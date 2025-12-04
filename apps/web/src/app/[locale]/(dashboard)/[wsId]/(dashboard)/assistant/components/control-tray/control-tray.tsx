@@ -39,7 +39,10 @@ export type ControlTrayProps = {
   videoRef: RefObject<HTMLVideoElement | null>;
   children?: ReactNode;
   supportsVideo: boolean;
-  onVideoStreamChange?: (stream: MediaStream | null) => void;
+  onVideoStreamChange?: (
+    stream: MediaStream | null,
+    type: 'webcam' | 'screen' | null
+  ) => void;
   // New: Chat toggle props
   textChatOpen?: boolean;
   onToggleChat?: () => void;
@@ -172,7 +175,9 @@ const connectButtonVariants: Variants = {
 function ControlTray({
   videoRef,
   children,
-  onVideoStreamChange = () => {},
+  onVideoStreamChange = () => {
+    // Default no-op
+  },
   supportsVideo,
   textChatOpen,
   onToggleChat,
@@ -257,41 +262,89 @@ function ControlTray({
 
   useEffect(() => {
     if (!videoRef?.current || !activeVideoStream) return;
-    videoRef.current.srcObject = activeVideoStream;
-    let frameId = -1;
-    let timeoutId = -1;
 
-    function sendVideoFrame() {
-      const video = videoRef.current;
+    const video = videoRef.current;
+    video.srcObject = activeVideoStream;
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let isCapturing = false;
+
+    // Capture and send a video frame
+    function captureAndSendFrame() {
       const canvas = renderCanvasRef.current;
+      if (!video || !canvas || !connected) {
+        return;
+      }
 
-      if (!video || !canvas) {
+      // Skip if video dimensions not ready
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        console.log('[Video] Waiting for video dimensions...');
+        timeoutId = setTimeout(captureAndSendFrame, 500);
         return;
       }
 
       const ctx = canvas.getContext('2d');
-      canvas.width = video.videoWidth * 0.25;
-      canvas.height = video.videoHeight * 0.25;
+      if (!ctx) return;
 
-      if (videoRef.current && canvas.width + canvas.height > 0) {
-        ctx?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL('image/jpeg', 1.0);
-        const data = base64.slice(base64.indexOf(',') + 1, Infinity);
-        client.sendRealtimeInput([{ mimeType: 'image/jpeg', data }]);
+      // Calculate size - cap at 1024x1024 like Python example
+      const maxSize = 1024;
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+
+      if (width > maxSize || height > maxSize) {
+        const scale = maxSize / Math.max(width, height);
+        width = Math.floor(width * scale);
+        height = Math.floor(height * scale);
       }
 
-      if (connected) {
-        timeoutId = window.setTimeout(sendVideoFrame, 1000 / 0.5);
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw frame to canvas
+      ctx.drawImage(video, 0, 0, width, height);
+
+      // Convert to base64 JPEG
+      const base64 = canvas.toDataURL('image/jpeg', 0.8);
+      const data = base64.slice(base64.indexOf(',') + 1);
+
+      // Send to Gemini
+      console.log(`[Video] Sending frame ${width}x${height}`);
+      client.sendRealtimeInput([{ mimeType: 'image/jpeg', data }]);
+
+      // Schedule next frame - 1 second interval like Python example
+      if (connected && isCapturing) {
+        timeoutId = setTimeout(captureAndSendFrame, 1000);
       }
     }
 
-    if (connected && activeVideoStream) {
-      frameId = requestAnimationFrame(sendVideoFrame);
+    // Start capturing when video is ready to play
+    function startCapturing() {
+      if (isCapturing) return;
+      isCapturing = true;
+      console.log('[Video] Starting frame capture');
+      captureAndSendFrame();
     }
+
+    // Handle video ready state
+    if (video.readyState >= 2) {
+      // Video already has enough data
+      startCapturing();
+    } else {
+      // Wait for video to be ready
+      video.addEventListener('loadeddata', startCapturing, { once: true });
+    }
+
+    // Also try to play the video (needed for autoplay to work)
+    video.play().catch((err) => {
+      console.warn('[Video] Autoplay failed:', err);
+    });
 
     return () => {
-      cancelAnimationFrame(frameId);
-      clearTimeout(timeoutId);
+      isCapturing = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      video.removeEventListener('loadeddata', startCapturing);
     };
   }, [connected, activeVideoStream, client, videoRef]);
 
@@ -300,10 +353,10 @@ function ControlTray({
     if (next) {
       const mediaStream = await next.start();
       setActiveVideoStream(mediaStream);
-      onVideoStreamChange(mediaStream);
+      onVideoStreamChange(mediaStream, next.type);
     } else {
       setActiveVideoStream(null);
-      onVideoStreamChange(null);
+      onVideoStreamChange(null, null);
     }
 
     videoStreams

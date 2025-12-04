@@ -13,6 +13,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
   resolveFirstDayOfWeek,
+  resolveTimeFormat,
   resolveTimezone,
 } from '../../../../../lib/calendar-settings-resolver';
 import AddEventDialog from './components/add-event-dialog';
@@ -45,6 +46,7 @@ export default function CalendarClientPage({
       return res.json() as Promise<{
         timezone: string;
         first_day_of_week: string;
+        time_format: string;
       }>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -63,12 +65,17 @@ export default function CalendarClientPage({
       { timezone: workspace.timezone }
     );
 
+    const effectiveTimeFormat = resolveTimeFormat(
+      { time_format: userSettings?.time_format },
+      locale
+    );
+
     return {
       appearance: {
         firstDayOfWeek: effectiveFirstDay,
         showWeekends: true,
         theme: 'system',
-        timeFormat: '12h',
+        timeFormat: effectiveTimeFormat,
         defaultView: 'week',
         showWeekNumbers: false,
         showDeclinedEvents: false,
@@ -82,6 +89,7 @@ export default function CalendarClientPage({
   }, [
     userSettings?.first_day_of_week,
     userSettings?.timezone,
+    userSettings?.time_format,
     workspace.first_day_of_week,
     workspace.timezone,
     locale,

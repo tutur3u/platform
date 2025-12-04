@@ -156,6 +156,12 @@ export async function POST(req: Request) {
       case 'get_task_details':
         result = await getTaskDetails(normalizedWsId, args);
         break;
+      case 'get_workspace_members':
+        result = await getWorkspaceMembers(normalizedWsId, args);
+        break;
+      case 'get_tasks_by_assignee':
+        result = await getTasksByAssignee(normalizedWsId, args);
+        break;
 
       // Visualization tools
       case 'visualize_task_list':
@@ -175,6 +181,12 @@ export async function POST(req: Request) {
           action: 'dismiss_visualization',
           visualizationId: (args.visualizationId as string) || 'all',
         };
+        break;
+      case 'visualize_workspace_members':
+        result = await visualizeWorkspaceMembers(normalizedWsId, args);
+        break;
+      case 'visualize_assignee_tasks':
+        result = await visualizeAssigneeTasks(normalizedWsId, args);
         break;
 
       default:
@@ -698,6 +710,223 @@ async function getTaskDetails(
         name: ta.users?.display_name,
       })
     ),
+  };
+}
+
+async function getWorkspaceMembers(
+  wsId: string,
+  args: Record<string, unknown>
+) {
+  const supabase = await createClient();
+  const includeInvited = (args.includeInvited as boolean) ?? false;
+
+  let query = supabase
+    .from('workspace_members_and_invites')
+    .select('id, display_name, avatar_url, email, pending')
+    .eq('ws_id', wsId)
+    .order('display_name');
+
+  if (!includeInvited) {
+    query = query.eq('pending', false);
+  }
+
+  const { data, error } = await query.limit(100);
+
+  if (error) throw error;
+
+  return {
+    members: (data || []).map((m) => ({
+      id: m.id,
+      name: m.display_name || m.email || 'Unknown',
+      avatarUrl: m.avatar_url,
+      isPending: m.pending,
+    })),
+    count: data?.length || 0,
+  };
+}
+
+type TaskListStatus =
+  | 'not_started'
+  | 'active'
+  | 'done'
+  | 'closed'
+  | 'documents';
+
+async function getTasksByAssignee(wsId: string, args: Record<string, unknown>) {
+  const supabase = await createClient();
+  const targetUserId = args.userId as string | undefined;
+  const userName = args.userName as string | undefined;
+  const rawListStatuses = args.listStatuses as string[] | undefined;
+  const listStatuses: TaskListStatus[] = rawListStatuses
+    ? (rawListStatuses.filter((s) =>
+        ['not_started', 'active', 'done', 'closed', 'documents'].includes(s)
+      ) as TaskListStatus[])
+    : ['not_started', 'active'];
+  const includeCompleted = (args.includeCompleted as boolean) ?? false;
+
+  let assigneeId = targetUserId;
+  let assigneeName: string | null = null;
+  let assigneeAvatarUrl: string | null = null;
+
+  // If userName provided, find matching user
+  if (!assigneeId && userName) {
+    const { data: members } = await supabase
+      .from('workspace_members_and_invites')
+      .select('id, display_name, avatar_url')
+      .eq('ws_id', wsId)
+      .eq('pending', false)
+      .ilike('display_name', `%${userName}%`)
+      .limit(1);
+
+    if (members?.[0]?.id) {
+      assigneeId = members[0].id;
+      assigneeName = members[0].display_name ?? null;
+      assigneeAvatarUrl = members[0].avatar_url ?? null;
+    }
+  } else if (assigneeId) {
+    // Get name for the provided userId
+    const { data: member } = await supabase
+      .from('workspace_members_and_invites')
+      .select('display_name, avatar_url')
+      .eq('ws_id', wsId)
+      .eq('id', assigneeId)
+      .single();
+    assigneeName = member?.display_name || null;
+    assigneeAvatarUrl = member?.avatar_url || null;
+  }
+
+  if (!assigneeId) {
+    return {
+      error: 'No matching member found',
+      tasks: [],
+      count: 0,
+    };
+  }
+
+  // Get task IDs assigned to this user
+  const { data: taskAssignments } = await supabase
+    .from('task_assignees')
+    .select('task_id')
+    .eq('user_id', assigneeId);
+
+  const taskIds = taskAssignments?.map((t) => t.task_id) || [];
+
+  if (taskIds.length === 0) {
+    return {
+      assignee: {
+        id: assigneeId,
+        name: assigneeName,
+        avatarUrl: assigneeAvatarUrl,
+      },
+      tasks: [],
+      count: 0,
+      message: 'No tasks assigned to this member',
+    };
+  }
+
+  // Fetch task details with workspace and list status filter
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id, name, description, priority, start_date, end_date, completed_at,
+      task_lists!inner(name, status, workspace_boards!inner(name, ws_id))
+    `
+    )
+    .in('id', taskIds)
+    .is('deleted_at', null)
+    .eq('task_lists.workspace_boards.ws_id', wsId)
+    .in('task_lists.status', listStatuses)
+    .limit(50);
+
+  // Filter by completion status (completed_at timestamp)
+  const filteredTasks = includeCompleted
+    ? tasks
+    : tasks?.filter((t) => !t.completed_at);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return {
+    assignee: {
+      id: assigneeId,
+      name: assigneeName,
+      avatarUrl: assigneeAvatarUrl,
+    },
+    tasks: (filteredTasks || []).map((t) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const taskAny = t as any;
+      return {
+        id: t.id,
+        name: t.name,
+        description: t.description
+          ? extractTextFromDescription(t.description)
+          : null,
+        priority: t.priority,
+        priorityLabel: getPriorityLabel(t.priority),
+        startDate: t.start_date,
+        endDate: t.end_date,
+        isCompleted: !!t.completed_at,
+        listName: taskAny.task_lists?.name,
+        listStatus: taskAny.task_lists?.status,
+        boardName: taskAny.task_lists?.workspace_boards?.name,
+      };
+    }),
+    count: filteredTasks?.length || 0,
+  };
+}
+
+async function visualizeWorkspaceMembers(
+  wsId: string,
+  args: Record<string, unknown>
+) {
+  const title = (args.title as string) || 'Team Members';
+  const includeInvited = (args.includeInvited as boolean) ?? false;
+
+  const membersResult = await getWorkspaceMembers(wsId, { includeInvited });
+
+  return {
+    action: 'visualize_workspace_members',
+    memberCount: membersResult.count,
+    members: membersResult.members,
+    visualization: {
+      type: 'workspace_members' as const,
+      data: {
+        title,
+        members: membersResult.members,
+        totalCount: membersResult.count,
+      },
+    },
+  };
+}
+
+async function visualizeAssigneeTasks(
+  wsId: string,
+  args: Record<string, unknown>
+) {
+  const title = (args.title as string) || 'Assigned Tasks';
+
+  const tasksResult = await getTasksByAssignee(wsId, args);
+
+  if (tasksResult.error) {
+    return {
+      action: 'visualize_assignee_tasks',
+      error: tasksResult.error,
+    };
+  }
+
+  return {
+    action: 'visualize_assignee_tasks',
+    assignee: tasksResult.assignee,
+    taskCount: tasksResult.count,
+    tasks: tasksResult.tasks,
+    visualization: {
+      type: 'assignee_tasks' as const,
+      data: {
+        title,
+        assignee: tasksResult.assignee,
+        tasks: tasksResult.tasks,
+        totalCount: tasksResult.count,
+      },
+    },
   };
 }
 

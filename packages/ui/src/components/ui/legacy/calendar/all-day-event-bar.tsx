@@ -801,8 +801,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               className={cn(
                 'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold text-xs transition-all duration-200',
                 // Cursor changes based on locked state and drag state
+                // Locked events are clickable but not draggable
                 event.locked
-                  ? 'cursor-not-allowed opacity-60'
+                  ? 'cursor-pointer'
                   : dragState.isDragging
                     ? 'cursor-grabbing'
                     : 'cursor-grab hover:cursor-grab',
@@ -823,8 +824,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 zIndex: isDraggedEvent ? 10 : 5,
               }}
               onClick={() => {
-                // Only open modal if not dragging and not locked
-                if (!dragState.isDragging && !event.locked) {
+                // Only open modal if not dragging (locked events can still be clicked to edit)
+                if (!dragState.isDragging) {
                   openModal(event.id, 'all-day');
                 }
               }}

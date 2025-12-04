@@ -1,6 +1,5 @@
 import EventEmitter from 'eventemitter3';
 import { createWorketFromSrc } from './audioworklet-registry';
-import { audioContext } from './utils';
 import AudioRecordingWorklet from './worklets/audio-processing';
 import VolMeterWorket from './worklets/vol-meter';
 
@@ -29,24 +28,42 @@ export class AudioRecorder extends EventEmitter {
   }
 
   async start() {
+    // Prevent concurrent start calls
+    if (this.starting) {
+      await this.starting;
+      return;
+    }
+
+    if (this.recording) {
+      return;
+    }
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Could not request user media');
     }
 
-    this.starting = new Promise((resolve) => {
-      (async () => {
+    this.starting = (async () => {
+      try {
         this.stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
-        this.audioContext = await audioContext({
-          sampleRate: this.sampleRate,
-        });
+
+        // Create a fresh AudioContext for each recording session
+        this.audioContext = new AudioContext({ sampleRate: this.sampleRate });
         this.source = this.audioContext.createMediaStreamSource(this.stream);
 
         const workletName = 'audio-recorder-worklet';
         const src = createWorketFromSrc(workletName, AudioRecordingWorklet);
 
-        await this.audioContext.audioWorklet.addModule(src);
+        try {
+          await this.audioContext.audioWorklet.addModule(src);
+        } catch (moduleError) {
+          console.error('Failed to load audio worklet module:', moduleError);
+          throw new Error(
+            `Failed to load audio worklet: ${moduleError instanceof Error ? moduleError.message : 'Unknown error'}`
+          );
+        }
+
         this.recordingWorklet = new AudioWorkletNode(
           this.audioContext,
           workletName
@@ -65,9 +82,17 @@ export class AudioRecorder extends EventEmitter {
 
         // vu meter worklet
         const vuWorkletName = 'vu-meter';
-        await this.audioContext.audioWorklet.addModule(
-          createWorketFromSrc(vuWorkletName, VolMeterWorket)
-        );
+        try {
+          await this.audioContext.audioWorklet.addModule(
+            createWorketFromSrc(vuWorkletName, VolMeterWorket)
+          );
+        } catch (moduleError) {
+          console.error('Failed to load VU meter worklet module:', moduleError);
+          throw new Error(
+            `Failed to load VU meter worklet: ${moduleError instanceof Error ? moduleError.message : 'Unknown error'}`
+          );
+        }
+
         this.vuWorklet = new AudioWorkletNode(this.audioContext, vuWorkletName);
         this.vuWorklet.port.onmessage = (ev: MessageEvent) => {
           this.emit('volume', ev.data.volume);
@@ -75,24 +100,46 @@ export class AudioRecorder extends EventEmitter {
 
         this.source.connect(this.vuWorklet);
         this.recording = true;
-        resolve();
+      } finally {
         this.starting = null;
-      })();
-    });
+      }
+    })();
+
+    await this.starting;
   }
 
   stop() {
     // its plausible that stop would be called before start completes
     // such as if the websocket immediately hangs up
     const handleStop = () => {
+      this.recording = false;
       this.source?.disconnect();
       this.stream?.getTracks().forEach((track) => {
         track.stop();
       });
+
+      // Disconnect worklets before closing context
+      if (this.recordingWorklet) {
+        this.recordingWorklet.disconnect();
+        this.recordingWorklet = undefined;
+      }
+      if (this.vuWorklet) {
+        this.vuWorklet.disconnect();
+        this.vuWorklet = undefined;
+      }
+
+      // Close the AudioContext to free resources
+      if (this.audioContext && this.audioContext.state !== 'closed') {
+        this.audioContext.close().catch(() => {
+          // Ignore close errors
+        });
+      }
+
       this.stream = undefined;
-      this.recordingWorklet = undefined;
-      this.vuWorklet = undefined;
+      this.source = undefined;
+      this.audioContext = undefined;
     };
+
     if (this.starting) {
       this.starting.then(handleStop);
       return;

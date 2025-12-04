@@ -2,19 +2,29 @@
 
 import { ExternalLink, Globe, Search } from '@tuturuuu/icons';
 import { Card } from '@tuturuuu/ui/card';
+import { cn } from '@tuturuuu/utils/format';
 import type { GoogleSearchVisualization } from '../../types/visualizations';
 
 interface GoogleSearchCardProps {
   data: GoogleSearchVisualization['data'];
+  isFullscreen?: boolean;
 }
 
-export function GoogleSearchCard({ data }: GoogleSearchCardProps) {
+export function GoogleSearchCard({
+  data,
+  isFullscreen = false,
+}: GoogleSearchCardProps) {
   const { query, results, totalResults } = data;
 
   return (
     <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
-      <div className="border-border/30 border-b bg-dynamic-blue/10 px-4 py-3 pr-12">
+      <div
+        className={cn(
+          'border-border/30 border-b bg-dynamic-blue/10 px-4 py-3',
+          !isFullscreen && 'pr-12'
+        )}
+      >
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-blue/15">
             <Search className="h-4 w-4 text-dynamic-blue" />
@@ -32,7 +42,12 @@ export function GoogleSearchCard({ data }: GoogleSearchCardProps) {
       </div>
 
       {/* Results List */}
-      <div className="max-h-72 divide-y divide-border/20 overflow-y-auto">
+      <div
+        className={cn(
+          'divide-y divide-border/20 overflow-y-auto',
+          !isFullscreen && 'max-h-72'
+        )}
+      >
         {results.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-muted-foreground">
             <Globe className="h-8 w-8 opacity-50" />

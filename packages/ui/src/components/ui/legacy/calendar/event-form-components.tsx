@@ -5,6 +5,7 @@ import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors'
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -396,25 +397,30 @@ export const EventDateTimePicker = ({
   minTime?: string;
   scrollIntoViewOnOpen?: boolean;
   pickerButtonRef?: React.RefObject<HTMLButtonElement | null>;
-}) => (
-  <div className="space-y-2">
-    <Label className="flex items-center gap-2 font-medium text-sm">
-      {icon || <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
-      {label}
-    </Label>
-    <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
-      <DateTimePicker
-        date={value}
-        setDate={(date) => onChange(date)}
-        showTimeSelect={showTimeSelect}
-        minDate={minDate}
-        minTime={minTime}
-        scrollIntoViewOnOpen={scrollIntoViewOnOpen}
-        pickerButtonRef={pickerButtonRef}
-      />
+}) => {
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2 font-medium text-sm">
+        {icon || <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+        {label}
+      </Label>
+      <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
+        <DateTimePicker
+          date={value}
+          setDate={(date) => onChange(date)}
+          showTimeSelect={showTimeSelect}
+          minDate={minDate}
+          minTime={minTime}
+          scrollIntoViewOnOpen={scrollIntoViewOnOpen}
+          pickerButtonRef={pickerButtonRef}
+          preferences={{ weekStartsOn, timezone, timeFormat }}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Color picker component
 export const EventColorPicker = ({

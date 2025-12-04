@@ -1,6 +1,9 @@
 'use client';
 
-import { detectSystemTimezone } from '@/lib/calendar-settings-resolver';
+import {
+  detectLocaleTimeFormat,
+  detectSystemTimezone,
+} from '@/lib/calendar-settings-resolver';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Label } from '@tuturuuu/ui/label';
@@ -36,6 +39,7 @@ export default function AppearanceSettings() {
       return res.json() as Promise<{
         timezone: string;
         first_day_of_week: string;
+        time_format: string;
       }>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -46,6 +50,7 @@ export default function AppearanceSettings() {
     mutationFn: async (data: {
       timezone?: string;
       first_day_of_week?: string;
+      time_format?: string;
     }) => {
       const res = await fetch('/api/v1/users/calendar-settings', {
         method: 'PATCH',
@@ -96,9 +101,14 @@ export default function AppearanceSettings() {
     updateCalendarSettings.mutate({ first_day_of_week: firstDay });
   };
 
+  const handleTimeFormatChange = (timeFormat: string) => {
+    updateCalendarSettings.mutate({ time_format: timeFormat });
+  };
+
   // Get list of available timezones
   const timezones = Intl.supportedValuesOf('timeZone');
   const systemTimezone = detectSystemTimezone();
+  const detectedTimeFormat = detectLocaleTimeFormat(locale);
 
   return (
     <div className="space-y-8">
@@ -222,6 +232,35 @@ export default function AppearanceSettings() {
             </SelectItem>
             <SelectItem value="saturday">
               {t('settings-appearance.saturday')}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingItemTab>
+
+      <Separator />
+
+      <SettingItemTab
+        title={t('settings-account.time-format')}
+        description={t('settings-account.time-format-description')}
+      >
+        <Select
+          value={calendarSettings?.time_format || 'auto'}
+          onValueChange={handleTimeFormatChange}
+          disabled={isLoadingSettings || updateCalendarSettings.isPending}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t('settings-appearance.auto')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto">
+              {t('settings-appearance.auto')} (
+              {detectedTimeFormat === '12h' ? '1:30 PM' : '13:30'})
+            </SelectItem>
+            <SelectItem value="12h">
+              {t('settings-appearance.12-hour')} (1:30 PM)
+            </SelectItem>
+            <SelectItem value="24h">
+              {t('settings-appearance.24-hour')} (13:30)
             </SelectItem>
           </SelectContent>
         </Select>

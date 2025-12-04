@@ -53,6 +53,14 @@ When to use: When user wants to remove a task
 Purpose: Get full task info (labels, assignees, dates)
 When to use: When user asks for details about a specific task
 
+- get_workspace_members
+Purpose: Get list of all members in the workspace
+When to use: When user asks "who is in this workspace?", "show team members", or before querying tasks by person
+
+- get_tasks_by_assignee
+Purpose: Get tasks assigned to a specific person
+When to use: When user asks "what is [name] working on?", "[name]'s tasks", or "show tasks for [person]"
+
 ---
 
 CRITICAL BEHAVIORAL RULES
@@ -193,6 +201,21 @@ CRITICAL - TASK DETAIL VISUALIZATION RULE:
 2. create_task(...)
 3. Confirm: "Created '[name]' with [priority] priority."
 
+"Who's on the team?" / "Show members" Flow
+1. get_workspace_members() OR visualize_workspace_members(title: "Team Members")
+2. If using data tool: List members naturally: "There are X people in this workspace: [names]..."
+3. If user says "show" or "display": Always use visualize_workspace_members
+
+"What is [name] working on?" / "[name]'s tasks" Flow
+1. get_tasks_by_assignee(userName: extract name) OR visualize_assignee_tasks(title: "[Name]'s Tasks", userName: extract name)
+2. IF tasks found: List them naturally with priority/due dates
+3. IF no tasks: "I couldn't find any active tasks assigned to [name]."
+4. If user says "show" or "display": Always use visualize_assignee_tasks
+
+"Show [name]'s done tasks" / "What did [name] complete?" Flow
+1. visualize_assignee_tasks(title: "[Name]'s Completed Tasks", userName: extract name, listStatuses: ["done"], includeCompleted: true)
+2. This shows tasks in "done" lists AND tasks with completed_at set
+
 ---
 
 PRIORITY MAPPING
@@ -228,6 +251,8 @@ When users ask to "show", "display", or "visualize" their tasks on screen, use t
 - visualize_timeline: Displays a Gantt-style timeline of task schedules
 - visualize_status_breakdown: Displays a chart showing task distribution by status
 - visualize_task_detail: Displays a detailed card for a single task
+- visualize_workspace_members: Displays team members with avatars in a card
+- visualize_assignee_tasks: Displays tasks assigned to a specific person (supports listStatuses filter: "not_started", "active", "done", "closed")
 - dismiss_visualization: Hides/closes displayed visualizations
 
 IMPORTANT VISUALIZATION RULES:
@@ -431,6 +456,55 @@ const TASK_TOOL_DECLARATIONS = [
       required: ['taskId'],
     },
   },
+  {
+    name: 'get_workspace_members',
+    description:
+      'Get all members of the current workspace. Returns list of members with names and IDs. Use this when user asks who is in the workspace, who are the team members, or before showing tasks by person.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        includeInvited: {
+          type: Type.BOOLEAN,
+          description: 'Include pending invitations (default: false)',
+        },
+      } as Record<string, { type: Type; description: string }>,
+      required: [],
+    },
+  },
+  {
+    name: 'get_tasks_by_assignee',
+    description:
+      "Get all tasks assigned to a specific workspace member. Search by user ID or name. Use when user asks about someone's tasks, workload, or assignments.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        userId: {
+          type: Type.STRING,
+          description: 'The user ID of the assignee',
+        },
+        userName: {
+          type: Type.STRING,
+          description:
+            'The display name to search for (partial match supported)',
+        },
+        listStatuses: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+          description:
+            'Filter by task list status: "not_started", "active", "done", "closed". Default: ["not_started", "active"]',
+        },
+        includeCompleted: {
+          type: Type.BOOLEAN,
+          description:
+            'Include tasks with completed_at timestamp set (default: false)',
+        },
+      } as Record<
+        string,
+        { type: Type; description: string; items?: { type: Type } }
+      >,
+      required: [],
+    },
+  },
 ];
 
 // Visualization tool declarations
@@ -575,6 +649,62 @@ const VISUALIZATION_TOOL_DECLARATIONS = [
       required: [],
     },
   },
+  {
+    name: 'visualize_workspace_members',
+    description:
+      'Display workspace members as a visual card on screen. Shows team member names and avatars. Use when user asks "who is on the team?", "show team members", or wants to see workspace members.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description: 'Title for the card (e.g., "Team Members")',
+        },
+        includeInvited: {
+          type: Type.BOOLEAN,
+          description: 'Include pending invitations (default: false)',
+        },
+      } as Record<string, { type: Type; description: string }>,
+      required: ['title'],
+    },
+  },
+  {
+    name: 'visualize_assignee_tasks',
+    description:
+      "Display tasks assigned to a specific person as a visual card on screen. Use when user asks to show [name]'s tasks or wants to see what someone is working on.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description: 'Title for the card (e.g., "[Name]\'s Tasks")',
+        },
+        userId: {
+          type: Type.STRING,
+          description: 'The user ID of the assignee',
+        },
+        userName: {
+          type: Type.STRING,
+          description: 'The display name to search for',
+        },
+        listStatuses: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+          description:
+            'Filter by task list status: "not_started", "active", "done", "closed". Default: ["not_started", "active"]',
+        },
+        includeCompleted: {
+          type: Type.BOOLEAN,
+          description:
+            'Include tasks with completed_at timestamp set (default: false)',
+        },
+      } as Record<
+        string,
+        { type: Type; description: string; items?: { type: Type } }
+      >,
+      required: ['title'],
+    },
+  },
 ];
 
 // Combined tool declarations
@@ -619,12 +749,16 @@ export async function POST() {
         // Allow session to start anytime within the token's validity window
         newSessionExpireTime: expireTime,
         liveConnectConstraints: {
-          // NOTE: Using 2.0-flash-exp because native audio model may not support function calling
-          // Change back to 'gemini-2.5-flash-native-audio-preview-09-2025' once confirmed supported
+          // Use gemini-2.0-flash-live for multimodal support (audio + video + function calling)
+          // Note: gemini-2.5-flash-native-audio-preview is audio-only and may not support all features
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           config: {
             responseModalities: [Modality.AUDIO],
             proactivity: { proactiveAudio: true },
+            // Enable context window compression for longer sessions (unlimited duration)
+            contextWindowCompression: { slidingWindow: {} },
+            // Enable session resumption to receive session handles for reconnection
+            sessionResumption: {},
             thinkingConfig: {
               thinkingBudget: 0,
             },
@@ -664,6 +798,8 @@ export async function POST() {
       mode: FunctionCallingConfigMode.AUTO,
       hasSystemInstruction:
         !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,
+      contextWindowCompression: 'slidingWindow (enabled)',
+      sessionResumption: 'enabled',
     });
 
     const token = await client.authTokens.create(tokenConfig);

@@ -32,6 +32,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -310,6 +311,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onSaveSchedulingSettings,
     schedulingSaving,
   } = props;
+
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
@@ -865,6 +868,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         allowClear={true}
                         showFooterControls={true}
                         maxDate={endDate}
+                        preferences={{ weekStartsOn, timezone, timeFormat }}
                       />
                     </div>
 
@@ -880,6 +884,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         allowClear={true}
                         showFooterControls={true}
                         minDate={startDate}
+                        preferences={{ weekStartsOn, timezone, timeFormat }}
                       />
 
                       {/* Date Range Warning */}

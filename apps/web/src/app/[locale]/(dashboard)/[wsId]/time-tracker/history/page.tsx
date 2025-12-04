@@ -66,7 +66,7 @@ export default async function TimeTrackerHistoryPage({
           .is('deleted_at', null)
           .is('closed_at', null)
           .in('list.status', ['not_started', 'active']) // Only include tasks from not_started and active lists
-          .is('list.deleted_at', null)
+          .eq('list.deleted', false) // Fixed: use 'deleted' boolean instead of 'deleted_at'
           .order('created_at', { ascending: false })
           .limit(100);
 

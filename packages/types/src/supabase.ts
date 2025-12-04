@@ -3589,6 +3589,51 @@ export type Database = {
           },
         ];
       };
+      live_api_sessions: {
+        Row: {
+          created_at: string | null;
+          expires_at: string;
+          id: string;
+          session_handle: string;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          expires_at: string;
+          id?: string;
+          session_handle: string;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          session_handle?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'live_api_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'live_api_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       meet_together_guest_timeblocks: {
         Row: {
           created_at: string;
@@ -8676,6 +8721,7 @@ export type Database = {
           id: string;
           services: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self: boolean | null;
+          time_format: string | null;
           timezone: string | null;
         };
         Insert: {
@@ -8689,6 +8735,7 @@ export type Database = {
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self?: boolean | null;
+          time_format?: string | null;
           timezone?: string | null;
         };
         Update: {
@@ -8702,6 +8749,7 @@ export type Database = {
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self?: boolean | null;
+          time_format?: string | null;
           timezone?: string | null;
         };
         Relationships: [
@@ -9339,6 +9387,58 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_boards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_calendar_categories: {
+        Row: {
+          color: string;
+          created_at: string | null;
+          id: string;
+          name: string;
+          position: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string;
+          created_at?: string | null;
+          id?: string;
+          name: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string | null;
+          id?: string;
+          name?: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_calendar_categories_color_fkey';
+            columns: ['color'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_colors';
+            referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_categories_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_categories_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -14136,6 +14236,7 @@ export type Database = {
         | { Args: { user_id: string; ws_id: string }; Returns: boolean }
         | { Args: { ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
+      cleanup_expired_live_sessions: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
@@ -14515,6 +14616,19 @@ export type Database = {
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
+      get_grouped_sessions_paginated: {
+        Args: {
+          p_end_date?: string;
+          p_limit?: number;
+          p_page?: number;
+          p_period?: string;
+          p_search?: string;
+          p_start_date?: string;
+          p_timezone?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_guest_user_leads: {
         Args: {
           p_page?: number;

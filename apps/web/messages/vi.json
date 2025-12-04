@@ -3586,7 +3586,26 @@
     "month": "Tháng",
     "agenda": "Lịch trình",
     "view": "Chế độ hiển thị",
-    "this-month": "Tháng này"
+    "this-month": "Tháng này",
+    "categories": {
+      "title": "Màu sắc danh mục",
+      "description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
+      "your_categories": "Danh mục của bạn",
+      "suggestions": "Gợi ý",
+      "add": "Thêm",
+      "edit": "Sửa",
+      "done": "Xong",
+      "select_color": "Chọn màu:",
+      "new_category_placeholder": "Tên danh mục mới",
+      "no_categories": "Chưa có danh mục nào. Thêm một danh mục để bắt đầu.",
+      "browse_suggestions": "Xem gợi ý",
+      "add_all_missing": "Thêm tất cả còn thiếu",
+      "info_text": "Danh mục giúp tổ chức các sự kiện của bạn theo màu sắc. AI sẽ tự động gán màu cho các sự kiện dựa trên tiêu đề và các danh mục này.",
+      "info_example": "Ví dụ, nếu bạn có danh mục \"Công việc\" với màu xanh, các sự kiện có \"công việc\" hoặc \"cuộc họp\" trong tiêu đề sẽ được tô màu xanh.",
+      "event_suffix": "Sự kiện",
+      "failed_to_load": "Không thể tải danh mục",
+      "try_refreshing": "Vui lòng thử làm mới trang."
+    }
   },
   "documents": {
     "documents": "Tài liệu",
@@ -3811,6 +3830,8 @@
     "timezone-description": "Đặt múi giờ ưa thích của bạn cho lịch và các tính năng lập lịch. Cài đặt này sẽ ghi đè múi giờ của workspace.",
     "first-day-of-week": "Ngày đầu tuần",
     "first-day-of-week-description": "Chọn ngày đầu tuần của bạn để hiển thị lịch. Cài đặt này sẽ ghi đè cài đặt workspace.",
+    "time-format": "Định dạng giờ",
+    "time-format-description": "Chọn cách hiển thị giờ trong ứng dụng.",
     "revert_changes": "Hoàn tác thay đổi",
     "preview": "Xem trước",
     "display-name": "Tên hiển thị",
@@ -4011,7 +4032,9 @@
     "monday": "Thứ hai",
     "saturday": "Thứ bảy",
     "timezone-auto-description": "Tự động phát hiện múi giờ từ hệ thống của bạn",
-    "first-day-auto-description": "Tự động phát hiện ngày đầu tuần dựa trên ngôn ngữ của bạn"
+    "first-day-auto-description": "Tự động phát hiện ngày đầu tuần dựa trên ngôn ngữ của bạn",
+    "12-hour": "12 giờ",
+    "24-hour": "24 giờ"
   },
   "settings-security": {
     "security": "Bảo mật",
@@ -6839,7 +6862,7 @@
     },
     "stats": {
       "title": "Tiến độ của bạn",
-      "description": "Theo dõi các chỉ số năng suất ⚡",
+      "description": "Theo dõi các chỉ số năng suất ",
       "today": {
         "title": "Hôm nay",
         "messageActive": "Tiến bộ tốt!",
@@ -7101,6 +7124,11 @@
         "timesRequired": "Vui lòng nhập cả thời gian bắt đầu và kết thúc",
         "endBeforeStart": "Thời gian kết thúc không thể trước thời gian bắt đầu",
         "minDuration": "Phiên phải dài ít nhất 1 phút",
+        "futureDateTime": "Không thể sử dụng ngày/giờ trong tương lai: {dateTime}",
+        "futureStartTime": "Thời gian bắt đầu không thể trong tương lai: {dateTime}",
+        "futureEndTime": "Thời gian kết thúc không thể trong tương lai: {dateTime}",
+        "futureEntryDate": "Không thể thêm mục có ngày trong tương lai: {dateTime}",
+        "futureSessionUpdate": "Không thể cập nhật phiên có thời gian bắt đầu trong tương lai: {dateTime}",
         "imageRequiredAll": "Vui lòng tải lên ít nhất một hình ảnh cho tất cả các mục bị thiếu",
         "imageRequiredOlder": "Vui lòng tải lên ít nhất một hình ảnh cho các mục cũ hơn {days} ngày",
         "invalidFileType": "{count} tệp bị từ chối: chỉ chấp nhận hình ảnh (PNG, JPEG, WebP, GIF).",
@@ -7495,7 +7523,13 @@
       "failed_to_delete_session": "Không thể xóa phiên",
       "end_time_before_start": "Thời gian kết thúc không thể trước thời gian bắt đầu",
       "no_changes_detected": "Không phát hiện thay đổi",
-      "failed_to_move_session": "Không thể di chuyển phiên"
+      "failed_to_move_session": "Không thể di chuyển phiên",
+      "validation_future_start_time": "Thời gian bắt đầu không thể trong tương lai: {dateTime}",
+      "validation_future_end_time": "Thời gian kết thúc không thể trong tương lai: {dateTime}",
+      "validation_future_date_time": "Không thể sử dụng ngày/giờ trong tương lai: {dateTime}",
+      "validation_end_before_start": "Thời gian kết thúc phải sau thời gian bắt đầu",
+      "validation_duration_too_short": "Thời lượng phải ít nhất 1 phút",
+      "validation_invalid_time": "Thời gian không hợp lệ"
     },
     "page_settings": {
       "metadata": {

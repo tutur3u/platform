@@ -1,17 +1,19 @@
 'use client';
 
-import { InfoIcon, PlusIcon, Trash2 } from '@tuturuuu/icons';
+import { InfoIcon, Loader2, PlusIcon, Trash2 } from '@tuturuuu/icons';
+import type { Workspace } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  type CalendarCategory,
+  useCalendarCategories,
+} from '../../../hooks/use-calendar-categories';
 import { type CategoryColor, colorMap } from './color-picker';
-
-export type CategoryColorsData = {
-  categories: CategoryColor[];
-};
 
 // Common category suggestions with predefined colors
 const CATEGORY_SUGGESTIONS: CategoryColor[] = [
@@ -27,55 +29,70 @@ const CATEGORY_SUGGESTIONS: CategoryColor[] = [
   { name: 'Other', color: 'GRAY' },
 ];
 
-export const defaultCategoryColors: CategoryColorsData = {
-  categories: [
-    { name: 'Work', color: 'BLUE' },
-    { name: 'Personal', color: 'GREEN' },
-    { name: 'Family', color: 'PURPLE' },
-    { name: 'Health', color: 'RED' },
-    { name: 'Social', color: 'YELLOW' },
-    { name: 'Education', color: 'INDIGO' },
-    { name: 'Travel', color: 'ORANGE' },
-    { name: 'Other', color: 'GRAY' },
-  ],
-};
-
 type CategoryColorsSettingsProps = {
-  value: CategoryColorsData;
-  onChange: (value: CategoryColorsData) => void;
+  workspace: Workspace | null;
 };
 
 export function CategoryColorsSettings({
-  value,
-  onChange,
+  workspace,
 }: CategoryColorsSettingsProps) {
+  const {
+    categories,
+    isLoading,
+    isError,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    reorderCategories,
+    isCreating,
+    isMutating,
+  } = useCalendarCategories({ workspaceId: workspace?.id });
+
   const [newCategoryName, setNewCategoryName] = useState('');
   const [activeTab, setActiveTab] = useState<'categories' | 'suggestions'>(
     'categories'
   );
-  const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [localCategories, setLocalCategories] = useState<CalendarCategory[]>(
+    []
+  );
 
-  const handleCategoryChange = (
-    index: number,
-    updatedCategory: CategoryColor
-  ) => {
-    console.log('Changing category:', index, updatedCategory);
+  // Sync local state with fetched categories
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
-    // Create a new array to ensure React detects the change
-    const updatedCategories = value.categories.map((cat, i) =>
-      i === index ? updatedCategory : cat
+  // Auto-switch to suggestions tab when no categories exist
+  useEffect(() => {
+    if (!isLoading && categories.length === 0) {
+      setActiveTab('suggestions');
+    }
+  }, [isLoading, categories.length]);
+
+  const handleCategoryChange = (id: string, updatedCategory: CategoryColor) => {
+    // Update local state immediately for responsive UI
+    setLocalCategories((prev) =>
+      prev.map((cat) =>
+        cat.id === id
+          ? { ...cat, name: updatedCategory.name, color: updatedCategory.color }
+          : cat
+      )
     );
 
-    // Call the onChange handler with the updated categories
-    onChange({ categories: updatedCategories });
+    // Send update to server
+    updateCategory({
+      id,
+      name: updatedCategory.name,
+      color: updatedCategory.color,
+    });
   };
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) return;
 
     // Find an unused color
-    const usedColors = new Set(value.categories.map((cat) => cat.color));
+    const usedColors = new Set(localCategories.map((cat) => cat.color));
     const availableColors: SupportedColor[] = [
       'BLUE',
       'GREEN',
@@ -89,41 +106,36 @@ export function CategoryColorsSettings({
       'GRAY',
     ];
 
-    // Find first unused color or use the first available color
     const newColor =
       availableColors.find((color) => !usedColors.has(color)) ||
-      (availableColors[0] as SupportedColor);
+      availableColors[0]!;
 
-    onChange({
-      categories: [
-        ...value.categories,
-        { name: newCategoryName.trim(), color: newColor },
-      ],
+    createCategory({
+      name: newCategoryName.trim(),
+      color: newColor,
     });
 
     setNewCategoryName('');
+    setActiveTab('categories');
   };
 
-  const handleRemoveCategory = (category: CategoryColor) => {
-    const updatedCategories = value.categories.filter(
-      (cat) => cat.name !== category.name
-    );
-
-    onChange({ categories: updatedCategories });
+  const handleRemoveCategory = (categoryId: string) => {
+    deleteCategory(categoryId);
   };
 
-  // Add a suggested category that isn't already in the list
+  // Add a suggested category
   const addSuggestedCategory = (suggestion: CategoryColor) => {
     // Check if this category name or color already exists (case insensitive)
-    const exists = value.categories.some(
+    const exists = localCategories.some(
       (cat) =>
         cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
         cat.color === suggestion.color
     );
 
     if (!exists) {
-      onChange({
-        categories: [...value.categories, { ...suggestion }],
+      createCategory({
+        name: suggestion.name,
+        color: suggestion.color,
       });
     }
   };
@@ -131,9 +143,9 @@ export function CategoryColorsSettings({
   // Add all missing suggested categories
   const addAllSuggestions = () => {
     const currentCategoryNames = new Set(
-      value.categories.map((cat) => cat.name.toLowerCase())
+      localCategories.map((cat) => cat.name.toLowerCase())
     );
-    const currentColors = new Set(value.categories.map((cat) => cat.color));
+    const currentColors = new Set(localCategories.map((cat) => cat.color));
 
     const missingCategories = CATEGORY_SUGGESTIONS.filter(
       (suggestion) =>
@@ -141,26 +153,27 @@ export function CategoryColorsSettings({
         !currentColors.has(suggestion.color)
     );
 
-    if (missingCategories.length > 0) {
-      onChange({
-        categories: [...value.categories, ...missingCategories],
+    // Add each missing category
+    missingCategories.forEach((category) => {
+      createCategory({
+        name: category.name,
+        color: category.color,
       });
-    }
+    });
 
-    setActiveTab('categories');
+    if (missingCategories.length > 0) {
+      setActiveTab('categories');
+    }
   };
 
-  // Filter categories based on search query
-  const filteredCategories = value.categories;
-
   // Get a preview of what an event with this category might look like
-  const getCategoryPreview = (category: CategoryColor) => {
+  const getCategoryPreview = (category: CalendarCategory) => {
     const colorInfo = colorMap[category.color];
 
     return (
       <div
         className="flex flex-col items-center"
-        key={`preview-${category.name}-${category.color}`}
+        key={`preview-${category.id}`}
       >
         <div
           className={cn(
@@ -185,23 +198,55 @@ export function CategoryColorsSettings({
     if (draggedIndex === null) return;
 
     if (draggedIndex !== index) {
-      const newCategories = [...value.categories];
+      const newCategories = [...localCategories];
       const draggedItem = newCategories[draggedIndex];
       if (draggedItem) {
         newCategories.splice(draggedIndex, 1);
         newCategories.splice(index, 0, draggedItem);
-
-        onChange({ categories: newCategories });
+        setLocalCategories(newCategories);
         setDraggedIndex(index);
-        setEditingCategory(null);
       }
     }
   };
 
   const handleDragEnd = () => {
+    if (draggedIndex !== null) {
+      // Persist the new order to the database
+      const reorderedItems = localCategories.map((cat, idx) => ({
+        id: cat.id,
+        position: idx,
+      }));
+      reorderCategories(reorderedItems);
+    }
     setDraggedIndex(null);
     setEditingCategory(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+        <p className="font-medium text-destructive">
+          Failed to load categories
+        </p>
+        <p className="mt-1 text-muted-foreground text-sm">
+          Please try refreshing the page.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -222,11 +267,19 @@ export function CategoryColorsSettings({
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as 'categories' | 'suggestions')}
+      >
         <div className="mb-4 flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="categories" className="px-4">
               Your Categories
+              {localCategories.length > 0 && (
+                <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
+                  {localCategories.length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="suggestions" className="px-4">
               Suggestions
@@ -246,14 +299,19 @@ export function CategoryColorsSettings({
                     }
                   }}
                   className="h-9"
+                  disabled={isMutating}
                 />
                 <Button
                   variant="outline"
                   onClick={handleAddCategory}
                   className="h-9"
-                  disabled={!newCategoryName.trim()}
+                  disabled={!newCategoryName.trim() || isCreating}
                 >
-                  <PlusIcon className="mr-2 h-4 w-4" />
+                  {isCreating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                  )}
                   Add
                 </Button>
               </div>
@@ -263,15 +321,21 @@ export function CategoryColorsSettings({
                 size="sm"
                 onClick={addAllSuggestions}
                 variant="outline"
-                disabled={CATEGORY_SUGGESTIONS.every((suggestion) =>
-                  value.categories.some(
-                    (cat) =>
-                      cat.name.toLowerCase() ===
-                        suggestion.name.toLowerCase() ||
-                      cat.color === suggestion.color
+                disabled={
+                  isMutating ||
+                  CATEGORY_SUGGESTIONS.every((suggestion) =>
+                    localCategories.some(
+                      (cat) =>
+                        cat.name.toLowerCase() ===
+                          suggestion.name.toLowerCase() ||
+                        cat.color === suggestion.color
+                    )
                   )
-                )}
+                }
               >
+                {isMutating ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
                 Add All Missing
               </Button>
             )}
@@ -279,17 +343,24 @@ export function CategoryColorsSettings({
         </div>
 
         <TabsContent value="categories" className="mt-0">
-          {filteredCategories.length === 0 ? (
-            <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
+          {localCategories.length === 0 ? (
+            <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed">
               <p className="text-muted-foreground">
                 No categories yet. Add one to get started.
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveTab('suggestions')}
+              >
+                Browse suggestions
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {filteredCategories.map((category, index) => (
+              {localCategories.map((category, index) => (
                 <div
-                  key={`${index}-${category.color}`}
+                  key={category.id}
                   className="group w-full overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all"
                   draggable
                   onDragStart={() => handleDragStart(index)}
@@ -304,16 +375,15 @@ export function CategoryColorsSettings({
                             'h-6 w-6 flex-none cursor-move rounded-full border',
                             colorMap[category.color].cbg
                           )}
-                          key={`color-circle-${category.color}`}
-                          onClick={() => setEditingCategory(index)}
+                          onClick={() => setEditingCategory(category.id)}
                         />
 
-                        {editingCategory === index ? (
+                        {editingCategory === category.id ? (
                           <div className="flex flex-1 items-center justify-between">
                             <Input
                               value={category.name}
                               onChange={(e) =>
-                                handleCategoryChange(index, {
+                                handleCategoryChange(category.id, {
                                   ...category,
                                   name: e.target.value,
                                 })
@@ -340,7 +410,7 @@ export function CategoryColorsSettings({
                           <div className="flex flex-1 items-center justify-between">
                             <div
                               className="cursor-pointer truncate font-medium"
-                              onClick={() => setEditingCategory(index)}
+                              onClick={() => setEditingCategory(category.id)}
                             >
                               {category.name}
                             </div>
@@ -348,7 +418,7 @@ export function CategoryColorsSettings({
                               variant="ghost"
                               size="sm"
                               className="h-7 text-muted-foreground text-xs"
-                              onClick={() => setEditingCategory(index)}
+                              onClick={() => setEditingCategory(category.id)}
                             >
                               Edit
                             </Button>
@@ -358,7 +428,7 @@ export function CategoryColorsSettings({
                     </div>
 
                     {/* Color picker */}
-                    {editingCategory === index ? (
+                    {editingCategory === category.id ? (
                       <div className="mt-3">
                         <div className="mb-2 flex items-center justify-between">
                           <div className="font-medium text-sm">
@@ -369,10 +439,10 @@ export function CategoryColorsSettings({
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                handleRemoveCategory(category);
+                                handleRemoveCategory(category.id);
                                 setEditingCategory(null);
                               }}
-                              disabled={value.categories.length <= 1}
+                              disabled={localCategories.length <= 1}
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -396,14 +466,10 @@ export function CategoryColorsSettings({
                                       'shadow-md ring-2 ring-offset-2 ring-offset-background'
                                   )}
                                   onClick={() => {
-                                    // Create a new category object with the updated color
-                                    const newCategory = {
+                                    handleCategoryChange(category.id, {
                                       ...category,
                                       color: colorValue,
-                                    };
-
-                                    // Update the category
-                                    handleCategoryChange(index, newCategory);
+                                    });
                                     setEditingCategory(null);
                                   }}
                                   aria-label={`Select ${colorInfo.name} color`}
@@ -427,7 +493,7 @@ export function CategoryColorsSettings({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {CATEGORY_SUGGESTIONS.map((suggestion, index) => {
               // Check if this category name or color already exists
-              const exists = value.categories.some(
+              const exists = localCategories.some(
                 (cat) =>
                   cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
                   cat.color === suggestion.color
@@ -472,3 +538,12 @@ export function CategoryColorsSettings({
     </div>
   );
 }
+
+// Re-export types for backward compatibility
+export type CategoryColorsData = {
+  categories: CategoryColor[];
+};
+
+export const defaultCategoryColors: CategoryColorsData = {
+  categories: [],
+};

@@ -64,6 +64,7 @@ import {
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import type { MotionProps } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -1837,7 +1838,7 @@ export function TaskProjectDetail({
                           <h4 className="mb-1 font-medium">{task.name}</h4>
                           {task.description && (
                             <p className="line-clamp-2 text-muted-foreground text-sm">
-                              {task.description}
+                              {getDescriptionText(task.description)}
                             </p>
                           )}
                           <div className="mt-2 flex flex-wrap gap-2">

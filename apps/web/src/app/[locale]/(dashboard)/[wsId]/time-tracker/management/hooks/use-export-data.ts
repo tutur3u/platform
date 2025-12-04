@@ -12,7 +12,10 @@ interface GroupedSession {
     color: string;
   } | null;
   sessions: TimeTrackingSession[];
+  /** Total duration across all sessions (sum of duration_seconds) */
   totalDuration: number;
+  /** Duration that falls within the specific period (properly split for overnight sessions) */
+  periodDuration?: number;
   firstStartTime: string;
   lastEndTime: string | null;
   status: 'active' | 'paused' | 'completed';
@@ -46,6 +49,10 @@ interface ExportDataRow {
   period: string;
   periodType: string;
   sessionCount: number;
+  /** Period-specific duration (properly split for overnight sessions) */
+  periodDuration: string;
+  periodDurationSeconds: number;
+  /** Total duration across all sessions (for reference) */
   totalDuration: string;
   totalDurationSeconds: number;
   averageDuration: string;
@@ -128,6 +135,8 @@ export function useExportData(params: ExportParams) {
       'Period',
       'Period Type',
       'Session Count',
+      'Period Duration',
+      'Period Duration (Seconds)',
       'Total Duration',
       'Total Duration (Seconds)',
       'Average Duration',
@@ -144,6 +153,8 @@ export function useExportData(params: ExportParams) {
         row.period,
         row.periodType,
         row.sessionCount,
+        row.periodDuration,
+        row.periodDurationSeconds,
         row.totalDuration,
         row.totalDurationSeconds,
         row.averageDuration,
@@ -161,6 +172,8 @@ export function useExportData(params: ExportParams) {
       { wch: 15 },
       { wch: 12 },
       { wch: 12 },
+      { wch: 15 },
+      { wch: 20 },
       { wch: 15 },
       { wch: 18 },
       { wch: 15 },
@@ -205,16 +218,21 @@ export function useExportData(params: ExportParams) {
         new Set(session.sessions.map((s) => s.title).filter(Boolean))
       ).join('; ');
 
+      // Use periodDuration if available (properly split for overnight sessions), fallback to totalDuration
+      const effectiveDuration = session.periodDuration ?? session.totalDuration;
+
       return {
         user: session.user.displayName || 'Unknown User',
         period: session.period,
         periodType:
           period === 'day' ? 'Daily' : period === 'week' ? 'Weekly' : 'Monthly',
         sessionCount: session.sessions.length,
+        periodDuration: formatDurationForExport(effectiveDuration),
+        periodDurationSeconds: effectiveDuration,
         totalDuration: formatDurationForExport(session.totalDuration),
         totalDurationSeconds: session.totalDuration,
         averageDuration: formatDurationForExport(
-          Math.round(session.totalDuration / session.sessions.length)
+          Math.round(effectiveDuration / session.sessions.length)
         ),
         status: session.status,
         firstStartTime: dayjs(session.firstStartTime).format(
@@ -369,6 +387,8 @@ export function useExportData(params: ExportParams) {
         'Period',
         'Period Type',
         'Session Count',
+        'Period Duration',
+        'Period Duration (Seconds)',
         'Total Duration',
         'Total Duration (Seconds)',
         'Average Duration',
@@ -386,6 +406,8 @@ export function useExportData(params: ExportParams) {
             escapeCsvValue(row.period),
             escapeCsvValue(row.periodType),
             escapeCsvValue(row.sessionCount),
+            escapeCsvValue(row.periodDuration),
+            escapeCsvValue(row.periodDurationSeconds),
             escapeCsvValue(row.totalDuration),
             escapeCsvValue(row.totalDurationSeconds),
             escapeCsvValue(row.averageDuration),

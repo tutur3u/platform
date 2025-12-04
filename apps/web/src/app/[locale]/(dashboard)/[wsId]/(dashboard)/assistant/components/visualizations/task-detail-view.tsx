@@ -16,6 +16,7 @@ import type { TaskDetailVisualization } from '../../types/visualizations';
 
 interface TaskDetailViewProps {
   data: TaskDetailVisualization['data'];
+  isFullscreen?: boolean;
 }
 
 const priorityConfig: Record<
@@ -82,7 +83,10 @@ function getRelativeDate(dateString: string | null): {
   return { text: '', isOverdue: false, isToday: false };
 }
 
-export function TaskDetailView({ data }: TaskDetailViewProps) {
+export function TaskDetailView({
+  data,
+  isFullscreen = false,
+}: TaskDetailViewProps) {
   const {
     name,
     description,
@@ -111,7 +115,12 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
       )}
 
       {/* Header with Task Name */}
-      <div className="border-border/30 border-b px-4 py-4 pr-12">
+      <div
+        className={cn(
+          'border-border/30 border-b px-4 py-4',
+          !isFullscreen && 'pr-12'
+        )}
+      >
         <div className="flex items-start gap-3">
           {!completed && (
             <div className="mt-0.5">
@@ -164,7 +173,12 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
       </div>
 
       {/* Content Section */}
-      <div className="max-h-72 space-y-4 overflow-y-auto p-4">
+      <div
+        className={cn(
+          'space-y-4 overflow-y-auto p-4',
+          !isFullscreen && 'max-h-72'
+        )}
+      >
         {/* Description */}
         {description && (
           <div className="rounded-lg bg-muted/30 p-3">

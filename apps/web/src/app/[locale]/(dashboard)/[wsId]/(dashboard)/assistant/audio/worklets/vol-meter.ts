@@ -1,19 +1,15 @@
 const VolMeterWorket = `
   class VolMeter extends AudioWorkletProcessor {
-    volume
-    updateIntervalInMS
-    nextUpdateFrame
-
     constructor() {
-      super()
-      this.volume = 0
-      this.updateIntervalInMS = 25
-      this.nextUpdateFrame = this.updateIntervalInMS
-      this.port.onmessage = event => {
+      super();
+      this.volume = 0;
+      this.updateIntervalInMS = 25;
+      this.nextUpdateFrame = this.updateIntervalInMS;
+      this.port.onmessage = (event) => {
         if (event.data.updateIntervalInMS) {
-          this.updateIntervalInMS = event.data.updateIntervalInMS
+          this.updateIntervalInMS = event.data.updateIntervalInMS;
         }
-      }
+      };
     }
 
     get intervalInFrames() {

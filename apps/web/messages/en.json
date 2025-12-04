@@ -3474,7 +3474,26 @@
     "month": "Month",
     "agenda": "Agenda",
     "view": "View",
-    "this-month": "This month"
+    "this-month": "This month",
+    "categories": {
+      "title": "Category Colors",
+      "description": "Customize colors for different event categories",
+      "your_categories": "Your Categories",
+      "suggestions": "Suggestions",
+      "add": "Add",
+      "edit": "Edit",
+      "done": "Done",
+      "select_color": "Select a color:",
+      "new_category_placeholder": "New category name",
+      "no_categories": "No categories yet. Add one to get started.",
+      "browse_suggestions": "Browse suggestions",
+      "add_all_missing": "Add All Missing",
+      "info_text": "Categories help organize your events by color. The AI will automatically assign colors to events based on their title and these categories.",
+      "info_example": "For example, if you have a \"Work\" category with blue color, events with \"work\" or \"meeting\" in the title will be colored blue.",
+      "event_suffix": "Event",
+      "failed_to_load": "Failed to load categories",
+      "try_refreshing": "Please try refreshing the page."
+    }
   },
   "documents": {
     "documents": "Documents",
@@ -3648,6 +3667,8 @@
     "timezone-description": "Set your preferred timezone for calendar and scheduling features. This overrides workspace timezone.",
     "first-day-of-week": "First day of week",
     "first-day-of-week-description": "Choose the first day of your week for calendar display. This overrides workspace settings.",
+    "time-format": "Time format",
+    "time-format-description": "Choose how time is displayed across the application.",
     "revert_changes": "Revert changes",
     "preview": "Preview",
     "display-name": "Display name",
@@ -3858,7 +3879,9 @@
     "monday": "Monday",
     "saturday": "Saturday",
     "timezone-auto-description": "Automatically detect timezone from your system",
-    "first-day-auto-description": "Automatically detect first day of week based on your locale"
+    "first-day-auto-description": "Automatically detect first day of week based on your locale",
+    "12-hour": "12-hour",
+    "24-hour": "24-hour"
   },
   "settings-security": {
     "security": "Security",
@@ -7050,7 +7073,7 @@
     },
     "stats": {
       "title": "Your Progress",
-      "description": "Track your productivity metrics ⚡",
+      "description": "Track your productivity metrics ",
       "today": {
         "title": "Today",
         "messageActive": "Great progress!",
@@ -7312,6 +7335,11 @@
         "timesRequired": "Please enter both start and end times",
         "endBeforeStart": "End time cannot be before start time",
         "minDuration": "Session must be at least 1 minute long",
+        "futureDateTime": "Cannot use future date/time: {dateTime}",
+        "futureStartTime": "Start time cannot be in the future: {dateTime}",
+        "futureEndTime": "End time cannot be in the future: {dateTime}",
+        "futureEntryDate": "Cannot add entries with future dates: {dateTime}",
+        "futureSessionUpdate": "Cannot update session to have a start time in the future: {dateTime}",
         "imageRequiredAll": "Please upload at least one image for all missed entries",
         "imageRequiredOlder": "Please upload at least one image for entries older than {days} day{days, plural, =1 {} other {s}}",
         "invalidFileType": "{count} file(s) rejected: only images (PNG, JPEG, WebP, GIF) are allowed.",
@@ -7706,7 +7734,13 @@
       "failed_to_delete_session": "Failed to delete session",
       "end_time_before_start": "End time cannot be before start time",
       "no_changes_detected": "No changes detected",
-      "failed_to_move_session": "Failed to move session"
+      "failed_to_move_session": "Failed to move session",
+      "validation_future_start_time": "Start time cannot be in the future: {dateTime}",
+      "validation_future_end_time": "End time cannot be in the future: {dateTime}",
+      "validation_future_date_time": "Cannot use future date/time: {dateTime}",
+      "validation_end_before_start": "End time must be after start time",
+      "validation_duration_too_short": "Duration must be at least 1 minute",
+      "validation_invalid_time": "Invalid time"
     },
     "page_settings": {
       "metadata": {

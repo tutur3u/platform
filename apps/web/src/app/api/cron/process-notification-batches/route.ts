@@ -23,7 +23,7 @@ interface NotificationItem {
   createdAt: string;
 }
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     // Verify the request is authorized (check for cron secret)
     const authHeader = req.headers.get('authorization');
@@ -427,13 +427,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// Allow GET for health checks
-export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    message:
-      'Notification batch processor endpoint (batched notifications only)',
-  });
 }

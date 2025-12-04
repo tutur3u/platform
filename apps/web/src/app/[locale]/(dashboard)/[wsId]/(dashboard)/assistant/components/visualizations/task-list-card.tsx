@@ -16,6 +16,7 @@ import type { TaskListVisualization } from '../../types/visualizations';
 
 interface TaskListCardProps {
   data: TaskListVisualization['data'];
+  isFullscreen?: boolean;
 }
 
 const priorityConfig: Record<
@@ -88,7 +89,10 @@ function formatDate(dateString: string | null): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function TaskListCard({ data }: TaskListCardProps) {
+export function TaskListCard({
+  data,
+  isFullscreen = false,
+}: TaskListCardProps) {
   const { title, category, tasks } = data;
   const categoryStyle = category ? categoryConfig[category] : null;
   const CategoryIcon = categoryStyle?.icon || Circle;
@@ -98,7 +102,8 @@ export function TaskListCard({ data }: TaskListCardProps) {
       {/* Header */}
       <div
         className={cn(
-          'border-border/30 border-b px-4 py-3 pr-12',
+          'border-border/30 border-b px-4 py-3',
+          !isFullscreen && 'pr-12',
           categoryStyle?.bgColor
         )}
       >
@@ -126,7 +131,12 @@ export function TaskListCard({ data }: TaskListCardProps) {
       </div>
 
       {/* Task List */}
-      <div className="max-h-72 divide-y divide-border/20 overflow-y-auto">
+      <div
+        className={cn(
+          'divide-y divide-border/20 overflow-y-auto',
+          !isFullscreen && 'max-h-72'
+        )}
+      >
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-muted-foreground">
             <CheckCircle2 className="h-8 w-8 text-dynamic-green/50" />

@@ -1,7 +1,11 @@
 'use client';
 
 import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
-import { LiveAPIProvider, useLiveAPIContext } from '@/hooks/use-live-api';
+import {
+  type ConnectionStatus,
+  LiveAPIProvider,
+  useLiveAPIContext,
+} from '@/hooks/use-live-api';
 import { Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,6 +21,7 @@ import { AudioRecorder } from './audio/audio-recorder';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
+import VideoPreview from './components/video-panel/video-preview';
 import { VisualizationContainer } from './components/visualizations/visualization-container';
 import type { ServerContent, ToolCall } from './multimodal-live';
 import { isModelTurn } from './multimodal-live';
@@ -525,22 +530,40 @@ function AuroraBlob({
 // Status pill component
 function StatusPill({
   connected,
+  connectionStatus,
   isUserSpeaking,
   isSpeaking,
 }: {
   connected: boolean;
+  connectionStatus: ConnectionStatus;
   isUserSpeaking: boolean;
   isSpeaking: boolean;
 }) {
-  const status = !connected
-    ? 'Ready to connect'
-    : isUserSpeaking
-      ? 'Listening...'
-      : isSpeaking
-        ? 'Speaking...'
-        : 'Ready';
+  const status =
+    connectionStatus === 'reconnecting'
+      ? 'Reconnecting...'
+      : connectionStatus === 'connecting'
+        ? 'Connecting...'
+        : !connected
+          ? 'Ready to connect'
+          : isUserSpeaking
+            ? 'Listening...'
+            : isSpeaking
+              ? 'Speaking...'
+              : 'Ready';
+
+  const isConnecting =
+    connectionStatus === 'connecting' || connectionStatus === 'reconnecting';
 
   const getStatusStyle = () => {
+    // Connecting/reconnecting states
+    if (isConnecting) {
+      return {
+        bg: `${AURORA_COLORS.amber}20`,
+        text: AURORA_COLORS.amber,
+        glow: AURORA_COLORS.amber,
+      };
+    }
     if (!connected) {
       return {
         bg: `${AURORA_COLORS.violet}20`,
@@ -574,12 +597,20 @@ function StatusPill({
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={
+        isConnecting ? { opacity: [1, 0.6, 1], y: 0 } : { opacity: 1, y: 0 }
+      }
+      transition={
+        isConnecting
+          ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
+          : undefined
+      }
       className="rounded-full px-5 py-2 font-medium text-sm backdrop-blur-sm"
       style={{
         background: style.bg,
         color: style.text,
-        boxShadow: connected ? `0 0 20px ${style.glow}30` : 'none',
+        boxShadow:
+          connected || isConnecting ? `0 0 20px ${style.glow}30` : 'none',
       }}
     >
       <span className="flex items-center gap-2.5">
@@ -590,11 +621,11 @@ function StatusPill({
             boxShadow: `0 0 8px ${style.glow}`,
           }}
           animate={{
-            scale: connected ? [1, 1.4, 1] : 1,
-            opacity: connected ? [0.6, 1, 0.6] : 0.5,
+            scale: connected || isConnecting ? [1, 1.4, 1] : 1,
+            opacity: connected || isConnecting ? [0.6, 1, 0.6] : 0.5,
           }}
           transition={{
-            duration: 1.2,
+            duration: isConnecting ? 0.8 : 1.2,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
@@ -610,11 +641,20 @@ function GameApp({ wsId }: { wsId: string }) {
   const [textChatOpen, setTextChatOpen] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [activeVideoStream, setActiveVideoStream] =
+    useState<MediaStream | null>(null);
+  const [videoType, setVideoType] = useState<'webcam' | 'screen' | null>(null);
 
   const transcriptRef = useRef('');
 
-  const { client, connected, volume, onToolCall, sendToolResponse } =
-    useLiveAPIContext();
+  const {
+    client,
+    connected,
+    connectionStatus,
+    volume,
+    onToolCall,
+    sendToolResponse,
+  } = useLiveAPIContext();
   const { isUserSpeaking } = useAudioRecorder();
 
   // Visualization store
@@ -824,6 +864,42 @@ function GameApp({ wsId }: { wsId: string }) {
       client.off('groundingmetadata', handleGroundingMetadata);
     };
   }, [client, addVisualization]);
+
+  // Handle GoAway message (server requesting graceful disconnection)
+  useEffect(() => {
+    if (!client) return;
+
+    const handleGoAway = (data: { timeLeft?: string }) => {
+      console.log(
+        '[Assistant] Server requesting disconnect, time left:',
+        data.timeLeft || 'unknown'
+      );
+      // The session resumption will automatically handle reconnection
+      // using the stored session handle
+    };
+
+    client.on('goaway', handleGoAway);
+    return () => {
+      client.off('goaway', handleGoAway);
+    };
+  }, [client]);
+
+  // Handle GenerationComplete (model finished generating all output)
+  useEffect(() => {
+    if (!client) return;
+
+    const handleGenerationComplete = () => {
+      console.log('[Assistant] Generation complete');
+      // Clear transcript state cleanly when generation is complete
+      setCurrentTranscript('');
+      setIsSpeaking(false);
+    };
+
+    client.on('generationcomplete', handleGenerationComplete);
+    return () => {
+      client.off('generationcomplete', handleGenerationComplete);
+    };
+  }, [client]);
 
   // Keep transcript ref in sync
   useEffect(() => {
@@ -1035,6 +1111,7 @@ function GameApp({ wsId }: { wsId: string }) {
         <div className="absolute bottom-[22%]">
           <StatusPill
             connected={connected}
+            connectionStatus={connectionStatus}
             isUserSpeaking={isUserSpeaking}
             isSpeaking={isSpeaking}
           />
@@ -1046,9 +1123,13 @@ function GameApp({ wsId }: { wsId: string }) {
         <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 pb-6 md:p-6 md:pb-8">
           <ControlTray
             videoRef={videoRef}
-            supportsVideo={false}
+            supportsVideo={true}
             textChatOpen={textChatOpen}
             onToggleChat={() => setTextChatOpen((v) => !v)}
+            onVideoStreamChange={(stream, type) => {
+              setActiveVideoStream(stream);
+              setVideoType(type);
+            }}
           />
           <AnimatePresence>
             {textChatOpen && connected && (
@@ -1063,6 +1144,25 @@ function GameApp({ wsId }: { wsId: string }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Video preview panel */}
+      <VideoPreview
+        stream={activeVideoStream}
+        type={videoType}
+        onClose={() => {
+          // Stop all video streams when preview is closed
+          if (activeVideoStream) {
+            activeVideoStream.getTracks().forEach((track) => {
+              track.stop();
+            });
+            setActiveVideoStream(null);
+            setVideoType(null);
+          }
+        }}
+      />
+
+      {/* Hidden video element for frame capture */}
+      <video ref={videoRef} autoPlay playsInline muted className="hidden" />
     </div>
   );
 }
@@ -1230,7 +1330,7 @@ export default function App() {
   }
 
   return (
-    <LiveAPIProvider key={token} apiKey={token}>
+    <LiveAPIProvider key={token} apiKey={token} wsId={wsId}>
       <GameApp wsId={wsId} />
     </LiveAPIProvider>
   );

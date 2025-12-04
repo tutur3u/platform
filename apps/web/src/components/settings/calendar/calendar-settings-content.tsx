@@ -57,11 +57,9 @@ export function CalendarSettingsContent({
         <CalendarSettingsLayout
           title="Category Colors"
           description="Customize colors for different event categories"
+          hideActions
         >
-          <CategoryColorsSettings
-            value={settings.categoryColors}
-            onChange={(value) => updateSettings('categoryColors', value)}
-          />
+          <CategoryColorsSettings workspace={workspace ?? null} />
         </CalendarSettingsLayout>
       );
     case 'calendar_google':

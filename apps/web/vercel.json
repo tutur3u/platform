@@ -21,7 +21,7 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron/calendar/process-notification-batches",
+      "path": "/api/cron/process-notification-batches",
       "schedule": "*/10 * * * *"
     }
   ],

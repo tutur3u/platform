@@ -5,6 +5,7 @@ import * as React from 'react';
 export type CalendarPreferences = {
   weekStartsOn?: 0 | 1 | 6;
   timezone?: string;
+  timeFormat?: '12h' | '24h';
 };
 
 const CalendarPreferencesContext = React.createContext<
@@ -16,7 +17,8 @@ export function useCalendarPreferences(): CalendarPreferences {
 
   // Return default preferences if context is not available
   // weekStartsOn: 0 (Sunday) is react-day-picker's default
-  return context ?? { weekStartsOn: 0, timezone: 'auto' };
+  // timeFormat: '12h' is a sensible default for English users
+  return context ?? { weekStartsOn: 0, timezone: 'auto', timeFormat: '12h' };
 }
 
 export const CalendarPreferencesProvider = CalendarPreferencesContext.Provider;
