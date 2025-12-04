@@ -3474,7 +3474,26 @@
     "month": "Month",
     "agenda": "Agenda",
     "view": "View",
-    "this-month": "This month"
+    "this-month": "This month",
+    "categories": {
+      "title": "Category Colors",
+      "description": "Customize colors for different event categories",
+      "your_categories": "Your Categories",
+      "suggestions": "Suggestions",
+      "add": "Add",
+      "edit": "Edit",
+      "done": "Done",
+      "select_color": "Select a color:",
+      "new_category_placeholder": "New category name",
+      "no_categories": "No categories yet. Add one to get started.",
+      "browse_suggestions": "Browse suggestions",
+      "add_all_missing": "Add All Missing",
+      "info_text": "Categories help organize your events by color. The AI will automatically assign colors to events based on their title and these categories.",
+      "info_example": "For example, if you have a \"Work\" category with blue color, events with \"work\" or \"meeting\" in the title will be colored blue.",
+      "event_suffix": "Event",
+      "failed_to_load": "Failed to load categories",
+      "try_refreshing": "Please try refreshing the page."
+    }
   },
   "documents": {
     "documents": "Documents",

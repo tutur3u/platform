@@ -3586,7 +3586,26 @@
     "month": "Tháng",
     "agenda": "Lịch trình",
     "view": "Chế độ hiển thị",
-    "this-month": "Tháng này"
+    "this-month": "Tháng này",
+    "categories": {
+      "title": "Màu sắc danh mục",
+      "description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
+      "your_categories": "Danh mục của bạn",
+      "suggestions": "Gợi ý",
+      "add": "Thêm",
+      "edit": "Sửa",
+      "done": "Xong",
+      "select_color": "Chọn màu:",
+      "new_category_placeholder": "Tên danh mục mới",
+      "no_categories": "Chưa có danh mục nào. Thêm một danh mục để bắt đầu.",
+      "browse_suggestions": "Xem gợi ý",
+      "add_all_missing": "Thêm tất cả còn thiếu",
+      "info_text": "Danh mục giúp tổ chức các sự kiện của bạn theo màu sắc. AI sẽ tự động gán màu cho các sự kiện dựa trên tiêu đề và các danh mục này.",
+      "info_example": "Ví dụ, nếu bạn có danh mục \"Công việc\" với màu xanh, các sự kiện có \"công việc\" hoặc \"cuộc họp\" trong tiêu đề sẽ được tô màu xanh.",
+      "event_suffix": "Sự kiện",
+      "failed_to_load": "Không thể tải danh mục",
+      "try_refreshing": "Vui lòng thử làm mới trang."
+    }
   },
   "documents": {
     "documents": "Tài liệu",
