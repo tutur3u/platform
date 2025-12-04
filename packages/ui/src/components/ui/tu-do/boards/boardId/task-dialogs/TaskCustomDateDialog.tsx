@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Label } from '@tuturuuu/ui/label';
 
 interface TaskCustomDateDialogProps {
   open: boolean;
@@ -30,7 +29,7 @@ export function TaskCustomDateDialog({
 }: TaskCustomDateDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Set Custom Due Date</DialogTitle>
           <DialogDescription>
@@ -39,15 +38,13 @@ export function TaskCustomDateDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="space-y-3">
-            <Label className="font-medium text-sm">Due Date & Time</Label>
-            <DateTimePicker
-              date={endDate ? new Date(endDate) : undefined}
-              setDate={onDateChange}
-              showTimeSelect={true}
-              minDate={new Date()}
-            />
-          </div>
+          <DateTimePicker
+            date={endDate ? new Date(endDate) : undefined}
+            setDate={onDateChange}
+            showTimeSelect={true}
+            minDate={new Date()}
+            inline
+          />
         </div>
         <DialogFooter>
           <Button
