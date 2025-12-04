@@ -9,6 +9,7 @@ import type { AssigneeTasksVisualization } from '../../types/visualizations';
 
 interface AssigneeTasksCardProps {
   data: AssigneeTasksVisualization['data'];
+  isFullscreen?: boolean;
 }
 
 const priorityConfig: Record<
@@ -51,13 +52,21 @@ function formatDate(dateString: string | null | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function AssigneeTasksCard({ data }: AssigneeTasksCardProps) {
+export function AssigneeTasksCard({
+  data,
+  isFullscreen = false,
+}: AssigneeTasksCardProps) {
   const { title, assignee, tasks, totalCount } = data;
 
   return (
     <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
-      <div className="border-border/30 border-b bg-dynamic-cyan/10 px-4 py-3 pr-12">
+      <div
+        className={cn(
+          'border-border/30 border-b bg-dynamic-cyan/10 px-4 py-3',
+          !isFullscreen && 'pr-12'
+        )}
+      >
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-cyan/20">
             {assignee.avatarUrl ? (
@@ -85,7 +94,12 @@ export function AssigneeTasksCard({ data }: AssigneeTasksCardProps) {
       </div>
 
       {/* Tasks List */}
-      <div className="max-h-72 divide-y divide-border/20 overflow-y-auto">
+      <div
+        className={cn(
+          'divide-y divide-border/20 overflow-y-auto',
+          !isFullscreen && 'max-h-72'
+        )}
+      >
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-muted-foreground">
             <CheckCircle2 className="h-8 w-8 text-dynamic-green/50" />
@@ -98,6 +112,10 @@ export function AssigneeTasksCard({ data }: AssigneeTasksCardProps) {
               : null;
             const isOverdue =
               task.endDate && new Date(task.endDate) < new Date();
+            const isDoneOrClosed =
+              task.isCompleted ||
+              task.listStatus === 'done' ||
+              task.listStatus === 'closed';
 
             return (
               <div
@@ -105,12 +123,12 @@ export function AssigneeTasksCard({ data }: AssigneeTasksCardProps) {
                 className={cn(
                   'group flex items-start gap-3 px-4 py-3 transition-all duration-200',
                   'hover:bg-muted/40',
-                  task.isCompleted && 'opacity-60'
+                  isDoneOrClosed && 'opacity-50'
                 )}
               >
                 {/* Completion icon */}
                 <div className="mt-0.5 transition-transform duration-200 group-hover:scale-110">
-                  {task.isCompleted ? (
+                  {isDoneOrClosed ? (
                     <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                   ) : (
                     <Circle
@@ -129,7 +147,7 @@ export function AssigneeTasksCard({ data }: AssigneeTasksCardProps) {
                   <p
                     className={cn(
                       'text-sm leading-snug transition-colors',
-                      task.isCompleted && 'text-muted-foreground line-through'
+                      isDoneOrClosed && 'text-muted-foreground'
                     )}
                   >
                     {task.name}

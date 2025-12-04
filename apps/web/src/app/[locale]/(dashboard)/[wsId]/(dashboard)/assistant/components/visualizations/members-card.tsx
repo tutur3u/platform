@@ -9,15 +9,21 @@ import type { WorkspaceMembersVisualization } from '../../types/visualizations';
 
 interface MembersCardProps {
   data: WorkspaceMembersVisualization['data'];
+  isFullscreen?: boolean;
 }
 
-export function MembersCard({ data }: MembersCardProps) {
+export function MembersCard({ data, isFullscreen = false }: MembersCardProps) {
   const { title, members, totalCount } = data;
 
   return (
     <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
-      <div className="border-border/30 border-b bg-dynamic-purple/10 px-4 py-3 pr-12">
+      <div
+        className={cn(
+          'border-border/30 border-b bg-dynamic-purple/10 px-4 py-3',
+          !isFullscreen && 'pr-12'
+        )}
+      >
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-purple/20">
             <Users className="h-4 w-4 text-dynamic-purple" />
@@ -32,7 +38,12 @@ export function MembersCard({ data }: MembersCardProps) {
       </div>
 
       {/* Members List */}
-      <div className="max-h-72 divide-y divide-border/20 overflow-y-auto">
+      <div
+        className={cn(
+          'divide-y divide-border/20 overflow-y-auto',
+          !isFullscreen && 'max-h-72'
+        )}
+      >
         {members.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-muted-foreground">
             <Users className="h-8 w-8 text-dynamic-purple/50" />
