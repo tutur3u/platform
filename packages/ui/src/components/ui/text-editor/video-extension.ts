@@ -149,7 +149,7 @@ export const Video = (options: VideoOptions = {}) =>
 
           props: {
             handleDOMEvents: {
-              paste: (view: EditorView, event: ClipboardEvent) => {
+              paste: (view, event: ClipboardEvent) => {
                 if (!onVideoUpload) return false;
 
                 const items = event.clipboardData?.items;

@@ -1210,13 +1210,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       <ContextMenuContent className="w-48">
         <ContextMenuItem
           onClick={() => openModal(event._originalId || id)}
-          className={cn('flex items-center gap-2', {
-            'cursor-not-allowed opacity-50': locked,
-          })}
-          disabled={locked}
+          className="flex items-center gap-2"
         >
           <Edit className="h-4 w-4" />
-          <span>{locked ? 'View Event' : 'Edit Event'}</span>
+          <span>Edit Event</span>
         </ContextMenuItem>
 
         <ContextMenuItem
@@ -1237,12 +1234,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         </ContextMenuItem>
 
         <ContextMenuSub>
-          <ContextMenuSubTrigger
-            className={cn('flex items-center gap-2', {
-              'cursor-not-allowed opacity-50': locked,
-            })}
-            disabled={locked}
-          >
+          <ContextMenuSubTrigger className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             <span className="text-foreground">Change Color</span>
           </ContextMenuSubTrigger>
@@ -1324,10 +1316,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
         <ContextMenuItem
           onClick={handleDelete}
-          className={cn('flex items-center gap-2', {
-            'cursor-not-allowed opacity-50': locked,
-          })}
-          disabled={locked}
+          className="flex items-center gap-2"
         >
           <Trash2 className="h-4 w-4" />
           <span>Delete Event</span>

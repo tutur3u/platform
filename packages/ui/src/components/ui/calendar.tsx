@@ -229,17 +229,18 @@ function Calendar({
             day_button: cn(
               buttonVariants({ variant: 'ghost' }),
               'h-9 w-full rounded-md p-0 font-normal transition-colors duration-300',
-              'aria-selected:bg-foreground aria-selected:text-background',
+              'aria-selected:bg-primary aria-selected:text-primary-foreground',
               'hover:bg-accent/50 hover:text-accent-foreground',
-              'hover:aria-selected:bg-foreground hover:aria-selected:text-background'
+              'hover:aria-selected:bg-primary hover:aria-selected:text-primary-foreground'
             ),
-            selected: 'bg-foreground! text-background! rounded-md',
-            today: 'bg-accent text-accent-foreground rounded-md font-medium',
+            selected: 'bg-primary! text-primary-foreground! rounded-md',
+            today:
+              'bg-accent text-accent-foreground rounded-md font-medium ring-2 ring-primary/50',
             outside: 'text-muted-foreground opacity-40 grayscale',
             disabled: 'text-muted-foreground opacity-50',
-            range_start: 'bg-foreground! text-background! rounded-l-md',
-            range_end: 'bg-foreground! text-background! rounded-r-md',
-            range_middle: 'aria-selected:bg-foreground/20',
+            range_start: 'bg-primary! text-primary-foreground! rounded-l-md',
+            range_end: 'bg-primary! text-primary-foreground! rounded-r-md',
+            range_middle: 'aria-selected:bg-primary/20',
             hidden: 'invisible',
             month_grid: 'w-full',
             month_caption: 'hidden',

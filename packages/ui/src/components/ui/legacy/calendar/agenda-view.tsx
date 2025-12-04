@@ -4,9 +4,11 @@ import { Calendar, Clock, MapPin } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
 import { sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import {
   addDays,
   format,
@@ -109,6 +111,8 @@ const getEventStyles = (
 
 export const AgendaView = ({ startDate, daysToShow = 30 }: AgendaViewProps) => {
   const { getCurrentEvents, openModal } = useCalendar();
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
 
   // Group events by date
   const groupedEvents = useMemo(() => {
@@ -151,7 +155,7 @@ export const AgendaView = ({ startDate, daysToShow = 30 }: AgendaViewProps) => {
     try {
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
-      return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+      return `${format(start, timePattern)} - ${format(end, timePattern)}`;
     } catch {
       return '';
     }
@@ -249,10 +253,10 @@ export const AgendaView = ({ startDate, daysToShow = 30 }: AgendaViewProps) => {
                         ) : (
                           <>
                             <div className={cn('font-semibold text-sm', text)}>
-                              {format(new Date(event.start_at), 'h:mm a')}
+                              {format(new Date(event.start_at), timePattern)}
                             </div>
                             <div className="text-muted-foreground text-xs">
-                              {format(new Date(event.end_at), 'h:mm a')}
+                              {format(new Date(event.end_at), timePattern)}
                             </div>
                           </>
                         )}

@@ -235,7 +235,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
           props: {
             handleDOMEvents: {
-              paste: (view: EditorView, event: ClipboardEvent) => {
+              paste: (view, event: ClipboardEvent) => {
                 if (!onImageUpload) return false;
 
                 const items = event.clipboardData?.items;

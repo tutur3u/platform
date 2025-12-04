@@ -3811,6 +3811,8 @@
     "timezone-description": "Đặt múi giờ ưa thích của bạn cho lịch và các tính năng lập lịch. Cài đặt này sẽ ghi đè múi giờ của workspace.",
     "first-day-of-week": "Ngày đầu tuần",
     "first-day-of-week-description": "Chọn ngày đầu tuần của bạn để hiển thị lịch. Cài đặt này sẽ ghi đè cài đặt workspace.",
+    "time-format": "Định dạng giờ",
+    "time-format-description": "Chọn cách hiển thị giờ trong ứng dụng.",
     "revert_changes": "Hoàn tác thay đổi",
     "preview": "Xem trước",
     "display-name": "Tên hiển thị",
@@ -4011,7 +4013,9 @@
     "monday": "Thứ hai",
     "saturday": "Thứ bảy",
     "timezone-auto-description": "Tự động phát hiện múi giờ từ hệ thống của bạn",
-    "first-day-auto-description": "Tự động phát hiện ngày đầu tuần dựa trên ngôn ngữ của bạn"
+    "first-day-auto-description": "Tự động phát hiện ngày đầu tuần dựa trên ngôn ngữ của bạn",
+    "12-hour": "12 giờ",
+    "24-hour": "24 giờ"
   },
   "settings-security": {
     "security": "Bảo mật",
