@@ -140,7 +140,11 @@ export type ServerContentMessage = {
   serverContent: ServerContent;
 };
 
-export type ServerContent = ModelTurn | TurnComplete | Interrupted | GenerationComplete;
+export type ServerContent =
+  | ModelTurn
+  | TurnComplete
+  | Interrupted
+  | GenerationComplete;
 
 export type GenerationComplete = { generationComplete: boolean };
 

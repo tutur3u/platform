@@ -609,7 +609,8 @@ function StatusPill({
       style={{
         background: style.bg,
         color: style.text,
-        boxShadow: connected || isConnecting ? `0 0 20px ${style.glow}30` : 'none',
+        boxShadow:
+          connected || isConnecting ? `0 0 20px ${style.glow}30` : 'none',
       }}
     >
       <span className="flex items-center gap-2.5">
@@ -1161,13 +1162,7 @@ function GameApp({ wsId }: { wsId: string }) {
       />
 
       {/* Hidden video element for frame capture */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="hidden"
-      />
+      <video ref={videoRef} autoPlay playsInline muted className="hidden" />
     </div>
   );
 }

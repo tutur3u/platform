@@ -44,7 +44,10 @@ export async function GET(req: Request) {
     const wsId = searchParams.get('wsId');
 
     if (!wsId) {
-      return Response.json({ error: 'Missing wsId parameter' }, { status: 400 });
+      return Response.json(
+        { error: 'Missing wsId parameter' },
+        { status: 400 }
+      );
     }
 
     const supabase = await createClient();
@@ -65,7 +68,9 @@ export async function GET(req: Request) {
 
     // Note: The 'live_api_sessions' table type will be available after running
     // migrations (bun sb:up) and regenerating types (bun sb:typegen)
-    const { data, error } = await (supabase as Awaited<ReturnType<typeof createClient>>)
+    const { data, error } = await (
+      supabase as Awaited<ReturnType<typeof createClient>>
+    )
       .from('live_api_sessions' as never)
       .select('session_handle, expires_at')
       .eq('user_id', user.id)
@@ -79,7 +84,9 @@ export async function GET(req: Request) {
     }
 
     const sessionData = data as { session_handle?: string } | null;
-    return Response.json({ sessionHandle: sessionData?.session_handle || null });
+    return Response.json({
+      sessionHandle: sessionData?.session_handle || null,
+    });
   } catch (error) {
     console.error('[Session API] Unexpected error in GET:', error);
     return Response.json({ sessionHandle: null });
@@ -126,7 +133,9 @@ export async function POST(req: Request) {
 
     // Note: The 'live_api_sessions' table type will be available after running
     // migrations (bun sb:up) and regenerating types (bun sb:typegen)
-    const { error } = await (supabase as Awaited<ReturnType<typeof createClient>>)
+    const { error } = await (
+      supabase as Awaited<ReturnType<typeof createClient>>
+    )
       .from('live_api_sessions' as never)
       .upsert(
         {
@@ -167,7 +176,10 @@ export async function DELETE(req: Request) {
     const wsId = searchParams.get('wsId');
 
     if (!wsId) {
-      return Response.json({ error: 'Missing wsId parameter' }, { status: 400 });
+      return Response.json(
+        { error: 'Missing wsId parameter' },
+        { status: 400 }
+      );
     }
 
     const supabase = await createClient();
@@ -188,7 +200,9 @@ export async function DELETE(req: Request) {
 
     // Note: The 'live_api_sessions' table type will be available after running
     // migrations (bun sb:up) and regenerating types (bun sb:typegen)
-    const { error } = await (supabase as Awaited<ReturnType<typeof createClient>>)
+    const { error } = await (
+      supabase as Awaited<ReturnType<typeof createClient>>
+    )
       .from('live_api_sessions' as never)
       .delete()
       .eq('user_id', user.id)
