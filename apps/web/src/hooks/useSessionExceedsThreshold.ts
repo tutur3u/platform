@@ -15,8 +15,6 @@ import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/tim
  * @returns Object with exceeds status and threshold info
  */
 
-const DEFAULT_RUNNING_SESSION_LIMIT_HOURS = 24;
-
 interface SessionThresholdResult {
   exceeds: boolean;
   thresholdDays: number | null;
@@ -70,13 +68,10 @@ export function useSessionExceedsThreshold(
     }
 
     // If threshold is 0, all entries require approval
-    // A running session exceeds if it's been running for more than a reasonable time (e.g., 24 hours)
-    // This prevents the UI from showing the dialog immediately when threshold is 0
+    // Any running session should be marked as exceeded so it goes through the approval flow
     if (thresholdDays === 0) {
-      const exceeds =
-        sessionDuration > DEFAULT_RUNNING_SESSION_LIMIT_HOURS * 60 * 60; // More than 24 hours
       return {
-        exceeds,
+        exceeds: true,
         thresholdDays: 0,
         isLoading: false,
         sessionStartTime,
@@ -115,11 +110,9 @@ export function sessionExceedsThreshold(
   const start = dayjs(sessionStartTime);
   const now = dayjs();
 
+  // If threshold is 0, all entries require approval
   if (thresholdDays === 0) {
-    // For threshold 0, check if running more than 24 hours
-    return (
-      now.diff(start, 'second') > DEFAULT_RUNNING_SESSION_LIMIT_HOURS * 60 * 60
-    );
+    return true;
   }
 
   const thresholdAgo = now.subtract(thresholdDays, 'day');

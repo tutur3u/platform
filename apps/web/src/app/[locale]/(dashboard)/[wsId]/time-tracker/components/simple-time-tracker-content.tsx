@@ -49,6 +49,24 @@ export default function SimpleTimeTrackerContent({
     enabled: !!currentUser,
   });
 
+  // Use React Query for stats to enable real-time updates
+  const { data: statsFromQuery } = useQuery({
+    queryKey: ['time-tracker-stats', wsId],
+    queryFn: async () => {
+      if (!currentUser) return { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats&userId=${currentUser.id}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch time tracking stats');
+      const data = await response.json();
+      return data.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
+    },
+    refetchInterval: 60000, // 1 minute (less frequent than running session)
+    initialData: initialData.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
+    enabled: !!currentUser,
+    staleTime: 30000, // 30 seconds
+  });
+
   const [currentSession, setCurrentSession] =
     useState<SessionWithRelations | null>(initialData.runningSession);
   const [categories] = useState(initialData.categories || []);
@@ -143,8 +161,8 @@ export default function SimpleTimeTrackerContent({
     }
   }, [isRunning, currentSession]);
 
-  // Calculate stats
-  const todayStats = initialData.stats || {
+  // Calculate stats - use dynamic data from query for real-time updates
+  const todayStats = statsFromQuery || {
     todayTime: 0,
     weekTime: 0,
     monthTime: 0,
