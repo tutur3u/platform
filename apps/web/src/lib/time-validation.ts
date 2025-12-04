@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
  * Error codes for time validation
  */
 export type TimeValidationErrorCode =
+  | 'INVALID_DATE_TIME'
   | 'FUTURE_DATE_TIME'
   | 'FUTURE_START_TIME'
   | 'FUTURE_END_TIME'
@@ -40,6 +41,16 @@ export function validateNotFuture(
   }
 
   const dateTime = dayjs(dateTimeString);
+
+  // Check if the date string is invalid
+  if (!dateTime.isValid()) {
+    return {
+      isValid: false,
+      errorCode: 'INVALID_DATE_TIME',
+      errorParams: { input: dateTimeString },
+    };
+  }
+
   const now = dayjs();
 
   if (dateTime.isAfter(now)) {

@@ -49,6 +49,7 @@ export function SimpleTimerControls({
   categories,
   tasks,
   apiCall,
+  currentUserId,
   headerAction,
 }: SimpleTimerControlsProps) {
   const queryClient = useQueryClient();
@@ -120,10 +121,10 @@ export function SimpleTimerControls({
 
       // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId],
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       // Refresh server-side data to update overview page stats
@@ -182,10 +183,10 @@ export function SimpleTimerControls({
 
       // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId],
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       // Refresh server-side data to update overview page stats
@@ -228,10 +229,10 @@ export function SimpleTimerControls({
     resetFormState();
     // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
-      queryKey: ['running-time-session', wsId],
+      queryKey: ['running-time-session', wsId, currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['time-tracker-stats', wsId],
+      queryKey: ['time-tracker-stats', wsId, currentUserId],
     });
 
     // Refresh server-side data to update overview page stats
@@ -243,10 +244,10 @@ export function SimpleTimerControls({
     resetFormState();
     // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
-      queryKey: ['running-time-session', wsId],
+      queryKey: ['running-time-session', wsId, currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['time-tracker-stats', wsId],
+      queryKey: ['time-tracker-stats', wsId, currentUserId],
     });
 
     // Refresh server-side data to update overview page stats
@@ -273,10 +274,10 @@ export function SimpleTimerControls({
 
       // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId],
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       toast.success(t('timerPaused'));
@@ -308,10 +309,10 @@ export function SimpleTimerControls({
 
       // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId],
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       toast.success(t('timerResumed'));

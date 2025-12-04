@@ -118,7 +118,7 @@ export function EditSessionDialog({
     }
 
     setValidationErrors(errors);
-  }, [formState.startTime, formState.endTime, session, isOlderThanThreshold, t]);
+  }, [formState.startTime, formState.endTime, session, isOlderThanThreshold, getValidationErrorMessage]);
 
   return (
     <Dialog open={!!session} onOpenChange={() => onClose()}>
@@ -240,7 +240,9 @@ export function EditSessionDialog({
                       onChange={(e) =>
                         onFormChange('startTime', e.target.value)
                       }
-                      className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
+                      className={cn(
+                        !!validationErrors.startTime && 'border-dynamic-red'
+                      )}
                     />
                   </div>
                   <div>
@@ -250,7 +252,9 @@ export function EditSessionDialog({
                       type="datetime-local"
                       value={formState.endTime}
                       onChange={(e) => onFormChange('endTime', e.target.value)}
-                      className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
+                      className={cn(
+                        !!validationErrors.endTime && 'border-dynamic-red'
+                      )}
                     />
                   </div>
                 </div>

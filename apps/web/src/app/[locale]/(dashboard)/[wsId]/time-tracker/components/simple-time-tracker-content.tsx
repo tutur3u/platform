@@ -35,7 +35,7 @@ export default function SimpleTimeTrackerContent({
   const t = useTranslations('time-tracker');
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
-    queryKey: ['running-time-session', wsId],
+    queryKey: ['running-time-session', wsId, currentUser?.id],
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
@@ -51,7 +51,7 @@ export default function SimpleTimeTrackerContent({
 
   // Use React Query for stats to enable real-time updates
   const { data: statsFromQuery } = useQuery({
-    queryKey: ['time-tracker-stats', wsId],
+    queryKey: ['time-tracker-stats', wsId, currentUser?.id],
     queryFn: async () => {
       if (!currentUser) return { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
       const response = await fetch(
@@ -193,6 +193,7 @@ export default function SimpleTimeTrackerContent({
         categories={categories}
         tasks={tasks}
         apiCall={apiCall}
+        currentUserId={currentUser?.id ?? ''}
       />
 
       {/* Quick Stats Cards */}

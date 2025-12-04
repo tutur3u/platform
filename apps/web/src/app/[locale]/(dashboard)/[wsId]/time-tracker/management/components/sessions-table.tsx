@@ -34,34 +34,12 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import type { GroupedSession } from '@/lib/time-tracking-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);
-
-interface GroupedSession {
-  title: string;
-  category: {
-    name: string;
-    color: string;
-  } | null;
-  sessions: Array<any>;
-  /** Total duration across all sessions (sum of duration_seconds) */
-  totalDuration: number;
-  /** Duration that falls within the specific period (properly split for overnight sessions) */
-  periodDuration?: number;
-  firstStartTime: string;
-  lastEndTime: string | null;
-  status: 'active' | 'paused' | 'completed';
-  user: {
-    displayName: string | null;
-    avatarUrl: string | null;
-  };
-  period: string;
-  sessionCount?: number;
-  sessionTitles?: string[];
-}
 
 interface PaginationInfo {
   page: number;

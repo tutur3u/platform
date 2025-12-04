@@ -397,7 +397,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     }
 
     setValidationErrors(errors);
-  }, [missedEntryStartTime, missedEntryEndTime, t]);
+  }, [missedEntryStartTime, missedEntryEndTime, getValidationErrorMessage]);
 
   // Shared Image Upload Section - render function (not a component) to avoid ref issues
   const renderImageUploadSection = (disabled: boolean) => (
@@ -514,7 +514,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
     // Check if there are validation errors
     if (Object.keys(validationErrors).length > 0) {
-      toast.error(Object.values(validationErrors)[0]);
+      const allErrors = Object.values(validationErrors).join('. ');
+      toast.error(allErrors);
       return;
     }
 
@@ -868,25 +869,39 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 value={missedEntryStartTime}
                 onChange={(e) => setMissedEntryStartTime(e.target.value)}
                 disabled={isLoading}
-                className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
+                className={validationErrors.startTime ? 'border-dynamic-red' : ''}
               />
+              {validationErrors.startTime && (
+                <div className="flex items-center gap-1 text-dynamic-red text-sm mt-1" aria-live="polite">
+                  <AlertCircle className="h-3 w-3" />
+                  {validationErrors.startTime}
+                </div>
+              )}
             </div>
             <div>
-              <Label htmlFor="missed-entry-end-time">{t('form.endTime')}</Label>
+              <Label htmlFor="missed-entry-end-time">
+                {t('form.endTime')}
+              </Label>
               <Input
                 id="missed-entry-end-time"
                 type="datetime-local"
                 value={missedEntryEndTime}
                 onChange={(e) => setMissedEntryEndTime(e.target.value)}
                 disabled={isLoading}
-                className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
+                className={validationErrors.endTime ? 'border-dynamic-red' : ''}
               />
+              {validationErrors.endTime && (
+                <div className="flex items-center gap-1 text-dynamic-red text-sm mt-1" aria-live="polite">
+                  <AlertCircle className="h-3 w-3" />
+                  {validationErrors.endTime}
+                </div>
+              )}
             </div>
           </div>
-          {Object.keys(validationErrors).length > 0 && (
-            <div className="flex items-center gap-1 text-dynamic-red text-sm">
+          {validationErrors.timeRange && (
+            <div className="flex items-center gap-1 text-dynamic-red text-sm" aria-live="polite">
               <AlertCircle className="h-3 w-3" />
-              {Object.values(validationErrors)[0]}
+              {validationErrors.timeRange}
             </div>
           )}
 
