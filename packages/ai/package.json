@@ -6,7 +6,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^3.0.66",
+    "@ai-sdk/amazon-bedrock": "^3.0.67",
     "@ai-sdk/anthropic": "^2.0.53",
     "@ai-sdk/azure": "^2.0.79",
     "@ai-sdk/cerebras": "^1.0.32",
