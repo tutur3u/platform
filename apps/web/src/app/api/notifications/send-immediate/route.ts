@@ -512,10 +512,12 @@ export async function POST(req: NextRequest) {
         }
 
         // Send email
-        const sourceEmail =
-          credentials.source_email || 'notifications@tuturuuu.com';
+        const sourceName = 'Tuturuuu';
+        const sourceEmail = 'notifications@tuturuuu.com';
+        const formattedSource = `${sourceName} <${sourceEmail}>`;
+
         const command = new SendEmailCommand({
-          Source: sourceEmail,
+          Source: formattedSource,
           Destination: { ToAddresses: [userEmail] },
           Message: {
             Subject: { Data: emailSubject },

@@ -2,7 +2,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
-import { ROOT_WORKSPACE_ID, DEV_MODE } from '@tuturuuu/utils/constants';
+import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -321,9 +321,8 @@ export async function GET(req: NextRequest) {
           console.log('=== END DEBUG ===');
         } else {
           // Send email via SES
-          const sourceEmail =
-            credentials.source_email || 'notifications@tuturuuu.com';
-          const sourceName = credentials.source_name || 'Tuturuuu';
+          const sourceName = 'Tuturuuu';
+          const sourceEmail = 'notifications@tuturuuu.com';
           const formattedSource = `${sourceName} <${sourceEmail}>`;
 
           const command = new SendEmailCommand({
