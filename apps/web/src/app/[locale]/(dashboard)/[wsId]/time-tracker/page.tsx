@@ -198,7 +198,7 @@ async function StatsCard({
   const t = await getTranslations('time-tracker');
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-dynamic-blue to-dynamic-purple shadow-lg">
@@ -212,8 +212,8 @@ async function StatsCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <CardContent className="flex flex-1 items-center">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Today */}
           <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
             <div className="flex items-center gap-3">
@@ -408,21 +408,22 @@ export default async function TimeTrackerPage({
         return (
           <div className="grid gap-4 pb-4">
             {/* Stats */}
-            <Suspense fallback={<StatsCardSkeleton />}>
-              <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
-            </Suspense>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Suspense fallback={<StatsCardSkeleton />}>
+                <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
+              </Suspense>
+              {/* Quick Timer */}
+              <Suspense fallback={<TimerCardSkeleton />}>
+                <TimerCardWrapper
+                  timerDataPromise={timerDataPromise}
+                  wsId={wsId}
+                />
+              </Suspense>
+            </div>
 
             {/* Heatmap */}
             <Suspense fallback={<HeatmapCardSkeleton />}>
               <HeatmapCardWrapper statsPromise={statsPromise} />
-            </Suspense>
-
-            {/* Quick Timer */}
-            <Suspense fallback={<TimerCardSkeleton />}>
-              <TimerCardWrapper
-                timerDataPromise={timerDataPromise}
-                wsId={wsId}
-              />
             </Suspense>
           </div>
         );

@@ -6862,7 +6862,7 @@
     },
     "stats": {
       "title": "Tiến độ của bạn",
-      "description": "Theo dõi các chỉ số năng suất ⚡",
+      "description": "Theo dõi các chỉ số năng suất ",
       "today": {
         "title": "Hôm nay",
         "messageActive": "Tiến bộ tốt!",
@@ -7124,6 +7124,11 @@
         "timesRequired": "Vui lòng nhập cả thời gian bắt đầu và kết thúc",
         "endBeforeStart": "Thời gian kết thúc không thể trước thời gian bắt đầu",
         "minDuration": "Phiên phải dài ít nhất 1 phút",
+        "futureDateTime": "Không thể sử dụng ngày/giờ trong tương lai: {dateTime}",
+        "futureStartTime": "Thời gian bắt đầu không thể trong tương lai: {dateTime}",
+        "futureEndTime": "Thời gian kết thúc không thể trong tương lai: {dateTime}",
+        "futureEntryDate": "Không thể thêm mục có ngày trong tương lai: {dateTime}",
+        "futureSessionUpdate": "Không thể cập nhật phiên có thời gian bắt đầu trong tương lai: {dateTime}",
         "imageRequiredAll": "Vui lòng tải lên ít nhất một hình ảnh cho tất cả các mục bị thiếu",
         "imageRequiredOlder": "Vui lòng tải lên ít nhất một hình ảnh cho các mục cũ hơn {days} ngày",
         "invalidFileType": "{count} tệp bị từ chối: chỉ chấp nhận hình ảnh (PNG, JPEG, WebP, GIF).",
@@ -7518,7 +7523,13 @@
       "failed_to_delete_session": "Không thể xóa phiên",
       "end_time_before_start": "Thời gian kết thúc không thể trước thời gian bắt đầu",
       "no_changes_detected": "Không phát hiện thay đổi",
-      "failed_to_move_session": "Không thể di chuyển phiên"
+      "failed_to_move_session": "Không thể di chuyển phiên",
+      "validation_future_start_time": "Thời gian bắt đầu không thể trong tương lai: {dateTime}",
+      "validation_future_end_time": "Thời gian kết thúc không thể trong tương lai: {dateTime}",
+      "validation_future_date_time": "Không thể sử dụng ngày/giờ trong tương lai: {dateTime}",
+      "validation_end_before_start": "Thời gian kết thúc phải sau thời gian bắt đầu",
+      "validation_duration_too_short": "Thời lượng phải ít nhất 1 phút",
+      "validation_invalid_time": "Thời gian không hợp lệ"
     },
     "page_settings": {
       "metadata": {

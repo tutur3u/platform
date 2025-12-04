@@ -7073,7 +7073,7 @@
     },
     "stats": {
       "title": "Your Progress",
-      "description": "Track your productivity metrics ⚡",
+      "description": "Track your productivity metrics ",
       "today": {
         "title": "Today",
         "messageActive": "Great progress!",
@@ -7335,6 +7335,11 @@
         "timesRequired": "Please enter both start and end times",
         "endBeforeStart": "End time cannot be before start time",
         "minDuration": "Session must be at least 1 minute long",
+        "futureDateTime": "Cannot use future date/time: {dateTime}",
+        "futureStartTime": "Start time cannot be in the future: {dateTime}",
+        "futureEndTime": "End time cannot be in the future: {dateTime}",
+        "futureEntryDate": "Cannot add entries with future dates: {dateTime}",
+        "futureSessionUpdate": "Cannot update session to have a start time in the future: {dateTime}",
         "imageRequiredAll": "Please upload at least one image for all missed entries",
         "imageRequiredOlder": "Please upload at least one image for entries older than {days} day{days, plural, =1 {} other {s}}",
         "invalidFileType": "{count} file(s) rejected: only images (PNG, JPEG, WebP, GIF) are allowed.",
@@ -7729,7 +7734,13 @@
       "failed_to_delete_session": "Failed to delete session",
       "end_time_before_start": "End time cannot be before start time",
       "no_changes_detected": "No changes detected",
-      "failed_to_move_session": "Failed to move session"
+      "failed_to_move_session": "Failed to move session",
+      "validation_future_start_time": "Start time cannot be in the future: {dateTime}",
+      "validation_future_end_time": "End time cannot be in the future: {dateTime}",
+      "validation_future_date_time": "Cannot use future date/time: {dateTime}",
+      "validation_end_before_start": "End time must be after start time",
+      "validation_duration_too_short": "Duration must be at least 1 minute",
+      "validation_invalid_time": "Invalid time"
     },
     "page_settings": {
       "metadata": {

@@ -76,7 +76,7 @@ DECLARE
     threshold_days INTEGER;
 BEGIN
     -- Check for the bypass flag set in the current session.
-    -- Set this using: SET time_tracking.bypass_insert_limit = 'on';
+    -- Set this using: SET time_tracking.bypass_insert_limit ='on';
     IF current_setting('time_tracking.bypass_insert_limit', true) = 'on' THEN
         RETURN NEW; -- Bypass the rule and allow the insert.
     END IF;
