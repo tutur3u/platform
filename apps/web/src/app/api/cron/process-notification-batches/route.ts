@@ -65,12 +65,27 @@ export async function GET(req: NextRequest) {
 
     // Get all pending BATCHED notifications where window_end has passed
     // Immediate notifications are handled separately by /api/notifications/send-immediate
-    const { data: batches, error: batchesError } = await sbAdmin
+    // When restricted to root workspace, we filter at the query level to ensure we get
+    // the correct batches (otherwise limit(50) might return non-root batches first)
+    let batchesQuery = sbAdmin
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
       .eq('delivery_mode', 'batched')
-      .lte('window_end', new Date().toISOString())
+      .lte('window_end', new Date().toISOString());
+
+    // Filter by root workspace at query level to ensure we get correct batches
+    // This is important because limit(50) + post-fetch filtering could miss root
+    // workspace batches if non-root batches have earlier window_end times.
+    // We also include null ws_id batches since they might be user-scoped notifications
+    // (like workspace invites) where the workspace ID is in the notification data.
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      batchesQuery = batchesQuery.or(
+        `ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`
+      );
+    }
+
+    const { data: batches, error: batchesError } = await batchesQuery
       .order('window_end', { ascending: true })
       .limit(50); // Process max 50 batches per run
 
@@ -90,22 +105,18 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // If restricted to root workspace, we need to filter batches after fetching
-    // because ws_id can be null for user-scoped notifications (like workspace invites)
-    // In that case, the workspace ID is stored in the notification's entity_id or data
+    // If restricted to root workspace, we've already filtered at query level
+    // (ws_id = ROOT_WORKSPACE_ID or ws_id IS NULL). For null ws_id batches,
+    // we need additional filtering based on notification entity_id/data
     let filteredBatches = batches;
 
     if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      // First, get the notification data for batches with null ws_id to check entity_id
-      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
+      // Separate batches by whether ws_id is null
       const batchesWithWsId = batches.filter((b) => b.ws_id !== null);
+      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
 
-      // Keep batches that have ws_id = ROOT_WORKSPACE_ID
-      const validBatchesWithWsId = batchesWithWsId.filter(
-        (b) => b.ws_id === ROOT_WORKSPACE_ID
-      );
-
-      // For batches with null ws_id, check the notification's entity_id or data->workspace_id
+      // Batches with ws_id already match ROOT_WORKSPACE_ID (from query filter)
+      // For null ws_id batches, check notification's entity_id or data->workspace_id
       const validBatchIdsFromNullWsId: string[] = [];
 
       if (batchesWithNullWsId.length > 0) {
@@ -146,9 +157,9 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      // Combine valid batches
+      // Combine: all non-null ws_id batches (already filtered at query) + valid null ws_id batches
       const validBatchIds = new Set([
-        ...validBatchesWithWsId.map((b) => b.id),
+        ...batchesWithWsId.map((b) => b.id),
         ...validBatchIdsFromNullWsId,
       ]);
 
