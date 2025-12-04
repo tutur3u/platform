@@ -193,7 +193,7 @@ export default function SimpleTimeTrackerContent({
         categories={categories}
         tasks={tasks}
         apiCall={apiCall}
-        currentUserId={currentUser?.id ?? ''}
+        currentUserId={currentUser?.id}
       />
 
       {/* Quick Stats Cards */}

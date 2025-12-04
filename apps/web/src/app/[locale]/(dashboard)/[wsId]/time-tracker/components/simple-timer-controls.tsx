@@ -237,7 +237,7 @@ export function SimpleTimerControls({
 
     // Refresh server-side data to update overview page stats
     router.refresh();
-  }, [resetFormState, queryClient, wsId, router]);
+  }, [resetFormState, queryClient, wsId, router, currentUserId]);
 
   // Handle missed entry created from exceeded threshold dialog
   const handleMissedEntryCreated = useCallback(() => {
@@ -252,7 +252,7 @@ export function SimpleTimerControls({
 
     // Refresh server-side data to update overview page stats
     router.refresh();
-  }, [resetFormState, queryClient, wsId, router]);
+  }, [resetFormState, queryClient, wsId, router, currentUserId]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
