@@ -6,7 +6,9 @@ export type VisualizationType =
   | 'status_distribution'
   | 'task_detail'
   | 'google_search'
-  | 'core_mention';
+  | 'core_mention'
+  | 'workspace_members'
+  | 'assignee_tasks';
 
 export interface BaseVisualization {
   id: string;
@@ -109,6 +111,44 @@ export interface CoreMentionVisualization extends BaseVisualization {
   };
 }
 
+// Workspace members visualization - shows team members with avatars
+export interface WorkspaceMembersVisualization extends BaseVisualization {
+  type: 'workspace_members';
+  data: {
+    title: string;
+    members: Array<{
+      id: string;
+      name: string;
+      avatarUrl?: string | null;
+      isPending?: boolean;
+    }>;
+    totalCount: number;
+  };
+}
+
+// Assignee tasks visualization - shows tasks assigned to a specific person
+export interface AssigneeTasksVisualization extends BaseVisualization {
+  type: 'assignee_tasks';
+  data: {
+    title: string;
+    assignee: {
+      id: string;
+      name: string | null;
+      avatarUrl?: string | null;
+    };
+    tasks: Array<{
+      id: string;
+      name: string;
+      priority?: string | null;
+      priorityLabel?: string;
+      endDate?: string | null;
+      isCompleted: boolean;
+      listStatus?: string | null;
+    }>;
+    totalCount: number;
+  };
+}
+
 // Union type for all visualizations
 export type Visualization =
   | TaskListVisualization
@@ -116,7 +156,9 @@ export type Visualization =
   | StatusDistributionVisualization
   | TaskDetailVisualization
   | GoogleSearchVisualization
-  | CoreMentionVisualization;
+  | CoreMentionVisualization
+  | WorkspaceMembersVisualization
+  | AssigneeTasksVisualization;
 
 // Visualization action types returned from backend
 export type VisualizationAction =
@@ -127,7 +169,9 @@ export type VisualizationAction =
   | 'visualize_google_search'
   | 'highlight_core_topic'
   | 'dismiss_core_mention'
-  | 'dismiss_visualization';
+  | 'dismiss_visualization'
+  | 'visualize_workspace_members'
+  | 'visualize_assignee_tasks';
 
 // Tool response shape from backend
 export interface VisualizationToolResponse {

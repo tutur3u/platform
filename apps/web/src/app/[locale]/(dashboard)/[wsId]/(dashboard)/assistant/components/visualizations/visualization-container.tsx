@@ -5,8 +5,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useVisualizationStore } from '../../stores/visualization-store';
 import type { Visualization } from '../../types/visualizations';
+import { AssigneeTasksCard } from './assignee-tasks-card';
 import { CoreMentionCard } from './core-mention-card';
 import { GoogleSearchCard } from './google-search-card';
+import { MembersCard } from './members-card';
 import { StatusChart } from './status-chart';
 import { TaskDetailView } from './task-detail-view';
 import { TaskListCard } from './task-list-card';
@@ -64,6 +66,8 @@ function VisualizationCard({
         {vis.type === 'status_distribution' && <StatusChart data={vis.data} />}
         {vis.type === 'task_detail' && <TaskDetailView data={vis.data} />}
         {vis.type === 'google_search' && <GoogleSearchCard data={vis.data} />}
+        {vis.type === 'workspace_members' && <MembersCard data={vis.data} />}
+        {vis.type === 'assignee_tasks' && <AssigneeTasksCard data={vis.data} />}
       </div>
     </motion.div>
   );
