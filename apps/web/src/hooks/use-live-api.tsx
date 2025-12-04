@@ -68,7 +68,7 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
 
   const [connected, setConnected] = useState(false);
   const [config, setConfig] = useState<LiveConfig>({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
     // NOTE: When using ephemeral tokens, systemInstruction, tools, and toolConfig
     // are embedded in the token itself. Passing them here can cause conflicts.
     // Leave config minimal to avoid overriding token settings.
