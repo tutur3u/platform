@@ -6,6 +6,7 @@
     "pflannery.vscode-versionlens", // Version Lens
     "usernamehw.errorlens", // Error Lens
     "YoavBls.pretty-ts-errors", // Pretty TypeScript Errors
+    "typescriptteam.native-preview", // TypeScript Native Preview
     "aaron-bond.better-comments", // Better Comments
     "PKief.material-icon-theme", // Material Icon Theme
     "lokalise.i18n-ally" // i18n Ally
