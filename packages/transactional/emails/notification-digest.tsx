@@ -6,20 +6,33 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
+  Row,
   Section,
   Tailwind,
   Text,
 } from '@react-email/components';
 
+type NotificationType =
+  | 'task_assigned'
+  | 'task_updated'
+  | 'task_completed'
+  | 'task_mention'
+  | 'workspace_invite'
+  | 'comment_added'
+  | 'deadline_reminder'
+  | 'general';
+
 interface NotificationItem {
   id: string;
-  type: string;
+  type: NotificationType | string;
   title: string;
-  description: string;
-  data: Record<string, any>;
+  description?: string;
+  data?: Record<string, unknown>;
   createdAt: string;
+  actionUrl?: string;
 }
 
 interface NotificationDigestEmailProps {
@@ -27,149 +40,386 @@ interface NotificationDigestEmailProps {
   workspaceName?: string;
   notifications?: NotificationItem[];
   workspaceUrl?: string;
+  logoUrl?: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
 
-const getNotificationIcon = (type: string) => {
-  switch (type) {
-    case 'task_assigned':
-      return '📋';
-    case 'task_updated':
-      return '✏️';
-    case 'task_mention':
-      return '@';
-    case 'workspace_invite':
-      return '✉️';
-    default:
-      return '🔔';
-  }
+const NOTIFICATION_CONFIG: Record<
+  NotificationType,
+  { label: string; color: string; bgColor: string }
+> = {
+  task_assigned: {
+    label: 'Task Assigned',
+    color: '#2563eb',
+    bgColor: '#dbeafe',
+  },
+  task_updated: {
+    label: 'Task Updated',
+    color: '#7c3aed',
+    bgColor: '#ede9fe',
+  },
+  task_completed: {
+    label: 'Task Completed',
+    color: '#059669',
+    bgColor: '#d1fae5',
+  },
+  task_mention: {
+    label: 'Mentioned',
+    color: '#d97706',
+    bgColor: '#fef3c7',
+  },
+  workspace_invite: {
+    label: 'Invitation',
+    color: '#0891b2',
+    bgColor: '#cffafe',
+  },
+  comment_added: {
+    label: 'New Comment',
+    color: '#4f46e5',
+    bgColor: '#e0e7ff',
+  },
+  deadline_reminder: {
+    label: 'Deadline',
+    color: '#dc2626',
+    bgColor: '#fee2e2',
+  },
+  general: {
+    label: 'Notification',
+    color: '#6b7280',
+    bgColor: '#f3f4f6',
+  },
 };
 
-const getNotificationColor = (type: string) => {
-  switch (type) {
-    case 'task_assigned':
-      return '#3b82f6'; // blue
-    case 'task_updated':
-      return '#8b5cf6'; // purple
-    case 'task_mention':
-      return '#f59e0b'; // amber
-    case 'workspace_invite':
-      return '#10b981'; // green
-    default:
-      return '#6b7280'; // gray
-  }
+const getNotificationConfig = (type: string) => {
+  return (
+    NOTIFICATION_CONFIG[type as NotificationType] || NOTIFICATION_CONFIG.general
+  );
+};
+
+const formatRelativeTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
+const NotificationCard = ({
+  notification,
+  workspaceUrl,
+}: {
+  notification: NotificationItem;
+  workspaceUrl: string;
+}) => {
+  const config = getNotificationConfig(notification.type);
+  const actionUrl = notification.actionUrl || workspaceUrl;
+
+  return (
+    <Section
+      style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid #e5e7eb',
+        marginBottom: '12px',
+        overflow: 'hidden',
+      }}
+    >
+      <Row>
+        <td
+          style={{
+            width: '4px',
+            backgroundColor: config.color,
+            padding: 0,
+          }}
+        />
+        <td style={{ padding: '16px 20px' }}>
+          <table cellPadding="0" cellSpacing="0" style={{ width: '100%' }}>
+            <tr>
+              <td>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 10px',
+                    backgroundColor: config.bgColor,
+                    color: config.color,
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '9999px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {config.label}
+                </span>
+                <span
+                  style={{
+                    marginLeft: '12px',
+                    fontSize: '12px',
+                    color: '#9ca3af',
+                  }}
+                >
+                  {formatRelativeTime(notification.createdAt)}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ paddingTop: '10px' }}>
+                <Link
+                  href={actionUrl}
+                  style={{
+                    color: '#111827',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  {notification.title}
+                </Link>
+              </td>
+            </tr>
+            {notification.description && (
+              <tr>
+                <td style={{ paddingTop: '6px' }}>
+                  <Text
+                    style={{
+                      margin: 0,
+                      color: '#6b7280',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                    }}
+                  >
+                    {notification.description}
+                  </Text>
+                </td>
+              </tr>
+            )}
+          </table>
+        </td>
+      </Row>
+    </Section>
+  );
 };
 
 export const NotificationDigestEmail = ({
-  userName = 'User',
+  userName = 'there',
   workspaceName = 'Your Workspace',
   notifications = [],
-  workspaceUrl = baseUrl,
+  workspaceUrl = BASE_URL,
+  logoUrl,
 }: NotificationDigestEmailProps) => {
-  const previewText = `You have ${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} in ${workspaceName}`;
+  const notificationCount = notifications.length;
+  const previewText =
+    notificationCount === 0
+      ? `No new notifications in ${workspaceName}`
+      : `${notificationCount} new notification${notificationCount !== 1 ? 's' : ''} in ${workspaceName}`;
 
   return (
     <Html>
-      <Head />
+      <Head>
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+      </Head>
       <Preview>{previewText}</Preview>
       <Tailwind>
-        <Body className="mx-auto my-auto bg-gray-50 font-sans">
-          <Container className="mx-auto my-[40px] max-w-[600px] rounded-lg border border-gray-200 border-solid bg-white p-[20px] shadow-sm">
+        <Body
+          style={{
+            backgroundColor: '#f8fafc',
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            margin: 0,
+            padding: '40px 0',
+          }}
+        >
+          <Container
+            style={{
+              maxWidth: '560px',
+              margin: '0 auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow:
+                '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden',
+            }}
+          >
             {/* Header */}
-            <Section className="mt-[16px]">
-              <Heading className="mx-0 my-0 p-0 text-center font-bold text-[28px] text-gray-900">
-                🔔 Tuturuuu Notifications
+            <Section
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '32px 40px',
+                textAlign: 'center',
+              }}
+            >
+              {logoUrl && (
+                <Img
+                  src={logoUrl}
+                  alt="Tuturuuu"
+                  width="48"
+                  height="48"
+                  style={{
+                    margin: '0 auto 16px',
+                    borderRadius: '12px',
+                  }}
+                />
+              )}
+              <Heading
+                style={{
+                  margin: 0,
+                  color: '#ffffff',
+                  fontSize: '24px',
+                  fontWeight: 700,
+                  letterSpacing: '-0.025em',
+                }}
+              >
+                Notification Digest
               </Heading>
-              <Text className="mt-2 text-center text-[14px] text-gray-600">
+              <Text
+                style={{
+                  margin: '8px 0 0',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  fontSize: '14px',
+                }}
+              >
                 {workspaceName}
               </Text>
             </Section>
 
-            <Hr className="mx-0 my-[24px] w-full border border-gray-200 border-solid" />
-
-            {/* Greeting */}
-            <Text className="text-[16px] text-gray-900 font-medium leading-[24px]">
-              Hi {userName},
-            </Text>
-            <Text className="text-[14px] text-gray-700 leading-[24px]">
-              You have {notifications.length} new notification
-              {notifications.length !== 1 ? 's' : ''} waiting for you:
-            </Text>
-
-            {/* Notifications List */}
-            <Section className="mt-[24px]">
-              {notifications.map((notification, index) => (
-                <div key={notification.id}>
-                  <Section
-                    className="mb-[16px] rounded-lg border border-gray-200 border-solid p-[16px]"
-                    style={{
-                      borderLeftWidth: '4px',
-                      borderLeftColor: getNotificationColor(notification.type),
-                    }}
-                  >
-                    <Text className="m-0 text-[12px] text-gray-500 uppercase tracking-wide">
-                      {getNotificationIcon(notification.type)}{' '}
-                      {notification.type.replace('_', ' ')}
-                    </Text>
-                    <Text className="mt-[8px] mb-[4px] text-[16px] font-semibold text-gray-900 leading-[20px]">
-                      {notification.title}
-                    </Text>
-                    {notification.description && (
-                      <Text className="mt-0 text-[14px] text-gray-700 leading-[20px]">
-                        {notification.description}
-                      </Text>
-                    )}
-                    <Text className="mt-[8px] text-[12px] text-gray-500">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </Text>
-                  </Section>
-                  {index < notifications.length - 1 && (
-                    <div style={{ height: '8px' }} />
-                  )}
-                </div>
-              ))}
-            </Section>
-
-            {/* CTA Button */}
-            <Section className="mt-[32px] mb-[32px] text-center">
-              <Button
-                className="rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-[14px] text-white no-underline"
-                href={workspaceUrl}
+            {/* Content */}
+            <Section style={{ padding: '32px 24px' }}>
+              {/* Greeting */}
+              <Text
+                style={{
+                  margin: '0 0 8px',
+                  color: '#111827',
+                  fontSize: '18px',
+                  fontWeight: 600,
+                }}
               >
-                View All Notifications
-              </Button>
+                Hi {userName},
+              </Text>
+              <Text
+                style={{
+                  margin: '0 0 24px',
+                  color: '#6b7280',
+                  fontSize: '14px',
+                  lineHeight: '1.6',
+                }}
+              >
+                {notificationCount === 0
+                  ? "You're all caught up! No new notifications."
+                  : `You have ${notificationCount} new notification${notificationCount !== 1 ? 's' : ''} waiting for your attention.`}
+              </Text>
+
+              {/* Notifications */}
+              {notificationCount > 0 && (
+                <Section style={{ marginBottom: '24px' }}>
+                  {notifications.map((notification) => (
+                    <NotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      workspaceUrl={workspaceUrl}
+                    />
+                  ))}
+                </Section>
+              )}
+
+              {/* CTA */}
+              <Section style={{ textAlign: 'center', marginTop: '8px' }}>
+                <Button
+                  href={workspaceUrl}
+                  style={{
+                    display: 'inline-block',
+                    backgroundColor: '#4f46e5',
+                    color: '#ffffff',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    padding: '14px 28px',
+                    borderRadius: '10px',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)',
+                  }}
+                >
+                  {notificationCount === 0
+                    ? 'Go to Workspace'
+                    : 'View All Notifications'}
+                </Button>
+              </Section>
             </Section>
 
-            {/* Alternative Link */}
-            <Text className="text-center text-[12px] text-gray-600 leading-[20px]">
-              or copy and paste this URL into your browser:{' '}
-              <Link href={workspaceUrl} className="text-blue-600 no-underline">
-                {workspaceUrl}
-              </Link>
-            </Text>
-
-            <Hr className="mx-0 my-[26px] w-full border border-gray-200 border-solid" />
+            <Hr
+              style={{
+                borderColor: '#e5e7eb',
+                margin: 0,
+              }}
+            />
 
             {/* Footer */}
-            <Text className="text-center text-[12px] text-gray-500 leading-[20px]">
-              You received this email because you have notifications enabled for{' '}
-              <span className="font-medium text-gray-700">{workspaceName}</span>
-              .
-            </Text>
-            <Text className="text-center text-[12px] text-gray-500 leading-[20px]">
-              To manage your notification preferences,{' '}
-              <Link
-                href={`${workspaceUrl}/settings/notifications`}
-                className="text-blue-600 no-underline"
+            <Section
+              style={{
+                padding: '24px',
+                backgroundColor: '#f9fafb',
+              }}
+            >
+              <Text
+                style={{
+                  margin: '0 0 12px',
+                  color: '#6b7280',
+                  fontSize: '12px',
+                  textAlign: 'center',
+                  lineHeight: '1.6',
+                }}
               >
-                click here
-              </Link>
-              .
-            </Text>
-            <Text className="text-center text-[12px] text-gray-500 leading-[20px] mt-[16px]">
-              © {new Date().getFullYear()} Tuturuuu. All rights reserved.
-            </Text>
+                You received this email because you have notifications enabled
+                for{' '}
+                <span style={{ fontWeight: 600, color: '#374151' }}>
+                  {workspaceName}
+                </span>
+                .
+              </Text>
+              <Text
+                style={{
+                  margin: '0 0 16px',
+                  color: '#6b7280',
+                  fontSize: '12px',
+                  textAlign: 'center',
+                }}
+              >
+                <Link
+                  href={`${workspaceUrl}/settings/notifications`}
+                  style={{
+                    color: '#4f46e5',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Manage notification preferences
+                </Link>
+              </Text>
+              <Text
+                style={{
+                  margin: 0,
+                  color: '#9ca3af',
+                  fontSize: '11px',
+                  textAlign: 'center',
+                }}
+              >
+                {new Date().getFullYear()} Tuturuuu. All rights reserved.
+              </Text>
+            </Section>
           </Container>
         </Body>
       </Tailwind>
