@@ -12,6 +12,7 @@ import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
+import { RecycleBinPanel } from '../shared/recycle-bin-panel';
 
 export type ViewType = 'kanban' | 'list' | 'timeline';
 
@@ -48,6 +49,7 @@ export function BoardViews({
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
+  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const { createTask } = useTaskDialog();
 
   // Semantic search hook
@@ -443,8 +445,16 @@ export function BoardViews({
         isSearching={isSearchLoading || isSearchFetching}
         lists={lists}
         onUpdate={handleUpdate}
+        onRecycleBinOpen={() => setRecycleBinOpen(true)}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
+
+      <RecycleBinPanel
+        open={recycleBinOpen}
+        onOpenChange={setRecycleBinOpen}
+        boardId={board.id}
+        lists={lists}
+      />
     </div>
   );
 }

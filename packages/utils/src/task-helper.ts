@@ -946,16 +946,21 @@ export function useDeleteTask(boardId: string) {
     onMutate: async (taskId) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      await queryClient.cancelQueries({ queryKey: ['deleted-tasks', boardId] });
 
-      // Snapshot the previous value
+      // Snapshot the previous values
       const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
         | Task[]
         | undefined;
+      const previousDeletedTasks = queryClient.getQueryData([
+        'deleted-tasks',
+        boardId,
+      ]) as Task[] | undefined;
 
       // Find the task being deleted to store it for potential undo
       const deletedTask = previousTasks?.find((task) => task.id === taskId);
 
-      // Optimistically remove the task from the cache
+      // Optimistically remove the task from the tasks cache
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
@@ -964,15 +969,334 @@ export function useDeleteTask(boardId: string) {
         }
       );
 
-      return { previousTasks, deletedTask };
+      // Optimistically add the task to the deleted-tasks cache
+      if (deletedTask) {
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          (old: Task[] | undefined) => {
+            const taskWithDeletedAt = {
+              ...deletedTask,
+              deleted_at: new Date().toISOString(),
+            };
+            if (!old) return [taskWithDeletedAt];
+            return [taskWithDeletedAt, ...old]; // Add to start (latest first)
+          }
+        );
+      }
+
+      return { previousTasks, previousDeletedTasks, deletedTask };
     },
     onError: (err, _, context) => {
-      // Rollback optimistic update on error
+      // Rollback optimistic updates on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      if (context?.previousDeletedTasks) {
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          context.previousDeletedTasks
+        );
+      }
+
+      console.error('Failed to delete task:', err);
+    },
+  });
+}
+
+// ==================== Recycle Bin Functions ====================
+
+/**
+ * Fetch deleted tasks for a board (tasks where deleted_at IS NOT NULL)
+ */
+export async function getDeletedTasks(
+  supabase: TypedSupabaseClient,
+  boardId: string
+) {
+  try {
+    // First get all lists for this board (including deleted ones, since tasks might reference them)
+    const { data: lists } = await supabase
+      .from('task_lists')
+      .select('id, name')
+      .eq('board_id', boardId);
+
+    if (!lists?.length) return [];
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+          *,
+          assignees:task_assignees(
+            user:users(
+              id,
+              display_name,
+              avatar_url
+            )
+          ),
+          labels:task_labels(
+            label:workspace_task_labels(
+              id,
+              name,
+              color,
+              created_at
+            )
+          ),
+          projects:task_project_tasks(
+            project:task_projects(
+              id,
+              name,
+              status
+            )
+          )
+        `
+      )
+      .in(
+        'list_id',
+        lists.map((list) => list.id)
+      )
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching deleted tasks:', error);
+      throw error;
+    }
+
+    return data.map((task) => transformTaskRecord(task));
+  } catch (error) {
+    console.error('Error in getDeletedTasks:', error);
+    throw error;
+  }
+}
+
+/**
+ * React Query hook for fetching deleted tasks
+ */
+export function useDeletedTasks(boardId: string) {
+  return useQuery({
+    queryKey: ['deleted-tasks', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      return getDeletedTasks(supabase, boardId);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Restore tasks by setting deleted_at to null
+ */
+export async function restoreTasks(
+  supabase: TypedSupabaseClient,
+  taskIds: string[],
+  fallbackListId?: string
+) {
+  // First, verify which tasks have valid lists
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id, list_id')
+    .in('id', taskIds);
+
+  if (fetchError) throw fetchError;
+
+  // Get valid list IDs (filter out nulls)
+  const listIds = [
+    ...new Set(
+      tasks?.map((t) => t.list_id).filter((id): id is string => id !== null) ||
+        []
+    ),
+  ];
+  const { data: validLists } = await supabase
+    .from('task_lists')
+    .select('id')
+    .in('id', listIds)
+    .eq('deleted', false);
+
+  const validListIds = new Set(validLists?.map((l) => l.id) || []);
+
+  // Separate tasks into those with valid lists and those needing fallback
+  const tasksWithValidLists =
+    tasks?.filter((t) => t.list_id && validListIds.has(t.list_id)) || [];
+  const tasksNeedingFallback =
+    tasks?.filter((t) => !t.list_id || !validListIds.has(t.list_id)) || [];
+
+  const results: Task[] = [];
+
+  // Restore tasks with valid lists
+  if (tasksWithValidLists.length > 0) {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ deleted_at: null })
+      .in(
+        'id',
+        tasksWithValidLists.map((t) => t.id)
+      )
+      .select();
+
+    if (error) throw error;
+    results.push(...(data as Task[]));
+  }
+
+  // Restore tasks needing fallback to first list
+  if (tasksNeedingFallback.length > 0 && fallbackListId) {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ deleted_at: null, list_id: fallbackListId })
+      .in(
+        'id',
+        tasksNeedingFallback.map((t) => t.id)
+      )
+      .select();
+
+    if (error) throw error;
+    results.push(...(data as Task[]));
+  }
+
+  return results;
+}
+
+/**
+ * React Query mutation hook for restoring tasks
+ */
+export function useRestoreTasks(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      taskIds,
+      fallbackListId,
+    }: {
+      taskIds: string[];
+      fallbackListId?: string;
+    }) => {
+      const supabase = createClient();
+      return restoreTasks(supabase, taskIds, fallbackListId);
+    },
+    onMutate: async ({ taskIds }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['deleted-tasks', boardId] });
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+      // Snapshot previous values
+      const previousDeletedTasks = queryClient.getQueryData([
+        'deleted-tasks',
+        boardId,
+      ]) as Task[] | undefined;
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+        | Task[]
+        | undefined;
+
+      // Find tasks being restored
+      const restoringTasks =
+        previousDeletedTasks?.filter((t) => taskIds.includes(t.id)) || [];
+
+      // Optimistically remove from deleted-tasks cache
+      queryClient.setQueryData(
+        ['deleted-tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.filter((task) => !taskIds.includes(task.id));
+        }
+      );
+
+      // Optimistically add to tasks cache
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old)
+            return restoringTasks.map((t) => ({ ...t, deleted_at: null }));
+          return [
+            ...old,
+            ...restoringTasks.map((t) => ({ ...t, deleted_at: null })),
+          ];
+        }
+      );
+
+      return { previousDeletedTasks, previousTasks };
+    },
+    onError: (err, _, context) => {
+      // Rollback optimistic updates on error
+      if (context?.previousDeletedTasks) {
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          context.previousDeletedTasks
+        );
+      }
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
 
-      console.error('Failed to delete task:', err);
+      console.error('Failed to restore tasks:', err);
+    },
+    onSuccess: (restoredTasks) => {
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return restoredTasks;
+          const restoredIds = new Set(restoredTasks.map((t) => t.id));
+          const otherTasks = old.filter((t) => !restoredIds.has(t.id));
+          return [...otherTasks, ...restoredTasks];
+        }
+      );
+    },
+  });
+}
+
+/**
+ * Permanently delete tasks from the database
+ */
+export async function permanentlyDeleteTasks(
+  supabase: TypedSupabaseClient,
+  taskIds: string[]
+) {
+  const { error } = await supabase.from('tasks').delete().in('id', taskIds);
+
+  if (error) throw error;
+  return { count: taskIds.length };
+}
+
+/**
+ * React Query mutation hook for permanently deleting tasks
+ */
+export function usePermanentlyDeleteTasks(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskIds: string[]) => {
+      const supabase = createClient();
+      return permanentlyDeleteTasks(supabase, taskIds);
+    },
+    onMutate: async (taskIds) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['deleted-tasks', boardId] });
+
+      // Snapshot previous value
+      const previousDeletedTasks = queryClient.getQueryData([
+        'deleted-tasks',
+        boardId,
+      ]) as Task[] | undefined;
+
+      // Optimistically remove from deleted-tasks cache
+      queryClient.setQueryData(
+        ['deleted-tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.filter((task) => !taskIds.includes(task.id));
+        }
+      );
+
+      return { previousDeletedTasks };
+    },
+    onError: (err, _, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousDeletedTasks) {
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          context.previousDeletedTasks
+        );
+      }
+
+      console.error('Failed to permanently delete tasks:', err);
     },
   });
 }

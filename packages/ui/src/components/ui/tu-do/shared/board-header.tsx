@@ -168,6 +168,7 @@ interface Props {
   isSearching?: boolean;
   lists?: TaskList[];
   onUpdate?: () => void;
+  onRecycleBinOpen?: () => void;
 }
 
 export function BoardHeader({
@@ -185,6 +186,7 @@ export function BoardHeader({
   isSearching = false,
   lists = [],
   onUpdate,
+  onRecycleBinOpen,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -836,6 +838,18 @@ export function BoardHeader({
                   <Settings className="h-4 w-4" />
                   Board Settings
                 </DropdownMenuItem>
+                {onRecycleBinOpen && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onRecycleBinOpen();
+                      setBoardMenuOpen(false);
+                    }}
+                    className="gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Recycle Bin
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

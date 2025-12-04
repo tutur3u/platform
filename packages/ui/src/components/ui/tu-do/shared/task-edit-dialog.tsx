@@ -11,10 +11,6 @@ import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import {
-  checkStorageQuota,
-  StorageQuotaError,
-} from '../../text-editor/media-utils';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -30,6 +26,10 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
+import {
+  checkStorageQuota,
+  StorageQuotaError,
+} from '../../text-editor/media-utils';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
@@ -73,8 +73,8 @@ export type { PendingRelationship, PendingRelationshipType };
 
 // Re-export dialog header utilities for external use
 export {
-  getTaskDialogHeaderInfo,
   type DialogHeaderInfo,
+  getTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
 
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
@@ -2757,7 +2757,6 @@ export function TaskEditDialog({
         onOpenChange={setShowDeleteConfirm}
         taskId={task?.id}
         boardId={boardId}
-        wsId={wsId}
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}
