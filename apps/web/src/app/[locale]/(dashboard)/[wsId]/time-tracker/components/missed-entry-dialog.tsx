@@ -41,10 +41,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
-import {
-  validateStartTime,
-  validateEndTime,
-} from '@/lib/time-validation';
+import { validateStartTime, validateEndTime } from '@/lib/time-validation';
 import { getCategoryColor } from './session-history';
 import type { SessionWithRelations } from '../types';
 import { useSessionActions } from './session-history/use-session-actions';
@@ -106,7 +103,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     mode = 'normal',
   } = props;
 
-
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
   const session = isExceededMode ? props.session : undefined;
@@ -139,7 +135,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
-  const {getValidationErrorMessage} = useSessionActions({ wsId });
+  const { getValidationErrorMessage } = useSessionActions({ wsId });
 
   // State for missed entry form
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
@@ -161,9 +157,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const imagePreviewsRef = useRef<string[]>([]);
 
   // Validation state
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
-  
   // Calculate session info for exceeded mode
   const sessionStartTime = useMemo(
     () => (session?.start_time ? dayjs(session.start_time) : null),
@@ -390,14 +387,25 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     }
 
     // Only validate time range specific errors (skip individual time validations)
-    if (missedEntryStartTime && missedEntryEndTime && startValidation.isValid && endValidation.isValid) {
+    if (
+      missedEntryStartTime &&
+      missedEntryEndTime &&
+      startValidation.isValid &&
+      endValidation.isValid
+    ) {
       const startTime = dayjs(missedEntryStartTime);
       const endTime = dayjs(missedEntryEndTime);
 
       if (endTime.isBefore(startTime)) {
-        errors.timeRange = getValidationErrorMessage({ isValid: false, errorCode: 'END_BEFORE_START' });
+        errors.timeRange = getValidationErrorMessage({
+          isValid: false,
+          errorCode: 'END_BEFORE_START',
+        });
       } else if (endTime.diff(startTime, 'minutes') < 1) {
-        errors.timeRange = getValidationErrorMessage({ isValid: false, errorCode: 'DURATION_TOO_SHORT' });
+        errors.timeRange = getValidationErrorMessage({
+          isValid: false,
+          errorCode: 'DURATION_TOO_SHORT',
+        });
       }
     }
 
@@ -867,13 +875,13 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 value={missedEntryStartTime}
                 onChange={(e) => setMissedEntryStartTime(e.target.value)}
                 disabled={isLoading}
-                className={validationErrors.startTime ? 'border-dynamic-red' : ''}
+                className={
+                  validationErrors.startTime ? 'border-dynamic-red' : ''
+                }
               />
             </div>
             <div>
-              <Label htmlFor="missed-entry-end-time">
-                {t('form.endTime')}
-              </Label>
+              <Label htmlFor="missed-entry-end-time">{t('form.endTime')}</Label>
               <Input
                 id="missed-entry-end-time"
                 type="datetime-local"
@@ -885,9 +893,15 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             </div>
           </div>
           {Object.keys(validationErrors).length > 0 && (
-            <div className="rounded-lg bg-dynamic-red/10 p-3" aria-live="polite">
+            <div
+              className="rounded-lg bg-dynamic-red/10 p-3"
+              aria-live="polite"
+            >
               {Object.values(validationErrors).map((error, index) => (
-                <div key={index} className="flex items-start gap-2 text-dynamic-red text-sm">
+                <div
+                  key={index}
+                  className="flex items-start gap-2 text-dynamic-red text-sm"
+                >
                   <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
                   <span>{error}</span>
                 </div>

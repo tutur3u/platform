@@ -103,16 +103,19 @@ export const getGroupedSessionsPaginated = async (
   const userTimezone = dayjs.tz.guess();
 
   try {
-    const { data, error } = await supabase.rpc('get_grouped_sessions_paginated', {
-      p_ws_id: wsId,
-      p_period: period,
-      p_page: page,
-      p_limit: limit,
-      p_search: search || undefined,
-      p_start_date: startDate || undefined,
-      p_end_date: endDate || undefined,
-      p_timezone: userTimezone,
-    });
+    const { data, error } = await supabase.rpc(
+      'get_grouped_sessions_paginated',
+      {
+        p_ws_id: wsId,
+        p_period: period,
+        p_page: page,
+        p_limit: limit,
+        p_search: search || undefined,
+        p_start_date: startDate || undefined,
+        p_end_date: endDate || undefined,
+        p_timezone: userTimezone,
+      }
+    );
 
     if (error) {
       console.error('RPC error:', error);
@@ -165,7 +168,10 @@ export const getGroupedSessionsPaginated = async (
       pagination: result.pagination,
     };
   } catch (error) {
-    console.error('Error calling RPC, falling back to JS implementation:', error);
+    console.error(
+      'Error calling RPC, falling back to JS implementation:',
+      error
+    );
     return await getFallbackGroupedSessions(wsId, period, params);
   }
 };
@@ -208,7 +214,7 @@ const getFallbackGroupedSessions = async (
         // For a session to overlap with [filterStart, filterEnd]:
         // start_time <= filterEnd (session starts before filter ends)
         // AND (end_time >= filterStart OR end_time IS NULL) (session ends after filter starts, or still running)
-        // 
+        //
         // Since Supabase .or() creates OR at the top level, we need to structure this carefully
         // We'll fetch: sessions that START within range OR END within range OR SPAN the range
         query = query.or(
@@ -253,8 +259,6 @@ const getFallbackGroupedSessions = async (
     // Group sessions and handle pagination
     let groupedSessions = groupSessions(sessions, period);
 
-
-
     // Filter grouped sessions by date range if specified
     // This ensures we only show groups whose period falls within the filter range
     if (startDate || endDate) {
@@ -288,8 +292,6 @@ const getFallbackGroupedSessions = async (
 
         return true;
       });
-
-
     }
 
     const total = groupedSessions.length;
@@ -506,7 +508,11 @@ export const groupSessions = (
   const getSessionPeriods = (
     session: TimeTrackingSession
   ): { periodKey: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] => {
-    const periods: { periodKey: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] = [];
+    const periods: {
+      periodKey: string;
+      start: dayjs.Dayjs;
+      end: dayjs.Dayjs;
+    }[] = [];
 
     if (period === 'day') {
       // For day view, use getSessionDays to find all days the session spans

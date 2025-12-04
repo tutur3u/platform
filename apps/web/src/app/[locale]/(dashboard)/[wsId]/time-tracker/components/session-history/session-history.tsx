@@ -28,7 +28,11 @@ import { MonthView } from './month-view';
 import { PeriodNavigation } from './period-navigation';
 import { SessionFilters } from './session-filters';
 import { SessionStats } from './session-stats';
-import type { FilterState, SessionHistoryProps, ViewMode } from './session-types';
+import type {
+  FilterState,
+  SessionHistoryProps,
+  ViewMode,
+} from './session-types';
 import {
   calculatePeriodStats,
   getDurationCategory,
@@ -133,7 +137,10 @@ export function SessionHistory({
 
   // Filter functions
   const getProjectContext = useCallback(
-    (session: { task_id?: string | null; category?: { name?: string } | null }): string => {
+    (session: {
+      task_id?: string | null;
+      category?: { name?: string } | null;
+    }): string => {
       if (session.task_id) {
         const task = tasks?.find((t) => t.id === session.task_id);
         return task?.board_name || 'project-work';
@@ -210,12 +217,7 @@ export function SessionHistory({
   const sessionsForPeriod = useMemo(
     () =>
       filteredSessions?.filter((session) =>
-        sessionOverlapsPeriod(
-          session,
-          startOfPeriod,
-          endOfPeriod,
-          userTimezone
-        )
+        sessionOverlapsPeriod(session, startOfPeriod, endOfPeriod, userTimezone)
       ),
     [filteredSessions, startOfPeriod, endOfPeriod, userTimezone]
   );

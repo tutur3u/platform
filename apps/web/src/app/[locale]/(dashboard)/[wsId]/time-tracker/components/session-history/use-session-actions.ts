@@ -21,8 +21,6 @@ import {
  * This can be used by components that don't have access to the hook
  */
 
-
-
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -111,27 +109,30 @@ export function useSessionActions({
     null
   );
 
-  const getValidationErrorMessage = useCallback((result: TimeValidationResult): string => {
-    if (!result.errorCode) return '';
-  
-    const params = result.errorParams || {};
-    const dateTime = params.dateTime ?? '';
-  
-    switch (result.errorCode) {
-      case 'FUTURE_START_TIME':
-        return t('validation_future_start_time', { dateTime });
-      case 'FUTURE_END_TIME':
-        return t('validation_future_end_time', { dateTime });
-      case 'FUTURE_DATE_TIME':
-        return t('validation_future_date_time', { dateTime });
-      case 'END_BEFORE_START':
-        return t('validation_end_before_start');
-      case 'DURATION_TOO_SHORT':
-        return t('validation_duration_too_short');
-      default:
-        return t('validation_invalid_time');
-    }
-  }, []);
+  const getValidationErrorMessage = useCallback(
+    (result: TimeValidationResult): string => {
+      if (!result.errorCode) return '';
+
+      const params = result.errorParams || {};
+      const dateTime = params.dateTime ?? '';
+
+      switch (result.errorCode) {
+        case 'FUTURE_START_TIME':
+          return t('validation_future_start_time', { dateTime });
+        case 'FUTURE_END_TIME':
+          return t('validation_future_end_time', { dateTime });
+        case 'FUTURE_DATE_TIME':
+          return t('validation_future_date_time', { dateTime });
+        case 'END_BEFORE_START':
+          return t('validation_end_before_start');
+        case 'DURATION_TOO_SHORT':
+          return t('validation_duration_too_short');
+        default:
+          return t('validation_invalid_time');
+      }
+    },
+    []
+  );
 
   const setEditFormState = useCallback(
     <K extends keyof EditFormState>(key: K, value: EditFormState[K]) => {
@@ -224,7 +225,10 @@ export function useSessionActions({
       const userTz = dayjs.tz.guess();
 
       // Validate future dates for time edits
-      if (editFormState.startTime !== originalValues.startTime && editFormState.startTime) {
+      if (
+        editFormState.startTime !== originalValues.startTime &&
+        editFormState.startTime
+      ) {
         const startValidation = validateNotFuture(editFormState.startTime);
         if (!startValidation.isValid) {
           toast.error(getValidationErrorMessage(startValidation));
@@ -233,7 +237,10 @@ export function useSessionActions({
         }
       }
 
-      if (editFormState.endTime !== originalValues.endTime && editFormState.endTime) {
+      if (
+        editFormState.endTime !== originalValues.endTime &&
+        editFormState.endTime
+      ) {
         const endValidation = validateNotFuture(editFormState.endTime);
         if (!endValidation.isValid) {
           toast.error(getValidationErrorMessage(endValidation));
@@ -243,15 +250,23 @@ export function useSessionActions({
       }
 
       // Validate time range if both times are changing
-      const newStartTime = editFormState.startTime !== originalValues.startTime
-        ? editFormState.startTime
-        : dayjs.utc(sessionToEdit.start_time).tz(userTz).format('YYYY-MM-DDTHH:mm');
+      const newStartTime =
+        editFormState.startTime !== originalValues.startTime
+          ? editFormState.startTime
+          : dayjs
+              .utc(sessionToEdit.start_time)
+              .tz(userTz)
+              .format('YYYY-MM-DDTHH:mm');
 
-      const newEndTime = editFormState.endTime !== originalValues.endTime
-        ? editFormState.endTime
-        : sessionToEdit.end_time
-          ? dayjs.utc(sessionToEdit.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
-          : null;
+      const newEndTime =
+        editFormState.endTime !== originalValues.endTime
+          ? editFormState.endTime
+          : sessionToEdit.end_time
+            ? dayjs
+                .utc(sessionToEdit.end_time)
+                .tz(userTz)
+                .format('YYYY-MM-DDTHH:mm')
+            : null;
 
       if (newStartTime && newEndTime) {
         const rangeValidation = validateTimeRange(newStartTime, newEndTime);

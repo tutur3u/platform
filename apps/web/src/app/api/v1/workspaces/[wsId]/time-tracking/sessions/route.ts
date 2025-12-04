@@ -365,7 +365,10 @@ export async function POST(
       const start = new Date(startTime);
       if (start > now) {
         return NextResponse.json(
-          { error: 'Cannot create a time tracking session with a start time in the future.' },
+          {
+            error:
+              'Cannot create a time tracking session with a start time in the future.',
+          },
           { status: 400 }
         );
       }

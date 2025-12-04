@@ -75,7 +75,9 @@ export function validateStartTime(
 ): TimeValidationResult {
   const result = validateNotFuture(startTimeString);
   if (!result.isValid) {
-    const formattedDateTime = dayjs(startTimeString).format('MMM D, YYYY [at] h:mm A');
+    const formattedDateTime = dayjs(startTimeString).format(
+      'MMM D, YYYY [at] h:mm A'
+    );
     return {
       isValid: false,
       errorCode: 'FUTURE_START_TIME',
@@ -95,7 +97,9 @@ export function validateEndTime(
 ): TimeValidationResult {
   const result = validateNotFuture(endTimeString);
   if (!result.isValid) {
-    const formattedDateTime = dayjs(endTimeString).format('MMM D, YYYY [at] h:mm A');
+    const formattedDateTime = dayjs(endTimeString).format(
+      'MMM D, YYYY [at] h:mm A'
+    );
     return {
       isValid: false,
       errorCode: 'FUTURE_END_TIME',

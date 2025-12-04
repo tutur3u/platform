@@ -27,9 +27,9 @@ export interface SessionHistoryProps {
 export type TaskWithDetails = {
   id: string; // Required field for task selection
 } & Partial<WorkspaceTask> & {
-  board_name?: string;
-  list_name?: string;
-};
+    board_name?: string;
+    list_name?: string;
+  };
 
 export interface FilterState {
   searchQuery: string;
