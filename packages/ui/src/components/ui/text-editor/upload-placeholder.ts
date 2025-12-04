@@ -47,16 +47,18 @@ export function createLoadingPlaceholder(
     'w-8 h-8 border-[3px] border-muted-foreground/30 border-t-muted-foreground rounded-full';
   spinner.style.animation = 'spin 0.8s linear infinite';
 
-  // Add keyframes for spin animation if not already present
-  if (!document.querySelector('#upload-spinner-styles')) {
-    const style = document.createElement('style');
-    style.id = 'upload-spinner-styles';
-    style.textContent = `
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
+  // Add keyframes for spin animation if not already present (skip in SSR/test environments)
+  if (typeof document !== 'undefined' && document.head) {
+    if (!document.querySelector('#upload-spinner-styles')) {
+      const style = document.createElement('style');
+      style.id = 'upload-spinner-styles';
+      style.textContent = `
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }
 
   // Upload text

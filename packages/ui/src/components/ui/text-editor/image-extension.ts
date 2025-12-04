@@ -2,17 +2,17 @@ import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
-  createLoadingPlaceholder,
-  findUploadPlaceholder,
-  generateUploadId,
-  imageUploadPlaceholderPluginKey,
-} from './upload-placeholder';
-import {
   getImageDimensions,
   getVideoDimensions,
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
 } from './media-utils';
+import {
+  createLoadingPlaceholder,
+  findUploadPlaceholder,
+  generateUploadId,
+  imageUploadPlaceholderPluginKey,
+} from './upload-placeholder';
 
 export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -583,7 +583,6 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                       const node = nodeType.create({
                         src: url,
-                        width: displayWidth,
                       });
 
                       finalTr.insert(insertPos, node);

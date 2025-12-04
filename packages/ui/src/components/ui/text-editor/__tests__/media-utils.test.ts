@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  MAX_IMAGE_SIZE,
-  MAX_VIDEO_SIZE,
+  checkStorageQuota,
   DEFAULT_WORKSPACE_STORAGE_QUOTA,
   formatBytes,
-  StorageQuotaError,
-  checkStorageQuota,
   getImageDimensions,
   getVideoDimensions,
+  MAX_IMAGE_SIZE,
+  MAX_VIDEO_SIZE,
+  StorageQuotaError,
 } from '../media-utils';
 
 describe('media-utils', () => {
@@ -241,6 +241,22 @@ describe('media-utils', () => {
   });
 
   describe('getImageDimensions', () => {
+    let originalImage: typeof Image;
+    let originalCreateObjectURL: typeof URL.createObjectURL;
+    let originalRevokeObjectURL: typeof URL.revokeObjectURL;
+
+    beforeEach(() => {
+      originalImage = global.Image;
+      originalCreateObjectURL = global.URL.createObjectURL;
+      originalRevokeObjectURL = global.URL.revokeObjectURL;
+    });
+
+    afterEach(() => {
+      global.Image = originalImage;
+      global.URL.createObjectURL = originalCreateObjectURL;
+      global.URL.revokeObjectURL = originalRevokeObjectURL;
+    });
+
     it('should resolve with image dimensions', async () => {
       const mockFile = new File([''], 'test.jpg', { type: 'image/jpeg' });
 
@@ -300,6 +316,22 @@ describe('media-utils', () => {
   });
 
   describe('getVideoDimensions', () => {
+    let originalCreateObjectURL: typeof URL.createObjectURL;
+    let originalRevokeObjectURL: typeof URL.revokeObjectURL;
+    let originalCreateElement: typeof document.createElement;
+
+    beforeEach(() => {
+      originalCreateObjectURL = global.URL.createObjectURL;
+      originalRevokeObjectURL = global.URL.revokeObjectURL;
+      originalCreateElement = document.createElement.bind(document);
+    });
+
+    afterEach(() => {
+      global.URL.createObjectURL = originalCreateObjectURL;
+      global.URL.revokeObjectURL = originalRevokeObjectURL;
+      document.createElement = originalCreateElement;
+    });
+
     it('should resolve with video dimensions', async () => {
       const mockFile = new File([''], 'test.mp4', { type: 'video/mp4' });
 
@@ -315,7 +347,6 @@ describe('media-utils', () => {
       global.URL.revokeObjectURL = vi.fn();
 
       // Mock document.createElement for video
-      const originalCreateElement = document.createElement.bind(document);
       document.createElement = vi.fn((tagName: string) => {
         if (tagName === 'video') return mockVideo as any;
         return originalCreateElement(tagName);
@@ -330,9 +361,6 @@ describe('media-utils', () => {
 
       expect(result).toEqual({ width: 1920, height: 1080 });
       expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
-
-      // Restore
-      document.createElement = originalCreateElement;
     });
 
     it('should reject on video load error', async () => {
@@ -362,9 +390,6 @@ describe('media-utils', () => {
 
       await expect(promise).rejects.toThrow('Failed to load video');
       expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
-
-      // Restore
-      document.createElement = originalCreateElement;
     });
   });
 });

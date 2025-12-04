@@ -1,3 +1,5 @@
+import type { SupabaseClient } from '@tuturuuu/supabase';
+
 // Maximum file size limits for media uploads
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 export const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
@@ -42,11 +44,14 @@ export class StorageQuotaError extends Error {
  * @throws {StorageQuotaError} If quota would be exceeded
  */
 export async function checkStorageQuota(
-  supabaseClient: any,
+  supabaseClient: SupabaseClient<any>,
   workspaceId: string,
   fileSize: number,
   quota: number = DEFAULT_WORKSPACE_STORAGE_QUOTA
 ): Promise<void> {
+  const PAGE_SIZE = 100;
+  const CONCURRENCY_LIMIT = 5;
+
   try {
     // Check if workspace folder exists
     const { error: listError } = await supabaseClient.storage
@@ -61,27 +66,69 @@ export async function checkStorageQuota(
       return;
     }
 
-    // Calculate current usage by summing all file sizes recursively
+    // Calculate current usage using iterative folder traversal with pagination
     let currentUsage = 0;
-    const calculateFolderSize = async (prefix: string = workspaceId) => {
-      const { data: items } = await supabaseClient.storage
-        .from('workspaces')
-        .list(prefix, { limit: 1000 });
+    const folderQueue: string[] = [workspaceId];
 
-      if (!items) return;
+    // Helper to list all items in a folder with pagination
+    const listAllItemsInFolder = async (prefix: string) => {
+      const allItems: Array<{ name: string; metadata?: { size?: number } }> =
+        [];
+      let offset = 0;
+      let hasMore = true;
 
-      for (const item of items) {
-        if (item.metadata) {
-          // It's a file
-          currentUsage += item.metadata.size || 0;
+      while (hasMore) {
+        const { data: items } = await supabaseClient.storage
+          .from('workspaces')
+          .list(prefix, {
+            limit: PAGE_SIZE,
+            offset,
+          });
+
+        if (!items || items.length === 0) {
+          hasMore = false;
         } else {
-          // It's a folder, recurse
-          await calculateFolderSize(`${prefix}/${item.name}`);
+          allItems.push(...items);
+          offset += items.length;
+          // If we got fewer items than the limit, we've reached the end
+          hasMore = items.length === PAGE_SIZE;
         }
       }
+
+      return allItems;
     };
 
-    await calculateFolderSize();
+    // Process folders iteratively using a queue
+    while (folderQueue.length > 0) {
+      // Process folders in batches with concurrency limit
+      const foldersToProcess = folderQueue.splice(0, CONCURRENCY_LIMIT);
+
+      const results = await Promise.all(
+        foldersToProcess.map(async (folderPath) => {
+          const items = await listAllItemsInFolder(folderPath);
+          let folderSize = 0;
+          const subfolders: string[] = [];
+
+          for (const item of items) {
+            if (item.metadata) {
+              // It's a file - accumulate size
+              folderSize += item.metadata.size || 0;
+            } else {
+              // It's a folder - add to queue for processing
+              subfolders.push(`${folderPath}/${item.name}`);
+            }
+          }
+
+          return { folderSize, subfolders };
+        })
+      );
+
+      // Accumulate results
+      for (const { folderSize, subfolders } of results) {
+        currentUsage += folderSize;
+        folderQueue.push(...subfolders);
+      }
+    }
 
     // Check if adding this file would exceed quota
     if (currentUsage + fileSize > quota) {

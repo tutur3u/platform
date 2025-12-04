@@ -1,6 +1,7 @@
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
 import { Plugin, PluginKey } from 'prosemirror-state';
+import { toast } from '../sonner';
 import { getVideoDimensions, MAX_VIDEO_SIZE } from './media-utils';
 import {
   createLoadingPlaceholder,
@@ -185,10 +186,13 @@ export const Video = (options: VideoOptions = {}) =>
                     try {
                       // Validate file size (max 50MB for videos)
                       if (video.size > MAX_VIDEO_SIZE) {
-                        console.error(
-                          'Video size must be less than 50MB:',
-                          video.name
-                        );
+                        const errorMessage = `Video '${video.name}' exceeds the 50MB limit`;
+                        try {
+                          toast.error(errorMessage);
+                        } catch {
+                          // Fallback to console if toast API is unavailable
+                          console.error(errorMessage);
+                        }
                         continue;
                       }
 
@@ -318,10 +322,13 @@ export const Video = (options: VideoOptions = {}) =>
                     try {
                       // Validate file size (max 50MB)
                       if (video.size > MAX_VIDEO_SIZE) {
-                        console.error(
-                          'Video size must be less than 50MB:',
-                          video.name
-                        );
+                        const errorMessage = `Video '${video.name}' exceeds the 50MB limit`;
+                        try {
+                          toast.error(errorMessage);
+                        } catch {
+                          // Fallback to console if toast API is unavailable
+                          console.error(errorMessage);
+                        }
                         continue;
                       }
 
