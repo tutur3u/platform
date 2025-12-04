@@ -35,7 +35,8 @@
       "a11y": {
         "noLabelWithoutControl": "off",
         "useKeyWithClickEvents": "off",
-        "noStaticElementInteractions": "off"
+        "noStaticElementInteractions": "off",
+        "useMediaCaption": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
