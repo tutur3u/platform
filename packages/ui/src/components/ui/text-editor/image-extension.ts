@@ -384,10 +384,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
           props: {
             handleDOMEvents: {
-              
               drop: (view: EditorView, event: DragEvent) => {
                 if (!onImageUpload && !onVideoUpload) return false;
-
 
                 const hasFiles = event.dataTransfer?.files?.length;
                 if (!hasFiles) return false;
