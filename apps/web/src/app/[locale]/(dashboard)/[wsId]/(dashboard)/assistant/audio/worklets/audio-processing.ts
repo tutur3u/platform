@@ -1,15 +1,12 @@
 const AudioRecordingWorklet = `
 class AudioProcessingWorklet extends AudioWorkletProcessor {
-
-  // send and clear buffer every 2048 samples, 
-  // which at 16khz is about 8 times a second
-  buffer = new Int16Array(2048);
-
-  // current write index
-  bufferWriteIndex = 0;
-
   constructor() {
     super();
+    // send and clear buffer every 2048 samples,
+    // which at 16khz is about 8 times a second
+    this.buffer = new Int16Array(2048);
+    // current write index
+    this.bufferWriteIndex = 0;
     this.hasAudio = false;
   }
 

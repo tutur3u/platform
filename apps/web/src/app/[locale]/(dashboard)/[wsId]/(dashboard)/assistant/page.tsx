@@ -1330,7 +1330,7 @@ export default function App() {
   }
 
   return (
-    <LiveAPIProvider key={token} apiKey={token}>
+    <LiveAPIProvider key={token} apiKey={token} wsId={wsId}>
       <GameApp wsId={wsId} />
     </LiveAPIProvider>
   );
