@@ -53,16 +53,24 @@ export default function SimpleTimeTrackerContent({
   const { data: statsFromQuery } = useQuery({
     queryKey: ['time-tracker-stats', wsId],
     queryFn: async () => {
-      if (!currentUser) return { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
+      if (!currentUser)
+        return { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats&userId=${currentUser.id}`
       );
       if (!response.ok) throw new Error('Failed to fetch time tracking stats');
       const data = await response.json();
-      return data.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
+      return (
+        data.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 }
+      );
     },
     refetchInterval: 60000, // 1 minute (less frequent than running session)
-    initialData: initialData.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
+    initialData: initialData.stats || {
+      todayTime: 0,
+      weekTime: 0,
+      monthTime: 0,
+      streak: 0,
+    },
     enabled: !!currentUser,
     staleTime: 30000, // 30 seconds
   });

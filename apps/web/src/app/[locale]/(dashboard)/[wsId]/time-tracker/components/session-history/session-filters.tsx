@@ -184,10 +184,14 @@ export function SessionFilters({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('all_types')}</SelectItem>
-                      <SelectItem value="deep-work">{t('deep_work')}</SelectItem>
+                      <SelectItem value="deep-work">
+                        {t('deep_work')}
+                      </SelectItem>
                       <SelectItem value="focused">{t('focused')}</SelectItem>
                       <SelectItem value="standard">{t('standard')}</SelectItem>
-                      <SelectItem value="scattered">{t('scattered')}</SelectItem>
+                      <SelectItem value="scattered">
+                        {t('scattered')}
+                      </SelectItem>
                       <SelectItem value="interrupted">
                         {t('interrupted')}
                       </SelectItem>
@@ -212,7 +216,9 @@ export function SessionFilters({
                     <SelectContent>
                       <SelectItem value="all">{t('all_times')}</SelectItem>
                       <SelectItem value="morning">{t('morning')}</SelectItem>
-                      <SelectItem value="afternoon">{t('afternoon')}</SelectItem>
+                      <SelectItem value="afternoon">
+                        {t('afternoon')}
+                      </SelectItem>
                       <SelectItem value="evening">{t('evening')}</SelectItem>
                       <SelectItem value="night">{t('night')}</SelectItem>
                     </SelectContent>
@@ -266,7 +272,9 @@ export function SessionFilters({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('all_qualities')}</SelectItem>
-                      <SelectItem value="excellent">{t('excellent')}</SelectItem>
+                      <SelectItem value="excellent">
+                        {t('excellent')}
+                      </SelectItem>
                       <SelectItem value="good">{t('good')}</SelectItem>
                       <SelectItem value="average">{t('average')}</SelectItem>
                       <SelectItem value="needs-improvement">
