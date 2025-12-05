@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     env: loadEnv('production', process.cwd(), ''),
+    exclude: ['**/node_modules/**', '**/dist/**'],
   },
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
