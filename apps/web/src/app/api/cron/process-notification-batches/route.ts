@@ -1,7 +1,10 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
+import NotificationDigestEmail, {
+  generateSubjectLine,
+  type NotificationItem,
+} from '@tuturuuu/transactional/emails/notification-digest';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -13,15 +16,6 @@ import { NextResponse } from 'next/server';
 // Feature flag: When true, only send emails for notifications belonging to the root workspace
 // Set to false to allow emails for all workspaces
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
-
-interface NotificationItem {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  data: Record<string, unknown>;
-  createdAt: string;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -290,26 +284,44 @@ export async function GET(req: NextRequest) {
         const notifications: NotificationItem[] = deliveryLogs
           .map((log) => log.notifications)
           .filter(Boolean)
-          .map((n) => ({
-            id: n.id,
-            type: n.type,
-            title: n.title,
-            description: n.description || '',
-            data: n.data as Record<string, unknown>,
-            createdAt: n.created_at,
-          }));
+          .map((n) => {
+            const data = n.data as Record<string, unknown>;
+            // Build action URL from notification data if available
+            const actionUrl =
+              (data?.action_url as string) ||
+              (data?.url as string) ||
+              (data?.link as string) ||
+              undefined;
 
-        // Render digest email template
+            return {
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              description: n.description || '',
+              data,
+              createdAt: n.created_at,
+              actionUrl,
+            };
+          });
+
+        // Generate smart subject line based on notification content
+        const emailSubject = generateSubjectLine(notifications, workspaceName);
+
+        // Capture send timestamp for delay detection
+        const sentAt = new Date().toISOString();
+
+        // Render digest email template with time range info
         const emailHtml = await render(
           NotificationDigestEmail({
             userName,
             workspaceName,
             notifications,
             workspaceUrl,
+            windowStart: batch.window_start,
+            windowEnd: batch.window_end,
+            sentAt,
           })
         );
-
-        const emailSubject = `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`;
 
         // DEBUG: Skip SES sending for testing, just log the rendered HTML
         const DEBUG_SKIP_SES = DEV_MODE;

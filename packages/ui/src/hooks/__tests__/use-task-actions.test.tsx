@@ -34,7 +34,7 @@ describe('useTaskActions', () => {
   let mockUpdateTaskMutation: any;
   let mockToast: any;
 
-  const mockTask: Task = {
+  const mockTask = {
     id: 'task-1',
     name: 'Test Task',
     list_id: 'list-1',
@@ -48,7 +48,7 @@ describe('useTaskActions', () => {
     estimation_points: null,
     end_date: null,
     display_number: 1,
-  } as Task;
+  } as unknown as Task;
 
   const mockCompletionList: TaskList = {
     id: 'completion-list',
@@ -66,7 +66,7 @@ describe('useTaskActions', () => {
     created_at: '2025-01-01T00:00:00Z',
   } as TaskList;
 
-  const mockAvailableLists: TaskList[] = [
+  const mockAvailableLists = [
     {
       id: 'list-1',
       name: 'To Do',
@@ -78,7 +78,7 @@ describe('useTaskActions', () => {
       creator_id: 'user-1',
       color: null,
       position: 0,
-    } as TaskList,
+    } as unknown as TaskList,
     mockCompletionList,
     mockClosedList,
   ];

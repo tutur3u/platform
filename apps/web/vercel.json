@@ -32,10 +32,5 @@
       "path": "/api/cron/process-notification-batches",
       "schedule": "*/10 * * * *"
     }
-  ],
-  "functions": {
-    "src/app/api/**/*": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }

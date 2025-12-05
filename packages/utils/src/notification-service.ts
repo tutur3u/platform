@@ -5,7 +5,7 @@
  * across web, email, SMS, and push notification channels.
  */
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export type NotificationType =
   | 'task_assigned'
@@ -52,11 +52,11 @@ export async function createNotification(
     p_user_id: params.userId,
     p_type: params.type,
     p_title: params.title,
-    p_description: params.description || null,
+    p_description: params.description ?? undefined,
     p_data: params.data || {},
-    p_entity_type: params.entityType || null,
-    p_entity_id: params.entityId || null,
-    p_created_by: params.createdBy || null,
+    p_entity_type: params.entityType ?? undefined,
+    p_entity_id: params.entityId ?? undefined,
+    p_created_by: params.createdBy ?? undefined,
   });
 
   if (error) {
@@ -341,11 +341,11 @@ export async function createMentionNotifications(
   const supabase = await createClient();
   const { data: creator } = await supabase
     .from('users')
-    .select('display_name, email')
+    .select('display_name')
     .eq('id', createdBy)
     .single();
 
-  const creatorName = creator?.display_name || creator?.email || 'Someone';
+  const creatorName = creator?.display_name || 'Someone';
 
   // Create notifications for each mentioned user
   for (const userId of mentionedUserIds) {

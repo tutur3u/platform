@@ -1,5 +1,5 @@
 import { cleanup, render } from '@testing-library/react';
-import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useForwardedRef } from '../use-forwarded-ref';
 

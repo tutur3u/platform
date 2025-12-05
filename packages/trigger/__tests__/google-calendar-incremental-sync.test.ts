@@ -119,14 +119,10 @@ vi.mock('@trigger.dev/sdk/v3', () => ({
 dayjs.extend(utc);
 
 // Dynamically import the actual functions after env and mocks are set
-let googleCalendarIncrementalSync: any;
-let googleCalendarIncrementalSyncOrchestrator: any;
-
+// This import is for side effects only - it triggers module loading with mocks
 beforeAll(async () => {
-  const mod = await import('../src/google-calendar-incremental-sync.js');
-  googleCalendarIncrementalSync = mod.googleCalendarIncrementalSync;
-  googleCalendarIncrementalSyncOrchestrator =
-    mod.googleCalendarIncrementalSyncOrchestrator;
+  // Import for side effects - triggers task registration with mocked dependencies
+  await import('../src/google-calendar-incremental-sync.js');
 });
 
 // Mock Google Calendar events for testing

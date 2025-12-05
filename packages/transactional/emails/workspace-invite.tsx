@@ -38,25 +38,25 @@ export const WorkspaceInviteEmail = ({
 
   return (
     <Html>
-      <Head />
-      <Preview>{previewText}</Preview>
       <Tailwind>
+        <Head />
+        <Preview>{previewText}</Preview>
         <Body className="mx-auto my-auto bg-gray-50 font-sans">
-          <Container className="mx-auto my-[40px] max-w-[600px] rounded-lg border border-gray-200 border-solid bg-white p-[20px] shadow-sm">
+          <Container className="mx-auto my-10 max-w-[600px] rounded-lg border border-gray-200 border-solid bg-white p-5 shadow-sm">
             {/* Header */}
-            <Section className="mt-[16px]">
+            <Section className="mt-4">
               <Heading className="mx-0 my-0 p-0 text-center font-bold text-[28px] text-gray-900">
                 ✉️ You&apos;re Invited!
               </Heading>
             </Section>
 
-            <Hr className="mx-0 my-[24px] w-full border border-gray-200 border-solid" />
+            <Hr className="mx-0 my-6 w-full border border-gray-200 border-solid" />
 
             {/* Main Content */}
-            <Text className="text-[16px] text-gray-900 font-medium leading-[24px]">
+            <Text className="font-medium text-[16px] text-gray-900 leading-6">
               Hi {inviteeName},
             </Text>
-            <Text className="text-[14px] text-gray-700 leading-[24px]">
+            <Text className="text-[14px] text-gray-700 leading-6">
               <span className="font-semibold text-gray-900">{inviterName}</span>{' '}
               has invited you to join{' '}
               <span className="font-semibold text-blue-600">
@@ -65,18 +65,18 @@ export const WorkspaceInviteEmail = ({
               on Tuturuuu.
             </Text>
 
-            <Text className="text-[14px] text-gray-700 leading-[24px]">
+            <Text className="text-[14px] text-gray-700 leading-6">
               Tuturuuu helps teams collaborate more effectively with powerful
               tools for task management, project tracking, and team
               communication.
             </Text>
 
             {/* Feature highlights */}
-            <Section className="mt-[16px] mb-[24px] rounded-lg bg-gray-50 p-[16px]">
-              <Text className="m-0 text-[14px] font-medium text-gray-900">
+            <Section className="mt-4 mb-6 rounded-lg bg-gray-50 p-4">
+              <Text className="m-0 font-medium text-[14px] text-gray-900">
                 What you can do in {workspaceName}:
               </Text>
-              <ul className="mt-[8px] pl-[16px] text-[14px] text-gray-700 leading-[24px]">
+              <ul className="mt-2 pl-4 text-[14px] text-gray-700 leading-6">
                 <li>📋 Collaborate on tasks and projects</li>
                 <li>💬 Communicate with team members</li>
                 <li>📊 Track progress and deadlines</li>
@@ -85,9 +85,9 @@ export const WorkspaceInviteEmail = ({
             </Section>
 
             {/* CTA Button */}
-            <Section className="mt-[32px] mb-[32px] text-center">
+            <Section className="mt-8 mb-8 text-center">
               <Button
-                className="rounded-lg bg-blue-600 px-8 py-4 text-center font-semibold text-[16px] text-white no-underline hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-8 py-4 text-center font-semibold text-[16px] text-white no-underline"
                 href={actionUrl}
               >
                 Accept Invitation
@@ -95,7 +95,7 @@ export const WorkspaceInviteEmail = ({
             </Section>
 
             {/* Alternative Link */}
-            <Text className="text-center text-[12px] text-gray-600 leading-[20px]">
+            <Text className="text-center text-[12px] text-gray-600 leading-5">
               or copy and paste this URL into your browser:{' '}
               <Link href={actionUrl} className="text-blue-600 no-underline">
                 {actionUrl}
@@ -105,11 +105,11 @@ export const WorkspaceInviteEmail = ({
             <Hr className="mx-0 my-[26px] w-full border border-gray-200 border-solid" />
 
             {/* Footer */}
-            <Text className="text-center text-[12px] text-gray-500 leading-[20px]">
+            <Text className="text-center text-[12px] text-gray-500 leading-5">
               If you weren&apos;t expecting this invitation, you can safely
               ignore this email.
             </Text>
-            <Text className="mt-[16px] text-center text-[12px] text-gray-500 leading-[20px]">
+            <Text className="mt-4 text-center text-[12px] text-gray-500 leading-5">
               © {new Date().getFullYear()} Tuturuuu. All rights reserved.
             </Text>
           </Container>
