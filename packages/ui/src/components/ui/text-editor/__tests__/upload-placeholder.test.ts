@@ -12,16 +12,16 @@ describe('upload-placeholder', () => {
   describe('plugin keys', () => {
     it('should export imageUploadPlaceholderPluginKey', () => {
       expect(imageUploadPlaceholderPluginKey).toBeInstanceOf(PluginKey);
-      expect(imageUploadPlaceholderPluginKey.key).toBe(
-        'imageUploadPlaceholder$'
-      );
+      expect(
+        (imageUploadPlaceholderPluginKey as unknown as { key: string }).key
+      ).toBe('imageUploadPlaceholder$');
     });
 
     it('should export videoUploadPlaceholderPluginKey', () => {
       expect(videoUploadPlaceholderPluginKey).toBeInstanceOf(PluginKey);
-      expect(videoUploadPlaceholderPluginKey.key).toBe(
-        'videoUploadPlaceholder$'
-      );
+      expect(
+        (videoUploadPlaceholderPluginKey as unknown as { key: string }).key
+      ).toBe('videoUploadPlaceholder$');
     });
 
     it('should have different plugin keys', () => {

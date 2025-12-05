@@ -48,15 +48,15 @@ describe('useMentionSuggestions', () => {
     );
 
     expect(result.current.mentionUserOptions).toHaveLength(2);
-    expect(result.current.mentionUserOptions[0].type).toBe('user');
-    expect(result.current.mentionUserOptions[0].label).toBe('Jane Smith');
+    expect(result.current.mentionUserOptions[0]!.type).toBe('user');
+    expect(result.current.mentionUserOptions[0]!.label).toBe('Jane Smith');
   });
 
   it('should generate workspace mention options excluding personal', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        currentWorkspace: mockWorkspaces[0], // Non-personal workspace
+        currentWorkspace: mockWorkspaces[0]!, // Non-personal workspace
         taskProjects: [],
         workspaceTasks: [],
         query: '',
@@ -64,7 +64,9 @@ describe('useMentionSuggestions', () => {
     );
 
     expect(result.current.mentionWorkspaceOptions).toHaveLength(1);
-    expect(result.current.mentionWorkspaceOptions[0].label).toBe('Engineering');
+    expect(result.current.mentionWorkspaceOptions[0]!.label).toBe(
+      'Engineering'
+    );
   });
 
   it('should generate project mention options', () => {
@@ -79,7 +81,7 @@ describe('useMentionSuggestions', () => {
     );
 
     expect(result.current.mentionProjectOptions).toHaveLength(2);
-    expect(result.current.mentionProjectOptions[0].type).toBe('project');
+    expect(result.current.mentionProjectOptions[0]!.type).toBe('project');
   });
 
   it('should filter tasks excluding current task', () => {
@@ -95,7 +97,7 @@ describe('useMentionSuggestions', () => {
     );
 
     expect(result.current.mentionTaskOptions).toHaveLength(1);
-    expect(result.current.mentionTaskOptions[0].id).toBe('task-2');
+    expect(result.current.mentionTaskOptions[0]!.id).toBe('task-2');
   });
 
   it('should generate date mention options', () => {
@@ -110,8 +112,8 @@ describe('useMentionSuggestions', () => {
     );
 
     expect(result.current.mentionDateOptions).toHaveLength(5);
-    expect(result.current.mentionDateOptions[0].id).toBe('today');
-    expect(result.current.mentionDateOptions[4].id).toBe('custom-date');
+    expect(result.current.mentionDateOptions[0]!.id).toBe('today');
+    expect(result.current.mentionDateOptions[4]!.id).toBe('custom-date');
   });
 
   it('should filter options by query', () => {
@@ -167,8 +169,8 @@ describe('useMentionSuggestions', () => {
 
     const filtered = result.current.filteredMentionOptions;
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].type).toBe('external-user');
-    expect(filtered[0].label).toBe('NonExistentUser');
+    expect(filtered[0]!.type).toBe('external-user');
+    expect(filtered[0]!.label).toBe('NonExistentUser');
   });
 });
 

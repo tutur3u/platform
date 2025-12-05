@@ -64,7 +64,7 @@ describe('VideoExtension', () => {
 
     it('should have src attribute with proper default and parsing', () => {
       const extension = Video();
-      const attributes = extension.config.addAttributes();
+      const attributes = (extension.config as any).addAttributes() as any;
 
       expect(attributes.src).toBeDefined();
       expect(attributes.src.default).toBeNull();
@@ -86,7 +86,7 @@ describe('VideoExtension', () => {
 
     it('should parse HTML video elements', () => {
       const extension = Video();
-      const parseRules = extension.config.parseHTML();
+      const parseRules = (extension.config as any).parseHTML() as any[];
 
       expect(parseRules).toHaveLength(1);
       expect(parseRules[0].tag).toBe('video');
@@ -101,9 +101,9 @@ describe('VideoExtension', () => {
 
     it('should render as HTML video element with controls', () => {
       const extension = Video();
-      const renderOutput = extension.config.renderHTML({
+      const renderOutput = (extension.config as any).renderHTML({
         HTMLAttributes: { src: 'https://example.com/video.mp4' },
-      });
+      }) as any[];
 
       expect(renderOutput).toBeDefined();
       expect(renderOutput[0]).toBe('video');
@@ -129,7 +129,7 @@ describe('VideoExtension', () => {
 
     it('should provide setVideo command that inserts content', () => {
       const extension = Video();
-      const commands = extension.config.addCommands();
+      const commands = (extension.config as any).addCommands() as any;
 
       expect(commands.setVideo).toBeDefined();
       expect(typeof commands.setVideo).toBe('function');
@@ -137,7 +137,7 @@ describe('VideoExtension', () => {
 
     it('should provide toggleVideo command', () => {
       const extension = Video();
-      const commands = extension.config.addCommands();
+      const commands = (extension.config as any).addCommands() as any;
 
       expect(commands.toggleVideo).toBeDefined();
       expect(typeof commands.toggleVideo).toBe('function');
@@ -153,7 +153,7 @@ describe('VideoExtension', () => {
 
     it('should return input rules array', () => {
       const extension = Video();
-      const inputRules = extension.config.addInputRules();
+      const inputRules = (extension.config as any).addInputRules() as any[];
 
       expect(Array.isArray(inputRules)).toBe(true);
       expect(inputRules.length).toBeGreaterThan(0);
@@ -164,13 +164,17 @@ describe('VideoExtension', () => {
     it('should add three ProseMirror plugins', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
 
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       expect(plugins).toHaveLength(3); // placeholder, paste, drop plugins
     });
 
     it('should include placeholder plugin with state management', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
 
       const placeholderPlugin = plugins[0];
       expect(placeholderPlugin).toBeDefined();
@@ -180,7 +184,9 @@ describe('VideoExtension', () => {
 
     it('should include paste plugin with DOM event handler', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
 
       const pastePlugin = plugins[1];
       expect(pastePlugin.props?.handleDOMEvents?.paste).toBeDefined();
@@ -189,7 +195,9 @@ describe('VideoExtension', () => {
 
     it('should include drop plugin with DOM event handler', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
 
       const dropPlugin = plugins[2];
       expect(dropPlugin.props?.handleDOMEvents?.drop).toBeDefined();
@@ -222,7 +230,9 @@ describe('VideoExtension', () => {
   describe('paste handler behavior', () => {
     it('should return false when no onVideoUpload handler is provided', () => {
       const extension = Video();
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const pastePlugin = plugins[1];
 
       const mockView = {
@@ -244,7 +254,9 @@ describe('VideoExtension', () => {
     it('should return false when clipboard has no items', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const pastePlugin = plugins[1];
 
       const mockView = {
@@ -266,7 +278,9 @@ describe('VideoExtension', () => {
     it('should return false when clipboard has no video files', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const pastePlugin = plugins[1];
 
       const mockView = {
@@ -290,7 +304,9 @@ describe('VideoExtension', () => {
     it('should call preventDefault when handling video paste', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const pastePlugin = plugins[1];
 
       // Create a fully mocked transaction object with all required methods
@@ -336,7 +352,9 @@ describe('VideoExtension', () => {
   describe('drop handler behavior', () => {
     it('should return false when no onVideoUpload handler is provided', () => {
       const extension = Video();
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const dropPlugin = plugins[2];
 
       const mockView = {
@@ -361,7 +379,9 @@ describe('VideoExtension', () => {
     it('should return false when no files are dropped', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const dropPlugin = plugins[2];
 
       const mockView = {
@@ -386,7 +406,9 @@ describe('VideoExtension', () => {
     it('should return false when no video files are dropped', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const dropPlugin = plugins[2];
 
       const mockView = {
@@ -413,7 +435,9 @@ describe('VideoExtension', () => {
     it('should call preventDefault when handling video drop', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const dropPlugin = plugins[2];
 
       // Create a fully mocked transaction object with all required methods
@@ -450,7 +474,9 @@ describe('VideoExtension', () => {
     it('should return true when coordinates are invalid', () => {
       const mockUpload = vi.fn().mockResolvedValue('url');
       const extension = Video({ onVideoUpload: mockUpload });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const dropPlugin = plugins[2];
 
       const mockView = {
@@ -479,7 +505,9 @@ describe('VideoExtension', () => {
   describe('placeholder plugin', () => {
     it('should initialize with empty decoration set', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const placeholderPlugin = plugins[0];
 
       expect(placeholderPlugin.spec?.state?.init).toBeDefined();
@@ -487,7 +515,9 @@ describe('VideoExtension', () => {
 
     it('should have apply function for state transitions', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const placeholderPlugin = plugins[0];
 
       expect(placeholderPlugin.spec?.state?.apply).toBeDefined();
@@ -495,7 +525,9 @@ describe('VideoExtension', () => {
 
     it('should provide decorations prop', () => {
       const extension = Video({ onVideoUpload: vi.fn() });
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const placeholderPlugin = plugins[0];
 
       expect(placeholderPlugin.props?.decorations).toBeDefined();
@@ -511,7 +543,9 @@ describe('VideoExtension', () => {
       expect(extension).toBeDefined();
       expect(extension.name).toBe('video');
 
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       expect(plugins).toHaveLength(3);
     });
 
@@ -522,7 +556,9 @@ describe('VideoExtension', () => {
 
       expect(extension).toBeDefined();
 
-      const plugins = extension.config.addProseMirrorPlugins();
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
       const pastePlugin = plugins[1];
 
       expect(pastePlugin.props?.handleDOMEvents?.paste).toBeDefined();
@@ -530,7 +566,7 @@ describe('VideoExtension', () => {
 
     it('should fall back to default dimensions (640x360) when dimension loading fails', async () => {
       const { getVideoDimensions: mockedGetVideoDimensions } = await import(
-        '../media-utils'
+        '../media-utils.js'
       );
 
       (mockedGetVideoDimensions as any).mockRejectedValueOnce(
@@ -582,27 +618,27 @@ describe('VideoExtension', () => {
   describe('video rendering', () => {
     it('should render video with controls attribute', () => {
       const extension = Video();
-      const renderOutput = extension.config.renderHTML({
+      const renderOutput = (extension.config as any).renderHTML({
         HTMLAttributes: { src: 'test.mp4' },
-      });
+      }) as any[];
 
       expect(renderOutput[1]).toHaveProperty('controls', 'true');
     });
 
     it('should render video at full width', () => {
       const extension = Video();
-      const renderOutput = extension.config.renderHTML({
+      const renderOutput = (extension.config as any).renderHTML({
         HTMLAttributes: { src: 'test.mp4' },
-      });
+      }) as any[];
 
       expect(renderOutput[1]).toHaveProperty('style', 'width: 100%');
     });
 
     it('should include source element in render output', () => {
       const extension = Video();
-      const renderOutput = extension.config.renderHTML({
+      const renderOutput = (extension.config as any).renderHTML({
         HTMLAttributes: { src: 'test.mp4' },
-      });
+      }) as any[];
 
       expect(renderOutput[2]).toEqual(['source', { src: 'test.mp4' }]);
     });

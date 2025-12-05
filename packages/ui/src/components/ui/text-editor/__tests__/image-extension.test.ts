@@ -1,3 +1,4 @@
+import type { Plugin } from 'prosemirror-state';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CustomImage } from '../image-extension';
 import { MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '../media-utils';
@@ -196,7 +197,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const pastePlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.paste !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.paste !== undefined
       );
       expect(pastePlugin).toBeDefined();
       expect(typeof pastePlugin?.props?.handleDOMEvents?.paste).toBe(
@@ -210,7 +211,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const dropPlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.drop !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.drop !== undefined
       );
       expect(dropPlugin).toBeDefined();
       expect(typeof dropPlugin?.props?.handleDOMEvents?.drop).toBe('function');
@@ -223,7 +224,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const pastePlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.paste !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.paste !== undefined
       );
 
       // Create mock view and event
@@ -250,7 +251,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const pastePlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.paste !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.paste !== undefined
       );
 
       const mockView = {
@@ -276,7 +277,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const pastePlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.paste !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.paste !== undefined
       );
 
       const mockView = {
@@ -305,7 +306,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const dropPlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.drop !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.drop !== undefined
       );
 
       const mockView = {
@@ -334,7 +335,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const dropPlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.drop !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.drop !== undefined
       );
 
       const mockView = {
@@ -363,7 +364,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const dropPlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.drop !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.drop !== undefined
       );
 
       const mockView = {
@@ -552,7 +553,7 @@ describe('ImageExtension', () => {
 
       const plugins = extension.config.addProseMirrorPlugins();
       const dropPlugin = plugins.find(
-        (p) => p.props?.handleDOMEvents?.drop !== undefined
+        (p: Plugin) => p.props?.handleDOMEvents?.drop !== undefined
       );
 
       const mockView = {

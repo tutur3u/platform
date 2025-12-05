@@ -17,11 +17,11 @@ const mockTask: Task = {
   estimation_points: null,
   list_id: 'list-1',
   labels: [],
-  closed_at: null,
+  closed_at: undefined,
   assignees: [],
   created_at: '2024-01-01T00:00:00Z',
-  // updated_at: '2024-01-01T00:00:00Z',
   sort_key: 1000,
+  display_number: 1,
 };
 
 const mockList: TaskList = {

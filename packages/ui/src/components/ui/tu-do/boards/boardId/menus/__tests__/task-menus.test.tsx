@@ -269,7 +269,7 @@ describe('TaskLabelsMenu', () => {
   it('should show applied count when labels are selected', () => {
     render(
       <TaskLabelsMenu
-        taskLabels={[mockLabels[0]]}
+        taskLabels={[mockLabels[0]!]}
         availableLabels={mockLabels}
         isLoading={false}
         labelsSaving={null}
@@ -306,6 +306,7 @@ describe('TaskProjectsMenu', () => {
   ];
 
   const mockOnToggleProject = vi.fn();
+  const mockOnCreateNewProject = vi.fn();
   const mockOnMenuItemSelect = vi.fn((_, action) => action());
 
   it('should render projects menu', () => {
@@ -316,6 +317,7 @@ describe('TaskProjectsMenu', () => {
         isLoading={false}
         projectsSaving={null}
         onToggleProject={mockOnToggleProject}
+        onCreateNewProject={mockOnCreateNewProject}
         onMenuItemSelect={mockOnMenuItemSelect}
       />
     );
@@ -331,6 +333,7 @@ describe('TaskProjectsMenu', () => {
         isLoading={false}
         projectsSaving={null}
         onToggleProject={mockOnToggleProject}
+        onCreateNewProject={mockOnCreateNewProject}
         onMenuItemSelect={mockOnMenuItemSelect}
       />
     );
@@ -342,11 +345,12 @@ describe('TaskProjectsMenu', () => {
   it('should show assigned count when projects are selected', () => {
     render(
       <TaskProjectsMenu
-        taskProjects={[mockProjects[0]]}
+        taskProjects={[mockProjects[0]!]}
         availableProjects={mockProjects}
         isLoading={false}
         projectsSaving={null}
         onToggleProject={mockOnToggleProject}
+        onCreateNewProject={mockOnCreateNewProject}
         onMenuItemSelect={mockOnMenuItemSelect}
       />
     );
@@ -362,6 +366,7 @@ describe('TaskProjectsMenu', () => {
         isLoading={false}
         projectsSaving={null}
         onToggleProject={mockOnToggleProject}
+        onCreateNewProject={mockOnCreateNewProject}
         onMenuItemSelect={mockOnMenuItemSelect}
       />
     );
@@ -384,7 +389,7 @@ describe('TaskMoveMenu', () => {
     const { container } = render(
       <TaskMoveMenu
         currentListId="list-1"
-        availableLists={[mockLists[0]]}
+        availableLists={[mockLists[0]!]}
         isLoading={false}
         onMoveToList={mockOnMoveToList}
         onMenuItemSelect={mockOnMenuItemSelect}
@@ -412,7 +417,7 @@ describe('TaskMoveMenu', () => {
   });
 
   it('should show empty state when no other lists available', () => {
-    const singleList = [mockLists[0]];
+    const singleList: TaskList[] = [mockLists[0]!];
     render(
       <TaskMoveMenu
         currentListId="list-1"

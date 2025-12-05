@@ -179,8 +179,8 @@ describe('TaskEstimationMenu Component Logic', () => {
     });
 
     it('should not be active when currentPoints does not match idx', () => {
-      const currentPoints = 3;
-      const idx = 5;
+      const currentPoints: number = 3;
+      const idx: number = 5;
       const isActive = currentPoints === idx;
       expect(isActive).toBe(false);
     });
@@ -223,8 +223,8 @@ describe('TaskEstimationMenu Component Logic', () => {
     });
 
     it('should return idx when clicking inactive item', () => {
-      const currentPoints = 3;
-      const idx = 5;
+      const currentPoints: number = 3;
+      const idx: number = 5;
       const isActive = currentPoints === idx;
       const newValue = isActive ? null : idx;
       expect(newValue).toBe(5);
@@ -241,15 +241,21 @@ describe('TaskEstimationMenu Component Logic', () => {
 
   describe('should render based on estimation type', () => {
     it('should not render when estimation type is falsy', () => {
-      expect(!undefined).toBe(true);
-      expect(!null).toBe(true);
-      expect(!'').toBe(true);
+      const undefinedValue: string | undefined = undefined;
+      const nullValue: string | null = null;
+      const emptyString: string = '';
+      expect(!undefinedValue).toBe(true);
+      expect(!nullValue).toBe(true);
+      expect(!emptyString).toBe(true);
     });
 
     it('should render when estimation type has a value', () => {
-      expect(!'fibonacci').toBe(false);
-      expect(!'t-shirt').toBe(false);
-      expect(!'exponential').toBe(false);
+      const fibonacci: string = 'fibonacci';
+      const tShirt: string = 't-shirt';
+      const exponential: string = 'exponential';
+      expect(!fibonacci).toBe(false);
+      expect(!tShirt).toBe(false);
+      expect(!exponential).toBe(false);
     });
   });
 });
