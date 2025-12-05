@@ -41,7 +41,12 @@ interface NotificationDigestEmailProps {
   notifications?: NotificationItem[];
   workspaceUrl?: string;
   logoUrl?: string;
-  subjectLine?: string;
+  /** ISO timestamp of when batch window started */
+  windowStart?: string;
+  /** ISO timestamp of when batch window ended */
+  windowEnd?: string;
+  /** ISO timestamp of when the email is being sent */
+  sentAt?: string;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
@@ -203,6 +208,85 @@ const formatRelativeTime = (dateString: string): string => {
     month: 'short',
     day: 'numeric',
   });
+};
+
+// Format a date range for display in email header
+export const formatTimeRange = (
+  windowStart?: string,
+  windowEnd?: string,
+  notifications?: NotificationItem[]
+): string => {
+  // If we have notification timestamps, use the actual range
+  if (notifications && notifications.length > 0) {
+    const timestamps = notifications.map((n) =>
+      new Date(n.createdAt).getTime()
+    );
+    const oldest = new Date(Math.min(...timestamps));
+    const newest = new Date(Math.max(...timestamps));
+    return formatDateRange(oldest, newest);
+  }
+
+  // Fall back to window timestamps
+  if (windowStart && windowEnd) {
+    return formatDateRange(new Date(windowStart), new Date(windowEnd));
+  }
+
+  return '';
+};
+
+const formatDateRange = (start: Date, end: Date): string => {
+  const startDay = start.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+  const endDay = end.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  // Same day
+  if (startDay === endDay) {
+    const timeRange = `${start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    return `${startDay}, ${timeRange}`;
+  }
+
+  // Different days
+  return `${startDay} - ${endDay}`;
+};
+
+// Calculate delay information for display
+export const getDelayInfo = (
+  windowEnd?: string,
+  sentAt?: string
+): { isDelayed: boolean; delayText: string } => {
+  if (!windowEnd || !sentAt) {
+    return { isDelayed: false, delayText: '' };
+  }
+
+  const windowEndDate = new Date(windowEnd);
+  const sentAtDate = new Date(sentAt);
+  const delayMs = sentAtDate.getTime() - windowEndDate.getTime();
+
+  // Consider delayed if more than 15 minutes after window end
+  const DELAY_THRESHOLD_MS = 15 * 60 * 1000;
+  if (delayMs <= DELAY_THRESHOLD_MS) {
+    return { isDelayed: false, delayText: '' };
+  }
+
+  const delayMins = Math.floor(delayMs / 60000);
+  const delayHours = Math.floor(delayMs / 3600000);
+  const delayDays = Math.floor(delayMs / 86400000);
+
+  let delayText: string;
+  if (delayDays > 0) {
+    delayText = `Delayed ${delayDays} day${delayDays > 1 ? 's' : ''}`;
+  } else if (delayHours > 0) {
+    delayText = `Delayed ${delayHours} hour${delayHours > 1 ? 's' : ''}`;
+  } else {
+    delayText = `Delayed ${delayMins} minute${delayMins > 1 ? 's' : ''}`;
+  }
+
+  return { isDelayed: true, delayText };
 };
 
 // Group notifications by type for better organization
@@ -480,9 +564,16 @@ export const NotificationDigestEmail = ({
   notifications = [],
   workspaceUrl = BASE_URL,
   logoUrl,
+  windowStart,
+  windowEnd,
+  sentAt,
 }: NotificationDigestEmailProps) => {
   const notificationCount = notifications.length;
   const groups = groupNotificationsByType(notifications);
+
+  // Calculate time range and delay info
+  const timeRange = formatTimeRange(windowStart, windowEnd, notifications);
+  const { isDelayed, delayText } = getDelayInfo(windowEnd, sentAt);
 
   // Get the most important notification for preview
   const sortedByPriority = [...notifications].sort((a, b) => {
@@ -580,10 +671,34 @@ export const NotificationDigestEmail = ({
                       }}
                     >
                       {workspaceName}
+                      {timeRange && ` • ${timeRange}`}
                     </Text>
                   </Column>
                 </Row>
               </Section>
+
+              {/* Delay Warning Banner */}
+              {isDelayed && (
+                <Section
+                  style={{
+                    backgroundColor: '#fef3c7',
+                    padding: '10px 16px',
+                    borderBottom: '1px solid #fcd34d',
+                  }}
+                >
+                  <Text
+                    style={{
+                      margin: 0,
+                      color: '#92400e',
+                      fontSize: '12px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ⚠️ {delayText} - These notifications are from an earlier time
+                    period
+                  </Text>
+                </Section>
+              )}
 
               {/* Content */}
               <Section style={{ padding: '20px' }}>

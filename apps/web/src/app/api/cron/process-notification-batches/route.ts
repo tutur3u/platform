@@ -307,13 +307,19 @@ export async function GET(req: NextRequest) {
         // Generate smart subject line based on notification content
         const emailSubject = generateSubjectLine(notifications, workspaceName);
 
-        // Render digest email template
+        // Capture send timestamp for delay detection
+        const sentAt = new Date().toISOString();
+
+        // Render digest email template with time range info
         const emailHtml = await render(
           NotificationDigestEmail({
             userName,
             workspaceName,
             notifications,
             workspaceUrl,
+            windowStart: batch.window_start,
+            windowEnd: batch.window_end,
+            sentAt,
           })
         );
 
