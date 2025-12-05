@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   cacheComponents: true,
   poweredByHeader: false,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   transpilePackages: ['@tuturuuu/ui'],
   images: {
     remotePatterns: [

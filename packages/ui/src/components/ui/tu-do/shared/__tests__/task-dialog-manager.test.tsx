@@ -58,8 +58,8 @@ const mockTask: Task = {
   labels: [],
   assignees: [],
   created_at: '2024-01-01T00:00:00Z',
-  // updated_at: '2024-01-01T00:00:00Z',
   sort_key: 1000,
+  display_number: 1,
 };
 
 const mockList: TaskList = {
@@ -79,7 +79,7 @@ describe('TaskDialogManager', () => {
   it('should render nothing when dialog is not open', () => {
     const { container } = render(
       <TaskDialogProvider>
-        <TaskDialogManager />
+        <TaskDialogManager wsId="workspace-1" />
       </TaskDialogProvider>
     );
 
@@ -95,7 +95,7 @@ describe('TaskDialogManager', () => {
         openTask(mockTask, 'board-1', [mockList]);
       }, [openTask]);
 
-      return <TaskDialogManager />;
+      return <TaskDialogManager wsId="workspace-1" />;
     };
 
     const { queryByTestId } = render(
@@ -124,7 +124,7 @@ describe('TaskDialogManager', () => {
         openTask(mockTask, 'board-1', [mockList]);
       }, [openTask]);
 
-      return <TaskDialogManager />;
+      return <TaskDialogManager wsId="workspace-1" />;
     };
 
     const { getByTestId } = render(
@@ -146,7 +146,7 @@ describe('TaskDialogManager', () => {
   it('should handle Suspense boundary correctly', async () => {
     const { container } = render(
       <TaskDialogProvider>
-        <TaskDialogManager />
+        <TaskDialogManager wsId="workspace-1" />
       </TaskDialogProvider>
     );
 
@@ -162,7 +162,7 @@ describe('TaskDialogManager', () => {
         createTask('board-1', 'list-1', [mockList]);
       }, [createTask]);
 
-      return <TaskDialogManager />;
+      return <TaskDialogManager wsId="workspace-1" />;
     };
 
     const { getByTestId } = render(
@@ -186,7 +186,7 @@ describe('TaskDialogManager', () => {
 
       return (
         <div>
-          <TaskDialogManager />
+          <TaskDialogManager wsId="workspace-1" />
           <div data-testid="dialog-open-state">{String(state.isOpen)}</div>
         </div>
       );

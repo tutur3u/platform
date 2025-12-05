@@ -77,7 +77,7 @@ describe('taskColorUtils', () => {
         name: 'Test',
         color: 'RED' as SupportedColor,
       };
-      const result = getCardColorClasses(taskList, 'critical');
+      const result = getCardColorClasses(taskList as any, 'critical');
       expect(result).toContain('border-dynamic-red');
     });
 
@@ -118,7 +118,7 @@ describe('taskColorUtils', () => {
         name: 'Test',
         color: 'BLUE' as SupportedColor,
       };
-      const result = getTicketBadgeColorClasses(taskList);
+      const result = getTicketBadgeColorClasses(taskList as any);
       expect(result).toContain('border-dynamic-blue');
       expect(result).toContain('bg-dynamic-blue');
       expect(result).toContain('text-dynamic-blue');
@@ -137,7 +137,7 @@ describe('taskColorUtils', () => {
         name: 'Test',
         color: 'GREEN' as SupportedColor,
       };
-      const result = getTicketBadgeColorClasses(taskList, 'critical');
+      const result = getTicketBadgeColorClasses(taskList as any, 'critical');
       expect(result).toContain('border-dynamic-green');
       expect(result).not.toContain('border-dynamic-red');
     });
@@ -163,7 +163,7 @@ describe('taskColorUtils', () => {
         name: 'Test',
         color: 'UNKNOWN' as SupportedColor,
       };
-      const result = getTicketBadgeColorClasses(taskList);
+      const result = getTicketBadgeColorClasses(taskList as any);
       expect(result).toContain('border-dynamic-gray');
     });
   });

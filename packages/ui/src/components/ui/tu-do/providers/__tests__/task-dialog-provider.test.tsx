@@ -19,11 +19,10 @@ const mockTask: Task = {
   estimation_points: 5,
   list_id: 'list-1',
   labels: [],
-  archived: false,
   assignees: [],
   created_at: '2024-01-01T00:00:00Z',
-  // updated_at: '2024-01-01T00:00:00Z',
   sort_key: 1000,
+  display_number: 1,
 };
 
 const mockList: TaskList = {
@@ -136,7 +135,7 @@ describe('TaskDialogProvider', () => {
 
     // Should execute without error
     act(() => {
-      result.current.onUpdate();
+      result.current.onUpdate(() => {});
     });
   });
 
@@ -201,8 +200,6 @@ describe('TaskDialogProvider', () => {
     expect(newTask?.id).toBe('new');
     expect(newTask?.name).toBe('');
     expect(newTask?.list_id).toBe('list-1');
-    expect(newTask?.archived).toBe(false);
-    expect(newTask?.deleted).toBe(false);
     expect(newTask?.created_at).toBeDefined();
     // expect(newTask?.updated_at).toBeDefined();
   });

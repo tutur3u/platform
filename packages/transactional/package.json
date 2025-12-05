@@ -2,6 +2,14 @@
   "name": "@tuturuuu/transactional",
   "version": "1.0.0",
   "private": true,
+  "exports": {
+    "./react/email": "./react/email/index.ts",
+    "./emails/notification-digest": "./emails/notification-digest.tsx",
+    "./emails/workspace-invite": "./emails/workspace-invite.tsx",
+    "./emails/guest-template": "./emails/guest-template.tsx",
+    "./emails/post-template": "./emails/post-template.tsx",
+    "./emails/vercel-invite-user": "./emails/vercel-invite-user.tsx"
+  },
   "scripts": {
     "dev": "email dev -p 7001",
     "export": "email export"

@@ -1,5 +1,3 @@
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -9,6 +7,8 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import RecentChangelog from './changelog/recent-changelog';
 import Countdown from './countdown';
