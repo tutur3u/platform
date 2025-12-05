@@ -12,7 +12,9 @@
   },
   "scripts": {
     "dev": "email dev -p 7001",
-    "export": "email export"
+    "export": "email export",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@react-email/components": "^1.0.1",
@@ -23,7 +25,8 @@
     "@react-email/preview-server": "5.0.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.7"
+    "@types/react": "^19.2.7",
+    "vitest": "^4.0.15"
   },
   "packageManager": "bun@1.3.3"
 }
