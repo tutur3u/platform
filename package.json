@@ -35,6 +35,7 @@
     "dev:tumeet": "turbo run dev -F @tuturuuu/types -F @tuturuuu/tumeet -F @tuturuuu/web",
     "dev:finance": "turbo run dev -F @tuturuuu/types -F @tuturuuu/finance -F @tuturuuu/web",
     "dev:tudo": "turbo run dev -F @tuturuuu/types -F @tuturuuu/tudo -F @tuturuuu/web",
+    "dev:mail": "turbo run dev -F @tuturuuu/transactional",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devx:web": "bun sb:stop && bun sb:start && bun dev:web",
     "devx:calendar": "bun sb:stop && bun sb:start && bun dev:calendar",
