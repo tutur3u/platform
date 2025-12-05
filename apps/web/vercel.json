@@ -1,8 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "github": {
-    "enabled": false
-  },
   "crons": [
     {
       "path": "/api/cron/discord/wol/daily/remind",
@@ -24,10 +21,5 @@
       "path": "/api/cron/process-notification-batches",
       "schedule": "*/10 * * * *"
     }
-  ],
-  "functions": {
-    "src/app/api/**/*": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }

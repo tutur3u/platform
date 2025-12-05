@@ -1,11 +1,3 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "github": {
-    "enabled": false
-  },
-  "functions": {
-    "src/app/api/**/*": {
-      "maxDuration": 300
-    }
-  }
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
