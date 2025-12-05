@@ -116,7 +116,9 @@ describe('notification-digest utilities', () => {
     });
 
     it('should generate subject for task updated', () => {
-      const notifications = [createNotification('task_updated', 'Fix bug #456')];
+      const notifications = [
+        createNotification('task_updated', 'Fix bug #456'),
+      ];
       const subject = generateSubjectLine(notifications, 'Workspace');
       expect(subject).toBe('📝 Updated: Fix bug #456');
     });
