@@ -89,28 +89,11 @@ export async function GET(req: NextRequest) {
               updated_at: new Date().toISOString(),
             };
 
-            // Check if subscription exists first (since there may not be a unique constraint)
-            const { data: existing } = await sbAdmin
+            const { error: dbError } = await sbAdmin
               .from('workspace_subscription')
-              .select('id')
-              .eq('polar_subscription_id', subscription.id)
-              .maybeSingle();
-
-            let dbError = null;
-            if (existing) {
-              // Update existing subscription
-              const { error } = await sbAdmin
-                .from('workspace_subscription')
-                .update(subscriptionData)
-                .eq('polar_subscription_id', subscription.id);
-              dbError = error;
-            } else {
-              // Insert new subscription
-              const { error } = await sbAdmin
-                .from('workspace_subscription')
-                .insert(subscriptionData);
-              dbError = error;
-            }
+              .upsert(subscriptionData, {
+                onConflict: 'polar_subscription_id',
+              });
 
             if (dbError) {
               failedCount++;
