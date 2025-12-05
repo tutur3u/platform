@@ -62,7 +62,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
               {currentUser && (
                 <>
                   <Suspense fallback={null}>
-                    <UserGroupQuickActions wsId={wsId as number} />
+                    <UserGroupQuickActions wsId={wsId} />
                   </Suspense>
                   <Suspense fallback={<DashboardCardSkeleton />}>
                     <TasksAssignedToMe
