@@ -1359,7 +1359,8 @@
     "added_text": "added",
     "removed_text": "removed",
     "word_added_label": "New text",
-    "word_removed_label": "Deleted text"
+    "word_removed_label": "Deleted text",
+    "condense": "Condense"
   },
   "link-shortener": {
     "title": "Link Shortener",

@@ -1449,7 +1449,8 @@
     "added_text": "đã thêm",
     "removed_text": "đã xóa",
     "word_added_label": "Văn bản mới",
-    "word_removed_label": "Văn bản đã xóa"
+    "word_removed_label": "Văn bản đã xóa",
+    "condense": "Thu gọn"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

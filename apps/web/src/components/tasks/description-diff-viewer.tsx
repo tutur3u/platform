@@ -5,13 +5,14 @@ import {
   Columns2,
   Eye,
   FileText,
+  FoldVertical,
   Minus,
   Plus,
   Rows2,
   Type,
-  UnfoldVertical,
   WrapText,
 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -20,9 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { Separator } from '@tuturuuu/ui/separator';
+import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { cn } from '@tuturuuu/utils/format';
 import {
   computeLineDiff,
@@ -151,7 +151,6 @@ function collapseUnchangedLines(
   // Mark which lines should be visible (within context of a change)
   const visibleLines = new Set<number>();
   for (const changeIdx of changedIndices) {
-    // Add the changed line and context around it
     for (
       let i = Math.max(0, changeIdx - contextLines);
       i <= Math.min(lines.length - 1, changeIdx + contextLines);
@@ -169,11 +168,9 @@ function collapseUnchangedLines(
 
   for (let i = 0; i < lines.length; i++) {
     if (visibleLines.has(i)) {
-      // Output any accumulated collapsed lines
       if (collapsedCount > 0) {
         const blockId = `block-${blockCounter++}`;
         if (expandedBlocks.has(blockId)) {
-          // Show all the collapsed lines
           for (let j = collapsedStartIdx; j < i; j++) {
             result.push(lines[j]!);
           }
@@ -198,7 +195,6 @@ function collapseUnchangedLines(
     }
   }
 
-  // Don't forget trailing collapsed lines
   if (collapsedCount > 0) {
     const blockId = `block-${blockCounter}`;
     if (expandedBlocks.has(blockId)) {
@@ -262,23 +258,17 @@ export function DescriptionDiffViewer({
   const diff = granularity === 'word' ? wordDiff : lineDiff;
   const stats = useMemo(() => getDiffStats(lineDiff), [lineDiff]);
 
-  // Process diff into lines for minimized view
   const processedLines = useMemo(() => processDiffToLines(diff), [diff]);
   const minimizedDiff = useMemo(
     () => collapseUnchangedLines(processedLines, CONTEXT_LINES, expandedBlocks),
     [processedLines, expandedBlocks]
   );
 
-  // Check if there are actual changes - either in extracted text or raw values
   const hasTextChanges = lineDiff.some((d) => d.type !== 'unchanged');
 
-  // Also check if raw values are different (handles cases where extracted text is same but structure differs)
   const hasRawValueChanges = useMemo(() => {
-    // If both are null/undefined, no change
     if (!oldValue && !newValue) return false;
-    // If one exists and other doesn't, there's a change
     if (!oldValue || !newValue) return true;
-    // Compare stringified values for structural changes
     try {
       const oldStr =
         typeof oldValue === 'string' ? oldValue : JSON.stringify(oldValue);
@@ -290,7 +280,6 @@ export function DescriptionDiffViewer({
     }
   }, [oldValue, newValue]);
 
-  // Show if there are text changes OR if raw values differ (content was added/removed)
   if (!hasTextChanges && !hasRawValueChanges) {
     return null;
   }
@@ -299,102 +288,106 @@ export function DescriptionDiffViewer({
     triggerVariant === 'inline' ? (
       <button
         type="button"
-        className="inline-flex items-center gap-1 text-dynamic-blue text-xs hover:underline"
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-dynamic-blue text-xs transition-colors hover:bg-dynamic-blue/10"
       >
         <Eye className="h-3 w-3" />
         {t('view_changes', { defaultValue: 'View changes' })}
       </button>
     ) : (
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs">
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 gap-1.5 px-2.5 text-xs"
+      >
         <Eye className="h-3.5 w-3.5" />
         {t('view_changes', { defaultValue: 'View changes' })}
       </Button>
     );
 
-  // Check if there are no visible text changes (only structural/format changes)
   const noVisibleChanges = !hasTextChanges && hasRawValueChanges;
 
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] w-[95vw] max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl">
-        <DialogHeader>
+      <DialogContent
+        className="flex max-h-[90vh] w-[95vw] max-w-4xl flex-col gap-0 overflow-hidden p-0 md:max-w-5xl lg:max-w-6xl"
+        showCloseButton={false}
+      >
+        {/* Header */}
+        <DialogHeader className="border-b px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            <DialogTitle>
+            <DialogTitle className="text-base">
               {t('description_changes', {
                 defaultValue: 'Description Changes',
               })}
             </DialogTitle>
             {!noVisibleChanges && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {/* Granularity toggle */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={granularity === 'word' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className="h-8 gap-1.5 px-2.5"
-                      onClick={() =>
-                        setGranularity((g) => (g === 'line' ? 'word' : 'line'))
-                      }
-                    >
-                      {granularity === 'word' ? (
-                        <Type className="h-3.5 w-3.5" />
-                      ) : (
-                        <WrapText className="h-3.5 w-3.5" />
-                      )}
-                      <span className="text-xs">
-                        {granularity === 'word'
-                          ? t('word_diff', { defaultValue: 'Word' })
-                          : t('line_diff', { defaultValue: 'Line' })}
-                      </span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {granularity === 'word'
-                      ? t('switch_to_line_diff', {
-                          defaultValue: 'Switch to line-level diff',
-                        })
-                      : t('switch_to_word_diff', {
-                          defaultValue: 'Switch to word-level diff',
-                        })}
-                  </TooltipContent>
-                </Tooltip>
-                {/* View mode tabs */}
-                <Tabs
-                  value={viewMode}
-                  onValueChange={(v) => setViewMode(v as DiffViewMode)}
+                <ToggleGroup
+                  type="single"
+                  value={granularity}
+                  onValueChange={(v) =>
+                    v && setGranularity(v as DiffGranularity)
+                  }
+                  className="h-8"
                 >
-                  <TabsList className="h-8">
-                    <TabsTrigger
-                      value="unified"
-                      className="gap-1.5 px-2.5 text-xs"
-                    >
-                      <Rows2 className="h-3.5 w-3.5" />
-                      {t('unified_view', { defaultValue: 'Unified' })}
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="split"
-                      className="gap-1.5 px-2.5 text-xs"
-                    >
-                      <Columns2 className="h-3.5 w-3.5" />
-                      {t('split_view', { defaultValue: 'Split' })}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                  <ToggleGroupItem
+                    value="word"
+                    aria-label="Word diff"
+                    className="h-7 gap-1.5 px-2.5 text-xs"
+                  >
+                    <Type className="h-3.5 w-3.5" />
+                    {t('word_diff', { defaultValue: 'Word' })}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="line"
+                    aria-label="Line diff"
+                    className="h-7 gap-1.5 px-2.5 text-xs"
+                  >
+                    <WrapText className="h-3.5 w-3.5" />
+                    {t('line_diff', { defaultValue: 'Line' })}
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                <Separator orientation="vertical" className="mx-1 h-5" />
+
+                {/* View mode toggle */}
+                <ToggleGroup
+                  type="single"
+                  value={viewMode}
+                  onValueChange={(v) => v && setViewMode(v as DiffViewMode)}
+                  className="h-8"
+                >
+                  <ToggleGroupItem
+                    value="unified"
+                    aria-label="Unified view"
+                    className="h-7 gap-1.5 px-2.5 text-xs"
+                  >
+                    <Rows2 className="h-3.5 w-3.5" />
+                    {t('unified_view', { defaultValue: 'Unified' })}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="split"
+                    aria-label="Split view"
+                    className="h-7 gap-1.5 px-2.5 text-xs"
+                  >
+                    <Columns2 className="h-3.5 w-3.5" />
+                    {t('split_view', { defaultValue: 'Split' })}
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
             )}
           </div>
         </DialogHeader>
 
         {noVisibleChanges ? (
-          // Show message when there are no visible text changes
-          <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <FileText className="h-6 w-6 text-muted-foreground" />
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+              <FileText className="h-7 w-7 text-muted-foreground" />
             </div>
-            <div className="space-y-1">
-              <p className="font-medium text-foreground">
+            <div className="max-w-sm space-y-1.5 text-center">
+              <p className="font-medium">
                 {t('no_visible_changes', {
                   defaultValue: 'No visible text changes',
                 })}
@@ -410,47 +403,67 @@ export function DescriptionDiffViewer({
         ) : (
           <>
             {/* Stats bar */}
-            <div className="flex gap-4 border-b pb-2 text-sm">
-              <span className="flex items-center gap-1 text-dynamic-green">
-                <Plus className="h-3 w-3" />
-                {stats.added} {t('lines_added', { defaultValue: 'added' })}
-              </span>
-              <span className="flex items-center gap-1 text-dynamic-red">
-                <Minus className="h-3 w-3" />
-                {stats.removed}{' '}
-                {t('lines_removed', { defaultValue: 'removed' })}
-              </span>
+            <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
+              <div className="flex items-center gap-3">
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                >
+                  <Plus className="h-3 w-3" />
+                  {stats.added} {t('lines_added', { defaultValue: 'added' })}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red"
+                >
+                  <Minus className="h-3 w-3" />
+                  {stats.removed}{' '}
+                  {t('lines_removed', { defaultValue: 'removed' })}
+                </Badge>
+              </div>
+              {expandedBlocks.size > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-muted-foreground text-xs"
+                  onClick={() => setExpandedBlocks(new Set())}
+                >
+                  <FoldVertical className="h-3.5 w-3.5" />
+                  {t('condense', { defaultValue: 'Condense' })}
+                </Button>
+              )}
             </div>
 
             {/* Diff view */}
-            <ScrollArea className="h-[50vh] md:h-[60vh] lg:h-[70vh]">
-              {granularity === 'word' ? (
-                <WordDiffView
-                  diff={wordDiff}
-                  oldText={oldText}
-                  newText={newText}
-                  viewMode={viewMode}
-                  t={t}
-                  expandedBlocks={expandedBlocks}
-                  onToggleBlock={toggleBlock}
-                />
-              ) : viewMode === 'unified' ? (
-                <MinimizedUnifiedDiffView
-                  items={minimizedDiff}
-                  t={t}
-                  onToggleBlock={toggleBlock}
-                  expandedBlocks={expandedBlocks}
-                />
-              ) : (
-                <MinimizedSplitDiffView
-                  items={minimizedDiff}
-                  processedLines={processedLines}
-                  t={t}
-                  onToggleBlock={toggleBlock}
-                  expandedBlocks={expandedBlocks}
-                />
-              )}
-            </ScrollArea>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <div className="p-4">
+                {granularity === 'word' ? (
+                  <WordDiffView
+                    diff={wordDiff}
+                    oldText={oldText}
+                    newText={newText}
+                    viewMode={viewMode}
+                    t={t}
+                    expandedBlocks={expandedBlocks}
+                    onToggleBlock={toggleBlock}
+                  />
+                ) : viewMode === 'unified' ? (
+                  <MinimizedUnifiedDiffView
+                    items={minimizedDiff}
+                    t={t}
+                    onToggleBlock={toggleBlock}
+                    expandedBlocks={expandedBlocks}
+                  />
+                ) : (
+                  <MinimizedSplitDiffView
+                    items={minimizedDiff}
+                    t={t}
+                    onToggleBlock={toggleBlock}
+                    expandedBlocks={expandedBlocks}
+                  />
+                )}
+              </div>
+            </div>
           </>
         )}
       </DialogContent>
@@ -473,7 +486,7 @@ function MinimizedUnifiedDiffView({
   expandedBlocks: Set<string>;
 }) {
   return (
-    <div className="space-y-0.5 font-mono text-sm">
+    <div className="overflow-hidden rounded-lg border bg-card">
       {items.map((item) => {
         if ('id' in item && item.type === 'collapsed') {
           return (
@@ -490,26 +503,54 @@ function MinimizedUnifiedDiffView({
 
         const line = item as ProcessedLine;
         if (line.content === '' && line.type === 'unchanged') {
-          return null;
+          return (
+            <div
+              key={`line-${line.originalIndex}`}
+              className="flex min-h-6 border-border/50 border-b last:border-b-0"
+            >
+              <LineNumber value={line.lineNumber.old || line.lineNumber.new} />
+              <div className="flex-1 px-3 py-0.5 font-mono text-muted-foreground text-sm">
+                {' '}
+              </div>
+            </div>
+          );
         }
 
         return (
           <div
             key={`line-${line.originalIndex}`}
             className={cn(
-              'whitespace-pre-wrap rounded px-2 py-0.5',
-              line.type === 'added' && 'bg-dynamic-green/10 text-dynamic-green',
-              line.type === 'removed' &&
-                'bg-dynamic-red/10 text-dynamic-red line-through',
-              line.type === 'unchanged' && 'text-muted-foreground'
+              'flex min-h-6 border-border/50 border-b last:border-b-0',
+              line.type === 'added' && 'bg-dynamic-green/5',
+              line.type === 'removed' && 'bg-dynamic-red/5'
             )}
           >
-            <span className="mr-2 inline-block w-4 text-right opacity-50">
-              {line.type === 'added' && '+'}
-              {line.type === 'removed' && '-'}
-              {line.type === 'unchanged' && ' '}
-            </span>
-            {line.content || ' '}
+            <LineNumber
+              value={line.lineNumber.old || line.lineNumber.new}
+              type={line.type}
+            />
+            <div
+              className={cn(
+                'flex flex-1 items-start gap-2 px-3 py-0.5 font-mono text-sm',
+                line.type === 'added' && 'text-dynamic-green',
+                line.type === 'removed' && 'text-dynamic-red',
+                line.type === 'unchanged' && 'text-foreground/80'
+              )}
+            >
+              <span className="w-4 shrink-0 select-none text-center opacity-60">
+                {line.type === 'added' && '+'}
+                {line.type === 'removed' && '-'}
+                {line.type === 'unchanged' && ' '}
+              </span>
+              <span
+                className={cn(
+                  'whitespace-pre-wrap break-all',
+                  line.type === 'removed' && 'line-through'
+                )}
+              >
+                {line.content || ' '}
+              </span>
+            </div>
           </div>
         );
       })}
@@ -519,13 +560,11 @@ function MinimizedUnifiedDiffView({
 
 function MinimizedSplitDiffView({
   items,
-
   t,
   onToggleBlock,
   expandedBlocks,
 }: {
   items: DiffDisplayItem[];
-  processedLines: ProcessedLine[];
   t: (
     key: string,
     options?: { defaultValue?: string; count?: number }
@@ -533,7 +572,6 @@ function MinimizedSplitDiffView({
   onToggleBlock: (blockId: string) => void;
   expandedBlocks: Set<string>;
 }) {
-  // Create pairs for split view from minimized items
   const pairs = useMemo(() => {
     const result: Array<
       | {
@@ -571,7 +609,6 @@ function MinimizedSplitDiffView({
         });
         i++;
       } else if (line.type === 'removed') {
-        // Check if next is added (paired change)
         const next = items[i + 1];
         if (next && !('id' in next) && next.type === 'added') {
           result.push({
@@ -607,28 +644,29 @@ function MinimizedSplitDiffView({
   }, [items]);
 
   return (
-    <div className="grid grid-cols-2 gap-0.5">
+    <div className="overflow-hidden rounded-lg border bg-card">
       {/* Headers */}
-      <div className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 font-medium text-muted-foreground text-xs backdrop-blur">
-        {t('old_version', { defaultValue: 'Previous' })}
-      </div>
-      <div className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 font-medium text-muted-foreground text-xs backdrop-blur">
-        {t('new_version', { defaultValue: 'Current' })}
+      <div className="grid grid-cols-2 border-b bg-muted/50">
+        <div className="border-r px-3 py-2 font-medium text-muted-foreground text-xs">
+          {t('old_version', { defaultValue: 'Previous' })}
+        </div>
+        <div className="px-3 py-2 font-medium text-muted-foreground text-xs">
+          {t('new_version', { defaultValue: 'Current' })}
+        </div>
       </div>
 
       {/* Diff rows */}
       {pairs.map((pair) => {
         if (pair.type === 'collapsed') {
           return (
-            <div key={pair.id} className="col-span-2">
-              <CollapsedLinesIndicator
-                blockId={pair.id}
-                count={pair.count}
-                t={t}
-                onToggle={onToggleBlock}
-                isExpanded={expandedBlocks.has(pair.id)}
-              />
-            </div>
+            <CollapsedLinesIndicator
+              key={pair.id}
+              blockId={pair.id}
+              count={pair.count}
+              t={t}
+              onToggle={onToggleBlock}
+              isExpanded={expandedBlocks.has(pair.id)}
+            />
           );
         }
 
@@ -636,6 +674,29 @@ function MinimizedSplitDiffView({
           <SplitDiffRow key={pair.key} left={pair.left} right={pair.right} />
         );
       })}
+    </div>
+  );
+}
+
+function LineNumber({
+  value,
+  type,
+}: {
+  value?: number;
+  type?: 'added' | 'removed' | 'unchanged';
+}) {
+  return (
+    <div
+      className={cn(
+        'w-12 shrink-0 select-none border-r px-2 py-0.5 text-right font-mono text-xs',
+        type === 'added' &&
+          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green/60',
+        type === 'removed' &&
+          'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red/60',
+        !type && 'bg-muted/50 text-muted-foreground/60'
+      )}
+    >
+      {value || ''}
     </div>
   );
 }
@@ -657,9 +718,9 @@ function CollapsedLinesIndicator({
 }) {
   const label =
     count === 1
-      ? t('line_hidden', { defaultValue: '1 unchanged line hidden', count })
+      ? t('line_hidden', { defaultValue: '1 unchanged line', count })
       : t('lines_hidden', {
-          defaultValue: `{count} unchanged lines hidden`,
+          defaultValue: `${count} unchanged lines`,
           count,
         });
 
@@ -667,11 +728,14 @@ function CollapsedLinesIndicator({
     <button
       type="button"
       onClick={() => onToggle(blockId)}
-      className="my-1 flex w-full items-center gap-2 rounded bg-muted/50 px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+      className="group flex w-full items-center justify-center gap-2 border-y bg-muted/30 px-4 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted/50"
     >
-      <UnfoldVertical className="h-3 w-3" />
-      <span className="flex-1 text-left">{label}</span>
-      <ChevronsUpDown className="h-3 w-3" />
+      <div className="h-px flex-1 bg-border" />
+      <span className="flex items-center gap-1.5">
+        <ChevronsUpDown className="h-3 w-3" />
+        {label}
+      </span>
+      <div className="h-px flex-1 bg-border" />
     </button>
   );
 }
@@ -684,51 +748,84 @@ function SplitDiffRow({
   right: ProcessedLine | null;
 }) {
   return (
-    <>
+    <div className="grid grid-cols-2 border-border/50 border-b last:border-b-0">
       {/* Left side (old) */}
       <div
         className={cn(
-          'min-h-6 whitespace-pre-wrap border-r px-3 py-0.5 font-mono text-sm',
-          left?.type === 'removed' && 'bg-dynamic-red/10 text-dynamic-red',
-          left?.type === 'unchanged' && 'text-muted-foreground',
-          !left && 'bg-muted/30'
+          'flex min-h-7 border-r',
+          left?.type === 'removed' && 'bg-dynamic-red/5',
+          !left && 'bg-muted/20'
         )}
       >
         {left && (
-          <div className={left.type === 'removed' ? 'line-through' : ''}>
-            {left.type === 'removed' && (
-              <span className="mr-2 inline-block w-3 text-right opacity-50">
-                -
+          <>
+            <LineNumber
+              value={left.lineNumber.old}
+              type={left.type === 'removed' ? 'removed' : undefined}
+            />
+            <div
+              className={cn(
+                'flex flex-1 items-start gap-2 px-3 py-0.5 font-mono text-sm',
+                left.type === 'removed' && 'text-dynamic-red',
+                left.type === 'unchanged' && 'text-foreground/80'
+              )}
+            >
+              {left.type === 'removed' && (
+                <span className="w-3 shrink-0 select-none text-center opacity-60">
+                  -
+                </span>
+              )}
+              <span
+                className={cn(
+                  'whitespace-pre-wrap break-all',
+                  left.type === 'removed' && 'line-through'
+                )}
+              >
+                {left.content || ' '}
               </span>
-            )}
-            {left.content || ' '}
-          </div>
+            </div>
+          </>
         )}
       </div>
 
       {/* Right side (new) */}
       <div
         className={cn(
-          'min-h-6 whitespace-pre-wrap px-3 py-0.5 font-mono text-sm',
-          right?.type === 'added' && 'bg-dynamic-green/10 text-dynamic-green',
-          right?.type === 'unchanged' && 'text-muted-foreground',
-          !right && 'bg-muted/30'
+          'flex min-h-7',
+          right?.type === 'added' && 'bg-dynamic-green/5',
+          !right && 'bg-muted/20'
         )}
       >
         {right && (
-          <div>
-            {right.type === 'added' && (
-              <span className="mr-2 inline-block w-3 text-right opacity-50">
-                +
+          <>
+            <LineNumber
+              value={right.lineNumber.new}
+              type={right.type === 'added' ? 'added' : undefined}
+            />
+            <div
+              className={cn(
+                'flex flex-1 items-start gap-2 px-3 py-0.5 font-mono text-sm',
+                right.type === 'added' && 'text-dynamic-green',
+                right.type === 'unchanged' && 'text-foreground/80'
+              )}
+            >
+              {right.type === 'added' && (
+                <span className="w-3 shrink-0 select-none text-center opacity-60">
+                  +
+                </span>
+              )}
+              <span className="whitespace-pre-wrap break-all">
+                {right.content || ' '}
               </span>
-            )}
-            {right.content || ' '}
-          </div>
+            </div>
+          </>
         )}
       </div>
-    </>
+    </div>
   );
 }
+
+// Word diff types and helpers
 
 interface WordDiffLine {
   lineIndex: number;
@@ -736,9 +833,6 @@ interface WordDiffLine {
   segments: Array<{ type: 'added' | 'removed' | 'unchanged'; value: string }>;
 }
 
-/**
- * Process word diff into lines with word-level segments
- */
 function processWordDiffToLines(diff: DiffChange[]): WordDiffLine[] {
   const lines: WordDiffLine[] = [];
   let currentLineIndex = 0;
@@ -749,7 +843,6 @@ function processWordDiffToLines(diff: DiffChange[]): WordDiffLine[] {
     const parts = change.value.split('\n');
 
     parts.forEach((part, partIndex) => {
-      // Add the text segment to current line
       if (part.length > 0 || partIndex === 0) {
         currentLineSegments.push({ type: change.type, value: part });
         if (change.type !== 'unchanged') {
@@ -757,7 +850,6 @@ function processWordDiffToLines(diff: DiffChange[]): WordDiffLine[] {
         }
       }
 
-      // If not the last part, we have a newline - finish current line
       if (partIndex < parts.length - 1) {
         lines.push({
           lineIndex: currentLineIndex,
@@ -771,7 +863,6 @@ function processWordDiffToLines(diff: DiffChange[]): WordDiffLine[] {
     });
   }
 
-  // Don't forget the last line if it has content
   if (currentLineSegments.length > 0) {
     lines.push({
       lineIndex: currentLineIndex,
@@ -785,16 +876,11 @@ function processWordDiffToLines(diff: DiffChange[]): WordDiffLine[] {
 
 interface WordDiffDisplayItem {
   type: 'line' | 'collapsed';
-  // For line type
   line?: WordDiffLine;
-  // For collapsed type
   id?: string;
   count?: number;
 }
 
-/**
- * Collapse unchanged lines in word diff, keeping context around changes
- */
 function collapseUnchangedWordLines(
   lines: WordDiffLine[],
   contextLines: number,
@@ -802,12 +888,10 @@ function collapseUnchangedWordLines(
 ): WordDiffDisplayItem[] {
   if (lines.length === 0) return [];
 
-  // Find indices of all changed lines
   const changedIndices = lines
     .map((line, idx) => (line.hasChanges ? idx : -1))
     .filter((idx) => idx !== -1);
 
-  // If no changes, show a collapsed indicator for all lines
   if (changedIndices.length === 0) {
     const blockId = 'word-block-0';
     if (expandedBlocks.has(blockId)) {
@@ -818,7 +902,6 @@ function collapseUnchangedWordLines(
       : [];
   }
 
-  // Mark which lines should be visible (within context of a change)
   const visibleLines = new Set<number>();
   for (const changeIdx of changedIndices) {
     for (
@@ -830,7 +913,6 @@ function collapseUnchangedWordLines(
     }
   }
 
-  // Build result with collapsed blocks
   const result: WordDiffDisplayItem[] = [];
   let collapsedStartIdx = -1;
   let collapsedCount = 0;
@@ -838,7 +920,6 @@ function collapseUnchangedWordLines(
 
   for (let i = 0; i < lines.length; i++) {
     if (visibleLines.has(i)) {
-      // Output any accumulated collapsed lines
       if (collapsedCount > 0) {
         const blockId = `word-block-${blockCounter++}`;
         if (expandedBlocks.has(blockId)) {
@@ -864,7 +945,6 @@ function collapseUnchangedWordLines(
     }
   }
 
-  // Don't forget trailing collapsed lines
   if (collapsedCount > 0) {
     const blockId = `word-block-${blockCounter}`;
     if (expandedBlocks.has(blockId)) {
@@ -901,10 +981,8 @@ function WordDiffView({
   expandedBlocks,
   onToggleBlock,
 }: WordDiffViewProps) {
-  // Process word diff into lines
   const wordDiffLines = useMemo(() => processWordDiffToLines(diff), [diff]);
 
-  // Apply collapsing
   const displayItems = useMemo(
     () =>
       collapseUnchangedWordLines(wordDiffLines, CONTEXT_LINES, expandedBlocks),
@@ -913,40 +991,43 @@ function WordDiffView({
 
   if (viewMode === 'split') {
     return (
-      <div className="grid grid-cols-2 gap-0.5">
+      <div className="overflow-hidden rounded-lg border bg-card">
         {/* Headers */}
-        <div className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 font-medium text-muted-foreground text-xs backdrop-blur">
-          {t('old_version', { defaultValue: 'Previous' })}
-        </div>
-        <div className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 font-medium text-muted-foreground text-xs backdrop-blur">
-          {t('new_version', { defaultValue: 'Current' })}
+        <div className="grid grid-cols-2 border-b bg-muted/50">
+          <div className="border-r px-3 py-2 font-medium text-muted-foreground text-xs">
+            {t('old_version', { defaultValue: 'Previous' })}
+          </div>
+          <div className="px-3 py-2 font-medium text-muted-foreground text-xs">
+            {t('new_version', { defaultValue: 'Current' })}
+          </div>
         </div>
 
-        {/* Diff rows */}
         {displayItems.map((item) => {
           if (item.type === 'collapsed') {
             return (
-              <div key={item.id} className="col-span-2">
-                <CollapsedLinesIndicator
-                  blockId={item.id!}
-                  count={item.count!}
-                  t={t}
-                  onToggle={onToggleBlock}
-                  isExpanded={expandedBlocks.has(item.id!)}
-                />
-              </div>
+              <CollapsedLinesIndicator
+                key={item.id}
+                blockId={item.id!}
+                count={item.count!}
+                t={t}
+                onToggle={onToggleBlock}
+                isExpanded={expandedBlocks.has(item.id!)}
+              />
             );
           }
 
           const line = item.line!;
           return (
-            <WordDiffSplitRow key={`line-${line.lineIndex}`} line={line} />
+            <WordDiffSplitRow
+              key={`line-${line.lineIndex}`}
+              line={line}
+              lineIndex={line.lineIndex}
+            />
           );
         })}
 
-        {/* Empty state */}
         {!oldText && !newText && (
-          <div className="col-span-2 py-4 text-center text-muted-foreground italic">
+          <div className="py-8 text-center text-muted-foreground italic">
             {t('value.empty', { defaultValue: 'Empty' })}
           </div>
         )}
@@ -956,7 +1037,7 @@ function WordDiffView({
 
   // Unified view
   return (
-    <div className="space-y-0.5 font-mono text-sm">
+    <div className="overflow-hidden rounded-lg border bg-card">
       {displayItems.map((item) => {
         if (item.type === 'collapsed') {
           return (
@@ -972,38 +1053,49 @@ function WordDiffView({
         }
 
         const line = item.line!;
+        const hasAdditions = line.segments.some((s) => s.type === 'added');
+        const hasRemovals = line.segments.some((s) => s.type === 'removed');
+
         return (
           <div
             key={`line-${line.lineIndex}`}
             className={cn(
-              'whitespace-pre-wrap rounded px-2 py-0.5',
-              line.hasChanges ? 'bg-muted/30' : 'text-muted-foreground'
+              'flex min-h-6 border-border/50 border-b last:border-b-0',
+              line.hasChanges && 'bg-muted/20'
             )}
           >
-            <span className="mr-2 inline-block w-4 text-right opacity-50">
-              {line.hasChanges ? '*' : ' '}
-            </span>
-            {line.segments.map((seg, segIdx) => (
-              <span
-                key={segIdx}
-                className={cn(
-                  seg.type === 'added' &&
-                    'bg-dynamic-green/10 text-dynamic-green',
-                  seg.type === 'removed' &&
-                    'bg-dynamic-red/10 text-dynamic-red line-through'
-                )}
-              >
-                {seg.value}
+            <LineNumber
+              value={line.lineIndex + 1}
+              type={
+                hasRemovals ? 'removed' : hasAdditions ? 'added' : undefined
+              }
+            />
+            <div className="flex flex-1 items-start gap-2 px-3 py-0.5 font-mono text-sm">
+              <span className="w-4 shrink-0 select-none text-center opacity-60">
+                {line.hasChanges ? '*' : ' '}
               </span>
-            ))}
-            {line.segments.length === 0 && ' '}
+              <span className="whitespace-pre-wrap break-all">
+                {line.segments.map((seg, segIdx) => (
+                  <span
+                    key={segIdx}
+                    className={cn(
+                      seg.type === 'added' &&
+                        'rounded-sm bg-dynamic-green/20 text-dynamic-green',
+                      seg.type === 'removed' &&
+                        'rounded-sm bg-dynamic-red/20 text-dynamic-red line-through'
+                    )}
+                  >
+                    {seg.value}
+                  </span>
+                ))}
+              </span>
+            </div>
           </div>
         );
       })}
 
-      {/* Empty state */}
       {!oldText && !newText && (
-        <div className="py-4 text-center text-muted-foreground italic">
+        <div className="py-8 text-center text-muted-foreground italic">
           {t('value.empty', { defaultValue: 'Empty' })}
         </div>
       )}
@@ -1011,10 +1103,13 @@ function WordDiffView({
   );
 }
 
-function WordDiffSplitRow({ line }: { line: WordDiffLine }) {
-  // For split view, we show:
-  // - Left side: unchanged + removed segments
-  // - Right side: unchanged + added segments
+function WordDiffSplitRow({
+  line,
+  lineIndex,
+}: {
+  line: WordDiffLine;
+  lineIndex: number;
+}) {
   const leftSegments = line.segments.filter((s) => s.type !== 'added');
   const rightSegments = line.segments.filter((s) => s.type !== 'removed');
 
@@ -1022,52 +1117,77 @@ function WordDiffSplitRow({ line }: { line: WordDiffLine }) {
   const hasAdditions = line.segments.some((s) => s.type === 'added');
 
   return (
-    <>
+    <div className="grid grid-cols-2 border-border/50 border-b last:border-b-0">
       {/* Left side (old) */}
       <div
         className={cn(
-          'min-h-6 whitespace-pre-wrap border-r px-3 py-0.5 font-mono text-sm',
-          hasRemovals && 'bg-dynamic-red/10',
-          !line.hasChanges && 'text-muted-foreground'
+          'flex min-h-7 border-r',
+          hasRemovals && 'bg-dynamic-red/5'
         )}
       >
-        {hasRemovals && (
-          <span className="mr-2 inline-block w-3 text-right opacity-50">-</span>
-        )}
-        {leftSegments.map((seg, idx) => (
-          <span
-            key={idx}
-            className={cn(
-              seg.type === 'removed' && 'text-dynamic-red line-through'
-            )}
-          >
-            {seg.value}
+        <LineNumber
+          value={lineIndex + 1}
+          type={hasRemovals ? 'removed' : undefined}
+        />
+        <div
+          className={cn(
+            'flex flex-1 items-start gap-2 px-3 py-0.5 font-mono text-sm',
+            !line.hasChanges && 'text-foreground/80'
+          )}
+        >
+          {hasRemovals && (
+            <span className="w-3 shrink-0 select-none text-center text-dynamic-red/60">
+              -
+            </span>
+          )}
+          <span className="whitespace-pre-wrap break-all">
+            {leftSegments.map((seg, idx) => (
+              <span
+                key={idx}
+                className={cn(
+                  seg.type === 'removed' &&
+                    'rounded-sm bg-dynamic-red/20 text-dynamic-red line-through'
+                )}
+              >
+                {seg.value}
+              </span>
+            ))}
           </span>
-        ))}
-        {leftSegments.length === 0 && ' '}
+        </div>
       </div>
 
       {/* Right side (new) */}
-      <div
-        className={cn(
-          'min-h-6 whitespace-pre-wrap px-3 py-0.5 font-mono text-sm',
-          hasAdditions && 'bg-dynamic-green/10',
-          !line.hasChanges && 'text-muted-foreground'
-        )}
-      >
-        {hasAdditions && (
-          <span className="mr-2 inline-block w-3 text-right opacity-50">+</span>
-        )}
-        {rightSegments.map((seg, idx) => (
-          <span
-            key={idx}
-            className={cn(seg.type === 'added' && 'text-dynamic-green')}
-          >
-            {seg.value}
+      <div className={cn('flex min-h-7', hasAdditions && 'bg-dynamic-green/5')}>
+        <LineNumber
+          value={lineIndex + 1}
+          type={hasAdditions ? 'added' : undefined}
+        />
+        <div
+          className={cn(
+            'flex flex-1 items-start gap-2 px-3 py-0.5 font-mono text-sm',
+            !line.hasChanges && 'text-foreground/80'
+          )}
+        >
+          {hasAdditions && (
+            <span className="w-3 shrink-0 select-none text-center text-dynamic-green/60">
+              +
+            </span>
+          )}
+          <span className="whitespace-pre-wrap break-all">
+            {rightSegments.map((seg, idx) => (
+              <span
+                key={idx}
+                className={cn(
+                  seg.type === 'added' &&
+                    'rounded-sm bg-dynamic-green/20 text-dynamic-green'
+                )}
+              >
+                {seg.value}
+              </span>
+            ))}
           </span>
-        ))}
-        {rightSegments.length === 0 && ' '}
+        </div>
       </div>
-    </>
+    </div>
   );
 }
