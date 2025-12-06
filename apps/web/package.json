@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.44",
-    "@aws-sdk/client-ses": "^3.943.0",
+    "@aws-sdk/client-ses": "^3.946.0",
     "@deepgram/sdk": "^4.11.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -76,7 +76,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.35.7",
-    "ai": "^5.0.107",
+    "ai": "^5.0.108",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
     "client-only": "^0.0.1",
