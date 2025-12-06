@@ -1098,7 +1098,8 @@
     "track": "Track",
     "time_tracker_requests": "Requests",
     "time-tracker": "Time Tracker",
-    "boards": "Boards"
+    "boards": "Boards",
+    "logs": "Logs"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -1144,6 +1145,116 @@
         "completed": "Changed status",
         "unknown": "Updated field"
       }
+    }
+  },
+  "tasks-logs": {
+    "title": "Activity Logs",
+    "description": "Track all changes made to tasks in your workspace",
+    "timeline_view": "Timeline",
+    "table_view": "Table",
+    "search_placeholder": "Search by task name...",
+    "filters": "Filters",
+    "results": "results",
+    "entries": "entries",
+    "clear_filters": "Clear",
+    "refresh": "Refresh",
+    "on": "on",
+    "date": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "filter": {
+      "board": "Board",
+      "all_boards": "All boards",
+      "change_type": "Change type",
+      "all_changes": "All changes",
+      "field_name": "Field",
+      "all_fields": "All fields"
+    },
+    "columns": {
+      "date": "Date",
+      "user": "User",
+      "task": "Task",
+      "change_type": "Change",
+      "value": "Value"
+    },
+    "change_type": {
+      "task_created": "Created",
+      "field_updated": "Field updated",
+      "assignee_added": "Assigned",
+      "assignee_removed": "Unassigned",
+      "label_added": "Label added",
+      "label_removed": "Label removed",
+      "project_linked": "Project linked",
+      "project_unlinked": "Project unlinked"
+    },
+    "field_name": {
+      "name": "Name",
+      "description": "Description",
+      "priority": "Priority",
+      "end_date": "Due Date",
+      "start_date": "Start Date",
+      "estimation_points": "Points",
+      "list_id": "Moved",
+      "completed": "Status"
+    },
+    "field_updated": {
+      "name": "updated name",
+      "description": "updated description",
+      "priority": "changed priority",
+      "end_date": "changed due date",
+      "start_date": "changed start date",
+      "estimation_points": "updated points",
+      "list_id": "moved task",
+      "completed": "changed status",
+      "unknown": "made a change"
+    },
+    "assignee_added": "assigned",
+    "assignee_removed": "unassigned",
+    "label_added": "added label",
+    "label_removed": "removed label",
+    "task_created": "created",
+    "with_description": "with description",
+    "new_task": "New task",
+    "project_linked": "linked to project",
+    "project_unlinked": "unlinked from project",
+    "unknown_change": "made a change",
+    "unknown_user": "Unknown",
+    "unknown_label": "Unknown label",
+    "unknown_project": "Unknown project",
+    "value": {
+      "none": "None",
+      "yes": "Yes",
+      "no": "No",
+      "empty": "Empty",
+      "list_changed": "Column changed"
+    },
+    "view_changes": "View changes",
+    "description_changes": "Description Changes",
+    "lines_added": "added",
+    "lines_removed": "removed",
+    "unified_view": "Unified",
+    "split_view": "Split",
+    "old_version": "Previous",
+    "new_version": "Current",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "status": {
+      "completed": "Completed",
+      "pending": "Pending"
+    },
+    "empty": {
+      "title": "No activity found",
+      "with_filters": "No activity matches your current filters. Try adjusting your search criteria.",
+      "no_filters": "Task changes will appear here once you start making updates to your tasks."
+    },
+    "error": {
+      "title": "Failed to load logs",
+      "description": "Please try again later"
     }
   },
   "link-shortener": {

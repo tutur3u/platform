@@ -6531,6 +6531,34 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: 'task_history_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_history_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_history_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_history_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'task_history_task_id_fkey';
             columns: ['task_id'];
             isOneToOne: false;
@@ -14971,6 +14999,32 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_task_history: {
+        Args: {
+          p_change_type?: string;
+          p_field_name?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_task_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          change_type: string;
+          changed_at: string;
+          changed_by: string;
+          field_name: string;
+          id: string;
+          metadata: Json;
+          new_value: Json;
+          old_value: Json;
+          task_id: string;
+          task_name: string;
+          total_count: number;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_id: string;
+        }[];
+      };
       get_task_parents: {
         Args: { p_task_id: string };
         Returns: {
@@ -15269,6 +15323,37 @@ export type Database = {
         }[];
       };
       get_workspace_storage_limit: { Args: { ws_id: string }; Returns: number };
+      get_workspace_task_history: {
+        Args: {
+          p_board_id?: string;
+          p_change_type?: string;
+          p_field_name?: string;
+          p_from?: string;
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string;
+          p_to?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          board_id: string;
+          board_name: string;
+          change_type: string;
+          changed_at: string;
+          changed_by: string;
+          field_name: string;
+          id: string;
+          metadata: Json;
+          new_value: Json;
+          old_value: Json;
+          task_id: string;
+          task_name: string;
+          total_count: number;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_id: string;
+        }[];
+      };
       get_workspace_time_tracking_stats: {
         Args: { p_target_date?: string; p_workspace_id: string };
         Returns: Json;

@@ -234,6 +234,13 @@ export async function WorkspaceNavigationLinks({
           icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
           href: `/${personalOrWsId}/tasks/estimates`,
         },
+        null,
+        {
+          title: t('sidebar_tabs.logs'),
+          href: `/${personalOrWsId}/tasks/logs`,
+          icon: <Logs className="h-4 w-4" />,
+          disabled: withoutPermission('manage_projects'),
+        },
       ],
     },
     {

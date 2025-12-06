@@ -8,6 +8,7 @@ import {
   useNotifications,
   useUpdateNotification,
 } from '@/hooks/useNotifications';
+import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -553,7 +554,7 @@ function NotificationCard({
 
           {/* Change details - show before/after states */}
           {notification.data?.changes && (
-            <ChangeDetails changes={notification.data.changes} />
+            <ChangeDetails changes={notification.data.changes} t={t} />
           )}
 
           {/* Single field change (for older notifications or simple changes) */}
@@ -785,7 +786,10 @@ function GroupedNotificationCard({
                     {/* Show change details in grouped view */}
                     {notification.data?.changes && (
                       <div className="mt-1.5">
-                        <ChangeDetails changes={notification.data.changes} />
+                        <ChangeDetails
+                          changes={notification.data.changes}
+                          t={t}
+                        />
                       </div>
                     )}
                     {notification.data?.change_type &&
@@ -995,23 +999,36 @@ function getNotificationActions(
   }
 }
 
-function ChangeDetails({ changes }: { changes: any }) {
+function ChangeDetails({
+  changes,
+  t,
+}: {
+  changes: any;
+  t?: (key: string, options?: { defaultValue?: string }) => string;
+}) {
   const changeEntries = Object.entries(changes);
 
   if (changeEntries.length === 0) return null;
+
+  // Default translation function
+  const translate =
+    t ||
+    ((key: string, opts?: { defaultValue?: string }) =>
+      opts?.defaultValue || key);
 
   return (
     <div className="mt-2 space-y-1.5 rounded-lg border bg-foreground/5 p-3">
       {changeEntries.map(([field, change]: [string, any]) => {
         const oldValue = change.old;
         const newValue = change.new;
+        const isDescriptionChange = field === 'description';
 
         return (
           <div key={field} className="text-xs">
             <span className="font-medium text-foreground/70">
               {formatFieldName(field)}:
             </span>
-            <div className="mt-0.5 flex items-center gap-2">
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <span className="rounded bg-red-500/10 px-2 py-0.5 font-mono text-red-600 dark:text-red-400">
                 {formatValue(oldValue, field)}
               </span>
@@ -1019,6 +1036,14 @@ function ChangeDetails({ changes }: { changes: any }) {
               <span className="rounded bg-green-500/10 px-2 py-0.5 font-mono text-green-600 dark:text-green-400">
                 {formatValue(newValue, field)}
               </span>
+              {isDescriptionChange && oldValue && newValue && (
+                <DescriptionDiffViewer
+                  oldValue={oldValue}
+                  newValue={newValue}
+                  t={translate}
+                  triggerVariant="inline"
+                />
+              )}
             </div>
           </div>
         );
@@ -1032,6 +1057,7 @@ function SingleChangeDetail({
   changeType,
   oldValue,
   newValue,
+  t,
 }: {
   changeType: string;
   oldValue?: any;
@@ -1042,13 +1068,17 @@ function SingleChangeDetail({
 
   if (!oldValue && !newValue) return null;
 
+  // For description changes, show a diff viewer button
+  const isDescriptionChange =
+    field === 'description' || changeType === 'task_description_changed';
+
   return (
     <div className="mt-2 rounded-lg border bg-foreground/5 p-3">
       <div className="text-xs">
         <span className="font-medium text-foreground/70">
           {formatFieldName(field)}:
         </span>
-        <div className="mt-0.5 flex items-center gap-2">
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
           {oldValue && (
             <span className="rounded bg-red-500/10 px-2 py-0.5 font-mono text-red-600 dark:text-red-400">
               {formatValue(oldValue, field)}
@@ -1061,6 +1091,14 @@ function SingleChangeDetail({
             <span className="rounded bg-green-500/10 px-2 py-0.5 font-mono text-green-600 dark:text-green-400">
               {formatValue(newValue, field)}
             </span>
+          )}
+          {isDescriptionChange && oldValue && newValue && (
+            <DescriptionDiffViewer
+              oldValue={oldValue}
+              newValue={newValue}
+              t={t}
+              triggerVariant="inline"
+            />
           )}
         </div>
       </div>

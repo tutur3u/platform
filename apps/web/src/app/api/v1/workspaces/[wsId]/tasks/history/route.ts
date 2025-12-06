@@ -4,14 +4,14 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
-  limit: z
+  page: z
     .string()
     .nullish()
-    .transform((val) => (val ? parseInt(val, 10) : 50)),
-  offset: z
+    .transform((val) => (val ? parseInt(val, 10) : 1)),
+  pageSize: z
     .string()
     .nullish()
-    .transform((val) => (val ? parseInt(val, 10) : 0)),
+    .transform((val) => (val ? parseInt(val, 10) : 20)),
   change_type: z
     .enum([
       'task_created',
@@ -36,15 +36,19 @@ const querySchema = z.object({
       'completed',
     ])
     .nullish(),
+  board_id: z.string().uuid().nullish(),
+  from: z.string().nullish(),
+  to: z.string().nullish(),
+  search: z.string().nullish(),
 });
 
 /**
- * GET /api/v1/workspaces/[wsId]/tasks/[taskId]/history
- * Fetches task change history with pagination and filtering
+ * GET /api/v1/workspaces/[wsId]/tasks/history
+ * Fetches workspace-wide task change history with pagination and filtering
  */
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -59,16 +63,20 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { wsId: rawWsId, taskId } = await params;
+    const { wsId: rawWsId } = await params;
     const wsId = resolveWorkspaceId(rawWsId);
 
     // Parse query parameters
     const { searchParams } = new URL(req.url);
     const queryParams = querySchema.safeParse({
-      limit: searchParams.get('limit'),
-      offset: searchParams.get('offset'),
+      page: searchParams.get('page'),
+      pageSize: searchParams.get('pageSize'),
       change_type: searchParams.get('change_type'),
       field_name: searchParams.get('field_name'),
+      board_id: searchParams.get('board_id'),
+      from: searchParams.get('from'),
+      to: searchParams.get('to'),
+      search: searchParams.get('search'),
     });
 
     if (!queryParams.success) {
@@ -81,18 +89,30 @@ export async function GET(
       );
     }
 
-    const { limit, offset, change_type, field_name } = queryParams.data;
+    const {
+      page,
+      pageSize,
+      change_type,
+      field_name,
+      board_id,
+      from,
+      to,
+      search,
+    } = queryParams.data;
 
     // Call the RPC function for efficient data retrieval
     const { data: history, error: historyError } = await supabase.rpc(
-      'get_task_history',
+      'get_workspace_task_history',
       {
         p_ws_id: wsId,
-        p_task_id: taskId,
-        p_limit: limit,
-        p_offset: offset,
+        p_page: page,
+        p_page_size: pageSize,
         p_change_type: change_type ?? null,
         p_field_name: field_name ?? null,
+        p_board_id: board_id ?? null,
+        p_search: search ?? null,
+        p_from: from ?? null,
+        p_to: to ?? null,
       }
     );
 
@@ -100,15 +120,6 @@ export async function GET(
       console.error('Error fetching task history:', historyError);
 
       // Handle specific error messages from the RPC
-      if (historyError.message === 'Task not found') {
-        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-      }
-      if (historyError.message === 'Task does not belong to this workspace') {
-        return NextResponse.json(
-          { error: 'Task does not belong to this workspace' },
-          { status: 403 }
-        );
-      }
       if (historyError.message === 'Access denied to workspace') {
         return NextResponse.json(
           { error: 'Access denied to workspace' },
@@ -122,14 +133,16 @@ export async function GET(
       );
     }
 
-    // Get total count and task name from first row (or defaults if empty)
+    // Get total count from first row (or 0 if empty)
     const totalCount = history?.[0]?.total_count ?? 0;
-    const taskName = history?.[0]?.task_name ?? 'Unknown Task';
 
     // Format the response
     const formattedHistory = (history || []).map((entry) => ({
       id: entry.id,
       task_id: entry.task_id,
+      task_name: entry.task_name || 'Unknown Task',
+      board_id: entry.board_id,
+      board_name: entry.board_name,
       changed_by: entry.changed_by,
       changed_at: entry.changed_at,
       change_type: entry.change_type,
@@ -147,17 +160,13 @@ export async function GET(
     }));
 
     return NextResponse.json({
-      history: formattedHistory,
+      data: formattedHistory,
       count: Number(totalCount),
-      limit,
-      offset,
-      task: {
-        id: taskId,
-        name: taskName,
-      },
+      page,
+      pageSize,
     });
   } catch (error) {
-    console.error('Error in task history API:', error);
+    console.error('Error in workspace task history API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

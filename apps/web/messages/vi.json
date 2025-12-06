@@ -1188,7 +1188,8 @@
     "track": "Theo dõi",
     "time_tracker_requests": "Yêu cầu",
     "time-tracker": "Theo dõi thời gian",
-    "boards": "Bảng nhiệm vụ"
+    "boards": "Bảng nhiệm vụ",
+    "logs": "Nhật ký"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
@@ -1234,6 +1235,116 @@
         "completed": "Đã thay đổi trạng thái",
         "unknown": "Đã cập nhật trường"
       }
+    }
+  },
+  "tasks-logs": {
+    "title": "Nhật ký hoạt động",
+    "description": "Theo dõi tất cả các thay đổi của công việc trong không gian làm việc",
+    "timeline_view": "Dòng thời gian",
+    "table_view": "Bảng",
+    "search_placeholder": "Tìm theo tên công việc...",
+    "filters": "Bộ lọc",
+    "results": "kết quả",
+    "entries": "mục",
+    "clear_filters": "Xóa",
+    "refresh": "Làm mới",
+    "on": "trên",
+    "date": {
+      "today": "Hôm nay",
+      "yesterday": "Hôm qua"
+    },
+    "filter": {
+      "board": "Bảng",
+      "all_boards": "Tất cả các bảng",
+      "change_type": "Loại thay đổi",
+      "all_changes": "Tất cả thay đổi",
+      "field_name": "Trường",
+      "all_fields": "Tất cả các trường"
+    },
+    "columns": {
+      "date": "Ngày",
+      "user": "Người dùng",
+      "task": "Công việc",
+      "change_type": "Thay đổi",
+      "value": "Giá trị"
+    },
+    "change_type": {
+      "task_created": "Đã tạo",
+      "field_updated": "Đã cập nhật trường",
+      "assignee_added": "Đã giao",
+      "assignee_removed": "Đã hủy giao",
+      "label_added": "Đã thêm nhãn",
+      "label_removed": "Đã xóa nhãn",
+      "project_linked": "Đã liên kết dự án",
+      "project_unlinked": "Đã hủy liên kết dự án"
+    },
+    "field_name": {
+      "name": "Tên",
+      "description": "Mô tả",
+      "priority": "Mức độ ưu tiên",
+      "end_date": "Ngày đến hạn",
+      "start_date": "Ngày bắt đầu",
+      "estimation_points": "Điểm",
+      "list_id": "Đã di chuyển",
+      "completed": "Trạng thái"
+    },
+    "field_updated": {
+      "name": "đã cập nhật tên",
+      "description": "đã cập nhật mô tả",
+      "priority": "đã thay đổi mức độ ưu tiên",
+      "end_date": "đã thay đổi ngày đến hạn",
+      "start_date": "đã thay đổi ngày bắt đầu",
+      "estimation_points": "đã cập nhật điểm",
+      "list_id": "đã di chuyển công việc",
+      "completed": "đã thay đổi trạng thái",
+      "unknown": "đã thay đổi"
+    },
+    "assignee_added": "đã giao",
+    "assignee_removed": "đã hủy giao",
+    "label_added": "đã thêm nhãn",
+    "label_removed": "đã xóa nhãn",
+    "task_created": "đã tạo",
+    "with_description": "kèm mô tả",
+    "new_task": "Công việc mới",
+    "project_linked": "đã liên kết dự án",
+    "project_unlinked": "đã hủy liên kết dự án",
+    "unknown_change": "đã thay đổi",
+    "unknown_user": "Không xác định",
+    "unknown_label": "Nhãn không xác định",
+    "unknown_project": "Dự án không xác định",
+    "value": {
+      "none": "Không có",
+      "yes": "Có",
+      "no": "Không",
+      "empty": "Trống",
+      "list_changed": "Đã thay đổi cột"
+    },
+    "view_changes": "Xem thay đổi",
+    "description_changes": "Thay đổi mô tả",
+    "lines_added": "đã thêm",
+    "lines_removed": "đã xóa",
+    "unified_view": "Gộp",
+    "split_view": "Chia đôi",
+    "old_version": "Trước",
+    "new_version": "Sau",
+    "priority": {
+      "low": "Thấp",
+      "medium": "Trung bình",
+      "high": "Cao",
+      "urgent": "Khẩn cấp"
+    },
+    "status": {
+      "completed": "Hoàn thành",
+      "pending": "Đang chờ"
+    },
+    "empty": {
+      "title": "Không có hoạt động nào",
+      "with_filters": "Không có hoạt động nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.",
+      "no_filters": "Các thay đổi công việc sẽ xuất hiện ở đây khi bạn bắt đầu cập nhật công việc."
+    },
+    "error": {
+      "title": "Không thể tải nhật ký",
+      "description": "Vui lòng thử lại sau"
     }
   },
   "link-shortener": {
