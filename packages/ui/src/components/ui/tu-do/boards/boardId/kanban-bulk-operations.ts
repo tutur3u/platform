@@ -42,21 +42,33 @@ interface BulkOperationsConfig {
 function useBulkUpdatePriority(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string,
-  selectedTasks: Set<string>
+  boardId: string
 ) {
   return useMutation({
-    mutationFn: async (priority: Task['priority'] | null) => {
-      const ids = Array.from(selectedTasks);
-      const { error, count } = await supabase
-        .from('tasks')
-        .update({ priority }, { count: 'exact' })
-        .in('id', ids)
-        .select('id');
-      if (error) throw error;
-      return { count, priority };
+    mutationFn: async ({
+      priority,
+      taskIds,
+    }: {
+      priority: Task['priority'] | null;
+      taskIds: string[];
+    }) => {
+      console.log('🔄 Bulk priority mutation called with taskIds:', taskIds);
+      // Update one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ priority })
+          .eq('id', taskId);
+        if (error) {
+          console.error(`Failed to update priority for task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      return { count: successCount, priority, taskIds };
     },
-    onMutate: async (priority) => {
+    onMutate: async ({ priority, taskIds }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
@@ -64,13 +76,12 @@ function useBulkUpdatePriority(
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       // Optimistic update
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.map((t) =>
-            selectedTasks.has(t.id) ? { ...t, priority } : t
-          );
+          return old.map((t) => (taskIdSet.has(t.id) ? { ...t, priority } : t));
         }
       );
 
@@ -101,30 +112,46 @@ function useBulkUpdatePriority(
 function useBulkUpdateEstimation(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string,
-  selectedTasks: Set<string>
+  boardId: string
 ) {
   return useMutation({
-    mutationFn: async (points: number | null) => {
-      const ids = Array.from(selectedTasks);
-      const { error, count } = await supabase
-        .from('tasks')
-        .update({ estimation_points: points }, { count: 'exact' })
-        .in('id', ids)
-        .select('id');
-      if (error) throw error;
-      return { count, points };
+    mutationFn: async ({
+      points,
+      taskIds,
+    }: {
+      points: number | null;
+      taskIds: string[];
+    }) => {
+      console.log('🔄 Bulk estimation mutation called with taskIds:', taskIds);
+      // Update one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ estimation_points: points })
+          .eq('id', taskId);
+        if (error) {
+          console.error(
+            `Failed to update estimation for task ${taskId}:`,
+            error
+          );
+        } else {
+          successCount++;
+        }
+      }
+      return { count: successCount, points, taskIds };
     },
-    onMutate: async (points) => {
+    onMutate: async ({ points, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            selectedTasks.has(t.id) ? { ...t, estimation_points: points } : t
+            taskIdSet.has(t.id) ? { ...t, estimation_points: points } : t
           );
         }
       );
@@ -155,11 +182,17 @@ function useBulkUpdateEstimation(
 function useBulkUpdateDueDate(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string,
-  selectedTasks: Set<string>
+  boardId: string
 ) {
   return useMutation({
-    mutationFn: async (preset: 'today' | 'tomorrow' | 'week' | 'clear') => {
+    mutationFn: async ({
+      preset,
+      taskIds,
+    }: {
+      preset: 'today' | 'tomorrow' | 'week' | 'clear';
+      taskIds: string[];
+    }) => {
+      console.log('🔄 Bulk due date mutation called with taskIds:', taskIds);
       let newDate: string | null = null;
       if (preset !== 'clear') {
         const d = new Date();
@@ -169,16 +202,22 @@ function useBulkUpdateDueDate(
         newDate = d.toISOString();
       }
 
-      const ids = Array.from(selectedTasks);
-      const { error, count } = await supabase
-        .from('tasks')
-        .update({ end_date: newDate }, { count: 'exact' })
-        .in('id', ids)
-        .select('id');
-      if (error) throw error;
-      return { count, end_date: newDate };
+      // Update one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ end_date: newDate })
+          .eq('id', taskId);
+        if (error) {
+          console.error(`Failed to update due date for task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      return { count: successCount, end_date: newDate, taskIds };
     },
-    onMutate: async (preset) => {
+    onMutate: async ({ preset, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
@@ -191,12 +230,13 @@ function useBulkUpdateDueDate(
         newDate = d.toISOString();
       }
 
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            selectedTasks.has(t.id) ? { ...t, end_date: newDate } : t
+            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
           );
         }
       );
@@ -228,36 +268,57 @@ function useBulkMoveToStatus(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  selectedTasks: Set<string>,
   columns: TaskList[]
 ) {
   return useMutation({
-    mutationFn: async (status: 'done' | 'closed') => {
+    mutationFn: async ({
+      status,
+      taskIds,
+    }: {
+      status: 'done' | 'closed';
+      taskIds: string[];
+    }) => {
+      console.log(
+        '🔄 Bulk move to status mutation called with taskIds:',
+        taskIds
+      );
       const targetList = columns.find((c) => c.status === status);
       if (!targetList) throw new Error(`No ${status} list found`);
 
-      const ids = Array.from(selectedTasks);
-      const { error, count } = await supabase
-        .from('tasks')
-        .update({ list_id: targetList.id }, { count: 'exact' })
-        .in('id', ids)
-        .select('id');
-      if (error) throw error;
-      return { count, status, targetListId: targetList.id };
+      // Update one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ list_id: targetList.id })
+          .eq('id', taskId);
+        if (error) {
+          console.error(`Failed to move task ${taskId} to ${status}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      return {
+        count: successCount,
+        status,
+        targetListId: targetList.id,
+        taskIds,
+      };
     },
-    onMutate: async (status) => {
+    onMutate: async ({ status, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       const targetList = columns.find((c) => c.status === status);
       if (!targetList) return { previousTasks };
 
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            selectedTasks.has(t.id) ? { ...t, list_id: targetList.id } : t
+            taskIdSet.has(t.id) ? { ...t, list_id: targetList.id } : t
           );
         }
       );
@@ -287,47 +348,48 @@ function useBulkAddLabel(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  selectedTasks: Set<string>,
   workspaceLabels: WorkspaceLabel[]
 ) {
   return useMutation({
-    mutationFn: async (labelId: string) => {
-      const ids = Array.from(selectedTasks);
-      const current =
-        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ||
-        [];
+    mutationFn: async ({
+      labelId,
+      taskIds,
+    }: {
+      labelId: string;
+      taskIds: string[];
+    }) => {
+      console.log('🔄 Bulk add label mutation called with taskIds:', taskIds);
 
-      // Only add to tasks that don't have the label
-      const missingTaskIds = ids.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.labels?.some((l) => l.id === labelId);
-      });
-
-      if (missingTaskIds.length === 0) {
-        return { count: 0, labelId };
+      // Insert one by one to ensure triggers fire for each task
+      // Note: We try all tasks - duplicates are handled gracefully
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase.from('task_labels').insert({
+          task_id: taskId,
+          label_id: labelId,
+        });
+        // Ignore duplicate errors (already has label)
+        if (
+          error &&
+          error.code !== '23505' &&
+          !String(error.message).toLowerCase().includes('duplicate')
+        ) {
+          console.error(`Failed to add label to task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
       }
 
-      const rows = missingTaskIds.map((taskId) => ({
-        task_id: taskId,
-        label_id: labelId,
-      }));
-
-      const { error } = await supabase.from('task_labels').insert(rows);
-      if (error && !String(error.message).toLowerCase().includes('duplicate')) {
-        throw error;
-      }
-
-      return { count: missingTaskIds.length, labelId, missingTaskIds };
+      return { count: successCount, labelId, taskIds };
     },
-    onMutate: async (labelId) => {
+    onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       const current = (previousTasks as Task[] | undefined) || [];
       const labelMeta = workspaceLabels.find((l) => l.id === labelId);
-      const ids = Array.from(selectedTasks);
 
-      const missingTaskIds = ids.filter((id) => {
+      const missingTaskIds = taskIds.filter((id) => {
         const t = current.find((ct) => ct.id === id);
         return !t?.labels?.some((l) => l.id === labelId);
       });
@@ -382,30 +444,47 @@ function useBulkRemoveLabel(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  selectedTasks: Set<string>,
   workspaceLabels: WorkspaceLabel[]
 ) {
   return useMutation({
-    mutationFn: async (labelId: string) => {
-      const ids = Array.from(selectedTasks);
-      const { error } = await supabase
-        .from('task_labels')
-        .delete()
-        .in('task_id', ids)
-        .eq('label_id', labelId);
-      if (error) throw error;
-      return { count: ids.length, labelId };
+    mutationFn: async ({
+      labelId,
+      taskIds,
+    }: {
+      labelId: string;
+      taskIds: string[];
+    }) => {
+      console.log(
+        '🔄 Bulk remove label mutation called with taskIds:',
+        taskIds
+      );
+      // Delete one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('task_labels')
+          .delete()
+          .eq('task_id', taskId)
+          .eq('label_id', labelId);
+        if (error) {
+          console.error(`Failed to remove label from task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      return { count: successCount, labelId, taskIds };
     },
-    onMutate: async (labelId) => {
+    onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            selectedTasks.has(t.id)
+            taskIdSet.has(t.id)
               ? {
                   ...t,
                   labels: (t.labels || []).filter((l) => l.id !== labelId),
@@ -441,47 +520,48 @@ function useBulkAddProject(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  selectedTasks: Set<string>,
   workspaceProjects: WorkspaceProject[]
 ) {
   return useMutation({
-    mutationFn: async (projectId: string) => {
-      const ids = Array.from(selectedTasks);
-      const current =
-        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ||
-        [];
+    mutationFn: async ({
+      projectId,
+      taskIds,
+    }: {
+      projectId: string;
+      taskIds: string[];
+    }) => {
+      console.log('🔄 Bulk add project mutation called with taskIds:', taskIds);
 
-      // Only add to tasks that don't have the project
-      const missingTaskIds = ids.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.projects?.some((p) => p.id === projectId);
-      });
-
-      if (missingTaskIds.length === 0) {
-        return { count: 0, projectId };
+      // Insert one by one to ensure triggers fire for each task
+      // Note: We try all tasks - duplicates are handled gracefully
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase.from('task_project_tasks').insert({
+          task_id: taskId,
+          project_id: projectId,
+        });
+        // Ignore duplicate errors (already has project)
+        if (
+          error &&
+          error.code !== '23505' &&
+          !String(error.message).toLowerCase().includes('duplicate')
+        ) {
+          console.error(`Failed to add project to task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
       }
 
-      const rows = missingTaskIds.map((taskId) => ({
-        task_id: taskId,
-        project_id: projectId,
-      }));
-
-      const { error } = await supabase.from('task_project_tasks').insert(rows);
-      if (error && !String(error.message).toLowerCase().includes('duplicate')) {
-        throw error;
-      }
-
-      return { count: missingTaskIds.length, projectId, missingTaskIds };
+      return { count: successCount, projectId, taskIds };
     },
-    onMutate: async (projectId) => {
+    onMutate: async ({ projectId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       const current = (previousTasks as Task[] | undefined) || [];
       const projectMeta = workspaceProjects.find((p) => p.id === projectId);
-      const ids = Array.from(selectedTasks);
 
-      const missingTaskIds = ids.filter((id) => {
+      const missingTaskIds = taskIds.filter((id) => {
         const t = current.find((ct) => ct.id === id);
         return !t?.projects?.some((p) => p.id === projectId);
       });
@@ -537,30 +617,47 @@ function useBulkRemoveProject(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  selectedTasks: Set<string>,
   workspaceProjects: WorkspaceProject[]
 ) {
   return useMutation({
-    mutationFn: async (projectId: string) => {
-      const ids = Array.from(selectedTasks);
-      const { error } = await supabase
-        .from('task_project_tasks')
-        .delete()
-        .in('task_id', ids)
-        .eq('project_id', projectId);
-      if (error) throw error;
-      return { count: ids.length, projectId };
+    mutationFn: async ({
+      projectId,
+      taskIds,
+    }: {
+      projectId: string;
+      taskIds: string[];
+    }) => {
+      console.log(
+        '🔄 Bulk remove project mutation called with taskIds:',
+        taskIds
+      );
+      // Delete one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('task_project_tasks')
+          .delete()
+          .eq('task_id', taskId)
+          .eq('project_id', projectId);
+        if (error) {
+          console.error(`Failed to remove project from task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      return { count: successCount, projectId, taskIds };
     },
-    onMutate: async (projectId) => {
+    onMutate: async ({ projectId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            selectedTasks.has(t.id)
+            taskIdSet.has(t.id)
               ? {
                   ...t,
                   projects: (t.projects || []).filter(
@@ -600,31 +697,38 @@ function useBulkDeleteTasks(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  selectedTasks: Set<string>,
   clearSelection: () => void,
   setBulkDeleteOpen: (open: boolean) => void
 ) {
   return useMutation({
-    mutationFn: async () => {
-      const ids = Array.from(selectedTasks);
-      const { error, count } = await supabase
-        .from('tasks')
-        .update({ deleted: true }, { count: 'exact' })
-        .in('id', ids)
-        .select('id');
-      if (error) throw error;
-      return { count };
+    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
+      console.log('🔄 Bulk delete mutation called with taskIds:', taskIds);
+      // Update one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', taskId);
+        if (error) {
+          console.error(`Failed to delete task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      return { count: successCount, taskIds };
     },
-    onMutate: async () => {
+    onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       // Optimistically remove from cache
+      const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.filter((t) => !selectedTasks.has(t.id));
+          return old.filter((t) => !taskIdSet.has(t.id));
         }
       );
 
@@ -663,65 +767,52 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     setBulkDeleteOpen,
   } = config;
 
-  // Create all mutations
+  // Create all mutations (pass taskIds at call time, not hook creation time)
   const priorityMutation = useBulkUpdatePriority(
     queryClient,
     supabase,
-    boardId,
-    selectedTasks
+    boardId
   );
   const estimationMutation = useBulkUpdateEstimation(
     queryClient,
     supabase,
-    boardId,
-    selectedTasks
+    boardId
   );
-  const dueDateMutation = useBulkUpdateDueDate(
-    queryClient,
-    supabase,
-    boardId,
-    selectedTasks
-  );
+  const dueDateMutation = useBulkUpdateDueDate(queryClient, supabase, boardId);
   const statusMutation = useBulkMoveToStatus(
     queryClient,
     supabase,
     boardId,
-    selectedTasks,
     columns
   );
   const addLabelMutation = useBulkAddLabel(
     queryClient,
     supabase,
     boardId,
-    selectedTasks,
     workspaceLabels
   );
   const removeLabelMutation = useBulkRemoveLabel(
     queryClient,
     supabase,
     boardId,
-    selectedTasks,
     workspaceLabels
   );
   const addProjectMutation = useBulkAddProject(
     queryClient,
     supabase,
     boardId,
-    selectedTasks,
     workspaceProjects
   );
   const removeProjectMutation = useBulkRemoveProject(
     queryClient,
     supabase,
     boardId,
-    selectedTasks,
     workspaceProjects
   );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
     supabase,
     boardId,
-    selectedTasks,
     clearSelection,
     setBulkDeleteOpen
   );
@@ -750,46 +841,56 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   }
 
   // Return wrapped mutation functions
+  // IMPORTANT: Capture taskIds at call time, not at hook creation time
   return {
     bulkUpdatePriority: async (priority: Task['priority'] | null) => {
-      if (selectedTasks.size === 0) return;
-      await priorityMutation.mutateAsync(priority);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await priorityMutation.mutateAsync({ priority, taskIds });
     },
     bulkUpdateEstimation: async (points: number | null) => {
-      if (selectedTasks.size === 0) return;
-      await estimationMutation.mutateAsync(points);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await estimationMutation.mutateAsync({ points, taskIds });
     },
     bulkUpdateDueDate: async (
       preset: 'today' | 'tomorrow' | 'week' | 'clear'
     ) => {
-      if (selectedTasks.size === 0) return;
-      await dueDateMutation.mutateAsync(preset);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await dueDateMutation.mutateAsync({ preset, taskIds });
     },
     bulkMoveToStatus: async (status: 'done' | 'closed') => {
-      if (selectedTasks.size === 0) return;
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
       const listId = getListIdByStatus(status);
       if (!listId) return;
-      await statusMutation.mutateAsync(status);
+      await statusMutation.mutateAsync({ status, taskIds });
     },
     bulkAddLabel: async (labelId: string) => {
-      if (selectedTasks.size === 0) return;
-      await addLabelMutation.mutateAsync(labelId);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await addLabelMutation.mutateAsync({ labelId, taskIds });
     },
     bulkRemoveLabel: async (labelId: string) => {
-      if (selectedTasks.size === 0) return;
-      await removeLabelMutation.mutateAsync(labelId);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await removeLabelMutation.mutateAsync({ labelId, taskIds });
     },
     bulkAddProject: async (projectId: string) => {
-      if (selectedTasks.size === 0) return;
-      await addProjectMutation.mutateAsync(projectId);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await addProjectMutation.mutateAsync({ projectId, taskIds });
     },
     bulkRemoveProject: async (projectId: string) => {
-      if (selectedTasks.size === 0) return;
-      await removeProjectMutation.mutateAsync(projectId);
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await removeProjectMutation.mutateAsync({ projectId, taskIds });
     },
     bulkDeleteTasks: async () => {
-      if (selectedTasks.size === 0) return;
-      await deleteMutation.mutateAsync();
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await deleteMutation.mutateAsync({ taskIds });
     },
     getListIdByStatus,
   };

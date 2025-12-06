@@ -1159,6 +1159,54 @@
         "list_id": "Moved to list",
         "completed": "Changed status",
         "unknown": "Updated field"
+      },
+      "view_snapshot": "View snapshot & revert",
+      "snapshot_title": "Task Snapshot",
+      "error_loading": "Failed to load snapshot",
+      "no_snapshot": "No snapshot data available",
+      "changed": "Changed",
+      "no_change": "No change",
+      "snapshot": "Snapshot:",
+      "current": "Current:",
+      "had_content": "Had content",
+      "was_empty": "Was empty",
+      "content_changed": "Content changed",
+      "points": "pts",
+      "completed": "Completed",
+      "incomplete": "Incomplete",
+      "core_fields": "Core Fields",
+      "dates": "Dates",
+      "relationships": "Relationships",
+      "fields_changed": "{count} field(s) different",
+      "no_changes": "No changes from current state",
+      "select_all": "Select all",
+      "deselect_all": "Deselect all",
+      "revert_warning": "This will create a new history entry documenting the revert.",
+      "revert_selected": "Revert {count} field(s)",
+      "reverting": "Reverting...",
+      "revert_success_title": "Changes reverted",
+      "revert_success_description": "Successfully reverted the selected fields",
+      "revert_error_title": "Revert failed",
+      "revert_error_description": "Please try again",
+      "field": {
+        "name": "Name",
+        "description": "Description",
+        "priority": "Priority",
+        "start_date": "Start Date",
+        "end_date": "Due Date",
+        "estimation": "Estimation",
+        "list": "List",
+        "completed": "Completed",
+        "assignees": "Assignees",
+        "labels": "Labels",
+        "projects": "Projects"
+      },
+      "priority": {
+        "none": "None",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
       }
     }
   },
@@ -1211,7 +1259,8 @@
       "start_date": "Start Date",
       "estimation_points": "Points",
       "list_id": "Moved",
-      "completed": "Status"
+      "completed": "Status",
+      "deleted_at": "Deleted"
     },
     "field_updated": {
       "name": "updated name",
@@ -1222,6 +1271,7 @@
       "estimation_points": "updated points",
       "list_id": "moved task",
       "completed": "changed status",
+      "deleted_at": "moved to trash",
       "unknown": "made a change"
     },
     "assignee_added": "assigned",
@@ -1235,6 +1285,9 @@
     "task_created": "created",
     "changes": "changes",
     "updated": "updated",
+    "deleted": "Deleted",
+    "in_trash": "In Trash",
+    "permanently_deleted": "Permanently Deleted",
     "with_description": "with description",
     "new_task": "New task",
     "project_linked": "linked to project",
@@ -1243,12 +1296,14 @@
     "unknown_user": "Unknown",
     "unknown_label": "Unknown label",
     "unknown_project": "Unknown project",
+    "points": "pts",
     "value": {
       "none": "None",
       "yes": "Yes",
       "no": "No",
       "empty": "Empty",
-      "list_changed": "Column changed"
+      "list_changed": "Column changed",
+      "unknown_column": "Unknown"
     },
     "view_changes": "View changes",
     "description_changes": "Description Changes",
@@ -1270,8 +1325,11 @@
     },
     "status": {
       "completed": "Completed",
-      "pending": "Pending"
+      "pending": "Pending",
+      "deleted": "Deleted",
+      "restored": "Restored"
     },
+    "task_restored": "restored",
     "empty": {
       "title": "No activity found",
       "with_filters": "No activity matches your current filters. Try adjusting your search criteria.",

@@ -175,11 +175,32 @@ export function useBoardRealtime(
         // Handle realtime list changes with setQueryData (avoids flicker)
         // Task changes come through the tasks listener, not here
         switch (eventType) {
-          case 'INSERT':
+          case 'INSERT': {
             queryClient.setQueryData(
               ['task_lists', boardId],
               (old: TaskList[] | undefined) => {
-                const insertedList = newRecord as TaskList;
+                const insertedList = newRecord as TaskList & {
+                  list_id?: string;
+                };
+                // CRITICAL FIX: The realtime subscription sometimes sends TASK data
+                // to the task_lists listener. Tasks have a `list_id` property that
+                // points to their parent task_list, but task_lists don't have this.
+                // If we see `list_id`, this is actually a task, not a task_list!
+                if (insertedList?.list_id) {
+                  console.warn(
+                    '[useBoardRealtime] Skipping task data in task_lists INSERT (has list_id):',
+                    { id: insertedList.id, list_id: insertedList.list_id }
+                  );
+                  return old ?? [];
+                }
+                // Validate that the record has required fields
+                if (!insertedList?.id || !insertedList?.board_id) {
+                  console.warn(
+                    '[useBoardRealtime] Skipping invalid task_lists INSERT:',
+                    insertedList
+                  );
+                  return old ?? [];
+                }
                 if (!old) return [insertedList];
                 // Check if already exists (from optimistic update)
                 if (old.some((l) => l.id === insertedList.id)) return old;
@@ -187,6 +208,7 @@ export function useBoardRealtime(
               }
             );
             break;
+          }
 
           case 'UPDATE':
             queryClient.setQueryData(
@@ -263,10 +285,20 @@ export function useBoardRealtime(
                       },
                     ];
                   }
-                  const exists = old.some((t) => t.id === insertedTask.id);
-                  if (exists) {
-                    // Task already exists (likely added by optimistic update with relations)
-                    // Keep the existing one which may have complete relation data
+                  const existingTask = old.find(
+                    (t) => t.id === insertedTask.id
+                  );
+                  if (existingTask) {
+                    // Task already exists (likely added by optimistic update)
+                    // Remove _isOptimistic flag to confirm the task and enable full interaction
+                    if ('_isOptimistic' in existingTask) {
+                      return old.map((t) =>
+                        t.id === insertedTask.id
+                          ? { ...t, _isOptimistic: undefined }
+                          : t
+                      );
+                    }
+                    // Task already confirmed, keep as is
                     return old;
                   }
                   // New task from realtime - add with empty relations

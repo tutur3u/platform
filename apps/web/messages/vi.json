@@ -1249,6 +1249,54 @@
         "list_id": "Đã chuyển đến danh sách",
         "completed": "Đã thay đổi trạng thái",
         "unknown": "Đã cập nhật trường"
+      },
+      "view_snapshot": "Xem ảnh chụp & khôi phục",
+      "snapshot_title": "Ảnh Chụp Công Việc",
+      "error_loading": "Không thể tải ảnh chụp",
+      "no_snapshot": "Không có dữ liệu ảnh chụp",
+      "changed": "Đã thay đổi",
+      "no_change": "Không thay đổi",
+      "snapshot": "Ảnh chụp:",
+      "current": "Hiện tại:",
+      "had_content": "Có nội dung",
+      "was_empty": "Trống",
+      "content_changed": "Nội dung đã thay đổi",
+      "points": "điểm",
+      "completed": "Hoàn thành",
+      "incomplete": "Chưa hoàn thành",
+      "core_fields": "Trường Cơ Bản",
+      "dates": "Ngày Tháng",
+      "relationships": "Mối Quan Hệ",
+      "fields_changed": "{count} trường khác biệt",
+      "no_changes": "Không có thay đổi so với hiện tại",
+      "select_all": "Chọn tất cả",
+      "deselect_all": "Bỏ chọn tất cả",
+      "revert_warning": "Thao tác này sẽ tạo mục lịch sử mới ghi nhận việc khôi phục.",
+      "revert_selected": "Khôi phục {count} trường",
+      "reverting": "Đang khôi phục...",
+      "revert_success_title": "Đã khôi phục thay đổi",
+      "revert_success_description": "Đã khôi phục thành công các trường đã chọn",
+      "revert_error_title": "Khôi phục thất bại",
+      "revert_error_description": "Vui lòng thử lại",
+      "field": {
+        "name": "Tên",
+        "description": "Mô tả",
+        "priority": "Mức độ ưu tiên",
+        "start_date": "Ngày bắt đầu",
+        "end_date": "Ngày đến hạn",
+        "estimation": "Ước tính",
+        "list": "Danh sách",
+        "completed": "Hoàn thành",
+        "assignees": "Người được giao",
+        "labels": "Nhãn",
+        "projects": "Dự án"
+      },
+      "priority": {
+        "none": "Không có",
+        "low": "Thấp",
+        "medium": "Trung bình",
+        "high": "Cao",
+        "urgent": "Khẩn cấp"
       }
     }
   },
@@ -1301,7 +1349,8 @@
       "start_date": "Ngày bắt đầu",
       "estimation_points": "Điểm",
       "list_id": "Đã di chuyển",
-      "completed": "Trạng thái"
+      "completed": "Trạng thái",
+      "deleted_at": "Đã xóa"
     },
     "field_updated": {
       "name": "đã cập nhật tên",
@@ -1312,6 +1361,7 @@
       "estimation_points": "đã cập nhật điểm",
       "list_id": "đã di chuyển công việc",
       "completed": "đã thay đổi trạng thái",
+      "deleted_at": "đã chuyển vào thùng rác",
       "unknown": "đã thay đổi"
     },
     "assignee_added": "đã giao",
@@ -1325,6 +1375,9 @@
     "task_created": "đã tạo",
     "changes": "thay đổi",
     "updated": "đã cập nhật",
+    "deleted": "Đã xóa",
+    "in_trash": "Trong thùng rác",
+    "permanently_deleted": "Đã xóa vĩnh viễn",
     "with_description": "kèm mô tả",
     "new_task": "Công việc mới",
     "project_linked": "đã liên kết dự án",
@@ -1333,12 +1386,14 @@
     "unknown_user": "Không xác định",
     "unknown_label": "Nhãn không xác định",
     "unknown_project": "Dự án không xác định",
+    "points": "điểm",
     "value": {
       "none": "Không có",
       "yes": "Có",
       "no": "Không",
       "empty": "Trống",
-      "list_changed": "Đã thay đổi cột"
+      "list_changed": "Đã thay đổi cột",
+      "unknown_column": "Không xác định"
     },
     "view_changes": "Xem thay đổi",
     "description_changes": "Thay đổi mô tả",
@@ -1360,8 +1415,11 @@
     },
     "status": {
       "completed": "Hoàn thành",
-      "pending": "Đang chờ"
+      "pending": "Đang chờ",
+      "deleted": "Đã xóa",
+      "restored": "Đã khôi phục"
     },
+    "task_restored": "đã khôi phục",
     "empty": {
       "title": "Không có hoạt động nào",
       "with_filters": "Không có hoạt động nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.",

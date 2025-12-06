@@ -1085,6 +1085,7 @@ export function useDeletedTasks(boardId: string) {
 
 /**
  * Restore tasks by setting deleted_at to null
+ * Processes one task at a time to ensure triggers fire correctly
  */
 export async function restoreTasks(
   supabase: TypedSupabaseClient,
@@ -1122,34 +1123,38 @@ export async function restoreTasks(
 
   const results: Task[] = [];
 
-  // Restore tasks with valid lists
-  if (tasksWithValidLists.length > 0) {
+  // Restore tasks with valid lists - one by one to ensure triggers fire correctly
+  for (const task of tasksWithValidLists) {
     const { data, error } = await supabase
       .from('tasks')
       .update({ deleted_at: null })
-      .in(
-        'id',
-        tasksWithValidLists.map((t) => t.id)
-      )
-      .select();
+      .eq('id', task.id)
+      .select()
+      .single();
 
-    if (error) throw error;
-    results.push(...(data as Task[]));
+    if (error) {
+      console.error(`Failed to restore task ${task.id}:`, error);
+      continue; // Continue with other tasks even if one fails
+    }
+    if (data) results.push(data as Task);
   }
 
-  // Restore tasks needing fallback to first list
-  if (tasksNeedingFallback.length > 0 && fallbackListId) {
+  // Restore tasks needing fallback to first list - one by one
+  for (const task of tasksNeedingFallback) {
+    if (!fallbackListId) continue;
+
     const { data, error } = await supabase
       .from('tasks')
       .update({ deleted_at: null, list_id: fallbackListId })
-      .in(
-        'id',
-        tasksNeedingFallback.map((t) => t.id)
-      )
-      .select();
+      .eq('id', task.id)
+      .select()
+      .single();
 
-    if (error) throw error;
-    results.push(...(data as Task[]));
+    if (error) {
+      console.error(`Failed to restore task ${task.id}:`, error);
+      continue; // Continue with other tasks even if one fails
+    }
+    if (data) results.push(data as Task);
   }
 
   return results;
@@ -1244,15 +1249,25 @@ export function useRestoreTasks(boardId: string) {
 
 /**
  * Permanently delete tasks from the database
+ * Processes one task at a time to ensure triggers fire correctly and avoid cascade issues
  */
 export async function permanentlyDeleteTasks(
   supabase: TypedSupabaseClient,
   taskIds: string[]
 ) {
-  const { error } = await supabase.from('tasks').delete().in('id', taskIds);
+  let successCount = 0;
 
-  if (error) throw error;
-  return { count: taskIds.length };
+  for (const taskId of taskIds) {
+    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+
+    if (error) {
+      console.error(`Failed to permanently delete task ${taskId}:`, error);
+      continue; // Continue with other tasks even if one fails
+    }
+    successCount++;
+  }
+
+  return { count: successCount };
 }
 
 /**

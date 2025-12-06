@@ -31,13 +31,13 @@ import {
   YoutubeIcon,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MAX_IMAGE_SIZE,
@@ -494,8 +494,25 @@ export function ToolBar({
       return;
     }
 
-    // Invalidate task caches
-    await invalidateTaskCaches(queryClient, boardId);
+    // Add the new task to the cache directly instead of invalidating
+    // This avoids full-board refetch flickering
+    if (result.taskId) {
+      const newTask: Partial<Task> = {
+        id: result.taskId,
+        name: result.taskName || '',
+        list_id: firstList.id,
+        created_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return [newTask as Task];
+          // Check if task already exists (from realtime), if so don't duplicate
+          if (old.some((t) => t.id === result.taskId)) return old;
+          return [...old, newTask as Task];
+        }
+      );
+    }
 
     toast.success('Task created', {
       description: `Created task "${result.taskName}" and added mention`,

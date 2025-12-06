@@ -113,39 +113,45 @@ export function useTaskProjectManagement({
 
     try {
       const supabase = createClient();
+      let successCount = 0;
+
       if (active) {
-        // Remove project only from tasks that have it
-        if (tasksToRemoveFrom.length > 0) {
+        // Remove project one by one to ensure triggers fire for each task
+        for (const taskId of tasksToRemoveFrom) {
           const { error } = await supabase
             .from('task_project_tasks')
             .delete()
-            .in('task_id', tasksToRemoveFrom)
+            .eq('task_id', taskId)
             .eq('project_id', projectId);
-          if (error) throw error;
+          if (error) {
+            console.error(
+              `Failed to remove project from task ${taskId}:`,
+              error
+            );
+          } else {
+            successCount++;
+          }
         }
       } else {
-        // Add project to selected tasks that don't already have it
-        if (tasksNeedingProject.length > 0) {
-          const rows = tasksNeedingProject.map((taskId) => ({
+        // Add project one by one to ensure triggers fire for each task
+        for (const taskId of tasksNeedingProject) {
+          const { error } = await supabase.from('task_project_tasks').insert({
             task_id: taskId,
             project_id: projectId,
-          }));
-          const { error } = await supabase
-            .from('task_project_tasks')
-            .insert(rows);
+          });
 
           // Ignore duplicate key errors (code '23505' for unique_violation)
           if (error && error.code !== '23505') {
-            throw error;
+            console.error(`Failed to add project to task ${taskId}:`, error);
+          } else {
+            successCount++;
           }
         }
       }
 
-      const taskCount = active
-        ? tasksToRemoveFrom.length
-        : tasksNeedingProject.length;
       toast.success(active ? 'Project removed' : 'Project added', {
-        description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
+        description:
+          successCount > 1 ? `${successCount} tasks updated` : undefined,
       });
 
       // Don't auto-clear selection - let user manually clear with "Clear" button

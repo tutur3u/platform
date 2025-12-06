@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import type { WorkspaceTaskLabel } from '../types';
 
@@ -112,7 +112,25 @@ export function useTaskRelationships({
             })
           );
         }
-        await invalidateTaskCaches(queryClient, boardId);
+        // Update task cache directly to avoid full refetch flickering
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id !== taskId) return task;
+              const currentLabels = task.labels || [];
+              const newLabels = exists
+                ? currentLabels.filter((l) => l.id !== label.id)
+                : [...currentLabels, label].sort((a, b) =>
+                    (a?.name || '')
+                      .toLowerCase()
+                      .localeCompare((b?.name || '').toLowerCase())
+                  );
+              return { ...task, labels: newLabels };
+            });
+          }
+        );
       } catch (e: any) {
         toast({
           title: 'Label update failed',
@@ -167,7 +185,30 @@ export function useTaskRelationships({
           if (error) throw error;
           setSelectedAssignees((prev) => [...prev, member]);
         }
-        await invalidateTaskCaches(queryClient, boardId);
+        // Update task cache directly to avoid full refetch flickering
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id !== taskId) return task;
+              const currentAssignees = task.assignees || [];
+              const newAssignees = exists
+                ? currentAssignees.filter((a) => a.id !== userId)
+                : [
+                    ...currentAssignees,
+                    {
+                      id: userId,
+                      display_name: member.display_name || member.name,
+                      email: member.email,
+                      avatar_url: member.avatar_url,
+                      handle: member.handle,
+                    },
+                  ];
+              return { ...task, assignees: newAssignees };
+            });
+          }
+        );
         onUpdate();
       } catch (e: any) {
         toast({
@@ -224,7 +265,6 @@ export function useTaskRelationships({
                 title: 'Already linked',
                 description: 'This project is already linked to the task',
               });
-              await invalidateTaskCaches(queryClient, boardId);
               onUpdate();
               return;
             }
@@ -232,7 +272,21 @@ export function useTaskRelationships({
           }
           setSelectedProjects((prev) => [...prev, project]);
         }
-        await invalidateTaskCaches(queryClient, boardId);
+        // Update task cache directly to avoid full refetch flickering
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id !== taskId) return task;
+              const currentProjects = task.projects || [];
+              const newProjects = exists
+                ? currentProjects.filter((p) => p.id !== project.id)
+                : [...currentProjects, project];
+              return { ...task, projects: newProjects };
+            });
+          }
+        );
         onUpdate();
       } catch (e: any) {
         toast({
@@ -319,7 +373,25 @@ export function useTaskRelationships({
             }
           } else {
             setSelectedLabels((prev) => [...prev, newLabel]);
-            await invalidateTaskCaches(queryClient, boardId);
+            // Update task cache directly to avoid full refetch flickering
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (old: Task[] | undefined) => {
+                if (!old) return old;
+                return old.map((task) => {
+                  if (task.id !== taskId) return task;
+                  const currentLabels = task.labels || [];
+                  return {
+                    ...task,
+                    labels: [...currentLabels, newLabel].sort((a, b) =>
+                      (a?.name || '')
+                        .toLowerCase()
+                        .localeCompare((b?.name || '').toLowerCase())
+                    ),
+                  };
+                });
+              }
+            );
             onUpdate();
             toast({
               title: 'Label created & linked',
@@ -419,7 +491,21 @@ export function useTaskRelationships({
             }
           } else {
             setSelectedProjects((prev) => [...prev, newProject]);
-            await invalidateTaskCaches(queryClient, boardId);
+            // Update task cache directly to avoid full refetch flickering
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (old: Task[] | undefined) => {
+                if (!old) return old;
+                return old.map((task) => {
+                  if (task.id !== taskId) return task;
+                  const currentProjects = task.projects || [];
+                  return {
+                    ...task,
+                    projects: [...currentProjects, newProject],
+                  };
+                });
+              }
+            );
             onUpdate();
             toast({
               title: 'Project created & linked',

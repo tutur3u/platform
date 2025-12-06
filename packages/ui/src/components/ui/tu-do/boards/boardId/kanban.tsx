@@ -318,18 +318,24 @@ export function KanbanBoard({
         console.log('🎯 Target board:', targetBoardId);
         console.log('📋 Target list:', targetListId);
 
-        // Move all selected tasks in parallel for better performance
-        const movePromises = tasksToMove.map((taskId) =>
-          moveTaskToBoardMutation.mutateAsync({
-            taskId,
-            newListId: targetListId,
-            targetBoardId,
-          })
+        // Move tasks one by one to ensure triggers fire for each task
+        let successCount = 0;
+        for (const taskId of tasksToMove) {
+          try {
+            await moveTaskToBoardMutation.mutateAsync({
+              taskId,
+              newListId: targetListId,
+              targetBoardId,
+            });
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to move task ${taskId}:`, error);
+          }
+        }
+
+        console.log(
+          `✅ Batch cross-board move completed: ${successCount}/${tasksToMove.length} tasks moved`
         );
-
-        await Promise.allSettled(movePromises);
-
-        console.log('✅ Batch cross-board move completed');
 
         // Clear selection and close dialog after moves
         clearSelection();
@@ -2085,7 +2091,7 @@ export function KanbanBoard({
                 strategy={horizontalListSortingStrategy}
               >
                 <div ref={boardRef} className="flex h-full gap-4 p-2 md:px-4">
-                  {columns
+                  {[...columns]
                     .sort((a, b) => {
                       // First sort by status priority, then by position within status
                       const statusOrder = {

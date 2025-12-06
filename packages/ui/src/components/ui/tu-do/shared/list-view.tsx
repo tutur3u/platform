@@ -128,7 +128,19 @@ export function ListView({
     try {
       const supabase = createClient();
       const taskIds = Array.from(selectedTasks);
-      await supabase.from('tasks').delete().in('id', taskIds);
+      // Delete one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', taskId);
+        if (error) {
+          console.error(`Failed to delete task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
       // Refresh the task list and invalidate cache
       const updatedTasks = await getTasks(supabase, boardId);
       setLocalTasks(updatedTasks);
@@ -136,7 +148,7 @@ export function ListView({
       setSelectedTasks(new Set());
       toast({
         title: 'Tasks deleted',
-        description: `${taskIds.length} task${taskIds.length !== 1 ? 's' : ''} deleted successfully.`,
+        description: `${successCount} task${successCount !== 1 ? 's' : ''} deleted successfully.`,
         variant: 'default',
       });
     } catch (error) {
