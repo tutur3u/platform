@@ -1,8 +1,5 @@
 'use client';
 
-import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
-import { TextDiffViewer } from '@/components/tasks/text-diff-viewer';
-import { type TaskHistoryLogEntry } from './columns';
 import {
   ArrowRight,
   Calendar,
@@ -10,6 +7,7 @@ import {
   ChevronDown,
   CircleDot,
   Clock,
+  Eye,
   FileText,
   Flag,
   FolderKanban,
@@ -30,6 +28,9 @@ import { enUS, vi } from 'date-fns/locale';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
+import { TextDiffViewer } from '@/components/tasks/text-diff-viewer';
+import type { TaskHistoryLogEntry } from './columns';
 
 interface LogsTimelineProps {
   entries: TaskHistoryLogEntry[];
@@ -361,7 +362,7 @@ export default function LogsTimeline({
           className="space-y-3"
         >
           {/* Date header */}
-          <div className="sticky top-0 z-10 flex items-center gap-3 bg-background/95 py-2 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-center gap-3 py-2 backdrop-blur">
             <div className="h-px flex-1 bg-border" />
             <span className="rounded-full bg-muted px-3 py-1 font-medium text-muted-foreground text-xs">
               {group.dateLabel}
@@ -473,6 +474,17 @@ function RapidChangeGroupEntry({
     locale: dateLocale,
   });
 
+  // Find description changes in the group for showing diff viewers
+  const descriptionChanges = group.entries
+    .filter(
+      (e) => e.change_type === 'field_updated' && e.field_name === 'description'
+    )
+    .map((e) => ({
+      id: e.id,
+      oldValue: e.old_value,
+      newValue: e.new_value,
+    }));
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -521,7 +533,7 @@ function RapidChangeGroupEntry({
                 <Link
                   href={`/${wsId}/tasks/${group.task_id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="max-w-[150px] truncate font-medium text-sm text-foreground hover:underline md:max-w-[250px]"
+                  className="max-w-[150px] truncate font-medium text-foreground text-sm hover:underline md:max-w-[250px]"
                 >
                   {group.task_name}
                 </Link>
@@ -578,6 +590,32 @@ function RapidChangeGroupEntry({
           </p>
         </div>
       </button>
+
+      {/* Show diff viewers for description changes in the group - outside button to avoid nesting */}
+      {descriptionChanges.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-t px-4 py-2">
+          {descriptionChanges.map((change, idx) => (
+            <DescriptionDiffViewer
+              key={change.id}
+              oldValue={change.oldValue}
+              newValue={change.newValue}
+              t={t}
+              triggerVariant="inline"
+              trigger={
+                descriptionChanges.length > 1 ? (
+                  <span className="inline-flex cursor-pointer items-center gap-1 text-dynamic-blue text-xs hover:underline">
+                    <Eye className="h-3 w-3" />
+                    {t('view_changes', {
+                      defaultValue: 'View changes',
+                    })}{' '}
+                    #{idx + 1}
+                  </span>
+                ) : undefined
+              }
+            />
+          ))}
+        </div>
+      )}
 
       {/* Expanded content */}
       <AnimatePresence>
@@ -702,7 +740,7 @@ function AggregatedActionEntry({
               <span
                 className={cn(
                   'text-sm',
-                  isRemoved && 'line-through text-muted-foreground'
+                  isRemoved && 'text-muted-foreground line-through'
                 )}
               >
                 {item.name}
@@ -800,7 +838,7 @@ function AggregatedActionEntry({
             <TooltipTrigger asChild>
               <Link
                 href={`/${wsId}/tasks/${group.task_id}`}
-                className="max-w-[200px] truncate font-medium text-sm text-foreground hover:underline md:max-w-[300px]"
+                className="max-w-[200px] truncate font-medium text-foreground text-sm hover:underline md:max-w-[300px]"
               >
                 {group.task_name}
               </Link>
@@ -927,7 +965,7 @@ function TimelineEntry({
               <TooltipTrigger asChild>
                 <Link
                   href={`/${wsId}/tasks/${entry.task_id}`}
-                  className="max-w-[200px] truncate font-medium text-sm text-foreground hover:underline md:max-w-[300px]"
+                  className="max-w-[200px] truncate font-medium text-foreground text-sm hover:underline md:max-w-[300px]"
                 >
                   {entry.task_name}
                 </Link>

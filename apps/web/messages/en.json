@@ -886,6 +886,14 @@
       "account_update": "Account Update",
       "security_alert": "Security Alert"
     },
+    "view_changes": "View changes",
+    "description_changes": "Description Changes",
+    "unified_view": "Unified",
+    "split_view": "Split",
+    "lines_added": "added",
+    "lines_removed": "removed",
+    "old_version": "Previous",
+    "new_version": "Current",
     "settings": {
       "title": "Notification Settings",
       "description": "Configure how you receive notifications for different events",

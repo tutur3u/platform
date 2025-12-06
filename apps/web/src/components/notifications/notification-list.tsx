@@ -693,6 +693,36 @@ function GroupedNotificationCard({
     })
     .join(', ');
 
+  // Find description changes in the group for showing diff viewers
+  const descriptionChanges = notifications
+    .map((n) => {
+      // Check for changes object with description field
+      if (n.data?.changes?.description) {
+        return {
+          id: n.id,
+          oldValue: n.data.changes.description.old,
+          newValue: n.data.changes.description.new,
+        };
+      }
+      // Check for task_description_changed type
+      if (
+        n.type === 'task_description_changed' &&
+        (n.data?.old_value || n.data?.new_value)
+      ) {
+        return {
+          id: n.id,
+          oldValue: n.data.old_value,
+          newValue: n.data.new_value,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean) as Array<{
+    id: string;
+    oldValue: unknown;
+    newValue: unknown;
+  }>;
+
   const handleMarkAllAsRead = async () => {
     // Get all unread notification IDs
     const unreadIds = notifications.filter((n) => !n.read_at).map((n) => n.id);
@@ -765,6 +795,32 @@ function GroupedNotificationCard({
               </div>
             </div>
           </button>
+
+          {/* Show diff viewers for description changes in the group - outside button to avoid nesting */}
+          {descriptionChanges.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {descriptionChanges.map((change, index) => (
+                <DescriptionDiffViewer
+                  key={change.id}
+                  oldValue={change.oldValue}
+                  newValue={change.newValue}
+                  t={t}
+                  triggerVariant="inline"
+                  trigger={
+                    descriptionChanges.length > 1 ? (
+                      <span className="inline-flex cursor-pointer items-center gap-1 text-xs text-dynamic-blue hover:underline">
+                        <Eye className="h-3 w-3" />
+                        {t('view_changes', {
+                          defaultValue: 'View changes',
+                        })}{' '}
+                        #{index + 1}
+                      </span>
+                    ) : undefined
+                  }
+                />
+              ))}
+            </div>
+          )}
 
           {/* Expanded notifications */}
           {isExpanded && (
@@ -1036,7 +1092,7 @@ function ChangeDetails({
               <span className="rounded bg-green-500/10 px-2 py-0.5 font-mono text-green-600 dark:text-green-400">
                 {formatValue(newValue, field)}
               </span>
-              {isDescriptionChange && oldValue && newValue && (
+              {isDescriptionChange && (oldValue || newValue) && (
                 <DescriptionDiffViewer
                   oldValue={oldValue}
                   newValue={newValue}
@@ -1092,7 +1148,7 @@ function SingleChangeDetail({
               {formatValue(newValue, field)}
             </span>
           )}
-          {isDescriptionChange && oldValue && newValue && (
+          {isDescriptionChange && (oldValue || newValue) && (
             <DescriptionDiffViewer
               oldValue={oldValue}
               newValue={newValue}

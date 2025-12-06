@@ -56,10 +56,29 @@ export function DescriptionDiffViewer({
   );
   const stats = useMemo(() => getDiffStats(diff), [diff]);
 
-  // Check if there are actual changes
-  const hasChanges = diff.some((d) => d.type !== 'unchanged');
+  // Check if there are actual changes - either in extracted text or raw values
+  const hasTextChanges = diff.some((d) => d.type !== 'unchanged');
 
-  if (!hasChanges) {
+  // Also check if raw values are different (handles cases where extracted text is same but structure differs)
+  const hasRawValueChanges = useMemo(() => {
+    // If both are null/undefined, no change
+    if (!oldValue && !newValue) return false;
+    // If one exists and other doesn't, there's a change
+    if (!oldValue || !newValue) return true;
+    // Compare stringified values for structural changes
+    try {
+      const oldStr =
+        typeof oldValue === 'string' ? oldValue : JSON.stringify(oldValue);
+      const newStr =
+        typeof newValue === 'string' ? newValue : JSON.stringify(newValue);
+      return oldStr !== newStr;
+    } catch {
+      return oldValue !== newValue;
+    }
+  }, [oldValue, newValue]);
+
+  // Show if there are text changes OR if raw values differ (content was added/removed)
+  if (!hasTextChanges && !hasRawValueChanges) {
     return null;
   }
 

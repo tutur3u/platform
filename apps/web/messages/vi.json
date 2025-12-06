@@ -976,6 +976,14 @@
       "account_update": "Cập nhật tài khoản",
       "security_alert": "Cảnh báo bảo mật"
     },
+    "view_changes": "Xem thay đổi",
+    "description_changes": "Thay đổi mô tả",
+    "unified_view": "Gộp",
+    "split_view": "Chia đôi",
+    "lines_added": "thêm",
+    "lines_removed": "xóa",
+    "old_version": "Trước",
+    "new_version": "Hiện tại",
     "settings": {
       "title": "Cài đặt thông báo",
       "description": "Cấu hình cách bạn nhận thông báo cho các sự kiện khác nhau",
