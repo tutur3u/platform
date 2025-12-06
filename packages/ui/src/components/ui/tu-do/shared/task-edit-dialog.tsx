@@ -2649,7 +2649,7 @@ export function TaskEditDialog({
                 />
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="relative pb-8">
+                <div ref={editorRef} className="relative">
                   <div
                     ref={richTextEditorRef}
                     className={cn(
@@ -2662,7 +2662,7 @@ export function TaskEditDialog({
                       onChange={setDescription}
                       writePlaceholder="Add a detailed description, attach files, or use markdown..."
                       titlePlaceholder=""
-                      className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                      className="min-h-[calc(100vh-16rem)] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                       workspaceId={wsId || undefined}
                       onImageUpload={handleImageUpload}
                       flushPendingRef={flushEditorPendingRef}
