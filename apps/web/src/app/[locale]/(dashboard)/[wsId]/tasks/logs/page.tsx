@@ -23,7 +23,7 @@ interface Props {
 
 interface Board {
   id: string;
-  name: string;
+  name: string | null;
 }
 
 export default async function TaskLogsPage({ params }: Props) {

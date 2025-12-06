@@ -51,10 +51,15 @@ export interface TaskHistoryLogEntry {
   } | null;
 }
 
+type TranslationFunction = (
+  key: string,
+  options?: { defaultValue?: string }
+) => string;
+
 interface ColumnsConfig {
   wsId: string;
   locale: string;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: TranslationFunction;
 }
 
 export function getColumns({

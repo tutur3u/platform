@@ -53,7 +53,7 @@ import LogsTimeline from './logs-timeline';
 
 interface Board {
   id: string;
-  name: string;
+  name: string | null;
 }
 
 interface LogsClientProps {
@@ -178,7 +178,12 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
 
   // Table columns
   const columns = useMemo(
-    () => getColumns({ wsId, locale, t }),
+    () =>
+      getColumns({
+        wsId,
+        locale,
+        t: t as (key: string, options?: { defaultValue?: string }) => string,
+      }),
     [wsId, locale, t]
   );
 
@@ -356,7 +361,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
                   </SelectItem>
                   {boards.map((board) => (
                     <SelectItem key={board.id} value={board.id}>
-                      {board.name}
+                      {board.name || 'Unnamed Board'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -453,15 +458,29 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
         {isLoading ? (
           <LoadingSkeleton viewMode={viewMode} />
         ) : error ? (
-          <ErrorState onRetry={() => refetch()} t={t} />
+          <ErrorState
+            onRetry={() => refetch()}
+            t={
+              t as (key: string, options?: { defaultValue?: string }) => string
+            }
+          />
         ) : !data?.data || data.data.length === 0 ? (
           <EmptyState
             hasActiveFilters={hasActiveFilters}
             onClear={clearFilters}
-            t={t}
+            t={
+              t as (key: string, options?: { defaultValue?: string }) => string
+            }
           />
         ) : viewMode === 'timeline' ? (
-          <LogsTimeline entries={data.data} wsId={wsId} locale={locale} t={t} />
+          <LogsTimeline
+            entries={data.data}
+            wsId={wsId}
+            locale={locale}
+            t={
+              t as (key: string, options?: { defaultValue?: string }) => string
+            }
+          />
         ) : (
           <div className="overflow-hidden rounded-lg border bg-card">
             <Table>
@@ -596,12 +615,17 @@ function LoadingSkeleton({ viewMode }: { viewMode: ViewMode }) {
   );
 }
 
+type TranslationFunction = (
+  key: string,
+  options?: { defaultValue?: string }
+) => string;
+
 function ErrorState({
   onRetry,
   t,
 }: {
   onRetry: () => void;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: TranslationFunction;
 }) {
   return (
     <motion.div
@@ -640,7 +664,7 @@ function EmptyState({
 }: {
   hasActiveFilters: boolean;
   onClear: () => void;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: TranslationFunction;
 }) {
   return (
     <motion.div

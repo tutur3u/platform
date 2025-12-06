@@ -91,8 +91,8 @@ export async function GET(
         p_task_id: taskId,
         p_limit: limit,
         p_offset: offset,
-        p_change_type: change_type ?? null,
-        p_field_name: field_name ?? null,
+        p_change_type: change_type ?? undefined,
+        p_field_name: field_name ?? undefined,
       }
     );
 
@@ -130,12 +130,12 @@ export async function GET(
     const formattedHistory = (history || []).map((entry) => ({
       id: entry.id,
       task_id: entry.task_id,
-      changed_by: entry.changed_by,
+      changed_by: entry.changed_by ?? undefined,
       changed_at: entry.changed_at,
-      change_type: entry.change_type,
-      field_name: entry.field_name,
-      old_value: entry.old_value,
-      new_value: entry.new_value,
+      change_type: entry.change_type ?? undefined,
+      field_name: entry.field_name ?? undefined,
+      old_value: entry.old_value ?? undefined,
+      new_value: entry.new_value ?? undefined,
       metadata: entry.metadata,
       user: entry.user_id
         ? {
