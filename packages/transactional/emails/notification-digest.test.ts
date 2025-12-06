@@ -4,8 +4,13 @@ import {
   generateSubjectLine,
   getDelayInfo,
   getNotificationConfig,
+  getCategoryForType,
+  getCategoryConfig,
   NOTIFICATION_CONFIG,
+  CATEGORY_CONFIG,
+  TYPE_TO_CATEGORY,
   type NotificationItem,
+  type NotificationCategory,
 } from './notification-digest';
 
 describe('notification-digest utilities', () => {
@@ -39,6 +44,128 @@ describe('notification-digest utilities', () => {
       );
       expect(Math.min(...priorities)).toBe(1);
       expect(NOTIFICATION_CONFIG.workspace_invite.priority).toBe(1);
+    });
+  });
+
+  describe('getCategoryForType', () => {
+    it('should map task field changes to task_updates category', () => {
+      expect(getCategoryForType('task_title_changed')).toBe('task_updates');
+      expect(getCategoryForType('task_description_changed')).toBe(
+        'task_updates'
+      );
+      expect(getCategoryForType('task_priority_changed')).toBe('task_updates');
+      expect(getCategoryForType('task_due_date_changed')).toBe('task_updates');
+      expect(getCategoryForType('task_start_date_changed')).toBe(
+        'task_updates'
+      );
+      expect(getCategoryForType('task_estimation_changed')).toBe(
+        'task_updates'
+      );
+      expect(getCategoryForType('task_updated')).toBe('task_updates');
+    });
+
+    it('should map status changes to task_status category', () => {
+      expect(getCategoryForType('task_completed')).toBe('task_status');
+      expect(getCategoryForType('task_reopened')).toBe('task_status');
+      expect(getCategoryForType('task_moved')).toBe('task_status');
+    });
+
+    it('should map assignment types to task_assignments category', () => {
+      expect(getCategoryForType('task_assigned')).toBe('task_assignments');
+      expect(getCategoryForType('task_mention')).toBe('task_assignments');
+    });
+
+    it('should map relationship types to task_relationships category', () => {
+      expect(getCategoryForType('task_label_added')).toBe('task_relationships');
+      expect(getCategoryForType('task_label_removed')).toBe(
+        'task_relationships'
+      );
+      expect(getCategoryForType('task_project_linked')).toBe(
+        'task_relationships'
+      );
+      expect(getCategoryForType('task_project_unlinked')).toBe(
+        'task_relationships'
+      );
+      expect(getCategoryForType('task_assignee_removed')).toBe(
+        'task_relationships'
+      );
+    });
+
+    it('should map other known types to their categories', () => {
+      expect(getCategoryForType('workspace_invite')).toBe('workspace');
+      expect(getCategoryForType('comment_added')).toBe('comments');
+      expect(getCategoryForType('deadline_reminder')).toBe('deadlines');
+      expect(getCategoryForType('system_announcement')).toBe('system');
+    });
+
+    it('should map unknown types to general category', () => {
+      expect(getCategoryForType('unknown_type')).toBe('general');
+      expect(getCategoryForType('random_notification')).toBe('general');
+    });
+  });
+
+  describe('getCategoryConfig', () => {
+    it('should return category config for known types', () => {
+      const config = getCategoryConfig('task_title_changed');
+      expect(config.label).toBe('Task Updates');
+      expect(config.emoji).toBe('📝');
+    });
+
+    it('should return general config for unknown types', () => {
+      const config = getCategoryConfig('unknown_type');
+      expect(config.label).toBe('Updates');
+      expect(config.emoji).toBe('🔔');
+    });
+  });
+
+  describe('CATEGORY_CONFIG', () => {
+    it('should have workspace as highest priority (1)', () => {
+      const priorities = Object.values(CATEGORY_CONFIG).map((c) => c.priority);
+      expect(Math.min(...priorities)).toBe(1);
+      expect(CATEGORY_CONFIG.workspace.priority).toBe(1);
+    });
+
+    it('should have all required categories defined', () => {
+      const expectedCategories: NotificationCategory[] = [
+        'task_assignments',
+        'task_status',
+        'task_updates',
+        'task_relationships',
+        'workspace',
+        'comments',
+        'deadlines',
+        'system',
+        'general',
+      ];
+
+      expectedCategories.forEach((category) => {
+        expect(CATEGORY_CONFIG[category]).toBeDefined();
+        expect(CATEGORY_CONFIG[category].label).toBeDefined();
+        expect(CATEGORY_CONFIG[category].emoji).toBeDefined();
+        expect(CATEGORY_CONFIG[category].color).toBeDefined();
+        expect(CATEGORY_CONFIG[category].bgColor).toBeDefined();
+        expect(CATEGORY_CONFIG[category].priority).toBeDefined();
+        expect(CATEGORY_CONFIG[category].actionVerb).toBeDefined();
+      });
+    });
+  });
+
+  describe('TYPE_TO_CATEGORY consolidation', () => {
+    it('should consolidate all task field changes into one category', () => {
+      const fieldChangeTypes = [
+        'task_title_changed',
+        'task_description_changed',
+        'task_priority_changed',
+        'task_due_date_changed',
+        'task_start_date_changed',
+        'task_estimation_changed',
+      ];
+
+      const categories = fieldChangeTypes.map((t) => TYPE_TO_CATEGORY[t]);
+      const uniqueCategories = [...new Set(categories)];
+
+      expect(uniqueCategories).toHaveLength(1);
+      expect(uniqueCategories[0]).toBe('task_updates');
     });
   });
 
@@ -95,7 +222,7 @@ describe('notification-digest utilities', () => {
         }),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('@ John mentioned you');
+      expect(subject).toBe('📋 John mentioned you');
     });
 
     it('should generate subject for comment added', () => {
@@ -115,16 +242,24 @@ describe('notification-digest utilities', () => {
       expect(subject).toBe('✅ Task completed: Setup CI/CD');
     });
 
-    it('should generate subject for task updated', () => {
+    it('should generate subject for task updated (field changes)', () => {
       const notifications = [
         createNotification('task_updated', 'Fix bug #456'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('📝 Updated: Fix bug #456');
+      expect(subject).toBe('📝 Task updated: Fix bug #456');
+    });
+
+    it('should generate subject for granular task field changes', () => {
+      const notifications = [
+        createNotification('task_title_changed', 'Updated task name'),
+      ];
+      const subject = generateSubjectLine(notifications, 'Workspace');
+      expect(subject).toBe('📝 Task updated: Updated task name');
     });
 
     it('should prioritize most important notification for subject', () => {
-      // deadline_reminder (priority 2) should be used over task_updated (priority 7)
+      // deadline_reminder (priority 2) should be used over task_updated (priority 6)
       const notifications = [
         createNotification('task_updated', 'Some update'),
         createNotification('deadline_reminder', 'Important deadline'),
@@ -202,6 +337,37 @@ describe('notification-digest utilities', () => {
       // Should contain the date and time range
       expect(result).toContain('-');
       expect(result).toMatch(/\d{1,2}:\d{2}/); // Time format
+    });
+
+    it('should show single time when notifications are at same moment', () => {
+      const sameTime = new Date('2024-12-06T10:08:00Z').toISOString();
+      const notifications: NotificationItem[] = [
+        {
+          id: '1',
+          type: 'task_assigned',
+          title: 'Task 1',
+          createdAt: sameTime,
+        },
+        {
+          id: '2',
+          type: 'task_completed',
+          title: 'Task 2',
+          createdAt: sameTime,
+        },
+      ];
+      const result = formatTimeRange(undefined, undefined, notifications);
+      // Should show single time format "Dec 6 at X:XX AM/PM", not range with "-"
+      expect(result).toContain('at');
+      expect(result).not.toMatch(/\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}/); // Should NOT have time range
+    });
+
+    it('should show single time when window times are within 1 minute', () => {
+      const windowStart = '2024-12-06T10:08:00Z';
+      const windowEnd = '2024-12-06T10:08:30Z'; // 30 seconds later
+
+      const result = formatTimeRange(windowStart, windowEnd, undefined);
+      expect(result).toContain('at');
+      expect(result).not.toMatch(/\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}/);
     });
 
     it('should format multi-day range', () => {
