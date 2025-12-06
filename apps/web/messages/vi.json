@@ -1441,7 +1441,15 @@
     "new_value": "Sau",
     "diff_view": "Thay đổi",
     "to_project": "vào",
-    "from_project": "khỏi"
+    "from_project": "khỏi",
+    "word_diff": "Từ",
+    "line_diff": "Dòng",
+    "switch_to_line_diff": "Chuyển sang so sánh theo dòng",
+    "switch_to_word_diff": "Chuyển sang so sánh theo từ",
+    "added_text": "đã thêm",
+    "removed_text": "đã xóa",
+    "word_added_label": "Văn bản mới",
+    "word_removed_label": "Văn bản đã xóa"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

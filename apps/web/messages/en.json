@@ -1351,7 +1351,15 @@
     "new_value": "Current",
     "diff_view": "Changes",
     "to_project": "to",
-    "from_project": "from"
+    "from_project": "from",
+    "word_diff": "Word",
+    "line_diff": "Line",
+    "switch_to_line_diff": "Switch to line-level diff",
+    "switch_to_word_diff": "Switch to word-level diff",
+    "added_text": "added",
+    "removed_text": "removed",
+    "word_added_label": "New text",
+    "word_removed_label": "Deleted text"
   },
   "link-shortener": {
     "title": "Link Shortener",
