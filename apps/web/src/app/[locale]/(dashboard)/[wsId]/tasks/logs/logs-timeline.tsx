@@ -11,10 +11,15 @@ import {
   FileText,
   Flag,
   FolderKanban,
+  horseHead,
+  Icon,
   Layers,
   Plus,
+  Rabbit,
   Tag,
   Target,
+  Turtle,
+  unicornHead,
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
@@ -27,10 +32,67 @@ import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 import { TextDiffViewer } from '@/components/tasks/text-diff-viewer';
 import type { TaskHistoryLogEntry } from './columns';
+
+// Priority styling constants (matching task card)
+const PRIORITY_LABELS: Record<string, string> = {
+  critical: 'Urgent',
+  high: 'High',
+  normal: 'Medium',
+  low: 'Low',
+};
+
+const PRIORITY_BADGE_COLORS: Record<string, string> = {
+  critical:
+    'bg-dynamic-red/20 border-dynamic-red/50 text-dynamic-red shadow-sm shadow-dynamic-red/50',
+  high: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
+  normal: 'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
+  low: 'bg-dynamic-blue/10 border-dynamic-blue/30 text-dynamic-blue',
+};
+
+function getPriorityIcon(
+  priority: string,
+  className?: string
+): React.ReactNode {
+  const icons: Record<string, React.ReactElement> = {
+    critical: <Icon iconNode={unicornHead} className={className} />,
+    high: <Icon iconNode={horseHead} className={className} />,
+    normal: <Rabbit className={className} />,
+    low: <Turtle className={className} />,
+  };
+  return icons[priority] || null;
+}
+
+function renderPriorityBadge(
+  priority: string | number | null
+): React.ReactNode {
+  if (priority === null || priority === undefined) return null;
+
+  // Handle numeric priority (legacy)
+  const priorityMap: Record<number, string> = {
+    1: 'low',
+    2: 'normal',
+    3: 'high',
+    4: 'critical',
+  };
+
+  const priorityKey =
+    typeof priority === 'number' ? priorityMap[priority] : priority;
+  if (!priorityKey || !PRIORITY_LABELS[priorityKey]) return null;
+
+  return (
+    <Badge
+      variant="secondary"
+      className={cn('gap-1 p-0.75 text-xs', PRIORITY_BADGE_COLORS[priorityKey])}
+    >
+      {getPriorityIcon(priorityKey, 'size-3')}
+      {PRIORITY_LABELS[priorityKey]}
+    </Badge>
+  );
+}
 
 interface LogsTimelineProps {
   entries: TaskHistoryLogEntry[];
@@ -985,9 +1047,15 @@ function TimelineEntry({
         {/* Change details */}
         {description.details && (
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5 text-sm">
-              {description.details}
-            </div>
+            {description.noDetailsWrapper ? (
+              <div className="inline-flex items-center gap-2 text-sm">
+                {description.details}
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5 text-sm">
+                {description.details}
+              </div>
+            )}
             {description.showDescriptionDiff && (
               <DescriptionDiffViewer
                 oldValue={entry.old_value}
@@ -1134,6 +1202,8 @@ interface ChangeDescription {
   details?: React.ReactNode;
   showDescriptionDiff?: boolean;
   showNameDiff?: boolean;
+  /** If true, details won't be wrapped with background/padding (for items with their own styling) */
+  noDetailsWrapper?: boolean;
 }
 
 function getChangeDescription(
@@ -1149,6 +1219,7 @@ function getChangeDescription(
           {t('with_description', { defaultValue: 'with description' })}
         </Badge>
       ) : undefined,
+      noDetailsWrapper: true,
     };
   }
 
@@ -1252,6 +1323,36 @@ function getChangeDescription(
       return { action, details, showNameDiff: isLongChange };
     }
 
+    // For priority changes, show styled priority badges
+    if (entry.field_name === 'priority') {
+      const oldPriorityBadge = renderPriorityBadge(
+        entry.old_value as string | number | null
+      );
+      const newPriorityBadge = renderPriorityBadge(
+        entry.new_value as string | number | null
+      );
+
+      const details = (
+        <div className="flex items-center gap-2">
+          {oldPriorityBadge ? (
+            <span className="opacity-60">{oldPriorityBadge}</span>
+          ) : (
+            <span className="text-muted-foreground text-xs">
+              {t('value.none', { defaultValue: 'None' })}
+            </span>
+          )}
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          {newPriorityBadge || (
+            <span className="text-muted-foreground text-xs">
+              {t('value.none', { defaultValue: 'None' })}
+            </span>
+          )}
+        </div>
+      );
+
+      return { action, details, noDetailsWrapper: true };
+    }
+
     // Format the old and new values
     const oldValue = formatValue(entry.old_value, entry.field_name, t);
     const newValue = formatValue(entry.new_value, entry.field_name, t);
@@ -1306,6 +1407,7 @@ function getChangeDescription(
             </Badge>
           </div>
         ),
+        noDetailsWrapper: true,
       };
     }
     case 'assignee_removed': {
@@ -1345,6 +1447,7 @@ function getChangeDescription(
             </Badge>
           </div>
         ),
+        noDetailsWrapper: true,
       };
     }
     case 'label_added': {
@@ -1385,6 +1488,7 @@ function getChangeDescription(
             {labelName}
           </Badge>
         ),
+        noDetailsWrapper: true,
       };
     }
     case 'label_removed': {
@@ -1424,6 +1528,7 @@ function getChangeDescription(
             {labelName}
           </Badge>
         ),
+        noDetailsWrapper: true,
       };
     }
     case 'project_linked': {
@@ -1462,6 +1567,7 @@ function getChangeDescription(
             </Badge>
           </>
         ),
+        noDetailsWrapper: true,
       };
     }
     case 'project_unlinked': {
@@ -1500,6 +1606,7 @@ function getChangeDescription(
             </Badge>
           </>
         ),
+        noDetailsWrapper: true,
       };
     }
     default:
