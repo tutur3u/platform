@@ -1370,6 +1370,11 @@ export function TaskEditDialog({
     autoSchedule,
     parentTaskId,
     pendingRelationship,
+    isPersonalWorkspace,
+    user?.avatar_url,
+    user?.display_name,
+    user?.id,
+    userTaskSettings?.task_auto_assign_to_self,
   ]);
 
   // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
@@ -2739,8 +2744,35 @@ export function TaskEditDialog({
                 </div>
 
                 {/* Task Activity Section - Only show in edit mode */}
-                {!isCreateMode && (
-                  <TaskActivitySection wsId={wsId} taskId={task?.id} />
+                {!isCreateMode && task && (
+                  <TaskActivitySection
+                    wsId={wsId}
+                    taskId={task.id}
+                    boardId={boardId}
+                    currentTask={{
+                      id: task.id,
+                      name: name || task.name || '',
+                      description: description,
+                      priority: priority,
+                      start_date: startDate?.toISOString() || null,
+                      end_date: endDate?.toISOString() || null,
+                      estimation_points: estimationPoints ?? null,
+                      list_id: selectedListId || task.list_id || '',
+                      list_name:
+                        availableLists?.find((l) => l.id === selectedListId)
+                          ?.name || null,
+                      completed: !!task.completed_at,
+                      assignees: selectedAssignees.map((a) => ({
+                        id: a.id,
+                        user_id: a.id,
+                      })),
+                      labels: selectedLabels.map((l) => ({ id: l.id })),
+                      projects: selectedProjects.map((p) => ({ id: p.id })),
+                    }}
+                    // NOTE: Snapshot reversion is disabled as the feature is not stable yet.
+                    // Set to false when the feature is ready.
+                    revertDisabled={true}
+                  />
                 )}
               </div>
             </div>

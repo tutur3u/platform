@@ -59,6 +59,8 @@ interface Board {
 interface LogsClientProps {
   wsId: string;
   boards: Board[];
+  /** Map of board_id -> estimation_type for proper estimation display */
+  estimationTypes: Record<string, string | null>;
 }
 
 type ViewMode = 'timeline' | 'table';
@@ -85,7 +87,11 @@ const FIELD_NAMES = [
   'completed',
 ] as const;
 
-export default function LogsClient({ wsId, boards }: LogsClientProps) {
+export default function LogsClient({
+  wsId,
+  boards,
+  estimationTypes,
+}: LogsClientProps) {
   const t = useTranslations('tasks-logs');
   const locale = useLocale();
 
@@ -206,7 +212,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
         className="mb-6 space-y-1"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-dynamic-purple/20 to-dynamic-blue/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-purple/20 to-dynamic-blue/20">
             <Activity className="h-5 w-5 text-dynamic-purple" />
           </div>
           <div>
@@ -264,6 +270,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
             />
             {search && (
               <button
+                type="button"
                 onClick={() => {
                   setSearch('');
                   setDebouncedSearch('');
@@ -350,7 +357,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
                 value={boardId}
                 onValueChange={(value) => handleFilterChange(setBoardId, value)}
               >
-                <SelectTrigger className="h-8 w-[160px] text-xs">
+                <SelectTrigger className="h-8 w-40 text-xs">
                   <SelectValue
                     placeholder={t('filter.board', { defaultValue: 'Board' })}
                   />
@@ -374,7 +381,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
                   handleFilterChange(setChangeType, value)
                 }
               >
-                <SelectTrigger className="h-8 w-[160px] text-xs">
+                <SelectTrigger className="h-8 w-40 text-xs">
                   <SelectValue
                     placeholder={t('filter.change_type', {
                       defaultValue: 'Change type',
@@ -407,7 +414,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
                         handleFilterChange(setFieldName, value)
                       }
                     >
-                      <SelectTrigger className="h-8 w-[160px] text-xs">
+                      <SelectTrigger className="h-8 w-40 text-xs">
                         <SelectValue
                           placeholder={t('filter.field_name', {
                             defaultValue: 'Field',
@@ -480,6 +487,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
             t={
               t as (key: string, options?: { defaultValue?: string }) => string
             }
+            estimationTypes={estimationTypes}
           />
         ) : (
           <div className="overflow-hidden rounded-lg border bg-card">
@@ -493,7 +501,7 @@ export default function LogsClient({ wsId, boards }: LogsClientProps) {
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
-                        className="h-10 bg-muted/50 text-xs font-medium"
+                        className="h-10 bg-muted/50 font-medium text-xs"
                       >
                         {header.isPlaceholder
                           ? null
@@ -674,14 +682,14 @@ function EmptyState({
     >
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="relative">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-purple/10 to-dynamic-blue/10">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-purple/10 to-dynamic-blue/10">
             {hasActiveFilters ? (
               <Search className="h-7 w-7 text-muted-foreground" />
             ) : (
               <Clock className="h-7 w-7 text-muted-foreground" />
             )}
           </div>
-          <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-purple/20">
+          <div className="-top-1 -right-1 absolute flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-purple/20">
             <Sparkles className="h-3.5 w-3.5 text-dynamic-purple" />
           </div>
         </div>

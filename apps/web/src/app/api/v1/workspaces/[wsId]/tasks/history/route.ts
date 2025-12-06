@@ -34,6 +34,7 @@ const querySchema = z.object({
       'estimation_points',
       'list_id',
       'completed',
+      'deleted_at',
     ])
     .nullish(),
   board_id: z.string().uuid().nullish(),
@@ -141,6 +142,8 @@ export async function GET(
       id: entry.id,
       task_id: entry.task_id,
       task_name: entry.task_name || 'Unknown Task',
+      task_deleted_at: entry.task_deleted_at ?? undefined,
+      task_permanently_deleted: entry.task_permanently_deleted ?? false,
       board_id: entry.board_id ?? undefined,
       board_name: entry.board_name ?? undefined,
       changed_by: entry.changed_by ?? undefined,

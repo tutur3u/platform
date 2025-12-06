@@ -970,7 +970,10 @@
       "task_label_removed": "Xóa nhãn",
       "task_project_linked": "Liên kết dự án",
       "task_project_unlinked": "Hủy liên kết dự án",
+      "task_assignee_added": "Thêm người được giao",
       "task_assignee_removed": "Xóa người được giao",
+      "task_deleted": "Nhiệm vụ bị xóa",
+      "task_restored": "Nhiệm vụ được khôi phục",
       "workspace_invite": "Lời mời không gian làm việc",
       "system_announcement": "Thông báo hệ thống",
       "account_update": "Cập nhật tài khoản",
@@ -1023,7 +1026,10 @@
         "task_label_removed": "Xóa nhãn",
         "task_project_linked": "Liên kết dự án",
         "task_project_unlinked": "Hủy liên kết dự án",
+        "task_assignee_added": "Thêm người được giao",
         "task_assignee_removed": "Xóa người được giao",
+        "task_deleted": "Xóa nhiệm vụ",
+        "task_restored": "Khôi phục nhiệm vụ",
         "deadline_reminder": "Nhắc nhở hạn chót",
         "workspace_invite": "Lời mời không gian làm việc",
         "email_notifications": "Thông báo email",
@@ -1435,8 +1441,7 @@
     "new_value": "Sau",
     "diff_view": "Thay đổi",
     "to_project": "vào",
-    "from_project": "khỏi",
-    "changes": "thay đổi"
+    "from_project": "khỏi"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

@@ -550,12 +550,28 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
         ) {
           selectedDate = selectedDate.endOf('day');
         }
+        // If both start and end dates are empty, set start date to start of today
+        if (!startDate && !endDate) {
+          onStartDateChange(dayjs().startOf('day').toDate());
+        }
         onEndDateChange(selectedDate.toDate());
       } else {
         onEndDateChange(undefined);
       }
     },
-    [onEndDateChange]
+    [startDate, endDate, onStartDateChange, onEndDateChange]
+  );
+
+  // Wrapper for quick due date that also sets start date if both are empty
+  const handleQuickDueDate = useCallback(
+    (days: number | null) => {
+      // If both start and end dates are empty, set start date to start of today
+      if (!startDate && !endDate && days !== null) {
+        onStartDateChange(dayjs().startOf('day').toDate());
+      }
+      onQuickDueDate(days);
+    },
+    [startDate, endDate, onStartDateChange, onQuickDueDate]
   );
 
   return (
@@ -907,7 +923,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => onQuickDueDate(0)}
+                            onClick={() => handleQuickDueDate(0)}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
@@ -917,7 +933,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => onQuickDueDate(1)}
+                            onClick={() => handleQuickDueDate(1)}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
@@ -929,7 +945,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             size="xs"
                             onClick={() => {
                               const daysUntilEndOfWeek = 6 - dayjs().day();
-                              onQuickDueDate(daysUntilEndOfWeek);
+                              handleQuickDueDate(daysUntilEndOfWeek);
                             }}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
@@ -940,7 +956,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => onQuickDueDate(7)}
+                            onClick={() => handleQuickDueDate(7)}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >

@@ -12,7 +12,8 @@ export interface TaskHistoryEntry {
     | 'label_added'
     | 'label_removed'
     | 'project_linked'
-    | 'project_unlinked';
+    | 'project_unlinked'
+    | 'task_created';
   field_name?: string | null;
   old_value: any;
   new_value: any;

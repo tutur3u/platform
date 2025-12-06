@@ -6503,7 +6503,7 @@ export type Database = {
           metadata: Json | null;
           new_value: Json | null;
           old_value: Json | null;
-          task_id: string;
+          task_id: string | null;
         };
         Insert: {
           change_type: string;
@@ -6515,7 +6515,7 @@ export type Database = {
           metadata?: Json | null;
           new_value?: Json | null;
           old_value?: Json | null;
-          task_id: string;
+          task_id?: string | null;
         };
         Update: {
           change_type?: string;
@@ -6527,7 +6527,7 @@ export type Database = {
           metadata?: Json | null;
           new_value?: Json | null;
           old_value?: Json | null;
-          task_id?: string;
+          task_id?: string | null;
         };
         Relationships: [
           {
@@ -15201,6 +15201,14 @@ export type Database = {
           task_id: string;
         }[];
       };
+      get_task_relationships_at_snapshot: {
+        Args: { p_history_id: string; p_task_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      get_task_snapshot_at_history: {
+        Args: { p_history_id: string; p_task_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracker_stats: {
         Args: { p_is_personal?: boolean; p_user_id: string; p_ws_id: string };
@@ -15515,8 +15523,10 @@ export type Database = {
           metadata: Json;
           new_value: Json;
           old_value: Json;
+          task_deleted_at: string;
           task_id: string;
           task_name: string;
+          task_permanently_deleted: boolean;
           total_count: number;
           user_avatar_url: string;
           user_display_name: string;

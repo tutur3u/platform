@@ -16,23 +16,30 @@ import {
   Layers,
   Plus,
   Rabbit,
+  RotateCcw,
   Tag,
   Target,
+  Trash2,
   Turtle,
-  unicornHead,
   UserMinus,
   UserPlus,
+  unicornHead,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import {
+  type EstimationType,
+  mapEstimationPoints,
+} from '@tuturuuu/ui/tu-do/shared/estimation-mapping';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import React, { useMemo, useState } from 'react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
 import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 import { TextDiffViewer } from '@/components/tasks/text-diff-viewer';
 import type { TaskHistoryLogEntry } from './columns';
@@ -102,13 +109,17 @@ interface LogsTimelineProps {
   className?: string;
   /** Time window in minutes for grouping rapid successive changes (default: 5) */
   rapidChangeWindowMinutes?: number;
+  /** Map of board_id -> estimation_type for proper estimation display */
+  estimationTypes?: Record<string, string | null>;
 }
 
 /** Represents a group of rapid successive changes to the same task by the same user */
 interface RapidChangeGroup {
   id: string;
-  task_id: string;
+  task_id: string | null;
   task_name: string;
+  task_deleted_at?: string;
+  task_permanently_deleted?: boolean;
   board_id?: string;
   user: TaskHistoryLogEntry['user'];
   first_changed_at: string;
@@ -121,8 +132,10 @@ interface RapidChangeGroup {
 /** Represents an aggregated group of same-type actions (e.g., multiple assignees added at once) */
 interface AggregatedActionGroup {
   id: string;
-  task_id: string;
+  task_id: string | null;
   task_name: string;
+  task_deleted_at?: string;
+  task_permanently_deleted?: boolean;
   board_id?: string;
   user: TaskHistoryLogEntry['user'];
   changed_at: string;
@@ -238,6 +251,13 @@ function groupRapidSuccessiveChanges(
   const result: TimelineItem[] = [];
   const processed = new Set<string>();
 
+  // Helper to check if two entries refer to the same task
+  const isSameTask = (a: TaskHistoryLogEntry, b: TaskHistoryLogEntry) => {
+    if (a.task_id && b.task_id) return a.task_id === b.task_id;
+    // Fallback for permanently deleted tasks (null task_id)
+    return !a.task_id && !b.task_id && a.task_name === b.task_name;
+  };
+
   for (const entry of sorted) {
     if (processed.has(entry.id)) continue;
 
@@ -256,7 +276,7 @@ function groupRapidSuccessiveChanges(
 
         // Aggregate same-type actions for the same task by the same user within the time window
         if (
-          otherEntry.task_id === entry.task_id &&
+          isSameTask(otherEntry, entry) &&
           otherEntry.changed_by === entry.changed_by &&
           otherEntry.change_type === entry.change_type &&
           diffMinutes <= timeWindowMinutes
@@ -281,6 +301,8 @@ function groupRapidSuccessiveChanges(
           id: entry.id,
           task_id: entry.task_id,
           task_name: entry.task_name,
+          task_deleted_at: entry.task_deleted_at,
+          task_permanently_deleted: entry.task_permanently_deleted,
           board_id: entry.board_id,
           user: entry.user,
           changed_at: chronological[chronological.length - 1]!.changed_at,
@@ -290,7 +312,9 @@ function groupRapidSuccessiveChanges(
           aggregated_items: aggregatedItems,
         });
 
-        sameTypeEntries.forEach((e) => processed.add(e.id));
+        sameTypeEntries.forEach((e) => {
+          processed.add(e.id);
+        });
         continue;
       }
     }
@@ -305,7 +329,7 @@ function groupRapidSuccessiveChanges(
       const diffMinutes = Math.abs(entryTime - otherTime) / (1000 * 60);
 
       if (
-        otherEntry.task_id === entry.task_id &&
+        isSameTask(otherEntry, entry) &&
         otherEntry.changed_by === entry.changed_by &&
         diffMinutes <= timeWindowMinutes
       ) {
@@ -324,6 +348,8 @@ function groupRapidSuccessiveChanges(
         id: entry.id,
         task_id: entry.task_id,
         task_name: entry.task_name,
+        task_deleted_at: entry.task_deleted_at,
+        task_permanently_deleted: entry.task_permanently_deleted,
         board_id: entry.board_id,
         user: entry.user,
         first_changed_at: chronological[0]!.changed_at,
@@ -333,7 +359,9 @@ function groupRapidSuccessiveChanges(
         change_count: groupEntries.length,
       });
 
-      groupEntries.forEach((e) => processed.add(e.id));
+      groupEntries.forEach((e) => {
+        processed.add(e.id);
+      });
     } else {
       result.push(entry);
       processed.add(entry.id);
@@ -363,8 +391,45 @@ export default function LogsTimeline({
   t,
   className,
   rapidChangeWindowMinutes = 5,
+  estimationTypes,
 }: LogsTimelineProps) {
   const dateLocale = locale === 'vi' ? vi : enUS;
+
+  // Calculate latest deletion entries for permanently deleted tasks
+  const latestDeletions = useMemo(() => {
+    const deletions = new Set<string>();
+    const processedTasks = new Set<string>();
+
+    // Entries are typically sorted by date descending, but let's be safe
+    // We want the NEWEST 'deleted_at' entry for each task
+    const sortedEntries = [...entries].sort(
+      (a, b) =>
+        new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime()
+    );
+
+    for (const entry of sortedEntries) {
+      if (
+        entry.task_permanently_deleted &&
+        entry.change_type === 'field_updated' &&
+        entry.field_name === 'deleted_at' &&
+        // Check if it's a delete action (not restore)
+        entry.new_value !== null &&
+        entry.new_value !== undefined &&
+        entry.new_value !== '' &&
+        entry.new_value !== 'null'
+      ) {
+        // For permanently deleted tasks, task_id is null.
+        // We use task_name as a fallback key to distinguish between different deleted tasks.
+        const taskKey = entry.task_id || `null-${entry.task_name}`;
+
+        if (!processedTasks.has(taskKey)) {
+          deletions.add(entry.id);
+          processedTasks.add(taskKey);
+        }
+      }
+    }
+    return deletions;
+  }, [entries]);
 
   // Group entries by date, then apply rapid change grouping
   const groupedEntries = useMemo(() => {
@@ -444,6 +509,10 @@ export default function LogsTimeline({
                   t={t}
                   index={index}
                   dateLocale={dateLocale}
+                  estimationType={
+                    item.board_id ? estimationTypes?.[item.board_id] : undefined
+                  }
+                  latestDeletions={latestDeletions}
                 />
               ) : isAggregatedActionGroup(item) ? (
                 <AggregatedActionEntry
@@ -463,6 +532,10 @@ export default function LogsTimeline({
                   t={t}
                   index={index}
                   dateLocale={dateLocale}
+                  estimationType={
+                    item.board_id ? estimationTypes?.[item.board_id] : undefined
+                  }
+                  isLatestDeletion={latestDeletions.has(item.id)}
                 />
               )
             )}
@@ -480,6 +553,10 @@ interface RapidChangeGroupEntryProps {
   t: (key: string, options?: { defaultValue?: string }) => string;
   index: number;
   dateLocale: typeof enUS | typeof vi;
+  /** Estimation type for proper points display */
+  estimationType?: EstimationType;
+  /** Set of IDs for entries that are the latest deletion for a permanently deleted task */
+  latestDeletions?: Set<string>;
 }
 
 function RapidChangeGroupEntry({
@@ -489,6 +566,8 @@ function RapidChangeGroupEntry({
   t,
   index,
   dateLocale,
+  estimationType,
+  latestDeletions,
 }: RapidChangeGroupEntryProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -590,25 +669,57 @@ function RapidChangeGroupEntry({
             </Badge>
 
             {/* Task link */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={`/${wsId}/tasks/${group.task_id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="max-w-[150px] truncate font-medium text-foreground text-sm hover:underline md:max-w-[250px]"
+            <div className="flex items-center gap-1.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {group.task_permanently_deleted ? (
+                    <span className="max-w-[150px] truncate font-medium text-muted-foreground text-sm line-through md:max-w-[250px]">
+                      {group.task_name}
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/${wsId}/tasks/${group.task_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        'max-w-[150px] truncate font-medium text-sm hover:underline md:max-w-[250px]',
+                        group.task_deleted_at
+                          ? 'text-muted-foreground line-through'
+                          : 'text-foreground'
+                      )}
+                    >
+                      {group.task_name}
+                    </Link>
+                  )}
+                </TooltipTrigger>
+                {group.task_name.length > 25 && (
+                  <TooltipContent
+                    side="bottom"
+                    className="wrap-break-word max-w-md text-sm"
+                  >
+                    {group.task_name}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              {group.task_permanently_deleted ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-dynamic-red/50 bg-dynamic-red/20 px-1.5 py-0.5 text-dynamic-red text-xs"
                 >
-                  {group.task_name}
-                </Link>
-              </TooltipTrigger>
-              {group.task_name.length > 25 && (
-                <TooltipContent
-                  side="bottom"
-                  className="max-w-md break-words text-sm"
+                  <Trash2 className="h-3 w-3" />
+                  {t('permanently_deleted', {
+                    defaultValue: 'Permanently Deleted',
+                  })}
+                </Badge>
+              ) : group.task_deleted_at ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-dynamic-orange/30 bg-dynamic-orange/10 px-1.5 py-0.5 text-dynamic-orange text-xs"
                 >
-                  {group.task_name}
-                </TooltipContent>
-              )}
-            </Tooltip>
+                  <RotateCcw className="h-3 w-3" />
+                  {t('in_trash', { defaultValue: 'In Trash' })}
+                </Badge>
+              ) : null}
+            </div>
 
             {/* Expand indicator */}
             <ChevronDown
@@ -700,6 +811,8 @@ function RapidChangeGroupEntry({
                   index={i}
                   dateLocale={dateLocale}
                   compact
+                  estimationType={estimationType}
+                  isLatestDeletion={latestDeletions?.has(entry.id)}
                 />
               ))}
             </div>
@@ -778,19 +891,17 @@ function AggregatedActionEntry({
       return (
         <div className="flex flex-wrap items-center gap-1.5">
           {items.map((item, i) => (
-            <div
+            <Badge
               key={i}
-              className={cn(
-                'flex items-center gap-1',
-                isRemoved && 'opacity-70'
-              )}
+              variant={isRemoved ? 'outline' : 'secondary'}
+              className={cn('gap-1.5 text-xs', isRemoved && 'opacity-70')}
             >
-              <Avatar className="h-5 w-5">
+              <Avatar className="h-4 w-4">
                 <AvatarImage
                   src={item.avatar_url || undefined}
                   alt={item.name}
                 />
-                <AvatarFallback className="text-[10px]">
+                <AvatarFallback className="text-[8px]">
                   {item.name
                     .split(' ')
                     .map((n) => n[0])
@@ -799,18 +910,10 @@ function AggregatedActionEntry({
                     .slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
-              <span
-                className={cn(
-                  'text-sm',
-                  isRemoved && 'text-muted-foreground line-through'
-                )}
-              >
+              <span className={cn(isRemoved && 'line-through')}>
                 {item.name}
               </span>
-              {i < items.length - 1 && (
-                <span className="text-muted-foreground">,</span>
-              )}
-            </div>
+            </Badge>
           ))}
         </div>
       );
@@ -896,24 +999,56 @@ function AggregatedActionEntry({
           </span>
 
           {/* Task link */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href={`/${wsId}/tasks/${group.task_id}`}
-                className="max-w-[200px] truncate font-medium text-foreground text-sm hover:underline md:max-w-[300px]"
+          <div className="flex items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {group.task_permanently_deleted ? (
+                  <span className="max-w-[200px] truncate font-medium text-muted-foreground text-sm line-through md:max-w-[300px]">
+                    {group.task_name}
+                  </span>
+                ) : (
+                  <Link
+                    href={`/${wsId}/tasks/${group.task_id}`}
+                    className={cn(
+                      'max-w-[200px] truncate font-medium text-sm hover:underline md:max-w-[300px]',
+                      group.task_deleted_at
+                        ? 'text-muted-foreground line-through'
+                        : 'text-foreground'
+                    )}
+                  >
+                    {group.task_name}
+                  </Link>
+                )}
+              </TooltipTrigger>
+              {group.task_name.length > 30 && (
+                <TooltipContent
+                  side="bottom"
+                  className="wrap-break-word max-w-md text-sm"
+                >
+                  {group.task_name}
+                </TooltipContent>
+              )}
+            </Tooltip>
+            {group.task_permanently_deleted ? (
+              <Badge
+                variant="outline"
+                className="gap-1 border-dynamic-red/50 bg-dynamic-red/20 px-1.5 py-0.5 text-dynamic-red text-xs"
               >
-                {group.task_name}
-              </Link>
-            </TooltipTrigger>
-            {group.task_name.length > 30 && (
-              <TooltipContent
-                side="bottom"
-                className="max-w-md break-words text-sm"
+                <Trash2 className="h-3 w-3" />
+                {t('permanently_deleted', {
+                  defaultValue: 'Permanently Deleted',
+                })}
+              </Badge>
+            ) : group.task_deleted_at ? (
+              <Badge
+                variant="outline"
+                className="gap-1 border-dynamic-orange/30 bg-dynamic-orange/10 px-1.5 py-0.5 text-dynamic-orange text-xs"
               >
-                {group.task_name}
-              </TooltipContent>
-            )}
-          </Tooltip>
+                <RotateCcw className="h-3 w-3" />
+                {t('in_trash', { defaultValue: 'In Trash' })}
+              </Badge>
+            ) : null}
+          </div>
         </div>
 
         {/* Aggregated items */}
@@ -939,6 +1074,10 @@ interface TimelineEntryProps {
   dateLocale: typeof enUS | typeof vi;
   /** Compact mode for nested display within groups */
   compact?: boolean;
+  /** Estimation type for proper points display */
+  estimationType?: EstimationType;
+  /** Whether this entry is the latest deletion for a permanently deleted task */
+  isLatestDeletion?: boolean;
 }
 
 function TimelineEntry({
@@ -948,9 +1087,20 @@ function TimelineEntry({
   index,
   dateLocale,
   compact = false,
+  estimationType,
+  isLatestDeletion,
 }: TimelineEntryProps) {
-  const { icon, color } = getChangeIcon(entry.change_type, entry.field_name);
-  const description = getChangeDescription(entry, t);
+  const { icon, color } = getChangeIcon(
+    entry.change_type,
+    entry.field_name,
+    entry.new_value
+  );
+  const description = getChangeDescription(
+    entry,
+    t,
+    estimationType,
+    isLatestDeletion
+  );
   const timeAgo = formatDistanceToNow(new Date(entry.changed_at), {
     addSuffix: true,
     locale: dateLocale,
@@ -1023,24 +1173,56 @@ function TimelineEntry({
 
           {/* Task link - hidden in compact mode since parent shows it */}
           {!compact && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={`/${wsId}/tasks/${entry.task_id}`}
-                  className="max-w-[200px] truncate font-medium text-foreground text-sm hover:underline md:max-w-[300px]"
+            <div className="flex items-center gap-1.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {entry.task_permanently_deleted ? (
+                    <span className="max-w-[200px] truncate font-medium text-muted-foreground text-sm line-through md:max-w-[300px]">
+                      {entry.task_name}
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/${wsId}/tasks/${entry.task_id}`}
+                      className={cn(
+                        'max-w-[200px] truncate font-medium text-sm hover:underline md:max-w-[300px]',
+                        entry.task_deleted_at
+                          ? 'text-muted-foreground line-through'
+                          : 'text-foreground'
+                      )}
+                    >
+                      {entry.task_name}
+                    </Link>
+                  )}
+                </TooltipTrigger>
+                {entry.task_name.length > 30 && (
+                  <TooltipContent
+                    side="bottom"
+                    className="wrap-break-word max-w-md text-sm"
+                  >
+                    {entry.task_name}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              {entry.task_permanently_deleted ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-dynamic-red/50 bg-dynamic-red/20 px-1.5 py-0.5 text-dynamic-red text-xs"
                 >
-                  {entry.task_name}
-                </Link>
-              </TooltipTrigger>
-              {entry.task_name.length > 30 && (
-                <TooltipContent
-                  side="bottom"
-                  className="max-w-md break-words text-sm"
+                  <Trash2 className="h-3 w-3" />
+                  {t('permanently_deleted', {
+                    defaultValue: 'Permanently Deleted',
+                  })}
+                </Badge>
+              ) : entry.task_deleted_at ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-dynamic-orange/30 bg-dynamic-orange/10 px-1.5 py-0.5 text-dynamic-orange text-xs"
                 >
-                  {entry.task_name}
-                </TooltipContent>
-              )}
-            </Tooltip>
+                  <RotateCcw className="h-3 w-3" />
+                  {t('in_trash', { defaultValue: 'In Trash' })}
+                </Badge>
+              ) : null}
+            </div>
           )}
         </div>
 
@@ -1101,7 +1283,8 @@ function TimelineEntry({
 
 function getChangeIcon(
   changeType: string,
-  fieldName?: string | null
+  fieldName?: string | null,
+  newValue?: unknown
 ): { icon: React.ReactNode; color: string } {
   if (changeType === 'field_updated') {
     switch (fieldName) {
@@ -1145,6 +1328,23 @@ function getChangeIcon(
           icon: <CheckCircle2 className="h-4 w-4 text-dynamic-green" />,
           color: 'bg-dynamic-green/10',
         };
+      case 'deleted_at': {
+        // Check if task was deleted or restored based on new_value
+        const wasDeleted =
+          newValue !== null &&
+          newValue !== undefined &&
+          newValue !== '' &&
+          newValue !== 'null';
+        return wasDeleted
+          ? {
+              icon: <RotateCcw className="h-4 w-4 text-dynamic-orange" />,
+              color: 'bg-dynamic-orange/10',
+            }
+          : {
+              icon: <RotateCcw className="h-4 w-4 text-dynamic-green" />,
+              color: 'bg-dynamic-green/10',
+            };
+      }
       default:
         return {
           icon: <CircleDot className="h-4 w-4 text-muted-foreground" />,
@@ -1208,17 +1408,70 @@ interface ChangeDescription {
 
 function getChangeDescription(
   entry: TaskHistoryLogEntry,
-  t: (key: string, options?: { defaultValue?: string }) => string
+  t: (key: string, options?: { defaultValue?: string }) => string,
+  estimationType?: EstimationType,
+  isLatestDeletion?: boolean
 ): ChangeDescription {
   // Handle task_created
   if (entry.change_type === 'task_created') {
-    return {
-      action: t('task_created', { defaultValue: 'created' }),
-      details: entry.metadata?.description ? (
-        <Badge variant="secondary" className="text-xs">
+    const metadata = entry.metadata as Record<string, unknown> | null;
+    const hasDescription = !!metadata?.description;
+    const hasEstimation = metadata?.estimation_points != null;
+    const hasStartDate = !!metadata?.start_date;
+    const hasEndDate = !!metadata?.end_date;
+    const listName = metadata?.list_name as string | undefined;
+
+    const badges: React.ReactNode[] = [];
+    if (listName) {
+      badges.push(
+        <Badge key="list" variant="outline" className="gap-1 text-xs">
+          <ArrowRight className="h-3 w-3" />
+          {listName}
+        </Badge>
+      );
+    }
+    if (hasDescription) {
+      badges.push(
+        <Badge key="desc" variant="secondary" className="text-xs">
           {t('with_description', { defaultValue: 'with description' })}
         </Badge>
-      ) : undefined,
+      );
+    }
+    if (hasEstimation) {
+      const points = metadata.estimation_points as number;
+      const displayPoints = estimationType
+        ? mapEstimationPoints(points, estimationType)
+        : `${points} ${t('points', { defaultValue: 'pts' })}`;
+      badges.push(
+        <Badge key="est" variant="secondary" className="gap-1 text-xs">
+          <Target className="h-3 w-3" />
+          {displayPoints}
+        </Badge>
+      );
+    }
+    if (hasStartDate) {
+      badges.push(
+        <Badge key="start" variant="secondary" className="gap-1 text-xs">
+          <Clock className="h-3 w-3" />
+          {format(new Date(metadata.start_date as string), 'MMM d')}
+        </Badge>
+      );
+    }
+    if (hasEndDate) {
+      badges.push(
+        <Badge key="end" variant="secondary" className="gap-1 text-xs">
+          <Calendar className="h-3 w-3" />
+          {format(new Date(metadata.end_date as string), 'MMM d')}
+        </Badge>
+      );
+    }
+
+    return {
+      action: t('task_created', { defaultValue: 'created' }),
+      details:
+        badges.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">{badges}</div>
+        ) : undefined,
       noDetailsWrapper: true,
     };
   }
@@ -1244,6 +1497,9 @@ function getChangeDescription(
       list_id: t('field_updated.list_id', { defaultValue: 'moved' }),
       completed: t('field_updated.completed', {
         defaultValue: 'changed status of',
+      }),
+      deleted_at: t('field_updated.deleted_at', {
+        defaultValue: 'deleted',
       }),
     };
 
@@ -1299,7 +1555,10 @@ function getChangeDescription(
               </span>
             </TooltipTrigger>
             {oldName.length > 40 && (
-              <TooltipContent side="bottom" className="max-w-md break-words">
+              <TooltipContent
+                side="bottom"
+                className="wrap-break-word max-w-md"
+              >
                 {oldName}
               </TooltipContent>
             )}
@@ -1312,7 +1571,10 @@ function getChangeDescription(
               </span>
             </TooltipTrigger>
             {newName.length > 40 && (
-              <TooltipContent side="bottom" className="max-w-md break-words">
+              <TooltipContent
+                side="bottom"
+                className="wrap-break-word max-w-md"
+              >
                 {newName}
               </TooltipContent>
             )}
@@ -1348,6 +1610,117 @@ function getChangeDescription(
             </span>
           )}
         </div>
+      );
+
+      return { action, details, noDetailsWrapper: true };
+    }
+
+    // For list_id changes, show actual column names from metadata
+    if (entry.field_name === 'list_id') {
+      const metadata = entry.metadata as Record<string, unknown> | null;
+      const oldListName =
+        (metadata?.old_list_name as string) ||
+        t('value.unknown_column', { defaultValue: 'Unknown' });
+      const newListName =
+        (metadata?.new_list_name as string) ||
+        t('value.unknown_column', { defaultValue: 'Unknown' });
+
+      const details = (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs opacity-70">
+            {oldListName}
+          </Badge>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <Badge variant="secondary" className="text-xs">
+            {newListName}
+          </Badge>
+        </div>
+      );
+
+      return { action, details, noDetailsWrapper: true };
+    }
+
+    // For estimation_points changes, use proper estimation type formatting
+    if (entry.field_name === 'estimation_points') {
+      const oldPoints = entry.old_value as number | null;
+      const newPoints = entry.new_value as number | null;
+
+      const formatPoints = (points: number | null) => {
+        if (points === null || points === undefined) {
+          return t('value.none', { defaultValue: 'None' });
+        }
+        if (estimationType) {
+          return mapEstimationPoints(points, estimationType);
+        }
+        return `${points} ${t('points', { defaultValue: 'pts' })}`;
+      };
+
+      const details = (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="gap-1 text-xs opacity-70">
+            <Target className="h-3 w-3" />
+            {formatPoints(oldPoints)}
+          </Badge>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <Badge variant="secondary" className="gap-1 text-xs">
+            <Target className="h-3 w-3" />
+            {formatPoints(newPoints)}
+          </Badge>
+        </div>
+      );
+
+      return { action, details, noDetailsWrapper: true };
+    }
+
+    // For deleted_at changes, show task moved to trash/restored status
+    // If the task is now permanently deleted, show that instead of "In Trash"
+    if (entry.field_name === 'deleted_at') {
+      // Check if task was deleted (new_value has a timestamp) or restored (new_value is null/undefined/empty)
+      // Handle various representations of null from JSONB: null, undefined, empty string, "null" string
+      const newValue = entry.new_value;
+      const wasDeleted =
+        newValue !== null &&
+        newValue !== undefined &&
+        newValue !== '' &&
+        newValue !== 'null';
+
+      // If the task was subsequently permanently deleted, show that status
+      // Otherwise show the soft-delete (moved to trash) status
+      const showPermanentlyDeleted = wasDeleted && isLatestDeletion;
+
+      const action = wasDeleted
+        ? showPermanentlyDeleted
+          ? t('field_updated.deleted_at', {
+              defaultValue: 'permanently deleted',
+            })
+          : t('field_updated.deleted_at', { defaultValue: 'moved to trash' })
+        : t('task_restored', { defaultValue: 'restored' });
+
+      const details = (
+        <Badge
+          variant="outline"
+          className={cn(
+            'gap-1 text-xs',
+            showPermanentlyDeleted
+              ? 'border-dynamic-red/50 bg-dynamic-red/20 text-dynamic-red'
+              : wasDeleted
+                ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
+                : 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+          )}
+        >
+          {showPermanentlyDeleted ? (
+            <Trash2 className="h-3 w-3" />
+          ) : wasDeleted ? (
+            <RotateCcw className="h-3 w-3" />
+          ) : (
+            <RotateCcw className="h-3 w-3" />
+          )}
+          {showPermanentlyDeleted
+            ? t('permanently_deleted', { defaultValue: 'Permanently Deleted' })
+            : wasDeleted
+              ? t('in_trash', { defaultValue: 'In Trash' })
+              : t('status.restored', { defaultValue: 'Restored' })}
+        </Badge>
       );
 
       return { action, details, noDetailsWrapper: true };
@@ -1392,20 +1765,18 @@ function getChangeDescription(
       return {
         action: t('assignee_added', { defaultValue: 'assigned' }),
         details: (
-          <div className="flex items-center gap-1.5">
-            <Avatar className="h-5 w-5">
+          <Badge variant="secondary" className="gap-1.5 text-xs">
+            <Avatar className="h-4 w-4">
               <AvatarImage
                 src={assigneeAvatar || undefined}
                 alt={assigneeName}
               />
-              <AvatarFallback className="text-[10px]">
+              <AvatarFallback className="text-[8px]">
                 {assigneeInitials}
               </AvatarFallback>
             </Avatar>
-            <Badge variant="secondary" className="text-xs">
-              {assigneeName}
-            </Badge>
-          </div>
+            {assigneeName}
+          </Badge>
         ),
         noDetailsWrapper: true,
       };
@@ -1432,20 +1803,18 @@ function getChangeDescription(
       return {
         action: t('assignee_removed', { defaultValue: 'unassigned' }),
         details: (
-          <div className="flex items-center gap-1.5">
-            <Avatar className="h-5 w-5 opacity-60">
+          <Badge variant="outline" className="gap-1.5 text-xs">
+            <Avatar className="h-4 w-4 opacity-60">
               <AvatarImage
                 src={assigneeAvatar || undefined}
                 alt={assigneeName}
               />
-              <AvatarFallback className="text-[10px]">
+              <AvatarFallback className="text-[8px]">
                 {assigneeInitials}
               </AvatarFallback>
             </Avatar>
-            <Badge variant="outline" className="text-xs">
-              {assigneeName}
-            </Badge>
-          </div>
+            {assigneeName}
+          </Badge>
         ),
         noDetailsWrapper: true,
       };

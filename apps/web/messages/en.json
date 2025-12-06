@@ -880,7 +880,10 @@
       "task_label_removed": "Label Removed",
       "task_project_linked": "Project Linked",
       "task_project_unlinked": "Project Unlinked",
+      "task_assignee_added": "Assignee Added",
       "task_assignee_removed": "Assignee Removed",
+      "task_deleted": "Task Deleted",
+      "task_restored": "Task Restored",
       "workspace_invite": "Workspace Invite",
       "system_announcement": "System Announcement",
       "account_update": "Account Update",
@@ -933,7 +936,10 @@
         "task_label_removed": "Label removals",
         "task_project_linked": "Project links",
         "task_project_unlinked": "Project unlinks",
+        "task_assignee_added": "Assignee additions",
         "task_assignee_removed": "Assignee removals",
+        "task_deleted": "Task deletions",
+        "task_restored": "Task restorations",
         "deadline_reminder": "Deadline reminders",
         "workspace_invite": "Workspace invitations",
         "email_notifications": "Email notifications",
@@ -1345,8 +1351,7 @@
     "new_value": "Current",
     "diff_view": "Changes",
     "to_project": "to",
-    "from_project": "from",
-    "changes": "changes"
+    "from_project": "from"
   },
   "link-shortener": {
     "title": "Link Shortener",

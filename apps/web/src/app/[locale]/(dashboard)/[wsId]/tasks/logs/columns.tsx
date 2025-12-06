@@ -13,6 +13,7 @@ import {
   Plus,
   Tag,
   Target,
+  Trash2,
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
@@ -26,8 +27,10 @@ import Link from 'next/link';
 
 export interface TaskHistoryLogEntry {
   id: string;
-  task_id: string;
+  task_id: string | null;
   task_name: string;
+  task_deleted_at?: string; // Indicates if task is soft-deleted
+  task_permanently_deleted?: boolean; // Indicates if task was permanently deleted
   board_id?: string;
   changed_by: string | null;
   changed_at: string;
@@ -136,21 +139,47 @@ export function getColumns({
       accessorKey: 'task_name',
       header: t('columns.task', { defaultValue: 'Task' }),
       cell: ({ row }) => {
-        const { task_id, task_name } = row.original;
+        const { task_id, task_name, task_permanently_deleted } = row.original;
         const isLongName = task_name.length > 30;
+
+        const content = (
+          <span
+            className={`block max-w-[200px] truncate font-medium text-sm ${
+              !task_id || task_permanently_deleted
+                ? 'text-muted-foreground line-through'
+                : 'hover:underline'
+            }`}
+          >
+            {task_name}
+          </span>
+        );
+
+        if (!task_id || task_permanently_deleted) {
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>{content}</TooltipTrigger>
+              {isLongName && (
+                <TooltipContent
+                  side="bottom"
+                  className="wrap-break-word max-w-md"
+                >
+                  {task_name}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          );
+        }
 
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link
-                href={`/${wsId}/tasks/${task_id}`}
-                className="block max-w-[200px] truncate font-medium text-sm hover:underline"
-              >
-                {task_name}
-              </Link>
+              <Link href={`/${wsId}/tasks/${task_id}`}>{content}</Link>
             </TooltipTrigger>
             {isLongName && (
-              <TooltipContent side="bottom" className="max-w-md break-words">
+              <TooltipContent
+                side="bottom"
+                className="wrap-break-word max-w-md"
+              >
                 {task_name}
               </TooltipContent>
             )}
@@ -189,7 +218,7 @@ export function getColumns({
           const taskName =
             typeof new_value === 'string' ? new_value : String(new_value || '');
           return (
-            <span className="font-medium text-sm text-dynamic-green">
+            <span className="font-medium text-dynamic-green text-sm">
               {taskName || t('new_task', { defaultValue: 'New task' })}
             </span>
           );
@@ -213,9 +242,9 @@ export function getColumns({
           const oldName = String(old_value || '');
           const newName = String(new_value || '');
           const oldTruncated =
-            oldName.length > 30 ? oldName.slice(0, 27) + '...' : oldName;
+            oldName.length > 30 ? `${oldName.slice(0, 27)}...` : oldName;
           const newTruncated =
-            newName.length > 30 ? newName.slice(0, 27) + '...' : newName;
+            newName.length > 30 ? `${newName.slice(0, 27)}...` : newName;
 
           return (
             <div className="flex items-center gap-2 text-sm">
@@ -228,7 +257,7 @@ export function getColumns({
                 {oldName.length > 30 && (
                   <TooltipContent
                     side="bottom"
-                    className="max-w-md break-words"
+                    className="wrap-break-word max-w-md"
                   >
                     {oldName}
                   </TooltipContent>
@@ -244,7 +273,7 @@ export function getColumns({
                 {newName.length > 30 && (
                   <TooltipContent
                     side="bottom"
-                    className="max-w-md break-words"
+                    className="wrap-break-word max-w-md"
                   >
                     {newName}
                   </TooltipContent>
@@ -295,6 +324,7 @@ function getChangeTypeDisplay(
       estimation_points: <Target className="h-3 w-3" />,
       list_id: <ArrowRight className="h-3 w-3" />,
       completed: <CheckCircle2 className="h-3 w-3" />,
+      deleted_at: <Trash2 className="h-3 w-3" />,
     };
 
     const fieldLabels: Record<string, string> = {
@@ -312,13 +342,16 @@ function getChangeTypeDisplay(
       }),
       list_id: translate('field_name.list_id', { defaultValue: 'Moved' }),
       completed: translate('field_name.completed', { defaultValue: 'Status' }),
+      deleted_at: translate('field_name.deleted_at', {
+        defaultValue: 'Deleted',
+      }),
     };
 
     return {
       icon: fieldIcons[fieldName || ''] || <CircleDot className="h-3 w-3" />,
       label:
         fieldLabels[fieldName || ''] ||
-        translate('field_updated', { defaultValue: 'Updated' }),
+        translate('change_type.field_updated', { defaultValue: 'Updated' }),
       variant: 'secondary',
     };
   }
