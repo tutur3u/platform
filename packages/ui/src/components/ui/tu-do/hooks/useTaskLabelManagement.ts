@@ -154,6 +154,14 @@ export function useTaskLabelManagement({
         }
       }
 
+      // If no operations succeeded, throw to trigger rollback
+      const targetCount = active
+        ? tasksToRemoveFrom.length
+        : tasksNeedingLabel.length;
+      if (targetCount > 0 && successCount === 0) {
+        throw new Error('Failed to update any tasks');
+      }
+
       toast.success(active ? 'Label removed' : 'Label added', {
         description:
           successCount > 1 ? `${successCount} tasks updated` : undefined,

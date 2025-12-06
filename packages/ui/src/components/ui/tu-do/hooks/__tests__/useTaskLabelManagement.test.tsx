@@ -86,9 +86,9 @@ describe('useTaskLabelManagement', () => {
     vi.clearAllMocks();
 
     // Setup default mock implementations
-    // The actual code uses: .delete().in('task_id', [...]).eq('label_id', labelId)
+    // The actual code uses: .delete().eq('task_id', taskId).eq('label_id', labelId)
     mockDelete.mockReturnValue({
-      in: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),
       }),
     });
@@ -221,9 +221,9 @@ describe('useTaskLabelManagement', () => {
     });
 
     it('should rollback on error and show toast', async () => {
-      // Mock error for this test - using .in().eq() pattern
+      // Mock error for this test - using .eq().eq() pattern
       mockDelete.mockReturnValue({
-        in: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
           eq: vi
             .fn()
             .mockResolvedValue({ error: { message: 'Database error' } }),

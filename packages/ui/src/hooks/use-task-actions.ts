@@ -1139,6 +1139,14 @@ export function useTaskActions({
           }
         }
 
+        // If no operations succeeded, throw to trigger rollback
+        const targetCount = active
+          ? tasksToRemoveFrom.length
+          : tasksNeedingAssignee.length;
+        if (targetCount > 0 && successCount === 0) {
+          throw new Error('Failed to update any tasks');
+        }
+
         // NOTE: No invalidation needed - optimistic update already handles the UI
         // and realtime subscription handles cross-user sync
 
