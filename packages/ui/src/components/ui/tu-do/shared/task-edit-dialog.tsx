@@ -80,6 +80,7 @@ export {
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
+import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
@@ -2736,6 +2737,11 @@ export function TaskEditDialog({
                     )}
                   </div>
                 </div>
+
+                {/* Task Activity Section - Only show in edit mode */}
+                {!isCreateMode && (
+                  <TaskActivitySection wsId={wsId} taskId={task?.id} />
+                )}
               </div>
             </div>
           </div>

@@ -23,6 +23,8 @@ export type NotificationEventType =
   | 'task_project_linked'
   | 'task_project_unlinked'
   | 'task_assignee_removed'
+  // Deadline reminders
+  | 'deadline_reminder'
   // Workspace
   | 'workspace_invite';
 

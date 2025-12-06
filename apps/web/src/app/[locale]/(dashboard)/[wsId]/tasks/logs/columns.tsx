@@ -13,8 +13,8 @@ import {
   Plus,
   Tag,
   Target,
-  User,
   UserMinus,
+  UserPlus,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -137,13 +137,24 @@ export function getColumns({
       header: t('columns.task', { defaultValue: 'Task' }),
       cell: ({ row }) => {
         const { task_id, task_name } = row.original;
+        const isLongName = task_name.length > 30;
+
         return (
-          <Link
-            href={`/${wsId}/tasks/${task_id}`}
-            className="truncate font-medium text-sm hover:underline"
-          >
-            {task_name}
-          </Link>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={`/${wsId}/tasks/${task_id}`}
+                className="block max-w-[200px] truncate font-medium text-sm hover:underline"
+              >
+                {task_name}
+              </Link>
+            </TooltipTrigger>
+            {isLongName && (
+              <TooltipContent side="bottom" className="max-w-md break-words">
+                {task_name}
+              </TooltipContent>
+            )}
+          </Tooltip>
         );
       },
     },
@@ -184,17 +195,62 @@ export function getColumns({
           );
         }
 
+        // Handle relationship changes with enhanced display
         if (change_type !== 'field_updated') {
-          // For relationship changes, show the entity name from metadata
-          const entityName = getRelationshipEntityName(
-            change_type,
-            metadata,
-            t
-          );
           return (
-            <span className="text-sm">
-              {entityName || t('no_details', { defaultValue: 'No details' })}
-            </span>
+            <RelationshipChangeValue
+              changeType={change_type}
+              oldValue={old_value}
+              newValue={new_value}
+              metadata={metadata}
+              t={t}
+            />
+          );
+        }
+
+        // For name field changes, add tooltip for long values
+        if (field_name === 'name') {
+          const oldName = String(old_value || '');
+          const newName = String(new_value || '');
+          const oldTruncated =
+            oldName.length > 30 ? oldName.slice(0, 27) + '...' : oldName;
+          const newTruncated =
+            newName.length > 30 ? newName.slice(0, 27) + '...' : newName;
+
+          return (
+            <div className="flex items-center gap-2 text-sm">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="max-w-[100px] truncate text-muted-foreground line-through">
+                    {oldTruncated}
+                  </span>
+                </TooltipTrigger>
+                {oldName.length > 30 && (
+                  <TooltipContent
+                    side="bottom"
+                    className="max-w-md break-words"
+                  >
+                    {oldName}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="max-w-[100px] truncate font-medium">
+                    {newTruncated}
+                  </span>
+                </TooltipTrigger>
+                {newName.length > 30 && (
+                  <TooltipContent
+                    side="bottom"
+                    className="max-w-md break-words"
+                  >
+                    {newName}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </div>
           );
         }
 
@@ -283,7 +339,7 @@ function getChangeTypeDisplay(
       variant: 'default',
     },
     assignee_added: {
-      icon: <User className="h-3 w-3" />,
+      icon: <UserPlus className="h-3 w-3" />,
       label: translate('change_type.assignee_added', {
         defaultValue: 'Assigned',
       }),
@@ -335,37 +391,217 @@ function getChangeTypeDisplay(
   );
 }
 
-function getRelationshipEntityName(
-  changeType: string,
-  metadata: Record<string, any>,
-  t?: (key: string, options?: { defaultValue?: string }) => string
-): string | null {
-  const translate =
-    t ||
-    ((key: string, opts?: { defaultValue?: string }) =>
-      opts?.defaultValue || key);
+interface RelationshipChangeValueProps {
+  changeType: string;
+  oldValue: unknown;
+  newValue: unknown;
+  metadata: Record<string, unknown>;
+  t: (key: string, options?: { defaultValue?: string }) => string;
+}
 
+function RelationshipChangeValue({
+  changeType,
+  oldValue,
+  newValue,
+  metadata,
+  t,
+}: RelationshipChangeValueProps) {
   switch (changeType) {
-    case 'assignee_added':
-    case 'assignee_removed':
+    case 'assignee_added': {
+      const assigneeData = newValue as {
+        user_id?: string;
+        user_name?: string;
+        avatar_url?: string;
+      } | null;
+      const assigneeName =
+        assigneeData?.user_name ||
+        (metadata?.assignee_name as string) ||
+        t('unknown_user', { defaultValue: 'Unknown user' });
+      const assigneeAvatar = assigneeData?.avatar_url;
+      const assigneeInitials = assigneeName
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+
       return (
-        metadata?.assignee_name ||
-        translate('unknown_user', { defaultValue: 'Unknown user' })
+        <div className="flex items-center gap-1.5 text-sm">
+          <Avatar className="h-5 w-5">
+            <AvatarImage src={assigneeAvatar || undefined} alt={assigneeName} />
+            <AvatarFallback className="text-[10px]">
+              {assigneeInitials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="font-medium text-dynamic-green">{assigneeName}</span>
+        </div>
       );
-    case 'label_added':
-    case 'label_removed':
+    }
+    case 'assignee_removed': {
+      const assigneeData = oldValue as {
+        user_id?: string;
+        user_name?: string;
+        avatar_url?: string;
+      } | null;
+      const assigneeName =
+        assigneeData?.user_name ||
+        (metadata?.assignee_name as string) ||
+        t('unknown_user', { defaultValue: 'Unknown user' });
+      const assigneeAvatar = assigneeData?.avatar_url;
+      const assigneeInitials = assigneeName
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+
       return (
-        metadata?.label_name ||
-        translate('unknown_label', { defaultValue: 'Unknown label' })
+        <div className="flex items-center gap-1.5 text-sm opacity-70">
+          <Avatar className="h-5 w-5">
+            <AvatarImage src={assigneeAvatar || undefined} alt={assigneeName} />
+            <AvatarFallback className="text-[10px]">
+              {assigneeInitials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-muted-foreground line-through">
+            {assigneeName}
+          </span>
+        </div>
       );
-    case 'project_linked':
-    case 'project_unlinked':
+    }
+    case 'label_added': {
+      const labelData = newValue as {
+        id?: string;
+        name?: string;
+        color?: string;
+      } | null;
+      const labelName =
+        labelData?.name ||
+        (metadata?.label_name as string) ||
+        t('unknown_label', { defaultValue: 'Unknown label' });
+      const labelColor =
+        labelData?.color || (metadata?.label_color as string | undefined);
+
       return (
-        metadata?.project_name ||
-        translate('unknown_project', { defaultValue: 'Unknown project' })
+        <Badge
+          variant="secondary"
+          className="gap-1.5 text-xs"
+          style={
+            labelColor
+              ? {
+                  backgroundColor: `${labelColor}20`,
+                  borderColor: `${labelColor}40`,
+                  color: labelColor,
+                }
+              : undefined
+          }
+        >
+          {labelColor && (
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: labelColor }}
+            />
+          )}
+          {labelName}
+        </Badge>
       );
+    }
+    case 'label_removed': {
+      const labelData = oldValue as {
+        id?: string;
+        name?: string;
+        color?: string;
+      } | null;
+      const labelName =
+        labelData?.name ||
+        (metadata?.label_name as string) ||
+        t('unknown_label', { defaultValue: 'Unknown label' });
+      const labelColor =
+        labelData?.color || (metadata?.label_color as string | undefined);
+
+      return (
+        <Badge
+          variant="outline"
+          className="gap-1.5 text-xs opacity-70"
+          style={
+            labelColor
+              ? {
+                  borderColor: `${labelColor}60`,
+                  color: labelColor,
+                }
+              : undefined
+          }
+        >
+          {labelColor && (
+            <span
+              className="h-2 w-2 rounded-full opacity-60"
+              style={{ backgroundColor: labelColor }}
+            />
+          )}
+          {labelName}
+        </Badge>
+      );
+    }
+    case 'project_linked': {
+      // Extract project name from various possible locations
+      const valueData =
+        typeof newValue === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(newValue);
+              } catch {
+                return null;
+              }
+            })()
+          : (newValue as Record<string, unknown> | null);
+
+      const projectName =
+        (metadata?.project_name as string) ||
+        valueData?.project_name ||
+        valueData?.name ||
+        (typeof newValue === 'string' ? newValue : null) ||
+        t('unknown_project', { defaultValue: 'Unknown project' });
+
+      return (
+        <Badge variant="secondary" className="gap-1 text-xs">
+          <FolderKanban className="h-3 w-3" />
+          {projectName}
+        </Badge>
+      );
+    }
+    case 'project_unlinked': {
+      // Extract project name from various possible locations
+      const valueData =
+        typeof oldValue === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(oldValue);
+              } catch {
+                return null;
+              }
+            })()
+          : (oldValue as Record<string, unknown> | null);
+
+      const projectName =
+        (metadata?.project_name as string) ||
+        valueData?.project_name ||
+        valueData?.name ||
+        (typeof oldValue === 'string' ? oldValue : null) ||
+        t('unknown_project', { defaultValue: 'Unknown project' });
+
+      return (
+        <Badge variant="outline" className="gap-1 text-xs opacity-70">
+          <FolderKanban className="h-3 w-3" />
+          {projectName}
+        </Badge>
+      );
+    }
     default:
-      return null;
+      return (
+        <span className="text-muted-foreground text-sm">
+          {t('no_details', { defaultValue: 'No details' })}
+        </span>
+      );
   }
 }
 

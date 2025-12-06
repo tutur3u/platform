@@ -10,6 +10,7 @@ import {
   Bell,
   Megaphone,
   Lock,
+  Clock,
 } from '@tuturuuu/icons';
 
 export interface EventGroup<T extends string> {
@@ -64,6 +65,13 @@ export const WORKSPACE_EVENT_GROUPS: EventGroup<NotificationEventType>[] = [
       'task_project_unlinked',
       'task_assignee_removed',
     ],
+  },
+  {
+    id: 'deadline_reminders',
+    labelKey: 'deadline-reminders',
+    descriptionKey: 'deadline-reminders-description',
+    icon: Clock,
+    events: ['deadline_reminder'],
   },
   {
     id: 'workspace_events',

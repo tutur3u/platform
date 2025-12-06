@@ -6,6 +6,7 @@
     "./react/email": "./react/email/index.ts",
     "./emails/notification-digest": "./emails/notification-digest.tsx",
     "./emails/workspace-invite": "./emails/workspace-invite.tsx",
+    "./emails/deadline-reminder": "./emails/deadline-reminder.tsx",
     "./emails/guest-template": "./emails/guest-template.tsx",
     "./emails/post-template": "./emails/post-template.tsx",
     "./emails/vercel-invite-user": "./emails/vercel-invite-user.tsx"

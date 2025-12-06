@@ -1,6 +1,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import DeadlineReminderEmail from '@tuturuuu/transactional/emails/deadline-reminder';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
 import WorkspaceInviteEmail from '@tuturuuu/transactional/emails/workspace-invite';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -19,7 +20,10 @@ const RequestBodySchema = z.object({
 });
 
 // Email template registry for immediate notifications
-type EmailTemplateType = 'workspace-invite' | 'notification-digest';
+type EmailTemplateType =
+  | 'workspace-invite'
+  | 'deadline-reminder'
+  | 'notification-digest';
 
 interface NotificationData {
   id: string;
@@ -95,6 +99,33 @@ async function renderEmailTemplate(params: RenderTemplateParams): Promise<{
       return {
         html,
         subject: `You've been invited to join ${wsName}`,
+      };
+    }
+
+    case 'deadline-reminder': {
+      const taskName =
+        (notification.data?.task_name as string) || 'Untitled Task';
+      const boardName = (notification.data?.board_name as string) || 'Board';
+      const dueDate = notification.data?.end_date as string | undefined;
+      const reminderInterval =
+        (notification.data?.reminder_interval as string) || '24 hours';
+      const taskUrl = notification.data?.task_url as string | undefined;
+
+      const html = await render(
+        DeadlineReminderEmail({
+          userName,
+          taskName,
+          boardName,
+          workspaceName,
+          dueDate,
+          reminderInterval,
+          taskUrl,
+        })
+      );
+
+      return {
+        html,
+        subject: `Task Due Soon: ${taskName}`,
       };
     }
 
