@@ -39,7 +39,7 @@ const emphasisConfig = {
     bgColor: 'bg-dynamic-purple/10',
     borderColor: 'border-dynamic-purple/30',
     iconColor: 'text-dynamic-purple',
-    headerBg: 'bg-gradient-to-r from-dynamic-purple/10 to-dynamic-pink/10',
+    headerBg: 'bg-linear-to-r from-dynamic-purple/10 to-dynamic-pink/10',
   },
 };
 

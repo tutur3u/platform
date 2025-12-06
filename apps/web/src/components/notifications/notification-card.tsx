@@ -1,13 +1,5 @@
 'use client';
 
-import type { Notification } from '@/hooks/useNotifications';
-import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
-import {
-  formatFieldName,
-  formatValue,
-  getEntityLink,
-  type TranslationFn,
-} from './notification-utils';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Check,
@@ -29,6 +21,14 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
+import type { Notification } from '@/hooks/useNotifications';
+import {
+  formatFieldName,
+  formatValue,
+  getEntityLink,
+  type TranslationFn,
+} from './notification-utils';
 
 dayjs.extend(relativeTime);
 
@@ -140,8 +140,8 @@ export function NotificationCard({
         'group relative rounded-xl border transition-all duration-200',
         'hover:shadow-sm',
         isUnread
-          ? 'border-dynamic-blue/20 bg-dynamic-blue/[0.03]'
-          : 'border-foreground/5 bg-foreground/[0.01] hover:border-foreground/10 hover:bg-foreground/[0.02]',
+          ? 'border-dynamic-blue/20 bg-dynamic-blue/3'
+          : 'border-foreground/5 bg-foreground/1 hover:border-foreground/10 hover:bg-foreground/2',
         isUpdating && 'pointer-events-none opacity-60'
       )}
     >
@@ -167,7 +167,7 @@ export function NotificationCard({
             ) : null}
             <AvatarFallback
               className={cn(
-                'text-xs font-medium',
+                'font-medium text-xs',
                 isUnread
                   ? 'bg-dynamic-blue text-white'
                   : 'bg-muted text-muted-foreground'
@@ -249,7 +249,7 @@ export function NotificationCard({
           {/* Action buttons or status */}
           {notification.type === 'workspace_invite' &&
           notification.data?.action_taken ? (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/[0.02] px-3 py-1.5 text-sm">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/2 px-3 py-1.5 text-sm">
               {notification.data.action_taken === 'accepted' ? (
                 <>
                   <CheckCircle2 className="h-3.5 w-3.5 text-dynamic-green" />
@@ -291,7 +291,7 @@ export function NotificationCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs text-foreground/50 hover:text-dynamic-blue"
+                className="h-7 px-2 text-foreground/50 text-xs hover:text-dynamic-blue"
               >
                 {t('view_details')} →
               </Button>
@@ -343,7 +343,7 @@ function ChangeDetails({
   if (changeEntries.length === 0) return null;
 
   return (
-    <div className="mt-2 space-y-1.5 rounded-lg border border-foreground/5 bg-foreground/[0.02] p-2.5">
+    <div className="mt-2 space-y-1.5 rounded-lg border border-foreground/5 bg-foreground/2 p-2.5">
       {changeEntries.map(([field, change]) => {
         const oldValue = change.old;
         const newValue = change.new;
@@ -397,7 +397,7 @@ function SingleChangeDetail({
     field === 'description' || changeType === 'task_description_changed';
 
   return (
-    <div className="mt-2 rounded-lg border border-foreground/5 bg-foreground/[0.02] p-2.5">
+    <div className="mt-2 rounded-lg border border-foreground/5 bg-foreground/2 p-2.5">
       <div className="text-xs">
         <span className="font-medium text-foreground/60">
           {formatFieldName(field)}:

@@ -210,7 +210,7 @@ function PageJumpPopover({
 
   const handleGoToPage = () => {
     const pageNum = parseInt(inputValue, 10);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+    if (!Number.isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
       onPageChange(pageNum);
       setIsOpen(false);
       setInputValue('');
@@ -240,7 +240,7 @@ function PageJumpPopover({
               <button
                 type="button"
                 onClick={() => {
-                  const current = parseInt(inputValue) || 2;
+                  const current = parseInt(inputValue, 10) || 2;
                   if (current > 1) {
                     setInputValue(String(current - 1));
                   }
@@ -266,7 +266,7 @@ function PageJumpPopover({
               <button
                 type="button"
                 onClick={() => {
-                  const current = parseInt(inputValue) || 0;
+                  const current = parseInt(inputValue, 10) || 0;
                   if (current < totalPages) {
                     setInputValue(String(current + 1));
                   }
@@ -281,8 +281,8 @@ function PageJumpPopover({
               onClick={handleGoToPage}
               disabled={
                 !inputValue ||
-                parseInt(inputValue) < 1 ||
-                parseInt(inputValue) > totalPages
+                parseInt(inputValue, 10) < 1 ||
+                parseInt(inputValue, 10) > totalPages
               }
               className="h-8 px-3"
             >
@@ -295,6 +295,7 @@ function PageJumpPopover({
               .filter((v, i, a) => a.indexOf(v) === i)
               .map((pageNum) => (
                 <button
+                  type="button"
                   key={pageNum}
                   onClick={() => {
                     onPageChange(pageNum);
@@ -335,7 +336,7 @@ function CurrentPagePopover({
 
   const handleGoToPage = () => {
     const pageNum = parseInt(inputValue, 10);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+    if (!Number.isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
       onPageChange(pageNum);
       setIsOpen(false);
       setInputValue('');
@@ -367,7 +368,7 @@ function CurrentPagePopover({
               <button
                 type="button"
                 onClick={() => {
-                  const current = parseInt(inputValue) || 2;
+                  const current = parseInt(inputValue, 10) || 2;
                   if (current > 1) {
                     setInputValue(String(current - 1));
                   }
@@ -393,7 +394,7 @@ function CurrentPagePopover({
               <button
                 type="button"
                 onClick={() => {
-                  const current = parseInt(inputValue) || 0;
+                  const current = parseInt(inputValue, 10) || 0;
                   if (current < totalPages) {
                     setInputValue(String(current + 1));
                   }
@@ -408,8 +409,8 @@ function CurrentPagePopover({
               onClick={handleGoToPage}
               disabled={
                 !inputValue ||
-                parseInt(inputValue) < 1 ||
-                parseInt(inputValue) > totalPages
+                parseInt(inputValue, 10) < 1 ||
+                parseInt(inputValue, 10) > totalPages
               }
               className="h-8 px-3"
             >
@@ -422,6 +423,7 @@ function CurrentPagePopover({
               .filter((v, i, a) => a.indexOf(v) === i)
               .map((pageNum) => (
                 <button
+                  type="button"
                   key={pageNum}
                   onClick={() => {
                     onPageChange(pageNum);

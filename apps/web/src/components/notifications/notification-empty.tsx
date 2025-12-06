@@ -1,9 +1,9 @@
 'use client';
 
-import type { NotificationTab, TranslationFn } from './notification-utils';
 import { AtSign, Bell, CheckCircle2, Inbox } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'motion/react';
+import type { NotificationTab, TranslationFn } from './notification-utils';
 
 interface NotificationEmptyProps {
   tab: NotificationTab;
@@ -68,12 +68,12 @@ export function NotificationEmpty({
         transition={{ delay: 0.1, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
         className={cn(
           'relative mb-6 flex h-20 w-20 items-center justify-center',
-          'rounded-2xl bg-gradient-to-br from-foreground/5 to-foreground/10',
+          'rounded-2xl bg-linear-to-br from-foreground/5 to-foreground/10',
           'ring-1 ring-foreground/5'
         )}
       >
         {/* Subtle glow effect */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-dynamic-blue/5 to-transparent" />
+        <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-dynamic-blue/5 to-transparent" />
 
         <Icon className="relative h-8 w-8 text-foreground/40" />
 
@@ -82,13 +82,13 @@ export function NotificationEmpty({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-dynamic-blue/30"
+          className="-right-1 -top-1 absolute h-2 w-2 rounded-full bg-dynamic-blue/30"
         />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="absolute -bottom-1 -left-1 h-1.5 w-1.5 rounded-full bg-foreground/20"
+          className="-bottom-1 -left-1 absolute h-1.5 w-1.5 rounded-full bg-foreground/20"
         />
       </motion.div>
 
@@ -123,7 +123,7 @@ export function NotificationSkeleton() {
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="flex items-start gap-4 rounded-xl border border-foreground/5 bg-foreground/[0.02] p-4"
+          className="flex items-start gap-4 rounded-xl border border-foreground/5 bg-foreground/2 p-4"
           style={{ animationDelay: `${i * 100}ms` }}
         >
           {/* Icon skeleton */}

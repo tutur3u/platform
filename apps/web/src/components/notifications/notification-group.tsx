@@ -1,13 +1,5 @@
 'use client';
 
-import type { Notification } from '@/hooks/useNotifications';
-import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
-import {
-  formatFieldName,
-  formatValue,
-  getEntityLink,
-  type TranslationFn,
-} from './notification-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { ChevronDown, Eye, EyeOff, Loader2, User } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -23,6 +15,14 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
+import type { Notification } from '@/hooks/useNotifications';
+import {
+  formatFieldName,
+  formatValue,
+  getEntityLink,
+  type TranslationFn,
+} from './notification-utils';
 
 dayjs.extend(relativeTime);
 
@@ -116,8 +116,8 @@ export function NotificationGroupCard({
       className={cn(
         'group relative overflow-hidden rounded-xl border transition-all duration-200',
         hasUnread
-          ? 'border-dynamic-blue/20 bg-dynamic-blue/[0.03]'
-          : 'border-foreground/5 bg-foreground/[0.01] hover:border-foreground/10'
+          ? 'border-dynamic-blue/20 bg-dynamic-blue/3'
+          : 'border-foreground/5 bg-foreground/1 hover:border-foreground/10'
       )}
     >
       {/* Unread indicator */}
@@ -130,7 +130,7 @@ export function NotificationGroupCard({
           {/* Stacked avatars with type icon badge */}
           <div className="relative flex-none">
             {/* Stacked avatars for unique actors */}
-            <div className="flex -space-x-2">
+            <div className="-space-x-2 flex">
               {(() => {
                 // Deduplicate actors by ID and sort: avatars first, then alphabetically
                 const uniqueActors = notifications
@@ -174,7 +174,7 @@ export function NotificationGroupCard({
                     ) : null}
                     <AvatarFallback
                       className={cn(
-                        'text-xs font-medium',
+                        'font-medium text-xs',
                         hasUnread
                           ? 'bg-dynamic-blue text-white'
                           : 'bg-muted text-muted-foreground'
@@ -258,7 +258,7 @@ export function NotificationGroupCard({
                     t={t}
                     triggerVariant="inline"
                     trigger={
-                      <span className="inline-flex cursor-pointer items-center gap-1 text-xs text-dynamic-blue hover:underline">
+                      <span className="inline-flex cursor-pointer items-center gap-1 text-dynamic-blue text-xs hover:underline">
                         <Eye className="h-3 w-3" />
                         {t('view_changes')}{' '}
                         {descriptionChanges.length > 1 ? `#${idx + 1}` : ''}
@@ -278,7 +278,7 @@ export function NotificationGroupCard({
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="mt-4 space-y-2 border-t border-foreground/5 pt-4"
+                    className="mt-4 space-y-2 border-foreground/5 border-t pt-4"
                   >
                     {notifications.map((notification, idx) => (
                       <GroupedNotificationItem
@@ -300,7 +300,7 @@ export function NotificationGroupCard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-xs text-foreground/50 hover:text-dynamic-blue"
+                  className="h-7 px-2 text-foreground/50 text-xs hover:text-dynamic-blue"
                 >
                   {t('view_task')} →
                 </Button>
@@ -366,7 +366,7 @@ function GroupedNotificationItem({
       transition={{ delay: index * 0.03, duration: 0.2 }}
       className={cn(
         'group/item flex items-start gap-3 rounded-lg p-2.5 transition-colors',
-        isUnread ? 'bg-dynamic-blue/5' : 'bg-foreground/[0.02]'
+        isUnread ? 'bg-dynamic-blue/5' : 'bg-foreground/2'
       )}
     >
       {/* Mini avatar with type badge */}
@@ -380,7 +380,7 @@ function GroupedNotificationItem({
           ) : null}
           <AvatarFallback
             className={cn(
-              'text-[10px] font-medium',
+              'font-medium text-[10px]',
               isUnread
                 ? 'bg-dynamic-blue text-white'
                 : 'bg-muted text-muted-foreground'

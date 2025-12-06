@@ -1,5 +1,11 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import { Bell } from '@tuturuuu/icons';
+import { toast } from '@tuturuuu/ui/sonner';
+import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useMemo, useState } from 'react';
 import {
   useMarkAllAsRead,
   useNotificationSubscription,
@@ -23,12 +29,6 @@ import {
   TASK_TYPES,
   type TranslationFn,
 } from './notification-utils';
-import { useQueryClient } from '@tanstack/react-query';
-import { Bell } from '@tuturuuu/icons';
-import { toast } from '@tuturuuu/ui/sonner';
-import { motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
 
 interface NotificationListProps {
   wsId: string | null;
@@ -176,7 +176,7 @@ export default function NotificationList({
         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
         className="flex items-center gap-3"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 text-dynamic-blue">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 text-dynamic-blue">
           <Bell className="h-5 w-5" />
         </div>
         <div>

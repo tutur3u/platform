@@ -1,6 +1,5 @@
 'use client';
 
-import type { NotificationTab, TranslationFn } from './notification-utils';
 import {
   AtSign,
   Bell,
@@ -16,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import type { NotificationTab, TranslationFn } from './notification-utils';
 
 interface NotificationFiltersProps {
   activeTab: NotificationTab;
@@ -76,7 +76,7 @@ export function NotificationFilters({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Tab navigation */}
-      <div className="relative flex gap-1 rounded-xl bg-foreground/[0.03] p-1">
+      <div className="relative flex gap-1 rounded-xl bg-foreground/3 p-1">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const count = getCount(tab.countKey);
@@ -84,10 +84,11 @@ export function NotificationFilters({
 
           return (
             <button
+              type="button"
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                'relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'relative flex items-center gap-1.5 rounded-lg px-3 py-2 font-medium text-sm transition-colors',
                 isActive
                   ? 'text-foreground'
                   : 'text-foreground/50 hover:text-foreground/70'
@@ -111,7 +112,7 @@ export function NotificationFilters({
               {count > 0 && (
                 <span
                   className={cn(
-                    'relative ml-0.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 font-medium text-xs',
+                    'relative ml-0.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 font-medium text-xs',
                     isActive
                       ? 'bg-dynamic-blue/15 text-dynamic-blue'
                       : 'bg-foreground/10 text-foreground/50'
@@ -172,7 +173,7 @@ export function DateGroupHeader({ label, count }: DateGroupHeaderProps) {
       <h3 className="font-semibold text-foreground/70 text-xs uppercase tracking-wider">
         {label}
       </h3>
-      <div className="h-px flex-1 bg-gradient-to-r from-foreground/10 to-transparent" />
+      <div className="h-px flex-1 bg-linear-to-r from-foreground/10 to-transparent" />
       <span className="text-foreground/40 text-xs">{count}</span>
     </motion.div>
   );
@@ -210,7 +211,7 @@ export function NotificationPagination({
 
   const handleGoToPage = () => {
     const pageNum = parseInt(inputValue, 10);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+    if (!Number.isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
       onGoToPage(pageNum - 1); // Convert to 0-indexed
       setIsOpen(false);
       setInputValue('');
@@ -228,7 +229,7 @@ export function NotificationPagination({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="mt-6 flex items-center justify-between rounded-xl border border-foreground/5 bg-foreground/[0.02] p-3"
+      className="mt-6 flex items-center justify-between rounded-xl border border-foreground/5 bg-foreground/2 p-3"
     >
       <Button
         variant="ghost"
@@ -245,6 +246,7 @@ export function NotificationPagination({
         {totalPages <= 7 ? (
           Array.from({ length: totalPages }, (_, i) => (
             <button
+              type="button"
               key={i}
               onClick={() => onGoToPage(i)}
               className={cn(
@@ -259,6 +261,7 @@ export function NotificationPagination({
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <button
+                type="button"
                 className={cn(
                   'flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-sm transition-colors',
                   'bg-foreground/5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground'
@@ -286,7 +289,7 @@ export function NotificationPagination({
                           setInputValue(String(current - 1));
                         }
                       }}
-                      className="flex h-8 w-9 items-center justify-center rounded-l-md border border-r-0 border-foreground/10 text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                      className="flex h-8 w-9 items-center justify-center rounded-l-md border border-foreground/10 border-r-0 text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
@@ -307,12 +310,12 @@ export function NotificationPagination({
                     <button
                       type="button"
                       onClick={() => {
-                        const current = parseInt(inputValue) || 0;
+                        const current = parseInt(inputValue, 10) || 0;
                         if (current < totalPages) {
                           setInputValue(String(current + 1));
                         }
                       }}
-                      className="flex h-8 w-9 items-center justify-center rounded-r-md border border-l-0 border-foreground/10 text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                      className="flex h-8 w-9 items-center justify-center rounded-r-md border border-foreground/10 border-l-0 text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
@@ -322,8 +325,8 @@ export function NotificationPagination({
                     onClick={handleGoToPage}
                     disabled={
                       !inputValue ||
-                      parseInt(inputValue) < 1 ||
-                      parseInt(inputValue) > totalPages
+                      parseInt(inputValue, 10) < 1 ||
+                      parseInt(inputValue, 10) > totalPages
                     }
                     className="h-8 px-3"
                   >
@@ -336,6 +339,7 @@ export function NotificationPagination({
                     .filter((v, i, a) => a.indexOf(v) === i) // unique values
                     .map((pageNum) => (
                       <button
+                        type="button"
                         key={pageNum}
                         onClick={() => {
                           onGoToPage(pageNum - 1);
