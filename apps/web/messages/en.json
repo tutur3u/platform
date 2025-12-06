@@ -894,6 +894,10 @@
     "lines_removed": "removed",
     "old_version": "Previous",
     "new_version": "Current",
+    "line_hidden": "1 unchanged line hidden",
+    "lines_hidden": "{count} unchanged lines hidden",
+    "no_visible_changes": "No visible text changes",
+    "no_visible_changes_description": "The description was modified but the text content appears the same. This may be due to formatting or structural changes.",
     "settings": {
       "title": "Notification Settings",
       "description": "Configure how you receive notifications for different events",
@@ -1254,6 +1258,10 @@
     "split_view": "Split",
     "old_version": "Previous",
     "new_version": "Current",
+    "line_hidden": "1 unchanged line hidden",
+    "lines_hidden": "{count} unchanged lines hidden",
+    "no_visible_changes": "No visible text changes",
+    "no_visible_changes_description": "The description was modified but the text content appears the same. This may be due to formatting or structural changes.",
     "priority": {
       "low": "Low",
       "medium": "Medium",

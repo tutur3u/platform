@@ -984,6 +984,10 @@
     "lines_removed": "xóa",
     "old_version": "Trước",
     "new_version": "Hiện tại",
+    "line_hidden": "1 dòng không thay đổi bị ẩn",
+    "lines_hidden": "{count} dòng không thay đổi bị ẩn",
+    "no_visible_changes": "Không có thay đổi văn bản",
+    "no_visible_changes_description": "Mô tả đã được sửa đổi nhưng nội dung văn bản có vẻ giống nhau. Điều này có thể do thay đổi định dạng hoặc cấu trúc.",
     "settings": {
       "title": "Cài đặt thông báo",
       "description": "Cấu hình cách bạn nhận thông báo cho các sự kiện khác nhau",
@@ -1344,6 +1348,10 @@
     "split_view": "Chia đôi",
     "old_version": "Trước",
     "new_version": "Sau",
+    "line_hidden": "1 dòng không thay đổi bị ẩn",
+    "lines_hidden": "{count} dòng không thay đổi bị ẩn",
+    "no_visible_changes": "Không có thay đổi văn bản",
+    "no_visible_changes_description": "Mô tả đã được sửa đổi nhưng nội dung văn bản có vẻ giống nhau. Điều này có thể do thay đổi định dạng hoặc cấu trúc.",
     "priority": {
       "low": "Thấp",
       "medium": "Trung bình",
