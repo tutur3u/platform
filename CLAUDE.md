@@ -304,6 +304,13 @@ Raw `fetch()`, `useEffect` with manual state, or custom hooks without React Quer
 - If you see `useEffect` + API calls in existing code, REFACTOR to React Query immediately
 - **CRITICAL:** The only acceptable pattern is `useQuery`/`useMutation`/`useInfiniteQuery` from TanStack Query
 
+**Kanban Task Realtime Sync (CRITICAL):**
+
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+
+- ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
+- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+
 **Banned Patterns (Will Cause Code Rejection):**
 
 ```typescript

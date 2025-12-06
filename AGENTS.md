@@ -503,6 +503,17 @@ Realtime Integration (Optional):
 - Subscribe to Supabase channel only for high-value live data (e.g., collaborative edits). In handler, update cache via `setQueryData` instead of invalidating if diff known.
 - Throttle bursts (debounce merging) to avoid rapid re-renders.
 
+**Kanban Task Realtime Sync (CRITICAL):**
+
+Tasks inside kanban boards (`task.tsx`, `task-edit-dialog.tsx`, and related components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to keep task fields synchronized across all connected clients. **NEVER invalidate TanStack Query caches for task data in these components.**
+
+- ❌ **NEVER** call `queryClient.invalidateQueries()` for task-related queries in kanban components
+- ❌ **NEVER** use `refetch()` on task queries after mutations in kanban context
+- ✅ **DO** rely on realtime subscriptions to propagate changes automatically
+- ✅ **DO** use optimistic updates via `setQueryData` for immediate UI feedback, letting realtime sync handle cross-client consistency
+
+**Rationale:** Query invalidation triggers refetches that race with realtime updates, causing UI flicker, stale data overwrites, and inconsistent state across clients. The realtime subscription is the single source of truth for task state propagation.
+
 Performance & Render Hygiene:
 
 - Co-locate small read queries with components; share bigger aggregates at boundary provider to avoid over-fetch.
