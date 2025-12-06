@@ -901,6 +901,8 @@
     "lines_hidden": "{count} unchanged lines hidden",
     "no_visible_changes": "No visible text changes",
     "no_visible_changes_description": "The description was modified but the text content appears the same. This may be due to formatting or structural changes.",
+    "word_diff": "Word",
+    "line_diff": "Line",
     "settings": {
       "title": "Notification Settings",
       "description": "Configure how you receive notifications for different events",
