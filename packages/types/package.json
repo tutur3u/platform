@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
-    "type-check": "tsc --project tsconfig.build.json --noEmit",
+    "type-check": "tsgo --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build"
   },
