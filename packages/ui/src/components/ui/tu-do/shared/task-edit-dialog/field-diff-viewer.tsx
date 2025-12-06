@@ -6,15 +6,12 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Columns2,
-  Eye,
   FileText,
   Flag,
   FolderKanban,
   Layers,
   Minus,
   Plus,
-  Rows2,
   Tag,
   Target,
   Users,
@@ -22,17 +19,7 @@ import {
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import {
   type ComparableField,
@@ -45,13 +32,10 @@ import {
   type SnapshotProject,
   type TaskPriorityType,
 } from '@tuturuuu/utils/task-snapshot';
-import {
-  computeLineDiff,
-  type DiffChange,
-  getDiffStats,
-} from '@tuturuuu/utils/text-diff';
+import { computeLineDiff } from '@tuturuuu/utils/text-diff';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { DescriptionDiffViewer } from './description-diff-viewer';
 import type { EstimationType } from '../estimation-mapping';
 import { mapEstimationPoints } from '../estimation-mapping';
 
@@ -333,8 +317,6 @@ function TextDiff({
   );
 }
 
-type DiffViewMode = 'unified' | 'split';
-
 function DescriptionDiff({
   snapshotValue,
   currentValue,
@@ -347,8 +329,6 @@ function DescriptionDiff({
     options?: { defaultValue?: string; count?: number }
   ) => string;
 }) {
-  const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
-
   const hasSnapshot = !!snapshotValue;
   const hasCurrent = !!currentValue;
 
@@ -362,12 +342,11 @@ function DescriptionDiff({
     [currentValue]
   );
 
-  // Compute diff
+  // Compute diff to check if there are text changes
   const diff = useMemo(
     () => computeLineDiff(currentText, snapshotText),
     [currentText, snapshotText]
   );
-  const stats = useMemo(() => getDiffStats(diff), [diff]);
   const hasTextChanges = diff.some((d) => d.type !== 'unchanged');
 
   // Badge to show the type of change
@@ -394,78 +373,18 @@ function DescriptionDiff({
     </>
   );
 
-  // If both exist and there are text changes, show a view changes button
+  // If both exist and there are text changes, show the full diff viewer
   if (hasSnapshot && hasCurrent && hasTextChanges) {
     return (
       <div className="text-sm">
         <div className="flex items-center gap-2">
           {changeBadge}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 gap-1 px-2 text-xs"
-              >
-                <Eye className="h-3 w-3" />
-                {t('view_changes', { defaultValue: 'View changes' })}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] w-[95vw] max-w-3xl md:max-w-4xl lg:max-w-5xl">
-              <DialogHeader>
-                <div className="flex items-center justify-between gap-4">
-                  <DialogTitle>
-                    {t('description_changes', {
-                      defaultValue: 'Description Changes',
-                    })}
-                  </DialogTitle>
-                  <Tabs
-                    value={viewMode}
-                    onValueChange={(v) => setViewMode(v as DiffViewMode)}
-                  >
-                    <TabsList className="h-8">
-                      <TabsTrigger
-                        value="unified"
-                        className="gap-1.5 px-2.5 text-xs"
-                      >
-                        <Rows2 className="h-3.5 w-3.5" />
-                        {t('unified_view', { defaultValue: 'Unified' })}
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="split"
-                        className="gap-1.5 px-2.5 text-xs"
-                      >
-                        <Columns2 className="h-3.5 w-3.5" />
-                        {t('split_view', { defaultValue: 'Split' })}
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-              </DialogHeader>
-
-              {/* Stats bar */}
-              <div className="flex gap-4 border-b pb-2 text-sm">
-                <span className="flex items-center gap-1 text-dynamic-green">
-                  <Plus className="h-3 w-3" />
-                  {stats.added} {t('lines_added', { defaultValue: 'added' })}
-                </span>
-                <span className="flex items-center gap-1 text-dynamic-red">
-                  <Minus className="h-3 w-3" />
-                  {stats.removed}{' '}
-                  {t('lines_removed', { defaultValue: 'removed' })}
-                </span>
-              </div>
-
-              {/* Diff view */}
-              <ScrollArea className="h-[50vh] md:h-[60vh]">
-                {viewMode === 'unified' ? (
-                  <UnifiedDiffView diff={diff} />
-                ) : (
-                  <SplitDiffView diff={diff} t={t} />
-                )}
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
+          <DescriptionDiffViewer
+            oldValue={currentValue}
+            newValue={snapshotValue}
+            t={t}
+            triggerVariant="inline"
+          />
         </div>
       </div>
     );
@@ -475,154 +394,6 @@ function DescriptionDiff({
     <div className="text-sm">
       <div className="flex items-center gap-2">{changeBadge}</div>
     </div>
-  );
-}
-
-function UnifiedDiffView({ diff }: { diff: DiffChange[] }) {
-  return (
-    <div className="space-y-0.5 font-mono text-sm">
-      {diff.map((change, index) => {
-        const lines = change.value.split('\n').filter(Boolean);
-        return lines.map((line, lineIndex) => (
-          <div
-            key={`${index}-${lineIndex}`}
-            className={cn(
-              'whitespace-pre-wrap rounded px-2 py-0.5',
-              change.type === 'added' &&
-                'bg-dynamic-green/10 text-dynamic-green',
-              change.type === 'removed' &&
-                'bg-dynamic-red/10 text-dynamic-red line-through',
-              change.type === 'unchanged' && 'text-muted-foreground'
-            )}
-          >
-            <span className="mr-2 inline-block w-4 text-right opacity-50">
-              {change.type === 'added' && '+'}
-              {change.type === 'removed' && '-'}
-              {change.type === 'unchanged' && ' '}
-            </span>
-            {line || ' '}
-          </div>
-        ));
-      })}
-    </div>
-  );
-}
-
-function SplitDiffView({
-  diff,
-  t,
-}: {
-  diff: DiffChange[];
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  // Separate old and new lines
-  const { oldLines, newLines } = useMemo(() => {
-    const old: string[] = [];
-    const newL: string[] = [];
-
-    for (const change of diff) {
-      const lines = change.value.split('\n').filter(Boolean);
-      if (change.type === 'unchanged') {
-        old.push(...lines);
-        newL.push(...lines);
-      } else if (change.type === 'removed') {
-        old.push(...lines);
-      } else if (change.type === 'added') {
-        newL.push(...lines);
-      }
-    }
-
-    return { oldLines: old, newLines: newL };
-  }, [diff]);
-
-  const maxLines = Math.max(oldLines.length, newLines.length);
-
-  return (
-    <div className="grid grid-cols-2 gap-0.5">
-      {/* Headers */}
-      <div className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 font-medium text-muted-foreground text-xs backdrop-blur">
-        {t('current_version', { defaultValue: 'Current' })}
-      </div>
-      <div className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 font-medium text-muted-foreground text-xs backdrop-blur">
-        {t('snapshot_version', { defaultValue: 'Snapshot' })}
-      </div>
-
-      {/* Diff rows */}
-      {Array.from({ length: maxLines }).map((_, i) => {
-        const oldLine = oldLines[i];
-        const newLine = newLines[i];
-        const isOldRemoved = Boolean(oldLine && !newLines.includes(oldLine));
-        const isNewAdded = Boolean(newLine && !oldLines.includes(newLine));
-
-        return (
-          <SplitDiffRow
-            key={i}
-            oldLine={oldLine}
-            newLine={newLine}
-            isOldRemoved={isOldRemoved}
-            isNewAdded={isNewAdded}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function SplitDiffRow({
-  oldLine,
-  newLine,
-  isOldRemoved,
-  isNewAdded,
-}: {
-  oldLine?: string;
-  newLine?: string;
-  isOldRemoved: boolean;
-  isNewAdded: boolean;
-}) {
-  return (
-    <>
-      {/* Left side (current) */}
-      <div
-        className={cn(
-          'min-h-6 whitespace-pre-wrap border-r px-3 py-0.5 font-mono text-sm',
-          isOldRemoved && 'bg-dynamic-red/10 text-dynamic-red line-through',
-          !isOldRemoved && oldLine && 'text-muted-foreground',
-          !oldLine && 'bg-muted/30'
-        )}
-      >
-        {oldLine && (
-          <div>
-            {isOldRemoved && (
-              <span className="mr-2 inline-block w-3 text-right opacity-50">
-                -
-              </span>
-            )}
-            {oldLine || ' '}
-          </div>
-        )}
-      </div>
-
-      {/* Right side (snapshot) */}
-      <div
-        className={cn(
-          'min-h-6 whitespace-pre-wrap px-3 py-0.5 font-mono text-sm',
-          isNewAdded && 'bg-dynamic-green/10 text-dynamic-green',
-          !isNewAdded && newLine && 'text-muted-foreground',
-          !newLine && 'bg-muted/30'
-        )}
-      >
-        {newLine && (
-          <div>
-            {isNewAdded && (
-              <span className="mr-2 inline-block w-3 text-right opacity-50">
-                +
-              </span>
-            )}
-            {newLine || ' '}
-          </div>
-        )}
-      </div>
-    </>
   );
 }
 

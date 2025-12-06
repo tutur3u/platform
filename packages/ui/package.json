@@ -183,6 +183,7 @@
     "./tu-do/hooks/*": "./src/components/ui/tu-do/hooks/*",
     "./tu-do/providers/*": "./src/components/ui/tu-do/providers/*.tsx",
     "./tu-do/shared/*": "./src/components/ui/tu-do/shared/*.tsx",
+    "./tu-do/shared/task-edit-dialog/*": "./src/components/ui/tu-do/shared/task-edit-dialog/*.tsx",
     "./tu-do/shared/estimation-mapping": {
       "types": "./src/components/ui/tu-do/shared/estimation-mapping.ts",
       "import": "./src/components/ui/tu-do/shared/estimation-mapping.ts"
