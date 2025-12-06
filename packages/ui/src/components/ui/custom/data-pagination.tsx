@@ -1,3 +1,9 @@
+'use client';
+
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import { useState } from 'react';
+import { Button } from '../button';
+import { Input } from '../input';
 import {
   Pagination,
   PaginationContent,
@@ -7,6 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '../pagination';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import {
   Select,
   SelectContent,
@@ -43,11 +50,6 @@ export function DataPagination({
   // Calculate display range
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalCount);
-
-  //   // If there are no items or only one page, don't show pagination
-  //   if (totalCount === 0 || totalPages <= 1) {
-  //     return null;
-  //   }
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,7 +100,11 @@ export function DataPagination({
               </PaginationItem>
               {currentPage > 3 && (
                 <PaginationItem>
-                  <PaginationEllipsis />
+                  <PageJumpPopover
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange}
+                  />
                 </PaginationItem>
               )}
             </>
@@ -117,9 +123,13 @@ export function DataPagination({
             </PaginationItem>
           )}
 
-          {/* Current page */}
+          {/* Current page - with popover */}
           <PaginationItem>
-            <PaginationLink isActive={true}>{currentPage}</PaginationLink>
+            <CurrentPagePopover
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+            />
           </PaginationItem>
 
           {/* Next page */}
@@ -140,7 +150,11 @@ export function DataPagination({
             <>
               {currentPage < totalPages - 2 && (
                 <PaginationItem>
-                  <PaginationEllipsis />
+                  <PageJumpPopover
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange}
+                  />
                 </PaginationItem>
               )}
               <PaginationItem>
@@ -173,5 +187,258 @@ export function DataPagination({
         </div>
       )}
     </div>
+  );
+}
+
+// ============================================================================
+// Page Jump Popover (for ellipsis)
+// ============================================================================
+
+interface PageJumpPopoverProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function PageJumpPopover({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: PageJumpPopoverProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+
+  const handleGoToPage = () => {
+    const pageNum = parseInt(inputValue, 10);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange(pageNum);
+      setIsOpen(false);
+      setInputValue('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleGoToPage();
+    }
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <button type="button" className="cursor-pointer">
+          <PaginationEllipsis />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-3" align="center" sideOffset={8}>
+        <div className="space-y-3">
+          <p className="text-center text-muted-foreground text-xs">
+            Go to page
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(inputValue) || 2;
+                  if (current > 1) {
+                    setInputValue(String(current - 1));
+                  }
+                }}
+                className="flex h-8 w-9 items-center justify-center rounded-l-md border border-r-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={inputValue}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setInputValue(val);
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={`1-${totalPages}`}
+                className="h-8 rounded-none border-x-0 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(inputValue) || 0;
+                  if (current < totalPages) {
+                    setInputValue(String(current + 1));
+                  }
+                }}
+                className="flex h-8 w-9 items-center justify-center rounded-r-md border border-l-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleGoToPage}
+              disabled={
+                !inputValue ||
+                parseInt(inputValue) < 1 ||
+                parseInt(inputValue) > totalPages
+              }
+              className="h-8 px-3"
+            >
+              Go
+            </Button>
+          </div>
+          {/* Quick page buttons */}
+          <div className="flex flex-wrap justify-center gap-1">
+            {[1, Math.ceil(totalPages / 2), totalPages]
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => {
+                    onPageChange(pageNum);
+                    setIsOpen(false);
+                  }}
+                  className={`rounded px-2 py-0.5 text-xs transition-colors ${
+                    currentPage === pageNum
+                      ? 'bg-primary/15 text-primary'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ============================================================================
+// Current Page Popover
+// ============================================================================
+
+function CurrentPagePopover({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: PageJumpPopoverProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+
+  // Don't show popover if only one page
+  if (totalPages <= 1) {
+    return <PaginationLink isActive={true}>{currentPage}</PaginationLink>;
+  }
+
+  const handleGoToPage = () => {
+    const pageNum = parseInt(inputValue, 10);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange(pageNum);
+      setIsOpen(false);
+      setInputValue('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleGoToPage();
+    }
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <button type="button">
+          <PaginationLink isActive={true} className="cursor-pointer">
+            {currentPage}
+          </PaginationLink>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-3" align="center" sideOffset={8}>
+        <div className="space-y-3">
+          <p className="text-center text-muted-foreground text-xs">
+            Page {currentPage} of {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(inputValue) || 2;
+                  if (current > 1) {
+                    setInputValue(String(current - 1));
+                  }
+                }}
+                className="flex h-8 w-9 items-center justify-center rounded-l-md border border-r-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={inputValue}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setInputValue(val);
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={`1-${totalPages}`}
+                className="h-8 rounded-none border-x-0 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(inputValue) || 0;
+                  if (current < totalPages) {
+                    setInputValue(String(current + 1));
+                  }
+                }}
+                className="flex h-8 w-9 items-center justify-center rounded-r-md border border-l-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleGoToPage}
+              disabled={
+                !inputValue ||
+                parseInt(inputValue) < 1 ||
+                parseInt(inputValue) > totalPages
+              }
+              className="h-8 px-3"
+            >
+              Go
+            </Button>
+          </div>
+          {/* Quick page buttons */}
+          <div className="flex flex-wrap justify-center gap-1">
+            {[1, Math.ceil(totalPages / 2), totalPages]
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => {
+                    onPageChange(pageNum);
+                    setIsOpen(false);
+                  }}
+                  className={`rounded px-2 py-0.5 text-xs transition-colors ${
+                    currentPage === pageNum
+                      ? 'bg-primary/15 text-primary'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

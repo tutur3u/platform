@@ -25,6 +25,12 @@ export type NotificationType =
   | 'account_update'
   | 'security_alert';
 
+export interface NotificationActor {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface Notification {
   id: string;
   ws_id: string | null; // Can be null for user-scoped notifications
@@ -38,6 +44,7 @@ export interface Notification {
   read_at: string | null;
   created_at: string;
   created_by: string | null;
+  actor: NotificationActor | null;
 }
 
 interface UseNotificationsOptions {
