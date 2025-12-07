@@ -1,7 +1,12 @@
-import { Receipt } from '@tuturuuu/icons';
+'use client';
+
+import { Eye } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
+import { OrdersDialog } from './orders-dialog';
 
 interface BillingHistoryItem {
   id: string;
@@ -13,7 +18,6 @@ interface BillingHistoryItem {
   cancel_at_period_end: boolean | null;
   product: {
     name: string;
-    description: string | null;
     price: number;
     recurring_interval: string;
   } | null;
@@ -25,6 +29,11 @@ export default function BillingHistory({
   billingHistory: BillingHistoryItem[];
 }) {
   const t = useTranslations('billing');
+  const [selectedSubscription, setSelectedSubscription] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -92,11 +101,6 @@ export default function BillingHistory({
                         <div className="font-semibold">
                           {subscription.product?.name || 'Unknown Plan'}
                         </div>
-                        {subscription.product?.description && (
-                          <div className="text-muted-foreground text-sm">
-                            {subscription.product.description}
-                          </div>
-                        )}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-4 text-card-foreground">
@@ -139,13 +143,20 @@ export default function BillingHistory({
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-4 text-center">
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-md p-2 text-primary transition-colors hover:bg-primary/10 hover:text-primary/80"
-                        title="Download Receipt"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setSelectedSubscription({
+                            id: subscription.id,
+                            name: subscription.product?.name || 'Unknown Plan',
+                          })
+                        }
+                        className="h-9 gap-2"
                       >
-                        <Receipt className="h-5 w-5" />
-                      </button>
+                        <Eye className="h-4 w-4" />
+                        View Orders
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -154,6 +165,17 @@ export default function BillingHistory({
           </div>
         )}
       </div>
+
+      {selectedSubscription && (
+        <OrdersDialog
+          open={!!selectedSubscription}
+          onOpenChange={(open) => {
+            if (!open) setSelectedSubscription(null);
+          }}
+          subscriptionId={selectedSubscription.id}
+          planName={selectedSubscription.name}
+        />
+      )}
     </div>
   );
 }

@@ -101,16 +101,9 @@ const fetchWorkspaceSubscriptions = async (wsId: string) => {
     .from('workspace_subscription')
     .select(
       `
-      id,
-      created_at,
-      current_period_start,
-      current_period_end,
-      product_id,
-      status,
-      cancel_at_period_end,
+      *,
       workspace_subscription_products (
         name,
-        description,
         price,
         recurring_interval
       )
@@ -193,7 +186,6 @@ export default async function BillingPage({
             ? {
                 name:
                   sub.workspace_subscription_products.name || 'Unknown Plan',
-                description: sub.workspace_subscription_products.description,
                 price: sub.workspace_subscription_products.price || 0,
                 recurring_interval:
                   sub.workspace_subscription_products.recurring_interval ||
@@ -209,7 +201,6 @@ export default async function BillingPage({
               products={products}
               product_id={subscription?.product.id || ''}
               wsId={wsId}
-              activeSubscriptionId={subscription?.polarSubscriptionId || ''}
               isCreator={isCreator}
             />
 

@@ -41,7 +41,6 @@ interface BillingClientProps {
   products: Product[];
   product_id: string;
   isCreator: boolean;
-  activeSubscriptionId?: string;
 }
 
 export function BillingClient({
