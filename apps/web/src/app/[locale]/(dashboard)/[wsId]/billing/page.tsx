@@ -1,5 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceSubscriptionWithProduct } from '@tuturuuu/types/db';
 import { Separator } from '@tuturuuu/ui/separator';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
@@ -52,11 +53,23 @@ const checkCreator = async (wsId: string) => {
 };
 
 const fetchSubscription = async ({ wsId }: { wsId: string }) => {
-  const sbAdmin = await createClient();
+  const supabase = await createClient();
 
-  const { data: dbSub, error } = await sbAdmin
+  const { data: dbSub, error } = await supabase
     .from('workspace_subscription')
-    .select('*')
+    .select(
+      `
+      *,
+      workspace_subscription_products (
+        id,
+        name,
+        description,
+        price,
+        recurring_interval,
+        tier
+      )
+    `
+    )
     .eq('ws_id', wsId)
     .eq('status', 'active')
     .single();
@@ -66,22 +79,18 @@ const fetchSubscription = async ({ wsId }: { wsId: string }) => {
     return null;
   }
 
-  const polar = createPolarClient();
+  const typedSub = dbSub as WorkspaceSubscriptionWithProduct;
 
-  const polarProduct = await polar.products.get({
-    id: dbSub.product_id || '',
-  });
-
-  if (!polarProduct) return null;
+  if (!typedSub.workspace_subscription_products) return null;
 
   return {
-    id: dbSub.id,
-    status: dbSub.status,
-    currentPeriodStart: dbSub.current_period_start,
-    currentPeriodEnd: dbSub.current_period_end,
-    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
-    polarSubscriptionId: dbSub.polar_subscription_id,
-    product: polarProduct,
+    id: typedSub.id,
+    status: typedSub.status,
+    currentPeriodStart: typedSub.current_period_start,
+    currentPeriodEnd: typedSub.current_period_end,
+    cancelAtPeriodEnd: typedSub.cancel_at_period_end,
+    polarSubscriptionId: typedSub.polar_subscription_id,
+    product: typedSub.workspace_subscription_products,
   };
 };
 
@@ -94,6 +103,8 @@ const fetchWorkspaceSubscriptions = async (wsId: string) => {
       `
       id,
       created_at,
+      current_period_start,
+      current_period_end,
       product_id,
       status,
       cancel_at_period_end,
@@ -106,7 +117,7 @@ const fetchWorkspaceSubscriptions = async (wsId: string) => {
     `
     )
     .eq('ws_id', wsId)
-    .order('created_at', { ascending: false })
+    .order('current_period_end', { ascending: false })
     .limit(5);
 
   if (error) {
@@ -133,20 +144,14 @@ export default async function BillingPage({
             checkCreator(wsId),
           ]);
 
-        const currentPlan = subscription?.product
+        const currentPlan = subscription
           ? {
               id: subscription.id,
               polarSubscriptionId: subscription.polarSubscriptionId,
               productId: subscription.product.id,
               name: subscription.product.name || 'No Plan',
-              price:
-                subscription.product.prices.length > 0
-                  ? subscription.product.prices[0] &&
-                    'priceAmount' in subscription.product.prices[0]
-                    ? subscription.product.prices[0].priceAmount
-                    : 0
-                  : 0,
-              billingCycle: subscription.product.recurringInterval,
+              price: subscription.product.price ?? 0,
+              billingCycle: subscription.product.recurring_interval,
               startDate: subscription.currentPeriodStart
                 ? format(
                     new Date(subscription.currentPeriodStart),
@@ -158,9 +163,9 @@ export default async function BillingPage({
                 : '-',
               cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
               status: subscription.status || 'unknown',
-              features: subscription.product.benefits.map(
-                (benefit) => benefit.description
-              ),
+              features: subscription.product.description
+                ? [subscription.product.description]
+                : ['Premium features'],
             }
           : {
               id: '',
@@ -176,9 +181,11 @@ export default async function BillingPage({
               features: ['Basic features', 'Limited usage'],
             };
 
-        const billingHistory = subscriptionHistory.map((sub, index) => ({
-          id: sub.id ?? `SUB-${sub.product_id?.slice(-6) || index}`,
+        const billingHistory = subscriptionHistory.map((sub) => ({
+          id: sub.id,
           created_at: sub.created_at,
+          current_period_start: sub.current_period_start,
+          current_period_end: sub.current_period_end,
           product_id: sub.product_id,
           status: sub.status ?? 'unknown',
           cancel_at_period_end: sub.cancel_at_period_end,

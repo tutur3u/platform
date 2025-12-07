@@ -6,6 +6,8 @@ import { centToDollar } from '@/utils/price-helper';
 interface BillingHistoryItem {
   id: string;
   created_at: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
   product_id: string | null;
   status: string;
   cancel_at_period_end: boolean | null;
@@ -26,34 +28,22 @@ export default function BillingHistory({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+        return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20';
+      case 'trialing':
+        return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20';
       case 'past_due':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+        return 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20';
       case 'canceled':
       case 'cancelled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-      case 'incomplete':
-      case 'incomplete_expired':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+        return 'bg-muted text-muted-foreground border-border';
       default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+        return 'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20';
     }
   };
 
-  const getDisplayDate = (item: BillingHistoryItem) => {
-    const createdDate = format(new Date(item.created_at), 'MMM d, yyyy');
-
-    switch (item.status) {
-      case 'active':
-        return `Started: ${createdDate}`;
-      case 'past_due':
-        return `Due: ${createdDate}`;
-      case 'canceled':
-      case 'cancelled':
-        return `Cancelled: ${createdDate}`;
-      default:
-        return createdDate;
-    }
+  const formatDate = (date: string | null) => {
+    if (!date) return '-';
+    return format(new Date(date), 'MMM d, yyyy');
   };
 
   return (
@@ -72,58 +62,74 @@ export default function BillingHistory({
               <thead>
                 <tr className="border-border border-b bg-muted/50">
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                    Subscription #
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Plan
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Amount
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                    Status
+                    Start Date
                   </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
+                    End Date
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-center font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {billingHistory.map((subscription) => (
-                  <tr key={subscription.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
-                      {subscription.id}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
-                      {getDisplayDate(subscription)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
-                      <div>
-                        <div className="font-medium">
+                  <tr
+                    key={subscription.id}
+                    className="transition-colors hover:bg-muted/30"
+                  >
+                    <td className="px-4 py-4 text-card-foreground">
+                      <div className="flex flex-col">
+                        <div className="font-semibold">
                           {subscription.product?.name || 'Unknown Plan'}
                         </div>
+                        {subscription.product?.description && (
+                          <div className="text-muted-foreground text-sm">
+                            {subscription.product.description}
+                          </div>
+                        )}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
+                    <td className="whitespace-nowrap px-4 py-4 text-card-foreground">
                       {subscription.product ? (
-                        <div>
-                          <div className="font-medium">
-                            {`$${centToDollar(subscription.product.price)}`}
+                        <div className="flex flex-col">
+                          <div className="font-semibold">
+                            ${centToDollar(subscription.product.price)}
                           </div>
                           <div className="text-muted-foreground text-sm">
                             per {subscription.product.recurring_interval}
                           </div>
                         </div>
                       ) : (
-                        'N/A'
+                        <span className="text-muted-foreground">N/A</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-4 text-card-foreground">
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {formatDate(subscription.current_period_start)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-card-foreground">
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {formatDate(subscription.current_period_end)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4">
                       <span
-                        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${getStatusColor(subscription.status)}`}
+                        className={`inline-flex items-center rounded-md border px-2.5 py-1 font-medium text-xs ${getStatusColor(subscription.status)}`}
                       >
                         {subscription.status.charAt(0).toUpperCase() +
                           subscription.status.slice(1)}
@@ -132,13 +138,14 @@ export default function BillingHistory({
                           ' (Ending)'}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <p
-                        className="text-primary hover:text-primary/80"
+                    <td className="whitespace-nowrap px-4 py-4 text-center">
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-md p-2 text-primary transition-colors hover:bg-primary/10 hover:text-primary/80"
                         title="Download Receipt"
                       >
                         <Receipt className="h-5 w-5" />
-                      </p>
+                      </button>
                     </td>
                   </tr>
                 ))}
