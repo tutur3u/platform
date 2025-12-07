@@ -10,7 +10,6 @@ import {
   X,
 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
-import type { TaskWithDetails } from './session-history/session-types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -41,9 +40,10 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
-import { validateStartTime, validateEndTime } from '@/lib/time-validation';
-import { getCategoryColor } from './session-history';
+import { validateEndTime, validateStartTime } from '@/lib/time-validation';
 import type { SessionWithRelations } from '../types';
+import { getCategoryColor } from './session-history';
+import type { TaskWithDetails } from './session-history/session-types';
 import { useSessionActions } from './session-history/use-session-actions';
 
 dayjs.extend(utc);
@@ -902,7 +902,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                   key={index}
                   className="flex items-start gap-2 text-dynamic-red text-sm"
                 >
-                  <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+                  <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
                   <span>{error}</span>
                 </div>
               ))}
