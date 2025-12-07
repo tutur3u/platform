@@ -10,6 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@tuturuuu/ui/table';
 import { format } from 'date-fns';
 import { centToDollar } from '@/utils/price-helper';
 
@@ -97,73 +105,68 @@ export function OrdersDialog({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-border border-b bg-muted/50">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                      Order ID
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                      Total Amount
-                    </th>
-                    <th className="px-4 py-3 text-center font-medium text-muted-foreground text-sm uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {data.orders.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="transition-colors hover:bg-muted/30"
-                    >
-                      <td className="px-4 py-4 font-mono text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">
-                            {order.id.slice(0, 8)}...
-                          </span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        <span className="font-medium">
-                          {format(new Date(order.createdAt), 'MMM d, yyyy')}
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="uppercase tracking-wider">
+                    Order ID
+                  </TableHead>
+                  <TableHead className="uppercase tracking-wider">
+                    Date
+                  </TableHead>
+                  <TableHead className="uppercase tracking-wider">
+                    Type
+                  </TableHead>
+                  <TableHead className="uppercase tracking-wider">
+                    Total Amount
+                  </TableHead>
+                  <TableHead className="text-center uppercase tracking-wider">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {order.id.slice(0, 8)}...
                         </span>
-                        <div className="text-muted-foreground text-xs">
-                          {format(new Date(order.createdAt), 'HH:mm')}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-md border px-2.5 py-1 font-medium text-xs ${getStatusColor(order.billingReason)}`}
-                        >
-                          {formatBillingReason(order.billingReason)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 font-semibold">
-                        ${centToDollar(order.totalAmount)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          title="View Order Details"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <span className="font-medium">
+                        {format(new Date(order.createdAt), 'MMM d, yyyy')}
+                      </span>
+                      <div className="text-muted-foreground text-xs">
+                        {format(new Date(order.createdAt), 'HH:mm')}
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center rounded-md border px-2.5 py-1 font-medium text-xs ${getStatusColor(order.billingReason)}`}
+                      >
+                        {formatBillingReason(order.billingReason)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap font-semibold">
+                      ${centToDollar(order.totalAmount)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        title="View Order Details"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
 
