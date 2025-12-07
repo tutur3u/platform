@@ -52,5 +52,5 @@
     "./permissions": "./src/permissions.tsx",
     "./editor": "./src/editor/index.ts"
   },
-  "packageManager": "bun@1.3.3"
+  "packageManager": "bun@1.3.4"
 }
