@@ -36,6 +36,7 @@ import { sendOtpAction, verifyOtpAction } from './actions';
 // Constants
 const COOLDOWN_DURATION = 60;
 const MAX_OTP_LENGTH = 6;
+const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 
 export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const supabase = createClient();
@@ -157,29 +158,40 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   // Captcha state (Turnstile)
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
-  const captchaRef = useRef<TurnstileInstance>(null);
+  // Distinct refs for each tab's Turnstile widget
+  const captchaRefOtp = useRef<TurnstileInstance>(null);
+  const captchaRefPassword = useRef<TurnstileInstance>(null);
+  // Read env var once with runtime guard (undefined if not set)
+  const turnstileSiteKey =
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
+
+  
+  const resetCaptcha = useCallback(() => {
+    captchaRefOtp.current?.reset();
+    captchaRefPassword.current?.reset();
+    setCaptchaToken(undefined);
+  }, []);
 
   // Handle Turnstile errors with automatic retry
   const handleCaptchaError = useCallback(
     (errorCode?: string) => {
       console.error('[Turnstile] Error:', errorCode);
-      setCaptchaToken(undefined);
+      resetCaptcha();
       setCaptchaError(t('login.captcha_error'));
-      // Auto-retry after a short delay
+      // Auto-retry after a short delay - use correct ref based on active tab
       setTimeout(() => {
-        captchaRef.current?.reset();
+        resetCaptcha();
         setCaptchaError(undefined);
-      }, 3000);
+      }, CAPTCHA_ERROR_RETRY_DELAY);
     },
-    [t]
+    [t, loginMethod]
   );
 
   // Handle Turnstile timeout (user didn't interact in time)
   const handleCaptchaTimeout = useCallback(() => {
     console.warn('[Turnstile] Timeout - resetting widget');
-    setCaptchaToken(undefined);
-    captchaRef.current?.reset();
-  }, []);
+    resetCaptcha();
+  }, [resetCaptcha]);
 
   // URL Processing Helper
   const processNextUrl = useCallback(async () => {
@@ -294,8 +306,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         options: { captchaToken },
       });
 
-      // Reset captcha after attempt
-      captchaRef.current?.reset();
+      // Reset captcha after attempt (password tab uses captchaRefPassword)
+      captchaRefPassword.current?.reset();
       setCaptchaToken(undefined);
 
       if (error) {
@@ -337,7 +349,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     } catch (error) {
       // This is an authentication error (login failed)
       console.error('[loginWithPassword] Authentication failed:', error);
-      captchaRef.current?.reset();
+      captchaRefPassword.current?.reset();
       setCaptchaToken(undefined);
       passwordForm.setError('password', {
         message: t('login.invalid_credentials'),
@@ -367,8 +379,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           captchaToken,
         });
 
-        // Reset captcha after attempt
-        captchaRef.current?.reset();
+        // Reset captcha after attempt (OTP tab uses captchaRefOtp)
+        captchaRefOtp.current?.reset();
         setCaptchaToken(undefined);
 
         if (result.error) {
@@ -399,7 +411,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         }
       } catch (error) {
         console.error('SendOTP Error:', error);
-        captchaRef.current?.reset();
+        captchaRefOtp.current?.reset();
         setCaptchaToken(undefined);
         toast({
           title: t('login.failed'),
@@ -1029,12 +1041,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   />
                 )}
 
-                {/* Turnstile CAPTCHA - only show when not in dev mode and OTP not yet sent */}
-                {!DEV_MODE && !otpSent && (
+                {/* Turnstile CAPTCHA - show when not in dev mode (both on initial send and resend) */}
+                {!DEV_MODE && turnstileSiteKey && (
                   <div className="flex flex-col items-center gap-2">
                     <Turnstile
-                      ref={captchaRef}
-                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                      ref={captchaRefOtp}
+                      siteKey={turnstileSiteKey}
                       onSuccess={(token) => {
                         setCaptchaToken(token);
                         setCaptchaError(undefined);
@@ -1077,7 +1089,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     type="button"
                     variant="outline"
                     className="h-12 w-full bg-white/50 transition-all duration-200 hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-                    disabled={_isLoading || resendCooldown > 0}
+                    disabled={_isLoading || resendCooldown > 0 || (!DEV_MODE && !captchaToken)}
                     onClick={() => {
                       otpForm.handleSubmit(onOtpSubmit)();
                     }}
@@ -1198,11 +1210,11 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                 />
 
                 {/* Turnstile CAPTCHA - only show when not in dev mode */}
-                {!DEV_MODE && (
+                {!DEV_MODE && turnstileSiteKey && (
                   <div className="flex flex-col items-center gap-2">
                     <Turnstile
-                      ref={captchaRef}
-                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                      ref={captchaRefPassword}
+                      siteKey={turnstileSiteKey}
                       onSuccess={(token) => {
                         setCaptchaToken(token);
                         setCaptchaError(undefined);
