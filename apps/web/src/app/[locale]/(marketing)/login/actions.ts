@@ -14,6 +14,7 @@ import {
 export interface SendOtpInput {
   email: string;
   locale: string;
+  captchaToken?: string;
 }
 
 export interface SendOtpResult {
@@ -25,6 +26,7 @@ export interface VerifyOtpInput {
   email: string;
   otp: string;
   locale: string;
+  captchaToken?: string;
 }
 
 export interface VerifyOtpResult {
@@ -40,7 +42,7 @@ export async function sendOtpAction(
   input: SendOtpInput
 ): Promise<SendOtpResult> {
   try {
-    const { email, locale } = input;
+    const { email, locale, captchaToken } = input;
     const validatedEmail = await validateEmail(email);
 
     const userId = await checkIfUserExists({ email: validatedEmail });
@@ -64,7 +66,7 @@ export async function sendOtpAction(
       // Send OTP for existing user
       const { error } = await supabase.auth.signInWithOtp({
         email: validatedEmail,
-        options: { data: { locale, origin: 'TUTURUUU' } },
+        options: { data: { locale, origin: 'TUTURUUU' }, captchaToken },
       });
 
       if (error) {
@@ -79,6 +81,7 @@ export async function sendOtpAction(
         password: randomPassword,
         options: {
           data: { locale, origin: 'TUTURUUU' },
+          captchaToken,
         },
       });
 

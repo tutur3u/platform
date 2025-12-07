@@ -1,6 +1,6 @@
 'use client';
 
-import { DEV_MODE, PORT } from '@/constants/common';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -25,11 +25,12 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import * as z from 'zod';
+import { DEV_MODE, PORT } from '@/constants/common';
 import { sendOtpAction, verifyOtpAction } from './actions';
 
 // Constants
@@ -153,6 +154,33 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const [isPendingSendOtp, startSendOtpTransition] = useTransition();
   const [isPendingVerifyOtp, startVerifyOtpTransition] = useTransition();
 
+  // Captcha state (Turnstile)
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const [captchaError, setCaptchaError] = useState<string>();
+  const captchaRef = useRef<TurnstileInstance>(null);
+
+  // Handle Turnstile errors with automatic retry
+  const handleCaptchaError = useCallback(
+    (errorCode?: string) => {
+      console.error('[Turnstile] Error:', errorCode);
+      setCaptchaToken(undefined);
+      setCaptchaError(t('login.captcha_error'));
+      // Auto-retry after a short delay
+      setTimeout(() => {
+        captchaRef.current?.reset();
+        setCaptchaError(undefined);
+      }, 3000);
+    },
+    [t]
+  );
+
+  // Handle Turnstile timeout (user didn't interact in time)
+  const handleCaptchaTimeout = useCallback(() => {
+    console.warn('[Turnstile] Timeout - resetting widget');
+    setCaptchaToken(undefined);
+    captchaRef.current?.reset();
+  }, []);
+
   // URL Processing Helper
   const processNextUrl = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
@@ -263,7 +291,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
+        options: { captchaToken },
       });
+
+      // Reset captcha after attempt
+      captchaRef.current?.reset();
+      setCaptchaToken(undefined);
 
       if (error) {
         // Login failed - this is an authentication error
@@ -304,6 +337,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     } catch (error) {
       // This is an authentication error (login failed)
       console.error('[loginWithPassword] Authentication failed:', error);
+      captchaRef.current?.reset();
+      setCaptchaToken(undefined);
       passwordForm.setError('password', {
         message: t('login.invalid_credentials'),
       });
@@ -329,7 +364,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         const result = await sendOtpAction({
           email: data.email,
           locale,
+          captchaToken,
         });
+
+        // Reset captcha after attempt
+        captchaRef.current?.reset();
+        setCaptchaToken(undefined);
 
         if (result.error) {
           // Handle error from server action
@@ -359,6 +399,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         }
       } catch (error) {
         console.error('SendOTP Error:', error);
+        captchaRef.current?.reset();
+        setCaptchaToken(undefined);
         toast({
           title: t('login.failed'),
           description: t('login.failed_to_send'),
@@ -987,13 +1029,35 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   />
                 )}
 
+                {/* Turnstile CAPTCHA - only show when not in dev mode and OTP not yet sent */}
+                {!DEV_MODE && !otpSent && (
+                  <div className="flex flex-col items-center gap-2">
+                    <Turnstile
+                      ref={captchaRef}
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                      onSuccess={(token) => {
+                        setCaptchaToken(token);
+                        setCaptchaError(undefined);
+                      }}
+                      onExpire={() => setCaptchaToken(undefined)}
+                      onError={handleCaptchaError}
+                      onTimeout={handleCaptchaTimeout}
+                    />
+                    {captchaError && (
+                      <p className="text-destructive text-sm">{captchaError}</p>
+                    )}
+                  </div>
+                )}
+
                 <Button
                   type="submit"
                   variant={_isLoading ? 'outline' : undefined}
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
                   disabled={
                     _isLoading ||
-                    (otpSent && otpForm.watch('otp').length !== MAX_OTP_LENGTH)
+                    (otpSent &&
+                      otpForm.watch('otp').length !== MAX_OTP_LENGTH) ||
+                    (!DEV_MODE && !otpSent && !captchaToken)
                   }
                 >
                   {_isLoading ? (
@@ -1133,11 +1197,35 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   )}
                 />
 
+                {/* Turnstile CAPTCHA - only show when not in dev mode */}
+                {!DEV_MODE && (
+                  <div className="flex flex-col items-center gap-2">
+                    <Turnstile
+                      ref={captchaRef}
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                      onSuccess={(token) => {
+                        setCaptchaToken(token);
+                        setCaptchaError(undefined);
+                      }}
+                      onExpire={() => setCaptchaToken(undefined)}
+                      onError={handleCaptchaError}
+                      onTimeout={handleCaptchaTimeout}
+                    />
+                    {captchaError && (
+                      <p className="text-destructive text-sm">{captchaError}</p>
+                    )}
+                  </div>
+                )}
+
                 <Button
                   type="submit"
                   variant={_isLoading ? 'outline' : undefined}
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
-                  disabled={_isLoading || !passwordForm.formState.isValid}
+                  disabled={
+                    _isLoading ||
+                    !passwordForm.formState.isValid ||
+                    (!DEV_MODE && !captchaToken)
+                  }
                 >
                   {_isLoading ? (
                     <div className="flex items-center gap-2">
