@@ -165,7 +165,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const turnstileSiteKey =
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
 
-  
   const resetCaptcha = useCallback(() => {
     captchaRefOtp.current?.reset();
     captchaRefPassword.current?.reset();
@@ -1089,7 +1088,11 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     type="button"
                     variant="outline"
                     className="h-12 w-full bg-white/50 transition-all duration-200 hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-                    disabled={_isLoading || resendCooldown > 0 || (!DEV_MODE && !captchaToken)}
+                    disabled={
+                      _isLoading ||
+                      resendCooldown > 0 ||
+                      (!DEV_MODE && !captchaToken)
+                    }
                     onClick={() => {
                       otpForm.handleSubmit(onOtpSubmit)();
                     }}
