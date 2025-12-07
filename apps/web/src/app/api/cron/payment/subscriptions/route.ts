@@ -1,5 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const cronSecret =
       process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET ?? '';
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (!DEV_MODE && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
