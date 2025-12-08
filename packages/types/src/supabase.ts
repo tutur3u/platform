@@ -14,6 +14,42 @@ export type Database = {
   };
   public: {
     Tables: {
+      abuse_events: {
+        Row: {
+          created_at: string;
+          email_hash: string | null;
+          endpoint: string | null;
+          event_type: Database['public']['Enums']['abuse_event_type'];
+          id: string;
+          ip_address: string;
+          metadata: Json | null;
+          success: boolean;
+          user_agent: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          email_hash?: string | null;
+          endpoint?: string | null;
+          event_type: Database['public']['Enums']['abuse_event_type'];
+          id?: string;
+          ip_address: string;
+          metadata?: Json | null;
+          success?: boolean;
+          user_agent?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          email_hash?: string | null;
+          endpoint?: string | null;
+          event_type?: Database['public']['Enums']['abuse_event_type'];
+          id?: string;
+          ip_address?: string;
+          metadata?: Json | null;
+          success?: boolean;
+          user_agent?: string | null;
+        };
+        Relationships: [];
+      };
       ai_chat_members: {
         Row: {
           chat_id: string;
@@ -543,6 +579,83 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      blocked_ips: {
+        Row: {
+          block_level: number;
+          blocked_at: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          ip_address: string;
+          metadata: Json | null;
+          reason: Database['public']['Enums']['abuse_event_type'];
+          status: Database['public']['Enums']['ip_block_status'];
+          unblock_reason: string | null;
+          unblocked_at: string | null;
+          unblocked_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          block_level?: number;
+          blocked_at?: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          ip_address: string;
+          metadata?: Json | null;
+          reason: Database['public']['Enums']['abuse_event_type'];
+          status?: Database['public']['Enums']['ip_block_status'];
+          unblock_reason?: string | null;
+          unblocked_at?: string | null;
+          unblocked_by?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          block_level?: number;
+          blocked_at?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          ip_address?: string;
+          metadata?: Json | null;
+          reason?: Database['public']['Enums']['abuse_event_type'];
+          status?: Database['public']['Enums']['ip_block_status'];
+          unblock_reason?: string | null;
+          unblocked_at?: string | null;
+          unblocked_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'blocked_ips_unblocked_by_fkey';
+            columns: ['unblocked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'blocked_ips_unblocked_by_fkey';
+            columns: ['unblocked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'blocked_ips_unblocked_by_fkey';
+            columns: ['unblocked_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'blocked_ips_unblocked_by_fkey';
+            columns: ['unblocked_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -14569,6 +14682,16 @@ export type Database = {
           hour_of_day: number;
         }[];
       };
+      get_active_ip_block: {
+        Args: { p_ip_address: string };
+        Returns: {
+          block_level: number;
+          blocked_at: string;
+          expires_at: string;
+          id: string;
+          reason: Database['public']['Enums']['abuse_event_type'];
+        }[];
+      };
       get_active_sessions_count: { Args: never; Returns: number };
       get_activity_heatmap: {
         Args: never;
@@ -14907,6 +15030,7 @@ export type Database = {
         Args: { ws_id: string };
         Returns: number;
       };
+      get_ip_block_level: { Args: { p_ip_address: string }; Returns: number };
       get_joined_workspace_count: {
         Args: { user_id: string };
         Returns: number;
@@ -15985,6 +16109,15 @@ export type Database = {
       };
     };
     Enums: {
+      abuse_event_type:
+        | 'otp_send'
+        | 'otp_verify_failed'
+        | 'mfa_challenge'
+        | 'mfa_verify_failed'
+        | 'reauth_send'
+        | 'reauth_verify_failed'
+        | 'password_login_failed'
+        | 'manual';
       ai_message_type:
         | 'message'
         | 'file'
@@ -16006,6 +16139,7 @@ export type Database = {
         | 'ENABLE_CHALLENGES'
         | 'ENABLE_QUIZZES';
       habit_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+      ip_block_status: 'active' | 'expired' | 'manually_unblocked';
       monthly_recurrence_type: 'day_of_month' | 'day_of_week';
       notification_delivery_mode: 'immediate' | 'batched';
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -16261,6 +16395,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      abuse_event_type: [
+        'otp_send',
+        'otp_verify_failed',
+        'mfa_challenge',
+        'mfa_verify_failed',
+        'reauth_send',
+        'reauth_verify_failed',
+        'password_login_failed',
+        'manual',
+      ],
       ai_message_type: [
         'message',
         'file',
@@ -16284,6 +16428,7 @@ export const Constants = {
         'ENABLE_QUIZZES',
       ],
       habit_frequency: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
+      ip_block_status: ['active', 'expired', 'manually_unblocked'],
       monthly_recurrence_type: ['day_of_month', 'day_of_week'],
       notification_delivery_mode: ['immediate', 'batched'],
       notification_priority: ['low', 'medium', 'high', 'urgent'],

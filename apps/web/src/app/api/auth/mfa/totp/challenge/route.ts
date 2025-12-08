@@ -1,8 +1,27 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  checkMFAChallengeLimit,
+  extractIPFromHeaders,
+} from '@tuturuuu/utils/abuse-protection';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    // Get IP address for abuse tracking
+    const ipAddress = extractIPFromHeaders(request.headers);
+
+    // Check rate limit for MFA challenges
+    const abuseCheck = await checkMFAChallengeLimit(ipAddress);
+    if (!abuseCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: abuseCheck.reason || 'Too many requests',
+          retryAfter: abuseCheck.retryAfter,
+        },
+        { status: 429 }
+      );
+    }
+
     const supabase = await createClient();
 
     // Get the current user

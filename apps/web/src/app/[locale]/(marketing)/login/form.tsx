@@ -31,7 +31,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import * as z from 'zod';
 import { DEV_MODE, PORT } from '@/constants/common';
-import { sendOtpAction, verifyOtpAction } from './actions';
+import { passwordLoginAction, sendOtpAction, verifyOtpAction } from './actions';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -299,20 +299,38 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // Use server action for abuse protection
+      const result = await passwordLoginAction({
         email: data.email,
         password: data.password,
-        options: { captchaToken },
+        locale,
+        captchaToken,
       });
 
       // Reset captcha after attempt (password tab uses captchaRefPassword)
       captchaRefPassword.current?.reset();
       setCaptchaToken(undefined);
 
-      if (error) {
-        // Login failed - this is an authentication error
-        console.error('[loginWithPassword] Auth error:', error);
-        throw error;
+      if (result.error) {
+        // Login failed - show error
+        console.error('[loginWithPassword] Auth error:', result.error);
+
+        // Show retry after message if rate limited
+        const errorMessage = result.retryAfter
+          ? `${result.error} (retry in ${result.retryAfter}s)`
+          : result.error;
+
+        passwordForm.setError('password', {
+          message: errorMessage,
+        });
+
+        toast({
+          title: t('login.failed'),
+          description: errorMessage,
+        });
+
+        setLoading(false);
+        return;
       }
 
       // Login succeeded, now handle navigation
@@ -346,8 +364,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         }
       }
     } catch (error) {
-      // This is an authentication error (login failed)
-      console.error('[loginWithPassword] Authentication failed:', error);
+      // Unexpected error
+      console.error('[loginWithPassword] Unexpected error:', error);
       captchaRefPassword.current?.reset();
       setCaptchaToken(undefined);
       passwordForm.setError('password', {
