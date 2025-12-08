@@ -31,6 +31,7 @@ import {
   createErrorFromResponse,
   isApiErrorResponse,
   NetworkError,
+  RateLimitError,
   ValidationError,
 } from './errors';
 import type {
@@ -108,6 +109,20 @@ function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
 }
 
 /**
+ * Retry configuration for rate limit handling
+ */
+export interface RetryConfig {
+  /** Maximum number of retry attempts (default: 3) */
+  maxRetries?: number;
+  /** Initial delay in milliseconds before first retry (default: 1000) */
+  initialDelayMs?: number;
+  /** Maximum delay in milliseconds between retries (default: 30000) */
+  maxDelayMs?: number;
+  /** Whether to automatically retry on 429 rate limit errors (default: true) */
+  retryOn429?: boolean;
+}
+
+/**
  * Configuration options for the Tuturuuu client
  */
 export interface TuturuuuClientConfig {
@@ -115,6 +130,8 @@ export interface TuturuuuClientConfig {
   baseUrl?: string;
   timeout?: number;
   fetch?: typeof fetch;
+  /** Retry configuration for handling rate limits */
+  retry?: RetryConfig;
 }
 
 /**
@@ -158,7 +175,7 @@ export class StorageClient {
     if (validatedOptions.sortOrder)
       params.set('sortOrder', validatedOptions.sortOrder);
 
-    const response = await this.client.request<any>(
+    const response = await this.client.requestWithRetry<any>(
       `/storage/list?${params.toString()}`
     );
 
@@ -205,8 +222,8 @@ export class StorageClient {
     const filename =
       file instanceof File ? file.name : `file-${Date.now()}.bin`;
 
-    // Step 1: Request a signed upload URL from the platform
-    const signedUrlResponse = await this.client.request<
+    // Step 1: Request a signed upload URL from the platform (with retry for rate limits)
+    const signedUrlResponse = await this.client.requestWithRetry<
       import('./types').SignedUploadUrlResponse
     >('/storage/upload-url', {
       method: 'POST',
@@ -300,14 +317,17 @@ export class StorageClient {
       options
     );
 
-    return this.client.request<SignedUploadUrlResponse>('/storage/upload-url', {
-      method: 'POST',
-      body: JSON.stringify({
-        filename: validatedOptions.filename,
-        path: validatedOptions.path || '',
-        upsert: validatedOptions.upsert ?? false,
-      }),
-    });
+    return this.client.requestWithRetry<SignedUploadUrlResponse>(
+      '/storage/upload-url',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: validatedOptions.filename,
+          path: validatedOptions.path || '',
+          upsert: validatedOptions.upsert ?? false,
+        }),
+      }
+    );
   }
 
   /**
@@ -466,7 +486,7 @@ export class StorageClient {
     // Validate options
     const validatedOptions = validateWithSchema(shareOptionsSchema, options);
 
-    return this.client.request<ShareResponse>('/storage/share', {
+    return this.client.requestWithRetry<ShareResponse>('/storage/share', {
       method: 'POST',
       body: JSON.stringify({
         path,
@@ -513,10 +533,13 @@ export class StorageClient {
       throw new ValidationError('Maximum 100 paths can be processed at once');
     }
 
-    return this.client.request<BatchShareResponse>('/storage/share-batch', {
-      method: 'POST',
-      body: JSON.stringify({ paths, expiresIn }),
-    });
+    return this.client.requestWithRetry<BatchShareResponse>(
+      '/storage/share-batch',
+      {
+        method: 'POST',
+        body: JSON.stringify({ paths, expiresIn }),
+      }
+    );
   }
 
   /**
@@ -532,7 +555,9 @@ export class StorageClient {
    * ```
    */
   async getAnalytics(): Promise<AnalyticsResponse> {
-    return this.client.request<AnalyticsResponse>('/storage/analytics');
+    return this.client.requestWithRetry<AnalyticsResponse>(
+      '/storage/analytics'
+    );
   }
 }
 
@@ -575,7 +600,7 @@ export class DocumentsClient {
     if (validatedOptions.isPublic !== undefined)
       params.set('isPublic', validatedOptions.isPublic.toString());
 
-    return this.client.request<ListDocumentsResponse>(
+    return this.client.requestWithRetry<ListDocumentsResponse>(
       `/documents?${params.toString()}`
     );
   }
@@ -621,7 +646,9 @@ export class DocumentsClient {
       throw new ValidationError('Document ID is required');
     }
 
-    return this.client.request<GetDocumentResponse>(`/documents/${id}`);
+    return this.client.requestWithRetry<GetDocumentResponse>(
+      `/documents/${id}`
+    );
   }
 
   /**
@@ -694,6 +721,16 @@ export class DocumentsClient {
 }
 
 /**
+ * Default retry configuration
+ */
+const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
+  maxRetries: 3,
+  initialDelayMs: 1000,
+  maxDelayMs: 30000,
+  retryOn429: true,
+};
+
+/**
  * Main Tuturuuu SDK client
  */
 export class TuturuuuClient {
@@ -701,6 +738,7 @@ export class TuturuuuClient {
   public readonly baseUrl: string;
   public readonly timeout: number;
   public readonly fetch: typeof fetch;
+  public readonly retryConfig: Required<RetryConfig>;
 
   public readonly storage: StorageClient;
   public readonly documents: DocumentsClient;
@@ -730,6 +768,7 @@ export class TuturuuuClient {
       this.baseUrl = 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
       this.fetch = globalThis.fetch;
+      this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
     } else if (config) {
       this.apiKey = config.apiKey || process.env.TUTURUUU_API_KEY || '';
       this.baseUrl =
@@ -738,6 +777,7 @@ export class TuturuuuClient {
         'https://tuturuuu.com/api/v1';
       this.timeout = config.timeout || 30000;
       this.fetch = config.fetch || globalThis.fetch;
+      this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry };
     } else {
       // Auto-load from environment variables
       this.apiKey = process.env.TUTURUUU_API_KEY || '';
@@ -745,6 +785,7 @@ export class TuturuuuClient {
         process.env.TUTURUUU_BASE_URL || 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
       this.fetch = globalThis.fetch;
+      this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
     }
 
     // Validate API key
@@ -812,6 +853,24 @@ export class TuturuuuClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // Extract rate limit headers for 429 responses
+        const retryAfter = response.headers.get('Retry-After');
+        const resetTime = response.headers.get('X-RateLimit-Reset');
+
+        // Handle 429 rate limit errors specially - they may come from infrastructure
+        // (e.g., Vercel) with HTML content, not JSON
+        if (response.status === 429) {
+          const message = retryAfter
+            ? `Rate limit exceeded. Retry after ${retryAfter} seconds.`
+            : 'Rate limit exceeded. Please try again later.';
+
+          throw new RateLimitError(message, {
+            code: 'RATE_LIMIT_EXCEEDED',
+            retryAfter: retryAfter ? parseInt(retryAfter, 10) : undefined,
+            resetTime: resetTime ? parseInt(resetTime, 10) : undefined,
+          });
+        }
+
         // Check if response is JSON before attempting to parse
         const contentType = response.headers.get('content-type');
         const isJson = contentType?.toLowerCase().includes('application/json');
@@ -820,7 +879,10 @@ export class TuturuuuClient {
           try {
             const errorData = await response.json();
             if (isApiErrorResponse(errorData)) {
-              throw createErrorFromResponse(errorData, response.status);
+              throw createErrorFromResponse(errorData, response.status, {
+                retryAfter,
+                resetTime,
+              });
             }
             throw new NetworkError(
               `HTTP ${response.status}: ${response.statusText}`
@@ -862,6 +924,58 @@ export class TuturuuuClient {
       }
       throw error;
     }
+  }
+
+  /**
+   * Internal method to make HTTP requests with automatic retry on rate limit errors
+   * @internal
+   */
+  async requestWithRetry<T>(
+    endpoint: string,
+    options: {
+      method?: string;
+      body?: string | FormData;
+      skipJsonContentType?: boolean;
+    } = {}
+  ): Promise<T> {
+    const { maxRetries, initialDelayMs, maxDelayMs, retryOn429 } =
+      this.retryConfig;
+
+    if (!retryOn429) {
+      return this.request<T>(endpoint, options);
+    }
+
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.request<T>(endpoint, options);
+      } catch (error) {
+        if (error instanceof RateLimitError && attempt < maxRetries) {
+          // Calculate delay: use retryAfter if available, otherwise exponential backoff
+          const baseDelay = error.retryAfter
+            ? error.retryAfter * 1000
+            : initialDelayMs * 2 ** attempt;
+          const delay = Math.min(baseDelay, maxDelayMs);
+
+          await this.sleep(delay);
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    // This should never be reached, but TypeScript needs it
+    throw lastError ?? new Error('Unexpected retry loop exit');
+  }
+
+  /**
+   * Sleep helper for retry delays
+   * @internal
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

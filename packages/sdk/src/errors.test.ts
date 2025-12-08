@@ -94,6 +94,27 @@ describe('RateLimitError', () => {
     expect(error.name).toBe('RateLimitError');
     expect(error.statusCode).toBe(429);
   });
+
+  it('should create error with retry metadata', () => {
+    const error = new RateLimitError('Rate limit exceeded', {
+      code: 'RATE_LIMIT_EXCEEDED',
+      retryAfter: 60,
+      resetTime: 1699999999,
+    });
+    expect(error.message).toBe('Rate limit exceeded');
+    expect(error.code).toBe('RATE_LIMIT_EXCEEDED');
+    expect(error.statusCode).toBe(429);
+    expect(error.retryAfter).toBe(60);
+    expect(error.resetTime).toBe(1699999999);
+  });
+
+  it('should allow undefined retry metadata', () => {
+    const error = new RateLimitError('Rate limit exceeded', {
+      code: 'RATE_LIMIT_EXCEEDED',
+    });
+    expect(error.retryAfter).toBeUndefined();
+    expect(error.resetTime).toBeUndefined();
+  });
 });
 
 describe('InternalServerError', () => {
@@ -181,6 +202,52 @@ describe('createErrorFromResponse', () => {
     };
     const error = createErrorFromResponse(response, 429);
     expect(error).toBeInstanceOf(RateLimitError);
+  });
+
+  it('should create RateLimitError for 429 with rate limit headers', () => {
+    const response: ApiErrorResponse = {
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded',
+      code: 'RATE_LIMIT_EXCEEDED',
+    };
+    const error = createErrorFromResponse(response, 429, {
+      retryAfter: '60',
+      resetTime: '1699999999',
+    });
+    expect(error).toBeInstanceOf(RateLimitError);
+    const rateLimitError = error as RateLimitError;
+    expect(rateLimitError.retryAfter).toBe(60);
+    expect(rateLimitError.resetTime).toBe(1699999999);
+  });
+
+  it('should handle null rate limit headers', () => {
+    const response: ApiErrorResponse = {
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded',
+    };
+    const error = createErrorFromResponse(response, 429, {
+      retryAfter: null,
+      resetTime: null,
+    });
+    expect(error).toBeInstanceOf(RateLimitError);
+    const rateLimitError = error as RateLimitError;
+    expect(rateLimitError.retryAfter).toBeUndefined();
+    expect(rateLimitError.resetTime).toBeUndefined();
+  });
+
+  it('should handle invalid rate limit header values', () => {
+    const response: ApiErrorResponse = {
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded',
+    };
+    const error = createErrorFromResponse(response, 429, {
+      retryAfter: 'invalid',
+      resetTime: '-100',
+    });
+    expect(error).toBeInstanceOf(RateLimitError);
+    const rateLimitError = error as RateLimitError;
+    expect(rateLimitError.retryAfter).toBeUndefined();
+    expect(rateLimitError.resetTime).toBeUndefined();
   });
 
   it('should create InternalServerError for 500', () => {

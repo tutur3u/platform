@@ -22,7 +22,7 @@ export {
   TuturuuuError,
   ValidationError,
 } from './errors';
-export type { TuturuuuClientConfig } from './storage';
+export type { RetryConfig, TuturuuuClientConfig } from './storage';
 // Main client
 /**
  * Default Tuturuuu client instance with auto-configured credentials
@@ -42,8 +42,8 @@ export type { TuturuuuClientConfig } from './storage';
 export {
   DocumentsClient,
   StorageClient,
-  tuturuuu,
   TuturuuuClient,
+  tuturuuu,
 } from './storage';
 // Types
 export type {
