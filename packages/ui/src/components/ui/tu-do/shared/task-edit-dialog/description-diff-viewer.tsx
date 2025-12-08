@@ -1,16 +1,23 @@
 'use client';
 
 import {
+  ChevronDown,
+  ChevronRight,
   ChevronsUpDown,
   Columns2,
   Eye,
   FileText,
   FoldVertical,
+  Image as ImageIcon,
   Minus,
+  Pen,
   Plus,
   Rows2,
   Type,
+  Video,
   WrapText,
+  X,
+  Youtube,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,12 +32,20 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  computeNodeDiff,
+  getNodeImageSrc,
+  type NodeDiffResult,
+  type NodeDiffSummary,
+  parseJsonContent,
+} from '@tuturuuu/utils/node-diff';
+import {
   computeLineDiff,
   computeWordDiff,
   type DiffChange,
   getDiffStats,
 } from '@tuturuuu/utils/text-diff';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
+import Image from 'next/image';
 import { useCallback, useMemo, useState } from 'react';
 
 type DiffViewMode = 'unified' | 'split';
@@ -280,7 +295,14 @@ export function DescriptionDiffViewer({
     }
   }, [oldValue, newValue]);
 
-  if (!hasTextChanges && !hasRawValueChanges) {
+  // Compute node-level diff for media changes
+  const nodeDiff = useMemo<NodeDiffSummary>(() => {
+    const oldContent = parseJsonContent(oldValue);
+    const newContent = parseJsonContent(newValue);
+    return computeNodeDiff(oldContent, newContent);
+  }, [oldValue, newValue]);
+
+  if (!hasTextChanges && !hasRawValueChanges && nodeDiff.totalChanges === 0) {
     return null;
   }
 
@@ -314,15 +336,15 @@ export function DescriptionDiffViewer({
         showCloseButton={false}
       >
         {/* Header */}
-        <DialogHeader className="border-b px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <DialogTitle className="text-base">
+        <DialogHeader className="border-b px-3 py-2 sm:px-4 sm:py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <DialogTitle className="text-sm sm:text-base">
               {t('description_changes', {
                 defaultValue: 'Description Changes',
               })}
             </DialogTitle>
             {!noVisibleChanges && (
-              <div className="flex items-center gap-1">
+              <div className="flex w-full items-center justify-center gap-1 sm:w-auto sm:justify-start">
                 {/* Granularity toggle */}
                 <ToggleGroup
                   type="single"
@@ -330,38 +352,41 @@ export function DescriptionDiffViewer({
                   onValueChange={(v) =>
                     v && setGranularity(v as DiffGranularity)
                   }
-                  className="h-8"
+                  className="h-7 sm:h-8"
                 >
                   <ToggleGroupItem
                     value="word"
-                    aria-label="Word diff"
-                    className="h-7 gap-1.5 px-2.5 text-xs"
+                    aria-label={t('word_diff', { defaultValue: 'Word' })}
+                    className="h-6 gap-1 px-1.5 text-xs sm:h-7 sm:gap-1.5 sm:px-2.5"
                   >
-                    <Type className="h-3.5 w-3.5" />
+                    <Type className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     {t('word_diff', { defaultValue: 'Word' })}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="line"
-                    aria-label="Line diff"
-                    className="h-7 gap-1.5 px-2.5 text-xs"
+                    aria-label={t('line_diff', { defaultValue: 'Line' })}
+                    className="h-6 gap-1 px-1.5 text-xs sm:h-7 sm:gap-1.5 sm:px-2.5"
                   >
-                    <WrapText className="h-3.5 w-3.5" />
+                    <WrapText className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     {t('line_diff', { defaultValue: 'Line' })}
                   </ToggleGroupItem>
                 </ToggleGroup>
 
-                <Separator orientation="vertical" className="mx-1 h-5" />
+                {/* View mode toggle - only show on sm+ screens */}
+                <Separator
+                  orientation="vertical"
+                  className="mx-0.5 hidden h-4 sm:mx-1 sm:block sm:h-5"
+                />
 
-                {/* View mode toggle */}
                 <ToggleGroup
                   type="single"
                   value={viewMode}
                   onValueChange={(v) => v && setViewMode(v as DiffViewMode)}
-                  className="h-8"
+                  className="hidden h-8 sm:flex"
                 >
                   <ToggleGroupItem
                     value="unified"
-                    aria-label="Unified view"
+                    aria-label={t('unified_view', { defaultValue: 'Unified' })}
                     className="h-7 gap-1.5 px-2.5 text-xs"
                   >
                     <Rows2 className="h-3.5 w-3.5" />
@@ -369,7 +394,7 @@ export function DescriptionDiffViewer({
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="split"
-                    aria-label="Split view"
+                    aria-label={t('split_view', { defaultValue: 'Split' })}
                     className="h-7 gap-1.5 px-2.5 text-xs"
                   >
                     <Columns2 className="h-3.5 w-3.5" />
@@ -403,64 +428,90 @@ export function DescriptionDiffViewer({
         ) : (
           <>
             {/* Stats bar */}
-            <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5 sm:px-4 sm:py-2">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <Badge
                   variant="outline"
-                  className="gap-1.5 border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                  className="gap-1 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0.5 text-dynamic-green text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5"
                 >
                   <Plus className="h-3 w-3" />
-                  {stats.added} {t('lines_added', { defaultValue: 'added' })}
+                  {stats.added}{' '}
+                  <span className="xs:inline hidden">
+                    {t('lines_added', { defaultValue: 'added' })}
+                  </span>
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="gap-1.5 border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red"
+                  className="gap-1 border-dynamic-red/30 bg-dynamic-red/10 px-1.5 py-0.5 text-dynamic-red text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5"
                 >
                   <Minus className="h-3 w-3" />
                   {stats.removed}{' '}
-                  {t('lines_removed', { defaultValue: 'removed' })}
+                  <span className="xs:inline hidden">
+                    {t('lines_removed', { defaultValue: 'removed' })}
+                  </span>
                 </Badge>
               </div>
               {expandedBlocks.size > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 gap-1.5 px-2 text-muted-foreground text-xs"
+                  className="h-6 gap-1 px-1.5 text-muted-foreground text-xs sm:h-7 sm:gap-1.5 sm:px-2"
                   onClick={() => setExpandedBlocks(new Set())}
                 >
-                  <FoldVertical className="h-3.5 w-3.5" />
-                  {t('condense', { defaultValue: 'Condense' })}
+                  <FoldVertical className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span className="hidden sm:inline">
+                    {t('condense', { defaultValue: 'Condense' })}
+                  </span>
                 </Button>
               )}
             </div>
 
             {/* Diff view */}
             <div className="min-h-0 flex-1 overflow-auto">
-              <div className="p-4">
-                {granularity === 'word' ? (
-                  <WordDiffView
-                    diff={wordDiff}
-                    oldText={oldText}
-                    newText={newText}
-                    viewMode={viewMode}
-                    t={t}
-                    expandedBlocks={expandedBlocks}
-                    onToggleBlock={toggleBlock}
-                  />
-                ) : viewMode === 'unified' ? (
-                  <MinimizedUnifiedDiffView
-                    items={minimizedDiff}
-                    t={t}
-                    onToggleBlock={toggleBlock}
-                    expandedBlocks={expandedBlocks}
-                  />
-                ) : (
-                  <MinimizedSplitDiffView
-                    items={minimizedDiff}
-                    t={t}
-                    onToggleBlock={toggleBlock}
-                    expandedBlocks={expandedBlocks}
-                  />
+              <div className="space-y-3 p-2 sm:space-y-4 sm:p-4">
+                {/* Media changes section (images, videos, etc.) */}
+                {nodeDiff.hasMediaChanges && (
+                  <MediaChangesSection nodeDiff={nodeDiff} t={t} />
+                )}
+
+                {/* Text diff section */}
+                {hasTextChanges && (
+                  <>
+                    {nodeDiff.hasMediaChanges && (
+                      <div className="flex items-center gap-2 pt-2">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-muted-foreground text-xs">
+                          {t('text_changes', { defaultValue: 'Text Changes' })}
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                    )}
+                    {granularity === 'word' ? (
+                      <WordDiffView
+                        diff={wordDiff}
+                        oldText={oldText}
+                        newText={newText}
+                        viewMode={viewMode}
+                        t={t}
+                        expandedBlocks={expandedBlocks}
+                        onToggleBlock={toggleBlock}
+                      />
+                    ) : viewMode === 'unified' ? (
+                      <MinimizedUnifiedDiffView
+                        items={minimizedDiff}
+                        t={t}
+                        onToggleBlock={toggleBlock}
+                        expandedBlocks={expandedBlocks}
+                      />
+                    ) : (
+                      <MinimizedSplitDiffView
+                        items={minimizedDiff}
+                        t={t}
+                        onToggleBlock={toggleBlock}
+                        expandedBlocks={expandedBlocks}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -1190,4 +1241,424 @@ function WordDiffSplitRow({
       </div>
     </div>
   );
+}
+
+// ============================================================================
+// MEDIA CHANGES SECTION - Shows image/video/mention changes with thumbnails
+// ============================================================================
+
+interface MediaChangesSectionProps {
+  nodeDiff: NodeDiffSummary;
+  t: (
+    key: string,
+    options?: { defaultValue?: string; count?: number }
+  ) => string;
+}
+
+function MediaChangesSection({ nodeDiff, t }: MediaChangesSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const { added, removed, modified } = nodeDiff;
+
+  // Filter to only show media nodes (images, videos, youtube)
+  const mediaAdded = added.filter((d) =>
+    ['image', 'imageResize', 'video', 'youtube'].includes(d.nodeType)
+  );
+  const mediaRemoved = removed.filter((d) =>
+    ['image', 'imageResize', 'video', 'youtube'].includes(d.nodeType)
+  );
+  const mediaModified = modified.filter((d) =>
+    ['image', 'imageResize', 'video', 'youtube'].includes(d.nodeType)
+  );
+
+  const totalCount =
+    mediaAdded.length + mediaRemoved.length + mediaModified.length;
+
+  if (totalCount === 0) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg border bg-card">
+      {/* Collapsible Header */}
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center gap-1.5 bg-muted/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/70 sm:gap-2 sm:px-3 sm:py-2"
+      >
+        {isExpanded ? (
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
+        )}
+        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
+        <span className="font-medium text-xs sm:text-sm">
+          {t('media_changes', { defaultValue: 'Media Changes' })}
+        </span>
+        <Badge variant="secondary" className="ml-auto text-xs">
+          {totalCount}
+        </Badge>
+      </button>
+
+      {/* Collapsible Content */}
+      {isExpanded && (
+        <div className="divide-y border-t">
+          {/* Removed items */}
+          {mediaRemoved.map((diff, idx) => (
+            <MediaChangeRow
+              key={`removed-${idx}`}
+              diff={diff}
+              changeType="removed"
+              t={t}
+            />
+          ))}
+
+          {/* Added items */}
+          {mediaAdded.map((diff, idx) => (
+            <MediaChangeRow
+              key={`added-${idx}`}
+              diff={diff}
+              changeType="added"
+              t={t}
+            />
+          ))}
+
+          {/* Modified items */}
+          {mediaModified.map((diff, idx) => (
+            <MediaChangeRow
+              key={`modified-${idx}`}
+              diff={diff}
+              changeType="modified"
+              t={t}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface MediaChangeRowProps {
+  diff: NodeDiffResult;
+  changeType: 'added' | 'removed' | 'modified';
+  t: (
+    key: string,
+    options?: { defaultValue?: string; count?: number }
+  ) => string;
+}
+
+function MediaChangeRow({ diff, changeType, t }: MediaChangeRowProps) {
+  const [imageError, setImageError] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const node = changeType === 'removed' ? diff.oldNode : diff.newNode;
+  const imageSrc = node ? getNodeImageSrc(node) : null;
+  const isImage = diff.nodeType === 'image' || diff.nodeType === 'imageResize';
+  const isVideo = diff.nodeType === 'video';
+  const isYoutube = diff.nodeType === 'youtube';
+
+  // Get video source for preview
+  const videoSrc = isVideo ? node?.attrs?.src : null;
+  const youtubeSrc = isYoutube
+    ? node?.attrs?.src || node?.attrs?.videoId
+    : null;
+
+  const getIcon = () => {
+    if (isVideo) return <Video className="h-4 w-4" />;
+    if (isYoutube) return <Youtube className="h-4 w-4" />;
+    return <ImageIcon className="h-4 w-4" />;
+  };
+
+  const getLabel = () => {
+    if (changeType === 'modified') {
+      return t('media_modified', { defaultValue: 'Modified' });
+    }
+    if (changeType === 'added') {
+      if (isImage) return t('image_added', { defaultValue: 'Image added' });
+      if (isVideo) return t('video_added', { defaultValue: 'Video added' });
+      if (isYoutube)
+        return t('youtube_added', { defaultValue: 'YouTube added' });
+      return t('media_added', { defaultValue: 'Added' });
+    }
+    // removed
+    if (isImage) return t('image_removed', { defaultValue: 'Image removed' });
+    if (isVideo) return t('video_removed', { defaultValue: 'Video removed' });
+    if (isYoutube)
+      return t('youtube_removed', { defaultValue: 'YouTube removed' });
+    return t('media_removed', { defaultValue: 'Removed' });
+  };
+
+  const canPreview =
+    (isImage && imageSrc && !imageError) || videoSrc || youtubeSrc;
+
+  return (
+    <>
+      <div
+        className={cn(
+          'flex items-center gap-2 px-2 py-1.5 sm:gap-3 sm:px-3 sm:py-2',
+          changeType === 'added' && 'bg-dynamic-green/5',
+          changeType === 'removed' && 'bg-dynamic-red/5',
+          changeType === 'modified' && 'bg-dynamic-yellow/5'
+        )}
+      >
+        {/* Change indicator */}
+        <div
+          className={cn(
+            'flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium text-xs sm:h-5 sm:w-5',
+            changeType === 'added' && 'bg-dynamic-green/20 text-dynamic-green',
+            changeType === 'removed' && 'bg-dynamic-red/20 text-dynamic-red',
+            changeType === 'modified' &&
+              'bg-dynamic-yellow/20 text-dynamic-yellow'
+          )}
+        >
+          {changeType === 'added' && (
+            <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+          )}
+          {changeType === 'removed' && (
+            <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+          )}
+          {changeType === 'modified' && (
+            <Pen className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+          )}
+        </div>
+
+        {/* Thumbnail - clickable for preview */}
+        <button
+          type="button"
+          onClick={() => canPreview && setShowPreview(true)}
+          disabled={!canPreview}
+          className={cn(
+            'relative h-10 w-10 shrink-0 overflow-hidden rounded-md border-2 transition-transform sm:h-12 sm:w-12',
+            changeType === 'added' && 'border-dynamic-green/30',
+            changeType === 'removed' && 'border-dynamic-red/30 opacity-60',
+            changeType === 'modified' && 'border-dynamic-yellow/30',
+            canPreview &&
+              'cursor-pointer hover:scale-105 hover:ring-2 hover:ring-primary/50'
+          )}
+        >
+          {isImage && imageSrc && !imageError ? (
+            <Image
+              src={imageSrc}
+              alt={diff.displayLabel}
+              height={48}
+              width={48}
+              className="h-full w-full object-cover"
+              onError={() => setImageError(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+              {getIcon()}
+            </div>
+          )}
+          {canPreview && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/20 hover:opacity-100">
+              <Eye className="h-4 w-4 text-white" />
+            </div>
+          )}
+        </button>
+
+        {/* Label and details */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'font-medium text-[10px] sm:text-xs',
+                changeType === 'added' && 'text-dynamic-green',
+                changeType === 'removed' && 'text-dynamic-red',
+                changeType === 'modified' && 'text-dynamic-yellow'
+              )}
+            >
+              {getLabel()}
+            </span>
+          </div>
+          <p className="truncate text-foreground/80 text-xs sm:text-sm">
+            {diff.displayLabel}
+          </p>
+
+          {/* Show attribute changes for modified items - hidden on small screens */}
+          {changeType === 'modified' && diff.attributeChanges && (
+            <div className="mt-1 hidden flex-wrap gap-1 sm:flex">
+              {diff.attributeChanges.slice(0, 3).map((change, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+                >
+                  <span className="font-medium">{change.key}:</span>
+                  <span className="line-through opacity-60">
+                    {formatAttrValue(change.oldValue)}
+                  </span>
+                  <span>→</span>
+                  <span>{formatAttrValue(change.newValue)}</span>
+                </span>
+              ))}
+              {diff.attributeChanges.length > 3 && (
+                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+                  +{diff.attributeChanges.length - 3} more
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Full-screen preview dialog */}
+      {showPreview && canPreview && (
+        <MediaPreviewDialog
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          src={imageSrc || videoSrc || youtubeSrc || ''}
+          type={isImage ? 'image' : isVideo ? 'video' : 'youtube'}
+          label={diff.displayLabel}
+          t={t}
+        />
+      )}
+    </>
+  );
+}
+
+// ============================================================================
+// MEDIA PREVIEW DIALOG - Full-screen preview for media items
+// ============================================================================
+
+interface MediaPreviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  src: string;
+  type: 'image' | 'video' | 'youtube';
+  label: string;
+  t: (
+    key: string,
+    options?: { defaultValue?: string; count?: number }
+  ) => string;
+}
+
+function MediaPreviewDialog({
+  isOpen,
+  onClose,
+  src,
+  type,
+  label,
+  t,
+}: MediaPreviewDialogProps) {
+  const [imageError, setImageError] = useState(false);
+
+  if (!isOpen) return null;
+
+  // Extract YouTube video ID from URL
+  const getYoutubeEmbedUrl = (url: string) => {
+    try {
+      // Handle various YouTube URL formats
+      const urlObj = new URL(url);
+      let videoId = urlObj.searchParams.get('v');
+      if (!videoId) {
+        // Handle youtu.be or embed URLs
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        videoId = pathParts[pathParts.length - 1] || null;
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    } catch {
+      // If it's just a video ID, use it directly
+      return `https://www.youtube.com/embed/${src}`;
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent
+        className="flex h-[95vh] max-h-[95vh] w-[98vw] max-w-4xl flex-col gap-0 overflow-hidden p-0 sm:h-[90vh] sm:max-h-[90vh] sm:w-[95vw] md:max-w-5xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90vw]"
+        showCloseButton={false}
+      >
+        {/* Header */}
+        <DialogHeader className="flex-row items-center justify-between border-b px-2 py-2 sm:px-4 sm:py-3">
+          <DialogTitle className="flex items-center gap-1.5 text-sm sm:gap-2 sm:text-base">
+            {type === 'image' && (
+              <ImageIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            )}
+            {type === 'video' && (
+              <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            )}
+            {type === 'youtube' && (
+              <Youtube className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            )}
+            <span className="xs:inline hidden">
+              {t('media_preview', { defaultValue: 'Media Preview' })}
+            </span>
+          </DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-7 w-7 sm:h-8 sm:w-8"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">
+              {t('close_preview', { defaultValue: 'Close preview' })}
+            </span>
+          </Button>
+        </DialogHeader>
+
+        {/* Preview content */}
+        <div className="flex flex-1 items-center justify-center overflow-auto bg-black/5 p-2 sm:p-4">
+          {type === 'image' && !imageError && (
+            <Image
+              src={src}
+              alt={label}
+              height={512}
+              width={512}
+              className="max-h-full max-w-full rounded-lg object-contain shadow-lg"
+              onError={() => setImageError(true)}
+            />
+          )}
+          {type === 'image' && imageError && (
+            <div className="flex flex-col items-center gap-4 text-muted-foreground">
+              <ImageIcon className="h-12 w-12 sm:h-16 sm:w-16" />
+              <p className="text-xs sm:text-sm">Failed to load image</p>
+            </div>
+          )}
+          {type === 'video' && (
+            <video
+              src={src}
+              controls
+              className="max-h-full max-w-full rounded-lg shadow-lg"
+            >
+              Your browser does not support the video tag.
+            </video>
+          )}
+          {type === 'youtube' && (
+            <iframe
+              src={getYoutubeEmbedUrl(src)}
+              title={label}
+              className="aspect-video h-auto w-full max-w-4xl rounded-lg shadow-lg"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          )}
+        </div>
+
+        {/* Footer with label */}
+        <div className="border-t bg-muted/30 px-2 py-1.5 sm:px-4 sm:py-2">
+          <p className="truncate text-center text-muted-foreground text-xs sm:text-sm">
+            {label}
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Format attribute value for display
+ */
+function formatAttrValue(value: unknown): string {
+  if (value === null || value === undefined) return 'none';
+  if (typeof value === 'string') {
+    return value.length > 20 ? value.slice(0, 17) + '...' : value;
+  }
+  if (typeof value === 'number') {
+    // Round to 2 decimal places if needed
+    const rounded = Math.round(value * 100) / 100;
+    return String(rounded);
+  }
+  if (typeof value === 'boolean') return value ? 'yes' : 'no';
+  return JSON.stringify(value).slice(0, 20);
 }

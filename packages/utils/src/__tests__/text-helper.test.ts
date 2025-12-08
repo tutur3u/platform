@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getDescriptionMetadata,
   getDescriptionText,
+  getDescriptionTextWithIdentifiers,
   removeAccents,
 } from '../text-helper';
 
@@ -598,6 +599,178 @@ describe('Text Helper', () => {
       const result = getDescriptionMetadata(json);
       expect(result.hasText).toBe(true);
       expect(result.hasImages).toBe(true);
+    });
+  });
+
+  describe('getDescriptionTextWithIdentifiers', () => {
+    it('returns empty string for empty input', () => {
+      expect(getDescriptionTextWithIdentifiers('')).toBe('');
+      expect(getDescriptionTextWithIdentifiers(undefined)).toBe('');
+    });
+
+    it('includes image filename in output', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: { src: 'https://example.com/uploads/cat-photo.png' },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('[Image: cat-photo.png]');
+    });
+
+    it('includes image alt and filename', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: { src: 'https://example.com/cat.png', alt: 'My Cat' },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('[Image: My Cat (cat.png)]');
+    });
+
+    it('falls back to alt text when no src', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: { alt: 'My Image' },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('[Image: My Image]');
+    });
+
+    it('includes video filename in output', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'video',
+            attrs: { src: 'https://example.com/uploads/intro.mp4' },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('[Video: intro.mp4]');
+    });
+
+    it('extracts YouTube video ID', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'youtube',
+            attrs: { src: 'https://youtube.com/watch?v=abc123' },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('[YouTube: abc123]');
+    });
+
+    it('handles imageResize nodes', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'imageResize',
+            attrs: { src: 'https://example.com/resized.png', width: 400 },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('[Image: resized.png]');
+    });
+
+    it('truncates long filenames', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: {
+              src: 'https://example.com/very-long-filename-that-should-be-truncated.png',
+            },
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('...');
+      expect(result.length).toBeLessThan(80);
+    });
+
+    it('includes mention ID when different from label', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'mention',
+                attrs: { id: 'user-12345678-abcd', label: 'John' },
+              },
+            ],
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toContain('@John#user-123');
+    });
+
+    it('detects different images with same alt text', () => {
+      const json1 = JSON.stringify({
+        type: 'doc',
+        content: [{ type: 'image', attrs: { src: 'cat.png', alt: 'Pet' } }],
+      });
+      const json2 = JSON.stringify({
+        type: 'doc',
+        content: [{ type: 'image', attrs: { src: 'dog.png', alt: 'Pet' } }],
+      });
+      const result1 = getDescriptionTextWithIdentifiers(json1);
+      const result2 = getDescriptionTextWithIdentifiers(json2);
+      // Should produce different outputs even with same alt
+      expect(result1).not.toEqual(result2);
+      expect(result1).toContain('cat.png');
+      expect(result2).toContain('dog.png');
+    });
+
+    it('handles regular text normally', () => {
+      const json = JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Hello World' }],
+          },
+        ],
+      });
+      const result = getDescriptionTextWithIdentifiers(json);
+      expect(result).toBe('Hello World');
+    });
+
+    it('handles Json object directly', () => {
+      const jsonObj = {
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: { src: 'test.png' },
+          },
+        ],
+      };
+      const result = getDescriptionTextWithIdentifiers(jsonObj);
+      expect(result).toContain('[Image: test.png]');
     });
   });
 });
