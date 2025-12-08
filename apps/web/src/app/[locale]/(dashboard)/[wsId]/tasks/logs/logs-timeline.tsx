@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CircleDot,
   Clock,
+  ExternalLink,
   Eye,
   FileText,
   Flag,
@@ -14,6 +15,7 @@ import {
   horseHead,
   Icon,
   Layers,
+  LayoutGrid,
   Plus,
   Rabbit,
   RotateCcw,
@@ -121,6 +123,7 @@ interface RapidChangeGroup {
   task_deleted_at?: string;
   task_permanently_deleted?: boolean;
   board_id?: string;
+  board_name?: string;
   user: TaskHistoryLogEntry['user'];
   first_changed_at: string;
   last_changed_at: string;
@@ -137,6 +140,7 @@ interface AggregatedActionGroup {
   task_deleted_at?: string;
   task_permanently_deleted?: boolean;
   board_id?: string;
+  board_name?: string;
   user: TaskHistoryLogEntry['user'];
   changed_at: string;
   change_type: TaskHistoryLogEntry['change_type'];
@@ -312,6 +316,7 @@ function groupRapidSuccessiveChanges(
           task_deleted_at: entry.task_deleted_at,
           task_permanently_deleted: entry.task_permanently_deleted,
           board_id: entry.board_id,
+          board_name: entry.board_name,
           user: entry.user,
           changed_at: chronological[chronological.length - 1]!.changed_at,
           change_type: entry.change_type,
@@ -359,6 +364,7 @@ function groupRapidSuccessiveChanges(
         task_deleted_at: entry.task_deleted_at,
         task_permanently_deleted: entry.task_permanently_deleted,
         board_id: entry.board_id,
+        board_name: entry.board_name,
         user: entry.user,
         first_changed_at: chronological[0]!.changed_at,
         last_changed_at: chronological[chronological.length - 1]!.changed_at,
@@ -624,6 +630,7 @@ function RapidChangeGroupEntry({
             task_deleted_at: entry.task_deleted_at,
             task_permanently_deleted: entry.task_permanently_deleted,
             board_id: entry.board_id,
+            board_name: entry.board_name,
             user: entry.user,
             changed_at: chronological[chronological.length - 1]!.changed_at,
             change_type: entry.change_type,
@@ -780,6 +787,35 @@ function RapidChangeGroupEntry({
                   {t('in_trash', { defaultValue: 'In Trash' })}
                 </Badge>
               ) : null}
+              {/* Board link */}
+              {group.board_id && group.board_name && (
+                <>
+                  <span className="text-muted-foreground text-xs">
+                    {t('in_board', { defaultValue: 'in' })}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={`/${wsId}/tasks/boards/${group.board_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="group/board inline-flex max-w-[100px] items-center gap-1 text-xs hover:text-foreground md:max-w-[120px]"
+                      >
+                        <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                          {group.board_name}
+                        </span>
+                        <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      <p>
+                        {t('open_board', { defaultValue: 'Open board' })}:{' '}
+                        {group.board_name}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
             </div>
 
             {/* Expand indicator */}
@@ -1329,6 +1365,34 @@ function AggregatedActionEntry({
                 {t('in_trash', { defaultValue: 'In Trash' })}
               </Badge>
             ) : null}
+            {/* Board link */}
+            {group.board_id && group.board_name && (
+              <>
+                <span className="text-muted-foreground text-xs">
+                  {t('in_board', { defaultValue: 'in' })}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={`/${wsId}/tasks/boards/${group.board_id}`}
+                      className="group/board inline-flex max-w-[120px] items-center gap-1 text-xs hover:text-foreground md:max-w-[150px]"
+                    >
+                      <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                        {group.board_name}
+                      </span>
+                      <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    <p>
+                      {t('open_board', { defaultValue: 'Open board' })}:{' '}
+                      {group.board_name}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )}
           </div>
         </div>
 
@@ -1504,6 +1568,34 @@ function TimelineEntry({
                   {t('in_trash', { defaultValue: 'In Trash' })}
                 </Badge>
               ) : null}
+              {/* Board link */}
+              {entry.board_id && entry.board_name && (
+                <>
+                  <span className="text-muted-foreground text-xs">
+                    {t('in_board', { defaultValue: 'in' })}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={`/${wsId}/tasks/boards/${entry.board_id}`}
+                        className="group/board inline-flex max-w-[120px] items-center gap-1 text-xs hover:text-foreground md:max-w-[150px]"
+                      >
+                        <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                          {entry.board_name}
+                        </span>
+                        <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      <p>
+                        {t('open_board', { defaultValue: 'Open board' })}:{' '}
+                        {entry.board_name}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
             </div>
           )}
         </div>

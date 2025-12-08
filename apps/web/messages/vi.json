@@ -1361,6 +1361,7 @@
       "date": "Ngày",
       "user": "Người dùng",
       "task": "Công việc",
+      "board": "Bảng",
       "change_type": "Thay đổi",
       "value": "Giá trị"
     },
@@ -1423,6 +1424,9 @@
     "unknown_user": "Không xác định",
     "unknown_label": "Nhãn không xác định",
     "unknown_project": "Dự án không xác định",
+    "unknown_board": "Không xác định",
+    "in_board": "trong",
+    "open_board": "Mở bảng",
     "points": "điểm",
     "value": {
       "none": "Không có",

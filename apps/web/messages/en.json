@@ -1271,6 +1271,7 @@
       "date": "Date",
       "user": "User",
       "task": "Task",
+      "board": "Board",
       "change_type": "Change",
       "value": "Value"
     },
@@ -1333,6 +1334,9 @@
     "unknown_user": "Unknown",
     "unknown_label": "Unknown label",
     "unknown_project": "Unknown project",
+    "unknown_board": "Unknown",
+    "in_board": "in",
+    "open_board": "Open board",
     "points": "pts",
     "value": {
       "none": "None",

@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   CircleDot,
   Clock,
+  ExternalLink,
   FileText,
   Flag,
   FolderKanban,
+  LayoutGrid,
   Plus,
   Tag,
   Target,
@@ -32,6 +34,7 @@ export interface TaskHistoryLogEntry {
   task_deleted_at?: string; // Indicates if task is soft-deleted
   task_permanently_deleted?: boolean; // Indicates if task was permanently deleted
   board_id?: string;
+  board_name?: string; // Name of the board the task belongs to
   changed_by: string | null;
   changed_at: string;
   change_type:
@@ -183,6 +186,43 @@ export function getColumns({
                 {task_name}
               </TooltipContent>
             )}
+          </Tooltip>
+        );
+      },
+    },
+    {
+      accessorKey: 'board_name',
+      header: t('columns.board', { defaultValue: 'Board' }),
+      cell: ({ row }) => {
+        const { board_id, board_name } = row.original;
+
+        if (!board_id || !board_name) {
+          return (
+            <span className="text-muted-foreground text-sm">
+              {t('unknown_board', { defaultValue: 'Unknown' })}
+            </span>
+          );
+        }
+
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={`/${wsId}/tasks/boards/${board_id}`}
+                className="group/board inline-flex max-w-[150px] items-center gap-1.5 text-sm hover:text-foreground"
+              >
+                <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                  {board_name}
+                </span>
+                <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>
+                {t('open_board', { defaultValue: 'Open board' })}: {board_name}
+              </p>
+            </TooltipContent>
           </Tooltip>
         );
       },
