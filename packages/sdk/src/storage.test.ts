@@ -3,6 +3,7 @@ import {
   AuthenticationError,
   NetworkError,
   NotFoundError,
+  RateLimitError,
   ValidationError,
 } from './errors';
 import { StorageClient, TuturuuuClient } from './storage';
@@ -12,7 +13,6 @@ import type {
   DeleteResponse,
   ListStorageResponse,
   ShareResponse,
-  UploadResponse,
 } from './types';
 
 // Mock fetch globally
@@ -88,6 +88,49 @@ describe('TuturuuuClient', () => {
         fetch: customFetch,
       });
       expect(client.fetch).toBe(customFetch);
+    });
+
+    it('should use default retry config', () => {
+      const client = new TuturuuuClient('ttr_test_key');
+      expect(client.retryConfig).toEqual({
+        maxRetries: 3,
+        initialDelayMs: 1000,
+        maxDelayMs: 30000,
+        retryOn429: true,
+      });
+    });
+
+    it('should accept custom retry config', () => {
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          maxRetries: 5,
+          initialDelayMs: 500,
+          maxDelayMs: 60000,
+          retryOn429: false,
+        },
+      });
+      expect(client.retryConfig).toEqual({
+        maxRetries: 5,
+        initialDelayMs: 500,
+        maxDelayMs: 60000,
+        retryOn429: false,
+      });
+    });
+
+    it('should merge partial retry config with defaults', () => {
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          maxRetries: 5,
+        },
+      });
+      expect(client.retryConfig).toEqual({
+        maxRetries: 5,
+        initialDelayMs: 1000,
+        maxDelayMs: 30000,
+        retryOn429: true,
+      });
     });
   });
 
@@ -240,6 +283,231 @@ describe('TuturuuuClient', () => {
 
       const client = new TuturuuuClient('ttr_test_key');
       await expect(client.request('/test')).rejects.toThrow('Network failure');
+    });
+
+    it('should throw RateLimitError for 429 with JSON response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({
+          'content-type': 'application/json',
+          'Retry-After': '60',
+          'X-RateLimit-Reset': '1699999999',
+        }),
+        json: async () => ({
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded',
+        }),
+      });
+
+      const client = new TuturuuuClient('ttr_test_key');
+      try {
+        await client.request('/test');
+        expect.fail('Should have thrown RateLimitError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(RateLimitError);
+        const rateLimitError = error as RateLimitError;
+        expect(rateLimitError.retryAfter).toBe(60);
+        expect(rateLimitError.resetTime).toBe(1699999999);
+      }
+    });
+
+    it('should throw RateLimitError for 429 with HTML response (infrastructure rate limit)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({
+          'content-type': 'text/html',
+          'Retry-After': '30',
+        }),
+        text: async () => '<!DOCTYPE html><html>Rate limit page</html>',
+      });
+
+      const client = new TuturuuuClient('ttr_test_key');
+      try {
+        await client.request('/test');
+        expect.fail('Should have thrown RateLimitError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(RateLimitError);
+        const rateLimitError = error as RateLimitError;
+        expect(rateLimitError.message).toContain('Rate limit exceeded');
+        expect(rateLimitError.retryAfter).toBe(30);
+        expect(rateLimitError.code).toBe('RATE_LIMIT_EXCEEDED');
+      }
+    });
+
+    it('should throw RateLimitError for 429 without Retry-After header', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({
+          'content-type': 'text/html',
+        }),
+        text: async () => '<!DOCTYPE html><html>Rate limit page</html>',
+      });
+
+      const client = new TuturuuuClient('ttr_test_key');
+      try {
+        await client.request('/test');
+        expect.fail('Should have thrown RateLimitError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(RateLimitError);
+        const rateLimitError = error as RateLimitError;
+        expect(rateLimitError.message).toContain('try again later');
+        expect(rateLimitError.retryAfter).toBeUndefined();
+      }
+    });
+  });
+
+  describe('requestWithRetry', () => {
+    it('should retry on rate limit and succeed', async () => {
+      // First call: rate limit
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'content-type': 'text/html' }),
+        text: async () => 'Rate limit',
+      });
+
+      // Second call: success
+      const mockResponse = { data: 'success' };
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          maxRetries: 3,
+          initialDelayMs: 10, // Short delay for tests
+          maxDelayMs: 100,
+          retryOn429: true,
+        },
+      });
+
+      const result = await client.requestWithRetry('/test');
+
+      expect(result).toEqual(mockResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should use retryAfter header for delay', async () => {
+      mockFetch.mockClear();
+
+      // First call: rate limit with very short retry-after
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({
+          'content-type': 'text/html',
+          'Retry-After': '1', // 1 second for fast test
+        }),
+        text: async () => 'Rate limit',
+      });
+
+      // Second call: success
+      const mockResponse = { data: 'success' };
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          maxRetries: 1,
+          initialDelayMs: 100, // Short default delay
+          maxDelayMs: 2000, // Cap at 2 seconds
+          retryOn429: true,
+        },
+      });
+
+      const start = Date.now();
+      await client.requestWithRetry('/test');
+      const elapsed = Date.now() - start;
+
+      // Should have waited approximately 1s (retryAfter value)
+      expect(elapsed).toBeGreaterThanOrEqual(900);
+      expect(elapsed).toBeLessThan(3000);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should exhaust retries and throw last error', async () => {
+      mockFetch.mockClear();
+
+      // All calls return 429
+      mockFetch.mockImplementation(() =>
+        Promise.resolve({
+          ok: false,
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: new Headers({ 'content-type': 'text/html' }),
+          text: async () => 'Rate limit',
+        })
+      );
+
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          maxRetries: 3,
+          initialDelayMs: 1, // Very short delay for tests
+          retryOn429: true,
+        },
+      });
+
+      await expect(client.requestWithRetry('/test')).rejects.toThrow(
+        RateLimitError
+      );
+      expect(mockFetch).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
+    });
+
+    it('should not retry when retryOn429 is false', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'content-type': 'text/html' }),
+        text: async () => 'Rate limit',
+      });
+
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          retryOn429: false,
+        },
+      });
+
+      await expect(client.requestWithRetry('/test')).rejects.toThrow(
+        RateLimitError
+      );
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry non-429 errors', async () => {
+      mockFetch.mockClear();
+
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(
+          {
+            error: 'Not Found',
+            message: 'Resource not found',
+          },
+          404
+        )
+      );
+
+      const client = new TuturuuuClient({
+        apiKey: 'ttr_test_key',
+        retry: {
+          maxRetries: 3,
+          retryOn429: true,
+        },
+      });
+
+      await expect(client.requestWithRetry('/test')).rejects.toThrow(
+        NotFoundError
+      );
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
 });

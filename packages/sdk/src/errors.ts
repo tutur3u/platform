@@ -78,9 +78,23 @@ export class ConflictError extends TuturuuuError {
  * Rate limit error (429)
  */
 export class RateLimitError extends TuturuuuError {
-  constructor(message: string, code?: string) {
-    super(message, code, 429);
+  /** Number of seconds to wait before retrying (from Retry-After header) */
+  public readonly retryAfter?: number;
+  /** Unix timestamp when the rate limit resets (from X-RateLimit-Reset header) */
+  public readonly resetTime?: number;
+
+  constructor(
+    message: string,
+    options?: {
+      code?: string;
+      retryAfter?: number;
+      resetTime?: number;
+    }
+  ) {
+    super(message, options?.code, 429);
     this.name = 'RateLimitError';
+    this.retryAfter = options?.retryAfter;
+    this.resetTime = options?.resetTime;
   }
 }
 
@@ -115,11 +129,20 @@ export class ValidationError extends TuturuuuError {
 }
 
 /**
+ * Options for creating a rate limit error from response headers
+ */
+export interface RateLimitHeaders {
+  retryAfter?: string | null;
+  resetTime?: string | null;
+}
+
+/**
  * Helper function to create appropriate error from API response
  */
 export function createErrorFromResponse(
   response: ApiErrorResponse,
-  statusCode: number
+  statusCode: number,
+  rateLimitHeaders?: RateLimitHeaders
 ): TuturuuuError {
   const { message, code } = response;
 
@@ -135,7 +158,11 @@ export function createErrorFromResponse(
     case 409:
       return new ConflictError(message, code);
     case 429:
-      return new RateLimitError(message, code);
+      return new RateLimitError(message, {
+        code,
+        retryAfter: parseIntSafe(rateLimitHeaders?.retryAfter),
+        resetTime: parseIntSafe(rateLimitHeaders?.resetTime),
+      });
     case 500:
     case 502:
     case 503:
@@ -144,6 +171,15 @@ export function createErrorFromResponse(
     default:
       return new TuturuuuError(message, code, statusCode);
   }
+}
+
+/**
+ * Safely parse a string to integer, returning undefined for invalid values
+ */
+function parseIntSafe(value: string | null | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) || parsed < 0 ? undefined : parsed;
 }
 
 /**
