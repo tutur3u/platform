@@ -514,6 +514,12 @@ const NotificationCard = ({
   const config = getNotificationConfig(notification.type);
   const actionUrl = notification.actionUrl || workspaceUrl;
 
+  // Check if this is a task_moved notification with list names
+  const isTaskMoved = notification.type === 'task_moved';
+  const oldListName = notification.data?.old_list_name as string | undefined;
+  const newListName = notification.data?.new_list_name as string | undefined;
+  const hasListMoveInfo = isTaskMoved && oldListName && newListName;
+
   if (isCompact) {
     return (
       <tr>
@@ -528,6 +534,13 @@ const NotificationCard = ({
           >
             {notification.title}
           </Link>
+          {hasListMoveInfo && (
+            <span
+              style={{ color: '#6b7280', fontSize: '12px', marginLeft: '6px' }}
+            >
+              ({oldListName} → {newListName})
+            </span>
+          )}
           <span
             style={{ color: '#9ca3af', fontSize: '12px', marginLeft: '8px' }}
           >
@@ -592,6 +605,47 @@ const NotificationCard = ({
                   >
                     {truncate(notification.description, 120)}
                   </Text>
+                </td>
+              </tr>
+            )}
+            {hasListMoveInfo && (
+              <tr>
+                <td colSpan={2} style={{ paddingTop: '6px' }}>
+                  <table cellPadding="0" cellSpacing="0">
+                    <tr>
+                      <td
+                        style={{
+                          backgroundColor: '#fef2f2',
+                          color: '#dc2626',
+                          fontSize: '11px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {oldListName}
+                      </td>
+                      <td
+                        style={{
+                          color: '#9ca3af',
+                          fontSize: '11px',
+                          padding: '0 6px',
+                        }}
+                      >
+                        →
+                      </td>
+                      <td
+                        style={{
+                          backgroundColor: '#ecfdf5',
+                          color: '#059669',
+                          fontSize: '11px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {newListName}
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             )}

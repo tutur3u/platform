@@ -308,6 +308,7 @@ const FIELD_NAME_MAP: Record<string, string> = {
   estimation: 'Estimation',
   completed: 'Status',
   label_name: 'Label',
+  list_id: 'List',
 };
 
 export function formatFieldName(field: string): string {

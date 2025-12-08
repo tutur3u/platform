@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom/vitest';
+
 // Setup global mocks for jsdom environment
 const createLocalStorageMock = () => {
   let store: Record<string, string> = {};

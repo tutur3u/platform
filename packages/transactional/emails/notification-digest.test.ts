@@ -1,5 +1,6 @@
+import { render } from '@react-email/render';
 import { describe, expect, it } from 'vitest';
-import {
+import NotificationDigestEmail, {
   formatTimeRange,
   generateSubjectLine,
   getDelayInfo,
@@ -403,6 +404,47 @@ describe('notification-digest utilities', () => {
     });
   });
 
+  describe('task_moved list names in subject', () => {
+    const createNotification = (
+      type: string,
+      title: string,
+      data?: Record<string, unknown>
+    ): NotificationItem => ({
+      id: `test-${Math.random()}`,
+      type,
+      title,
+      description: '',
+      data,
+      createdAt: new Date().toISOString(),
+    });
+
+    it('should generate subject for task_moved', () => {
+      const notifications = [createNotification('task_moved', 'Fix login bug')];
+      const subject = generateSubjectLine(notifications, 'Workspace');
+      expect(subject).toContain('Task moved');
+      expect(subject).toContain('Fix login bug');
+    });
+
+    it('should generate subject for task_reopened', () => {
+      const notifications = [
+        createNotification('task_reopened', 'Review documentation'),
+      ];
+      const subject = generateSubjectLine(notifications, 'Workspace');
+      expect(subject).toContain('Task reopened');
+      expect(subject).toContain('Review documentation');
+    });
+
+    it('should prioritize task_moved in subject for multiple status changes', () => {
+      const notifications = [
+        createNotification('task_moved', 'Task A'),
+        createNotification('task_completed', 'Task B'),
+      ];
+      // Both are in task_status category with same priority
+      const subject = generateSubjectLine(notifications, 'Workspace');
+      expect(subject).toContain('(+1 more)');
+    });
+  });
+
   describe('getDelayInfo', () => {
     it('should return not delayed when no timestamps provided', () => {
       const result = getDelayInfo(undefined, undefined);
@@ -468,6 +510,93 @@ describe('notification-digest utilities', () => {
       const result = getDelayInfo(windowEnd, sentAt);
       expect(result.isDelayed).toBe(true);
       expect(result.delayText).toBe('Delayed 1 day');
+    });
+  });
+
+  describe('NotificationDigestEmail rendering with list names', () => {
+    const createNotification = (
+      type: string,
+      title: string,
+      data?: Record<string, unknown>
+    ): NotificationItem => ({
+      id: `test-${Math.random()}`,
+      type,
+      title,
+      description: 'Test description',
+      data,
+      createdAt: new Date().toISOString(),
+    });
+
+    it('should render task_moved notification with list names', async () => {
+      const notifications: NotificationItem[] = [
+        createNotification('task_moved', 'Fix login bug', {
+          old_list_name: 'To Do',
+          new_list_name: 'In Progress',
+        }),
+      ];
+
+      const html = await render(
+        NotificationDigestEmail({
+          userName: 'Test User',
+          workspaceName: 'Test Workspace',
+          notifications,
+          workspaceUrl: 'https://test.com',
+        })
+      );
+
+      // Should contain the list names in the rendered HTML
+      expect(html).toContain('To Do');
+      expect(html).toContain('In Progress');
+    });
+
+    it('should render task_moved without list names when not provided', async () => {
+      const notifications: NotificationItem[] = [
+        createNotification('task_moved', 'Fix login bug', {
+          // No list names provided
+        }),
+      ];
+
+      const html = await render(
+        NotificationDigestEmail({
+          userName: 'Test User',
+          workspaceName: 'Test Workspace',
+          notifications,
+          workspaceUrl: 'https://test.com',
+        })
+      );
+
+      // Should still render the notification
+      expect(html).toContain('Fix login bug');
+      // Should not contain list move badges (no arrow between list names)
+      expect(html).not.toContain('To Do');
+    });
+
+    it('should render multiple notifications including task_moved', async () => {
+      const notifications: NotificationItem[] = [
+        createNotification('task_moved', 'Task A', {
+          old_list_name: 'Backlog',
+          new_list_name: 'Done',
+        }),
+        createNotification('task_assigned', 'Task B'),
+        createNotification('task_completed', 'Task C'),
+      ];
+
+      const html = await render(
+        NotificationDigestEmail({
+          userName: 'Test User',
+          workspaceName: 'Test Workspace',
+          notifications,
+          workspaceUrl: 'https://test.com',
+        })
+      );
+
+      // Should contain all notifications
+      expect(html).toContain('Task A');
+      expect(html).toContain('Task B');
+      expect(html).toContain('Task C');
+      // Should contain list names for task_moved
+      expect(html).toContain('Backlog');
+      expect(html).toContain('Done');
     });
   });
 });

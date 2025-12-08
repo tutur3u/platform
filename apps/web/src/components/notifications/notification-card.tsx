@@ -234,7 +234,11 @@ export function NotificationCard({
 
           {/* Change details */}
           {notification.data?.changes && (
-            <ChangeDetails changes={notification.data.changes} t={t} />
+            <ChangeDetails
+              changes={notification.data.changes}
+              t={t}
+              notificationData={notification.data}
+            />
           )}
 
           {notification.data?.change_type && !notification.data?.changes && (
@@ -243,6 +247,7 @@ export function NotificationCard({
               oldValue={notification.data.old_value}
               newValue={notification.data.new_value}
               t={t}
+              notificationData={notification.data}
             />
           )}
 
@@ -335,9 +340,11 @@ export function NotificationCard({
 function ChangeDetails({
   changes,
   t,
+  notificationData,
 }: {
   changes: Record<string, { old: unknown; new: unknown }>;
   t: TranslationFn;
+  notificationData?: Record<string, unknown>;
 }) {
   const changeEntries = Object.entries(changes);
   if (changeEntries.length === 0) return null;
@@ -348,6 +355,15 @@ function ChangeDetails({
         const oldValue = change.old;
         const newValue = change.new;
         const isDescriptionChange = field === 'description';
+        const isListIdChange = field === 'list_id';
+
+        // For list_id changes, use list names from notification data if available
+        const displayOldValue = isListIdChange
+          ? (notificationData?.old_list_name as string) || 'Unknown'
+          : formatValue(oldValue, field);
+        const displayNewValue = isListIdChange
+          ? (notificationData?.new_list_name as string) || 'Unknown'
+          : formatValue(newValue, field);
 
         return (
           <div key={field} className="text-xs">
@@ -356,11 +372,11 @@ function ChangeDetails({
             </span>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
               <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-red-600 text-xs dark:text-red-400">
-                {formatValue(oldValue, field)}
+                {displayOldValue}
               </span>
               <span className="text-foreground/30">→</span>
               <span className="rounded bg-green-500/10 px-1.5 py-0.5 font-mono text-green-600 text-xs dark:text-green-400">
-                {formatValue(newValue, field)}
+                {displayNewValue}
               </span>
               {isDescriptionChange && (oldValue != null || newValue != null) ? (
                 <DescriptionDiffViewer
@@ -383,11 +399,13 @@ function SingleChangeDetail({
   oldValue,
   newValue,
   t,
+  notificationData,
 }: {
   changeType: string;
   oldValue?: unknown;
   newValue?: unknown;
   t: TranslationFn;
+  notificationData?: Record<string, unknown>;
 }) {
   const field = changeType.replace('task_', '').replace('_changed', '');
 
@@ -395,17 +413,29 @@ function SingleChangeDetail({
 
   const isDescriptionChange =
     field === 'description' || changeType === 'task_description_changed';
+  const isListIdChange = field === 'list_id' || changeType === 'task_moved';
+
+  // For list_id changes, use list names from notification data if available
+  const displayOldValue = isListIdChange
+    ? (notificationData?.old_list_name as string) || 'Unknown'
+    : formatValue(oldValue, field);
+  const displayNewValue = isListIdChange
+    ? (notificationData?.new_list_name as string) || 'Unknown'
+    : formatValue(newValue, field);
+
+  // For task_moved, use 'List' as the field name
+  const displayField = isListIdChange ? 'list_id' : field;
 
   return (
     <div className="mt-2 rounded-lg border border-foreground/5 bg-foreground/2 p-2.5">
       <div className="text-xs">
         <span className="font-medium text-foreground/60">
-          {formatFieldName(field)}:
+          {formatFieldName(displayField)}:
         </span>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
           {oldValue != null && (
             <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-red-600 text-xs dark:text-red-400">
-              {formatValue(oldValue, field)}
+              {displayOldValue}
             </span>
           )}
           {oldValue != null && newValue != null && (
@@ -413,7 +443,7 @@ function SingleChangeDetail({
           )}
           {newValue != null && (
             <span className="rounded bg-green-500/10 px-1.5 py-0.5 font-mono text-green-600 text-xs dark:text-green-400">
-              {formatValue(newValue, field)}
+              {displayNewValue}
             </span>
           )}
           {isDescriptionChange && (oldValue != null || newValue != null) ? (

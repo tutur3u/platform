@@ -146,6 +146,7 @@ interface AggregatedActionGroup {
     name: string;
     avatar_url?: string;
     color?: string;
+    changed_at: string;
   }>;
 }
 
@@ -175,10 +176,13 @@ function isAggregatableChangeType(changeType: string): boolean {
 }
 
 /** Extract item details from an entry for aggregation */
-function extractAggregatedItem(
-  entry: TaskHistoryLogEntry
-): { name: string; avatar_url?: string; color?: string } | null {
-  const { change_type, old_value, new_value, metadata } = entry;
+function extractAggregatedItem(entry: TaskHistoryLogEntry): {
+  name: string;
+  avatar_url?: string;
+  color?: string;
+  changed_at: string;
+} | null {
+  const { change_type, old_value, new_value, metadata, changed_at } = entry;
 
   switch (change_type) {
     case 'assignee_added': {
@@ -190,6 +194,7 @@ function extractAggregatedItem(
         name:
           data?.user_name || (metadata?.assignee_name as string) || 'Unknown',
         avatar_url: data?.avatar_url,
+        changed_at,
       };
     }
     case 'assignee_removed': {
@@ -201,6 +206,7 @@ function extractAggregatedItem(
         name:
           data?.user_name || (metadata?.assignee_name as string) || 'Unknown',
         avatar_url: data?.avatar_url,
+        changed_at,
       };
     }
     case 'label_added': {
@@ -208,6 +214,7 @@ function extractAggregatedItem(
       return {
         name: data?.name || (metadata?.label_name as string) || 'Unknown',
         color: data?.color || (metadata?.label_color as string),
+        changed_at,
       };
     }
     case 'label_removed': {
@@ -215,6 +222,7 @@ function extractAggregatedItem(
       return {
         name: data?.name || (metadata?.label_name as string) || 'Unknown',
         color: data?.color || (metadata?.label_color as string),
+        changed_at,
       };
     }
     default:
@@ -583,6 +591,59 @@ function RapidChangeGroupEntry({
     .toUpperCase()
     .slice(0, 2);
 
+  // Aggregate same-type entries within this group (e.g., multiple assignee_added)
+  const aggregatedEntries = useMemo(() => {
+    const result: Array<TaskHistoryLogEntry | AggregatedActionGroup> = [];
+    const processed = new Set<string>();
+
+    for (const entry of group.entries) {
+      if (processed.has(entry.id)) continue;
+
+      if (isAggregatableChangeType(entry.change_type)) {
+        // Find all entries of the same type
+        const sameTypeEntries = group.entries.filter(
+          (e) => !processed.has(e.id) && e.change_type === entry.change_type
+        );
+
+        if (sameTypeEntries.length > 1) {
+          // Create an aggregated action group
+          const aggregatedItems = sameTypeEntries
+            .map(extractAggregatedItem)
+            .filter((item): item is NonNullable<typeof item> => item !== null);
+
+          const chronological = [...sameTypeEntries].sort(
+            (a, b) =>
+              new Date(a.changed_at).getTime() -
+              new Date(b.changed_at).getTime()
+          );
+
+          result.push({
+            id: entry.id,
+            task_id: entry.task_id,
+            task_name: entry.task_name,
+            task_deleted_at: entry.task_deleted_at,
+            task_permanently_deleted: entry.task_permanently_deleted,
+            board_id: entry.board_id,
+            user: entry.user,
+            changed_at: chronological[chronological.length - 1]!.changed_at,
+            change_type: entry.change_type,
+            entries: chronological,
+            is_aggregated: true,
+            aggregated_items: aggregatedItems,
+          });
+
+          sameTypeEntries.forEach((e) => processed.add(e.id));
+          continue;
+        }
+      }
+
+      result.push(entry);
+      processed.add(entry.id);
+    }
+
+    return result;
+  }, [group.entries]);
+
   // Get change type distribution for summary
   const changeTypeCounts = group.entries.reduce(
     (acc, e) => {
@@ -801,24 +862,209 @@ function RapidChangeGroupEntry({
             className="border-t"
           >
             <div className="space-y-2 p-4 pt-3">
-              {group.entries.map((entry, i) => (
-                <TimelineEntry
-                  key={entry.id}
-                  entry={entry}
-                  wsId={wsId}
-                  locale={locale}
-                  t={t}
-                  index={i}
-                  dateLocale={dateLocale}
-                  compact
-                  estimationType={estimationType}
-                  isLatestDeletion={latestDeletions?.has(entry.id)}
-                />
-              ))}
+              {aggregatedEntries.map((item, i) =>
+                isAggregatedActionGroup(item) ? (
+                  <CompactAggregatedEntry
+                    key={item.id}
+                    group={item}
+                    t={t}
+                    index={i}
+                    dateLocale={dateLocale}
+                  />
+                ) : (
+                  <TimelineEntry
+                    key={item.id}
+                    entry={item}
+                    wsId={wsId}
+                    locale={locale}
+                    t={t}
+                    index={i}
+                    dateLocale={dateLocale}
+                    compact
+                    estimationType={estimationType}
+                    isLatestDeletion={latestDeletions?.has(item.id)}
+                  />
+                )
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/** Compact version of aggregated entry for display within RapidChangeGroup */
+interface CompactAggregatedEntryProps {
+  group: AggregatedActionGroup;
+  t: (key: string, options?: { defaultValue?: string }) => string;
+  index: number;
+  dateLocale: typeof enUS | typeof vi;
+}
+
+function CompactAggregatedEntry({
+  group,
+  t,
+  index,
+  dateLocale,
+}: CompactAggregatedEntryProps) {
+  const { icon, color } = getChangeIcon(group.change_type, null);
+  const exactTime = format(new Date(group.changed_at), 'HH:mm', {
+    locale: dateLocale,
+  });
+
+  const isAssignee =
+    group.change_type === 'assignee_added' ||
+    group.change_type === 'assignee_removed';
+  const isLabel =
+    group.change_type === 'label_added' ||
+    group.change_type === 'label_removed';
+  const isRemoved =
+    group.change_type === 'assignee_removed' ||
+    group.change_type === 'label_removed';
+
+  const formatItemDate = (changedAt: string) => {
+    const date = new Date(changedAt);
+    return format(date, 'HH:mm, EEEE, d MMMM yyyy', { locale: dateLocale });
+  };
+
+  const getActionLabel = () => {
+    switch (group.change_type) {
+      case 'assignee_added':
+        return t('assigned_multiple', { defaultValue: 'Assigned' });
+      case 'assignee_removed':
+        return t('unassigned_multiple', { defaultValue: 'Unassigned' });
+      case 'label_added':
+        return t('added_labels', { defaultValue: 'Added labels' });
+      case 'label_removed':
+        return t('removed_labels', { defaultValue: 'Removed labels' });
+      default:
+        return t('updated', { defaultValue: 'Updated' });
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.03 }}
+      className="group relative flex gap-3 rounded-lg bg-muted/30 p-3 transition-all"
+    >
+      {/* Icon indicator */}
+      <div
+        className={cn(
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+          color
+        )}
+      >
+        {icon}
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        {/* Action label */}
+        <p className="mb-1.5 text-muted-foreground text-sm capitalize">
+          {getActionLabel()}
+        </p>
+
+        {/* Aggregated items with tooltips */}
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {isAssignee &&
+            group.aggregated_items.map((item, i) => (
+              <Tooltip key={i}>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant={isRemoved ? 'outline' : 'secondary'}
+                    className={cn(
+                      'cursor-default gap-1.5 text-xs',
+                      isRemoved && 'opacity-70'
+                    )}
+                  >
+                    <Avatar className="h-4 w-4">
+                      <AvatarImage
+                        src={item.avatar_url || undefined}
+                        alt={item.name}
+                      />
+                      <AvatarFallback className="text-[8px]">
+                        {item.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className={cn(isRemoved && 'line-through')}>
+                      {item.name}
+                    </span>
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-muted-foreground">
+                    {isRemoved
+                      ? t('unassigned_at', { defaultValue: 'Unassigned at' })
+                      : t('assigned_at', { defaultValue: 'Assigned at' })}
+                    : {formatItemDate(item.changed_at)}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          {isLabel &&
+            group.aggregated_items.map((item, i) => (
+              <Tooltip key={i}>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant={isRemoved ? 'outline' : 'secondary'}
+                    className={cn(
+                      'cursor-default gap-1.5 text-xs',
+                      isRemoved && 'opacity-70'
+                    )}
+                    style={
+                      item.color
+                        ? isRemoved
+                          ? {
+                              borderColor: `${item.color}60`,
+                              color: item.color,
+                            }
+                          : {
+                              backgroundColor: `${item.color}20`,
+                              borderColor: `${item.color}40`,
+                              color: item.color,
+                            }
+                        : undefined
+                    }
+                  >
+                    {item.color && (
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full',
+                          isRemoved && 'opacity-60'
+                        )}
+                        style={{ backgroundColor: item.color }}
+                      />
+                    )}
+                    {item.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-muted-foreground">
+                    {isRemoved
+                      ? t('removed_at', { defaultValue: 'Removed at' })
+                      : t('added_at', { defaultValue: 'Added at' })}
+                    : {formatItemDate(item.changed_at)}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+        </div>
+
+        {/* Timestamp */}
+        <p className="text-muted-foreground text-xs">
+          <span className="font-medium">{exactTime}</span>
+        </p>
+      </div>
     </motion.div>
   );
 }
@@ -887,33 +1133,53 @@ function AggregatedActionEntry({
       group.change_type === 'assignee_removed' ||
       group.change_type === 'label_removed';
 
+    const formatItemDate = (changedAt: string) => {
+      const date = new Date(changedAt);
+      return format(date, 'HH:mm, EEEE, d MMMM yyyy', { locale: dateLocale });
+    };
+
     if (isAssignee) {
       return (
         <div className="flex flex-wrap items-center gap-1.5">
           {items.map((item, i) => (
-            <Badge
-              key={i}
-              variant={isRemoved ? 'outline' : 'secondary'}
-              className={cn('gap-1.5 text-xs', isRemoved && 'opacity-70')}
-            >
-              <Avatar className="h-4 w-4">
-                <AvatarImage
-                  src={item.avatar_url || undefined}
-                  alt={item.name}
-                />
-                <AvatarFallback className="text-[8px]">
-                  {item.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <span className={cn(isRemoved && 'line-through')}>
-                {item.name}
-              </span>
-            </Badge>
+            <Tooltip key={i}>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant={isRemoved ? 'outline' : 'secondary'}
+                  className={cn(
+                    'cursor-default gap-1.5 text-xs',
+                    isRemoved && 'opacity-70'
+                  )}
+                >
+                  <Avatar className="h-4 w-4">
+                    <AvatarImage
+                      src={item.avatar_url || undefined}
+                      alt={item.name}
+                    />
+                    <AvatarFallback className="text-[8px]">
+                      {item.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className={cn(isRemoved && 'line-through')}>
+                    {item.name}
+                  </span>
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                <div className="font-medium">{item.name}</div>
+                <div className="text-muted-foreground">
+                  {isRemoved
+                    ? t('unassigned_at', { defaultValue: 'Unassigned at' })
+                    : t('assigned_at', { defaultValue: 'Assigned at' })}
+                  : {formatItemDate(item.changed_at)}
+                </div>
+              </TooltipContent>
+            </Tooltip>
           ))}
         </div>
       );
@@ -923,33 +1189,48 @@ function AggregatedActionEntry({
       return (
         <div className="flex flex-wrap items-center gap-1.5">
           {items.map((item, i) => (
-            <Badge
-              key={i}
-              variant={isRemoved ? 'outline' : 'secondary'}
-              className={cn('gap-1.5 text-xs', isRemoved && 'opacity-70')}
-              style={
-                item.color
-                  ? isRemoved
-                    ? { borderColor: `${item.color}60`, color: item.color }
-                    : {
-                        backgroundColor: `${item.color}20`,
-                        borderColor: `${item.color}40`,
-                        color: item.color,
-                      }
-                  : undefined
-              }
-            >
-              {item.color && (
-                <span
+            <Tooltip key={i}>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant={isRemoved ? 'outline' : 'secondary'}
                   className={cn(
-                    'h-2 w-2 rounded-full',
-                    isRemoved && 'opacity-60'
+                    'cursor-default gap-1.5 text-xs',
+                    isRemoved && 'opacity-70'
                   )}
-                  style={{ backgroundColor: item.color }}
-                />
-              )}
-              {item.name}
-            </Badge>
+                  style={
+                    item.color
+                      ? isRemoved
+                        ? { borderColor: `${item.color}60`, color: item.color }
+                        : {
+                            backgroundColor: `${item.color}20`,
+                            borderColor: `${item.color}40`,
+                            color: item.color,
+                          }
+                      : undefined
+                  }
+                >
+                  {item.color && (
+                    <span
+                      className={cn(
+                        'h-2 w-2 rounded-full',
+                        isRemoved && 'opacity-60'
+                      )}
+                      style={{ backgroundColor: item.color }}
+                    />
+                  )}
+                  {item.name}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                <div className="font-medium">{item.name}</div>
+                <div className="text-muted-foreground">
+                  {isRemoved
+                    ? t('removed_at', { defaultValue: 'Removed at' })
+                    : t('added_at', { defaultValue: 'Added at' })}
+                  : {formatItemDate(item.changed_at)}
+                </div>
+              </TooltipContent>
+            </Tooltip>
           ))}
         </div>
       );
@@ -1099,7 +1380,8 @@ function TimelineEntry({
     entry,
     t,
     estimationType,
-    isLatestDeletion
+    isLatestDeletion,
+    dateLocale
   );
   const timeAgo = formatDistanceToNow(new Date(entry.changed_at), {
     addSuffix: true,
@@ -1410,7 +1692,8 @@ function getChangeDescription(
   entry: TaskHistoryLogEntry,
   t: (key: string, options?: { defaultValue?: string }) => string,
   estimationType?: EstimationType,
-  isLatestDeletion?: boolean
+  isLatestDeletion?: boolean,
+  dateLocale?: typeof enUS | typeof vi
 ): ChangeDescription {
   // Handle task_created
   if (entry.change_type === 'task_created') {
@@ -1450,19 +1733,49 @@ function getChangeDescription(
       );
     }
     if (hasStartDate) {
+      const startDate = new Date(metadata.start_date as string);
       badges.push(
-        <Badge key="start" variant="secondary" className="gap-1 text-xs">
-          <Clock className="h-3 w-3" />
-          {format(new Date(metadata.start_date as string), 'MMM d')}
-        </Badge>
+        <Tooltip key="start">
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className="cursor-default gap-1 text-xs">
+              <Clock className="h-3 w-3" />
+              {format(startDate, 'd MMM', { locale: dateLocale })}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            <div className="font-medium">
+              {t('field_name.start_date', { defaultValue: 'Start Date' })}
+            </div>
+            <div className="text-muted-foreground">
+              {format(startDate, 'HH:mm, EEEE, d MMMM yyyy', {
+                locale: dateLocale,
+              })}
+            </div>
+          </TooltipContent>
+        </Tooltip>
       );
     }
     if (hasEndDate) {
+      const endDate = new Date(metadata.end_date as string);
       badges.push(
-        <Badge key="end" variant="secondary" className="gap-1 text-xs">
-          <Calendar className="h-3 w-3" />
-          {format(new Date(metadata.end_date as string), 'MMM d')}
-        </Badge>
+        <Tooltip key="end">
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className="cursor-default gap-1 text-xs">
+              <Calendar className="h-3 w-3" />
+              {format(endDate, 'd MMM', { locale: dateLocale })}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            <div className="font-medium">
+              {t('field_name.end_date', { defaultValue: 'Due Date' })}
+            </div>
+            <div className="text-muted-foreground">
+              {format(endDate, 'HH:mm, EEEE, d MMMM yyyy', {
+                locale: dateLocale,
+              })}
+            </div>
+          </TooltipContent>
+        </Tooltip>
       );
     }
 

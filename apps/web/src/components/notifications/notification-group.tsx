@@ -420,7 +420,11 @@ function GroupedNotificationItem({
         {/* Change details */}
         {notification.data?.changes && (
           <div className="mt-1.5">
-            <MiniChangeDetails changes={notification.data.changes} t={t} />
+            <MiniChangeDetails
+              changes={notification.data.changes}
+              t={t}
+              notificationData={notification.data}
+            />
             {/* Description diff viewer for description changes */}
             {notification.data.changes.description && (
               <div className="mt-1">
@@ -479,30 +483,45 @@ function GroupedNotificationItem({
 
 function MiniChangeDetails({
   changes,
+  notificationData,
 }: {
   changes: Record<string, { old: unknown; new: unknown }>;
   t?: TranslationFn;
+  notificationData?: Record<string, unknown>;
 }) {
   const changeEntries = Object.entries(changes);
   if (changeEntries.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-1">
-      {changeEntries.slice(0, 2).map(([field, change]) => (
-        <span
-          key={field}
-          className="inline-flex items-center gap-1 rounded bg-foreground/5 px-1.5 py-0.5 text-xs"
-        >
-          <span className="text-foreground/50">{formatFieldName(field)}:</span>
-          <span className="text-red-500/70 line-through">
-            {formatValue(change.old, field).slice(0, 15)}
+      {changeEntries.slice(0, 2).map(([field, change]) => {
+        // For list_id changes, use list names from notification data
+        const isListIdChange = field === 'list_id';
+        const displayOldValue = isListIdChange
+          ? (notificationData?.old_list_name as string) || 'Unknown'
+          : formatValue(change.old, field);
+        const displayNewValue = isListIdChange
+          ? (notificationData?.new_list_name as string) || 'Unknown'
+          : formatValue(change.new, field);
+
+        return (
+          <span
+            key={field}
+            className="inline-flex items-center gap-1 rounded bg-foreground/5 px-1.5 py-0.5 text-xs"
+          >
+            <span className="text-foreground/50">
+              {formatFieldName(field)}:
+            </span>
+            <span className="text-red-500/70 line-through">
+              {displayOldValue.slice(0, 15)}
+            </span>
+            <span className="text-foreground/30">→</span>
+            <span className="text-green-600/80">
+              {displayNewValue.slice(0, 15)}
+            </span>
           </span>
-          <span className="text-foreground/30">→</span>
-          <span className="text-green-600/80">
-            {formatValue(change.new, field).slice(0, 15)}
-          </span>
-        </span>
-      ))}
+        );
+      })}
       {changeEntries.length > 2 && (
         <span className="text-foreground/40 text-xs">
           +{changeEntries.length - 2} more
