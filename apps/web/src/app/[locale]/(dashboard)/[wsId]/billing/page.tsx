@@ -94,31 +94,30 @@ const fetchSubscription = async ({ wsId }: { wsId: string }) => {
   };
 };
 
-const fetchWorkspaceSubscriptions = async (wsId: string) => {
-  const sbAdmin = await createClient();
+const fetchWorkspaceOrders = async (wsId: string) => {
+  try {
+    const polar = createPolarClient();
 
-  const { data, error } = await sbAdmin
-    .from('workspace_subscription')
-    .select(
-      `
-      *,
-      workspace_subscription_products (
-        name,
-        price,
-        recurring_interval
-      )
-    `
-    )
-    .eq('ws_id', wsId)
-    .order('current_period_end', { ascending: false })
-    .limit(5);
+    // Fetch orders with metadata filter for this workspace
+    const response = await polar.orders.list({
+      metadata: {
+        wsId,
+      },
+      limit: 10,
+      page: 1,
+    });
 
-  if (error) {
-    console.error('Error fetching billing history:', error);
+    const orders = response.result?.items ?? [];
+
+    // Sort by creation date descending (newest first)
+    return orders.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (error) {
+    console.error('Error fetching workspace orders:', error);
     return [];
   }
-
-  return data ?? [];
 };
 
 export default async function BillingPage({
@@ -129,13 +128,12 @@ export default async function BillingPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const [products, subscription, subscriptionHistory, isCreator] =
-          await Promise.all([
-            fetchProducts(),
-            fetchSubscription({ wsId }),
-            fetchWorkspaceSubscriptions(wsId),
-            checkCreator(wsId),
-          ]);
+        const [products, subscription, orders, isCreator] = await Promise.all([
+          fetchProducts(),
+          fetchSubscription({ wsId }),
+          fetchWorkspaceOrders(wsId),
+          checkCreator(wsId),
+        ]);
 
         const currentPlan = subscription
           ? {
@@ -174,24 +172,15 @@ export default async function BillingPage({
               features: ['Basic features', 'Limited usage'],
             };
 
-        const billingHistory = subscriptionHistory.map((sub) => ({
-          id: sub.id,
-          created_at: sub.created_at,
-          current_period_start: sub.current_period_start,
-          current_period_end: sub.current_period_end,
-          product_id: sub.product_id,
-          status: sub.status ?? 'unknown',
-          cancel_at_period_end: sub.cancel_at_period_end,
-          product: sub.workspace_subscription_products
-            ? {
-                name:
-                  sub.workspace_subscription_products.name || 'Unknown Plan',
-                price: sub.workspace_subscription_products.price || 0,
-                recurring_interval:
-                  sub.workspace_subscription_products.recurring_interval ||
-                  'one-time',
-              }
-            : null,
+        // Transform orders for billing history display
+        const billingHistory = orders.map((order) => ({
+          id: order.id,
+          createdAt: order.createdAt.toISOString(),
+          billingReason: order.billingReason as string,
+          totalAmount: order.totalAmount,
+          currency: order.currency,
+          status: order.status as string,
+          productName: order.product?.name ?? 'N/A',
         }));
 
         return (
@@ -206,7 +195,7 @@ export default async function BillingPage({
 
             <Separator className="my-8" />
 
-            <BillingHistory billingHistory={billingHistory} />
+            <BillingHistory orders={billingHistory} />
           </div>
         );
       }}
