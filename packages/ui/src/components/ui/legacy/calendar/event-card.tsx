@@ -925,6 +925,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       : tz === 'auto'
         ? dayjs(date)
         : dayjs(date).tz(tz);
+
+    // Special case: if time is 23:59, show as 12:00 AM (midnight)
+    if (d.hour() === 23 && d.minute() === 59) {
+      return timeFormat === '24h' ? '00:00' : '12:00 am';
+    }
+
     return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
 

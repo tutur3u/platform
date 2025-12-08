@@ -298,6 +298,67 @@ function isSlotOngoing(start: Date, end: Date, now: Date): boolean {
 }
 
 /**
+ * Round a date to the nearest 15-minute boundary
+ * This ensures all scheduled events align to 15-minute multiples
+ */
+function roundTo15Minutes(date: Date): Date {
+  const result = new Date(date);
+  const minutes = result.getMinutes();
+  const roundedMinutes = Math.round(minutes / 15) * 15;
+  result.setMinutes(roundedMinutes);
+  result.setSeconds(0);
+  result.setMilliseconds(0);
+  return result;
+}
+
+/**
+ * Get the local hour for a Date in a specific timezone
+ * Falls back to UTC if timezone is not provided or invalid
+ */
+function getLocalHour(date: Date, timezone: string | null | undefined): number {
+  if (!timezone || timezone === 'auto') {
+    return date.getUTCHours();
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const hourPart = parts.find((p) => p.type === 'hour');
+    return parseInt(hourPart?.value || '0', 10);
+  } catch {
+    return date.getUTCHours();
+  }
+}
+
+/**
+ * Get the local minute for a Date in a specific timezone
+ * Falls back to UTC if timezone is not provided or invalid
+ */
+function getLocalMinute(
+  date: Date,
+  timezone: string | null | undefined
+): number {
+  if (!timezone || timezone === 'auto') {
+    return date.getUTCMinutes();
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      minute: 'numeric',
+    });
+    const parts = formatter.formatToParts(date);
+    const minutePart = parts.find((p) => p.type === 'minute');
+    return parseInt(minutePart?.value || '0', 10);
+  } catch {
+    return date.getUTCMinutes();
+  }
+}
+/**
  * Fetch all active habits with auto_schedule enabled
  */
 async function fetchSchedulableHabits(
@@ -318,6 +379,32 @@ async function fetchSchedulableHabits(
   }
 
   return (data as Habit[]) || [];
+}
+
+/**
+ * Fetch workspace timezone setting
+ * Returns null if no timezone is set (auto-detect)
+ */
+async function fetchWorkspaceTimezone(
+  supabase: SupabaseClient,
+  wsId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('timezone')
+    .eq('id', wsId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const tz = data.timezone;
+  if (!tz || tz === 'auto') {
+    return null;
+  }
+
+  return tz;
 }
 
 /**
@@ -419,8 +506,20 @@ function getDayTimeBlocks(
   }
 
   const daySettings = settings[dayName];
-  if (!daySettings?.enabled) return [];
-  return daySettings.timeBlocks || [];
+  if (!daySettings?.enabled) {
+    console.log(
+      `[SmartSchedule] getDayTimeBlocks: ${dayName} is disabled for ${calendarHours ?? 'personal_hours'}`
+    );
+    return [];
+  }
+
+  const timeBlocks = daySettings.timeBlocks || [];
+  console.log(
+    `[SmartSchedule] getDayTimeBlocks for ${dayName} (${calendarHours ?? 'personal_hours'}):`,
+    JSON.stringify(timeBlocks)
+  );
+
+  return timeBlocks;
 }
 
 /**
@@ -507,6 +606,17 @@ function findAvailableSlotsInDay(
     }
   }
 
+  // Debug: log summary of found slots
+  if (slots.length > 0) {
+    console.log(
+      `[SmartSchedule] findAvailableSlotsInDay found ${slots.length} slot(s) for ${date.toISOString().split('T')[0]}:`,
+      slots.map(
+        (s) =>
+          `${s.start.toTimeString().slice(0, 5)}-${s.end.toTimeString().slice(0, 5)} (${s.maxAvailable}m)`
+      )
+    );
+  }
+
   return slots;
 }
 
@@ -524,13 +634,176 @@ function convertHabitToConfig(habit: Habit): HabitDurationConfig {
 }
 
 /**
- * Filter out slots that are in the past
+ * Filter out slots that are in the past and adjust partially-past slots
+ * Also sorts slots by start time to ensure earliest slots are selected first
  */
 function filterFutureSlots(
   slots: Array<{ start: Date; end: Date; maxAvailable: number }>,
   now: Date
 ): Array<{ start: Date; end: Date; maxAvailable: number }> {
-  return slots.filter((slot) => slot.end > now);
+  // Round 'now' up to next 15-minute boundary for scheduling purposes
+  const roundedNow = roundTo15Minutes(new Date(now.getTime() + 14 * 60 * 1000));
+
+  const result = slots
+    .filter((slot) => slot.end > roundedNow)
+    .map((slot) => {
+      // If slot has already started but not ended, adjust start to roundedNow
+      if (slot.start < roundedNow) {
+        const adjustedStart = new Date(roundedNow);
+        const newMaxAvailable =
+          (slot.end.getTime() - adjustedStart.getTime()) / 60000;
+        return {
+          start: adjustedStart,
+          end: slot.end,
+          maxAvailable: newMaxAvailable,
+        };
+      }
+      return slot;
+    })
+    .filter((slot) => slot.maxAvailable > 0); // Remove slots that became too small
+
+  // Sort by start time to ensure earliest slots are selected first
+  result.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  return result;
+}
+
+/**
+ * Filter and sort slots by habit time preference
+ * This ensures habits with specific time preferences only get scheduled in appropriate slots
+ * Returns slots sorted by proximity to ideal time (closest first)
+ */
+function filterSlotsByTimePreference(
+  slots: Array<{ start: Date; end: Date; maxAvailable: number }>,
+  idealTime: string | null | undefined,
+  timePreference: string | null | undefined,
+  duration: number,
+  timezone: string | null | undefined
+): Array<{ start: Date; end: Date; maxAvailable: number }> {
+  if (!idealTime && !timePreference) {
+    return slots; // No preference, return all slots
+  }
+
+  const idealHour = idealTime
+    ? parseInt(idealTime.split(':')[0] || '0', 10)
+    : null;
+  const idealMin = idealTime
+    ? parseInt(idealTime.split(':')[1] || '0', 10)
+    : null;
+
+  // Helper to calculate how far a slot's start hour is from ideal time
+  const getDistanceFromIdealTime = (slot: { start: Date; end: Date }) => {
+    const slotHour = getLocalHour(slot.start, timezone);
+    const slotMin = getLocalMinute(slot.start, timezone);
+    const slotTimeInMinutes = slotHour * 60 + slotMin;
+
+    if (idealHour !== null) {
+      const idealTimeInMinutes = idealHour * 60 + (idealMin ?? 0);
+      // Calculate circular distance (handles midnight wraparound)
+      const diff = Math.abs(slotTimeInMinutes - idealTimeInMinutes);
+      return Math.min(diff, 24 * 60 - diff);
+    }
+
+    // For time_preference, calculate distance from preference range center
+    if (timePreference) {
+      const preferenceRanges: Record<string, { start: number; end: number }> = {
+        morning: { start: 5, end: 12 },
+        afternoon: { start: 12, end: 17 },
+        evening: { start: 17, end: 21 },
+        night: { start: 21, end: 24 },
+      };
+      const range = preferenceRanges[timePreference.toLowerCase()];
+      if (range) {
+        const centerMinutes = ((range.start + range.end) / 2) * 60;
+        return Math.abs(slotTimeInMinutes - centerMinutes);
+      }
+    }
+
+    return 0;
+  };
+
+  // If habit has an ideal_time, filter to slots that can accommodate it
+  if (idealTime && idealHour !== null) {
+    // First try: find slots where the ideal time actually falls within the slot
+    const slotsContainingIdealTime = slots.filter((slot) => {
+      const slotStartHour = getLocalHour(slot.start, timezone);
+      const slotEndHour = getLocalHour(slot.end, timezone);
+      const slotStartMin = getLocalMinute(slot.start, timezone);
+      const slotEndMin = getLocalMinute(slot.end, timezone);
+
+      const slotStartInMinutes = slotStartHour * 60 + slotStartMin;
+      const slotEndInMinutes = slotEndHour * 60 + slotEndMin;
+      const idealInMinutes = idealHour * 60 + (idealMin ?? 0);
+
+      // Handle slots that don't cross midnight
+      if (slotEndInMinutes > slotStartInMinutes) {
+        return (
+          idealInMinutes >= slotStartInMinutes &&
+          idealInMinutes + duration <= slotEndInMinutes
+        );
+      }
+      // Handle slots that cross midnight (e.g., 10pm - 2am)
+      return (
+        idealInMinutes >= slotStartInMinutes ||
+        idealInMinutes + duration <= slotEndInMinutes
+      );
+    });
+
+    if (slotsContainingIdealTime.length > 0) {
+      // Sort by distance from ideal time
+      return slotsContainingIdealTime.sort(
+        (a, b) => getDistanceFromIdealTime(a) - getDistanceFromIdealTime(b)
+      );
+    }
+
+    // Second try: find slots in a similar time range (within 3 hours)
+    const slotsNearIdealTime = slots.filter((slot) => {
+      const slotHour = getLocalHour(slot.start, timezone);
+      // Check if slot is within 3 hours of ideal time (handles midnight wraparound)
+      const hourDiff = Math.abs(slotHour - idealHour);
+      const wrappedDiff = 24 - hourDiff;
+      return Math.min(hourDiff, wrappedDiff) <= 3;
+    });
+
+    if (slotsNearIdealTime.length > 0) {
+      return slotsNearIdealTime.sort(
+        (a, b) => getDistanceFromIdealTime(a) - getDistanceFromIdealTime(b)
+      );
+    }
+  }
+
+  // If habit has a time_preference (morning/afternoon/evening/night)
+  if (timePreference) {
+    const preferenceRanges: Record<string, { start: number; end: number }> = {
+      morning: { start: 5, end: 12 }, // 5am - 12pm
+      afternoon: { start: 12, end: 17 }, // 12pm - 5pm
+      evening: { start: 17, end: 21 }, // 5pm - 9pm
+      night: { start: 21, end: 24 }, // 9pm - midnight
+    };
+
+    const range = preferenceRanges[timePreference.toLowerCase()];
+    if (range) {
+      const filteredSlots = slots.filter((slot) => {
+        const slotHour = getLocalHour(slot.start, timezone);
+        return slotHour >= range.start && slotHour < range.end;
+      });
+
+      if (filteredSlots.length > 0) {
+        return filteredSlots.sort(
+          (a, b) => getDistanceFromIdealTime(a) - getDistanceFromIdealTime(b)
+        );
+      }
+    }
+  }
+
+  // Fallback: return all slots sorted by distance from ideal time
+  if (idealHour !== null || timePreference) {
+    return [...slots].sort(
+      (a, b) => getDistanceFromIdealTime(a) - getDistanceFromIdealTime(b)
+    );
+  }
+
+  return slots;
 }
 
 /**
@@ -557,7 +830,8 @@ async function scheduleHabitsPhase(
   hourSettings: HourSettings,
   occupiedSlots: OccupiedSlotTracker,
   windowDays: number,
-  logger: SchedulingLogger
+  logger: SchedulingLogger,
+  timezone: string | null
 ): Promise<{
   events: HabitScheduleResult[];
   habitEventMap: Map<
@@ -573,8 +847,22 @@ async function scheduleHabitsPhase(
   >();
   const warnings: string[] = [];
 
-  // Sort habits by priority (highest first)
+  // Sort habits by: has_ideal_time DESC, has_time_preference DESC, priority DESC
+  // This ensures habits with specific time preferences get scheduled first
   const sortedHabits = [...habits].sort((a, b) => {
+    // First prioritize habits with ideal_time
+    const aHasIdealTime = !!a.ideal_time;
+    const bHasIdealTime = !!b.ideal_time;
+    if (aHasIdealTime && !bHasIdealTime) return -1;
+    if (bHasIdealTime && !aHasIdealTime) return 1;
+
+    // Then prioritize habits with time_preference
+    const aHasTimePref = !!a.time_preference;
+    const bHasTimePref = !!b.time_preference;
+    if (aHasTimePref && !bHasTimePref) return -1;
+    if (bHasTimePref && !aHasTimePref) return 1;
+
+    // Finally sort by priority score (highest first)
     const aScore = calculatePriorityScore({ priority: a.priority });
     const bScore = calculatePriorityScore({ priority: b.priority });
     return bScore - aScore;
@@ -654,16 +942,59 @@ async function scheduleHabitsPhase(
         continue;
       }
 
-      // Filter out past slots and find best slot based on habit time preferences
+      // Filter out past slots
       const futureSlots = filterFutureSlots(slots, now);
+
+      // Filter slots by habit's time preference (ideal_time or time_preference)
+      // This ensures habits get scheduled at appropriate times, not just any available slot
+      const preferredSlots = filterSlotsByTimePreference(
+        futureSlots,
+        habit.ideal_time,
+        habit.time_preference,
+        habit.duration_minutes || minDuration || 30,
+        timezone
+      );
+
+      logger.log(
+        'info',
+        `Habit "${habit.name}" slot filtering: ${futureSlots.length} future slots -> ${preferredSlots.length} preferred slots`,
+        {
+          ideal_time: habit.ideal_time,
+          time_preference: habit.time_preference,
+          futureSlots: futureSlots.map((s) => ({
+            start: s.start.toISOString(),
+            hour: getLocalHour(s.start, timezone),
+          })),
+          preferredSlots: preferredSlots.map((s) => ({
+            start: s.start.toISOString(),
+            hour: getLocalHour(s.start, timezone),
+          })),
+        },
+        habit.id,
+        habit.name
+      );
+
       const habitConfig = convertHabitToConfig(habit);
-      const bestSlot = findBestSlotForHabitAI(habitConfig, futureSlots);
+
+      // For habits with time preferences, use the first slot from preferredSlots
+      // (already sorted by proximity to ideal time)
+      // For habits without preferences, use AI scoring
+      let bestSlot;
+      if (habit.ideal_time || habit.time_preference) {
+        // preferredSlots is already sorted by proximity to ideal time
+        // Find the first slot that meets minimum duration
+        bestSlot = preferredSlots.find(
+          (slot) => slot.maxAvailable >= (minDuration || 15)
+        );
+      } else {
+        bestSlot = findBestSlotForHabitAI(habitConfig, preferredSlots);
+      }
 
       if (!bestSlot) {
         logger.log(
           'warning',
           `No suitable slot found for ${habit.name} on ${occurrenceDate} (min duration not met)`,
-          { slotsCount: futureSlots.length },
+          { slotsCount: preferredSlots.length },
           habit.id,
           habit.name
         );
@@ -675,7 +1006,7 @@ async function scheduleHabitsPhase(
 
       // Check if ideal time was possible but missed
       if (habit.ideal_time) {
-        const idealTimePossible = futureSlots.some((s) => {
+        const idealTimePossible = preferredSlots.some((s) => {
           // Simple check if ideal time string is within slot range
           // This is a rough check for logging purposes
           const [idealHour, idealMin] = habit
@@ -689,7 +1020,7 @@ async function scheduleHabitsPhase(
           logger.log(
             'warning',
             `Ideal time ${habit.ideal_time} not possible in available slots for ${habit.name} on ${occurrenceDate}`,
-            { slots: futureSlots },
+            { slots: preferredSlots },
             habit.id,
             habit.name
           );
@@ -772,16 +1103,20 @@ async function scheduleHabitsPhase(
       // Calculate ideal start time within the slot based on habit preferences
       // This ensures habits don't all stack at the beginning of available blocks
       // Pass `now` to ensure we don't schedule before current time
-      const idealStartTime = calculateIdealStartTimeForHabit(
+      const rawIdealStartTime = calculateIdealStartTimeForHabit(
         convertHabitToConfig(habit),
         bestSlot,
         duration,
         now
       );
 
-      // Calculate event end time
-      const eventEnd = new Date(idealStartTime);
-      eventEnd.setMinutes(eventEnd.getMinutes() + duration);
+      // Round to 15-minute boundaries for clean scheduling
+      const idealStartTime = roundTo15Minutes(rawIdealStartTime);
+
+      // Calculate event end time and round it too
+      const eventEnd = roundTo15Minutes(
+        new Date(idealStartTime.getTime() + duration * 60 * 1000)
+      );
 
       // Safety check: Verify no conflict before scheduling
       if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
@@ -1035,6 +1370,21 @@ async function scheduleTasksPhase(
           now
         );
 
+        // Sort bumpable habits: prefer bumping habits WITHOUT time preferences
+        // This protects habits that have specific timing requirements
+        bumpable.sort((a, b) => {
+          const aHabitInfo = habitEventMap.get(a.id);
+          const bHabitInfo = habitEventMap.get(b.id);
+          const aHasPreference =
+            aHabitInfo?.habit.ideal_time || aHabitInfo?.habit.time_preference;
+          const bHasPreference =
+            bHabitInfo?.habit.ideal_time || bHabitInfo?.habit.time_preference;
+          // Bump habits WITHOUT preference first
+          if (!aHasPreference && bHasPreference) return -1;
+          if (aHasPreference && !bHasPreference) return 1;
+          return 0;
+        });
+
         for (const bumpableSlot of bumpable) {
           const habitInfo = habitEventMap.get(bumpableSlot.id);
           if (habitInfo) {
@@ -1123,6 +1473,10 @@ async function scheduleTasksPhase(
         continue;
       }
 
+      // Sort slots by start time (earliest first) to reduce gaps
+      // This ensures tasks are scheduled contiguously
+      futureSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
+
       // Create task config for smart slot selection
       const taskConfig: TaskSlotConfig = {
         deadline: task.end_date ? new Date(task.end_date) : null,
@@ -1133,13 +1487,25 @@ async function scheduleTasksPhase(
       // Use smart slot selection instead of sequential iteration
       // This ensures tasks don't all stack at 7am
       while (remainingMinutes > 0 && futureSlots.length > 0) {
-        // Find the best slot for this task based on deadline and priority
-        const bestSlot = findBestSlotForTask(
-          taskConfig,
-          futureSlots,
-          minDuration,
-          now
-        );
+        // For tasks without tight deadlines, prefer the earliest available slot to reduce gaps
+        // For urgent tasks, let the scoring function decide based on deadline proximity
+        let bestSlot;
+        if (!taskIsUrgent && futureSlots.length > 0) {
+          // Prefer earliest slot for non-urgent tasks to fill gaps
+          bestSlot = futureSlots.find(
+            (slot) => slot.maxAvailable >= minDuration
+          );
+        }
+
+        // Fall back to smart slot selection if no suitable early slot found
+        if (!bestSlot) {
+          bestSlot = findBestSlotForTask(
+            taskConfig,
+            futureSlots,
+            minDuration,
+            now
+          );
+        }
 
         if (!bestSlot) {
           logger.log(
@@ -1188,17 +1554,32 @@ async function scheduleTasksPhase(
           continue;
         }
 
-        // Calculate ideal start time within the slot based on task deadline and preference
-        // This ensures tasks don't all stack at the beginning of available blocks
-        const idealStartTime = calculateIdealStartTimeForTask(
-          taskConfig,
-          bestSlot,
-          eventDuration,
-          now
-        );
+        // Calculate ideal start time within the slot
+        // For non-urgent tasks, prefer the start of the slot to reduce gaps
+        // For urgent tasks, use smart placement based on deadline proximity
+        let rawIdealStartTime: Date;
+        if (!taskIsUrgent) {
+          // Non-urgent: start at beginning of slot to fill gaps
+          rawIdealStartTime = new Date(
+            Math.max(bestSlot.start.getTime(), now.getTime())
+          );
+        } else {
+          // Urgent: use smart placement based on deadline
+          rawIdealStartTime = calculateIdealStartTimeForTask(
+            taskConfig,
+            bestSlot,
+            eventDuration,
+            now
+          );
+        }
 
-        const eventEnd = new Date(idealStartTime);
-        eventEnd.setMinutes(eventEnd.getMinutes() + eventDuration);
+        // Round to 15-minute boundaries for clean scheduling
+        const idealStartTime = roundTo15Minutes(rawIdealStartTime);
+
+        // Calculate event end time and round it too
+        const eventEnd = roundTo15Minutes(
+          new Date(idealStartTime.getTime() + eventDuration * 60 * 1000)
+        );
 
         // Check if scheduled after deadline
         if (task.end_date && eventEnd > new Date(task.end_date)) {
@@ -1362,7 +1743,8 @@ async function rescheduleBumpedHabits(
   bumpedEvents: BumpedHabitEvent[],
   hourSettings: HourSettings,
   occupiedSlots: OccupiedSlotTracker,
-  logger: SchedulingLogger
+  logger: SchedulingLogger,
+  timezone: string | null
 ): Promise<HabitScheduleResult[]> {
   const results: HabitScheduleResult[] = [];
   const now = new Date();
@@ -1410,15 +1792,35 @@ async function rescheduleBumpedHabits(
       allSlots.push(...daySlots);
     }
 
-    // Filter out past slots and find best slot based on habit time preferences
+    // Filter out past slots
     const futureSlots = filterFutureSlots(allSlots, now);
+
+    // Filter slots by habit's time preference for rescheduling
+    const preferredSlots = filterSlotsByTimePreference(
+      futureSlots,
+      habit.ideal_time,
+      habit.time_preference,
+      habit.duration_minutes || minDuration || 30,
+      timezone
+    );
+
     const habitConfig = convertHabitToConfig(habit);
-    const bestSlot = findBestSlotForHabitAI(habitConfig, futureSlots);
+
+    // For habits with time preferences, use the first slot from preferredSlots
+    // (already sorted by proximity to ideal time)
+    let bestSlot;
+    if (habit.ideal_time || habit.time_preference) {
+      bestSlot = preferredSlots.find(
+        (slot) => slot.maxAvailable >= (minDuration || 15)
+      );
+    } else {
+      bestSlot = findBestSlotForHabitAI(habitConfig, preferredSlots);
+    }
 
     if (!bestSlot) {
       logger.warn(
         `Could not reschedule bumped habit "${habit.name}" - no suitable slot found.`,
-        null,
+        { preferredSlotsCount: preferredSlots.length },
         habit.id,
         habit.name
       );
@@ -1453,15 +1855,20 @@ async function rescheduleBumpedHabits(
 
     // Calculate ideal start time within the slot based on habit preferences
     // Pass `now` to ensure we don't schedule before current time
-    const idealStartTime = calculateIdealStartTimeForHabit(
+    const rawIdealStartTime = calculateIdealStartTimeForHabit(
       convertHabitToConfig(habit),
       bestSlot,
       duration,
       now
     );
 
-    const eventEnd = new Date(idealStartTime);
-    eventEnd.setMinutes(eventEnd.getMinutes() + duration);
+    // Round to 15-minute boundaries for clean scheduling
+    const idealStartTime = roundTo15Minutes(rawIdealStartTime);
+
+    // Calculate event end time and round it too
+    const eventEnd = roundTo15Minutes(
+      new Date(idealStartTime.getTime() + duration * 60 * 1000)
+    );
 
     // Safety check: Verify no conflict before scheduling
     if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
@@ -1697,13 +2104,14 @@ export async function scheduleWorkspace(
   });
 
   // 1. Fetch all scheduling context in parallel
-  const [hourSettings, blockedEvents, habits, tasks, breakSettings] =
+  const [hourSettings, blockedEvents, habits, tasks, breakSettings, timezone] =
     await Promise.all([
       fetchHourSettings(supabase, wsId),
       fetchAllBlockedEvents(supabase, wsId, windowDays),
       fetchSchedulableHabits(supabase, wsId),
       fetchSchedulableTasks(supabase, wsId),
       fetchWorkspaceBreakSettings(supabase, wsId),
+      fetchWorkspaceTimezone(supabase, wsId),
     ]);
   logger.log('info', 'Fetched initial data', {
     habitsCount: habits.length,
@@ -1805,7 +2213,8 @@ export async function scheduleWorkspace(
     hourSettings,
     occupiedSlots,
     windowDays,
-    logger
+    logger,
+    timezone
   );
   logger.log(
     'info',
@@ -1836,7 +2245,8 @@ export async function scheduleWorkspace(
     taskResults.bumpedHabitEvents,
     hourSettings,
     occupiedSlots,
-    logger
+    logger,
+    timezone
   );
 
   // 7. PHASE 3: Schedule universal breaks based on workspace settings

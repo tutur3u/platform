@@ -10,12 +10,14 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ExtendedWorkspaceTask } from '../../../time-tracker/types';
 import { HabitsPanel } from '../habits-panel';
 import PriorityView from '../priority-view';
 import { TaskSchedulerPanel } from '../task-scheduler-panel';
 import TimeTracker from '../time-tracker';
+
+const SIDEBAR_COLLAPSED_KEY = 'calendar-sidebar-collapsed';
 
 type SidebarTab = 'tasks' | 'habits' | 'schedule';
 
@@ -25,6 +27,8 @@ interface CalendarSidebarProps {
   tasks?: ExtendedWorkspaceTask[];
   locale?: string;
   onEventCreated?: () => void;
+  /** If true, skip auto-assignment when creating tasks (personal workspace) */
+  isPersonalWorkspace?: boolean;
 }
 
 const SIDEBAR_TABS: Array<{
@@ -58,9 +62,20 @@ export function CalendarSidebar({
   assigneeId,
   tasks = [],
   onEventCreated,
+  isPersonalWorkspace = false,
 }: CalendarSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  // Load collapsed state from localStorage, default to true (collapsed)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return saved === null ? true : saved === 'true';
+  });
   const [activeTab, setActiveTab] = useState<SidebarTab>('tasks');
+
+  // Persist collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
+  }, [isCollapsed]);
 
   // Collapsed state - show only expand button
   if (isCollapsed) {
@@ -129,6 +144,7 @@ export function CalendarSidebar({
                 wsId={wsId}
                 allTasks={tasks}
                 assigneeId={assigneeId}
+                isPersonalWorkspace={isPersonalWorkspace}
               />
             </div>
           </ScrollArea>

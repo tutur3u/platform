@@ -37,6 +37,23 @@ const getRelativeDateLabel = (date: Date): string | null => {
   return null;
 };
 
+// Format time with special handling for midnight (23:59 -> 12:00 AM)
+const formatTimeWithMidnight = (
+  date: Date,
+  timePattern: string,
+  timeFormat: '12h' | '24h'
+): string => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  // Special case: if time is 23:59, show as 12:00 AM (midnight)
+  if (hours === 23 && minutes === 59) {
+    return timeFormat === '24h' ? '00:00' : '12:00 am';
+  }
+
+  return format(date, timePattern);
+};
+
 const getEventStyles = (
   event: any
 ): { bg: string; text: string; border: string } => {
@@ -111,7 +128,8 @@ const getEventStyles = (
 
 export const AgendaView = ({ startDate, daysToShow = 30 }: AgendaViewProps) => {
   const { getCurrentEvents, openModal } = useCalendar();
-  const { timeFormat } = useCalendarPreferences();
+  const { timeFormat: rawTimeFormat } = useCalendarPreferences();
+  const timeFormat = rawTimeFormat || '12h'; // Default to 12-hour format
   const timePattern = getTimeFormatPattern(timeFormat);
 
   // Group events by date
@@ -155,7 +173,7 @@ export const AgendaView = ({ startDate, daysToShow = 30 }: AgendaViewProps) => {
     try {
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
-      return `${format(start, timePattern)} - ${format(end, timePattern)}`;
+      return `${formatTimeWithMidnight(start, timePattern, timeFormat)} - ${formatTimeWithMidnight(end, timePattern, timeFormat)}`;
     } catch {
       return '';
     }
@@ -253,10 +271,18 @@ export const AgendaView = ({ startDate, daysToShow = 30 }: AgendaViewProps) => {
                         ) : (
                           <>
                             <div className={cn('font-semibold text-sm', text)}>
-                              {format(new Date(event.start_at), timePattern)}
+                              {formatTimeWithMidnight(
+                                new Date(event.start_at),
+                                timePattern,
+                                timeFormat
+                              )}
                             </div>
                             <div className="text-muted-foreground text-xs">
-                              {format(new Date(event.end_at), timePattern)}
+                              {formatTimeWithMidnight(
+                                new Date(event.end_at),
+                                timePattern,
+                                timeFormat
+                              )}
                             </div>
                           </>
                         )}

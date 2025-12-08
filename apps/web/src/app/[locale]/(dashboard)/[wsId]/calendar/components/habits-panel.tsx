@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   Check,
@@ -57,7 +57,6 @@ const priorityColors: Record<string, string> = {
 };
 
 export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
-  const [visibleHabits, setVisibleHabits] = useState<Set<string>>(new Set());
   const [schedulingHabitId, setSchedulingHabitId] = useState<string | null>(
     null
   );
@@ -89,15 +88,64 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
     (h: HabitWithStreak) => h.is_active
   );
 
-  const toggleVisibility = (habitId: string) => {
-    setVisibleHabits((prev) => {
-      const next = new Set(prev);
-      if (next.has(habitId)) {
-        next.delete(habitId);
-      } else {
-        next.add(habitId);
+  // Mutation to update habit visibility
+  const visibilityMutation = useMutation({
+    mutationFn: async ({
+      habitId,
+      isVisible,
+    }: {
+      habitId: string;
+      isVisible: boolean;
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/habits/${habitId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_visible_in_calendar: isVisible }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to update habit visibility');
       }
-      return next;
+      return response.json();
+    },
+    onMutate: async ({ habitId, isVisible }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['habits', wsId] });
+
+      // Snapshot the previous value
+      const previousHabits = queryClient.getQueryData(['habits', wsId]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        ['habits', wsId],
+        (old: { habits: HabitWithStreak[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            habits: old.habits.map((h) =>
+              h.id === habitId ? { ...h, is_visible_in_calendar: isVisible } : h
+            ),
+          };
+        }
+      );
+
+      return { previousHabits };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousHabits) {
+        queryClient.setQueryData(['habits', wsId], context.previousHabits);
+      }
+      toast.error('Failed to update visibility');
+    },
+  });
+
+  const toggleVisibility = (habitId: string, currentVisibility: boolean) => {
+    visibilityMutation.mutate({
+      habitId,
+      isVisible: !currentVisibility,
     });
   };
 
@@ -233,7 +281,7 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
         <div className="flex flex-col gap-2 p-3">
           {habits.map((habit) => {
             const colorClass = colorMap[habit.color] || colorMap.BLUE;
-            const isVisible = visibleHabits.has(habit.id);
+            const isVisible = habit.is_visible_in_calendar ?? true;
             const isScheduling = schedulingHabitId === habit.id;
             const isCompleting = completingHabitId === habit.id;
 
@@ -259,7 +307,9 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
                     </div>
                     <Switch
                       checked={isVisible}
-                      onCheckedChange={() => toggleVisibility(habit.id)}
+                      onCheckedChange={() =>
+                        toggleVisibility(habit.id, isVisible)
+                      }
                       className="shrink-0"
                     />
                   </div>

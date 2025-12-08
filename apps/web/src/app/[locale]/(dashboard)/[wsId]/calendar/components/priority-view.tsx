@@ -21,13 +21,14 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import ActionsDropdown from './actions-dropdown';
@@ -96,13 +97,26 @@ export default function PriorityView({
   wsId,
   allTasks,
   assigneeId,
+  isPersonalWorkspace = false,
 }: {
   wsId: string;
   allTasks: ExtendedWorkspaceTask[];
   assigneeId: string;
+  /** If true, skip auto-assignment (personal workspace) */
+  isPersonalWorkspace?: boolean;
 }) {
   const router = useRouter();
   const { openTaskById, onUpdate } = useTaskDialog();
+  const { setOnTaskScheduled } = useCalendar();
+
+  // Register callback to refresh data when a task is scheduled via drag-drop
+  useEffect(() => {
+    setOnTaskScheduled(() => {
+      router.refresh();
+    });
+    return () => setOnTaskScheduled(undefined);
+  }, [setOnTaskScheduled, router]);
+
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState<ExtendedWorkspaceTask[]>(
@@ -148,6 +162,52 @@ export default function PriorityView({
     });
     return emptyGroups;
   });
+
+  // Track manually collapsed groups (to not auto-expand them)
+  const [manuallyCollapsed, setManuallyCollapsed] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Track previous task counts to detect changes
+  const prevGroupedRef = React.useRef<{ [key: string]: number }>({});
+
+  // Auto-collapse empty groups and auto-expand non-empty groups
+  React.useEffect(() => {
+    const prevCounts = prevGroupedRef.current;
+    const newCollapsed = new Set(collapsedGroups);
+    let changed = false;
+
+    PRIORITY_ORDER.forEach((key) => {
+      const currentCount = grouped[key]?.length || 0;
+      const prevCount = prevCounts[key] ?? currentCount;
+
+      // If section became empty, auto-collapse it
+      if (currentCount === 0 && prevCount > 0) {
+        newCollapsed.add(key);
+        changed = true;
+      }
+      // If section got tasks and wasn't manually collapsed, auto-expand it
+      else if (
+        currentCount > 0 &&
+        prevCount === 0 &&
+        !manuallyCollapsed.has(key)
+      ) {
+        newCollapsed.delete(key);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      setCollapsedGroups(newCollapsed);
+    }
+
+    // Update prev counts for next comparison
+    const newCounts: { [key: string]: number } = {};
+    PRIORITY_ORDER.forEach((key) => {
+      newCounts[key] = grouped[key]?.length || 0;
+    });
+    prevGroupedRef.current = newCounts;
+  }, [grouped, collapsedGroups, manuallyCollapsed]);
 
   // Scheduling dialog state
   const [schedulingDialogOpen, setSchedulingDialogOpen] = useState(false);
@@ -212,9 +272,21 @@ export default function PriorityView({
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(priorityKey)) {
+        // User is expanding - remove from manually collapsed
         next.delete(priorityKey);
+        setManuallyCollapsed((prevManual) => {
+          const newManual = new Set(prevManual);
+          newManual.delete(priorityKey);
+          return newManual;
+        });
       } else {
+        // User is collapsing - mark as manually collapsed
         next.add(priorityKey);
+        setManuallyCollapsed((prevManual) => {
+          const newManual = new Set(prevManual);
+          newManual.add(priorityKey);
+          return newManual;
+        });
       }
       return next;
     });
@@ -759,6 +831,8 @@ export default function PriorityView({
         open={quickTaskDialogOpen}
         onOpenChange={setQuickTaskDialogOpen}
         onSuccess={() => router.refresh()}
+        userId={assigneeId}
+        isPersonalWorkspace={isPersonalWorkspace}
       />
     </div>
   );

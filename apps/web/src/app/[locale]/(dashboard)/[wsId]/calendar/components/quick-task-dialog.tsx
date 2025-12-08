@@ -52,6 +52,10 @@ interface QuickTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  /** Current user ID for auto-assignment */
+  userId?: string;
+  /** If true, skip auto-assignment (personal workspace) */
+  isPersonalWorkspace?: boolean;
 }
 
 export function QuickTaskDialog({
@@ -59,6 +63,8 @@ export function QuickTaskDialog({
   open,
   onOpenChange,
   onSuccess,
+  userId,
+  isPersonalWorkspace = false,
 }: QuickTaskDialogProps) {
   const queryClient = useQueryClient();
   const supabase = createClient();
@@ -86,32 +92,34 @@ export function QuickTaskDialog({
   const selectedBoard = boards.find((b) => b.id === selectedBoardId);
   const lists = selectedBoard?.task_lists || [];
 
-  // Auto-select first board and list if only one exists
+  // Track previous board for detecting board changes
+  const prevBoardRef = useRef(selectedBoardId);
+
+  // Auto-select first board when dialog opens
   useEffect(() => {
     if (open && boards.length > 0 && !selectedBoardId) {
       setSelectedBoardId(boards[0]!.id);
     }
   }, [open, boards, selectedBoardId]);
 
+  // Handle board changes and auto-select first list
+  // Combined into single effect to ensure proper ordering
   useEffect(() => {
-    if (selectedBoardId && lists.length > 0 && !selectedListId) {
-      // Select the first "active" list or any list if none are active
+    const boardChanged = prevBoardRef.current !== selectedBoardId;
+    prevBoardRef.current = selectedBoardId;
+
+    if (!selectedBoardId || lists.length === 0) {
+      return;
+    }
+
+    // When board changes or no list is selected, auto-select first available list
+    if (boardChanged || !selectedListId) {
       const activeList = lists.find((l) => l.status === 'active') || lists[0];
       if (activeList) {
         setSelectedListId(activeList.id);
       }
     }
   }, [selectedBoardId, lists, selectedListId]);
-
-  // Reset list when board changes - intentionally not including selectedBoardId in deps
-  // to avoid circular dependency since this effect sets selectedListId
-  const prevBoardRef = useRef(selectedBoardId);
-  useEffect(() => {
-    if (prevBoardRef.current !== selectedBoardId) {
-      setSelectedListId('');
-      prevBoardRef.current = selectedBoardId;
-    }
-  });
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -134,9 +142,16 @@ export function QuickTaskDialog({
 
     setIsSubmitting(true);
     try {
-      await createTask(supabase, selectedListId, {
+      const newTask = await createTask(supabase, selectedListId, {
         name: taskName.trim(),
       });
+
+      // Auto-assign the creator (unless personal workspace)
+      if (userId && !isPersonalWorkspace && newTask?.id) {
+        await supabase
+          .from('task_assignees')
+          .insert({ task_id: newTask.id, user_id: userId });
+      }
 
       toast.success('Task created successfully');
       queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });

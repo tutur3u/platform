@@ -129,6 +129,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const { settings } = useCalendarSettings();
   const [isHovering, setIsHovering] = useState(false);
   const [isDropTarget, setIsDropTarget] = useState(false);
+  // Task drop preview state
+  const [taskDropPreview, setTaskDropPreview] = useState<{
+    top: number;
+    height: number;
+    taskName: string;
+  } | null>(null);
+  const taskDragDataRef = useRef<{
+    taskName: string;
+    totalDuration: number;
+  } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{
@@ -192,13 +202,64 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     e.preventDefault();
     if (e.dataTransfer.types.includes('application/json')) {
       setIsDropTarget(true);
+      // Try to parse task data for preview
+      try {
+        const jsonData = e.dataTransfer.getData('application/json');
+        if (jsonData) {
+          const data = JSON.parse(jsonData);
+          if (data.type === 'task') {
+            taskDragDataRef.current = {
+              taskName: data.taskName || 'Task',
+              totalDuration: data.totalDuration || 0,
+            };
+          }
+        }
+      } catch {
+        // getData may fail during dragenter in some browsers, that's ok
+      }
     }
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+  // Calculate preview height based on task duration
+  const getTaskPreviewHeight = useCallback((totalDuration: number): number => {
+    let durationMinutes: number;
+    if (totalDuration <= 0) {
+      durationMinutes = 60; // Default 1 hour
+    } else {
+      const totalMinutes = totalDuration * 60;
+      const cappedMinutes = Math.min(totalMinutes, 60);
+      durationMinutes = Math.ceil(cappedMinutes / 15) * 15;
+    }
+    return (durationMinutes / 60) * HOUR_HEIGHT;
   }, []);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+
+      // Update task drop preview position
+      if (isDropTarget && cellRef.current) {
+        const rect = cellRef.current.getBoundingClientRect();
+        const relativeY = e.clientY - rect.top;
+        const exactMinutes = (relativeY / HOUR_HEIGHT) * 60;
+        const snappedMinutes = Math.round(exactMinutes / 15) * 15;
+
+        // Calculate preview position
+        const top = (snappedMinutes / 60) * HOUR_HEIGHT;
+        const height = getTaskPreviewHeight(
+          taskDragDataRef.current?.totalDuration || 0
+        );
+
+        setTaskDropPreview({
+          top,
+          height,
+          taskName: taskDragDataRef.current?.taskName || 'Task',
+        });
+      }
+    },
+    [isDropTarget, getTaskPreviewHeight]
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     // Only reset if we're actually leaving the cell (not entering a child)
@@ -207,6 +268,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       e.relatedTarget === null
     ) {
       setIsDropTarget(false);
+      setTaskDropPreview(null);
+      taskDragDataRef.current = null;
     }
   }, []);
 
@@ -214,6 +277,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     async (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setIsDropTarget(false);
+      setTaskDropPreview(null);
+      taskDragDataRef.current = null;
 
       try {
         const jsonData = e.dataTransfer.getData('application/json');
@@ -226,9 +291,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         if (!cellRef.current) return;
         const rect = cellRef.current.getBoundingClientRect();
         const relativeY = e.clientY - rect.top;
-        const minuteOffset = Math.round((relativeY / HOUR_HEIGHT) * 60);
-        // Snap to 15-minute intervals
-        const snappedMinutes = Math.round(minuteOffset / 15) * 15;
+        // Calculate exact minute position without intermediate rounding
+        const exactMinutes = (relativeY / HOUR_HEIGHT) * 60;
+        // Snap directly to nearest 15-minute interval (avoids double-rounding offset)
+        const snappedMinutes = Math.round(exactMinutes / 15) * 15;
 
         const startAt = getCellDate(hour, snappedMinutes);
 
@@ -778,7 +844,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         'calendar-cell relative transition-colors',
         hour !== 0 && 'border-border/30 border-t',
         isHovering ? 'bg-muted/20' : 'hover:bg-muted/10',
-        isDropTarget && 'ring-2 ring-primary ring-inset bg-primary/10'
+        // Only show cell highlight if no task preview (preview has its own visual)
+        isDropTarget &&
+          !taskDropPreview &&
+          'ring-2 ring-primary ring-inset bg-primary/10'
       )}
       style={{
         height: `${HOUR_HEIGHT}px`,
@@ -827,6 +896,21 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           color={settings?.categoryColors?.categories?.[0]?.color || 'BLUE'}
           timeFormat={settings?.appearance?.timeFormat}
         />
+      )}
+
+      {/* Task drop preview - shows exactly where the task will land */}
+      {taskDropPreview && (
+        <div
+          className="pointer-events-none absolute right-1 left-1 z-50 overflow-hidden rounded-md border-2 border-dashed border-primary bg-primary/20 px-2 py-1"
+          style={{
+            top: taskDropPreview.top,
+            height: Math.max(taskDropPreview.height, 20),
+          }}
+        >
+          <span className="line-clamp-1 font-medium text-primary text-xs">
+            {taskDropPreview.taskName}
+          </span>
+        </div>
       )}
 
       {/* Full cell clickable area (hour) */}

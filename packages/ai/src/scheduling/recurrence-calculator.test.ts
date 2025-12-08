@@ -21,6 +21,7 @@ function createTestHabit(overrides: Partial<Habit>): Habit {
     start_date: '2024-01-01',
     is_active: true,
     auto_schedule: true,
+    is_visible_in_calendar: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     ...overrides,

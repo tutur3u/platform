@@ -55,12 +55,16 @@ export default async function TasksSidebar({
     max_split_duration_minutes: task.task_max_split_duration_minutes,
   })) || []) as ExtendedWorkspaceTask[];
 
+  // Personal workspace = workspace ID matches user ID (no need for auto-assignment)
+  const isPersonalWorkspace = resolvedWsId === user.id;
+
   return (
     <CalendarSidebar
       wsId={wsId}
       assigneeId={user.id}
       tasks={tasks}
       locale={locale}
+      isPersonalWorkspace={isPersonalWorkspace}
     />
   );
 }

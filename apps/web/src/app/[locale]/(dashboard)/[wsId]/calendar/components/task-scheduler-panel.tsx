@@ -339,11 +339,15 @@ function TaskSchedulerItem({
   onSchedule,
   isScheduling,
 }: TaskSchedulerItemProps) {
-  const totalMinutes = (task.total_duration ?? 0) * 60;
+  const rawTotalMinutes = (task.total_duration ?? 0) * 60;
   const scheduledMinutes = task.scheduled_minutes ?? 0;
+  // Use max of scheduled and total to handle over-scheduling gracefully
+  const displayTotalMinutes = Math.max(rawTotalMinutes, scheduledMinutes);
   const progress =
-    totalMinutes > 0 ? (scheduledMinutes / totalMinutes) * 100 : 0;
-  const isFullyScheduled = progress >= 100;
+    displayTotalMinutes > 0
+      ? Math.min((scheduledMinutes / displayTotalMinutes) * 100, 100)
+      : 0;
+  const isFullyScheduled = scheduledMinutes >= rawTotalMinutes;
   const hasScheduled = scheduledMinutes > 0;
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -391,10 +395,10 @@ function TaskSchedulerItem({
           >
             {task.name || 'Untitled Task'}
           </p>
-          <div className="mt-1 flex items-center gap-2 text-muted-foreground text-xs">
-            <span className="flex items-center gap-1">
+          <div className="mt-1 flex min-w-0 items-center gap-2 text-muted-foreground text-xs">
+            <span className="flex shrink-0 items-center gap-1">
               <Clock className="h-3 w-3" />
-              {formatDuration(totalMinutes)}
+              {formatDuration(displayTotalMinutes)}
             </span>
             {task.is_splittable && (
               <Badge variant="outline" className="h-4 px-1 text-[10px]">
@@ -422,24 +426,24 @@ function TaskSchedulerItem({
       </div>
 
       {/* Progress Bar */}
-      {totalMinutes > 0 && (
+      {displayTotalMinutes > 0 && (
         <div className="mt-2 space-y-1">
           <Progress
             value={progress}
             className={cn('h-1.5', isFullyScheduled && 'bg-dynamic-green/20')}
           />
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>
+          <div className="flex min-w-0 items-center justify-between gap-1 overflow-hidden text-[10px] text-muted-foreground">
+            <span className="truncate">
               {formatDuration(scheduledMinutes)} /{' '}
-              {formatDuration(totalMinutes)}
+              {formatDuration(displayTotalMinutes)}
             </span>
             {hasScheduled && !isFullyScheduled && (
-              <span className="text-dynamic-yellow">
-                {formatDuration(totalMinutes - scheduledMinutes)} remaining
+              <span className="shrink-0 text-dynamic-yellow">
+                {formatDuration(rawTotalMinutes - scheduledMinutes)} remaining
               </span>
             )}
             {isFullyScheduled && (
-              <span className="flex items-center gap-0.5 text-dynamic-green">
+              <span className="flex shrink-0 items-center gap-0.5 text-dynamic-green">
                 <CheckCircle className="h-3 w-3" />
                 Scheduled
               </span>

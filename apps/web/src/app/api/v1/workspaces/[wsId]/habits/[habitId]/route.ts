@@ -206,6 +206,8 @@ export async function PUT(
     if (body.is_active !== undefined) updateData.is_active = body.is_active;
     if (body.auto_schedule !== undefined)
       updateData.auto_schedule = body.auto_schedule;
+    if (body.is_visible_in_calendar !== undefined)
+      updateData.is_visible_in_calendar = body.is_visible_in_calendar;
 
     // Update the habit
     const { data: updatedHabit, error: updateError } = await supabase

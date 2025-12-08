@@ -91,6 +91,9 @@ const CalendarContext = createContext<{
     startAt: Date,
     endAt: Date
   ) => Promise<void>;
+  // Callback when a task is scheduled (for UI refresh)
+  onTaskScheduled?: () => void;
+  setOnTaskScheduled: (callback: (() => void) | undefined) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -124,6 +127,9 @@ const CalendarContext = createContext<{
   setHoveredEventColumn: () => undefined,
   // Task scheduling
   scheduleTaskAsEvent: undefined,
+  // Callback when a task is scheduled
+  onTaskScheduled: undefined,
+  setOnTaskScheduled: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -268,6 +274,11 @@ export const CalendarProvider = ({
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
+
+  // Callback for when a task is scheduled (allows components to refresh)
+  const [onTaskScheduled, setOnTaskScheduled] = useState<
+    (() => void) | undefined
+  >(undefined);
 
   // Event getters
   const getEvent = useCallback(
@@ -641,6 +652,13 @@ export const CalendarProvider = ({
             end_at: data.end_at,
             task_id: data.task_id,
           });
+          // Invalidate task-related queries to refresh sidebar
+          queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+          queryClient.invalidateQueries({
+            queryKey: ['scheduled-events-batch'],
+          });
+          // Notify components to refresh server data
+          onTaskScheduled?.();
         }
 
         // Refresh the query cache after updating an event
@@ -671,7 +689,7 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws?.id]);
+  }, [refresh, events, ws?.id, queryClient, onTaskScheduled]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -861,6 +879,25 @@ export const CalendarProvider = ({
       }
 
       const supabase = createClient();
+
+      // Check if this event is linked to a task via junction table
+      const { data: junction } = await (supabase as any)
+        .from('task_calendar_events')
+        .select('task_id')
+        .eq('event_id', eventId)
+        .maybeSingle();
+
+      const hasLinkedTask = !!junction?.task_id;
+
+      // Delete the junction record if it exists
+      if (hasLinkedTask) {
+        await (supabase as any)
+          .from('task_calendar_events')
+          .delete()
+          .eq('event_id', eventId);
+      }
+
+      // Delete the event
       const { error } = await supabase
         .from('workspace_calendar_events')
         .delete()
@@ -871,8 +908,23 @@ export const CalendarProvider = ({
       // Refresh the query cache after deleting an event
       refresh();
       setActiveEventId(null);
+
+      // If this was a task-linked event, refresh task queries
+      if (hasLinkedTask) {
+        queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+        onTaskScheduled?.();
+      }
     },
-    [ws, refresh, pendingNewEvent, events, experimentalGoogleToken]
+    [
+      ws,
+      refresh,
+      pendingNewEvent,
+      events,
+      experimentalGoogleToken,
+      queryClient,
+      onTaskScheduled,
+    ]
   );
 
   // Automatically fetch Google Calendar events
@@ -1454,10 +1506,12 @@ export const CalendarProvider = ({
 
       const supabase = createClient();
 
-      // Fetch task details including duration
+      // Fetch task details including duration and scheduling fields
       const { data: task, error: taskError } = await supabase
         .from('tasks')
-        .select('name, priority, total_duration')
+        .select(
+          'name, priority, total_duration, calendar_hours, is_splittable, auto_schedule'
+        )
         .eq('id', taskId)
         .single();
 
@@ -1470,15 +1524,24 @@ export const CalendarProvider = ({
       const scheduledHours =
         (endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60);
 
-      // If task has no duration set, update it with the scheduled duration
-      if (!task.total_duration || task.total_duration <= 0) {
+      // Check if task has scheduling configured (has duration and calendar_hours)
+      const hasSchedulingConfigured =
+        task.total_duration && task.total_duration > 0 && task.calendar_hours;
+
+      // If task doesn't have scheduling configured, set up defaults
+      if (!hasSchedulingConfigured) {
         const { error: updateError } = await supabase
           .from('tasks')
-          .update({ total_duration: scheduledHours })
+          .update({
+            total_duration: scheduledHours,
+            calendar_hours: 'personal_hours',
+            is_splittable: false,
+            auto_schedule: true,
+          })
           .eq('id', taskId);
 
         if (updateError) {
-          console.error('Failed to update task duration:', updateError);
+          console.error('Failed to update task scheduling:', updateError);
           // Don't throw - we can still create the event
         }
       }
@@ -1534,13 +1597,48 @@ export const CalendarProvider = ({
           console.error('Failed to create task-event junction:', junctionError);
           // Don't throw - the event was still created successfully
         }
+
+        // Sync total_duration if total scheduled exceeds current duration
+        // Use the new duration if we just set defaults, otherwise use existing
+        const currentDuration = hasSchedulingConfigured
+          ? task.total_duration || 0
+          : scheduledHours;
+
+        const { data: allJunctions } = await (supabase as any)
+          .from('task_calendar_events')
+          .select('scheduled_minutes')
+          .eq('task_id', taskId);
+
+        const totalScheduledMinutes = (allJunctions || []).reduce(
+          (sum: number, j: { scheduled_minutes?: number }) =>
+            sum + (j.scheduled_minutes || 0),
+          0
+        );
+        const totalScheduledHours = totalScheduledMinutes / 60;
+
+        // If scheduled exceeds current duration, update the task
+        if (totalScheduledHours > currentDuration) {
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ total_duration: totalScheduledHours })
+            .eq('id', taskId);
+
+          if (updateError) {
+            console.error('Failed to update task duration:', updateError);
+          }
+        }
       }
 
       // Refresh queries
       refresh();
+      // Invalidate all task-related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+
+      // Call the callback to notify components (e.g., for server data refresh)
+      onTaskScheduled?.();
     },
-    [ws?.id, refresh, queryClient]
+    [ws?.id, refresh, queryClient, onTaskScheduled]
   );
 
   const values = {
@@ -1582,6 +1680,8 @@ export const CalendarProvider = ({
     setHoveredEventColumn,
     // Task scheduling
     scheduleTaskAsEvent,
+    onTaskScheduled,
+    setOnTaskScheduled,
   };
 
   // Clean up any pending updates when component unmounts
