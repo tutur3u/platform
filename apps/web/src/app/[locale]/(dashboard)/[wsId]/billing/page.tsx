@@ -25,38 +25,11 @@ const fetchProducts = async () => {
   }
 };
 
-const checkCreator = async (wsId: string) => {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    console.error('Error checking user:', userError);
-    return false;
-  }
-
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', wsId)
-    .single();
-
-  if (error) {
-    console.error('Error checking workspace creator:', error);
-    return false;
-  }
-
-  return data.creator_id === user?.id;
-};
-
-const fetchSubscription = async ({ wsId }: { wsId: string }) => {
+const fetchSubscription = async (wsId: string) => {
   const supabase = await createClient();
 
   const { data: dbSub, error } = await supabase
-    .from('workspace_subscription')
+    .from('workspace_subscriptions')
     .select(
       `
       *,
@@ -96,28 +69,59 @@ const fetchSubscription = async ({ wsId }: { wsId: string }) => {
 
 const fetchWorkspaceOrders = async (wsId: string) => {
   try {
-    const polar = createPolarClient();
+    const supabase = await createClient();
+    const { data: orders, error } = await supabase
+      .from('workspace_orders')
+      .select('*, workspace_subscription_products (name)')
+      .eq('ws_id', wsId)
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    // Fetch orders with metadata filter for this workspace
-    const response = await polar.orders.list({
-      metadata: {
-        wsId,
-      },
-      limit: 10,
-      page: 1,
-    });
+    if (error) {
+      console.error('Error fetching workspace orders:', error);
+      return [];
+    }
 
-    const orders = response.result?.items ?? [];
-
-    // Sort by creation date descending (newest first)
-    return orders.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return orders.map((order) => ({
+      id: order.id,
+      createdAt: order.created_at,
+      billingReason: order.billing_reason ?? 'unknown',
+      totalAmount: order.total_amount ?? 0,
+      currency: order.currency ?? 'usd',
+      status: order.status,
+      productName: order.workspace_subscription_products?.name ?? 'N/A',
+    }));
   } catch (error) {
     console.error('Error fetching workspace orders:', error);
     return [];
   }
+};
+
+const checkCreator = async (wsId: string) => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('Error checking user:', userError);
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  if (error) {
+    console.error('Error checking workspace creator:', error);
+    return false;
+  }
+
+  return data.creator_id === user?.id;
 };
 
 export default async function BillingPage({
@@ -130,7 +134,7 @@ export default async function BillingPage({
       {async ({ wsId }) => {
         const [products, subscription, orders, isCreator] = await Promise.all([
           fetchProducts(),
-          fetchSubscription({ wsId }),
+          fetchSubscription(wsId),
           fetchWorkspaceOrders(wsId),
           checkCreator(wsId),
         ]);
@@ -172,17 +176,6 @@ export default async function BillingPage({
               features: ['Basic features', 'Limited usage'],
             };
 
-        // Transform orders for billing history display
-        const billingHistory = orders.map((order) => ({
-          id: order.id,
-          createdAt: order.createdAt.toISOString(),
-          billingReason: order.billingReason as string,
-          totalAmount: order.totalAmount,
-          currency: order.currency,
-          status: order.status as string,
-          productName: order.product?.name ?? 'N/A',
-        }));
-
         return (
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
@@ -195,7 +188,7 @@ export default async function BillingPage({
 
             <Separator className="my-8" />
 
-            <BillingHistory orders={billingHistory} />
+            <BillingHistory orders={orders} />
           </div>
         );
       }}

@@ -29,6 +29,10 @@
       "schedule": "0 * * * *"
     },
     {
+      "path": "/api/cron/payment/orders",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/process-notification-batches",
       "schedule": "*/10 * * * *"
     },

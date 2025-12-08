@@ -12,7 +12,7 @@ export async function GET(
 
     // Fetch subscription data
     const { data: subscription, error } = await supabase
-      .from('workspace_subscription')
+      .from('workspace_subscriptions')
       .select('*, workspace_subscription_products(price)')
       .eq('ws_id', wsId)
       .single();
