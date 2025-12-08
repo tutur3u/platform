@@ -70,12 +70,22 @@ async function fetchSchedulableTasks(
     return [];
   }
 
-  // Note: task_calendar_events table requires migration to be applied
-  // Using type assertion until bun sb:push and bun sb:typegen are run
-  const { data: taskEvents } = await (supabase as any)
+  // Query scheduled minutes from both sources:
+  // 1. task_calendar_events junction table (for detailed tracking)
+  // 2. workspace_calendar_events with task_id (for direct reference)
+
+  // First, try the junction table
+  const { data: junctionEvents } = await (supabase as any)
     .from('task_calendar_events')
     .select('task_id, scheduled_minutes, completed')
     .in('task_id', taskIds);
+
+  // Also query directly from calendar events with task_id
+  const { data: directEvents } = await supabase
+    .from('workspace_calendar_events')
+    .select('task_id, start_at, end_at')
+    .in('task_id', taskIds)
+    .not('task_id', 'is', null);
 
   // Calculate scheduled and completed minutes per task
   const taskSchedulingMap = new Map<
@@ -89,7 +99,8 @@ async function fetchSchedulableTasks(
     completed: boolean;
   };
 
-  (taskEvents as TaskEventRow[] | null)?.forEach((event) => {
+  // Process junction table events
+  (junctionEvents as TaskEventRow[] | null)?.forEach((event) => {
     const current = taskSchedulingMap.get(event.task_id) || {
       scheduled_minutes: 0,
       completed_minutes: 0,
@@ -99,6 +110,35 @@ async function fetchSchedulableTasks(
       current.completed_minutes += event.scheduled_minutes || 0;
     }
     taskSchedulingMap.set(event.task_id, current);
+  });
+
+  // Process direct calendar events (fallback for when junction insert fails)
+  type DirectEventRow = {
+    task_id: string;
+    start_at: string;
+    end_at: string;
+  };
+
+  (directEvents as DirectEventRow[] | null)?.forEach((event) => {
+    const taskId = event.task_id;
+    if (!taskId) return;
+
+    // Calculate duration from event times
+    const startAt = new Date(event.start_at);
+    const endAt = new Date(event.end_at);
+    const scheduledMinutes = Math.round(
+      (endAt.getTime() - startAt.getTime()) / 60000
+    );
+
+    // Check if already counted from junction table
+    const current = taskSchedulingMap.get(taskId);
+    if (!current || current.scheduled_minutes === 0) {
+      // Only add if not already tracked via junction
+      taskSchedulingMap.set(taskId, {
+        scheduled_minutes: scheduledMinutes,
+        completed_minutes: 0,
+      });
+    }
   });
 
   // Merge scheduling info into tasks
@@ -306,13 +346,39 @@ function TaskSchedulerItem({
   const isFullyScheduled = progress >= 100;
   const hasScheduled = scheduledMinutes > 0;
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    // Set drag data for calendar drop zone
+    const dragData = {
+      type: 'task',
+      taskId: task.id,
+      taskName: task.name || 'Untitled Task',
+      totalDuration: task.total_duration ?? 0, // in hours
+      priority: task.priority,
+      listId: task.list_id,
+    };
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.effectAllowed = 'copy';
+
+    // Add a custom drag image (optional enhancement)
+    const dragElement = e.currentTarget;
+    dragElement.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    // Reset opacity after drag
+    e.currentTarget.style.opacity = '1';
+  };
+
   return (
     <div
+      draggable={!isFullyScheduled}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       className={cn(
         'group rounded-md border p-2.5 transition-colors',
         isFullyScheduled
           ? 'border-dynamic-green/30 bg-dynamic-green/5'
-          : 'border-border hover:border-primary/50 hover:bg-accent/50'
+          : 'cursor-grab border-border hover:border-primary/50 hover:bg-accent/50 active:cursor-grabbing'
       )}
     >
       <div className="flex items-start justify-between gap-2">

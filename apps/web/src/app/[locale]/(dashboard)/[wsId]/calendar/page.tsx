@@ -1,11 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import CalendarClientPage from './client';
+import TasksSidebar from './components/tasks-sidebar';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -22,7 +24,7 @@ interface PageProps {
 export default async function CalendarPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId }) => {
+      {async ({ workspace, wsId, locale }) => {
         const { withoutPermission } = await getPermissions({ wsId });
 
         const supabase = await createClient();
@@ -60,22 +62,30 @@ export default async function CalendarPage({ params }: PageProps) {
         // Check if user has valid Tuturuuu email for Smart Schedule feature
         const hasValidTuturuuuEmail = isValidTuturuuuEmail(user?.email);
 
+        const isPersonalWorkspace = workspace.id === user?.id;
+
         return (
-          <CalendarSyncProvider
+          <TaskDialogWrapper
+            isPersonalWorkspace={isPersonalWorkspace}
             wsId={workspace.id}
-            experimentalGoogleToken={googleToken}
-            initialCalendarConnections={calendarConnections || []}
           >
-            {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
-            <div className="flex h-[calc(100vh-2rem)]">
-              <CalendarClientPage
-                experimentalGoogleToken={googleToken}
-                calendarConnections={calendarConnections || []}
-                workspace={workspace}
-                hasValidTuturuuuEmail={hasValidTuturuuuEmail}
-              />
-            </div>
-          </CalendarSyncProvider>
+            <CalendarSyncProvider
+              wsId={workspace.id}
+              experimentalGoogleToken={googleToken}
+              initialCalendarConnections={calendarConnections || []}
+            >
+              {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
+              <div className="flex h-[calc(100vh-2rem)]">
+                <CalendarClientPage
+                  experimentalGoogleToken={googleToken}
+                  calendarConnections={calendarConnections || []}
+                  workspace={workspace}
+                  hasValidTuturuuuEmail={hasValidTuturuuuEmail}
+                />
+                <TasksSidebar wsId={wsId} locale={locale} />
+              </div>
+            </CalendarSyncProvider>
+          </TaskDialogWrapper>
         );
       }}
     </WorkspaceWrapper>

@@ -1646,6 +1646,22 @@
     "sync-dashboard": "Sync Dashboard",
     "sync-history": "Sync History"
   },
+  "calendar-sidebar": {
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "tasks-tab": "Tasks",
+    "habits-tab": "Habits",
+    "schedule-tab": "Schedule",
+    "no-tasks": "No tasks assigned",
+    "priority-low": "Low Priority",
+    "priority-normal": "Normal Priority",
+    "priority-high": "High Priority",
+    "priority-critical": "Critical Priority",
+    "ready": "Ready",
+    "search-tasks": "Search tasks...",
+    "untitled-task": "Untitled task",
+    "due": "Due"
+  },
   "workspace-finance-tabs": {
     "overview": "Overview",
     "wallets": "Wallets",

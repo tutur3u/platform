@@ -131,9 +131,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Stable drag event handlers using refs
   const handleDragStart = useCallback(
     (e: React.MouseEvent, eventSpan: EventSpan) => {
-      // Don't allow dragging locked events
-      if (eventSpan.event.locked) return;
-
       // Don't allow dragging if there are no visible dates or only one date
       if (visibleDates.length <= 1) return;
 
@@ -549,7 +546,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
-    if (eventSpan.event.locked) return;
     if (visibleDates.length <= 1) return;
     e.preventDefault();
     e.stopPropagation();
@@ -584,7 +580,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   };
 
   const handleEventTouchStart = (e: React.TouchEvent, eventSpan: EventSpan) => {
-    if (eventSpan.event.locked) return;
     if (visibleDates.length <= 1) return;
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
@@ -800,13 +795,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               key={`spanning-event-${event.id}`}
               className={cn(
                 'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold text-xs transition-all duration-200',
-                // Cursor changes based on locked state and drag state
-                // Locked events are clickable but not draggable
-                event.locked
-                  ? 'cursor-pointer'
-                  : dragState.isDragging
-                    ? 'cursor-grabbing'
-                    : 'cursor-grab hover:cursor-grab',
+                // Cursor changes based on drag state
+                dragState.isDragging
+                  ? 'cursor-grabbing'
+                  : 'cursor-grab hover:cursor-grab',
                 // Visual feedback for dragging
                 isDraggedEvent && 'scale-95 opacity-30',
                 // Normal styling

@@ -4,6 +4,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HOUR_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';
@@ -123,9 +124,11 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     addEmptyEventWithDuration,
     isDragging,
     setIsDragging,
+    scheduleTaskAsEvent,
   } = useCalendar();
   const { settings } = useCalendarSettings();
   const [isHovering, setIsHovering] = useState(false);
+  const [isDropTarget, setIsDropTarget] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{
@@ -183,6 +186,80 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
     return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
   };
+
+  // --- HTML5 Drag-and-Drop handlers for task scheduling ---
+  const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('application/json')) {
+      setIsDropTarget(true);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    // Only reset if we're actually leaving the cell (not entering a child)
+    if (
+      !cellRef.current?.contains(e.relatedTarget as Node) ||
+      e.relatedTarget === null
+    ) {
+      setIsDropTarget(false);
+    }
+  }, []);
+
+  const handleTaskDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDropTarget(false);
+
+      try {
+        const jsonData = e.dataTransfer.getData('application/json');
+        if (!jsonData) return;
+
+        const data = JSON.parse(jsonData);
+        if (data.type !== 'task') return;
+
+        // Calculate time from mouse position within the cell
+        if (!cellRef.current) return;
+        const rect = cellRef.current.getBoundingClientRect();
+        const relativeY = e.clientY - rect.top;
+        const minuteOffset = Math.round((relativeY / HOUR_HEIGHT) * 60);
+        // Snap to 15-minute intervals
+        const snappedMinutes = Math.round(minuteOffset / 15) * 15;
+
+        const startAt = getCellDate(hour, snappedMinutes);
+
+        // Calculate duration based on user requirements:
+        // Use task's total_duration if ≤1 hour, otherwise 1 hour
+        // Round to 15-minute multiples
+        const totalDurationHours = data.totalDuration || 0;
+        let durationMinutes: number;
+
+        if (totalDurationHours <= 0) {
+          durationMinutes = 60; // Default 1 hour
+        } else {
+          const totalMinutes = totalDurationHours * 60;
+          // Cap at 1 hour if total duration exceeds it
+          const cappedMinutes = Math.min(totalMinutes, 60);
+          // Round to 15-minute multiples
+          durationMinutes = Math.ceil(cappedMinutes / 15) * 15;
+        }
+
+        const endAt = new Date(startAt.getTime() + durationMinutes * 60000);
+
+        // Schedule the task as a calendar event
+        if (scheduleTaskAsEvent) {
+          await scheduleTaskAsEvent(data.taskId, startAt, endAt);
+        }
+      } catch (err) {
+        console.error('Failed to drop task:', err);
+      }
+    },
+    [hour, getCellDate, scheduleTaskAsEvent]
+  );
 
   const handleCreateEvent = (midHour?: boolean) => {
     // Always use timezone-aware date construction
@@ -700,7 +777,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       className={cn(
         'calendar-cell relative transition-colors',
         hour !== 0 && 'border-border/30 border-t',
-        isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
+        isHovering ? 'bg-muted/20' : 'hover:bg-muted/10',
+        isDropTarget && 'ring-2 ring-primary ring-inset bg-primary/10'
       )}
       style={{
         height: `${HOUR_HEIGHT}px`,
@@ -710,6 +788,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       }}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={handleCellMouseLeave}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleTaskDrop}
       data-hour={hour}
       data-date={date}
     >
