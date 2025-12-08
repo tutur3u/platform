@@ -5,6 +5,8 @@
  * to prevent brute force attacks and enumeration.
  */
 
+import type { SupabaseClient } from '@tuturuuu/supabase';
+import type { Database, Json } from '@tuturuuu/types';
 import { createHash } from 'crypto';
 
 import {
@@ -204,12 +206,12 @@ async function deleteKeys(...keys: string[]): Promise<void> {
 /**
  * Create Supabase admin client for database operations
  */
-async function getSupabaseAdmin() {
+async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
   try {
     const { createAdminClient } = await import(
       '@tuturuuu/supabase/next/server'
     );
-    return await createAdminClient();
+    return (await createAdminClient()) as SupabaseClient<Database>;
   } catch (error) {
     console.error(
       '[Abuse Protection] Failed to create Supabase client:',
@@ -263,6 +265,9 @@ export async function isIPBlocked(
     }
 
     const block = Array.isArray(data) ? data[0] : data;
+    if (!block) {
+      return null;
+    }
     const blockInfo: BlockInfo = {
       id: block.id,
       blockLevel: block.block_level,
@@ -344,13 +349,15 @@ export async function blockIP(
     // Insert block record
     const { data: blockRecord, error } = await sbAdmin
       .from('blocked_ips')
-      .insert({
-        ip_address: ipAddress,
-        reason,
-        block_level: newLevel,
-        expires_at: expiresAt.toISOString(),
-        metadata: metadata || {},
-      })
+      .insert([
+        {
+          ip_address: ipAddress,
+          reason,
+          block_level: newLevel,
+          expires_at: expiresAt.toISOString(),
+          metadata: (metadata || {}) as Json,
+        },
+      ])
       .select('id')
       .single();
 
@@ -448,15 +455,17 @@ export async function logAbuseEvent(
     const sbAdmin = await getSupabaseAdmin();
     if (!sbAdmin) return;
 
-    await sbAdmin.from('abuse_events').insert({
-      ip_address: ipAddress,
-      event_type: eventType,
-      email_hash: options?.email ? hashEmail(options.email) : null,
-      user_agent: options?.userAgent?.substring(0, 500),
-      endpoint: options?.endpoint,
-      success: options?.success ?? false,
-      metadata: options?.metadata || {},
-    });
+    await sbAdmin.from('abuse_events').insert([
+      {
+        ip_address: ipAddress,
+        event_type: eventType,
+        email_hash: options?.email ? hashEmail(options.email) : null,
+        user_agent: options?.userAgent?.substring(0, 500),
+        endpoint: options?.endpoint,
+        success: options?.success ?? false,
+        metadata: (options?.metadata || {}) as Json,
+      },
+    ]);
   } catch (error) {
     console.error('[Abuse Protection] Error logging event:', error);
   }

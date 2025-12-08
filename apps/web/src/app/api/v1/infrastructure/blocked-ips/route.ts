@@ -8,7 +8,10 @@ import {
   WINDOW_MS,
   unblockIP,
 } from '@tuturuuu/utils/abuse-protection';
-import type { AbuseEventType } from '@tuturuuu/utils/abuse-protection';
+import type {
+  AbuseEventType,
+  IPBlockStatus,
+} from '@tuturuuu/utils/abuse-protection';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -77,7 +80,7 @@ export async function GET(req: Request) {
 
   // Apply status filter
   if (status !== 'all') {
-    query = query.eq('status', status);
+    query = query.eq('status', status as IPBlockStatus);
   }
 
   // Apply IP filter

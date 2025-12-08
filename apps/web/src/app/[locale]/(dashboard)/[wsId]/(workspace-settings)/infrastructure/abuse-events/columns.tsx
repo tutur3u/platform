@@ -6,15 +6,25 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import { Badge } from '@tuturuuu/ui/badge';
 import moment from 'moment';
 
+export type AbuseEventType =
+  | 'otp_send'
+  | 'otp_verify_failed'
+  | 'mfa_challenge'
+  | 'mfa_verify_failed'
+  | 'reauth_send'
+  | 'reauth_verify_failed'
+  | 'password_login_failed'
+  | 'manual';
+
 export interface AbuseEventEntry {
   id: string;
   ip_address: string;
-  event_type: string;
-  email_hash?: string | null;
-  user_agent?: string | null;
-  endpoint?: string | null;
+  event_type: AbuseEventType;
+  email_hash: string | null;
+  user_agent: string | null;
+  endpoint: string | null;
   success: boolean;
-  metadata: Record<string, unknown>;
+  metadata: unknown;
   created_at: string;
 }
 
@@ -214,10 +224,13 @@ export const getAbuseEventsColumns = (
       />
     ),
     cell: ({ row }) => {
-      const metadata = row.getValue<Record<string, unknown>>('metadata');
+      const metadata = row.getValue('metadata') as Record<
+        string,
+        unknown
+      > | null;
       return (
         <div className="max-w-32 truncate font-mono text-xs text-muted-foreground">
-          {Object.keys(metadata || {}).length > 0
+          {metadata && Object.keys(metadata).length > 0
             ? JSON.stringify(metadata)
             : '-'}
         </div>

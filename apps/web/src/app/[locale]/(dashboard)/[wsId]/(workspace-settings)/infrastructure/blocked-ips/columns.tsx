@@ -7,21 +7,33 @@ import { Badge } from '@tuturuuu/ui/badge';
 import moment from 'moment';
 import { BlockedIPRowActions } from './row-actions';
 
+export type AbuseEventType =
+  | 'otp_send'
+  | 'otp_verify_failed'
+  | 'mfa_challenge'
+  | 'mfa_verify_failed'
+  | 'reauth_send'
+  | 'reauth_verify_failed'
+  | 'password_login_failed'
+  | 'manual';
+
+export type IPBlockStatus = 'active' | 'expired' | 'manually_unblocked';
+
 export interface BlockedIPEntry {
   id: string;
   ip_address: string;
-  reason: string;
+  reason: AbuseEventType;
   block_level: number;
-  status: 'active' | 'expired' | 'manually_unblocked';
+  status: IPBlockStatus;
   blocked_at: string;
   expires_at: string;
-  unblocked_at?: string | null;
-  unblocked_by?: string | null;
-  unblock_reason?: string | null;
-  metadata: Record<string, unknown>;
+  unblocked_at: string | null;
+  unblocked_by: string | null;
+  unblock_reason: string | null;
+  metadata: unknown;
   created_at: string;
   updated_at: string;
-  unblocked_by_user?: {
+  unblocked_by_user: {
     id: string;
     display_name: string | null;
   } | null;
@@ -227,10 +239,13 @@ export const getBlockedIPsColumns = (
       />
     ),
     cell: ({ row }) => {
-      const metadata = row.getValue<Record<string, unknown>>('metadata');
+      const metadata = row.getValue('metadata') as Record<
+        string,
+        unknown
+      > | null;
       return (
         <div className="max-w-32 truncate font-mono text-xs text-muted-foreground">
-          {Object.keys(metadata || {}).length > 0
+          {metadata && Object.keys(metadata).length > 0
             ? JSON.stringify(metadata)
             : '-'}
         </div>

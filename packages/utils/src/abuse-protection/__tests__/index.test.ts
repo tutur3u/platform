@@ -273,13 +273,8 @@ describe('abuse-protection', () => {
 });
 
 describe('abuse-protection types', () => {
-  it('should export AbuseEventType', async () => {
-    const { AbuseEventType } = await import('../types.ts');
-    // Type exists (compile-time check, runtime is undefined for types)
-    expect(true).toBe(true);
-  });
-
   it('should have all expected abuse event types as valid strings', () => {
+    // These are the valid AbuseEventType values as defined in types.ts
     const validTypes = [
       'otp_send',
       'otp_verify_failed',
@@ -288,6 +283,7 @@ describe('abuse-protection types', () => {
       'reauth_send',
       'reauth_verify_failed',
       'password_login_failed',
+      'manual',
     ];
     // Just verify these are valid string values
     validTypes.forEach((type) => {
