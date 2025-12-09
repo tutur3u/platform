@@ -1,7 +1,6 @@
 {
   "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@tuturuuu/apis/*": ["./src/*"]
     },

@@ -363,8 +363,8 @@ describe('Streaming utilities', () => {
 
     it('should include parsing_error step', () => {
       expect(STEP_CONFIG.parsing_error).toBeDefined();
-      expect(STEP_CONFIG.parsing_error.label).toBe('Communication Issue');
-      expect(STEP_CONFIG.parsing_error.category).toBe('validation');
+      expect(STEP_CONFIG.parsing_error!.label).toBe('Communication Issue');
+      expect(STEP_CONFIG.parsing_error!.category).toBe('validation');
     });
 
     it('should have unique order values', () => {

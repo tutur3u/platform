@@ -35,7 +35,7 @@ export default function SimpleTimeTrackerContent({
   const t = useTranslations('time-tracker');
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
-    queryKey: ['running-time-session', wsId],
+    queryKey: ['running-time-session', wsId, currentUser?.id],
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
@@ -47,6 +47,32 @@ export default function SimpleTimeTrackerContent({
     refetchInterval: 30000, // 30 seconds
     initialData: initialData.runningSession,
     enabled: !!currentUser,
+  });
+
+  // Use React Query for stats to enable real-time updates
+  const { data: statsFromQuery } = useQuery({
+    queryKey: ['time-tracker-stats', wsId, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser)
+        return { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 };
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats&userId=${currentUser.id}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch time tracking stats');
+      const data = await response.json();
+      return (
+        data.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 }
+      );
+    },
+    refetchInterval: 60000, // 1 minute (less frequent than running session)
+    initialData: initialData.stats || {
+      todayTime: 0,
+      weekTime: 0,
+      monthTime: 0,
+      streak: 0,
+    },
+    enabled: !!currentUser,
+    staleTime: 30000, // 30 seconds
   });
 
   const [currentSession, setCurrentSession] =
@@ -143,8 +169,8 @@ export default function SimpleTimeTrackerContent({
     }
   }, [isRunning, currentSession]);
 
-  // Calculate stats
-  const todayStats = initialData.stats || {
+  // Calculate stats - use dynamic data from query for real-time updates
+  const todayStats = statsFromQuery || {
     todayTime: 0,
     weekTime: 0,
     monthTime: 0,
@@ -175,6 +201,7 @@ export default function SimpleTimeTrackerContent({
         categories={categories}
         tasks={tasks}
         apiCall={apiCall}
+        currentUserId={currentUser?.id || undefined}
       />
 
       {/* Quick Stats Cards */}

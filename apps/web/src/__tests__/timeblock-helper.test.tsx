@@ -331,8 +331,8 @@ describe('durationToTimeblocks', () => {
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: result[0].start_time,
-        end_time: result[0].end_time,
+        start_time: result[0]!.start_time,
+        end_time: result[0]!.end_time,
         tentative: false,
       },
     ];
@@ -354,8 +354,8 @@ describe('durationToTimeblocks', () => {
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: result[0].start_time,
-        end_time: result[0].end_time,
+        start_time: result[0]!.start_time,
+        end_time: result[0]!.end_time,
         tentative: false,
       },
     ];
@@ -548,8 +548,8 @@ describe('addTimeblocks', () => {
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: result[0].start_time,
-        end_time: result[0].end_time,
+        start_time: result[0]!.start_time,
+        end_time: result[0]!.end_time,
         tentative: false,
       },
     ];
@@ -568,8 +568,8 @@ describe('addTimeblocks', () => {
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: result[0].start_time,
-        end_time: result[0].end_time,
+        start_time: result[0]!.start_time,
+        end_time: result[0]!.end_time,
         tentative: false,
       },
     ];
@@ -786,12 +786,12 @@ describe('removeTimeblocks', () => {
       {
         date: '2024-03-15',
         start_time: '08:00:00+00:00',
-        end_time: result[0].end_time,
+        end_time: result[0]!.end_time,
         tentative: false,
       },
       {
         date: '2024-03-15',
-        start_time: result[1].start_time,
+        start_time: result[1]!.start_time,
         end_time: '09:00:00+00:00',
         tentative: false,
       },

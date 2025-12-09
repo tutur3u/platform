@@ -46,16 +46,17 @@ vi.mock('../src/unified-schedule-helper', () => ({
   unifiedScheduleHelper: vi.fn(),
 }));
 
-// Import after mock setup
+// Import after mock setup - some imports are only used to trigger side effects
+// @ts-expect-error - imported for mock setup
 import { task, schedules } from '@trigger.dev/sdk/v3';
 import { getWorkspacesForSync } from '../src/google-calendar-sync';
 import { unifiedScheduleHelper } from '../src/unified-schedule-helper';
 
-// Import module to trigger task registration
+// Import module to trigger task registration (some variables may appear unused)
 import {
   unifiedScheduleTask,
-  unifiedScheduleTrigger,
-  unifiedScheduleManualTrigger,
+  unifiedScheduleTrigger as _unifiedScheduleTrigger,
+  unifiedScheduleManualTrigger as _unifiedScheduleManualTrigger,
 } from '../src/unified-schedule';
 
 describe('Unified Schedule', () => {
@@ -85,7 +86,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['unified-schedule-task'];
-      const result = await runFn({
+      const result = await runFn!({
         ws_id: 'test-ws-id',
         windowDays: 14,
         forceReschedule: true,
@@ -104,7 +105,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['unified-schedule-task'];
-      const result = await runFn({ ws_id: 'test-ws-id' });
+      const result = await runFn!({ ws_id: 'test-ws-id' });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Schedule error');
@@ -114,7 +115,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockRejectedValue(new Error('API error'));
 
       const runFn = taskRunFunctions['unified-schedule-task'];
-      const result = await runFn({ ws_id: 'test-ws-id' });
+      const result = await runFn!({ ws_id: 'test-ws-id' });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('API error');
@@ -125,7 +126,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockRejectedValue({ code: 'ERROR' });
 
       const runFn = taskRunFunctions['unified-schedule-task'];
-      const result = await runFn({ ws_id: 'test-ws-id' });
+      const result = await runFn!({ ws_id: 'test-ws-id' });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Unknown error');
@@ -136,7 +137,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['unified-schedule-task'];
-      await runFn({ ws_id: 'test-ws-id' });
+      await runFn!({ ws_id: 'test-ws-id' });
 
       expect(unifiedScheduleHelper).toHaveBeenCalledWith('test-ws-id', {
         windowDays: undefined,
@@ -154,7 +155,7 @@ describe('Unified Schedule', () => {
       unifiedScheduleTask.trigger = mockTrigger;
 
       const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      const result = await runFn();
+      const result = await runFn!();
 
       expect(getWorkspacesForSync).toHaveBeenCalled();
       expect(mockTrigger).toHaveBeenCalledTimes(2);
@@ -171,7 +172,7 @@ describe('Unified Schedule', () => {
       unifiedScheduleTask.trigger = mockTrigger;
 
       const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      await runFn();
+      await runFn!();
 
       expect(mockTrigger).toHaveBeenCalledWith(
         {
@@ -187,7 +188,7 @@ describe('Unified Schedule', () => {
       (getWorkspacesForSync as Mock).mockResolvedValue([]);
 
       const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      const result = await runFn();
+      const result = await runFn!();
 
       expect(result.totalWorkspaces).toBe(0);
       expect(result.triggered).toBe(0);
@@ -206,7 +207,7 @@ describe('Unified Schedule', () => {
       unifiedScheduleTask.trigger = mockTrigger;
 
       const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      const result = await runFn();
+      const result = await runFn!();
 
       expect(result.totalWorkspaces).toBe(2);
       expect(result.triggered).toBe(1);
@@ -218,7 +219,7 @@ describe('Unified Schedule', () => {
 
       const runFn = scheduledTaskRunFunctions['unified-schedule'];
 
-      await expect(runFn()).rejects.toThrow('DB error');
+      await expect(runFn!()).rejects.toThrow('DB error');
     });
   });
 
@@ -231,7 +232,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['unified-schedule-manual'];
-      const result = await runFn({
+      const result = await runFn!({
         ws_id: 'test-ws',
         windowDays: 7,
         forceReschedule: false,
@@ -249,7 +250,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['unified-schedule-manual'];
-      await runFn({ ws_id: 'test-ws' });
+      await runFn!({ ws_id: 'test-ws' });
 
       expect(unifiedScheduleHelper).toHaveBeenCalledWith('test-ws', {
         windowDays: 30,
@@ -262,7 +263,7 @@ describe('Unified Schedule', () => {
       (unifiedScheduleHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['unified-schedule-manual'];
-      await runFn({ ws_id: 'test-ws' });
+      await runFn!({ ws_id: 'test-ws' });
 
       expect(consoleSpy.log).toHaveBeenCalledWith(
         '[test-ws] Manual unified schedule triggered'

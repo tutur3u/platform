@@ -15,6 +15,8 @@ interface StatsOverviewProps {
   period: 'day' | 'week' | 'month';
   groupedSessions: Array<{
     totalDuration: number;
+    /** Duration that falls within the specific period (properly split for overnight sessions) */
+    periodDuration?: number;
     sessions: Array<any>;
   }>;
 }
@@ -168,7 +170,7 @@ export default function StatsOverview({
               ? formatDuration(
                   stats.total_sessions > 0
                     ? groupedSessions.reduce(
-                        (sum, s) => sum + s.totalDuration,
+                        (sum, s) => sum + (s.periodDuration ?? s.totalDuration),
                         0
                       ) / stats.total_sessions
                     : 0

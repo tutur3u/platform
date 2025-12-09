@@ -291,3 +291,239 @@ export const getDescriptionMetadata = (
 
   return metadata;
 };
+
+export interface ExtractTextOptions {
+  /** Include unique identifiers in placeholders for media nodes */
+  includeIdentifiers?: boolean;
+  /** Maximum length for identifiers (truncate with ...) */
+  maxIdentifierLength?: number;
+}
+
+/**
+ * Extract a filename from a URL or path
+ */
+function extractFilename(urlOrPath: string, maxLength = 30): string {
+  try {
+    // Try to parse as URL first
+    const url = new URL(urlOrPath);
+    const pathname = url.pathname;
+    const filename = pathname.split('/').pop() || pathname;
+    const decoded = decodeURIComponent(filename);
+    return decoded.length > maxLength
+      ? decoded.slice(0, maxLength - 3) + '...'
+      : decoded;
+  } catch {
+    // Not a valid URL, treat as path
+    const filename = urlOrPath.split('/').pop() || urlOrPath;
+    return filename.length > maxLength
+      ? filename.slice(0, maxLength - 3) + '...'
+      : filename;
+  }
+}
+
+/**
+ * Enhanced version of getDescriptionText that includes unique identifiers
+ * for media nodes, enabling text-based diff to detect image/video changes.
+ *
+ * Example outputs:
+ * - Image: "[Image: cat-photo.png]" instead of "[Image]"
+ * - Video: "[Video: intro.mp4]" instead of "[Video]"
+ * - YouTube: "[YouTube: abc123]" instead of "[YouTube Video]"
+ */
+export const getDescriptionTextWithIdentifiers = (
+  description?: string | Json,
+  options?: ExtractTextOptions
+): string => {
+  if (!description) return '';
+
+  const maxLen = options?.maxIdentifierLength ?? 30;
+
+  try {
+    const parsed =
+      typeof description === 'string' ? JSON.parse(description) : description;
+
+    const extractText = (
+      node: JSONContent,
+      depth = 0,
+      listCounter?: number
+    ): string => {
+      if (node.type === 'text') {
+        return node.text || '';
+      }
+
+      if (node.type === 'hardBreak') {
+        return '\n';
+      }
+
+      if (node.type === 'horizontalRule') {
+        return '\n---\n';
+      }
+
+      if (node.type === 'paragraph') {
+        const text =
+          node.content?.map((child) => extractText(child, depth)).join('') ||
+          '';
+        return `${text}\n`;
+      }
+
+      if (node.type === 'heading') {
+        const text =
+          node.content?.map((child) => extractText(child, depth)).join('') ||
+          '';
+        const level = node.attrs?.level || 1;
+        const prefix = '#'.repeat(level);
+        return `${prefix} ${text}\n`;
+      }
+
+      if (node.type === 'blockquote') {
+        const text =
+          node.content
+            ?.map((child) => extractText(child, depth + 1))
+            .join('') || '';
+        return `${text
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => `> ${line}`)
+          .join('\n')}\n`;
+      }
+
+      if (node.type === 'codeBlock') {
+        const text =
+          node.content?.map((child) => extractText(child, depth)).join('') ||
+          '';
+        const language = node.attrs?.language || '';
+        return `\`\`\`${language}\n${text}\`\`\`\n`;
+      }
+
+      if (node.type === 'bulletList') {
+        const items =
+          node.content?.map((child) => extractText(child, depth)).join('') ||
+          '';
+        return `${items}\n`;
+      }
+
+      if (node.type === 'orderedList') {
+        let counter = node.attrs?.start || 1;
+        const items =
+          node.content
+            ?.map((child) => {
+              const text = extractText(child, depth, counter);
+              counter++;
+              return text;
+            })
+            .join('') || '';
+        return `${items}\n`;
+      }
+
+      if (node.type === 'listItem') {
+        const text =
+          node.content
+            ?.map((child) => extractText(child, depth + 1))
+            .join('')
+            .trim() || '';
+        const indent = '  '.repeat(depth);
+        const prefix =
+          typeof listCounter === 'number' ? `${listCounter}.` : '•';
+        return `${indent}${prefix} ${text}\n`;
+      }
+
+      if (node.type === 'taskList') {
+        const items =
+          node.content?.map((child) => extractText(child, depth)).join('') ||
+          '';
+        return `${items}\n`;
+      }
+
+      if (node.type === 'taskItem') {
+        const text =
+          node.content
+            ?.map((child) => extractText(child, depth + 1))
+            .join('')
+            .trim() || '';
+        const indent = '  '.repeat(depth);
+        const checkbox = node.attrs?.checked ? '[x]' : '[ ]';
+        return `${indent}${checkbox} ${text}\n`;
+      }
+
+      if (node.type === 'table') {
+        const rows =
+          node.content?.map((child) => extractText(child, depth)).join('') ||
+          '';
+        return `\n${rows}\n`;
+      }
+
+      if (node.type === 'tableRow') {
+        const cells =
+          node.content?.map((child) => extractText(child, depth)).join(' | ') ||
+          '';
+        return `| ${cells} |\n`;
+      }
+
+      if (node.type === 'tableCell' || node.type === 'tableHeader') {
+        const text =
+          node.content
+            ?.map((child) => extractText(child, depth))
+            .join('')
+            .trim() || '';
+        return text;
+      }
+
+      // Media nodes with unique identifiers
+      if (node.type === 'image' || node.type === 'imageResize') {
+        const src = node.attrs?.src;
+        const alt = node.attrs?.alt;
+        if (src) {
+          const filename = extractFilename(src, maxLen);
+          return alt ? `[Image: ${alt} (${filename})]` : `[Image: ${filename}]`;
+        }
+        return alt ? `[Image: ${alt}]` : '[Image]';
+      }
+
+      if (node.type === 'video') {
+        const src = node.attrs?.src;
+        if (src) {
+          const filename = extractFilename(src, maxLen);
+          return `[Video: ${filename}]`;
+        }
+        return '[Video]';
+      }
+
+      if (node.type === 'youtube') {
+        const src = node.attrs?.src || node.attrs?.videoId;
+        if (src) {
+          try {
+            const url = new URL(src);
+            const videoId =
+              url.searchParams.get('v') || url.pathname.split('/').pop();
+            return videoId ? `[YouTube: ${videoId}]` : '[YouTube Video]';
+          } catch {
+            const id = src.length > 20 ? src.slice(0, 17) + '...' : src;
+            return `[YouTube: ${id}]`;
+          }
+        }
+        return '[YouTube Video]';
+      }
+
+      if (node.type === 'mention') {
+        const label = node.attrs?.label || node.attrs?.id || 'mention';
+        const id = node.attrs?.id;
+        // Include ID in identifier for unique tracking
+        if (id && id !== label) {
+          return `@${label}#${id.slice(0, 8)}`;
+        }
+        return `@${label}`;
+      }
+
+      if (node.content) {
+        return node.content.map((child) => extractText(child, depth)).join('');
+      }
+
+      return '';
+    };
+
+    const result = extractText(parsed).trim();
+    return result.replace(/\n{3,}/g, '\n\n');
+  } catch {
+    return typeof description === 'string' ? description : String(description);
+  }
+};

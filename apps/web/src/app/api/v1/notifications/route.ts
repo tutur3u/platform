@@ -103,12 +103,15 @@ export async function GET(req: Request) {
       queryParams.data;
 
     // Build query - DO NOT add order yet, apply it after all filters
-    // Include workspace name via join
+    // Include workspace name and actor info via join
     // NOTE: We rely entirely on RLS policies for access control
     // RLS handles: user_id matches, email matches, workspace membership, etc.
     let query = supabase
       .from('notifications')
-      .select('*, workspace:workspaces(name)', { count: 'exact' });
+      .select(
+        '*, workspace:workspaces(name), actor:users!notifications_created_by_fkey(id, display_name, avatar_url)',
+        { count: 'exact' }
+      );
 
     // Filter by workspace if specifically requested
     if (wsId) {
@@ -155,13 +158,20 @@ export async function GET(req: Request) {
       );
     }
 
-    // Transform notifications to include workspace_name in data
+    // Transform notifications to include workspace_name and actor info
     const transformedNotifications = (notifications || []).map((n: any) => ({
       ...n,
       data: {
         ...n.data,
         workspace_name: n.workspace?.name || n.data?.workspace_name,
       },
+      actor: n.actor
+        ? {
+            id: n.actor.id,
+            display_name: n.actor.display_name,
+            avatar_url: n.actor.avatar_url,
+          }
+        : null,
       workspace: undefined, // Remove the joined workspace object
     }));
 

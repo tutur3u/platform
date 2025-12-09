@@ -172,37 +172,50 @@ export function useTaskLabelManagement({
 
     try {
       const supabase = createClient();
+      let successCount = 0;
+
       if (active) {
-        // Remove label only from tasks that have it
-        if (tasksToRemoveFrom.length > 0) {
+        // Remove label one by one to ensure triggers fire for each task
+        for (const taskId of tasksToRemoveFrom) {
           const { error } = await supabase
             .from('task_labels')
             .delete()
-            .in('task_id', tasksToRemoveFrom)
+            .eq('task_id', taskId)
             .eq('label_id', labelId);
-          if (error) throw error;
+          if (error) {
+            console.error(`Failed to remove label from task ${taskId}:`, error);
+          } else {
+            successCount++;
+          }
         }
       } else {
-        // Add label to selected tasks that don't already have it
-        if (tasksNeedingLabel.length > 0) {
-          const rows = tasksNeedingLabel.map((taskId) => ({
+        // Add label one by one to ensure triggers fire for each task
+        for (const taskId of tasksNeedingLabel) {
+          const { error } = await supabase.from('task_labels').insert({
             task_id: taskId,
             label_id: labelId,
-          }));
-          const { error } = await supabase.from('task_labels').insert(rows);
+          });
 
           // Ignore duplicate key errors (code '23505' for unique_violation)
           if (error && error.code !== '23505') {
-            throw error;
+            console.error(`Failed to add label to task ${taskId}:`, error);
+          } else {
+            successCount++;
           }
         }
       }
 
-      const taskCount = active
+      // If no operations succeeded, throw to trigger rollback
+      const targetCount = active
         ? tasksToRemoveFrom.length
         : tasksNeedingLabel.length;
+      if (targetCount > 0 && successCount === 0) {
+        throw new Error('Failed to update any tasks');
+      }
+
       toast.success(active ? 'Label removed' : 'Label added', {
-        description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
+        description:
+          successCount > 1 ? `${successCount} tasks updated` : undefined,
       });
 
       // Don't auto-clear selection - let user manually clear with "Clear" button

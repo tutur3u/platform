@@ -68,7 +68,7 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsgo",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
@@ -76,7 +76,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.86.0",
+    "@supabase/supabase-js": "^2.86.2",
     "@tuturuuu/types": "workspace:*",
     "next": "^16.0.1",
     "react": "^19.2.0",
@@ -87,18 +87,18 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
-    "next": "^16.0.6",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "next": "^16.0.7",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.15"
   },
   "peerDependencies": {
     "next": ">=15.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
-  "packageManager": "bun@1.3.3",
+  "packageManager": "bun@1.3.4",
   "engines": {
     "node": ">=18.0.0"
   }

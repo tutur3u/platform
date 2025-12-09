@@ -303,6 +303,13 @@ export type RecordingTranscript = Tables<'recording_transcripts'>;
 export type SupportInquiry = Tables<'support_inquiries'>;
 export type SupportType = Database['public']['Enums']['support_type'];
 export type Product = Database['public']['Enums']['product'];
+
+export type WorkspaceSubscription = Tables<'workspace_subscription'>;
+export type WorkspaceSubscriptionProduct =
+  Tables<'workspace_subscription_products'>;
+export type WorkspaceSubscriptionWithProduct = WorkspaceSubscription & {
+  workspace_subscription_products: WorkspaceSubscriptionProduct | null;
+};
 export type WorkspaceProductTier =
   Database['public']['Enums']['workspace_product_tier'];
 export type SubscriptionStatus =

@@ -34,24 +34,24 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 
 1. **Install dependencies:**
 
-    ```bash
-    bun i
-    ```
+   ```bash
+   bun i
+   ```
 
 2. **Start the Supabase local development environment:**
 
-    ```bash
-    bun sb:start
-    ```
+   ```bash
+   bun sb:start
+   ```
 
 3. **Create environment files:**
-    Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
+   Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
 
 4. **Start all applications in development mode:**
 
-    ```bash
-    bun dev
-    ```
+   ```bash
+   bun dev
+   ```
 
 ### Key Commands
 
@@ -59,6 +59,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - `bun dev`: Start all applications in development mode.
 - `bun build`: Build all applications.
 - `bun test`: Run tests.
+- `npx tsgo`: Type check with tsgo (~10x faster than tsc) - **RECOMMENDED for agents**.
 - `bun sb:start`: Start the local Supabase development environment.
 - `bun sb:stop`: Stop the local Supabase development environment.
 - `bun format-and-lint:fix`: Format and lint all files.
@@ -68,6 +69,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - **Package Management:** All packages are managed with `bun` workspaces.
 - **UI Components:** The `packages/ui` directory contains the shared UI component library. New components can be added using the `bun ui:add` command.
 - **Code Style:** The project uses Biome for linting and formatting. Use `bun format-and-lint:fix` to automatically fix any issues.
+- **Type Checking:** Use `tsgo` (`@typescript/native-preview`) instead of `tsc` for type checking. It is nearly **10x faster**. Agents CAN and SHOULD run `npx tsgo` for quick type feedback.
 - **Testing:** Tests are written with Vitest. Run all tests with `bun test`. **CRITICAL**: Always add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test` to verify functionality.
 - **Commits:** Commits should follow the Conventional Commits specification.
 - **Environment Variables:** Global environment variables are defined in `turbo.json`. Each application can also have its own `.env.local` file for local development.
@@ -110,13 +112,13 @@ This section summarizes the key operating procedures for AI agents working in th
 2. **Server Action** - for mutations returning updated state to RSC.
 3. **RSC + Client hydration** - when background refresh is needed.
 4. **TanStack Query client-side (REQUIRED)** - for ALL client-side data fetching including:
-    - Interactive state and rapidly changing data
-    - Mutations with optimistic UI updates
-    - Paginated or infinite lists
-    - Dependent queries (sequential client-side fetching)
-    - Shared client state across components
-    - Any API calls requiring caching, refetching, or state management
-    - Polling or periodic refresh scenarios
+   - Interactive state and rapidly changing data
+   - Mutations with optimistic UI updates
+   - Paginated or infinite lists
+   - Dependent queries (sequential client-side fetching)
+   - Shared client state across components
+   - Any API calls requiring caching, refetching, or state management
+   - Polling or periodic refresh scenarios
 5. **Realtime subscriptions** (Supabase channels) - only when live updates materially improve UX.
 
 **ABSOLUTELY FORBIDDEN PATTERNS (Code Will Be REJECTED):**
@@ -124,13 +126,15 @@ This section summarizes the key operating procedures for AI agents working in th
 ```typescript
 // ❌ NEVER EVER DO THIS - #1 VIOLATION
 useEffect(() => {
-  fetch('/api/data').then(r => r.json()).then(setData);
+  fetch("/api/data")
+    .then((r) => r.json())
+    .then(setData);
 }, []);
 
 // ❌ NEVER DO THIS EITHER
 useEffect(() => {
   async function fetchData() {
-    const response = await fetch('/api/data');
+    const response = await fetch("/api/data");
     const json = await response.json();
     setData(json);
   }
@@ -140,12 +144,14 @@ useEffect(() => {
 // ❌ NO MANUAL STATE MANAGEMENT FOR DATA FETCHING
 const [data, setData] = useState(null);
 const [loading, setLoading] = useState(false);
-useEffect(() => { /* fetch logic */ }, []);
+useEffect(() => {
+  /* fetch logic */
+}, []);
 
 // ✅ ONLY ACCEPTABLE PATTERN
 const { data, isLoading } = useQuery({
-  queryKey: ['data', dependency],
-  queryFn: () => fetch('/api/data').then(r => r.json())
+  queryKey: ["data", dependency],
+  queryFn: () => fetch("/api/data").then((r) => r.json()),
 });
 ```
 
@@ -166,6 +172,13 @@ const { data, isLoading } = useQuery({
 - Define mutations with proper error handling and cache updates
 - **If you encounter `useEffect` + fetch in existing code, REFACTOR it to React Query immediately**
 
+**Kanban Task Realtime Sync (CRITICAL):**
+
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+
+- ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
+- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+
 **ENFORCEMENT RULES:**
 
 1. **NEVER use `useEffect` for data fetching** - Zero tolerance, no exceptions
@@ -177,11 +190,11 @@ const { data, isLoading } = useQuery({
 
 - **Dependency Management:** Use `bun add <pkg> --workspace=@tuturuuu/<scope>` to add dependencies. Use `workspace:*` for internal packages.
 - **Database Migrations:**
-    1. Create a new migration with `bun sb:new`.
-    2. Edit the generated SQL file.
-    3. Ask the user to apply the migration (`bun sb:push`) and regenerate types (`bun sb:typegen`).
-    4. Incorporate the newly generated types from `packages/types` into your changes.
-    5. **Type Inference**: After user runs migrations + typegen, prefer importing types from `packages/types/src/db.ts` for convenient type aliases and extended types (e.g., `Workspace`, `WorkspaceTask`, `TaskProjectWithRelations`). Never attempt to infer types before migrations are applied.
+  1. Create a new migration with `bun sb:new`.
+  2. Edit the generated SQL file.
+  3. Ask the user to apply the migration (`bun sb:push`) and regenerate types (`bun sb:typegen`).
+  4. Incorporate the newly generated types from `packages/types` into your changes.
+  5. **Type Inference**: After user runs migrations + typegen, prefer importing types from `packages/types/src/db.ts` for convenient type aliases and extended types (e.g., `Workspace`, `WorkspaceTask`, `TaskProjectWithRelations`). Never attempt to infer types before migrations are applied.
 - **Adding API Routes:** Create new routes in `apps/<app>/src/app/api/...`. Use Supabase client wrappers for authentication and Zod for input validation.
 - **Navigation Updates (CRITICAL):** When adding new pages or routes, **ALWAYS** update the main navigation file (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx` for web app). Add routes to both the `aliases` array and `children` navigation items. Include proper icons, permission checks, and translation keys. **CRITICAL**: Ensure translation keys have entries in both `en.json` AND `vi.json`. Navigation updates are mandatory, not optional.
 - **Documentation:** When adding a new feature or changing an existing one, update the corresponding documentation in `apps/docs`. **Crucially, add any new page to `apps/docs/mint.json` to make it visible.**

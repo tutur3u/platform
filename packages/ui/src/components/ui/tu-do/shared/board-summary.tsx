@@ -14,9 +14,11 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format } from 'date-fns';
 import { type JSX, useMemo } from 'react';
 
@@ -32,6 +34,8 @@ export function BoardSummary({
   onToggleCollapsed,
 }: Props): JSX.Element {
   const { id: boardId } = board;
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ['tasks', boardId],
@@ -294,7 +298,7 @@ export function BoardSummary({
                   {nextDueTask.end_date
                     ? format(
                         new Date(nextDueTask.end_date),
-                        "MMM d, yyyy 'at' h:mm a"
+                        `MMM d, yyyy 'at' ${timePattern}`
                       )
                     : 'No date'}
                 </div>

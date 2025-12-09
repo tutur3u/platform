@@ -34,31 +34,12 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import type { GroupedSession } from '@/lib/time-tracking-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);
-
-interface GroupedSession {
-  title: string;
-  category: {
-    name: string;
-    color: string;
-  } | null;
-  sessions: Array<any>;
-  totalDuration: number;
-  firstStartTime: string;
-  lastEndTime: string | null;
-  status: 'active' | 'paused' | 'completed';
-  user: {
-    displayName: string | null;
-    avatarUrl: string | null;
-  };
-  period: string;
-  sessionCount?: number;
-  sessionTitles?: string[];
-}
 
 interface PaginationInfo {
   page: number;
@@ -459,20 +440,25 @@ export default function SessionsTable({
                     <div className="col-span-2">
                       <div className="space-y-2">
                         <div className="font-mono font-semibold text-dynamic-foreground">
-                          {formatDuration(session.totalDuration)}
+                          {formatDuration(
+                            session.periodDuration ?? session.totalDuration
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-16 rounded-full bg-dynamic-muted/20">
                             <div
                               className="h-1.5 rounded-full bg-linear-to-r from-dynamic-blue to-dynamic-purple transition-all duration-300"
                               style={{
-                                width: `${Math.min(100, (session.totalDuration / (8 * 3600)) * 100)}%`,
+                                width: `${Math.min(100, ((session.periodDuration ?? session.totalDuration) / (8 * 3600)) * 100)}%`,
                               }}
                             />
                           </div>
                           <span className="text-dynamic-muted text-xs">
                             {Math.round(
-                              (session.totalDuration / (8 * 3600)) * 100
+                              ((session.periodDuration ??
+                                session.totalDuration) /
+                                (8 * 3600)) *
+                                100
                             )}
                             %
                           </span>
@@ -480,7 +466,8 @@ export default function SessionsTable({
                         <p className="text-dynamic-muted text-xs">
                           {t('avg')}{' '}
                           {formatDuration(
-                            session.totalDuration / session.sessions.length
+                            (session.periodDuration ?? session.totalDuration) /
+                              session.sessions.length
                           )}
                         </p>
                       </div>

@@ -37,6 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import {
   HoverCard,
@@ -52,6 +53,7 @@ import {
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -132,6 +134,8 @@ function TaskCardInner({
 }: TaskCardProps) {
   const { wsId } = useParams();
   const queryClient = useQueryClient();
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
 
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -207,6 +211,7 @@ function TaskCardInner({
         return data || [];
       },
       enabled: !!boardConfig?.ws_id,
+      staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
     }
   );
 
@@ -239,7 +244,7 @@ function TaskCardInner({
       return fetchedMembers || [];
     },
     enabled: !!wsId && !isPersonalWorkspace,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes - members rarely change
   });
 
   // Use task relationships hook for managing parent/child/blocking/related tasks
@@ -282,6 +287,7 @@ function TaskCardInner({
     },
     enabled: !propAvailableLists, // Only fetch if not provided as prop
     initialData: propAvailableLists,
+    staleTime: 60 * 1000, // 1 minute - lists change less frequently
   });
 
   // Find the first list with 'done' or 'closed' status
@@ -315,6 +321,9 @@ function TaskCardInner({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Check if task is optimistically added (pending realtime confirmation)
+  const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
+
   const dragDisabled =
     isMobile ||
     dialogState.editDialogOpen ||
@@ -322,7 +331,24 @@ function TaskCardInner({
     dialogState.customDateDialogOpen ||
     dialogState.newLabelDialogOpen ||
     dialogState.newProjectDialogOpen ||
-    menuOpen;
+    menuOpen ||
+    isOptimistic; // Disable drag for optimistic tasks until confirmed
+
+  // Debug: log drag state for newly created task
+  if (task.name === 'new task') {
+    console.log('[TaskCard Debug]', {
+      taskId: task.id,
+      isMobile,
+      editDialogOpen: dialogState.editDialogOpen,
+      deleteDialogOpen: dialogState.deleteDialogOpen,
+      customDateDialogOpen: dialogState.customDateDialogOpen,
+      newLabelDialogOpen: dialogState.newLabelDialogOpen,
+      newProjectDialogOpen: dialogState.newProjectDialogOpen,
+      menuOpen,
+      isOptimistic,
+      RESULT_dragDisabled: dragDisabled,
+    });
+  }
 
   const { setNodeRef, attributes, listeners, transform, isDragging } =
     useSortable({
@@ -344,6 +370,8 @@ function TaskCardInner({
       : CSS.Transform.toString(transform),
     transition: 'none', // Always disable transitions - rely on optimistic updates
     height: 'var(--task-height)',
+    // Show reduced opacity for optimistic tasks (pending realtime confirmation)
+    opacity: isOptimistic ? 0.6 : undefined,
   };
 
   const now = new Date();
@@ -490,34 +518,43 @@ function TaskCardInner({
           taskData
         );
 
-        // Link existing labels to duplicated task
+        // Link existing labels one by one to ensure triggers fire
         if (sourceTask.labels && sourceTask.labels.length > 0) {
-          await supabase.from('task_labels').insert(
-            sourceTask.labels.map((label) => ({
+          for (const label of sourceTask.labels) {
+            const { error } = await supabase.from('task_labels').insert({
               task_id: newTask.id,
               label_id: label.id,
-            }))
-          );
+            });
+            if (error) {
+              console.error(`Failed to add label ${label.id}:`, error);
+            }
+          }
         }
 
-        // Link existing assignees to duplicated task
+        // Link existing assignees one by one to ensure triggers fire
         if (sourceTask.assignees && sourceTask.assignees.length > 0) {
-          await supabase.from('task_assignees').insert(
-            sourceTask.assignees.map((assignee) => ({
+          for (const assignee of sourceTask.assignees) {
+            const { error } = await supabase.from('task_assignees').insert({
               task_id: newTask.id,
               user_id: assignee.id,
-            }))
-          );
+            });
+            if (error) {
+              console.error(`Failed to add assignee ${assignee.id}:`, error);
+            }
+          }
         }
 
-        // Link existing projects to duplicated task
+        // Link existing projects one by one to ensure triggers fire
         if (sourceTask.projects && sourceTask.projects.length > 0) {
-          await supabase.from('task_project_tasks').insert(
-            sourceTask.projects.map((project) => ({
+          for (const project of sourceTask.projects) {
+            const { error } = await supabase.from('task_project_tasks').insert({
               task_id: newTask.id,
               project_id: project.id,
-            }))
-          );
+            });
+            if (error) {
+              console.error(`Failed to add project ${project.id}:`, error);
+            }
+          }
         }
 
         duplicatedTasks.push({
@@ -1379,7 +1416,7 @@ function TaskCardInner({
                     </Badge>
                   ) : (
                     <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                      {format(endDate, "MMM dd 'at' h:mm a")}
+                      {format(endDate, `MMM dd 'at' ${timePattern}`)}
                     </span>
                   )}
                 </div>
@@ -1407,7 +1444,10 @@ function TaskCardInner({
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                  {format(new Date(task.completed_at), "MMM dd 'at' h:mm a")}
+                  {format(
+                    new Date(task.completed_at),
+                    `MMM dd 'at' ${timePattern}`
+                  )}
                 </span>
               </div>
             )}
@@ -1426,7 +1466,10 @@ function TaskCardInner({
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                  {format(new Date(task.closed_at), "MMM dd 'at' h:mm a")}
+                  {format(
+                    new Date(task.closed_at),
+                    `MMM dd 'at' ${timePattern}`
+                  )}
                 </span>
               </div>
             )}

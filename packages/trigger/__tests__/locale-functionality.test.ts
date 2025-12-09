@@ -88,23 +88,6 @@ const mockSetupDayjsLocale = async (locale?: string) => {
   }
 };
 
-// Mock Google Calendar events for testing
-const createMockGoogleEvent = (
-  id: string,
-  title: string,
-  start: string,
-  end: string
-) => ({
-  id,
-  summary: title,
-  description: '',
-  start: { dateTime: start },
-  end: { dateTime: end },
-  location: '',
-  colorId: '1',
-  status: 'confirmed',
-});
-
 describe('Google Calendar Sync - Locale Functionality', () => {
   beforeEach(() => {
     // Reset environment

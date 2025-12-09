@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -56,6 +57,7 @@ export function TaskForm({
 
   const params = useParams();
   const wsId = params.wsId as string;
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Fetch workspace members for quick assign
   const { data: members = [] } = useQuery({
@@ -162,27 +164,30 @@ export function TaskForm({
         }
       }
 
+      // Add assignees one by one to ensure triggers fire for each
       if (finalAssignees.length > 0) {
-        await Promise.all(
-          finalAssignees.map(async (userId) => {
-            await supabase.from('task_assignees').insert({
-              task_id: newTask.id,
-              user_id: userId,
-            });
-          })
-        );
+        for (const userId of finalAssignees) {
+          const { error } = await supabase.from('task_assignees').insert({
+            task_id: newTask.id,
+            user_id: userId,
+          });
+          if (error) {
+            console.error(`Failed to add assignee ${userId}:`, error);
+          }
+        }
       }
 
-      // Add label assignments if any selected
+      // Add label assignments one by one to ensure triggers fire for each
       if (selectedLabels.length > 0) {
-        await Promise.all(
-          selectedLabels.map(async (label) => {
-            await supabase.from('task_labels').insert({
-              task_id: newTask.id,
-              label_id: label.id,
-            });
-          })
-        );
+        for (const label of selectedLabels) {
+          const { error } = await supabase.from('task_labels').insert({
+            task_id: newTask.id,
+            label_id: label.id,
+          });
+          if (error) {
+            console.error(`Failed to add label ${label.id}:`, error);
+          }
+        }
       }
 
       handleReset();
@@ -415,6 +420,7 @@ export function TaskForm({
                     date={startDate}
                     setDate={setStartDate}
                     showTimeSelect={true}
+                    preferences={{ weekStartsOn, timezone, timeFormat }}
                   />
                 </div>
 
@@ -425,6 +431,7 @@ export function TaskForm({
                     date={endDate}
                     setDate={handleEndDateChange}
                     showTimeSelect={true}
+                    preferences={{ weekStartsOn, timezone, timeFormat }}
                   />
                 </div>
               </div>

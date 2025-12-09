@@ -7,6 +7,7 @@ const calendarSettingsSchema = z.object({
   first_day_of_week: z
     .enum(['auto', 'sunday', 'monday', 'saturday'])
     .optional(),
+  time_format: z.enum(['auto', '12h', '24h']).optional(),
 });
 
 export async function GET() {
@@ -26,7 +27,7 @@ export async function GET() {
     // Fetch user calendar settings
     const { data: userData, error } = await supabase
       .from('users')
-      .select('timezone, first_day_of_week')
+      .select('timezone, first_day_of_week, time_format')
       .eq('id', user.id)
       .single();
 
@@ -41,6 +42,7 @@ export async function GET() {
     return NextResponse.json({
       timezone: userData.timezone || 'auto',
       first_day_of_week: userData.first_day_of_week || 'auto',
+      time_format: userData.time_format || 'auto',
     });
   } catch (error) {
     console.error('Error in user calendar settings API:', error);
@@ -75,9 +77,10 @@ export async function PATCH(req: NextRequest) {
       .update({
         timezone: validatedData.timezone,
         first_day_of_week: validatedData.first_day_of_week,
+        time_format: validatedData.time_format,
       })
       .eq('id', user.id)
-      .select('timezone, first_day_of_week')
+      .select('timezone, first_day_of_week, time_format')
       .single();
 
     if (error) {
@@ -91,6 +94,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({
       timezone: data.timezone || 'auto',
       first_day_of_week: data.first_day_of_week || 'auto',
+      time_format: data.time_format || 'auto',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -37,7 +37,8 @@
     "NODE_ENV",
     "TRIGGER_SECRET_KEY",
     "POLAR_ACCESS_TOKEN",
-    "POLAR_WEBHOOK_SECRET"
+    "POLAR_WEBHOOK_SECRET",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY"
   ],
   "tasks": {
     "build": {

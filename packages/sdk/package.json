@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
   "license": "MIT",
   "author": "Tuturuuu",
@@ -45,7 +45,7 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
-    "type-check": "tsc --project tsconfig.build.json --noEmit",
+    "type-check": "tsgo --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
@@ -59,10 +59,10 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.15"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "bun@1.3.3"
+  "packageManager": "bun@1.3.4"
 }

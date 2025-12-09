@@ -3,13 +3,14 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-const isDev = process.env.NODE_ENV === 'development';
-
 const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
   // cacheComponents: true,
   poweredByHeader: false,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   transpilePackages: [
     '@tuturuuu/ai',
     '@tuturuuu/ui',

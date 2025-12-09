@@ -33,6 +33,7 @@ export function CalendarPreferencesProvider({
       return data as {
         timezone?: string | null;
         first_day_of_week?: string | null;
+        time_format?: string | null;
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -69,6 +70,7 @@ export function CalendarPreferencesProvider({
         | 1
         | 6,
       timezone: resolved.timezone,
+      timeFormat: resolved.timeFormat,
     };
   }, [userSettings, workspaceSettings, locale]);
 

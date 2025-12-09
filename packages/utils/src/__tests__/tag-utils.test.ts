@@ -125,7 +125,7 @@ describe('Tag Utils', () => {
     it('style matches getTagColor output', () => {
       const result = getTagColorStyling('test');
       const colors = getTagColor('test');
-      expect(result.style['--tag-bg-color' as any]).toBe(
+      expect((result.style as Record<string, string>)['--tag-bg-color']).toBe(
         colors['--tag-bg-color']
       );
     });

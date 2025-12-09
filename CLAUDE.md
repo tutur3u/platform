@@ -127,6 +127,7 @@ bun --filter @tuturuuu/utils test
 ```
 
 **CRITICAL for Agents**:
+
 - **BUILD**: NEVER run `bun run build`, `bun build`, or `bun run buildx` unless the user explicitly requests it
 - **TEST**: ALWAYS add test cases after implementing new features and run them to verify functionality
 
@@ -147,6 +148,16 @@ bun format-and-lint:fix
 ```
 
 **CRITICAL for Agents**: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Identify issues and request user to run these commands.
+
+### Type Checking (Agent-Safe)
+
+```bash
+# Type check with tsgo (~10x faster than tsc) - RECOMMENDED
+npx tsgo                                    # Check entire monorepo
+npx tsgo --project packages/utils/tsconfig.json  # Check specific package
+```
+
+**CRITICAL for Agents**: Use `tsgo` (`@typescript/native-preview`) for type checking instead of `tsc`. It is nearly **10x faster** and agents CAN run it for quick feedback.
 
 ### UI Components
 
@@ -293,18 +304,27 @@ Raw `fetch()`, `useEffect` with manual state, or custom hooks without React Quer
 - If you see `useEffect` + API calls in existing code, REFACTOR to React Query immediately
 - **CRITICAL:** The only acceptable pattern is `useQuery`/`useMutation`/`useInfiniteQuery` from TanStack Query
 
+**Kanban Task Realtime Sync (CRITICAL):**
+
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+
+- ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
+- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+
 **Banned Patterns (Will Cause Code Rejection):**
 
 ```typescript
 // ❌ NEVER DO THIS
 useEffect(() => {
-  fetch('/api/data').then(r => r.json()).then(setData);
+  fetch("/api/data")
+    .then((r) => r.json())
+    .then(setData);
 }, []);
 
 // ❌ NEVER DO THIS
 useEffect(() => {
   const fetchData = async () => {
-    const data = await fetch('/api/data');
+    const data = await fetch("/api/data");
     setData(data);
   };
   fetchData();
@@ -312,8 +332,8 @@ useEffect(() => {
 
 // ✅ ONLY DO THIS
 const { data } = useQuery({
-  queryKey: ['data'],
-  queryFn: () => fetch('/api/data').then(r => r.json())
+  queryKey: ["data"],
+  queryFn: () => fetch("/api/data").then((r) => r.json()),
 });
 ```
 
@@ -340,9 +360,7 @@ Components should receive the `workspace` object and use `workspace.id` directly
 
 ```typescript
 // ❌ WRONG - Using raw wsId
-const { data } = await supabase
-  .from('table')
-  .eq('ws_id', wsId);
+const { data } = await supabase.from("table").eq("ws_id", wsId);
 
 // ✅ CORRECT - Use workspace.id from props
 type MyComponentProps = {
@@ -353,9 +371,7 @@ export function MyComponent({ workspace }: MyComponentProps) {
   useEffect(() => {
     if (!workspace?.id) return;
 
-    const { data } = await supabase
-      .from('table')
-      .eq('ws_id', workspace.id);
+    const { data } = await supabase.from("table").eq("ws_id", workspace.id);
   }, [workspace?.id]);
 }
 ```
@@ -365,8 +381,11 @@ export function MyComponent({ workspace }: MyComponentProps) {
 **API Routes:** Use `normalizeWorkspaceId(wsId)` helper:
 
 ```typescript
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { resolveWorkspaceId, PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
+import { getWorkspace } from "@tuturuuu/utils/workspace-helper";
+import {
+  resolveWorkspaceId,
+  PERSONAL_WORKSPACE_SLUG,
+} from "@tuturuuu/utils/constants";
 
 const normalizeWorkspaceId = async (wsId: string) => {
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
@@ -514,7 +533,12 @@ Rules:
 **REQUIRED**: `@tuturuuu/ui/dialog` components
 
 ```tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@tuturuuu/ui/dialog";
 
 <Dialog open={show} onOpenChange={setShow}>
   <DialogContent>
@@ -523,7 +547,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/d
     </DialogHeader>
     {/* content */}
   </DialogContent>
-</Dialog>
+</Dialog>;
 ```
 
 #### Icons
@@ -533,9 +557,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/d
 **REQUIRED**: lucide-react icons via `@tuturuuu/icons` wrapper
 
 ```tsx
-import { CheckCircle, Lock, Clipboard } from '@tuturuuu/icons';
+import { CheckCircle, Lock, Clipboard } from "@tuturuuu/icons";
 
-<CheckCircle className="h-5 w-5" />
+<CheckCircle className="h-5 w-5" />;
 ```
 
 **Rationale**: Emojis render inconsistently across platforms, lack semantic meaning for screen readers, and don't respect theme/color customization.
@@ -547,7 +571,7 @@ import { CheckCircle, Lock, Clipboard } from '@tuturuuu/icons';
 **REQUIRED**: `@tuturuuu/ui/sonner`
 
 ```ts
-import { toast } from '@tuturuuu/ui/sonner';
+import { toast } from "@tuturuuu/ui/sonner";
 ```
 
 #### Centralized Settings Architecture
@@ -619,10 +643,10 @@ All SDK APIs (routes using `withApiAuth`) have automatic rate limiting:
 
 Workspaces can override default rate limits via `workspace_secrets` table:
 
-| Secret Name | Description | Example |
-|-------------|-------------|---------|
-| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds | `60000` |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `500` |
+| Secret Name               | Description                 | Example |
+| ------------------------- | --------------------------- | ------- |
+| `RATE_LIMIT_WINDOW_MS`    | Time window in milliseconds | `60000` |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window     | `500`   |
 
 **Adding Custom Rate Limits:**
 
@@ -633,15 +657,15 @@ export const POST = withApiAuth(
     // Handler code
   },
   {
-    permissions: ['manage_drive'],
-    rateLimit: { windowMs: 60000, maxRequests: 10 } // 10 req/min
-  }
+    permissions: ["manage_drive"],
+    rateLimit: { windowMs: 60000, maxRequests: 10 }, // 10 req/min
+  },
 );
 
 // Disable rate limiting (use sparingly)
 export const GET = withApiAuth(
   handler,
-  { rateLimit: false } // Not recommended
+  { rateLimit: false }, // Not recommended
 );
 ```
 
@@ -682,7 +706,7 @@ export const GET = withApiAuth(
 Extract to `packages/*` when:
 
 - Logic duplicated in ≥2 apps
-- >150 LOC multi-module complexity
+- > 150 LOC multi-module complexity
 - Security/auth logic that needs single point of maintenance
 - Stable interface ready for reuse
 
@@ -697,23 +721,24 @@ Steps:
 
 ## Quick Reference
 
-| Goal | Command | Notes |
-|------|---------|-------|
-| Install deps | `bun install` | Deterministic via lockfile |
-| Dev (all apps) | `bun dev` | No DB required if gated |
-| Full stack dev | `bun devx` | Starts Supabase + apps |
-| Reset + seed | `bun devrs` | Destructive local DB reset |
-| Build all | `bun run build` | USER-ONLY; uses Turbo cache |
-| Test all | `bun run test` | USER-ONLY; Vitest workspaces |
-| Scoped test | `bun --filter @tuturuuu/ui test` | Add `...` for dependents |
-| Lint | `bun lint` | USER-ONLY; agent suggests fixes |
-| Format | `bun format` | USER-ONLY; agent suggests fixes |
-| New migration | `bun sb:new` | Edit generated SQL file |
-| Apply migrations locally | `bun sb:up` | Safe for agents |
-| Apply migrations remote | `bun sb:push` | USER-ONLY; NEVER agents |
-| Regenerate types | `bun sb:typegen` | Commit resulting changes |
-| Add dep to pkg | `bun add <dep> --workspace=@tuturuuu/<scope>` | Internal: `workspace:*` |
-| Edge runtime | `export const runtime = 'edge'` | Only if required |
+| Goal                     | Command                                       | Notes                                |
+| ------------------------ | --------------------------------------------- | ------------------------------------ |
+| Install deps             | `bun install`                                 | Deterministic via lockfile           |
+| Dev (all apps)           | `bun dev`                                     | No DB required if gated              |
+| Full stack dev           | `bun devx`                                    | Starts Supabase + apps               |
+| Reset + seed             | `bun devrs`                                   | Destructive local DB reset           |
+| Build all                | `bun run build`                               | USER-ONLY; uses Turbo cache          |
+| Test all                 | `bun run test`                                | USER-ONLY; Vitest workspaces         |
+| Scoped test              | `bun --filter @tuturuuu/ui test`              | Add `...` for dependents             |
+| Lint                     | `bun lint`                                    | USER-ONLY; agent suggests fixes      |
+| Format                   | `bun format`                                  | USER-ONLY; agent suggests fixes      |
+| Type check (fast)        | `npx tsgo`                                    | ~10x faster than tsc; agents CAN run |
+| New migration            | `bun sb:new`                                  | Edit generated SQL file              |
+| Apply migrations locally | `bun sb:up`                                   | Safe for agents                      |
+| Apply migrations remote  | `bun sb:push`                                 | USER-ONLY; NEVER agents              |
+| Regenerate types         | `bun sb:typegen`                              | Commit resulting changes             |
+| Add dep to pkg           | `bun add <dep> --workspace=@tuturuuu/<scope>` | Internal: `workspace:*`              |
+| Edge runtime             | `export const runtime = 'edge'`               | Only if required                     |
 
 ## Pre-PR Verification Checklist
 

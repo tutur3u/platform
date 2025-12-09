@@ -1,6 +1,18 @@
-import type { EditorView } from '@tiptap/pm/view';
+import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
+import {
+  getImageDimensions,
+  getVideoDimensions,
+  MAX_IMAGE_SIZE,
+  MAX_VIDEO_SIZE,
+} from './media-utils';
+import {
+  createLoadingPlaceholder,
+  findUploadPlaceholder,
+  generateUploadId,
+  imageUploadPlaceholderPluginKey,
+} from './upload-placeholder';
 
 export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -67,32 +79,9 @@ function calculatePresetWidth(
   return containerWidth;
 }
 
-/**
- * Load an image file and get its natural dimensions
- */
-function getImageDimensions(
-  file: File
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image'));
-    };
-
-    img.src = url;
-  });
-}
-
 interface ImageOptions {
   onImageUpload?: (file: File) => Promise<string>;
+  onVideoUpload?: (file: File) => Promise<string>;
 }
 
 export const CustomImage = (options: ImageOptions = {}) => {
@@ -114,10 +103,56 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
     addProseMirrorPlugins() {
       const parentPlugins = this.parent?.() || [];
-      const { onImageUpload } = options;
+      const { onImageUpload, onVideoUpload } = options;
 
       return [
         ...parentPlugins,
+
+        // Upload placeholder plugin - manages loading state decorations
+        new Plugin({
+          key: imageUploadPlaceholderPluginKey,
+          state: {
+            init() {
+              return DecorationSet.empty;
+            },
+            apply(tr, set) {
+              // Map decorations through document changes
+              set = set.map(tr.mapping, tr.doc);
+
+              // Handle add/remove placeholder actions
+              const action = tr.getMeta(imageUploadPlaceholderPluginKey);
+              if (action?.add) {
+                const { id, pos, width, height, type } = action.add;
+                const placeholder = createLoadingPlaceholder(
+                  width,
+                  height,
+                  type
+                );
+                const deco = Decoration.widget(pos, placeholder, {
+                  id,
+                  type,
+                });
+                set = set.add(tr.doc, [deco]);
+              }
+              if (action?.remove) {
+                set = set.remove(
+                  set.find(
+                    undefined,
+                    undefined,
+                    (spec: { id?: string }) => spec.id === action.remove.id
+                  )
+                );
+              }
+              return set;
+            },
+          },
+          props: {
+            decorations(state) {
+              return this.getState(state);
+            },
+          },
+        }),
+
         // Image resize snap plugin
         new Plugin({
           key: new PluginKey('imageResizeSnapPlugin'),
@@ -193,13 +228,14 @@ export const CustomImage = (options: ImageOptions = {}) => {
             return modified ? tr : null;
           },
         }),
-        // Image paste plugin with upload
+
+        // Image paste plugin with upload and loading state
         new Plugin({
           key: new PluginKey('imagePastePlugin'),
 
           props: {
             handleDOMEvents: {
-              paste: (view: EditorView, event: ClipboardEvent) => {
+              paste: (view, event: ClipboardEvent) => {
                 if (!onImageUpload) return false;
 
                 const items = event.clipboardData?.items;
@@ -238,16 +274,11 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                   // Process all images sequentially
                   for (const image of images) {
-                    try {
-                      console.log('Processing pasted image:', {
-                        name: image.name,
-                        type: image.type,
-                        size: image.size,
-                      });
+                    const uploadId = generateUploadId();
 
+                    try {
                       // Validate file size (max 5MB for images)
-                      const maxSize = 5 * 1024 * 1024;
-                      if (image.size > maxSize) {
+                      if (image.size > MAX_IMAGE_SIZE) {
                         console.error(
                           'Image size must be less than 5MB:',
                           image.name
@@ -257,6 +288,27 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                       // Get image natural dimensions before upload
                       const dimensions = await getImageDimensions(image);
+
+                      // Calculate display dimensions
+                      const displayWidth = calculatePresetWidth(
+                        dimensions.width,
+                        containerWidth
+                      );
+                      const aspectRatio = dimensions.height / dimensions.width;
+                      const displayHeight = displayWidth * aspectRatio;
+
+                      // Add loading placeholder
+                      const placeholderTr = view.state.tr;
+                      placeholderTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        add: {
+                          id: uploadId,
+                          pos: currentPos,
+                          width: displayWidth,
+                          height: displayHeight,
+                          type: 'image' as const,
+                        },
+                      });
+                      view.dispatch(placeholderTr);
 
                       // Upload the image
                       const url = await onImageUpload(image);
@@ -270,33 +322,52 @@ export const CustomImage = (options: ImageOptions = {}) => {
                           'Image node not found. Available nodes:',
                           Object.keys(currentState.schema.nodes)
                         );
+                        // Remove placeholder on error
+                        const removeTr = view.state.tr;
+                        removeTr.setMeta(imageUploadPlaceholderPluginKey, {
+                          remove: { id: uploadId },
+                        });
+                        view.dispatch(removeTr);
                         continue;
                       }
 
-                      // Calculate width using preset-aligned sizing
-                      // This prevents the image from snapping when first clicked
-                      const width = calculatePresetWidth(
-                        dimensions.width,
-                        containerWidth
+                      // Find the placeholder position (may have shifted)
+                      const placeholder = findUploadPlaceholder(
+                        view.state,
+                        uploadId,
+                        imageUploadPlaceholderPluginKey
                       );
+                      const insertPos = placeholder?.pos ?? currentPos;
+
+                      // Remove placeholder and insert actual image
+                      const finalTr = view.state.tr;
+                      finalTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
 
                       // Create and insert the image node
                       const node = imageNode.create({
                         src: url,
-                        width: width,
+                        width: displayWidth,
                       });
 
-                      const tr = view.state.tr.insert(currentPos, node);
-                      view.dispatch(tr);
+                      finalTr.insert(insertPos, node);
+                      view.dispatch(finalTr);
 
-                      // Update position for next insertion, mapping through the transaction
-                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                      // Update position for next insertion
+                      currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error(
                         'Failed to upload pasted image:',
                         image.name,
                         error
                       );
+                      // Remove placeholder on error
+                      const removeTr = view.state.tr;
+                      removeTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+                      view.dispatch(removeTr);
                     }
                   }
                 })();
@@ -307,25 +378,23 @@ export const CustomImage = (options: ImageOptions = {}) => {
           },
         }),
 
-        // Image drop plugin with upload
+        // Image/Video drop plugin with upload and loading state
         new Plugin({
           key: new PluginKey('imageDropPlugin'),
 
           props: {
             handleDOMEvents: {
               drop: (view: EditorView, event: DragEvent) => {
-                if (!onImageUpload) return false;
+                if (!onImageUpload && !onVideoUpload) return false;
 
-                const { schema } = view.state;
                 const hasFiles = event.dataTransfer?.files?.length;
-
                 if (!hasFiles) return false;
 
-                const images = Array.from(
-                  event.dataTransfer?.files || []
-                ).filter((file) => /image/i.test(file.type));
+                const files = Array.from(event.dataTransfer?.files || []);
+                const images = files.filter((file) => /image/i.test(file.type));
+                const videos = files.filter((file) => /video/i.test(file.type));
 
-                if (images.length === 0) return false;
+                if (images.length === 0 && videos.length === 0) return false;
 
                 event.preventDefault();
 
@@ -350,11 +419,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
                 // Process files sequentially to avoid transaction conflicts
                 (async () => {
                   let currentPos = initialPos;
+
+                  // Process images
                   for (const image of images) {
+                    if (!onImageUpload) continue;
+                    const uploadId = generateUploadId();
+
                     try {
                       // Validate file size (max 5MB)
-                      const maxSize = 5 * 1024 * 1024;
-                      if (image.size > maxSize) {
+                      if (image.size > MAX_IMAGE_SIZE) {
                         console.error('Image too large:', image.name);
                         continue;
                       }
@@ -362,37 +435,169 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       // Get image natural dimensions before upload
                       const dimensions = await getImageDimensions(image);
 
+                      // Calculate display dimensions
+                      const displayWidth = calculatePresetWidth(
+                        dimensions.width,
+                        containerWidth
+                      );
+                      const aspectRatio = dimensions.height / dimensions.width;
+                      const displayHeight = displayWidth * aspectRatio;
+
+                      // Add loading placeholder
+                      const placeholderTr = view.state.tr;
+                      placeholderTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        add: {
+                          id: uploadId,
+                          pos: currentPos,
+                          width: displayWidth,
+                          height: displayHeight,
+                          type: 'image' as const,
+                        },
+                      });
+                      view.dispatch(placeholderTr);
+
                       // Upload the image
                       const url = await onImageUpload(image);
 
                       // Try imageResize first (custom), fallback to image (base)
+                      const { schema } = view.state;
                       const nodeType =
                         schema.nodes.imageResize || schema.nodes.image;
                       if (!nodeType) {
                         console.error('No image node type found in schema');
+                        // Remove placeholder on error
+                        const removeTr = view.state.tr;
+                        removeTr.setMeta(imageUploadPlaceholderPluginKey, {
+                          remove: { id: uploadId },
+                        });
+                        view.dispatch(removeTr);
                         continue;
                       }
 
-                      // Calculate width using preset-aligned sizing
-                      // This prevents the image from snapping when first clicked
-                      const width = calculatePresetWidth(
-                        dimensions.width,
-                        containerWidth
+                      // Find the placeholder position (may have shifted)
+                      const placeholder = findUploadPlaceholder(
+                        view.state,
+                        uploadId,
+                        imageUploadPlaceholderPluginKey
                       );
+                      const insertPos = placeholder?.pos ?? currentPos;
+
+                      // Remove placeholder and insert actual image
+                      const finalTr = view.state.tr;
+                      finalTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
 
                       const node = nodeType.create({
                         src: url,
-                        width: width,
+                        width: displayWidth,
                       });
 
-                      // Create fresh transaction from current view state
-                      const tr = view.state.tr.insert(currentPos, node);
-                      view.dispatch(tr);
+                      finalTr.insert(insertPos, node);
+                      view.dispatch(finalTr);
 
                       // Update position for next insertion
-                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                      currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error('Failed to upload image:', error);
+                      // Remove placeholder on error
+                      const removeTr = view.state.tr;
+                      removeTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+                      view.dispatch(removeTr);
+                    }
+                  }
+
+                  // Process videos
+                  for (const video of videos) {
+                    if (!onVideoUpload) continue;
+                    const uploadId = generateUploadId();
+
+                    try {
+                      // Validate file size (max 50MB for videos)
+                      if (video.size > MAX_VIDEO_SIZE) {
+                        console.error('Video too large:', video.name);
+                        continue;
+                      }
+
+                      // Get video dimensions
+                      let dimensions = { width: 640, height: 360 };
+                      try {
+                        dimensions = await getVideoDimensions(video);
+                      } catch {
+                        // Use default dimensions if we can't load the video
+                      }
+
+                      // Calculate display dimensions
+                      const displayWidth = calculatePresetWidth(
+                        dimensions.width,
+                        containerWidth
+                      );
+                      const aspectRatio = dimensions.height / dimensions.width;
+                      const displayHeight = displayWidth * aspectRatio;
+
+                      // Add loading placeholder
+                      const placeholderTr = view.state.tr;
+                      placeholderTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        add: {
+                          id: uploadId,
+                          pos: currentPos,
+                          width: displayWidth,
+                          height: displayHeight,
+                          type: 'video' as const,
+                        },
+                      });
+                      view.dispatch(placeholderTr);
+
+                      // Upload the video
+                      const url = await onVideoUpload(video);
+
+                      // Check for video node type
+                      const { schema } = view.state;
+                      const nodeType = schema.nodes.video;
+                      if (!nodeType) {
+                        console.error('No video node type found in schema');
+                        // Remove placeholder on error
+                        const removeTr = view.state.tr;
+                        removeTr.setMeta(imageUploadPlaceholderPluginKey, {
+                          remove: { id: uploadId },
+                        });
+                        view.dispatch(removeTr);
+                        continue;
+                      }
+
+                      // Find the placeholder position (may have shifted)
+                      const placeholder = findUploadPlaceholder(
+                        view.state,
+                        uploadId,
+                        imageUploadPlaceholderPluginKey
+                      );
+                      const insertPos = placeholder?.pos ?? currentPos;
+
+                      // Remove placeholder and insert actual video
+                      const finalTr = view.state.tr;
+                      finalTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+
+                      const node = nodeType.create({
+                        src: url,
+                      });
+
+                      finalTr.insert(insertPos, node);
+                      view.dispatch(finalTr);
+
+                      // Update position for next insertion
+                      currentPos = insertPos + node.nodeSize;
+                    } catch (error) {
+                      console.error('Failed to upload video:', error);
+                      // Remove placeholder on error
+                      const removeTr = view.state.tr;
+                      removeTr.setMeta(imageUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+                      view.dispatch(removeTr);
                     }
                   }
                 })();

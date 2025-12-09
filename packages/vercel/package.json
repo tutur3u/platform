@@ -9,8 +9,8 @@
     ".": "./src/core/index.ts"
   },
   "dependencies": {
-    "@vercel/analytics": "^1.5.0",
-    "@vercel/speed-insights": "^1.2.0"
+    "@vercel/analytics": "^1.6.1",
+    "@vercel/speed-insights": "^1.3.1"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
@@ -19,7 +19,7 @@
     "@types/react": "^19.2.7",
     "@vitejs/plugin-react": "^5.1.1",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.7"
   },
-  "packageManager": "bun@1.3.3"
+  "packageManager": "bun@1.3.4"
 }

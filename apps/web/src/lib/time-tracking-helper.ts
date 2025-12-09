@@ -1,10 +1,22 @@
 import { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import {
+  getSessionDays,
+  getSessionDurationInPeriod,
+} from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/components/session-history/session-utils';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TimeTrackingSession } from '@tuturuuu/types';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import 'server-only';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(isoWeek);
 
 // Enhanced pagination interface
 export interface PaginationParams {
@@ -33,7 +45,10 @@ export interface GroupedSession {
     color: string;
   } | null;
   sessions: SessionWithRelations[];
+  /** Total duration across all sessions (sum of duration_seconds) */
   totalDuration: number;
+  /** Duration that falls within the specific period (properly split for overnight sessions) */
+  periodDuration: number;
   firstStartTime: string;
   lastEndTime: string | null;
   status: 'active' | 'paused' | 'completed';
@@ -85,39 +100,80 @@ export const getGroupedSessionsPaginated = async (
 ): Promise<PaginatedResult<GroupedSession>> => {
   const { page = 1, limit = 50, search, startDate, endDate } = params;
   const supabase = await createClient();
+  const userTimezone = dayjs.tz.guess();
 
-  // Try RPC first, but fall back if date filtering is needed or RPC fails
-  if (!startDate && !endDate) {
-    try {
-      const { data, error } = await supabase.rpc(
-        'get_time_tracking_sessions_paginated',
-        {
-          p_ws_id: wsId,
-          p_period: period,
-          p_page: page,
-          p_limit: limit,
-          p_search: search || undefined,
-        }
-      );
-
-      if (error) {
-        console.error('Error fetching paginated sessions:', error);
-        throw new Error('RPC function failed');
+  try {
+    const { data, error } = await supabase.rpc(
+      'get_grouped_sessions_paginated',
+      {
+        p_ws_id: wsId,
+        p_period: period,
+        p_page: page,
+        p_limit: limit,
+        p_search: search || undefined,
+        p_start_date: startDate || undefined,
+        p_end_date: endDate || undefined,
+        p_timezone: userTimezone,
       }
+    );
 
-      return (
-        (data as unknown as PaginatedResult<GroupedSession>) || {
-          data: [],
-          pagination: { page, limit, total: 0, pages: 0 },
-        }
-      );
-    } catch (error) {
-      console.error('RPC not available, falling back to legacy method:', error);
+    if (error) {
+      console.error('RPC error:', error);
+      // Fall back to the JS implementation if RPC fails
+      return await getFallbackGroupedSessions(wsId, period, params);
     }
-  }
 
-  // Use fallback method for date filtering or when RPC fails
-  return await getFallbackGroupedSessions(wsId, period, params);
+    // Transform the RPC result to match the expected GroupedSession interface
+    const result = data as unknown as {
+      data: Array<{
+        title: string;
+        category: { name: string; color: string } | null;
+        sessions: Array<SessionWithRelations>;
+        totalDuration: number;
+        periodDuration: number;
+        firstStartTime: string;
+        lastEndTime: string | null;
+        status: 'active' | 'paused' | 'completed';
+        user: { displayName: string | null; avatarUrl: string | null };
+        period: string;
+        sessionCount: number;
+        sessionTitles: string[];
+      }>;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    };
+
+    return {
+      data: result.data.map((item) => ({
+        title: item.title,
+        category: item.category,
+        sessions: item.sessions,
+        totalDuration: item.totalDuration,
+        periodDuration: item.periodDuration,
+        firstStartTime: item.firstStartTime,
+        lastEndTime: item.lastEndTime,
+        status: item.status,
+        user: {
+          displayName: item.user.displayName,
+          avatarUrl: item.user.avatarUrl,
+        },
+        period: item.period,
+        sessionCount: item.sessionCount,
+        sessionTitles: item.sessionTitles,
+      })),
+      pagination: result.pagination,
+    };
+  } catch (error) {
+    console.error(
+      'Error calling RPC, falling back to JS implementation:',
+      error
+    );
+    return await getFallbackGroupedSessions(wsId, period, params);
+  }
 };
 
 // Fallback method for when RPC is not available or date filtering is needed
@@ -147,12 +203,39 @@ const getFallbackGroupedSessions = async (
       );
     }
 
-    // Add date range filtering with proper timezone handling
-    if (startDate) {
-      query = query.gte('start_time', `${startDate}T00:00:00.000Z`);
-    }
-    if (endDate) {
-      query = query.lte('start_time', `${endDate}T23:59:59.999Z`);
+    // Add date range filtering - include sessions that overlap with the date range
+    // A session overlaps if: session_start <= filter_end AND (session_end >= filter_start OR session_end IS NULL)
+    // We need to be careful with Supabase filter syntax
+    if (startDate || endDate) {
+      const filterStart = startDate ? `${startDate}T00:00:00.000Z` : null;
+      const filterEnd = endDate ? `${endDate}T23:59:59.999Z` : null;
+
+      if (filterStart && filterEnd) {
+        // For a session to overlap with [filterStart, filterEnd]:
+        // start_time <= filterEnd (session starts before filter ends)
+        // AND (end_time >= filterStart OR end_time IS NULL) (session ends after filter starts, or still running)
+        //
+        // Since Supabase .or() creates OR at the top level, we need to structure this carefully
+        // We'll fetch: sessions that START within range OR END within range OR SPAN the range
+        query = query.or(
+          [
+            // Sessions that start within the range
+            `start_time.gte.${filterStart},start_time.lte.${filterEnd}`,
+            // Sessions that end within the range (and started before)
+            `end_time.gte.${filterStart},end_time.lte.${filterEnd}`,
+            // Sessions still running that started before or during the range
+            `end_time.is.null`,
+          ].join(',')
+        );
+      } else if (filterStart) {
+        // Sessions that end on or after start date, or are still running, or start on or after start date
+        query = query.or(
+          `end_time.gte.${filterStart},end_time.is.null,start_time.gte.${filterStart}`
+        );
+      } else if (filterEnd) {
+        // Sessions that start on or before end date
+        query = query.lte('start_time', filterEnd);
+      }
     }
 
     // Fetch a reasonable amount of data for grouping
@@ -174,7 +257,43 @@ const getFallbackGroupedSessions = async (
     }
 
     // Group sessions and handle pagination
-    const groupedSessions = groupSessions(sessions, period);
+    let groupedSessions = groupSessions(sessions, period);
+
+    // Filter grouped sessions by date range if specified
+    // This ensures we only show groups whose period falls within the filter range
+    if (startDate || endDate) {
+      groupedSessions = groupedSessions.filter((group) => {
+        const groupPeriod = group.period; // Format: YYYY-MM-DD for day, YYYY-MM-DD (Monday) for week, YYYY-MM for month
+
+        if (period === 'day') {
+          // Compare dates directly
+          if (startDate && groupPeriod < startDate) return false;
+          if (endDate && groupPeriod > endDate) return false;
+        } else if (period === 'week') {
+          // groupPeriod is the Monday of the week (YYYY-MM-DD)
+          // A week overlaps with [startDate, endDate] if:
+          // weekStart <= endDate AND weekEnd >= startDate
+          const weekStart = dayjs(groupPeriod);
+          const weekEnd = weekStart.add(6, 'day');
+          if (startDate && weekEnd.format('YYYY-MM-DD') < startDate)
+            return false;
+          if (endDate && weekStart.format('YYYY-MM-DD') > endDate) return false;
+        } else if (period === 'month') {
+          // groupPeriod is YYYY-MM
+          // A month overlaps with [startDate, endDate] if:
+          // monthStart <= endDate AND monthEnd >= startDate
+          const monthStart = dayjs(`${groupPeriod}-01`);
+          const monthEnd = monthStart.endOf('month');
+          if (startDate && monthEnd.format('YYYY-MM-DD') < startDate)
+            return false;
+          if (endDate && monthStart.format('YYYY-MM-DD') > endDate)
+            return false;
+        }
+
+        return true;
+      });
+    }
+
     const total = groupedSessions.length;
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
@@ -311,75 +430,212 @@ export const groupSessions = (
   sessions: (TimeTrackingSession & {
     user?: { display_name?: string | null; avatar_url?: string | null };
   })[],
-  period: 'day' | 'week' | 'month' = 'day'
+  period: 'day' | 'week' | 'month' = 'day',
+  userTimezone?: string
 ): GroupedSession[] => {
+  // Use provided timezone or guess
+  const tz = userTimezone || dayjs.tz.guess();
+
   // Group sessions by period and user for management view
-  const grouped = new Map();
+  // For overnight sessions, they will be split across multiple periods
+  const grouped = new Map<
+    string,
+    {
+      title: string;
+      category: null;
+      sessions: (TimeTrackingSession & {
+        user?: { display_name?: string | null; avatar_url?: string | null };
+      })[];
+      totalDuration: number;
+      periodDuration: number;
+      firstStartTime: string;
+      lastEndTime: string | null;
+      status: 'active' | 'paused' | 'completed';
+      user: {
+        displayName: string | null | undefined;
+        avatarUrl: string | null | undefined;
+      };
+      period: string;
+      sessionCount: number;
+      sessionTitles: string[];
+    }
+  >();
 
-  const getPeriodKey = (startTime: string) => {
-    const date = new Date(startTime);
-
+  /**
+   * Get the period key for a given date
+   */
+  const getPeriodKey = (date: dayjs.Dayjs): string => {
     if (period === 'day') {
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      return date.format('YYYY-MM-DD');
     } else if (period === 'week') {
       // Use ISO week calculation (Monday-based)
-      const startOfWeek = new Date(date);
-      const dayOfWeek = date.getDay();
-      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0, Sunday = 6
-      startOfWeek.setDate(date.getDate() - daysToSubtract);
-      return startOfWeek.toISOString().split('T')[0]; // Return Monday's date as week key
+      return date.startOf('isoWeek').format('YYYY-MM-DD');
     } else {
-      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      return date.format('YYYY-MM');
     }
   };
 
+  /**
+   * Get the start and end of a period given a period key
+   */
+  const getPeriodBounds = (
+    periodKey: string
+  ): { start: dayjs.Dayjs; end: dayjs.Dayjs } => {
+    if (period === 'day') {
+      const date = dayjs.tz(periodKey, tz);
+      return {
+        start: date.startOf('day'),
+        end: date.endOf('day'),
+      };
+    } else if (period === 'week') {
+      const date = dayjs.tz(periodKey, tz);
+      return {
+        start: date.startOf('isoWeek'),
+        end: date.endOf('isoWeek'),
+      };
+    } else {
+      const date = dayjs.tz(`${periodKey}-01`, tz);
+      return {
+        start: date.startOf('month'),
+        end: date.endOf('month'),
+      };
+    }
+  };
+
+  /**
+   * Get all periods that a session spans
+   */
+  const getSessionPeriods = (
+    session: TimeTrackingSession
+  ): { periodKey: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] => {
+    const periods: {
+      periodKey: string;
+      start: dayjs.Dayjs;
+      end: dayjs.Dayjs;
+    }[] = [];
+
+    if (period === 'day') {
+      // For day view, use getSessionDays to find all days the session spans
+      // We need to cast session to SessionWithRelations for the utility function
+      const sessionWithRelations = {
+        ...session,
+        category: null,
+        task: null,
+      } as SessionWithRelations;
+
+      const days = getSessionDays(sessionWithRelations, tz);
+      for (const dateKey of days) {
+        const { start, end } = getPeriodBounds(dateKey);
+        periods.push({ periodKey: dateKey, start, end });
+      }
+    } else {
+      // For week/month, we need to check which periods the session spans
+      const sessionStart = dayjs.utc(session.start_time).tz(tz);
+      const sessionEnd = session.end_time
+        ? dayjs.utc(session.end_time).tz(tz)
+        : dayjs().tz(tz);
+
+      let currentPeriod = getPeriodKey(sessionStart);
+      const endPeriod = getPeriodKey(sessionEnd);
+
+      // Add all periods between start and end
+      while (currentPeriod <= endPeriod) {
+        const { start, end } = getPeriodBounds(currentPeriod);
+        periods.push({ periodKey: currentPeriod, start, end });
+
+        // Move to next period
+        if (period === 'week') {
+          const nextDate = dayjs.tz(currentPeriod, tz).add(1, 'week');
+          currentPeriod = getPeriodKey(nextDate);
+        } else {
+          const nextDate = dayjs.tz(`${currentPeriod}-01`, tz).add(1, 'month');
+          currentPeriod = getPeriodKey(nextDate);
+        }
+      }
+    }
+
+    return periods;
+  };
+
   sessions.forEach((session) => {
-    const periodKey = getPeriodKey(session.start_time);
-    const key = `${periodKey}-${session.user_id}`;
+    // Get all periods this session spans
+    const sessionPeriods = getSessionPeriods(session);
 
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        title: `${session.user?.display_name || 'Unknown User'} - ${periodKey}`,
-        category: null, // Not used in management view
-        sessions: [],
-        totalDuration: 0,
-        firstStartTime: session.start_time,
-        lastEndTime: session.end_time,
-        status: session.is_running ? 'active' : 'completed',
-        user: {
-          displayName: session.user?.display_name,
-          avatarUrl: session.user?.avatar_url,
-        },
-        period: periodKey,
-        sessionCount: 0,
-        sessionTitles: [],
-      });
-    }
+    for (const { periodKey, start, end } of sessionPeriods) {
+      const key = `${periodKey}-${session.user_id}`;
 
-    const group = grouped.get(key);
-    group.sessions.push(session);
-    group.totalDuration += session.duration_seconds || 0;
-    group.sessionCount = group.sessions.length;
+      // Calculate the duration that falls within this specific period
+      const sessionWithRelations = {
+        ...session,
+        category: null,
+        task: null,
+      } as SessionWithRelations;
 
-    // Update session titles
-    if (session.title && !group.sessionTitles.includes(session.title)) {
-      group.sessionTitles.push(session.title);
-    }
+      const periodDurationForSession = getSessionDurationInPeriod(
+        sessionWithRelations,
+        start,
+        end,
+        tz
+      );
 
-    // Update time ranges
-    if (session.start_time < group.firstStartTime) {
-      group.firstStartTime = session.start_time;
-    }
-    if (
-      session.end_time &&
-      (!group.lastEndTime || session.end_time > group.lastEndTime)
-    ) {
-      group.lastEndTime = session.end_time;
-    }
+      // Skip if no duration in this period
+      if (periodDurationForSession <= 0) {
+        continue;
+      }
 
-    // Update status - if any session is running, mark group as active
-    if (session.is_running) {
-      group.status = 'active';
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          title: `${session.user?.display_name || 'Unknown User'} - ${periodKey}`,
+          category: null, // Not used in management view
+          sessions: [],
+          totalDuration: 0,
+          periodDuration: 0,
+          firstStartTime: session.start_time,
+          lastEndTime: session.end_time,
+          status: session.is_running ? 'active' : 'completed',
+          user: {
+            displayName: session.user?.display_name,
+            avatarUrl: session.user?.avatar_url,
+          },
+          period: periodKey,
+          sessionCount: 0,
+          sessionTitles: [],
+        });
+      }
+
+      const group = grouped.get(key)!;
+
+      // Only add session once per group (avoid duplicates if session spans multiple periods)
+      if (!group.sessions.some((s) => s.id === session.id)) {
+        group.sessions.push(session);
+        // totalDuration is the sum of all session durations (for backwards compatibility)
+        group.totalDuration += session.duration_seconds || 0;
+      }
+
+      // periodDuration is the sum of durations that actually fall within this period
+      group.periodDuration += periodDurationForSession;
+      group.sessionCount = group.sessions.length;
+
+      // Update session titles
+      if (session.title && !group.sessionTitles.includes(session.title)) {
+        group.sessionTitles.push(session.title);
+      }
+
+      // Update time ranges
+      if (session.start_time < group.firstStartTime) {
+        group.firstStartTime = session.start_time;
+      }
+      if (
+        session.end_time &&
+        (!group.lastEndTime || session.end_time > group.lastEndTime)
+      ) {
+        group.lastEndTime = session.end_time;
+      }
+
+      // Update status - if any session is running, mark group as active
+      if (session.is_running) {
+        group.status = 'active';
+      }
     }
   });
 

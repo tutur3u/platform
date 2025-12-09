@@ -83,6 +83,8 @@ import {
   Vote,
   Wallet,
   Warehouse,
+  ShieldBan,
+  ShieldAlert,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -233,6 +235,13 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.estimates'),
           icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
           href: `/${personalOrWsId}/tasks/estimates`,
+        },
+        null,
+        {
+          title: t('sidebar_tabs.logs'),
+          href: `/${personalOrWsId}/tasks/logs`,
+          icon: <Logs className="h-4 w-4" />,
+          disabled: withoutPermission('manage_projects'),
         },
       ],
     },
@@ -1002,6 +1011,16 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.email_blacklist'),
               href: `/${personalOrWsId}/infrastructure/email-blacklist`,
               icon: <MailX className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.blocked_ips'),
+              href: `/${personalOrWsId}/infrastructure/blocked-ips`,
+              icon: <ShieldBan className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.abuse_events'),
+              href: `/${personalOrWsId}/infrastructure/abuse-events`,
+              icon: <ShieldAlert className="h-5 w-5" />,
             },
             {
               title: t('infrastructure-tabs.timezones'),

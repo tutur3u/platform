@@ -137,7 +137,9 @@ export function useTaskActions({
       );
     }
   }, [
-    task,
+    task.id,
+    task.closed_at,
+    task.list_id,
     targetCompletionList,
     onUpdate,
     setIsLoading,
@@ -186,14 +188,19 @@ export function useTaskActions({
         }
       );
 
-      // Move all tasks in parallel
-      await Promise.all(
-        tasksToMove.map((taskId) =>
-          moveTask(supabase, taskId, targetCompletionList.id)
-        )
-      );
+      // Move tasks one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of tasksToMove) {
+        try {
+          await moveTask(supabase, taskId, targetCompletionList.id);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to move task ${taskId}:`, error);
+        }
+      }
+      if (successCount === 0) throw new Error('Failed to move any tasks');
 
-      const taskCount = tasksToMove.length;
+      const taskCount = successCount;
       toast.success(
         taskCount > 1 ? `${taskCount} tasks completed` : 'Task completed',
         {
@@ -267,14 +274,19 @@ export function useTaskActions({
         }
       );
 
-      // Move all tasks in parallel
-      await Promise.all(
-        tasksToMove.map((taskId) =>
-          moveTask(supabase, taskId, targetClosedList.id)
-        )
-      );
+      // Move tasks one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of tasksToMove) {
+        try {
+          await moveTask(supabase, taskId, targetClosedList.id);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to move task ${taskId}:`, error);
+        }
+      }
+      if (successCount === 0) throw new Error('Failed to move any tasks');
 
-      const taskCount = tasksToMove.length;
+      const taskCount = successCount;
       toast.success('Success', {
         description:
           taskCount > 1
@@ -334,13 +346,20 @@ export function useTaskActions({
 
     const supabase = createClient();
     try {
-      // Delete all tasks (soft delete by setting deleted_at)
-      const { error } = await supabase
-        .from('tasks')
-        .update({ deleted_at: new Date().toISOString() })
-        .in('id', tasksToDelete);
-
-      if (error) throw error;
+      // Delete tasks one by one to ensure triggers fire for each task
+      let successCount = 0;
+      for (const taskId of tasksToDelete) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', taskId);
+        if (error) {
+          console.error(`Failed to delete task ${taskId}:`, error);
+        } else {
+          successCount++;
+        }
+      }
+      if (successCount === 0) throw new Error('Failed to delete any tasks');
 
       const taskCount = tasksToDelete.length;
       toast.success('Success', {
@@ -351,6 +370,8 @@ export function useTaskActions({
       });
 
       setDeleteDialogOpen?.(false);
+
+      queryClient.invalidateQueries({ queryKey: ['deleted-tasks', boardId] });
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
@@ -416,7 +437,14 @@ export function useTaskActions({
       setIsLoading(false);
       setMenuOpen(false);
     }
-  }, [task, boardId, queryClient, setIsLoading, setMenuOpen]);
+  }, [
+    task.id,
+    task.assignees,
+    boardId,
+    queryClient,
+    setIsLoading,
+    setMenuOpen,
+  ]);
 
   const handleRemoveAssignee = useCallback(
     async (assigneeId: string) => {
@@ -548,12 +576,19 @@ export function useTaskActions({
           }
         );
 
-        // Move all tasks in parallel
-        await Promise.all(
-          tasksToMove.map((taskId) => moveTask(supabase, taskId, targetListId))
-        );
+        // Move tasks one by one to ensure triggers fire for each task
+        let successCount = 0;
+        for (const taskId of tasksToMove) {
+          try {
+            await moveTask(supabase, taskId, targetListId);
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to move task ${taskId}:`, error);
+          }
+        }
+        if (successCount === 0) throw new Error('Failed to move any tasks');
 
-        const taskCount = tasksToMove.length;
+        const taskCount = successCount;
         toast.success('Success', {
           description:
             taskCount > 1
@@ -633,14 +668,24 @@ export function useTaskActions({
         // Use direct Supabase update for bulk operations
         if (shouldBulkUpdate) {
           const supabase = createClient();
-          const { error, count } = await supabase
-            .from('tasks')
-            .update({ end_date: newDate }, { count: 'exact' })
-            .in('id', tasksToUpdate)
-            .select('id, name, end_date, list_id'); // Explicitly select only needed columns to avoid embedding
-
-          if (error) throw error;
-          console.log(`✅ Bulk updated ${count} tasks with due date`);
+          // Update one by one to ensure triggers fire for each task
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            const { error } = await supabase
+              .from('tasks')
+              .update({ end_date: newDate })
+              .eq('id', taskId);
+            if (error) {
+              console.error(
+                `Failed to update due date for task ${taskId}:`,
+                error
+              );
+            } else {
+              successCount++;
+            }
+          }
+          if (successCount === 0) throw new Error('Failed to update any tasks');
+          console.log(`✅ Updated ${successCount} tasks with due date`);
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
@@ -734,26 +779,35 @@ export function useTaskActions({
         // Use direct Supabase update for bulk operations
         if (shouldBulkUpdate) {
           const supabase = createClient();
-          console.log('🔄 Executing bulk Supabase update:', {
+          console.log('🔄 Executing sequential Supabase updates:', {
             tasksToUpdate,
             count: tasksToUpdate.length,
             priority: newPriority,
           });
 
-          const result = await supabase
-            .from('tasks')
-            .update({ priority: newPriority }, { count: 'exact' })
-            .in('id', tasksToUpdate)
-            .select('id, name, priority, list_id'); // Explicitly select only needed columns to avoid embedding
+          // Update one by one to ensure triggers fire for each task
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            const { error } = await supabase
+              .from('tasks')
+              .update({ priority: newPriority })
+              .eq('id', taskId);
+            if (error) {
+              console.error(
+                `Failed to update priority for task ${taskId}:`,
+                error
+              );
+            } else {
+              successCount++;
+            }
+          }
 
-          console.log('✅ Supabase update result:', {
-            error: result.error,
-            status: result.status,
-            statusText: result.statusText,
-            count: result.count,
+          console.log('✅ Sequential update result:', {
+            successCount,
+            totalTasks: tasksToUpdate.length,
           });
 
-          if (result.error) throw result.error;
+          if (successCount === 0) throw new Error('Failed to update any tasks');
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
@@ -857,14 +911,26 @@ export function useTaskActions({
         // Use direct Supabase update for bulk operations
         if (tasksToUpdate.length > 1) {
           const supabase = createClient();
-          const { error, count } = await supabase
-            .from('tasks')
-            .update({ estimation_points: points }, { count: 'exact' })
-            .in('id', tasksToUpdate)
-            .select('id, name, estimation_points, list_id'); // Explicitly select only needed columns to avoid embedding
-
-          if (error) throw error;
-          console.log(`✅ Bulk updated ${count} tasks with estimation points`);
+          // Update one by one to ensure triggers fire for each task
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            const { error } = await supabase
+              .from('tasks')
+              .update({ estimation_points: points })
+              .eq('id', taskId);
+            if (error) {
+              console.error(
+                `Failed to update estimation for task ${taskId}:`,
+                error
+              );
+            } else {
+              successCount++;
+            }
+          }
+          if (successCount === 0) throw new Error('Failed to update any tasks');
+          console.log(
+            `✅ Updated ${successCount} tasks with estimation points`
+          );
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
@@ -1106,42 +1172,55 @@ export function useTaskActions({
 
       try {
         const supabase = createClient();
+        let successCount = 0;
+
         if (active) {
-          // Remove assignee only from tasks that have them
-          if (tasksToRemoveFrom.length > 0) {
+          // Remove assignee one by one to ensure triggers fire for each task
+          for (const taskId of tasksToRemoveFrom) {
             const { error } = await supabase
               .from('task_assignees')
               .delete()
-              .in('task_id', tasksToRemoveFrom)
+              .eq('task_id', taskId)
               .eq('user_id', assigneeId);
-            if (error) throw error;
+            if (error) {
+              console.error(
+                `Failed to remove assignee from task ${taskId}:`,
+                error
+              );
+            } else {
+              successCount++;
+            }
           }
         } else {
-          // Add assignee to selected tasks that don't already have them
-          if (tasksNeedingAssignee.length > 0) {
-            const rows = tasksNeedingAssignee.map((taskId) => ({
-              task_id: taskId,
-              user_id: assigneeId,
-            }));
+          // Add assignee one by one to ensure triggers fire for each task
+          for (const taskId of tasksNeedingAssignee) {
             const { error } = await supabase
               .from('task_assignees')
-              .insert(rows);
+              .insert({ task_id: taskId, user_id: assigneeId });
 
             // Ignore duplicate key errors (code '23505' for unique_violation)
             if (error && error.code !== '23505') {
-              throw error;
+              console.error(`Failed to add assignee to task ${taskId}:`, error);
+            } else {
+              successCount++;
             }
           }
+        }
+
+        // If no operations succeeded, throw to trigger rollback
+        const targetCount = active
+          ? tasksToRemoveFrom.length
+          : tasksNeedingAssignee.length;
+        if (targetCount > 0 && successCount === 0) {
+          throw new Error('Failed to update any tasks');
         }
 
         // NOTE: No invalidation needed - optimistic update already handles the UI
         // and realtime subscription handles cross-user sync
 
-        const taskCount = active
-          ? tasksToRemoveFrom.length
-          : tasksNeedingAssignee.length;
         toast.success(active ? 'Assignee removed' : 'Assignee added', {
-          description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
+          description:
+            successCount > 1 ? `${successCount} tasks updated` : undefined,
         });
 
         // Don't auto-clear selection - let user manually clear with "Clear" button

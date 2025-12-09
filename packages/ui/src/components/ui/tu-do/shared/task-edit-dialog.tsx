@@ -26,6 +26,10 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
+import {
+  checkStorageQuota,
+  StorageQuotaError,
+} from '../../text-editor/media-utils';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
@@ -76,6 +80,7 @@ export {
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
+import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
@@ -827,38 +832,70 @@ export function TaskEditDialog({
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
       if (!wsId) {
-        throw new Error('Workspace ID is required for image upload');
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${wsId}/task-images/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false,
+        const errorMsg = 'Workspace ID is required for image upload';
+        toast({
+          title: 'Upload failed',
+          description: errorMsg,
+          variant: 'destructive',
         });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw new Error('Failed to upload image');
+        throw new Error(errorMsg);
       }
 
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
+      try {
+        // Check storage quota before uploading
+        await checkStorageQuota(supabase, wsId, file.size);
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${wsId}/task-images/${fileName}`;
+
+        const { data, error } = await supabase.storage
           .from('workspaces')
-          .createSignedUrl(data.path, 31536000);
+          .upload(filePath, file, {
+            contentType: file.type,
+            upsert: false,
+          });
 
-      if (signedUrlError) {
-        console.error('Signed URL error:', signedUrlError);
-        throw new Error('Failed to generate signed URL');
+        if (error) {
+          console.error('Upload error:', error);
+          toast({
+            title: 'Upload failed',
+            description: error.message || 'Failed to upload image',
+            variant: 'destructive',
+          });
+          throw new Error('Failed to upload image');
+        }
+
+        const { data: signedUrlData, error: signedUrlError } =
+          await supabase.storage
+            .from('workspaces')
+            .createSignedUrl(data.path, 31536000);
+
+        if (signedUrlError) {
+          console.error('Signed URL error:', signedUrlError);
+          toast({
+            title: 'URL generation failed',
+            description:
+              signedUrlError.message || 'Failed to generate signed URL',
+            variant: 'destructive',
+          });
+          throw new Error('Failed to generate signed URL');
+        }
+
+        return signedUrlData.signedUrl;
+      } catch (error) {
+        if (error instanceof StorageQuotaError) {
+          toast({
+            title: 'Storage Quota Exceeded',
+            description: error.message,
+            variant: 'destructive',
+          });
+          throw error;
+        }
+        throw error;
       }
-
-      return signedUrlData.signedUrl;
     },
-    [wsId]
+    [wsId, toast]
   );
 
   const handleEstimationConfigSuccess = useCallback(async () => {
@@ -1370,6 +1407,11 @@ export function TaskEditDialog({
     autoSchedule,
     parentTaskId,
     pendingRelationship,
+    isPersonalWorkspace,
+    user?.avatar_url,
+    user?.display_name,
+    user?.id,
+    userTaskSettings?.task_auto_assign_to_self,
   ]);
 
   // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
@@ -2649,7 +2691,7 @@ export function TaskEditDialog({
                 />
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="relative pb-8">
+                <div ref={editorRef} className="relative">
                   <div
                     ref={richTextEditorRef}
                     className={cn(
@@ -2662,7 +2704,7 @@ export function TaskEditDialog({
                       onChange={setDescription}
                       writePlaceholder="Add a detailed description, attach files, or use markdown..."
                       titlePlaceholder=""
-                      className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                      className="min-h-[calc(100vh-16rem)] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                       workspaceId={wsId || undefined}
                       onImageUpload={handleImageUpload}
                       flushPendingRef={flushEditorPendingRef}
@@ -2737,6 +2779,38 @@ export function TaskEditDialog({
                     )}
                   </div>
                 </div>
+
+                {/* Task Activity Section - Only show in edit mode */}
+                {!isCreateMode && task && (
+                  <TaskActivitySection
+                    wsId={wsId}
+                    taskId={task.id}
+                    boardId={boardId}
+                    currentTask={{
+                      id: task.id,
+                      name: name || task.name || '',
+                      description: description,
+                      priority: priority,
+                      start_date: startDate?.toISOString() || null,
+                      end_date: endDate?.toISOString() || null,
+                      estimation_points: estimationPoints ?? null,
+                      list_id: selectedListId || task.list_id || '',
+                      list_name:
+                        availableLists?.find((l) => l.id === selectedListId)
+                          ?.name || null,
+                      completed: !!task.completed_at,
+                      assignees: selectedAssignees.map((a) => ({
+                        id: a.id,
+                        user_id: a.id,
+                      })),
+                      labels: selectedLabels.map((l) => ({ id: l.id })),
+                      projects: selectedProjects.map((p) => ({ id: p.id })),
+                    }}
+                    // NOTE: Snapshot reversion is disabled as the feature is not stable yet.
+                    // Set to false when the feature is ready.
+                    revertDisabled={true}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -2758,7 +2832,6 @@ export function TaskEditDialog({
         onOpenChange={setShowDeleteConfirm}
         taskId={task?.id}
         boardId={boardId}
-        wsId={wsId}
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}

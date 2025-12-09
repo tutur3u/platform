@@ -32,6 +32,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -311,6 +312,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     schedulingSaving,
   } = props;
 
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
+
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
   const [isDueDatePopoverOpen, setIsDueDatePopoverOpen] = useState(false);
@@ -547,12 +550,28 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
         ) {
           selectedDate = selectedDate.endOf('day');
         }
+        // If both start and end dates are empty, set start date to start of today
+        if (!startDate && !endDate) {
+          onStartDateChange(dayjs().startOf('day').toDate());
+        }
         onEndDateChange(selectedDate.toDate());
       } else {
         onEndDateChange(undefined);
       }
     },
-    [onEndDateChange]
+    [startDate, endDate, onStartDateChange, onEndDateChange]
+  );
+
+  // Wrapper for quick due date that also sets start date if both are empty
+  const handleQuickDueDate = useCallback(
+    (days: number | null) => {
+      // If both start and end dates are empty, set start date to start of today
+      if (!startDate && !endDate && days !== null) {
+        onStartDateChange(dayjs().startOf('day').toDate());
+      }
+      onQuickDueDate(days);
+    },
+    [startDate, endDate, onStartDateChange, onQuickDueDate]
   );
 
   return (
@@ -865,6 +884,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         allowClear={true}
                         showFooterControls={true}
                         maxDate={endDate}
+                        preferences={{ weekStartsOn, timezone, timeFormat }}
                       />
                     </div>
 
@@ -880,6 +900,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         allowClear={true}
                         showFooterControls={true}
                         minDate={startDate}
+                        preferences={{ weekStartsOn, timezone, timeFormat }}
                       />
 
                       {/* Date Range Warning */}
@@ -902,7 +923,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => onQuickDueDate(0)}
+                            onClick={() => handleQuickDueDate(0)}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
@@ -912,7 +933,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => onQuickDueDate(1)}
+                            onClick={() => handleQuickDueDate(1)}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
@@ -924,7 +945,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             size="xs"
                             onClick={() => {
                               const daysUntilEndOfWeek = 6 - dayjs().day();
-                              onQuickDueDate(daysUntilEndOfWeek);
+                              handleQuickDueDate(daysUntilEndOfWeek);
                             }}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
@@ -935,7 +956,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => onQuickDueDate(7)}
+                            onClick={() => handleQuickDueDate(7)}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >

@@ -22,15 +22,15 @@ All agents MUST treat this file as source of truth when policy conflicts arise. 
 
 Approved capability surface (default-allowed unless explicitly restricted):
 
-| Domain | Allowed Actions | Must Also Do | Never Do |
-|--------|-----------------|--------------|----------|
-| Code (TS/JS) | Create/modify Next.js App Router routes, React Server/Client Components, shared package code | Add/update minimal tests & types, update relevant docs, use TanStack Query for ALL client-side data fetching | Introduce breaking public API changes without `BREAKING` note; **NEVER use `useEffect` for data fetching**; use raw fetch without React Query |
-| Code (Python) | Modify scripts/services in `apps/*` (python) respecting virtual env & dependency isolation | Keep requirements pinned / update lock if exists | Mix unrelated refactors with feature PR |
-| Database (Supabase) | Create migration SQL in `apps/db/supabase/migrations`, run typegen | Bump generated types in `@tuturuuu/types` | Directly edit generated type files manually |
-| AI Endpoints | Add routes under `app/api/...` using Vercel AI SDK & schemas in `packages/ai` | Enforce auth & feature flag checks | Expose raw provider keys or skip validation |
-| Tooling | Update configs (`biome.json`, `turbo.json`) | Document rationale in PR description | Remove caching or security settings silently |
-| Docs | Update `.md` / `.mdx` for accuracy | Cross-link related guides | Invent undocumented behavior |
-| Dependencies | Add/remove workspace deps via `bun add --workspace` | Prefer workspace:* for internal packages | Add duplicate version already satisfied |
+| Domain              | Allowed Actions                                                                              | Must Also Do                                                                                                 | Never Do                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code (TS/JS)        | Create/modify Next.js App Router routes, React Server/Client Components, shared package code | Add/update minimal tests & types, update relevant docs, use TanStack Query for ALL client-side data fetching | Introduce breaking public API changes without `BREAKING` note; **NEVER use `useEffect` for data fetching**; use raw fetch without React Query |
+| Code (Python)       | Modify scripts/services in `apps/*` (python) respecting virtual env & dependency isolation   | Keep requirements pinned / update lock if exists                                                             | Mix unrelated refactors with feature PR                                                                                                       |
+| Database (Supabase) | Create migration SQL in `apps/db/supabase/migrations`, run typegen                           | Bump generated types in `@tuturuuu/types`                                                                    | Directly edit generated type files manually                                                                                                   |
+| AI Endpoints        | Add routes under `app/api/...` using Vercel AI SDK & schemas in `packages/ai`                | Enforce auth & feature flag checks                                                                           | Expose raw provider keys or skip validation                                                                                                   |
+| Tooling             | Update configs (`biome.json`, `turbo.json`)                                                  | Document rationale in PR description                                                                         | Remove caching or security settings silently                                                                                                  |
+| Docs                | Update `.md` / `.mdx` for accuracy                                                           | Cross-link related guides                                                                                    | Invent undocumented behavior                                                                                                                  |
+| Dependencies        | Add/remove workspace deps via `bun add --workspace`                                          | Prefer workspace:\* for internal packages                                                                    | Add duplicate version already satisfied                                                                                                       |
 
 Mandatory guardrails:
 
@@ -100,16 +100,16 @@ platform/
 
 Semantics & norms:
 
-| Area | Rule |
-|------|------|
-| Cross-app sharing | Prefer extracting to `packages/*` before duplicating logic. |
-| Supabase types | Always regenerate via `bun sb:typegen`—never hand-edit generated files. |
-| Type inference | Prefer importing types from `packages/types/src/db.ts` (only after user runs migrations + typegen). Never attempt to run migrations yourself. |
-| App isolation | Avoid importing from another app's `src/`; use published workspace packages. |
-| Environment config | Each Next.js app consumes root `.env*` plus its own; Python services manage their own `.env`. |
-| Naming | Package names follow `@tuturuuu/<name>`; commit scopes mirror these names. |
-| Edge/runtime | Explicitly set `export const runtime = 'edge'` when targeting edge execution. |
-| Server vs Client Components | Default to Server Components; add `'use client'` only when interactivity/state required. |
+| Area                        | Rule                                                                                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cross-app sharing           | Prefer extracting to `packages/*` before duplicating logic.                                                                                   |
+| Supabase types              | Always regenerate via `bun sb:typegen`—never hand-edit generated files.                                                                       |
+| Type inference              | Prefer importing types from `packages/types/src/db.ts` (only after user runs migrations + typegen). Never attempt to run migrations yourself. |
+| App isolation               | Avoid importing from another app's `src/`; use published workspace packages.                                                                  |
+| Environment config          | Each Next.js app consumes root `.env*` plus its own; Python services manage their own `.env`.                                                 |
+| Naming                      | Package names follow `@tuturuuu/<name>`; commit scopes mirror these names.                                                                    |
+| Edge/runtime                | Explicitly set `export const runtime = 'edge'` when targeting edge execution.                                                                 |
+| Server vs Client Components | Default to Server Components; add `'use client'` only when interactivity/state required.                                                      |
 
 Python subdirectory (`apps/discord/`):
 
@@ -119,7 +119,7 @@ Python subdirectory (`apps/discord/`):
 Database directory (`apps/db/`):
 
 - `supabase/migrations` holds versioned SQL migrations (timestamp-based or sequential). Do not reorder.
-- Scripts orchestrate Supabase CLI lifecycle (see root `package.json` sb:* scripts).
+- Scripts orchestrate Supabase CLI lifecycle (see root `package.json` sb:\* scripts).
 - After schema change: run migrations → `bun sb:typegen` → commit updated `packages/types` changes in same PR.
 
 ## 4. Canonical Workflows
@@ -130,7 +130,6 @@ Each workflow must be: minimal, idempotent, documented in PR description.
 
 1. Determine scope (app vs shared). If reusable → create/update package under `packages/*`.
 2. Add dependency:
-
    - `bun add <pkg>@<version> --workspace=@tuturuuu/<package-or-app>`
    - Internal: reference as `workspace:*`.
 
@@ -187,6 +186,20 @@ Use Biome (user-run only; agent must not execute commands directly).
 1. Agent identifies potential lint/format issues (heuristic or static review) and requests user to run `bun lint` / `bun format`.
 2. For fixes, agent proposes code edits; user optionally runs `bun lint:fix` / `bun format:fix`.
 3. Agent re-checks file content post-user action to confirm resolution.
+
+**Type Checking with tsgo (RECOMMENDED):**
+
+Use `tsgo` (`@typescript/native-preview`) for type checking instead of `tsc`. It is nearly **10x faster** than the standard TypeScript compiler.
+
+```bash
+# Type check a specific package (RECOMMENDED - ~10x faster)
+npx tsgo --project packages/utils/tsconfig.json
+
+# Type check the entire monorepo
+npx tsgo
+```
+
+Agents CAN run `tsgo` for type checking as it completes quickly. Prefer `tsgo` over `tsc` or `bun --filter @tuturuuu/<pkg> run type-check` for faster feedback.
 
 ### 4.7 Testing
 
@@ -464,10 +477,10 @@ Mutations:
 - Define `useMutation({ mutationFn, onMutate, onError, onSettled })`.
 - Optimistic Update Flow:
 
- 1. `onMutate` – cancel outgoing queries for affected keys (`queryClient.cancelQueries`). Snapshot previous value.
- 2. Apply optimistic cache change (`setQueryData`).
- 3. On error – restore snapshot; surface toast / non-intrusive error.
- 4. On success – merge server response (source of truth) and invalidate narrowly (e.g., `invalidateQueries({ queryKey: [...] })`).
+1.  `onMutate` – cancel outgoing queries for affected keys (`queryClient.cancelQueries`). Snapshot previous value.
+2.  Apply optimistic cache change (`setQueryData`).
+3.  On error – restore snapshot; surface toast / non-intrusive error.
+4.  On success – merge server response (source of truth) and invalidate narrowly (e.g., `invalidateQueries({ queryKey: [...] })`).
 
 - Avoid broad `invalidateQueries()` with no key – hurts perf & determinism.
 
@@ -490,6 +503,17 @@ Realtime Integration (Optional):
 - Subscribe to Supabase channel only for high-value live data (e.g., collaborative edits). In handler, update cache via `setQueryData` instead of invalidating if diff known.
 - Throttle bursts (debounce merging) to avoid rapid re-renders.
 
+**Kanban Task Realtime Sync (CRITICAL):**
+
+Tasks inside kanban boards (`task.tsx`, `task-edit-dialog.tsx`, and related components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to keep task fields synchronized across all connected clients. **NEVER invalidate TanStack Query caches for task data in these components.**
+
+- ❌ **NEVER** call `queryClient.invalidateQueries()` for task-related queries in kanban components
+- ❌ **NEVER** use `refetch()` on task queries after mutations in kanban context
+- ✅ **DO** rely on realtime subscriptions to propagate changes automatically
+- ✅ **DO** use optimistic updates via `setQueryData` for immediate UI feedback, letting realtime sync handle cross-client consistency
+
+**Rationale:** Query invalidation triggers refetches that race with realtime updates, causing UI flicker, stale data overwrites, and inconsistent state across clients. The realtime subscription is the single source of truth for task state propagation.
+
 Performance & Render Hygiene:
 
 - Co-locate small read queries with components; share bigger aggregates at boundary provider to avoid over-fetch.
@@ -508,13 +532,13 @@ Testing Guidelines:
 
 Do / Avoid Summary:
 
-| Do | Because | Avoid | Why |
-|----|---------|-------|-----|
-| RSC first for static & SEO data | Fewer bytes, faster TTFB | Client query for static config | Redundant round trip |
-| Hydrate initial query cache | Prevent double fetch | Refetch immediately post-hydration | Wasted bandwidth |
-| Narrow invalidations | Precise updates | Global invalidation | Performance hit |
-| Optimistic updates with snapshot | Responsive UX | Blind optimistic writes w/out rollback | Inconsistent UI on failure |
-| Version query keys on shape change | Avoid stale structural assumptions | Reusing old key after breaking change | Hard-to-debug stale caches |
+| Do                                 | Because                            | Avoid                                  | Why                        |
+| ---------------------------------- | ---------------------------------- | -------------------------------------- | -------------------------- |
+| RSC first for static & SEO data    | Fewer bytes, faster TTFB           | Client query for static config         | Redundant round trip       |
+| Hydrate initial query cache        | Prevent double fetch               | Refetch immediately post-hydration     | Wasted bandwidth           |
+| Narrow invalidations               | Precise updates                    | Global invalidation                    | Performance hit            |
+| Optimistic updates with snapshot   | Responsive UX                      | Blind optimistic writes w/out rollback | Inconsistent UI on failure |
+| Version query keys on shape change | Avoid stale structural assumptions | Reusing old key after breaking change  | Hard-to-debug stale caches |
 
 Escalate if: Proposed pattern entails >5 overlapping realtime channels OR optimistic update logic >40 LOC (extract helper / reconsider complexity).
 
@@ -547,10 +571,10 @@ Migration Pattern:
 
 ```ts
 // BEFORE (deprecated)
-import { toast } from '@tuturuuu/ui/toast';
+import { toast } from "@tuturuuu/ui/toast";
 
 // AFTER
-import { toast } from '@tuturuuu/ui/sonner';
+import { toast } from "@tuturuuu/ui/sonner";
 ```
 
 No behavioral API change expected; if an edge case arises (missing variant / prop), escalate instead of shim‑patching locally.
@@ -633,9 +657,9 @@ export function MyComponent({ workspace }: MyComponentProps) {
 
     // Directly use workspace.id - already resolved by parent
     const { data } = await supabase
-      .from('some_table')
-      .select('*')
-      .eq('ws_id', workspace.id);
+      .from("some_table")
+      .select("*")
+      .eq("ws_id", workspace.id);
   }, [workspace?.id]);
 }
 ```
@@ -652,8 +676,11 @@ export function MyComponent({ workspace }: MyComponentProps) {
 For server-side code, use the `normalizeWorkspaceId` helper:
 
 ```typescript
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { resolveWorkspaceId, PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
+import { getWorkspace } from "@tuturuuu/utils/workspace-helper";
+import {
+  resolveWorkspaceId,
+  PERSONAL_WORKSPACE_SLUG,
+} from "@tuturuuu/utils/constants";
 
 const normalizeWorkspaceId = async (wsId: string) => {
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
@@ -667,9 +694,7 @@ export async function GET(req: Request) {
   const { wsId } = await req.json();
   const resolvedWsId = await normalizeWorkspaceId(wsId);
 
-  const { data } = await supabase
-    .from('table')
-    .eq('ws_id', resolvedWsId);
+  const { data } = await supabase.from("table").eq("ws_id", resolvedWsId);
 }
 ```
 
@@ -749,19 +774,16 @@ Rules:
 1. Underlying stored value is always an integer index (0…7). Never store the human label directly.
 2. Mapping from index → display string handled by a shared function (currently `mapEstimationPoints` in `packages/ui/src/components/ui/tu-do/shared/estimation-mapping.ts`). Do not re‑implement ad hoc switch statements elsewhere (DRY enforcement).
 3. Supported estimation types & display sequences:
-
    - `t-shirt`: `0 -> -`, `1 -> XS`, `2 -> S`, `3 -> M`, `4 -> L`, `5 -> XL`, `6 -> XXL`, `7 -> XXXL`.
    - `fibonacci`: `0,1,2,3,5,8,13,21` (index 0..7).
    - `exponential`: `0,1,2,4,8,16,32,64` (index 0..7).
    - Default / linear: display the raw index.
 
 4. Extended Estimation Flag (`extended_estimation`):
-
    - When false: indices >5 (i.e. 6 and 7) MUST NOT be selectable; they should render in menus as disabled (optional hint label e.g. “(upgrade)” or omitted entirely).
    - When true: indices 6 and 7 become enabled with their mapped labels.
 
 5. Zero Handling (`allow_zero_estimates`):
-
    - If false: index 0 is excluded from selection lists and should not appear.
    - If true: index 0 is included; t‑shirt displays `-`, others show their mapped numeric.
 
@@ -793,13 +815,13 @@ Mandatory Refactoring Triggers:
 
 Refactoring Principles:
 
-| Principle | Rule | Example |
-|-----------|------|---------|
-| Single Responsibility | Each component/function does ONE thing well | Split `UserProfileForm` into `UserBasicInfo`, `UserPreferences`, `UserSecurity` |
-| Composition over Monoliths | Build from small, reusable pieces | Extract `<DataTable>`, `<FilterBar>`, `<Pagination>` from large list view |
-| Proper Hook Usage | Extract stateful logic to custom hooks | Move complex form state to `useUserProfileForm()` |
-| Meaningful Naming | Names reveal intent without needing comments | `calculateTotalWithTax()` not `calc()` |
-| DRY (Don't Repeat Yourself) | Zero tolerance for copy-paste code | Extract repeated validation logic to `validateUserInput()` |
+| Principle                   | Rule                                         | Example                                                                         |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------- |
+| Single Responsibility       | Each component/function does ONE thing well  | Split `UserProfileForm` into `UserBasicInfo`, `UserPreferences`, `UserSecurity` |
+| Composition over Monoliths  | Build from small, reusable pieces            | Extract `<DataTable>`, `<FilterBar>`, `<Pagination>` from large list view       |
+| Proper Hook Usage           | Extract stateful logic to custom hooks       | Move complex form state to `useUserProfileForm()`                               |
+| Meaningful Naming           | Names reveal intent without needing comments | `calculateTotalWithTax()` not `calc()`                                          |
+| DRY (Don't Repeat Yourself) | Zero tolerance for copy-paste code           | Extract repeated validation logic to `validateUserInput()`                      |
 
 React-Specific Best Practices (Mandatory):
 
@@ -828,14 +850,14 @@ Quality Over Speed:
 
 Extraction Decision Framework:
 
-| Signal | Keep In-File | Extract Now |
-|--------|--------------|-------------|
-| Function used once | ✓ | Only if >50 LOC |
-| Function used ≥2 times | | ✓ Extract to utils |
-| Component used once | ✓ (as sub-component) | Only if >100 LOC |
-| Component used ≥2 times | | ✓ Extract to shared |
-| Logic with side effects | ✓ (until stable) | After 2nd usage |
-| Pure computation | | ✓ Extract immediately if testable value |
+| Signal                  | Keep In-File         | Extract Now                             |
+| ----------------------- | -------------------- | --------------------------------------- |
+| Function used once      | ✓                    | Only if >50 LOC                         |
+| Function used ≥2 times  |                      | ✓ Extract to utils                      |
+| Component used once     | ✓ (as sub-component) | Only if >100 LOC                        |
+| Component used ≥2 times |                      | ✓ Extract to shared                     |
+| Logic with side effects | ✓ (until stable)     | After 2nd usage                         |
+| Pure computation        |                      | ✓ Extract immediately if testable value |
 
 Testing Implications:
 
@@ -881,18 +903,18 @@ The settings dialog uses a sidebar navigation pattern with grouped sections:
 ```typescript
 const navItems = [
   {
-    label: 'User Settings',
+    label: "User Settings",
     items: [
-      { name: 'profile', label: 'Profile', icon: User },
-      { name: 'security', label: 'Security', icon: Shield },
-      { name: 'sessions', label: 'Sessions & Devices', icon: Laptop },
+      { name: "profile", label: "Profile", icon: User },
+      { name: "security", label: "Security", icon: Shield },
+      { name: "sessions", label: "Sessions & Devices", icon: Laptop },
     ],
   },
   {
-    label: 'Preferences',
+    label: "Preferences",
     items: [
-      { name: 'appearance', label: 'Appearance & Theme', icon: Paintbrush },
-      { name: 'notifications', label: 'Notifications', icon: Bell },
+      { name: "appearance", label: "Appearance & Theme", icon: Paintbrush },
+      { name: "notifications", label: "Notifications", icon: Bell },
     ],
   },
   // ... workspace and product-specific sections
@@ -959,9 +981,9 @@ Mantine is integrated application-wide and available in any component:
 
    ```typescript
    // In apps/web/src/app/[locale]/layout.tsx
-   import '@mantine/core/styles.css';
-   import '@mantine/charts/styles.css';
-   import '@/style/mantine-theme-override.css';
+   import "@mantine/core/styles.css";
+   import "@mantine/charts/styles.css";
+   import "@/style/mantine-theme-override.css";
    ```
 
 2. **Theme Provider**: `MantineThemeProvider` is configured in root providers (`apps/web/src/components/providers.tsx`).
@@ -994,10 +1016,10 @@ Mantine is integrated application-wide and available in any component:
 
    ```typescript
    'use client';
-   
+
    import { Heatmap } from '@mantine/charts';
    import classes from '@/style/mantine-heatmap.module.css';
-   
+
    export function MyComponent() {
      return <Heatmap data={data} classNames={classes} />;
    }
@@ -1013,8 +1035,8 @@ For libraries not yet centralized, use route-scoped integration:
 
    ```typescript
    // In apps/web/src/app/[locale]/(dashboard)/[wsId]/some-route/layout.tsx
-   import '@third-party/core/styles.css';
-   import './third-party-theme-override.css';
+   import "@third-party/core/styles.css";
+   import "./third-party-theme-override.css";
    ```
 
 2. **Theme Override File**: Create a `*-theme-override.css` file in the route directory.
@@ -1029,12 +1051,12 @@ For libraries not yet centralized, use route-scoped integration:
 /* third-party-theme-override.css */
 /**
  * [Library Name] Theme Override - Color Synchronization
- * 
+ *
  * CRITICAL: Maps application theme colors to [Library]'s color system.
- * 
+ *
  * ⚠️  IMPORTANT: When updating colors in packages/ui/src/globals.css,
  *     update corresponding variables here.
- * 
+ *
  * 📖 Documentation: See [LIBRARY]_THEME_SYNC.md
  * Source of Truth: packages/ui/src/globals.css
  * Last Synced: YYYY-MM-DD
@@ -1097,7 +1119,7 @@ const [showDialog, setShowDialog] = useState(false);
       <Button onClick={handleConfirm}>Confirm</Button>
     </DialogFooter>
   </DialogContent>
-</Dialog>
+</Dialog>;
 ```
 
 Rationale:
@@ -1170,12 +1192,12 @@ Rules:
 
 Handoff Requirements:
 
-| From | To | Must Provide |
-|------|----|--------------|
-| Execution | Review | Summary of change, affected packages, commands run, residual warnings |
-| Review | Execution | Precise failure list (file:line + message), suggested fix vectors |
-| Execution | Docs | Public API surface diff & new env vars (names only) |
-| Refactor | Review | Rationale, before/after complexity/perf notes, test matrix unchanged |
+| From      | To        | Must Provide                                                          |
+| --------- | --------- | --------------------------------------------------------------------- |
+| Execution | Review    | Summary of change, affected packages, commands run, residual warnings |
+| Review    | Execution | Precise failure list (file:line + message), suggested fix vectors     |
+| Execution | Docs      | Public API surface diff & new env vars (names only)                   |
+| Refactor  | Review    | Rationale, before/after complexity/perf notes, test matrix unchanged  |
 
 ### 7.2 Concurrency Rules
 
@@ -1232,15 +1254,15 @@ Tick ALL before requesting review:
 
 ### 8.2 Quality Gates
 
-| Gate | Pass Criteria |
-|------|---------------|
-| Build | All packages/apps build w/out error |
-| Lint | No errors; warnings justified or fixed |
-| Types | No `any` leaks (except justified) |
-| Tests | Relevant suites pass; coverage stable or improved |
-| Migrations | Apply cleanly; idempotent re-run |
-| Docs | Updated & internally consistent |
-| Security | No plaintext secrets; validation present |
+| Gate        | Pass Criteria                                            |
+| ----------- | -------------------------------------------------------- |
+| Build       | All packages/apps build w/out error                      |
+| Lint        | No errors; warnings justified or fixed                   |
+| Types       | No `any` leaks (except justified)                        |
+| Tests       | Relevant suites pass; coverage stable or improved        |
+| Migrations  | Apply cleanly; idempotent re-run                         |
+| Docs        | Updated & internally consistent                          |
+| Security    | No plaintext secrets; validation present                 |
 | Performance | No obvious regressions; hot paths unchanged or justified |
 
 ### 8.3 Rejection Triggers (Auto-Fail)
@@ -1273,29 +1295,29 @@ CI pipelines enforce the guardrails automatically. Agents should align local ver
 
 ### 9.1 Workflow Categories
 
-| Category | Representative Workflow(s) | Purpose | Agent Prep |
-|----------|----------------------------|---------|-----------|
-| Code Quality | `biome-check.yaml` | Format + lint, auto-format PR if needed | Run `bun lint` & `bun format:fix` locally |
-| Unit Tests | `turbo-unit-tests.yaml` | Run Vitest across workspaces w/ remote turbo cache | Filter failing scope before pushing |
-| DB Integrity | `check-migrations.yml`, `supabase-types.yaml` | Enforce migration naming/order & type generation parity | Ensure `bun sb:push` clean + regenerated types committed |
-| Package Release | `release-*-package.yaml` | Conditional publish of scoped packages | Bump version + conventional commit title |
-| Supabase Deploy | `supabase-staging.yaml` / `supabase-production.yaml` | Apply migrations to envs | Avoid destructive SQL; additive changes |
-| Vercel Previews | `vercel-preview-*.yaml` | Build & preview per app | Keep build deterministic; avoid unused deps |
-| Vercel Production | `vercel-production-*.yaml` | Production deploy gating | Ensure env var usage documented |
-| Coverage | `codecov.yaml` | Upload coverage report | Add/maintain tests for changed logic |
-| Security / CodeQL | `codeql.yml` | Static security analysis | Address flagged issues or justify |
+| Category          | Representative Workflow(s)                           | Purpose                                                 | Agent Prep                                               |
+| ----------------- | ---------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
+| Code Quality      | `biome-check.yaml`                                   | Format + lint, auto-format PR if needed                 | Run `bun lint` & `bun format:fix` locally                |
+| Unit Tests        | `turbo-unit-tests.yaml`                              | Run Vitest across workspaces w/ remote turbo cache      | Filter failing scope before pushing                      |
+| DB Integrity      | `check-migrations.yml`, `supabase-types.yaml`        | Enforce migration naming/order & type generation parity | Ensure `bun sb:push` clean + regenerated types committed |
+| Package Release   | `release-*-package.yaml`                             | Conditional publish of scoped packages                  | Bump version + conventional commit title                 |
+| Supabase Deploy   | `supabase-staging.yaml` / `supabase-production.yaml` | Apply migrations to envs                                | Avoid destructive SQL; additive changes                  |
+| Vercel Previews   | `vercel-preview-*.yaml`                              | Build & preview per app                                 | Keep build deterministic; avoid unused deps              |
+| Vercel Production | `vercel-production-*.yaml`                           | Production deploy gating                                | Ensure env var usage documented                          |
+| Coverage          | `codecov.yaml`                                       | Upload coverage report                                  | Add/maintain tests for changed logic                     |
+| Security / CodeQL | `codeql.yml`                                         | Static security analysis                                | Address flagged issues or justify                        |
 
 ### 9.2 Failure Handling Guidance
 
-| Failure Type | Typical Cause | Agent Action |
-|--------------|---------------|--------------|
-| Biome format job opens PR | Unformatted files | Rebase after merge of autofix or apply locally |
-| Lint errors | New rule violations | Fix or suppress with rationale comment (rare) |
-| Migration ordering failure | Timestamp earlier than base | Rename migration with later timestamp |
-| Type mismatch (Supabase types) | Schema changed without regen | Run `bun sb:typegen` & commit |
-| Unit test flake | Non-deterministic test (timing, randomness) | Stabilize using deterministic seed or fake timers |
-| Build failure in preview | Missing dependency or edge runtime mismatch | Add dependency or export `runtime` constant |
-| Release workflow no-op | Missing chore commit scope/title | Adjust commit to `chore(@tuturuuu/<pkg>): bump version` |
+| Failure Type                   | Typical Cause                               | Agent Action                                            |
+| ------------------------------ | ------------------------------------------- | ------------------------------------------------------- |
+| Biome format job opens PR      | Unformatted files                           | Rebase after merge of autofix or apply locally          |
+| Lint errors                    | New rule violations                         | Fix or suppress with rationale comment (rare)           |
+| Migration ordering failure     | Timestamp earlier than base                 | Rename migration with later timestamp                   |
+| Type mismatch (Supabase types) | Schema changed without regen                | Run `bun sb:typegen` & commit                           |
+| Unit test flake                | Non-deterministic test (timing, randomness) | Stabilize using deterministic seed or fake timers       |
+| Build failure in preview       | Missing dependency or edge runtime mismatch | Add dependency or export `runtime` constant             |
+| Release workflow no-op         | Missing chore commit scope/title            | Adjust commit to `chore(@tuturuuu/<pkg>): bump version` |
 
 ### 9.3 Release Preconditions (Packages)
 
@@ -1345,37 +1367,38 @@ Agent Responsibilities:
 
 ## 10. Quick Reference (Cheat Sheet)
 
-| Goal | Command / Action | Notes |
-|------|------------------|-------|
-| Install deps | `bun install` | Deterministic via lockfile |
-| Dev (all apps) | `bun dev` | No DB required if gated |
-| Full stack dev | `bun devx` | Starts Supabase + apps |
-| Reset + seed | `bun devrs` | Destructive local DB reset |
-| Build all | `bun run build` | USER-ONLY; uses Turbo cache |
-| Test all | `bun run test` | Agents CAN run; Vitest workspaces |
-| Scoped test | `bun --filter @tuturuuu/ui test` | Add `...` suffix to include dependents |
-| Lint | `bun lint` | Use `lint:fix` to auto-fix |
-| Format | `bun format` | Use `format:fix` to write |
-| New migration | `bun sb:new` | Edit generated SQL file |
-| Apply migrations | `bun sb:push` | Also regenerates types |
-| Link migrations (user-only) | `bun sb:linkpush` | NEVER run as agent |
-| Regenerate types | `bun sb:typegen` | Commit resulting changes |
-| Add dep to pkg | `bun add <dep> --workspace=@tuturuuu/<scope>` | Internal deps `workspace:*` |
-| Create shared pkg | Follow 4.2 workflow | Include README + test |
-| Add API route | Create `app/api/.../route.ts` | Validate input early |
-| Add AI endpoint | See 4.4 | Use schema + auth + feature flag |
-| Add docs page | Create `.mdx` in `apps/docs/` + add to `mint.json` | **CRITICAL: Add to navigation or won't be visible** |
-| Add new settings | Add tab in `apps/web/src/components/settings/settings-dialog.tsx` | **CRITICAL: Never create separate settings pages** |
-| Integrate 3rd-party UI lib | See 5.21 workflow | Route-scoped CSS + theme override + sync docs |
-| Update app theme colors | Edit `packages/ui/src/globals.css` | **MUST** update all `*-theme-override.css` files |
-| Edge runtime | `export const runtime = 'edge'` | Only if required |
-| Supabase admin client | Import from `@tuturuuu/supabase` | Avoid direct REST calls |
-| Escape hatch escalation | Open issue `policy-gap` | Provide context & proposal |
-| (DO NOT auto run build/dev) | (Requires explicit user request) | Build commands are USER-ONLY unless explicitly requested |
-| (DO run tests after features) | `bun --filter @tuturuuu/<pkg> test` | Agents SHOULD add and run tests after implementing features |
-| (DO NOT run sb:push/linkpush) | User-only | Agent prepares migration & instructions |
-| (DO NOT run biome commands) | User-only | Agent suggests fixes; user executes |
-| (DO NOT run modal commands) | User-only | Agent prepares Modal code; user runs `modal run/deploy` |
+| Goal                          | Command / Action                                                  | Notes                                                       |
+| ----------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------- |
+| Install deps                  | `bun install`                                                     | Deterministic via lockfile                                  |
+| Dev (all apps)                | `bun dev`                                                         | No DB required if gated                                     |
+| Full stack dev                | `bun devx`                                                        | Starts Supabase + apps                                      |
+| Reset + seed                  | `bun devrs`                                                       | Destructive local DB reset                                  |
+| Build all                     | `bun run build`                                                   | USER-ONLY; uses Turbo cache                                 |
+| Test all                      | `bun run test`                                                    | Agents CAN run; Vitest workspaces                           |
+| Scoped test                   | `bun --filter @tuturuuu/ui test`                                  | Add `...` suffix to include dependents                      |
+| Lint                          | `bun lint`                                                        | Use `lint:fix` to auto-fix                                  |
+| Format                        | `bun format`                                                      | Use `format:fix` to write                                   |
+| New migration                 | `bun sb:new`                                                      | Edit generated SQL file                                     |
+| Apply migrations              | `bun sb:push`                                                     | Also regenerates types                                      |
+| Link migrations (user-only)   | `bun sb:linkpush`                                                 | NEVER run as agent                                          |
+| Regenerate types              | `bun sb:typegen`                                                  | Commit resulting changes                                    |
+| Add dep to pkg                | `bun add <dep> --workspace=@tuturuuu/<scope>`                     | Internal deps `workspace:*`                                 |
+| Create shared pkg             | Follow 4.2 workflow                                               | Include README + test                                       |
+| Add API route                 | Create `app/api/.../route.ts`                                     | Validate input early                                        |
+| Add AI endpoint               | See 4.4                                                           | Use schema + auth + feature flag                            |
+| Add docs page                 | Create `.mdx` in `apps/docs/` + add to `mint.json`                | **CRITICAL: Add to navigation or won't be visible**         |
+| Add new settings              | Add tab in `apps/web/src/components/settings/settings-dialog.tsx` | **CRITICAL: Never create separate settings pages**          |
+| Integrate 3rd-party UI lib    | See 5.21 workflow                                                 | Route-scoped CSS + theme override + sync docs               |
+| Update app theme colors       | Edit `packages/ui/src/globals.css`                                | **MUST** update all `*-theme-override.css` files            |
+| Edge runtime                  | `export const runtime = 'edge'`                                   | Only if required                                            |
+| Type check (fast)             | `npx tsgo`                                                        | ~10x faster than tsc; agents CAN run                        |
+| Supabase admin client         | Import from `@tuturuuu/supabase`                                  | Avoid direct REST calls                                     |
+| Escape hatch escalation       | Open issue `policy-gap`                                           | Provide context & proposal                                  |
+| (DO NOT auto run build/dev)   | (Requires explicit user request)                                  | Build commands are USER-ONLY unless explicitly requested    |
+| (DO run tests after features) | `bun --filter @tuturuuu/<pkg> test`                               | Agents SHOULD add and run tests after implementing features |
+| (DO NOT run sb:push/linkpush) | User-only                                                         | Agent prepares migration & instructions                     |
+| (DO NOT run biome commands)   | User-only                                                         | Agent suggests fixes; user executes                         |
+| (DO NOT run modal commands)   | User-only                                                         | Agent prepares Modal code; user runs `modal run/deploy`     |
 
 Top Failure Causes → Fix Fast:
 
@@ -1396,15 +1419,15 @@ Escalate if: multi-app breaking refactor, destructive schema change, data backfi
 
 When deciding whether to extract shared logic into a package under `packages/*`, evaluate the following dimensions. Extract only when ≥3 HIGH signals or a SINGLE Critical apply.
 
-| Criterion | Keep In-App (LOW) | Consider Extraction (MED) | Extract Now (HIGH) | Critical (Immediate) |
-|-----------|-------------------|---------------------------|--------------------|----------------------|
-| Reuse Breadth | Used in 1 app | Needed in 2 apps soon | Actively duplicated in ≥2 apps | Security / auth logic duplicated |
-| Change Velocity | Likely to churn heavily | Stabilizing | Stable interface | Must version for external integration |
-| Complexity | <50 LOC simple | 50–150 LOC moderate | >150 LOC multi-module | Requires specialized setup (e.g., provider clients) |
-| Domain Ownership | App-specific semantics | Mixed concerns | Pure cross-domain utility | Compliance / data boundary enforced |
-| Testing Needs | Hard to unit test yet | Basic tests exist | Comprehensive tests stable | Needed for contract testing in CI |
-| Public API Surface | Internal only | Might be exported later | Already imported via relative deep paths | External consumers (future OSS) |
-| Drift Risk | Low | Emerging duplication | Frequent copy-paste edits | Security patch needs single point fix |
+| Criterion          | Keep In-App (LOW)       | Consider Extraction (MED) | Extract Now (HIGH)                       | Critical (Immediate)                                |
+| ------------------ | ----------------------- | ------------------------- | ---------------------------------------- | --------------------------------------------------- |
+| Reuse Breadth      | Used in 1 app           | Needed in 2 apps soon     | Actively duplicated in ≥2 apps           | Security / auth logic duplicated                    |
+| Change Velocity    | Likely to churn heavily | Stabilizing               | Stable interface                         | Must version for external integration               |
+| Complexity         | <50 LOC simple          | 50–150 LOC moderate       | >150 LOC multi-module                    | Requires specialized setup (e.g., provider clients) |
+| Domain Ownership   | App-specific semantics  | Mixed concerns            | Pure cross-domain utility                | Compliance / data boundary enforced                 |
+| Testing Needs      | Hard to unit test yet   | Basic tests exist         | Comprehensive tests stable               | Needed for contract testing in CI                   |
+| Public API Surface | Internal only           | Might be exported later   | Already imported via relative deep paths | External consumers (future OSS)                     |
+| Drift Risk         | Low                     | Emerging duplication      | Frequent copy-paste edits                | Security patch needs single point fix               |
 
 Extraction Steps Recap:
 
@@ -1442,13 +1465,13 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 
 ### 12.3 Error Handling Strategy
 
-| Error Type | Detect | Action |
-|-----------|--------|--------|
-| Auth / 401 | Provider response code | Return 500 sanitized; log internal code path ID |
-| Rate limit | 429 / provider signal | Exponential backoff (max 2 retries), fallback model if supported |
-| Schema mismatch | Zod parse fail | Attempt single retry with stricter system instruction; else return 422 |
-| Timeout | Exceeds `maxDuration` | Abort controller; fallback to shorter prompt or flash model |
-| Content filter blocked | Provider flag | Return 400 with generic safe message; do not retry automatically |
+| Error Type             | Detect                 | Action                                                                 |
+| ---------------------- | ---------------------- | ---------------------------------------------------------------------- |
+| Auth / 401             | Provider response code | Return 500 sanitized; log internal code path ID                        |
+| Rate limit             | 429 / provider signal  | Exponential backoff (max 2 retries), fallback model if supported       |
+| Schema mismatch        | Zod parse fail         | Attempt single retry with stricter system instruction; else return 422 |
+| Timeout                | Exceeds `maxDuration`  | Abort controller; fallback to shorter prompt or flash model            |
+| Content filter blocked | Provider flag          | Return 400 with generic safe message; do not retry automatically       |
 
 ### 12.4 Prompt Hygiene
 
@@ -1471,27 +1494,27 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 
 ## 13. Glossary
 
-| Term | Definition |
-|------|------------|
-| RSC | React Server Components – default model; avoid `'use client'` unless interactivity required. |
-| Edge Runtime | Next.js execution mode optimized for low-latency global compute; set `export const runtime = 'edge'`. |
-| Typegen | Automatic generation of Supabase types via `bun sb:typegen`; never hand-edit output. |
-| Workspace Filter | Turborepo/Bun filter syntax `bun --filter <pkg>... <task>` including dependents with `...`. |
-| Migration | Versioned SQL file under `apps/db/supabase/migrations` representing additive schema evolution. |
-| Feature Flag | Workspace-level toggle stored in `workspace_secrets` controlling conditional feature access. |
-| Admin Client | Supabase service-role wrapper from `@tuturuuu/supabase` used for privileged operations server-side. |
-| Structured AI Generation | Using Vercel AI SDK `generateObject` / `streamObject` with Zod schema for deterministic shape. |
-| Idempotent | Safe to run multiple times without changing final state beyond initial application. |
-| Remote Cache | Turborepo cache persisted via `TURBO_TOKEN` / `TURBO_TEAM` enabling shared build artifacts. |
-| CI Parity | Local verification replicating key CI gates (build, test, lint, type, migration). |
-| Scope (Commit) | Affected package/app name inside Conventional Commit header (`feat(ui): ...`). |
-| Escalation | Opening `policy-gap` or human request when rule coverage insufficient or safety threshold exceeded. |
-| Dynamic Color Classes | Tailwind `dynamic-*` token-based utilities replacing static palette class names (blue-500, etc.). |
-| React Query | Client-side caching & async state library for queries/mutations; used only when RSC/server actions insufficient. |
-| Query Key | Stable array descriptor for cached resource (`[domain, paramsHash, version]`). |
-| Mutation | Write operation defined with `useMutation`; may perform optimistic UI update then reconcile. |
-| Optimistic Update | Temporary cache modification prior to server confirmation with rollback on failure. |
-| Hydration | Passing pre-fetched query data from server (RSC) into client cache to avoid duplicate fetch. |
-| Dialog Components | Accessible modal components from `@tuturuuu/ui/dialog`; must be used instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). |
-| Bilingual Translations | Mandatory requirement to provide user-facing strings in both English (`en.json`) and Vietnamese (`vi.json`) simultaneously. |
-| Translation Key | Hierarchical identifier (e.g., `workspace-finance-tabs.recurring`) used to reference localized strings via `next-intl`. |
+| Term                     | Definition                                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| RSC                      | React Server Components – default model; avoid `'use client'` unless interactivity required.                                                 |
+| Edge Runtime             | Next.js execution mode optimized for low-latency global compute; set `export const runtime = 'edge'`.                                        |
+| Typegen                  | Automatic generation of Supabase types via `bun sb:typegen`; never hand-edit output.                                                         |
+| Workspace Filter         | Turborepo/Bun filter syntax `bun --filter <pkg>... <task>` including dependents with `...`.                                                  |
+| Migration                | Versioned SQL file under `apps/db/supabase/migrations` representing additive schema evolution.                                               |
+| Feature Flag             | Workspace-level toggle stored in `workspace_secrets` controlling conditional feature access.                                                 |
+| Admin Client             | Supabase service-role wrapper from `@tuturuuu/supabase` used for privileged operations server-side.                                          |
+| Structured AI Generation | Using Vercel AI SDK `generateObject` / `streamObject` with Zod schema for deterministic shape.                                               |
+| Idempotent               | Safe to run multiple times without changing final state beyond initial application.                                                          |
+| Remote Cache             | Turborepo cache persisted via `TURBO_TOKEN` / `TURBO_TEAM` enabling shared build artifacts.                                                  |
+| CI Parity                | Local verification replicating key CI gates (build, test, lint, type, migration).                                                            |
+| Scope (Commit)           | Affected package/app name inside Conventional Commit header (`feat(ui): ...`).                                                               |
+| Escalation               | Opening `policy-gap` or human request when rule coverage insufficient or safety threshold exceeded.                                          |
+| Dynamic Color Classes    | Tailwind `dynamic-*` token-based utilities replacing static palette class names (blue-500, etc.).                                            |
+| React Query              | Client-side caching & async state library for queries/mutations; used only when RSC/server actions insufficient.                             |
+| Query Key                | Stable array descriptor for cached resource (`[domain, paramsHash, version]`).                                                               |
+| Mutation                 | Write operation defined with `useMutation`; may perform optimistic UI update then reconcile.                                                 |
+| Optimistic Update        | Temporary cache modification prior to server confirmation with rollback on failure.                                                          |
+| Hydration                | Passing pre-fetched query data from server (RSC) into client cache to avoid duplicate fetch.                                                 |
+| Dialog Components        | Accessible modal components from `@tuturuuu/ui/dialog`; must be used instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). |
+| Bilingual Translations   | Mandatory requirement to provide user-facing strings in both English (`en.json`) and Vietnamese (`vi.json`) simultaneously.                  |
+| Translation Key          | Hierarchical identifier (e.g., `workspace-finance-tabs.recurring`) used to reference localized strings via `next-intl`.                      |

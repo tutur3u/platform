@@ -1,3 +1,12 @@
+import '@testing-library/jest-dom/vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+// Automatically cleanup after each test to prevent React 19 scheduler issues
+afterEach(() => {
+  cleanup();
+});
+
 // Setup global mocks for jsdom environment
 const createLocalStorageMock = () => {
   let store: Record<string, string> = {};

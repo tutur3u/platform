@@ -210,11 +210,52 @@ function getChangeDescription(
   entry: TaskHistoryEntry,
   t: any
 ): { action: string; details?: React.ReactNode } {
+  // Handle task_created
+  if (entry.change_type === 'task_created') {
+    const metadata = entry.metadata as Record<string, unknown> | null;
+    const listName = metadata?.list_name as string | undefined;
+    const hasEstimation = metadata?.estimation_points != null;
+    const hasStartDate = !!metadata?.start_date;
+    const hasEndDate = !!metadata?.end_date;
+
+    const parts: string[] = [];
+    if (listName) parts.push(`in ${listName}`);
+    if (hasEstimation) parts.push(`${metadata?.estimation_points} pts`);
+    if (hasStartDate || hasEndDate) parts.push('with dates');
+
+    return {
+      action: t('task_created', { defaultValue: 'Created task' }),
+      details:
+        parts.length > 0 ? (
+          <span className="text-muted-foreground text-sm">
+            {parts.join(' · ')}
+          </span>
+        ) : undefined,
+    };
+  }
+
   if (entry.change_type === 'field_updated') {
     const fieldKey = entry.field_name || 'unknown';
     const action = t(`field_updated.${fieldKey}`, {
       defaultValue: `Updated ${fieldKey}`,
     });
+
+    // For list_id changes, show actual column names from metadata
+    if (entry.field_name === 'list_id') {
+      const metadata = entry.metadata as Record<string, unknown> | null;
+      const oldListName = (metadata?.old_list_name as string) || 'Unknown';
+      const newListName = (metadata?.new_list_name as string) || 'Unknown';
+
+      const details = (
+        <div className="flex items-center gap-2">
+          <span className="text-foreground/60">{oldListName}</span>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{newListName}</span>
+        </div>
+      );
+
+      return { action, details };
+    }
 
     // Format the old and new values
     const oldValue = formatValue(entry.old_value, entry.field_name);
@@ -312,10 +353,10 @@ function formatValue(value: any, fieldName?: string | null): string {
     return priorityLabels[value] || String(value);
   }
 
-  // Handle list_id (board movement)
-  if (fieldName === 'list_id' && typeof value === 'string') {
-    // Just show a generic label; the actual list name would need to be in metadata
-    return 'List changed';
+  // Handle list_id - this case is now handled in getChangeDescription with metadata
+  // This fallback is for cases where metadata is not available
+  if (fieldName === 'list_id') {
+    return 'Column';
   }
 
   // Default: convert to string

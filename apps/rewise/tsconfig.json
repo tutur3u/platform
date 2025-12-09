@@ -1,7 +1,6 @@
 {
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
-    "baseUrl": "./src",
     "module": "ESNext",
     "plugins": [
       {
@@ -9,7 +8,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true

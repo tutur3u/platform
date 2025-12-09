@@ -1,0 +1,3 @@
+ALTER TABLE public.workspace_subscription
+ADD CONSTRAINT workspace_subscription_polar_subscription_id_unique 
+UNIQUE (polar_subscription_id);

@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
+import { useRouter } from 'next/navigation';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -48,9 +49,11 @@ export function SimpleTimerControls({
   categories,
   tasks,
   apiCall,
+  currentUserId,
   headerAction,
 }: SimpleTimerControlsProps) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const t = useTranslations('time-tracker.simple');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
@@ -116,10 +119,16 @@ export function SimpleTimerControls({
         }),
       });
 
-      // Invalidate query to refetch running session - single source of truth
+      // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
+      });
+
+      // Refresh server-side data to update overview page stats
+      router.refresh();
 
       toast.success(t('timerStarted'));
     } catch (error) {
@@ -172,10 +181,16 @@ export function SimpleTimerControls({
 
       setTimeout(() => setJustCompleted(null), 3000);
 
-      // Invalidate query to refetch running session - single source of truth
+      // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
+      });
+
+      // Refresh server-side data to update overview page stats
+      router.refresh();
 
       toast.success(
         t('sessionCompleted', {
@@ -212,20 +227,32 @@ export function SimpleTimerControls({
   // Handle session discarded from exceeded threshold dialog
   const handleSessionDiscarded = useCallback(() => {
     resetFormState();
-    // Invalidate query to refetch running session - single source of truth
+    // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
-      queryKey: ['running-time-session', wsId],
+      queryKey: ['running-time-session', wsId, currentUserId],
     });
-  }, [resetFormState, queryClient, wsId]);
+    queryClient.invalidateQueries({
+      queryKey: ['time-tracker-stats', wsId, currentUserId],
+    });
+
+    // Refresh server-side data to update overview page stats
+    router.refresh();
+  }, [resetFormState, queryClient, wsId, router, currentUserId]);
 
   // Handle missed entry created from exceeded threshold dialog
   const handleMissedEntryCreated = useCallback(() => {
     resetFormState();
-    // Invalidate query to refetch running session - single source of truth
+    // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
-      queryKey: ['running-time-session', wsId],
+      queryKey: ['running-time-session', wsId, currentUserId],
     });
-  }, [resetFormState, queryClient, wsId]);
+    queryClient.invalidateQueries({
+      queryKey: ['time-tracker-stats', wsId, currentUserId],
+    });
+
+    // Refresh server-side data to update overview page stats
+    router.refresh();
+  }, [resetFormState, queryClient, wsId, router, currentUserId]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
@@ -245,9 +272,12 @@ export function SimpleTimerControls({
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
 
-      // Invalidate query to refetch running session - single source of truth
+      // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       toast.success(t('timerPaused'));
@@ -277,9 +307,12 @@ export function SimpleTimerControls({
       setPausedSession(null);
       setPausedElapsedTime(0);
 
-      // Invalidate query to refetch running session - single source of truth
+      // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
+        queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       toast.success(t('timerResumed'));

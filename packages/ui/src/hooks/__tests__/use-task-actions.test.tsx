@@ -34,7 +34,7 @@ describe('useTaskActions', () => {
   let mockUpdateTaskMutation: any;
   let mockToast: any;
 
-  const mockTask: Task = {
+  const mockTask = {
     id: 'task-1',
     name: 'Test Task',
     list_id: 'list-1',
@@ -48,7 +48,7 @@ describe('useTaskActions', () => {
     estimation_points: null,
     end_date: null,
     display_number: 1,
-  } as Task;
+  } as unknown as Task;
 
   const mockCompletionList: TaskList = {
     id: 'completion-list',
@@ -66,7 +66,7 @@ describe('useTaskActions', () => {
     created_at: '2025-01-01T00:00:00Z',
   } as TaskList;
 
-  const mockAvailableLists: TaskList[] = [
+  const mockAvailableLists = [
     {
       id: 'list-1',
       name: 'To Do',
@@ -78,7 +78,7 @@ describe('useTaskActions', () => {
       creator_id: 'user-1',
       color: null,
       position: 0,
-    } as TaskList,
+    } as unknown as TaskList,
     mockCompletionList,
     mockClosedList,
   ];
@@ -427,9 +427,9 @@ describe('useTaskActions', () => {
     it('should handle bulk delete of multiple tasks', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: null, data: [], count: 2 })
+      // Configure the .eq() call to resolve to a success response (sequential deletion)
+      mockSupabase.eq = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 1 })
       );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
@@ -458,7 +458,9 @@ describe('useTaskActions', () => {
         await result.current.handleDelete();
       });
 
-      expect(mockSupabase.in).toHaveBeenCalledWith('id', ['task-1', 'task-2']);
+      // Implementation uses sequential .eq() calls per task
+      expect(mockSupabase.update).toHaveBeenCalled();
+      expect(mockSupabase.eq).toHaveBeenCalled();
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: '2 tasks deleted',
       });
@@ -502,9 +504,9 @@ describe('useTaskActions', () => {
     it('should handle bulk due date update', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: null, data: [], count: 2 })
+      // Configure the .eq() call to resolve to a success response (sequential update)
+      mockSupabase.eq = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 1 })
       );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
@@ -531,11 +533,11 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(7);
       });
 
-      // Verify the Supabase update was called correctly
-      expect(mockSupabase.update).toHaveBeenCalledWith(
-        { end_date: expect.any(String) },
-        { count: 'exact' }
-      );
+      // Implementation uses sequential .update().eq() calls per task
+      expect(mockSupabase.update).toHaveBeenCalledWith({
+        end_date: expect.any(String),
+      });
+      expect(mockSupabase.eq).toHaveBeenCalled();
     });
 
     it('should remove due date when null is passed', async () => {
@@ -606,9 +608,9 @@ describe('useTaskActions', () => {
     it('should handle bulk priority update', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: null, data: [], count: 2 })
+      // Configure the .eq() call to resolve to a success response (sequential update)
+      mockSupabase.eq = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 1 })
       );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
@@ -635,11 +637,9 @@ describe('useTaskActions', () => {
         await result.current.handlePriorityChange('high');
       });
 
-      // Verify the Supabase update was called correctly
-      expect(mockSupabase.update).toHaveBeenCalledWith(
-        { priority: 'high' },
-        { count: 'exact' }
-      );
+      // Implementation uses sequential .update().eq() calls per task
+      expect(mockSupabase.update).toHaveBeenCalledWith({ priority: 'high' });
+      expect(mockSupabase.eq).toHaveBeenCalled();
     });
   });
 
@@ -711,9 +711,9 @@ describe('useTaskActions', () => {
     it('should handle bulk estimation update', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: null, data: [], count: 2 })
+      // Configure the .eq() call to resolve to a success response (sequential update)
+      mockSupabase.eq = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 1 })
       );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
@@ -741,11 +741,11 @@ describe('useTaskActions', () => {
         await result.current.updateEstimationPoints(8);
       });
 
-      // Verify the Supabase update was called correctly
-      expect(mockSupabase.update).toHaveBeenCalledWith(
-        { estimation_points: 8 },
-        { count: 'exact' }
-      );
+      // Implementation uses sequential .update().eq() calls per task
+      expect(mockSupabase.update).toHaveBeenCalledWith({
+        estimation_points: 8,
+      });
+      expect(mockSupabase.eq).toHaveBeenCalled();
     });
 
     it('should rollback estimation points on update failure', async () => {
@@ -939,12 +939,17 @@ describe('useTaskActions', () => {
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
 
       // Mock delete to fail (simulating remove assignee flow)
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({
-          error: new Error('Database delete failed'),
-          data: null,
-        })
-      );
+      // The implementation uses .delete().eq().eq() pattern
+      mockSupabase.delete = vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: vi.fn(() =>
+            Promise.resolve({
+              error: new Error('Database delete failed'),
+              data: null,
+            })
+          ),
+        })),
+      }));
 
       const setIsLoading = vi.fn();
       const setMenuOpen = vi.fn();

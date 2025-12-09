@@ -48,18 +48,18 @@ const createWrapper = () => {
 };
 
 describe('useTaskActions', () => {
-  const mockTask: Task = {
+  const mockTask = {
     id: 'task-1',
     name: 'Test Task',
     list_id: 'list-1',
-    archived: false,
     priority: 'normal',
     estimation_points: null,
     assignees: [],
     labels: [],
     projects: [],
     created_at: new Date().toISOString(),
-  } as Task;
+    display_number: 1,
+  } as unknown as Task;
 
   const mockCompletionList: TaskList = {
     id: 'completion-list',

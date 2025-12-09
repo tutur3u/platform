@@ -39,6 +39,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  MAX_IMAGE_SIZE,
+  MAX_VIDEO_SIZE,
+  StorageQuotaError,
+} from './media-utils';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
 
@@ -309,7 +314,7 @@ export function ToolBar({
       }
 
       // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024;
+      const maxSize = MAX_IMAGE_SIZE;
       if (file.size > maxSize) {
         toast.error('Image size must be less than 5MB');
         return;
@@ -346,7 +351,15 @@ export function ToolBar({
         }
       } catch (error) {
         console.error('Failed to upload image:', error);
-        toast.error('Failed to upload image. Please try again.');
+        if (error instanceof StorageQuotaError) {
+          toast.error(error.message);
+        } else if (error instanceof Error) {
+          toast.error(
+            error.message || 'Failed to upload image. Please try again.'
+          );
+        } else {
+          toast.error('Failed to upload image. Please try again.');
+        }
       } finally {
         setIsUploadingImage(false);
         // Reset file input
@@ -374,7 +387,7 @@ export function ToolBar({
       }
 
       // Validate file size (max 50MB)
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = MAX_VIDEO_SIZE;
       if (file.size > maxSize) {
         toast.error('Video size must be less than 50MB');
         return;
@@ -403,7 +416,15 @@ export function ToolBar({
         }
       } catch (error) {
         console.error('Failed to upload video:', error);
-        toast.error('Failed to upload video. Please try again.');
+        if (error instanceof StorageQuotaError) {
+          toast.error(error.message);
+        } else if (error instanceof Error) {
+          toast.error(
+            error.message || 'Failed to upload video. Please try again.'
+          );
+        } else {
+          toast.error('Failed to upload video. Please try again.');
+        }
       } finally {
         setIsUploadingVideo(false);
         // Reset file input
