@@ -1,16 +1,15 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
+import { processCalendarEvent } from './event-utils';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
-dayjs.extend(isSameOrBefore);
 
 export const CalendarMatrix = ({ dates }: { dates: Date[] }) => {
   return (
@@ -46,72 +45,10 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const allEvents = eventsWithoutAllDays;
 
   // Process events to handle multi-day events
-  const processedEvents = allEvents.flatMap((event) => {
-    // Parse dates with proper timezone handling
-    const startDay =
-      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-    const endDay =
-      tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
-
-    // Ensure end time is after start time
-    if (endDay.isBefore(startDay)) {
-      // Fix invalid event by setting end time to 1 hour after start
-      return [{ ...event, end_at: startDay.add(1, 'hour').toISOString() }];
-    }
-
-    // Normalize dates to compare just the date part (ignoring time)
-    const startDayNormalized = startDay.startOf('day');
-    const endDayNormalized = endDay.startOf('day');
-
-    // If start and end are on the same day, return the original event
-    if (startDayNormalized.isSame(endDayNormalized)) {
-      return [
-        {
-          ...event,
-          start_at: startDay.toISOString(),
-          end_at: endDay.toISOString(),
-        },
-      ];
-    }
-
-    // For multi-day events, create a separate instance for each day
-    const splitEvents: CalendarEvent[] = [];
-    let currentDay = startDayNormalized.clone();
-
-    // Iterate through each day of the event
-    while (currentDay.isSameOrBefore(endDayNormalized)) {
-      const dayStart = currentDay.startOf('day');
-      const dayEnd = currentDay.endOf('day');
-
-      const dayEvent: CalendarEvent = {
-        ...event,
-        _originalId: event.id,
-        id: `${event.id}-${currentDay.format('YYYY-MM-DD')}`,
-        _isMultiDay: true,
-        _dayPosition: currentDay.isSame(startDayNormalized)
-          ? 'start'
-          : currentDay.isSame(endDayNormalized)
-            ? 'end'
-            : 'middle',
-      };
-
-      if (currentDay.isSame(startDayNormalized)) {
-        dayEvent.start_at = startDay.toISOString();
-        dayEvent.end_at = dayEnd.toISOString();
-      } else if (currentDay.isSame(endDayNormalized)) {
-        dayEvent.start_at = dayStart.toISOString();
-        dayEvent.end_at = endDay.toISOString();
-      } else {
-        dayEvent.start_at = dayStart.toISOString();
-        dayEvent.end_at = dayEnd.toISOString();
-      }
-
-      splitEvents.push(dayEvent);
-      currentDay = currentDay.add(1, 'day');
-    }
-
-    return splitEvents;
-  });
+  // Events ending at exactly midnight are treated as ending on the previous day
+  const processedEvents = allEvents.flatMap((event) =>
+    processCalendarEvent(event, tz)
+  );
 
   // Filter events to only include those visible in the current date range
   const visibleEvents = processedEvents.filter((event) => {

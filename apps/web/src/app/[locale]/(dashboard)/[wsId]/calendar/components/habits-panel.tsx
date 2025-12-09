@@ -1,7 +1,6 @@
 'use client';
 
-import { scheduleHabit } from '@/lib/calendar/habit-scheduler';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   Check,
@@ -9,6 +8,7 @@ import {
   Flame,
   Loader2,
   Play,
+  Plus,
   RefreshCw,
   Repeat,
 } from '@tuturuuu/icons';
@@ -26,6 +26,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useState } from 'react';
+import { scheduleHabit } from '@/lib/calendar/habit-scheduler';
+import HabitFormDialog from '../../tasks/habits/habit-form-dialog';
 
 interface HabitWithStreak extends Habit {
   streak?: HabitStreak;
@@ -37,31 +39,31 @@ interface HabitsPanelProps {
 }
 
 const colorMap: Record<string, string> = {
-  BLUE: 'bg-blue-500',
-  RED: 'bg-red-500',
-  GREEN: 'bg-green-500',
-  YELLOW: 'bg-yellow-500',
-  PURPLE: 'bg-purple-500',
-  PINK: 'bg-pink-500',
-  CYAN: 'bg-cyan-500',
-  ORANGE: 'bg-orange-500',
+  BLUE: 'bg-dynamic-blue',
+  RED: 'bg-dynamic-red',
+  GREEN: 'bg-dynamic-green',
+  YELLOW: 'bg-dynamic-yellow',
+  PURPLE: 'bg-dynamic-purple',
+  PINK: 'bg-dynamic-pink',
+  CYAN: 'bg-dynamic-cyan',
+  ORANGE: 'bg-dynamic-orange',
 };
 
 const priorityColors: Record<string, string> = {
-  critical: 'text-red-500',
-  high: 'text-orange-500',
-  normal: 'text-blue-500',
-  low: 'text-gray-500',
+  critical: 'text-dynamic-red',
+  high: 'text-dynamic-orange',
+  normal: 'text-dynamic-blue',
+  low: 'text-muted-foreground',
 };
 
 export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
-  const [visibleHabits, setVisibleHabits] = useState<Set<string>>(new Set());
   const [schedulingHabitId, setSchedulingHabitId] = useState<string | null>(
     null
   );
   const [completingHabitId, setCompletingHabitId] = useState<string | null>(
     null
   );
+  const [isHabitDialogOpen, setIsHabitDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const supabase = createClient();
 
@@ -86,15 +88,64 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
     (h: HabitWithStreak) => h.is_active
   );
 
-  const toggleVisibility = (habitId: string) => {
-    setVisibleHabits((prev) => {
-      const next = new Set(prev);
-      if (next.has(habitId)) {
-        next.delete(habitId);
-      } else {
-        next.add(habitId);
+  // Mutation to update habit visibility
+  const visibilityMutation = useMutation({
+    mutationFn: async ({
+      habitId,
+      isVisible,
+    }: {
+      habitId: string;
+      isVisible: boolean;
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/habits/${habitId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_visible_in_calendar: isVisible }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to update habit visibility');
       }
-      return next;
+      return response.json();
+    },
+    onMutate: async ({ habitId, isVisible }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['habits', wsId] });
+
+      // Snapshot the previous value
+      const previousHabits = queryClient.getQueryData(['habits', wsId]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        ['habits', wsId],
+        (old: { habits: HabitWithStreak[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            habits: old.habits.map((h) =>
+              h.id === habitId ? { ...h, is_visible_in_calendar: isVisible } : h
+            ),
+          };
+        }
+      );
+
+      return { previousHabits };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousHabits) {
+        queryClient.setQueryData(['habits', wsId], context.previousHabits);
+      }
+      toast.error('Failed to update visibility');
+    },
+  });
+
+  const toggleVisibility = (habitId: string, currentVisibility: boolean) => {
+    visibilityMutation.mutate({
+      habitId,
+      isVisible: !currentVisibility,
     });
   };
 
@@ -167,18 +218,30 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
 
   if (habits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <Repeat className="h-12 w-12 text-muted-foreground" />
-        <div>
-          <h4 className="font-medium">No active habits</h4>
-          <p className="text-muted-foreground text-sm">
-            Create habits to track recurring activities
-          </p>
+      <>
+        <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+          <Repeat className="h-12 w-12 text-muted-foreground" />
+          <div>
+            <h4 className="font-medium">No active habits</h4>
+            <p className="text-muted-foreground text-sm">
+              Create habits to track recurring activities
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setIsHabitDialogOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Create Habit
+          </Button>
         </div>
-        <Link href={`/${wsId}/tasks/habits`}>
-          <Button size="sm">Create Habit</Button>
-        </Link>
-      </div>
+        <HabitFormDialog
+          open={isHabitDialogOpen}
+          onOpenChange={setIsHabitDialogOpen}
+          wsId={wsId}
+          onSuccess={() => {
+            setIsHabitDialogOpen(false);
+            refetch();
+          }}
+        />
+      </>
     );
   }
 
@@ -192,14 +255,25 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
             {habits.length} active habit{habits.length !== 1 ? 's' : ''}
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => refetch()}
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setIsHabitDialogOpen(true)}
+            title="Create new habit"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => refetch()}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Habits List */}
@@ -207,7 +281,7 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
         <div className="flex flex-col gap-2 p-3">
           {habits.map((habit) => {
             const colorClass = colorMap[habit.color] || colorMap.BLUE;
-            const isVisible = visibleHabits.has(habit.id);
+            const isVisible = habit.is_visible_in_calendar ?? true;
             const isScheduling = schedulingHabitId === habit.id;
             const isCompleting = completingHabitId === habit.id;
 
@@ -233,7 +307,9 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
                     </div>
                     <Switch
                       checked={isVisible}
-                      onCheckedChange={() => toggleVisibility(habit.id)}
+                      onCheckedChange={() =>
+                        toggleVisibility(habit.id, isVisible)
+                      }
                       className="shrink-0"
                     />
                   </div>
@@ -252,7 +328,7 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
                     </Badge>
                     {habit.streak && habit.streak.current_streak > 0 && (
                       <Badge variant="secondary" className="gap-1 text-xs">
-                        <Flame className="h-3 w-3 text-orange-500" />
+                        <Flame className="h-3 w-3 text-dynamic-orange" />
                         {habit.streak.current_streak}
                       </Badge>
                     )}
@@ -304,6 +380,17 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
           </Button>
         </Link>
       </div>
+
+      {/* Habit Creation Dialog */}
+      <HabitFormDialog
+        open={isHabitDialogOpen}
+        onOpenChange={setIsHabitDialogOpen}
+        wsId={wsId}
+        onSuccess={() => {
+          setIsHabitDialogOpen(false);
+          refetch();
+        }}
+      />
     </div>
   );
 }

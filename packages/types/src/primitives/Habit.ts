@@ -88,6 +88,7 @@ export interface Habit {
   // Status
   is_active: boolean;
   auto_schedule: boolean;
+  is_visible_in_calendar: boolean;
 
   // Timestamps
   created_at: string;
@@ -191,6 +192,7 @@ export interface HabitInput {
 
   is_active?: boolean;
   auto_schedule?: boolean;
+  is_visible_in_calendar?: boolean;
 }
 
 // ============================================================================

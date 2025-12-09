@@ -85,6 +85,15 @@ const CalendarContext = createContext<{
   setHoveredBaseEventId: (id: string | null) => void;
   hoveredEventColumn: number | null;
   setHoveredEventColumn: (column: number | null) => void;
+  // Task scheduling
+  scheduleTaskAsEvent?: (
+    taskId: string,
+    startAt: Date,
+    endAt: Date
+  ) => Promise<void>;
+  // Callback when a task is scheduled (for UI refresh)
+  onTaskScheduled?: () => void;
+  setOnTaskScheduled: (callback: (() => void) | undefined) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -116,6 +125,11 @@ const CalendarContext = createContext<{
   setHoveredBaseEventId: () => undefined,
   hoveredEventColumn: null,
   setHoveredEventColumn: () => undefined,
+  // Task scheduling
+  scheduleTaskAsEvent: undefined,
+  // Callback when a task is scheduled
+  onTaskScheduled: undefined,
+  setOnTaskScheduled: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -125,6 +139,107 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _eventId: string;
   _resolve?: (value: CalendarEvent) => void;
   _reject?: (reason: any) => void;
+}
+
+/**
+ * Syncs task total_duration after a calendar event is resized or moved.
+ * - Updates the junction table's scheduled_minutes for this event
+ * - If total scheduled time exceeds task's total_duration, auto-increase it
+ */
+async function syncTaskDurationAfterEventChange(
+  supabase: any, // Using any to avoid Supabase type issues with task_calendar_events
+  eventId: string,
+  eventData: { start_at: string; end_at: string; task_id?: string | null }
+) {
+  try {
+    // Get task_id either from event or junction table
+    let taskId = eventData.task_id;
+
+    if (!taskId) {
+      // Try to find task from junction table
+      const { data: junction } = await supabase
+        .from('task_calendar_events')
+        .select('task_id')
+        .eq('event_id', eventId)
+        .single();
+
+      if (!junction?.task_id) {
+        // No linked task, nothing to sync
+        return;
+      }
+      taskId = junction.task_id;
+    }
+
+    // Calculate new scheduled minutes for this event
+    const startTime = new Date(eventData.start_at).getTime();
+    const endTime = new Date(eventData.end_at).getTime();
+    const newScheduledMinutes = Math.round((endTime - startTime) / 60000);
+
+    // Update or insert junction record with new scheduled_minutes
+    const { error: upsertError } = await supabase
+      .from('task_calendar_events')
+      .upsert(
+        {
+          task_id: taskId,
+          event_id: eventId,
+          scheduled_minutes: newScheduledMinutes,
+        },
+        {
+          onConflict: 'task_id,event_id',
+        }
+      );
+
+    if (upsertError) {
+      console.error('Failed to update task_calendar_events:', upsertError);
+      return;
+    }
+
+    // Get all scheduled events for this task and sum their minutes
+    const { data: allEvents, error: eventsError } = await supabase
+      .from('task_calendar_events')
+      .select('scheduled_minutes')
+      .eq('task_id', taskId);
+
+    if (eventsError) {
+      console.error('Failed to fetch task events:', eventsError);
+      return;
+    }
+
+    const totalScheduledMinutes = (allEvents || []).reduce(
+      (sum: number, e: { scheduled_minutes?: number }) =>
+        sum + (e.scheduled_minutes || 0),
+      0
+    );
+    const totalScheduledHours = totalScheduledMinutes / 60;
+
+    // Get current task duration
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .select('total_duration')
+      .eq('id', taskId)
+      .single();
+
+    if (taskError) {
+      console.error('Failed to fetch task:', taskError);
+      return;
+    }
+
+    const currentDuration = task?.total_duration || 0;
+
+    // If scheduled exceeds current duration, update the task
+    if (totalScheduledHours > currentDuration) {
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ total_duration: totalScheduledHours })
+        .eq('id', taskId);
+
+      if (updateError) {
+        console.error('Failed to update task duration:', updateError);
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing task duration:', error);
+  }
 }
 
 export const CalendarProvider = ({
@@ -159,6 +274,11 @@ export const CalendarProvider = ({
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
+
+  // Callback for when a task is scheduled (allows components to refresh)
+  const [onTaskScheduled, setOnTaskScheduled] = useState<
+    (() => void) | undefined
+  >(undefined);
 
   // Event getters
   const getEvent = useCallback(
@@ -525,6 +645,22 @@ export const CalendarProvider = ({
           throw error;
         }
 
+        // If event times changed, sync task's total_duration
+        if (data && (cleanUpdateData.start_at || cleanUpdateData.end_at)) {
+          await syncTaskDurationAfterEventChange(supabase, eventId, {
+            start_at: data.start_at,
+            end_at: data.end_at,
+            task_id: data.task_id,
+          });
+          // Invalidate task-related queries to refresh sidebar
+          queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+          queryClient.invalidateQueries({
+            queryKey: ['scheduled-events-batch'],
+          });
+          // Notify components to refresh server data
+          onTaskScheduled?.();
+        }
+
         // Refresh the query cache after updating an event
         refresh();
 
@@ -553,7 +689,7 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws?.id]);
+  }, [refresh, events, ws?.id, queryClient, onTaskScheduled]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -743,6 +879,25 @@ export const CalendarProvider = ({
       }
 
       const supabase = createClient();
+
+      // Check if this event is linked to a task via junction table
+      const { data: junction } = await (supabase as any)
+        .from('task_calendar_events')
+        .select('task_id')
+        .eq('event_id', eventId)
+        .maybeSingle();
+
+      const hasLinkedTask = !!junction?.task_id;
+
+      // Delete the junction record if it exists
+      if (hasLinkedTask) {
+        await (supabase as any)
+          .from('task_calendar_events')
+          .delete()
+          .eq('event_id', eventId);
+      }
+
+      // Delete the event
       const { error } = await supabase
         .from('workspace_calendar_events')
         .delete()
@@ -753,8 +908,23 @@ export const CalendarProvider = ({
       // Refresh the query cache after deleting an event
       refresh();
       setActiveEventId(null);
+
+      // If this was a task-linked event, refresh task queries
+      if (hasLinkedTask) {
+        queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+        onTaskScheduled?.();
+      }
     },
-    [ws, refresh, pendingNewEvent, events, experimentalGoogleToken]
+    [
+      ws,
+      refresh,
+      pendingNewEvent,
+      events,
+      experimentalGoogleToken,
+      queryClient,
+      onTaskScheduled,
+    ]
   );
 
   // Automatically fetch Google Calendar events
@@ -1327,6 +1497,150 @@ export const CalendarProvider = ({
     null
   );
 
+  // Schedule a task as a calendar event (for drag-and-drop from sidebar)
+  const scheduleTaskAsEvent = useCallback(
+    async (taskId: string, startAt: Date, endAt: Date) => {
+      if (!ws?.id) {
+        throw new Error('No workspace selected');
+      }
+
+      const supabase = createClient();
+
+      // Fetch task details including duration and scheduling fields
+      const { data: task, error: taskError } = await supabase
+        .from('tasks')
+        .select(
+          'name, priority, total_duration, calendar_hours, is_splittable, auto_schedule'
+        )
+        .eq('id', taskId)
+        .single();
+
+      if (taskError) {
+        console.error('Failed to fetch task:', taskError);
+        throw taskError;
+      }
+
+      // Calculate scheduled duration in hours
+      const scheduledHours =
+        (endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60);
+
+      // Check if task has scheduling configured (has duration and calendar_hours)
+      const hasSchedulingConfigured =
+        task.total_duration && task.total_duration > 0 && task.calendar_hours;
+
+      // If task doesn't have scheduling configured, set up defaults
+      if (!hasSchedulingConfigured) {
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update({
+            total_duration: scheduledHours,
+            calendar_hours: 'personal_hours',
+            is_splittable: false,
+            auto_schedule: true,
+          })
+          .eq('id', taskId);
+
+        if (updateError) {
+          console.error('Failed to update task scheduling:', updateError);
+          // Don't throw - we can still create the event
+        }
+      }
+
+      // Map priority to color (priority can be string like 'critical', 'high', etc.)
+      const priorityColorMap: Record<string, SupportedColor> = {
+        critical: 'RED',
+        high: 'ORANGE',
+        normal: 'YELLOW',
+        low: 'BLUE',
+      };
+      const priority = String(task?.priority ?? 'normal');
+      const eventColor = priorityColorMap[priority] || 'BLUE';
+
+      // Create calendar event with task_id for direct reference
+      const { data: event, error: eventError } = await supabase
+        .from('workspace_calendar_events')
+        .insert({
+          title: task?.name || 'Task',
+          start_at: startAt.toISOString(),
+          end_at: endAt.toISOString(),
+          ws_id: ws.id,
+          color: eventColor,
+          locked: true, // Mark as locked to prevent auto-scheduling from moving it
+          task_id: taskId, // Direct reference to task (added in migration)
+        })
+        .select()
+        .single();
+
+      if (eventError) {
+        console.error('Failed to create calendar event:', eventError);
+        throw eventError;
+      }
+
+      // Create junction record to link task and event
+      if (event) {
+        const scheduledMinutes = Math.round(
+          (endAt.getTime() - startAt.getTime()) / 60000
+        );
+
+        // Note: task_calendar_events table requires migration
+        // Using type assertion until bun sb:push and bun sb:typegen are run
+        const { error: junctionError } = await (supabase as any)
+          .from('task_calendar_events')
+          .insert({
+            task_id: taskId,
+            event_id: event.id,
+            scheduled_minutes: scheduledMinutes,
+            completed: false,
+          });
+
+        if (junctionError) {
+          console.error('Failed to create task-event junction:', junctionError);
+          // Don't throw - the event was still created successfully
+        }
+
+        // Sync total_duration if total scheduled exceeds current duration
+        // Use the new duration if we just set defaults, otherwise use existing
+        const currentDuration = hasSchedulingConfigured
+          ? task.total_duration || 0
+          : scheduledHours;
+
+        const { data: allJunctions } = await (supabase as any)
+          .from('task_calendar_events')
+          .select('scheduled_minutes')
+          .eq('task_id', taskId);
+
+        const totalScheduledMinutes = (allJunctions || []).reduce(
+          (sum: number, j: { scheduled_minutes?: number }) =>
+            sum + (j.scheduled_minutes || 0),
+          0
+        );
+        const totalScheduledHours = totalScheduledMinutes / 60;
+
+        // If scheduled exceeds current duration, update the task
+        if (totalScheduledHours > currentDuration) {
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ total_duration: totalScheduledHours })
+            .eq('id', taskId);
+
+          if (updateError) {
+            console.error('Failed to update task duration:', updateError);
+          }
+        }
+      }
+
+      // Refresh queries
+      refresh();
+      // Invalidate all task-related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+
+      // Call the callback to notify components (e.g., for server data refresh)
+      onTaskScheduled?.();
+    },
+    [ws?.id, refresh, queryClient, onTaskScheduled]
+  );
+
   const values = {
     getEvent,
     getCurrentEvents,
@@ -1364,6 +1678,10 @@ export const CalendarProvider = ({
     setHoveredBaseEventId,
     hoveredEventColumn,
     setHoveredEventColumn,
+    // Task scheduling
+    scheduleTaskAsEvent,
+    onTaskScheduled,
+    setOnTaskScheduled,
   };
 
   // Clean up any pending updates when component unmounts

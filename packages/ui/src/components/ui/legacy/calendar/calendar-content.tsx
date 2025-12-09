@@ -130,6 +130,9 @@ export const CalendarContent = ({
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
 
+  // LocalStorage key for view persistence
+  const VIEW_STORAGE_KEY = 'calendar-view-mode';
+
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
     (newDate: Date | ((prevDate: Date) => Date)) => {
@@ -148,6 +151,10 @@ export const CalendarContent = ({
         externalState.setView(newView);
       } else {
         setView(newView);
+      }
+      // Persist view selection to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(VIEW_STORAGE_KEY, newView);
       }
     },
     [externalState]
@@ -300,8 +307,46 @@ export const CalendarContent = ({
       else if (externalState.view === 'month') enableMonthView();
       else if (externalState.view === 'agenda') enableAgendaView();
     } else {
-      // Default to week view if no setting is provided
-      enableWeekView();
+      // Load saved view from localStorage
+      const savedView =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem(VIEW_STORAGE_KEY) as CalendarView | null)
+          : null;
+
+      const isMobile =
+        typeof window !== 'undefined' && window.innerWidth <= 768;
+
+      // Handle saved view with special case for month
+      if (savedView) {
+        if (savedView === 'month') {
+          // Month view exception: show day on mobile, week on larger screens
+          if (isMobile) {
+            enableDayView();
+          } else {
+            enableWeekView();
+          }
+        } else if (
+          (savedView === 'week' || savedView === '4-days') &&
+          isMobile
+        ) {
+          // Week and 4-day views are disabled on mobile
+          enableDayView();
+        } else {
+          // Apply saved view
+          if (savedView === 'day') enableDayView();
+          else if (savedView === '4-days') enable4DayView();
+          else if (savedView === 'week') enableWeekView();
+          else if (savedView === 'agenda') enableAgendaView();
+          else enableWeekView();
+        }
+      } else {
+        // No saved view - default to day on mobile, week on desktop
+        if (isMobile) {
+          enableDayView();
+        } else {
+          enableWeekView();
+        }
+      }
     }
   }, [
     t,
