@@ -82,7 +82,9 @@ export default async function CalendarPage({ params }: PageProps) {
                   workspace={workspace}
                   hasValidTuturuuuEmail={hasValidTuturuuuEmail}
                 />
-                <TasksSidebar wsId={wsId} locale={locale} />
+                {isValidTuturuuuEmail(user?.email) && (
+                  <TasksSidebar wsId={wsId} locale={locale} />
+                )}
               </div>
             </CalendarSyncProvider>
           </TaskDialogWrapper>
