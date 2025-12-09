@@ -90,7 +90,7 @@ function FullscreenOverlay({
           </div>
 
           {/* Fullscreen content */}
-          <div className="h-full max-h-[90vh] overflow-auto">
+          <div className="h-full max-h-[90vh] overflow-auto scrollbar-none">
             <VisualizationContent vis={vis} isFullscreen />
           </div>
         </Card>
@@ -201,7 +201,7 @@ export function VisualizationContainer() {
     <>
       {/* Left side */}
       {leftVisualizations.length > 0 && (
-        <div className="pointer-events-none absolute top-20 left-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 *:pointer-events-auto">
+        <div className="pointer-events-none absolute top-20 left-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 scrollbar-none *:pointer-events-auto">
           <AnimatePresence mode="popLayout">
             {leftVisualizations.map((vis) => (
               <VisualizationCard
@@ -218,7 +218,7 @@ export function VisualizationContainer() {
 
       {/* Right side */}
       {rightVisualizations.length > 0 && (
-        <div className="pointer-events-none fixed top-20 right-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 *:pointer-events-auto">
+        <div className="pointer-events-none fixed top-20 right-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 scrollbar-none *:pointer-events-auto">
           <AnimatePresence mode="popLayout">
             {rightVisualizations.map((vis) => (
               <VisualizationCard

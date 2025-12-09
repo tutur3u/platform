@@ -44,7 +44,7 @@ export function GoogleSearchCard({
       {/* Results List */}
       <div
         className={cn(
-          'divide-y divide-border/20 overflow-y-auto',
+          'divide-y divide-border/20 overflow-y-auto scrollbar-none',
           !isFullscreen && 'max-h-72'
         )}
       >

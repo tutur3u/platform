@@ -67,8 +67,21 @@ function getRelativeDate(dateString: string | null): {
   if (!dateString) return { text: '', isOverdue: false, isToday: false };
   const date = new Date(dateString);
   const now = new Date();
-  const diff = date.getTime() - now.getTime();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  // Compare dates at midnight for accurate day difference
+  const dateAtMidnight = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+  const todayAtMidnight = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const diffMs = dateAtMidnight.getTime() - todayAtMidnight.getTime();
+  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (days < 0)
     return {
@@ -76,7 +89,7 @@ function getRelativeDate(dateString: string | null): {
       isOverdue: true,
       isToday: false,
     };
-  if (days === 0) return { text: 'Today', isOverdue: false, isToday: true };
+  if (days === 0) return { text: 'Due today', isOverdue: false, isToday: true };
   if (days === 1) return { text: 'Tomorrow', isOverdue: false, isToday: false };
   if (days < 7)
     return { text: `In ${days} days`, isOverdue: false, isToday: false };
@@ -175,7 +188,7 @@ export function TaskDetailView({
       {/* Content Section */}
       <div
         className={cn(
-          'space-y-4 overflow-y-auto p-4',
+          'space-y-4 overflow-y-auto scrollbar-none p-4',
           !isFullscreen && 'max-h-72'
         )}
       >

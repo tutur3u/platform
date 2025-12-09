@@ -42,13 +42,26 @@ function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return '';
   const date = new Date(dateString);
   const now = new Date();
-  const diff = date.getTime() - now.getTime();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  // Compare dates at midnight for accurate day difference
+  const dateAtMidnight = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+  const todayAtMidnight = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const diffMs = dateAtMidnight.getTime() - todayAtMidnight.getTime();
+  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (days < 0) return `${Math.abs(days)}d overdue`;
-  if (days === 0) return 'Today';
+  if (days === 0) return 'Due today';
   if (days === 1) return 'Tomorrow';
-  if (days < 7) return `${days}d`;
+  if (days < 7) return `In ${days}d`;
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -96,7 +109,7 @@ export function AssigneeTasksCard({
       {/* Tasks List */}
       <div
         className={cn(
-          'divide-y divide-border/20 overflow-y-auto',
+          'divide-y divide-border/20 overflow-y-auto scrollbar-none',
           !isFullscreen && 'max-h-72'
         )}
       >
