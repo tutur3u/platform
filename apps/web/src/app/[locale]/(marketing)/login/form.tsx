@@ -154,7 +154,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   // Server action transitions
   const [isPendingSendOtp, startSendOtpTransition] = useTransition();
   const [isPendingVerifyOtp, startVerifyOtpTransition] = useTransition();
-
+  startVerifyOtpTransition;
   // Captcha state (Turnstile)
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
@@ -1031,6 +1031,21 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           {t('login.check_email')}
                         </FormDescription>
                         <FormMessage />
+                        <div className="flex items-center justify-center">
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="text-muted-foreground text-sm underline transition-colors duration-200 hover:text-primary"
+                            onClick={() => {
+                              setOtpSent(false);
+                              otpForm.setValue('otp', '');
+                              otpForm.clearErrors('otp');
+                              setResendCooldown(0);
+                            }}
+                          >
+                            {t('login.back_to_email')}
+                          </Button>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -1122,6 +1137,55 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                 )}
               </form>
             </Form>
+
+            {!otpSent && (
+              <>
+                <div className="relative my-6">
+                  <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="rounded-full border bg-white/80 px-3 py-1 font-medium text-muted-foreground text-xs backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
+                      {t('login.or')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleGoogleLogin}
+                    disabled={_isLoading}
+                    className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+                  >
+                    <div className="absolute left-4">
+                      <Image
+                        src="/media/google-logo.png"
+                        alt="Google"
+                        width={20}
+                        height={20}
+                        className="object-contain transition-transform duration-200 group-hover:scale-110"
+                      />
+                    </div>
+                    <span className="font-medium">
+                      {t('login.continue_with_google')}
+                    </span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleGitHubLogin}
+                    disabled={_isLoading}
+                    className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+                  >
+                    <div className="absolute left-4">
+                      <Github className="size-5 transition-transform duration-200 group-hover:scale-110" />
+                    </div>
+                    <span className="font-medium">
+                      {t('login.continue_with_github')}
+                    </span>
+                  </Button>
+                </div>
+              </>
+            )}
           </TabsContent>
 
           {/* Password Login */}
@@ -1287,55 +1351,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
             </Form>
           </TabsContent>
         </Tabs>
-
-        {loginMethod === 'passwordless' && (
-          <>
-            <div className="relative my-6">
-              <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="rounded-full border bg-white/80 px-3 py-1 font-medium text-muted-foreground text-xs backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
-                  {t('login.or')}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                onClick={handleGoogleLogin}
-                disabled={_isLoading}
-                className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-              >
-                <div className="absolute left-4">
-                  <Image
-                    src="/media/google-logo.png"
-                    alt="Google"
-                    width={20}
-                    height={20}
-                    className="object-contain transition-transform duration-200 group-hover:scale-110"
-                  />
-                </div>
-                <span className="font-medium">
-                  {t('login.continue_with_google')}
-                </span>
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={handleGitHubLogin}
-                disabled={_isLoading}
-                className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-              >
-                <div className="absolute left-4">
-                  <Github className="size-5 transition-transform duration-200 group-hover:scale-110" />
-                </div>
-                <span className="font-medium">
-                  {t('login.continue_with_github')}
-                </span>
-              </Button>
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );
