@@ -34,6 +34,12 @@ type CalendarConnection = {
   updated_at: string;
 };
 
+// Extended CalendarEvent type with habit flags
+export type CalendarEventWithHabitInfo = CalendarEvent & {
+  _isHabit?: boolean;
+  _habitCompleted?: boolean;
+};
+
 // Sync status type
 type SyncStatus = {
   state: 'idle' | 'syncing' | 'success' | 'error';
@@ -64,7 +70,7 @@ const CalendarSyncContext = createContext<{
   isActiveSyncOn: boolean;
 
   // Events-related operations
-  events: CalendarEvent[];
+  events: CalendarEventWithHabitInfo[];
   setIsActiveSyncOn: (isActive: boolean) => void;
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
@@ -152,7 +158,7 @@ export const CalendarSyncProvider = ({
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
     null
   );
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEventWithHabitInfo[]>([]);
 
   const [error, setError] = useState<Error | null>(null);
   const [dates, setDates] = useState<Date[]>([]);
@@ -418,6 +424,69 @@ export const CalendarSyncProvider = ({
       return googleResponse.events;
     },
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
+  });
+
+  // Fetch habit calendar events to identify which events are habits
+  const { data: habitEventData } = useQuery({
+    queryKey: ['habitCalendarEvents', wsId, getCacheKey(dates)],
+    enabled: !!wsId && dates.length > 0,
+    staleTime: 60000, // Consider data fresh for 1 minute
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    queryFn: async () => {
+      const supabase = createClient();
+      const startDate = dayjs(dates[0]).startOf('day');
+      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+
+      // Fetch habit_calendar_events junction records for the date range
+      // Note: Using type assertion until bun sb:push and bun sb:typegen are run
+      // Filter by ws_id through the workspace_habits relation
+      const { data: habitEvents, error } = await (supabase as any)
+        .from('habit_calendar_events')
+        .select(
+          `
+          event_id,
+          habit_id,
+          completed,
+          workspace_habits!inner (
+            ws_id
+          ),
+          workspace_calendar_events!inner (
+            start_at,
+            end_at
+          )
+        `
+        )
+        .eq('workspace_habits.ws_id', wsId)
+        .lt(
+          'workspace_calendar_events.start_at',
+          endDate.add(1, 'day').toISOString()
+        )
+        .gt('workspace_calendar_events.end_at', startDate.toISOString());
+
+      if (error) {
+        console.error('Failed to fetch habit calendar events:', error);
+        return {
+          habitEventIds: new Set<string>(),
+          completedHabitEventIds: new Set<string>(),
+        };
+      }
+
+      // Build sets of habit event IDs and completed habit event IDs
+      const habitEventIds = new Set<string>();
+      const completedHabitEventIds = new Set<string>();
+
+      (habitEvents || []).forEach((record: any) => {
+        if (record.event_id) {
+          habitEventIds.add(record.event_id);
+          if (record.completed) {
+            completedHabitEventIds.add(record.event_id);
+          }
+        }
+      });
+
+      return { habitEventIds, completedHabitEventIds };
+    },
+    refetchInterval: 60000, // Refetch every minute
   });
 
   // Helper to check if dates have actually changed
@@ -793,7 +862,20 @@ export const CalendarSyncProvider = ({
               })
             : result;
 
-        setEvents(filteredEvents);
+        // Merge habit info into events
+        const habitEventIds =
+          habitEventData?.habitEventIds || new Set<string>();
+        const completedHabitEventIds =
+          habitEventData?.completedHabitEventIds || new Set<string>();
+
+        const eventsWithHabitInfo: CalendarEventWithHabitInfo[] =
+          filteredEvents.map((event) => ({
+            ...event,
+            _isHabit: habitEventIds.has(event.id),
+            _habitCompleted: completedHabitEventIds.has(event.id),
+          }));
+
+        setEvents(eventsWithHabitInfo);
       } else {
         setEvents([]);
       }
@@ -805,6 +887,7 @@ export const CalendarSyncProvider = ({
     removeDuplicateEvents,
     calendarConnections.length,
     enabledCalendarIds,
+    habitEventData,
   ]);
 
   const eventsWithoutAllDays = useMemo(() => {

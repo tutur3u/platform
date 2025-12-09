@@ -10815,6 +10815,7 @@ export type Database = {
           id: string;
           ideal_time: string | null;
           is_active: boolean | null;
+          is_visible_in_calendar: boolean | null;
           max_duration_minutes: number | null;
           min_duration_minutes: number | null;
           monthly_type:
@@ -10848,6 +10849,7 @@ export type Database = {
           id?: string;
           ideal_time?: string | null;
           is_active?: boolean | null;
+          is_visible_in_calendar?: boolean | null;
           max_duration_minutes?: number | null;
           min_duration_minutes?: number | null;
           monthly_type?:
@@ -10881,6 +10883,7 @@ export type Database = {
           id?: string;
           ideal_time?: string | null;
           is_active?: boolean | null;
+          is_visible_in_calendar?: boolean | null;
           max_duration_minutes?: number | null;
           min_duration_minutes?: number | null;
           monthly_type?:

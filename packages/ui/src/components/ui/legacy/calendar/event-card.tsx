@@ -8,6 +8,7 @@ import {
   Palette,
   Pencil,
   RefreshCw,
+  Repeat,
   Trash2,
   Unlock,
 } from '@tuturuuu/icons';
@@ -72,7 +73,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     google_calendar_id,
     _calendarName,
     _calendarColor,
-  } = event;
+    // Habit flags (from CalendarEventWithHabitInfo)
+    _isHabit,
+    _habitCompleted,
+  } = event as CalendarEvent & {
+    _isHabit?: boolean;
+    _habitCompleted?: boolean;
+  };
 
   // Default values for overlap properties if not provided
   const overlapCount = _overlapCount || 1;
@@ -918,6 +925,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       : tz === 'auto'
         ? dayjs(date)
         : dayjs(date).tz(tz);
+
+    // Special case: if time is 23:59, show as 12:00 AM (midnight)
+    if (d.hour() === 23 && d.minute() === 59) {
+      return timeFormat === '24h' ? '00:00' : '12:00 am';
+    }
+
     return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
 
@@ -1018,6 +1031,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
               'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
               'border-l-[3px]': hasCalendarInfo, // Thicker border for calendar events
+              // Habit-specific styling
+              'border-dashed border-2': _isHabit, // Dashed border for habit events
+              'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
             },
             level ? 'border border-l-2' : 'border-l-2',
             border,
@@ -1090,10 +1106,25 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             </div>
           )}
 
+          {/* Habit indicator */}
+          {_isHabit && (
+            <div className="absolute top-1 right-1 z-10">
+              <Repeat
+                className={cn(
+                  'h-3 w-3',
+                  _habitCompleted
+                    ? 'text-dynamic-green'
+                    : 'text-primary opacity-70'
+                )}
+              />
+            </div>
+          )}
+
           {/* Edit button overlay */}
           <div
             className={cn(
-              'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
+              'absolute top-2 rounded-full p-0.5 opacity-0 shadow-sm',
+              _isHabit ? 'right-5' : 'right-2', // Offset if habit icon is shown
               'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
               {
                 'opacity-0!':

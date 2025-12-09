@@ -9,7 +9,7 @@ import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 
 interface UseTaskActionsProps {
-  task: Task;
+  task?: Task; // Made optional to handle loading states
   boardId: string;
   targetCompletionList?: TaskList | null;
   targetClosedList?: TaskList | null;
@@ -23,6 +23,7 @@ interface UseTaskActionsProps {
   selectedTasks?: Set<string>; // For bulk operations
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void; // Callback to clear selection after bulk operations
+  taskId?: string; // Optional task ID for syncing individual task cache
 }
 
 export function useTaskActions({
@@ -39,12 +40,13 @@ export function useTaskActions({
   setEstimationSaving,
   selectedTasks,
   isMultiSelectMode,
+  taskId,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
 
   const handleArchiveToggle = useCallback(async () => {
-    if (!onUpdate) return;
+    if (!task || !onUpdate) return;
     setIsLoading(true);
 
     const newClosedState = !task.closed_at;
@@ -135,9 +137,9 @@ export function useTaskActions({
       );
     }
   }, [
-    task.id,
-    task.closed_at,
-    task.list_id,
+    task?.id,
+    task?.closed_at,
+    task?.list_id,
     targetCompletionList,
     onUpdate,
     setIsLoading,
@@ -147,7 +149,7 @@ export function useTaskActions({
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
-    if (!targetCompletionList || !onUpdate) return;
+    if (!task || !targetCompletionList || !onUpdate) return;
 
     setIsLoading(true);
 
@@ -227,7 +229,7 @@ export function useTaskActions({
   }, [
     targetCompletionList,
     onUpdate,
-    task.id,
+    task?.id,
     setIsLoading,
     setMenuOpen,
     isMultiSelectMode,
@@ -237,7 +239,7 @@ export function useTaskActions({
   ]);
 
   const handleMoveToClose = useCallback(async () => {
-    if (!targetClosedList || !onUpdate) return;
+    if (!task || !targetClosedList || !onUpdate) return;
 
     setIsLoading(true);
 
@@ -310,7 +312,7 @@ export function useTaskActions({
   }, [
     targetClosedList,
     onUpdate,
-    task.id,
+    task?.id,
     setIsLoading,
     setMenuOpen,
     isMultiSelectMode,
@@ -320,6 +322,7 @@ export function useTaskActions({
   ]);
 
   const handleDelete = useCallback(async () => {
+    if (!task) return;
     setIsLoading(true);
 
     // Check if we're in multi-select mode and have multiple tasks selected
@@ -382,7 +385,7 @@ export function useTaskActions({
       setIsLoading(false);
     }
   }, [
-    task.id,
+    task?.id,
     setIsLoading,
     setDeleteDialogOpen,
     isMultiSelectMode,
@@ -392,7 +395,7 @@ export function useTaskActions({
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
-    if (!task.assignees || task.assignees.length === 0) return;
+    if (!task || !task.assignees || task.assignees.length === 0) return;
 
     setIsLoading(true);
     const supabase = createClient();
@@ -435,8 +438,8 @@ export function useTaskActions({
       setMenuOpen(false);
     }
   }, [
-    task.id,
-    task.assignees,
+    task?.id,
+    task?.assignees,
     boardId,
     queryClient,
     setIsLoading,
@@ -445,6 +448,7 @@ export function useTaskActions({
 
   const handleRemoveAssignee = useCallback(
     async (assigneeId: string) => {
+      if (!task) return;
       setIsLoading(true);
       const supabase = createClient();
 
@@ -500,6 +504,7 @@ export function useTaskActions({
 
   const handleMoveToList = useCallback(
     async (targetListId: string) => {
+      if (!task) return;
       if (targetListId === task.list_id) {
         setMenuOpen(false);
         return;
@@ -608,8 +613,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.list_id,
+      task?.id,
+      task?.list_id,
       availableLists,
       setIsLoading,
       setMenuOpen,
@@ -622,6 +627,7 @@ export function useTaskActions({
 
   const handleDueDateChange = useCallback(
     async (days: number | null) => {
+      if (!task) return;
       let newDate: string | null = null;
       if (days !== null) {
         const target = addDays(new Date(), days);
@@ -714,7 +720,7 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
+      task?.id,
       updateTaskMutation,
       setIsLoading,
       isMultiSelectMode,
@@ -726,6 +732,7 @@ export function useTaskActions({
 
   const handlePriorityChange = useCallback(
     async (newPriority: TaskPriority | null) => {
+      if (!task) return;
       if (newPriority === task.priority && !isMultiSelectMode) return;
 
       // Check if we're in multi-select mode and have multiple tasks selected
@@ -839,8 +846,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.priority,
+      task?.id,
+      task?.priority,
       updateTaskMutation,
       setIsLoading,
       isMultiSelectMode,
@@ -852,6 +859,7 @@ export function useTaskActions({
 
   const updateEstimationPoints = useCallback(
     async (points: number | null) => {
+      if (!task) return;
       if (points === task.estimation_points && !isMultiSelectMode) return;
 
       // Check if we're in multi-select mode and have multiple tasks selected
@@ -955,8 +963,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.estimation_points,
+      task?.id,
+      task?.estimation_points,
       updateTaskMutation,
       setEstimationSaving,
       isMultiSelectMode,
@@ -968,6 +976,7 @@ export function useTaskActions({
 
   const handleCustomDateChange = useCallback(
     async (date: Date | undefined) => {
+      if (!task) return;
       let newDate: string | null = null;
 
       if (date) {
@@ -1004,21 +1013,30 @@ export function useTaskActions({
         }
       );
     },
-    [task.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
+    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
   );
 
   const handleToggleAssignee = useCallback(
     async (assigneeId: string) => {
+      if (!task) return;
+
+      // CRITICAL: Get current task state from cache instead of stale prop
+      // This ensures we read the most up-to-date state after optimistic updates
+      const currentTask = taskId
+        ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
+          task)
+        : task;
+
       // Check if we're in multi-select mode with multiple tasks selected
       const shouldBulkUpdate =
         isMultiSelectMode &&
         selectedTasks &&
         selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
+        selectedTasks.has(currentTask.id);
 
       const tasksToUpdate = shouldBulkUpdate
         ? Array.from(selectedTasks)
-        : [task.id];
+        : [currentTask.id];
 
       setIsLoading(true);
 
@@ -1031,7 +1049,8 @@ export function useTaskActions({
         | undefined;
 
       // Determine action: remove if ALL selected tasks have the assignee, add otherwise
-      let active = task.assignees?.some((a) => a.id === assigneeId);
+      // Use currentTask from cache, not stale task prop
+      let active = currentTask.assignees?.some((a) => a.id === assigneeId);
 
       if (shouldBulkUpdate && previousTasks) {
         const selectedTasksData = previousTasks.filter((t) =>
@@ -1043,30 +1062,50 @@ export function useTaskActions({
         );
       }
 
+      // Helper to get task from either board cache or individual cache
+      const getTaskState = (taskId: string): Task | undefined => {
+        // First try board cache
+        const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
+        if (fromBoardCache) return fromBoardCache;
+
+        // Fallback to individual task cache (for tasks not in board view)
+        if (taskId === currentTask.id) return currentTask;
+
+        return undefined;
+      };
+
       // Pre-calculate which tasks actually need to change
       const tasksNeedingAssignee = !active
         ? tasksToUpdate.filter((taskId) => {
-            const t = previousTasks?.find((ct) => ct.id === taskId);
+            const t = getTaskState(taskId);
             return !t?.assignees?.some((a) => a.id === assigneeId);
           })
         : [];
 
       const tasksToRemoveFrom = active
         ? tasksToUpdate.filter((taskId) => {
-            const t = previousTasks?.find((ct) => ct.id === taskId);
+            const t = getTaskState(taskId);
             return t?.assignees?.some((a) => a.id === assigneeId);
           })
         : [];
 
-      // Get assignee details from previous tasks for optimistic update
+      // Get assignee details for optimistic update
       let assigneeDetails = null;
-      if (!active && previousTasks) {
-        for (const t of previousTasks) {
-          const found = t.assignees?.find((a) => a.id === assigneeId);
-          if (found) {
-            assigneeDetails = found;
-            break;
+      if (!active) {
+        // First try from board cache
+        if (previousTasks) {
+          for (const t of previousTasks) {
+            const found = t.assignees?.find((a) => a.id === assigneeId);
+            if (found) {
+              assigneeDetails = found;
+              break;
+            }
           }
+        }
+        // Fallback to current task cache
+        if (!assigneeDetails && currentTask.assignees) {
+          assigneeDetails =
+            currentTask.assignees.find((a) => a.id === assigneeId) || null;
         }
       }
 
@@ -1101,6 +1140,36 @@ export function useTaskActions({
           });
         }
       );
+
+      // CRITICAL: Also update the individual task cache if taskId is provided
+      // This ensures the chip menu's task cache stays in sync with the board cache
+      if (taskId) {
+        queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
+          if (!old) return old;
+          if (active && tasksToRemoveFrom.includes(taskId)) {
+            // Remove the assignee
+            return {
+              ...old,
+              assignees:
+                old.assignees?.filter((a) => a.id !== assigneeId) || [],
+            };
+          } else if (!active && tasksNeedingAssignee.includes(taskId)) {
+            // Add the assignee
+            return {
+              ...old,
+              assignees: [
+                ...(old.assignees || []),
+                assigneeDetails || {
+                  id: assigneeId,
+                  display_name: 'User',
+                  email: '',
+                },
+              ],
+            };
+          }
+          return old;
+        });
+      }
 
       try {
         const supabase = createClient();
@@ -1170,8 +1239,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.assignees,
+      task,
+      taskId,
       boardId,
       queryClient,
       setIsLoading,

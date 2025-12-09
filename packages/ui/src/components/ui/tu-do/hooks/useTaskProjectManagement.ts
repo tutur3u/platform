@@ -18,6 +18,7 @@ interface UseTaskProjectManagementProps {
   selectedTasks?: Set<string>; // For bulk operations
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void;
+  taskId?: string; // Optional task ID for syncing individual task cache
 }
 
 export function useTaskProjectManagement({
@@ -27,6 +28,7 @@ export function useTaskProjectManagement({
   workspaceId,
   selectedTasks,
   isMultiSelectMode,
+  taskId,
 }: UseTaskProjectManagementProps) {
   const queryClient = useQueryClient();
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
@@ -35,16 +37,23 @@ export function useTaskProjectManagement({
 
   // Toggle a project for the task (quick projects submenu)
   async function toggleTaskProject(projectId: string) {
+    // CRITICAL: Get current task state from cache instead of stale prop
+    // This ensures we read the most up-to-date state after optimistic updates
+    const currentTask = taskId
+      ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
+        task)
+      : task;
+
     // Check if we're in multi-select mode with multiple tasks selected
     const shouldBulkUpdate =
       isMultiSelectMode &&
       selectedTasks &&
       selectedTasks.size > 1 &&
-      selectedTasks.has(task.id);
+      selectedTasks.has(currentTask.id);
 
     const tasksToUpdate = shouldBulkUpdate
       ? Array.from(selectedTasks)
-      : [task.id];
+      : [currentTask.id];
 
     setProjectsSaving(projectId);
 
@@ -57,7 +66,8 @@ export function useTaskProjectManagement({
       | undefined;
 
     // Determine action: remove if ALL selected tasks have the project, add otherwise
-    let active = task.projects?.some((p) => p.id === projectId) ?? false;
+    // Use currentTask from cache, not stale task prop
+    let active = currentTask.projects?.some((p) => p.id === projectId) ?? false;
 
     if (shouldBulkUpdate && previousTasks) {
       const selectedTasksData = previousTasks.filter((t) =>
@@ -69,17 +79,29 @@ export function useTaskProjectManagement({
       );
     }
 
+    // Helper to get task from either board cache or individual cache
+    const getTaskState = (taskId: string): Task | undefined => {
+      // First try board cache
+      const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
+      if (fromBoardCache) return fromBoardCache;
+
+      // Fallback to individual task cache (for tasks not in board view)
+      if (taskId === currentTask.id) return currentTask;
+
+      return undefined;
+    };
+
     // Pre-calculate which tasks actually need to change
     const tasksNeedingProject = !active
-      ? tasksToUpdate.filter((taskId) => {
-          const t = previousTasks?.find((ct) => ct.id === taskId);
+      ? tasksToUpdate.filter((tId) => {
+          const t = getTaskState(tId);
           return !t?.projects?.some((p) => p.id === projectId);
         })
       : [];
 
     const tasksToRemoveFrom = active
-      ? tasksToUpdate.filter((taskId) => {
-          const t = previousTasks?.find((ct) => ct.id === taskId);
+      ? tasksToUpdate.filter((tId) => {
+          const t = getTaskState(tId);
           return t?.projects?.some((p) => p.id === projectId);
         })
       : [];
@@ -110,6 +132,32 @@ export function useTaskProjectManagement({
         return t;
       });
     });
+
+    // CRITICAL: Also update the individual task cache if taskId is provided
+    // This ensures the chip menu's task cache stays in sync with the board cache
+    if (taskId) {
+      queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
+        if (!old) return old;
+        if (active && tasksToRemoveFrom.includes(taskId)) {
+          // Remove the project
+          return {
+            ...old,
+            projects:
+              old.projects?.filter((p: any) => p.id !== projectId) || [],
+          };
+        } else if (!active && tasksNeedingProject.includes(taskId)) {
+          // Add the project
+          return {
+            ...old,
+            projects: [
+              ...(old.projects || []),
+              project || { id: projectId, name: 'Unknown', status: 'unknown' },
+            ],
+          };
+        }
+        return old;
+      });
+    }
 
     try {
       const supabase = createClient();
@@ -234,6 +282,20 @@ export function useTaskProjectManagement({
             });
           }
         );
+
+        // CRITICAL: Also update individual task cache if taskId is provided
+        if (taskId) {
+          queryClient.setQueryData(
+            ['task', taskId],
+            (old: Task | undefined) => {
+              if (!old) return old;
+              return {
+                ...old,
+                projects: [...(old.projects || []), newProject],
+              };
+            }
+          );
+        }
 
         const { error: linkErr } = await supabase
           .from('task_project_tasks')

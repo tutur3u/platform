@@ -121,7 +121,7 @@ export function getSlashCommands(options: {
     {
       id: 'convert-to-task',
       label: 'Convert to task',
-      description: 'Convert this item into a new task and mention it',
+      description: 'Convert selected text or list item into a new task',
       icon: CirclePlus,
       keywords: ['convert', 'task', 'create', 'new', 'mention'],
     },

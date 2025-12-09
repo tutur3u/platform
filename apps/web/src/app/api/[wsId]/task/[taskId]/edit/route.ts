@@ -3,6 +3,17 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
 
+// Calendar hours type for task scheduling (matches database enum)
+type CalendarHoursType = 'work_hours' | 'personal_hours' | 'meeting_hours';
+
+// Valid values for validation
+const VALID_PRIORITIES: TaskPriority[] = ['critical', 'high', 'normal', 'low'];
+const VALID_CALENDAR_HOURS: CalendarHoursType[] = [
+  'work_hours',
+  'personal_hours',
+  'meeting_hours',
+];
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ taskId: string }> }
@@ -17,34 +28,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Parse and validate the request body
+    // 2. Parse the request body
     const body = await req.json();
-    const { priority } = body;
-
-    // Define valid priority type
-    const validPriorities: TaskPriority[] = [
-      'critical',
-      'high',
-      'normal',
-      'low',
-    ];
-
-    // Validate priority
-    if (!priority || typeof priority !== 'string') {
-      return NextResponse.json(
-        { error: 'Priority is required and must be a string' },
-        { status: 400 }
-      );
-    }
-
-    if (!validPriorities.includes(priority as TaskPriority)) {
-      return NextResponse.json(
-        { error: `Priority must be one of: ${validPriorities.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    const validatedPriority = priority as TaskPriority;
 
     // 3. Check if task exists and user has access to it
     const { data: existingTask, error: fetchError } = await supabase
@@ -72,10 +57,110 @@ export async function PATCH(
       );
     }
 
-    // 5. Update task priority
+    // 5. Build update object with validated fields
+    const updateData: Record<string, unknown> = {};
+
+    // Priority
+    if (body.priority !== undefined) {
+      if (
+        typeof body.priority !== 'string' ||
+        !VALID_PRIORITIES.includes(body.priority as TaskPriority)
+      ) {
+        return NextResponse.json(
+          { error: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}` },
+          { status: 400 }
+        );
+      }
+      updateData.priority = body.priority;
+    }
+
+    // Scheduling fields
+    if (body.total_duration !== undefined) {
+      if (typeof body.total_duration !== 'number' || body.total_duration < 0) {
+        return NextResponse.json(
+          { error: 'total_duration must be a non-negative number' },
+          { status: 400 }
+        );
+      }
+      updateData.total_duration = body.total_duration;
+    }
+
+    if (body.is_splittable !== undefined) {
+      if (typeof body.is_splittable !== 'boolean') {
+        return NextResponse.json(
+          { error: 'is_splittable must be a boolean' },
+          { status: 400 }
+        );
+      }
+      updateData.is_splittable = body.is_splittable;
+    }
+
+    if (body.min_split_duration_minutes !== undefined) {
+      if (
+        typeof body.min_split_duration_minutes !== 'number' ||
+        body.min_split_duration_minutes < 0
+      ) {
+        return NextResponse.json(
+          { error: 'min_split_duration_minutes must be a non-negative number' },
+          { status: 400 }
+        );
+      }
+      updateData.min_split_duration_minutes = body.min_split_duration_minutes;
+    }
+
+    if (body.max_split_duration_minutes !== undefined) {
+      if (
+        typeof body.max_split_duration_minutes !== 'number' ||
+        body.max_split_duration_minutes < 0
+      ) {
+        return NextResponse.json(
+          { error: 'max_split_duration_minutes must be a non-negative number' },
+          { status: 400 }
+        );
+      }
+      updateData.max_split_duration_minutes = body.max_split_duration_minutes;
+    }
+
+    if (body.calendar_hours !== undefined) {
+      if (
+        body.calendar_hours !== null &&
+        (typeof body.calendar_hours !== 'string' ||
+          !VALID_CALENDAR_HOURS.includes(
+            body.calendar_hours as CalendarHoursType
+          ))
+      ) {
+        return NextResponse.json(
+          {
+            error: `calendar_hours must be one of: ${VALID_CALENDAR_HOURS.join(', ')} or null`,
+          },
+          { status: 400 }
+        );
+      }
+      updateData.calendar_hours = body.calendar_hours;
+    }
+
+    if (body.auto_schedule !== undefined) {
+      if (typeof body.auto_schedule !== 'boolean') {
+        return NextResponse.json(
+          { error: 'auto_schedule must be a boolean' },
+          { status: 400 }
+        );
+      }
+      updateData.auto_schedule = body.auto_schedule;
+    }
+
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      );
+    }
+
+    // 6. Update task
     const { data: updatedTask, error: updateError } = await supabase
       .from('tasks')
-      .update({ priority: validatedPriority })
+      .update(updateData)
       .eq('id', taskId)
       .select()
       .single();

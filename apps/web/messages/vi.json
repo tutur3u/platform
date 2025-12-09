@@ -1736,6 +1736,22 @@
     "sync-dashboard": "Bảng điều khiển đồng bộ",
     "sync-history": "Đồng bộ hóa lịch sử"
   },
+  "calendar-sidebar": {
+    "expand": "Mở rộng thanh bên",
+    "collapse": "Thu gọn thanh bên",
+    "tasks-tab": "Công việc",
+    "habits-tab": "Thói quen",
+    "schedule-tab": "Lịch trình",
+    "no-tasks": "Không có công việc được giao",
+    "priority-low": "Ưu tiên thấp",
+    "priority-normal": "Ưu tiên bình thường",
+    "priority-high": "Ưu tiên cao",
+    "priority-critical": "Ưu tiên khẩn cấp",
+    "ready": "Sẵn sàng",
+    "search-tasks": "Tìm kiếm công việc...",
+    "untitled-task": "Công việc chưa đặt tên",
+    "due": "Hạn"
+  },
   "workspace-finance-tabs": {
     "overview": "Tổng quan",
     "wallets": "Ví",
