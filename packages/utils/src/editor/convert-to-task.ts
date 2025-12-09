@@ -7,7 +7,7 @@ export interface ConvertToTaskOptions {
   createTask: (params: {
     name: string;
     listId: string;
-  }) => Promise<{ id: string; name: string }>;
+  }) => Promise<{ id: string; name: string; display_number?: number }>;
   wrapInParagraph?: boolean;
 }
 
@@ -16,20 +16,20 @@ export interface ConvertToTaskResult {
   taskId?: string;
   taskName?: string;
   error?: {
-    type: 'not_in_list' | 'empty_content' | 'no_lists' | 'unknown';
+    type: 'no_selection' | 'empty_content' | 'no_lists' | 'unknown';
     message: string;
     description?: string;
   };
 }
 
 /**
- * Converts a list item in a TipTap editor to a task and replaces it with a mention.
+ * Converts selected text or a list item in a TipTap editor to a task and replaces it with a mention.
  *
- * This function:
- * 1. Validates that the cursor is in a list item
- * 2. Extracts the text content from the list item
- * 3. Creates a new task with the extracted text
- * 4. Replaces the list item with a mention to the new task
+ * This function supports two modes:
+ * 1. Selection mode: If text is highlighted/selected, uses the selected text as the task name
+ *    and replaces the selection with a mention to the new task.
+ * 2. List item mode (fallback): If no text is selected but cursor is in a list item,
+ *    uses the entire list item text and replaces the list item with a mention.
  *
  * @param options - Configuration options for the conversion
  * @returns Result object indicating success or failure with error details
@@ -40,13 +40,88 @@ export async function convertListItemToTask(
   const {
     editor,
     listId,
-    listName,
+    listName: _listName, // Kept for backwards compatibility but unused
     createTask,
     wrapInParagraph = false,
   } = options;
 
   const { state } = editor;
   const { selection } = state;
+  const { from, to, empty } = selection;
+
+  // Mode 1: Text is selected - use the selected text as task name
+  if (!empty) {
+    const selectedText = state.doc.textBetween(from, to, ' ').trim();
+
+    if (!selectedText) {
+      return {
+        success: false,
+        error: {
+          type: 'empty_content',
+          message: 'Empty selection',
+          description: 'Select some text to convert to a task',
+        },
+      };
+    }
+
+    try {
+      // Create new task using the selected text
+      const newTask = await createTask({
+        name: selectedText,
+        listId,
+      });
+
+      // Replace the selected text with a mention to the new task
+      const tr = state.tr;
+
+      // Delete the selected text
+      tr.delete(from, to);
+
+      // Check if mention node exists in schema
+      if (state.schema.nodes.mention) {
+        // Create mention node with correct attributes:
+        // - displayName: ticket number (e.g., "123" for #123)
+        // - subtitle: task name
+        const mentionNode = state.schema.nodes.mention.create({
+          entityId: newTask.id,
+          entityType: 'task',
+          displayName: newTask.display_number
+            ? String(newTask.display_number)
+            : newTask.name,
+          avatarUrl: null,
+          subtitle: newTask.name,
+        });
+
+        // Insert mention at the selection start position
+        tr.insert(from, mentionNode);
+
+        // Add a space after the mention for better UX
+        const spacePos = from + mentionNode.nodeSize;
+        tr.insertText(' ', spacePos);
+      }
+
+      // Apply transaction
+      editor.view.dispatch(tr);
+
+      return {
+        success: true,
+        taskId: newTask.id,
+        taskName: newTask.name,
+      };
+    } catch (error) {
+      console.error('Failed to convert selection to task:', error);
+      return {
+        success: false,
+        error: {
+          type: 'unknown',
+          message: 'Failed to create task',
+          description: 'An error occurred while creating the task',
+        },
+      };
+    }
+  }
+
+  // Mode 2: No selection - fall back to list item mode
   const { $from } = selection;
 
   // Get the current node (could be listItem, taskItem, or paragraph inside them)
@@ -58,9 +133,10 @@ export async function convertListItemToTask(
     return {
       success: false,
       error: {
-        type: 'not_in_list',
-        message: 'Not in a list item',
-        description: 'Move your cursor to a list item to convert it to a task',
+        type: 'no_selection',
+        message: 'No text selected',
+        description:
+          'Select some text or move your cursor to a list item to convert it to a task',
       },
     };
   }
@@ -73,10 +149,10 @@ export async function convertListItemToTask(
       return {
         success: false,
         error: {
-          type: 'not_in_list',
-          message: 'Not in a list item',
+          type: 'no_selection',
+          message: 'No text selected',
           description:
-            'Move your cursor to a list item to convert it to a task',
+            'Select some text or move your cursor to a list item to convert it to a task',
         },
       };
     }
@@ -90,9 +166,10 @@ export async function convertListItemToTask(
     return {
       success: false,
       error: {
-        type: 'not_in_list',
-        message: 'Not in a list item',
-        description: 'Move your cursor to a list item to convert it to a task',
+        type: 'no_selection',
+        message: 'No text selected',
+        description:
+          'Select some text or move your cursor to a list item to convert it to a task',
       },
     };
   }
@@ -125,13 +202,17 @@ export async function convertListItemToTask(
 
     // Check if mention node exists in schema
     if (state.schema.nodes.mention) {
-      // Create mention node
+      // Create mention node with correct attributes:
+      // - displayName: ticket number (e.g., "123" for #123)
+      // - subtitle: task name
       const mentionNode = state.schema.nodes.mention.create({
         entityId: newTask.id,
         entityType: 'task',
-        displayName: newTask.name,
+        displayName: newTask.display_number
+          ? String(newTask.display_number)
+          : newTask.name,
         avatarUrl: null,
-        subtitle: listName,
+        subtitle: newTask.name,
       });
 
       // Wrap in paragraph if requested and paragraph node exists

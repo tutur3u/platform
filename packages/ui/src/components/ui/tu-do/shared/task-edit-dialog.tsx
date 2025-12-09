@@ -947,6 +947,9 @@ export function TaskEditDialog({
       return;
     }
 
+    // Store the created task to add to cache later
+    let createdTask: Task | null = null;
+
     const result = await convertListItemToTask({
       editor: editorInstance,
       listId: firstList.id,
@@ -960,17 +963,31 @@ export function TaskEditDialog({
         listId: string;
       }) => {
         // Note: display_number and board_id are auto-assigned by database trigger
+        // Select all fields needed for the Task type to add to cache
         const { data: newTask, error } = await supabase
           .from('tasks')
           .insert({
             name,
             list_id: listId,
           })
-          .select('id, name')
+          .select('*')
           .single();
 
         if (error || !newTask) throw error;
-        return newTask;
+
+        // Store full task for cache update
+        createdTask = {
+          ...newTask,
+          assignees: [],
+          labels: [],
+          projects: [],
+        } as Task;
+
+        return {
+          id: newTask.id,
+          name: newTask.name,
+          display_number: newTask.display_number ?? undefined,
+        };
       },
     });
 
@@ -983,10 +1000,30 @@ export function TaskEditDialog({
       return;
     }
 
+    // CRITICAL: Flush the debounced editor change immediately after inserting the mention.
+    // Without this, the editor's onChange is debounced (500ms delay), and any re-render
+    // during that window causes the editor to sync back to stale content, erasing the mention.
+    // This ensures the React state (description) is updated BEFORE any cache invalidations.
+    if (flushEditorPendingRef.current) {
+      flushEditorPendingRef.current();
+    }
+
+    // Add the new task to the cache directly instead of relying on realtime
+    // This ensures the task appears immediately in personal workspaces (no realtime)
+    // and avoids full-board refetch flickering
+    if (createdTask) {
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return [createdTask];
+          // Check if task already exists (from realtime), if so don't duplicate
+          if (old.some((t) => t.id === createdTask!.id)) return old;
+          return [...old, createdTask];
+        }
+      );
+    }
+
     // Only invalidate time tracking data since task availability affects it
-    // Note: We intentionally do NOT invalidate the tasks cache here to avoid
-    // conflicts with realtime sync and unnecessary full-board refetches.
-    // The realtime subscription will handle adding the new task to the cache.
     await queryClient.invalidateQueries({
       queryKey: ['time-tracking-data'],
     });

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import type { WorkspaceTaskLabel } from '../types';
 
@@ -112,25 +113,8 @@ export function useTaskRelationships({
             })
           );
         }
-        // Update task cache directly to avoid full refetch flickering
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (task.id !== taskId) return task;
-              const currentLabels = task.labels || [];
-              const newLabels = exists
-                ? currentLabels.filter((l) => l.id !== label.id)
-                : [...currentLabels, label].sort((a, b) =>
-                    (a?.name || '')
-                      .toLowerCase()
-                      .localeCompare((b?.name || '').toLowerCase())
-                  );
-              return { ...task, labels: newLabels };
-            });
-          }
-        );
+        await invalidateTaskCaches(queryClient, boardId);
+        onUpdate();
       } catch (e: any) {
         toast({
           title: 'Label update failed',
@@ -147,6 +131,7 @@ export function useTaskRelationships({
       queryClient,
       toast,
       setSelectedLabels,
+      onUpdate,
     ]
   );
 
