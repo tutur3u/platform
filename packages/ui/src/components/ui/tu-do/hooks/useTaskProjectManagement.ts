@@ -92,15 +92,15 @@ export function useTaskProjectManagement({
 
     // Pre-calculate which tasks actually need to change
     const tasksNeedingProject = !active
-      ? tasksToUpdate.filter((taskId) => {
-          const t = getTaskState(taskId);
+      ? tasksToUpdate.filter((tId) => {
+          const t = getTaskState(tId);
           return !t?.projects?.some((p) => p.id === projectId);
         })
       : [];
 
     const tasksToRemoveFrom = active
-      ? tasksToUpdate.filter((taskId) => {
-          const t = getTaskState(taskId);
+      ? tasksToUpdate.filter((tId) => {
+          const t = getTaskState(tId);
           return t?.projects?.some((p) => p.id === projectId);
         })
       : [];

@@ -176,6 +176,7 @@ export function TaskMentionChip({
         return data || [];
       },
       enabled: !!boardConfig?.ws_id && menuOpen,
+      staleTime: 10 * 60 * 1000,
     }
   );
 
@@ -213,6 +214,7 @@ export function TaskMentionChip({
       return data as TaskList[];
     },
     enabled: !!task?.board_id && menuOpen,
+    staleTime: 10 * 60 * 1000,
   });
 
   // Placeholder task for hooks when task is not loaded yet

@@ -137,9 +137,9 @@ export function useTaskActions({
       );
     }
   }, [
-    task.id,
-    task.closed_at,
-    task.list_id,
+    task?.id,
+    task?.closed_at,
+    task?.list_id,
     targetCompletionList,
     onUpdate,
     setIsLoading,
@@ -438,8 +438,8 @@ export function useTaskActions({
       setMenuOpen(false);
     }
   }, [
-    task.id,
-    task.assignees,
+    task?.id,
+    task?.assignees,
     boardId,
     queryClient,
     setIsLoading,
@@ -1023,8 +1023,8 @@ export function useTaskActions({
       // CRITICAL: Get current task state from cache instead of stale prop
       // This ensures we read the most up-to-date state after optimistic updates
       const currentTask = taskId
-        ? (queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
-          task
+        ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
+          task)
         : task;
 
       // Check if we're in multi-select mode with multiple tasks selected
@@ -1150,7 +1150,8 @@ export function useTaskActions({
             // Remove the assignee
             return {
               ...old,
-              assignees: old.assignees?.filter((a) => a.id !== assigneeId) || [],
+              assignees:
+                old.assignees?.filter((a) => a.id !== assigneeId) || [],
             };
           } else if (!active && tasksNeedingAssignee.includes(taskId)) {
             // Add the assignee

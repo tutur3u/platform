@@ -254,7 +254,7 @@ describe('Slash Commands', () => {
       expect(convertCommand?.id).toBe('convert-to-task');
       expect(convertCommand?.label).toBe('Convert to task');
       expect(convertCommand?.description).toBe(
-        'Convert this item into a new task and mention it'
+        'Convert selected text or list item into a new task'
       );
       expect(convertCommand?.icon).toBeDefined();
       expect(convertCommand?.keywords).toEqual([
