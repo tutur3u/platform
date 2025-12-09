@@ -245,6 +245,7 @@ export function TaskMentionChip({
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
+    taskId: entityId, // Pass entityId to sync individual task cache
   });
 
   // Use project management hook - only when we have task
@@ -263,6 +264,7 @@ export function TaskMentionChip({
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
+    taskId: entityId, // Pass entityId to sync individual task cache
   });
 
   // Use task relationships hook - only when we have task
@@ -353,6 +355,7 @@ export function TaskMentionChip({
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
+    taskId: entityId, // Pass entityId to sync individual task cache
   });
 
   // Wrap handlers to also sync individual task cache
@@ -464,36 +467,10 @@ export function TaskMentionChip({
   const handleToggleAssignee = useCallback(
     async (assigneeId: string) => {
       if (!task) return;
-
-      // Use functional update to read current cache state
-      syncTaskCache((current) => {
-        const isCurrentlyAssigned = current.assignees?.some(
-          (a) => a.id === assigneeId
-        );
-
-        if (isCurrentlyAssigned) {
-          return {
-            assignees:
-              current.assignees?.filter((a) => a.id !== assigneeId) || [],
-          };
-        } else {
-          const member = workspaceMembers.find((m: any) => m.id === assigneeId);
-          return {
-            assignees: [
-              ...(current.assignees || []),
-              member || {
-                id: assigneeId,
-                display_name: 'User',
-                avatar_url: null,
-              },
-            ],
-          };
-        }
-      });
-
+      // Base function handles optimistic updates to both caches
       return baseHandleToggleAssignee(assigneeId);
     },
-    [baseHandleToggleAssignee, syncTaskCache, task, workspaceMembers]
+    [baseHandleToggleAssignee, task]
   );
 
   const onToggleAssignee = useCallback(
@@ -509,105 +486,37 @@ export function TaskMentionChip({
     [handleToggleAssignee]
   );
 
-  // Wrap label toggle to sync individual task cache
+  // Wrap label toggle - base function handles all cache updates
   const toggleTaskLabel = useCallback(
     async (labelId: string) => {
       if (!task) return;
-
-      // Use functional update to read current cache state
-      syncTaskCache((current) => {
-        const isCurrentlyLabeled = current.labels?.some(
-          (l) => l.id === labelId
-        );
-
-        if (isCurrentlyLabeled) {
-          return {
-            labels: current.labels?.filter((l) => l.id !== labelId) || [],
-          };
-        } else {
-          const label = workspaceLabels.find((l) => l.id === labelId);
-          return {
-            labels: [
-              ...(current.labels || []),
-              label || {
-                id: labelId,
-                name: 'Unknown',
-                color: '#3b82f6',
-                created_at: new Date().toISOString(),
-              },
-            ],
-          };
-        }
-      });
-
+      // Base function handles optimistic updates to both caches
       return baseToggleTaskLabel(labelId);
     },
-    [baseToggleTaskLabel, syncTaskCache, task, workspaceLabels]
+    [baseToggleTaskLabel, task]
   );
 
-  // Wrap project toggle to sync individual task cache
+  // Wrap project toggle - base function handles all cache updates
   const toggleTaskProject = useCallback(
     async (projectId: string) => {
       if (!task) return;
-
-      // Use functional update to read current cache state
-      syncTaskCache((current) => {
-        const isCurrentlyInProject = current.projects?.some(
-          (p) => p.id === projectId
-        );
-
-        if (isCurrentlyInProject) {
-          return {
-            projects: current.projects?.filter((p) => p.id !== projectId) || [],
-          };
-        } else {
-          const project = workspaceProjects.find((p) => p.id === projectId);
-          const newProject = project
-            ? {
-                id: project.id,
-                name: project.name,
-                status: project.status || 'unknown',
-              }
-            : { id: projectId, name: 'Unknown', status: 'unknown' };
-          return {
-            projects: [
-              ...(current.projects || []),
-              newProject,
-            ] as TaskWithBoardId['projects'],
-          };
-        }
-      });
-
+      // Base function handles optimistic updates to both caches
       return baseToggleTaskProject(projectId);
     },
-    [baseToggleTaskProject, syncTaskCache, task, workspaceProjects]
+    [baseToggleTaskProject, task]
   );
 
-  // Wrap create new label to sync individual task cache
+  // Wrap create new label - base function handles cache updates
   const createNewLabel = useCallback(async () => {
-    const result = await baseCreateNewLabel();
-    if (result) {
-      // The base function already links the label to the task
-      // Update individual task cache with the new label using functional update
-      syncTaskCache((current) => ({
-        labels: [...(current.labels || []), result],
-      }));
-    }
-    return result;
-  }, [baseCreateNewLabel, syncTaskCache]);
+    // Base function handles optimistic updates to both caches
+    return baseCreateNewLabel();
+  }, [baseCreateNewLabel]);
 
-  // Wrap create new project to sync individual task cache
+  // Wrap create new project - base function handles cache updates
   const createNewProject = useCallback(async () => {
-    const result = await baseCreateNewProject();
-    if (result) {
-      // The base function already links the project to the task
-      // Update individual task cache with the new project using functional update
-      syncTaskCache((current) => ({
-        projects: [...(current.projects || []), result],
-      }));
-    }
-    return result;
-  }, [baseCreateNewProject, syncTaskCache]);
+    // Base function handles optimistic updates to both caches
+    return baseCreateNewProject();
+  }, [baseCreateNewProject]);
 
   // Guarded select handler for menu items
   const handleMenuItemSelect = useCallback(

@@ -20,6 +20,7 @@ interface UseTaskLabelManagementProps {
   selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void;
+  taskId?: string; // Optional task ID for syncing individual task cache
 }
 
 export function useTaskLabelManagement({
@@ -29,6 +30,7 @@ export function useTaskLabelManagement({
   workspaceId,
   selectedTasks,
   isMultiSelectMode,
+  taskId,
 }: UseTaskLabelManagementProps) {
   const queryClient = useQueryClient();
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
@@ -38,16 +40,22 @@ export function useTaskLabelManagement({
 
   // Toggle a label for the task (quick labels submenu)
   async function toggleTaskLabel(labelId: string) {
+    // CRITICAL: Get current task state from cache instead of stale prop
+    // This ensures we read the most up-to-date state after optimistic updates
+    const currentTask = taskId
+      ? (queryClient.getQueryData(['task', taskId]) as Task | undefined) ?? task
+      : task;
+
     // Check if we're in multi-select mode with multiple tasks selected
     const shouldBulkUpdate =
       isMultiSelectMode &&
       selectedTasks &&
       selectedTasks.size > 1 &&
-      selectedTasks.has(task.id);
+      selectedTasks.has(currentTask.id);
 
     const tasksToUpdate = shouldBulkUpdate
       ? Array.from(selectedTasks)
-      : [task.id];
+      : [currentTask.id];
 
     setLabelsSaving(labelId);
 
@@ -60,7 +68,8 @@ export function useTaskLabelManagement({
       | undefined;
 
     // Determine action: remove if ALL selected tasks have the label, add otherwise
-    let active = task.labels?.some((l) => l.id === labelId) ?? false;
+    // Use currentTask from cache, not stale task prop
+    let active = currentTask.labels?.some((l) => l.id === labelId) ?? false;
 
     if (shouldBulkUpdate && previousTasks) {
       const selectedTasksData = previousTasks.filter((t) =>
@@ -72,17 +81,29 @@ export function useTaskLabelManagement({
       );
     }
 
+    // Helper to get task from either board cache or individual cache
+    const getTaskState = (taskId: string): Task | undefined => {
+      // First try board cache
+      const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
+      if (fromBoardCache) return fromBoardCache;
+
+      // Fallback to individual task cache (for tasks not in board view)
+      if (taskId === currentTask.id) return currentTask;
+
+      return undefined;
+    };
+
     // Pre-calculate which tasks actually need to change
     const tasksNeedingLabel = !active
       ? tasksToUpdate.filter((taskId) => {
-          const t = previousTasks?.find((ct) => ct.id === taskId);
+          const t = getTaskState(taskId);
           return !t?.labels?.some((l) => l.id === labelId);
         })
       : [];
 
     const tasksToRemoveFrom = active
       ? tasksToUpdate.filter((taskId) => {
-          const t = previousTasks?.find((ct) => ct.id === taskId);
+          const t = getTaskState(taskId);
           return t?.labels?.some((l) => l.id === labelId);
         })
       : [];
@@ -118,6 +139,36 @@ export function useTaskLabelManagement({
         return t;
       });
     });
+
+    // CRITICAL: Also update the individual task cache if taskId is provided
+    // This ensures the chip menu's task cache stays in sync with the board cache
+    if (taskId) {
+      queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
+        if (!old) return old;
+        if (active && tasksToRemoveFrom.includes(taskId)) {
+          // Remove the label
+          return {
+            ...old,
+            labels: old.labels?.filter((l) => l.id !== labelId) || [],
+          };
+        } else if (!active && tasksNeedingLabel.includes(taskId)) {
+          // Add the label
+          return {
+            ...old,
+            labels: [
+              ...(old.labels || []),
+              label || {
+                id: labelId,
+                name: 'Unknown',
+                color: '#3b82f6',
+                created_at: new Date().toISOString(),
+              },
+            ],
+          };
+        }
+        return old;
+      });
+    }
 
     try {
       const supabase = createClient();
@@ -243,6 +294,17 @@ export function useTaskLabelManagement({
             });
           }
         );
+
+        // CRITICAL: Also update individual task cache if taskId is provided
+        if (taskId) {
+          queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
+            if (!old) return old;
+            return {
+              ...old,
+              labels: [...(old.labels || []), newLabel],
+            };
+          });
+        }
 
         const { error: linkErr } = await supabase
           .from('task_labels')

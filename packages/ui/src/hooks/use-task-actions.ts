@@ -23,6 +23,7 @@ interface UseTaskActionsProps {
   selectedTasks?: Set<string>; // For bulk operations
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void; // Callback to clear selection after bulk operations
+  taskId?: string; // Optional task ID for syncing individual task cache
 }
 
 export function useTaskActions({
@@ -39,6 +40,7 @@ export function useTaskActions({
   setEstimationSaving,
   selectedTasks,
   isMultiSelectMode,
+  taskId,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
@@ -951,16 +953,24 @@ export function useTaskActions({
   const handleToggleAssignee = useCallback(
     async (assigneeId: string) => {
       if (!task) return;
+
+      // CRITICAL: Get current task state from cache instead of stale prop
+      // This ensures we read the most up-to-date state after optimistic updates
+      const currentTask = taskId
+        ? (queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
+          task
+        : task;
+
       // Check if we're in multi-select mode with multiple tasks selected
       const shouldBulkUpdate =
         isMultiSelectMode &&
         selectedTasks &&
         selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
+        selectedTasks.has(currentTask.id);
 
       const tasksToUpdate = shouldBulkUpdate
         ? Array.from(selectedTasks)
-        : [task.id];
+        : [currentTask.id];
 
       setIsLoading(true);
 
@@ -973,7 +983,8 @@ export function useTaskActions({
         | undefined;
 
       // Determine action: remove if ALL selected tasks have the assignee, add otherwise
-      let active = task.assignees?.some((a) => a.id === assigneeId);
+      // Use currentTask from cache, not stale task prop
+      let active = currentTask.assignees?.some((a) => a.id === assigneeId);
 
       if (shouldBulkUpdate && previousTasks) {
         const selectedTasksData = previousTasks.filter((t) =>
@@ -985,30 +996,50 @@ export function useTaskActions({
         );
       }
 
+      // Helper to get task from either board cache or individual cache
+      const getTaskState = (taskId: string): Task | undefined => {
+        // First try board cache
+        const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
+        if (fromBoardCache) return fromBoardCache;
+
+        // Fallback to individual task cache (for tasks not in board view)
+        if (taskId === currentTask.id) return currentTask;
+
+        return undefined;
+      };
+
       // Pre-calculate which tasks actually need to change
       const tasksNeedingAssignee = !active
         ? tasksToUpdate.filter((taskId) => {
-            const t = previousTasks?.find((ct) => ct.id === taskId);
+            const t = getTaskState(taskId);
             return !t?.assignees?.some((a) => a.id === assigneeId);
           })
         : [];
 
       const tasksToRemoveFrom = active
         ? tasksToUpdate.filter((taskId) => {
-            const t = previousTasks?.find((ct) => ct.id === taskId);
+            const t = getTaskState(taskId);
             return t?.assignees?.some((a) => a.id === assigneeId);
           })
         : [];
 
-      // Get assignee details from previous tasks for optimistic update
+      // Get assignee details for optimistic update
       let assigneeDetails = null;
-      if (!active && previousTasks) {
-        for (const t of previousTasks) {
-          const found = t.assignees?.find((a) => a.id === assigneeId);
-          if (found) {
-            assigneeDetails = found;
-            break;
+      if (!active) {
+        // First try from board cache
+        if (previousTasks) {
+          for (const t of previousTasks) {
+            const found = t.assignees?.find((a) => a.id === assigneeId);
+            if (found) {
+              assigneeDetails = found;
+              break;
+            }
           }
+        }
+        // Fallback to current task cache
+        if (!assigneeDetails && currentTask.assignees) {
+          assigneeDetails =
+            currentTask.assignees.find((a) => a.id === assigneeId) || null;
         }
       }
 
@@ -1043,6 +1074,35 @@ export function useTaskActions({
           });
         }
       );
+
+      // CRITICAL: Also update the individual task cache if taskId is provided
+      // This ensures the chip menu's task cache stays in sync with the board cache
+      if (taskId) {
+        queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
+          if (!old) return old;
+          if (active && tasksToRemoveFrom.includes(taskId)) {
+            // Remove the assignee
+            return {
+              ...old,
+              assignees: old.assignees?.filter((a) => a.id !== assigneeId) || [],
+            };
+          } else if (!active && tasksNeedingAssignee.includes(taskId)) {
+            // Add the assignee
+            return {
+              ...old,
+              assignees: [
+                ...(old.assignees || []),
+                assigneeDetails || {
+                  id: assigneeId,
+                  display_name: 'User',
+                  email: '',
+                },
+              ],
+            };
+          }
+          return old;
+        });
+      }
 
       try {
         const supabase = createClient();
@@ -1098,7 +1158,15 @@ export function useTaskActions({
         setIsLoading(false);
       }
     },
-    [task, boardId, queryClient, setIsLoading, isMultiSelectMode, selectedTasks]
+    [
+      task,
+      taskId,
+      boardId,
+      queryClient,
+      setIsLoading,
+      isMultiSelectMode,
+      selectedTasks,
+    ]
   );
 
   return {

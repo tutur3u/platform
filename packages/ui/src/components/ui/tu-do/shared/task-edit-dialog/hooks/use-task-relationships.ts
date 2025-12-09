@@ -113,6 +113,7 @@ export function useTaskRelationships({
           );
         }
         await invalidateTaskCaches(queryClient, boardId);
+        onUpdate();
       } catch (e: any) {
         toast({
           title: 'Label update failed',
@@ -129,6 +130,7 @@ export function useTaskRelationships({
       queryClient,
       toast,
       setSelectedLabels,
+      onUpdate,
     ]
   );
 
