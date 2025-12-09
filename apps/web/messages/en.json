@@ -821,7 +821,8 @@
     "enter_authenticator_code": "Enter your 6-digit verification code from your authenticator app",
     "verification_code_label": "Verification Code",
     "verify_button": "Verify",
-    "captcha_error": "Security check failed. Retrying..."
+    "captcha_error": "Security check failed. Retrying...",
+    "back_to_email": "Back to email"
   },
   "signup": {
     "get-started": "Get started",

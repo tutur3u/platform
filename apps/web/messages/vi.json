@@ -911,7 +911,8 @@
     "enter_authenticator_code": "Nhập mã xác thực 6 chữ số từ ứng dụng xác thực của bạn",
     "verification_code_label": "Mã xác thực",
     "verify_button": "Xác minh",
-    "captcha_error": "Kiểm tra bảo mật thất bại. Đang thử lại..."
+    "captcha_error": "Kiểm tra bảo mật thất bại. Đang thử lại...",
+    "back_to_email": "Quay lại nhập email"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
