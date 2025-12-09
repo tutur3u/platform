@@ -40,7 +40,8 @@ export function useTaskProjectManagement({
     // CRITICAL: Get current task state from cache instead of stale prop
     // This ensures we read the most up-to-date state after optimistic updates
     const currentTask = taskId
-      ? (queryClient.getQueryData(['task', taskId]) as Task | undefined) ?? task
+      ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
+        task)
       : task;
 
     // Check if we're in multi-select mode with multiple tasks selected
@@ -141,7 +142,8 @@ export function useTaskProjectManagement({
           // Remove the project
           return {
             ...old,
-            projects: old.projects?.filter((p: any) => p.id !== projectId) || [],
+            projects:
+              old.projects?.filter((p: any) => p.id !== projectId) || [],
           };
         } else if (!active && tasksNeedingProject.includes(taskId)) {
           // Add the project
@@ -283,13 +285,16 @@ export function useTaskProjectManagement({
 
         // CRITICAL: Also update individual task cache if taskId is provided
         if (taskId) {
-          queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
-            if (!old) return old;
-            return {
-              ...old,
-              projects: [...(old.projects || []), newProject],
-            };
-          });
+          queryClient.setQueryData(
+            ['task', taskId],
+            (old: Task | undefined) => {
+              if (!old) return old;
+              return {
+                ...old,
+                projects: [...(old.projects || []), newProject],
+              };
+            }
+          );
         }
 
         const { error: linkErr } = await supabase
