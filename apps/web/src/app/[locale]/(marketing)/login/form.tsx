@@ -139,7 +139,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     passwordless ? 'passwordless' : 'password'
   );
   const [showPassword, setShowPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(true);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [emailDisplay, setEmailDisplay] = useState({
@@ -154,7 +154,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   // Server action transitions
   const [isPendingSendOtp, startSendOtpTransition] = useTransition();
   const [isPendingVerifyOtp, startVerifyOtpTransition] = useTransition();
-  startVerifyOtpTransition;
+
   // Captcha state (Turnstile)
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
@@ -183,7 +183,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         setCaptchaError(undefined);
       }, CAPTCHA_ERROR_RETRY_DELAY);
     },
-    [t, loginMethod]
+    [t, resetCaptcha]
   );
 
   // Handle Turnstile timeout (user didn't interact in time)
