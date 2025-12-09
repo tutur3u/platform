@@ -1,4 +1,5 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -39,10 +40,11 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const wsId = params?.wsId as string;
   const { settings } = useCalendarSettings();
   const { eventsWithoutAllDays } = useCalendarSync();
+  const { previewEvents } = useCalendar();
   const tz = settings?.timezone?.timezone;
 
-  // Get all events
-  const allEvents = eventsWithoutAllDays;
+  // Merge real events with preview events for visual demo
+  const allEvents = [...eventsWithoutAllDays, ...previewEvents];
 
   // Process events to handle multi-day events
   // Events ending at exactly midnight are treated as ending on the previous day

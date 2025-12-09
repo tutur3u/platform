@@ -107,7 +107,10 @@ export interface TaskScheduleResult {
   task: TaskWithScheduling;
   events: ScheduledEvent[];
   scheduledMinutes: number;
+  totalMinutesRequired: number;
+  remainingMinutes: number;
   warning?: string;
+  warningLevel?: 'info' | 'warning' | 'error';
 }
 
 export interface BumpedHabitEvent {
@@ -317,7 +320,7 @@ function roundTo15Minutes(date: Date): Date {
  */
 function getLocalHour(date: Date, timezone: string | null | undefined): number {
   if (!timezone || timezone === 'auto') {
-    return date.getUTCHours();
+    return date.getHours(); // Use system local time, not UTC
   }
 
   try {
@@ -330,20 +333,20 @@ function getLocalHour(date: Date, timezone: string | null | undefined): number {
     const hourPart = parts.find((p) => p.type === 'hour');
     return parseInt(hourPart?.value || '0', 10);
   } catch {
-    return date.getUTCHours();
+    return date.getHours(); // Fallback to system local time, not UTC
   }
 }
 
 /**
  * Get the local minute for a Date in a specific timezone
- * Falls back to UTC if timezone is not provided or invalid
+ * Falls back to system local time if timezone is not provided or invalid
  */
 function getLocalMinute(
   date: Date,
   timezone: string | null | undefined
 ): number {
   if (!timezone || timezone === 'auto') {
-    return date.getUTCMinutes();
+    return date.getMinutes(); // Use system local time, not UTC
   }
 
   try {
@@ -355,7 +358,7 @@ function getLocalMinute(
     const minutePart = parts.find((p) => p.type === 'minute');
     return parseInt(minutePart?.value || '0', 10);
   } catch {
-    return date.getUTCMinutes();
+    return date.getMinutes(); // Fallback to system local time, not UTC
   }
 }
 /**
@@ -371,6 +374,7 @@ async function fetchSchedulableHabits(
     .eq('ws_id', wsId)
     .eq('is_active', true)
     .eq('auto_schedule', true)
+    .eq('is_visible_in_calendar', true)
     .is('deleted_at', null);
 
   if (error) {
@@ -1304,6 +1308,8 @@ async function scheduleTasksPhase(
         task,
         events: [],
         scheduledMinutes: totalMinutes,
+        totalMinutesRequired: totalMinutes,
+        remainingMinutes: 0,
       });
       continue;
     }
@@ -1711,16 +1717,40 @@ async function scheduleTasksPhase(
       }
     }
 
+    const finalScheduledMinutes = scheduledMinutes + scheduledSoFar;
+    const finalRemainingMinutes = totalMinutes - finalScheduledMinutes;
+
+    // Determine warning level based on scheduling outcome
+    let warning: string | undefined;
+    let warningLevel: 'info' | 'warning' | 'error' | undefined;
+
+    if (scheduledSoFar === 0 && totalMinutes > scheduledMinutes) {
+      // Could not schedule any new time
+      warning = `Could not schedule any time for task - no available slots found`;
+      warningLevel = 'error';
+    } else if (finalRemainingMinutes > 0) {
+      // Partially scheduled
+      warning = `Partially scheduled: ${finalRemainingMinutes} minutes remaining (${Math.round((finalScheduledMinutes / totalMinutes) * 100)}% complete)`;
+      warningLevel = 'warning';
+    } else if (scheduledAfterDeadline) {
+      // Fully scheduled but some after deadline
+      warning = 'Some events scheduled after deadline';
+      warningLevel = 'info';
+    }
+
     results.push({
       task,
       events: taskEvents,
-      scheduledMinutes: scheduledMinutes + scheduledSoFar,
-      warning: scheduledAfterDeadline
-        ? 'Some events scheduled after deadline'
-        : undefined,
+      scheduledMinutes: finalScheduledMinutes,
+      totalMinutesRequired: totalMinutes,
+      remainingMinutes: finalRemainingMinutes,
+      warning,
+      warningLevel,
     });
 
-    if (scheduledAfterDeadline) {
+    if (warningLevel === 'error' || warningLevel === 'warning') {
+      warnings.push(`Task "${task.name}": ${warning}`);
+    } else if (scheduledAfterDeadline) {
       warnings.push(
         `Task "${task.name}" has events scheduled after its deadline`
       );
@@ -2141,12 +2171,14 @@ export async function scheduleWorkspace(
 
     // Delete habit events that haven't started yet (NOT ongoing ones)
     // Only delete where start_at > now (future events that haven't begun)
+    // IMPORTANT: Never delete locked events - they are manually positioned
     for (const habit of habits) {
       const { data: futureLinks } = await supabase
         .from('habit_calendar_events')
-        .select('event_id, workspace_calendar_events!inner(start_at)')
+        .select('event_id, workspace_calendar_events!inner(start_at, locked)')
         .eq('habit_id', habit.id)
-        .gt('workspace_calendar_events.start_at', now.toISOString());
+        .gt('workspace_calendar_events.start_at', now.toISOString())
+        .eq('workspace_calendar_events.locked', false);
 
       if (futureLinks && futureLinks.length > 0) {
         const eventIds = futureLinks.map((l) => l.event_id);
@@ -2167,12 +2199,14 @@ export async function scheduleWorkspace(
 
     // Delete task events that haven't started yet (NOT ongoing ones)
     // Only delete where start_at > now (future events that haven't begun)
+    // IMPORTANT: Never delete locked events - they are manually positioned
     for (const task of tasks) {
       const { data: futureLinks } = await supabase
         .from('task_calendar_events')
-        .select('event_id, workspace_calendar_events!inner(start_at)')
+        .select('event_id, workspace_calendar_events!inner(start_at, locked)')
         .eq('task_id', task.id)
-        .gt('workspace_calendar_events.start_at', now.toISOString());
+        .gt('workspace_calendar_events.start_at', now.toISOString())
+        .eq('workspace_calendar_events.locked', false);
 
       if (futureLinks && futureLinks.length > 0) {
         const eventIds = futureLinks.map((l) => l.event_id);

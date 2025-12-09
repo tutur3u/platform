@@ -16,6 +16,127 @@
 import type { TimeOfDayPreference } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 
+// ============================================================================
+// TIMEZONE HELPERS
+// ============================================================================
+
+/**
+ * Get the local hour for a Date in a specific timezone
+ * Falls back to system local time if timezone is not provided or invalid
+ */
+export function getLocalHour(
+  date: Date,
+  timezone: string | null | undefined
+): number {
+  if (!timezone || timezone === 'auto') {
+    return date.getHours(); // Use system local time
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const hourPart = parts.find((p) => p.type === 'hour');
+    return parseInt(hourPart?.value || '0', 10);
+  } catch {
+    return date.getHours(); // Fallback to system local time
+  }
+}
+
+/**
+ * Get the local minute for a Date in a specific timezone
+ * Falls back to system local time if timezone is not provided or invalid
+ */
+export function getLocalMinute(
+  date: Date,
+  timezone: string | null | undefined
+): number {
+  if (!timezone || timezone === 'auto') {
+    return date.getMinutes(); // Use system local time
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      minute: 'numeric',
+    });
+    const parts = formatter.formatToParts(date);
+    const minutePart = parts.find((p) => p.type === 'minute');
+    return parseInt(minutePart?.value || '0', 10);
+  } catch {
+    return date.getMinutes(); // Fallback to system local time
+  }
+}
+
+/**
+ * Create a Date object from a time string (HH:MM) in a specific timezone
+ * on a given day
+ */
+export function createDateInTimezone(
+  baseDate: Date,
+  hours: number,
+  minutes: number,
+  timezone: string | null | undefined
+): Date {
+  // Get the date components in the target timezone
+  const year = baseDate.getFullYear();
+  const month = baseDate.getMonth();
+  const day = baseDate.getDate();
+
+  // Create a date string in ISO format and let the Date constructor parse it
+  // This works because we want the resulting Date to represent the moment when
+  // it's hours:minutes in the target timezone
+
+  if (!timezone || timezone === 'auto') {
+    // Use system local time
+    const result = new Date(year, month, day, hours, minutes, 0, 0);
+    return result;
+  }
+
+  try {
+    // Create a date at the specified local time in the target timezone
+    // We do this by creating a formatter and working backwards
+    const testDate = new Date(year, month, day, 12, 0, 0, 0);
+
+    // Get the UTC offset for the target timezone at this date
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    });
+
+    // Format in target timezone and parse
+    const targetStr = formatter.format(testDate);
+    const [targetHour] = targetStr.split(':').map(Number);
+    const systemHour = testDate.getHours();
+
+    // Calculate offset (this is an approximation but works for most cases)
+    const offsetHours = (systemHour - (targetHour ?? systemHour)) % 24;
+
+    const result = new Date(
+      year,
+      month,
+      day,
+      hours + offsetHours,
+      minutes,
+      0,
+      0
+    );
+    return result;
+  } catch {
+    // Fallback to system local time
+    return new Date(year, month, day, hours, minutes, 0, 0);
+  }
+}
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
 /**
  * Habit duration configuration
  */
@@ -119,16 +240,18 @@ export function calculateOptimalDuration(
 
 /**
  * Check if a time (HH:MM) falls within a time slot
+ * The idealTime is in the user's timezone (e.g., "18:30" means 6:30 PM local)
  */
 export function timeMatchesSlot(
   idealTime: string,
-  slot: TimeSlotInfo
+  slot: TimeSlotInfo,
+  timezone?: string | null
 ): boolean {
   const [hours, minutes] = idealTime.split(':').map(Number);
   if (hours === undefined || minutes === undefined) return false;
 
-  const idealDate = new Date(slot.start);
-  idealDate.setHours(hours, minutes, 0, 0);
+  // Create the ideal date in the target timezone
+  const idealDate = createDateInTimezone(slot.start, hours, minutes, timezone);
 
   // Check if ideal time falls within the slot
   return idealDate >= slot.start && idealDate < slot.end;
@@ -149,16 +272,19 @@ const TIME_PREFERENCE_RANGES: Record<
 
 /**
  * Check if a slot falls within a time-of-day preference
+ * Uses timezone-aware hour extraction
  */
 export function slotMatchesPreference(
   preference: TimeOfDayPreference,
-  slot: TimeSlotInfo
+  slot: TimeSlotInfo,
+  timezone?: string | null
 ): boolean {
   const range = TIME_PREFERENCE_RANGES[preference];
   if (!range) return false;
 
-  const slotStartHour = slot.start.getHours();
-  const slotEndHour = slot.end.getHours();
+  // Use timezone-aware hours
+  const slotStartHour = getLocalHour(slot.start, timezone);
+  const slotEndHour = getLocalHour(slot.end, timezone);
 
   // Slot matches if it overlaps with the preference range
   return slotStartHour < range.end && slotEndHour > range.start;
@@ -169,14 +295,15 @@ export function slotMatchesPreference(
  */
 export function getSlotCharacteristics(
   habit: HabitDurationConfig,
-  slot: TimeSlotInfo
+  slot: TimeSlotInfo,
+  timezone?: string | null
 ): SlotCharacteristics {
   const matchesIdealTime = habit.ideal_time
-    ? timeMatchesSlot(habit.ideal_time, slot)
+    ? timeMatchesSlot(habit.ideal_time, slot, timezone)
     : false;
 
   const matchesPreference = habit.time_preference
-    ? slotMatchesPreference(habit.time_preference, slot)
+    ? slotMatchesPreference(habit.time_preference, slot, timezone)
     : false;
 
   return { matchesIdealTime, matchesPreference };
@@ -188,9 +315,10 @@ export function getSlotCharacteristics(
  */
 export function scoreSlotForHabit(
   habit: HabitDurationConfig,
-  slot: TimeSlotInfo
+  slot: TimeSlotInfo,
+  timezone?: string | null
 ): number {
-  const characteristics = getSlotCharacteristics(habit, slot);
+  const characteristics = getSlotCharacteristics(habit, slot, timezone);
   let score = 0;
 
   // Ideal time match is the best
@@ -211,14 +339,15 @@ export function scoreSlotForHabit(
     score += 100;
   }
 
-  // Apply time-based scoring
+  // Apply time-based scoring using timezone-aware hours
+  const slotHour = getLocalHour(slot.start, timezone);
   if (habit.time_preference || habit.ideal_time) {
     // When user has set a preference, slightly prefer earlier slots as tiebreaker
-    score -= slot.start.getHours() * 0.1;
+    score -= slotHour * 0.1;
   } else {
     // When no preference set, prefer middle-of-day (closer to noon)
     // This prevents habits from always stacking at 7am
-    const distanceFromNoon = Math.abs(slot.start.getHours() - 12);
+    const distanceFromNoon = Math.abs(slotHour - 12);
     score -= distanceFromNoon * 0.5;
   }
 
@@ -230,7 +359,8 @@ export function scoreSlotForHabit(
  */
 export function findBestSlotForHabit(
   habit: HabitDurationConfig,
-  slots: TimeSlotInfo[]
+  slots: TimeSlotInfo[],
+  timezone?: string | null
 ): TimeSlotInfo | null {
   const { min } = getEffectiveDurationBounds(habit);
 
@@ -243,11 +373,11 @@ export function findBestSlotForHabit(
 
   // Score each slot and return the best one
   let bestSlot = viableSlots[0]!;
-  let bestScore = scoreSlotForHabit(habit, bestSlot);
+  let bestScore = scoreSlotForHabit(habit, bestSlot, timezone);
 
   for (let i = 1; i < viableSlots.length; i++) {
     const slot = viableSlots[i]!;
-    const score = scoreSlotForHabit(habit, slot);
+    const score = scoreSlotForHabit(habit, slot, timezone);
     if (score > bestScore) {
       bestScore = score;
       bestSlot = slot;
@@ -292,12 +422,16 @@ export function roundToNext15Minutes(date: Date): Date {
  *
  * All times are rounded to 15-minute boundaries.
  * If `now` is provided, ensures start time is not before now.
+ *
+ * IMPORTANT: The ideal_time and time_preference are in the USER'S timezone.
+ * The timezone parameter ensures we correctly interpret these times.
  */
 export function calculateIdealStartTimeForHabit(
   habit: HabitDurationConfig,
   slot: TimeSlotInfo,
   duration: number,
-  now?: Date
+  now?: Date,
+  timezone?: string | null
 ): Date {
   // Effective slot start (must be >= now if provided)
   let effectiveSlotStart = new Date(slot.start);
@@ -314,11 +448,17 @@ export function calculateIdealStartTimeForHabit(
   }
 
   // 1. If habit has ideal_time and it falls within the slot, use it
+  // ideal_time is in the user's timezone (e.g., "18:30" means 6:30 PM local)
   if (habit.ideal_time) {
     const [hours, minutes] = habit.ideal_time.split(':').map(Number);
     if (hours !== undefined && minutes !== undefined) {
-      const idealStart = new Date(slot.start);
-      idealStart.setHours(hours, minutes, 0, 0);
+      // Create the ideal start time in the TARGET timezone
+      const idealStart = createDateInTimezone(
+        slot.start,
+        hours,
+        minutes,
+        timezone
+      );
       const roundedIdeal = roundToNext15Minutes(idealStart);
 
       // Check if ideal time falls within usable range [effectiveSlotStart, latestStart]
@@ -342,17 +482,25 @@ export function calculateIdealStartTimeForHabit(
 
     const range = preferenceRanges[habit.time_preference];
     if (range) {
-      // Try the ideal time for this preference
-      const idealStart = new Date(slot.start);
-      idealStart.setHours(range.ideal, 0, 0, 0);
+      // Try the ideal time for this preference (in target timezone)
+      const idealStart = createDateInTimezone(
+        slot.start,
+        range.ideal,
+        0,
+        timezone
+      );
 
       if (idealStart >= effectiveSlotStart && idealStart <= latestStart) {
         return idealStart; // Already on hour boundary
       }
 
       // If ideal is outside slot, try the start of preference range
-      const rangeStart = new Date(slot.start);
-      rangeStart.setHours(range.start, 0, 0, 0);
+      const rangeStart = createDateInTimezone(
+        slot.start,
+        range.start,
+        0,
+        timezone
+      );
 
       if (rangeStart >= effectiveSlotStart && rangeStart <= latestStart) {
         return rangeStart;
@@ -360,9 +508,8 @@ export function calculateIdealStartTimeForHabit(
     }
   }
 
-  // 3. Default: aim for noon (12pm) to distribute events in middle of day
-  const noonTarget = new Date(slot.start);
-  noonTarget.setHours(12, 0, 0, 0);
+  // 3. Default: aim for noon (12pm local time) to distribute events in middle of day
+  const noonTarget = createDateInTimezone(slot.start, 12, 0, timezone);
 
   // If noon is within the usable range, use it
   if (noonTarget >= effectiveSlotStart && noonTarget <= latestStart) {
@@ -444,15 +591,19 @@ export interface TaskSlotConfig {
 export function scoreSlotForTask(
   task: TaskSlotConfig,
   slot: TimeSlotInfo,
-  now: Date
+  now: Date,
+  timezone?: string | null
 ): number {
   let score = 0;
+
+  // Use timezone-aware hour for scoring
+  const slotHour = getLocalHour(slot.start, timezone);
 
   // 1. ALWAYS prefer earlier slots - tasks should fill gaps ASAP
   // Earlier hour = higher score (+300 at midnight, -2 per hour)
   // This ensures gaps are filled before moving to later slots
   // Reduced penalty from -10 to -2 to prevent gaps between tasks
-  score += 300 - slot.start.getHours() * 2;
+  score += 300 - slotHour * 2;
 
   // 2. Small bonus for slots that fit well (max 50 points)
   // This is secondary to time preference - we want earlier slots first
@@ -460,7 +611,7 @@ export function scoreSlotForTask(
 
   // 3. If task has time preference, respect it (+500)
   if (task.preferredTimeOfDay) {
-    if (slotMatchesPreference(task.preferredTimeOfDay, slot)) {
+    if (slotMatchesPreference(task.preferredTimeOfDay, slot, timezone)) {
       score += 500;
     }
   }
@@ -472,10 +623,10 @@ export function scoreSlotForTask(
 
     if (hoursUntilDeadline < 24) {
       // URGENT: Extra bonus for earliest slots
-      score += 200 - slot.start.getHours() * 5;
+      score += 200 - slotHour * 5;
     } else if (hoursUntilDeadline < 72) {
       // SOON: Smaller bonus for earlier
-      score += 100 - slot.start.getHours() * 2;
+      score += 100 - slotHour * 2;
     }
     // Not urgent: No extra bonus, rely on base time scoring
   }
@@ -499,13 +650,15 @@ export function scoreSlotForTask(
  * @param slots - Available time slots
  * @param minDuration - Minimum required duration in minutes
  * @param now - Current time (for deadline calculations)
+ * @param timezone - Target timezone for scoring
  * @returns Best slot or null if no viable slots
  */
 export function findBestSlotForTask(
   task: TaskSlotConfig,
   slots: TimeSlotInfo[],
   minDuration: number,
-  now: Date
+  now: Date,
+  timezone?: string | null
 ): TimeSlotInfo | null {
   // Filter to slots that can fit at least minimum duration
   const viableSlots = slots.filter((slot) => slot.maxAvailable >= minDuration);
@@ -516,11 +669,11 @@ export function findBestSlotForTask(
 
   // Score each slot and return the best one
   let bestSlot = viableSlots[0]!;
-  let bestScore = scoreSlotForTask(task, bestSlot, now);
+  let bestScore = scoreSlotForTask(task, bestSlot, now, timezone);
 
   for (let i = 1; i < viableSlots.length; i++) {
     const slot = viableSlots[i]!;
-    const score = scoreSlotForTask(task, slot, now);
+    const score = scoreSlotForTask(task, slot, now, timezone);
     if (score > bestScore) {
       bestScore = score;
       bestSlot = slot;

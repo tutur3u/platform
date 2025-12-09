@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Check,
   Edit,
+  Eye,
   Lock,
   Palette,
   Pencil,
@@ -76,9 +77,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     // Habit flags (from CalendarEventWithHabitInfo)
     _isHabit,
     _habitCompleted,
+    // Preview flags (from preview mode)
+    _isPreview,
+    _previewType,
   } = event as CalendarEvent & {
     _isHabit?: boolean;
     _habitCompleted?: boolean;
+    _isPreview?: boolean;
+    _previewType?: 'habit' | 'task';
   };
 
   // Default values for overlap properties if not provided
@@ -95,7 +101,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     setHoveredBaseEventId,
     hoveredEventColumn,
     setHoveredEventColumn,
+    affectedEventIds,
+    hideNonPreviewEvents,
   } = useCalendar();
+
+  // Hide non-preview events during preview mode for better performance
+  if (hideNonPreviewEvents && !_isPreview) {
+    return null;
+  }
   const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
@@ -937,6 +950,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Check if the event is in the past
   const isPastEvent = new Date(end_at) < new Date();
 
+  // Check if this event is affected by preview (will be modified/deleted)
+  const isAffectedByPreview =
+    affectedEventIds?.has(id) || affectedEventIds?.has(event._originalId || '');
+
   // Handle color change
   const handleColorChange = (newColor: SupportedColor) => {
     const eventId = event._originalId || id;
@@ -1027,13 +1044,16 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
               'shadow-sm': hasOverlaps && !isDragging && !isResizing, // Subtle shadow for stacked events
               'hover:shadow-md': hasOverlaps, // Enhanced shadow on hover for stacked events
-              'opacity-50': isPastEvent, // Lower opacity for past events
+              'opacity-50': isPastEvent && !isAffectedByPreview, // Lower opacity for past events
+              'opacity-30 grayscale transition-all duration-500':
+                isAffectedByPreview, // Dim affected events during preview
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
               'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
               'border-l-[3px]': hasCalendarInfo, // Thicker border for calendar events
-              // Habit-specific styling
-              'border-dashed border-2': _isHabit, // Dashed border for habit events
+              // Habit-specific styling (icon only, no dashed border)
               'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
+              // Preview-specific styling - dashed border only (no animation/glow for performance)
+              'border-dashed border-2': _isPreview,
             },
             level ? 'border border-l-2' : 'border-l-2',
             border,
@@ -1186,10 +1206,40 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
-                {localEvent.locked && (
+                {_isPreview && (
+                  <Eye
+                    className={cn(
+                      'mr-1 inline-block h-3 w-3 align-middle opacity-80',
+                      _previewType === 'habit'
+                        ? 'text-dynamic-green'
+                        : _previewType === 'task'
+                          ? 'text-dynamic-purple'
+                          : 'text-dynamic-blue'
+                    )}
+                  />
+                )}
+                {localEvent.locked && !_isPreview && (
                   <Lock className="mr-1 inline-block h-3 w-3 align-middle opacity-70" />
                 )}
                 <span>{localEvent.title || 'Untitled event'}</span>
+                {_isPreview && (
+                  <span
+                    className={cn(
+                      'ml-1 rounded px-1 text-[10px] font-medium',
+                      _previewType === 'habit'
+                        ? 'bg-dynamic-green/20 text-dynamic-green'
+                        : _previewType === 'task'
+                          ? 'bg-dynamic-purple/20 text-dynamic-purple'
+                          : 'bg-dynamic-blue/20 text-dynamic-blue'
+                    )}
+                  >
+                    {_previewType === 'habit'
+                      ? 'Habit'
+                      : _previewType === 'task'
+                        ? 'Task'
+                        : 'Preview'}
+                  </span>
+                )}
               </div>
 
               {/* Show time for regular events or start/end segments of multi-day events */}

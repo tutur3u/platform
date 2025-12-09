@@ -7,6 +7,7 @@ import {
   Clock,
   Flame,
   Loader2,
+  Pencil,
   Play,
   Plus,
   RefreshCw,
@@ -64,6 +65,7 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
     null
   );
   const [isHabitDialogOpen, setIsHabitDialogOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
 
@@ -194,6 +196,18 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
     }
   };
 
+  const handleEditHabit = (habit: Habit) => {
+    setEditingHabit(habit);
+    setIsHabitDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setEditingHabit(null);
+    }
+    setIsHabitDialogOpen(open);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3 p-4">
@@ -234,10 +248,12 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
         </div>
         <HabitFormDialog
           open={isHabitDialogOpen}
-          onOpenChange={setIsHabitDialogOpen}
+          onOpenChange={handleDialogClose}
           wsId={wsId}
+          habit={editingHabit ?? undefined}
           onSuccess={() => {
             setIsHabitDialogOpen(false);
+            setEditingHabit(null);
             refetch();
           }}
         />
@@ -305,13 +321,23 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
                         {getRecurrenceDescription(habit)}
                       </p>
                     </div>
-                    <Switch
-                      checked={isVisible}
-                      onCheckedChange={() =>
-                        toggleVisibility(habit.id, isVisible)
-                      }
-                      className="shrink-0"
-                    />
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleEditHabit(habit)}
+                        title="Edit habit"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Switch
+                        checked={isVisible}
+                        onCheckedChange={() =>
+                          toggleVisibility(habit.id, isVisible)
+                        }
+                      />
+                    </div>
                   </div>
 
                   {/* Badges */}
@@ -381,13 +407,15 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
         </Link>
       </div>
 
-      {/* Habit Creation Dialog */}
+      {/* Habit Creation/Edit Dialog */}
       <HabitFormDialog
         open={isHabitDialogOpen}
-        onOpenChange={setIsHabitDialogOpen}
+        onOpenChange={handleDialogClose}
         wsId={wsId}
+        habit={editingHabit ?? undefined}
         onSuccess={() => {
           setIsHabitDialogOpen(false);
+          setEditingHabit(null);
           refetch();
         }}
       />

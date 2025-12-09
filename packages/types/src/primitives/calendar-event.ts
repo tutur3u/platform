@@ -29,4 +29,10 @@ export interface CalendarEvent {
   // Properties for calendar layering (populated at runtime)
   _calendarName?: string; // Display name of the source calendar
   _calendarColor?: string; // Color of the source calendar
+
+  // Properties for preview/demo mode (populated at runtime)
+  _isPreview?: boolean; // If true, this is a preview event not yet persisted
+  _previewStep?: number; // Step number for animated preview playback
+  _previewType?: 'habit' | 'task' | 'break'; // Type of preview event
+  _previewSourceId?: string; // ID of the source habit/task
 }

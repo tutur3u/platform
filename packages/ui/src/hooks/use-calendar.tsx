@@ -94,6 +94,17 @@ const CalendarContext = createContext<{
   // Callback when a task is scheduled (for UI refresh)
   onTaskScheduled?: () => void;
   setOnTaskScheduled: (callback: (() => void) | undefined) => void;
+  // Preview events (for demo/preview mode)
+  previewEvents: CalendarEvent[];
+  setPreviewEvents: (events: CalendarEvent[]) => void;
+  clearPreviewEvents: () => void;
+  // Affected events (events that will be modified/deleted during preview)
+  affectedEventIds: Set<string>;
+  setAffectedEventIds: (ids: Set<string> | string[]) => void;
+  clearAffectedEventIds: () => void;
+  // Hide non-preview events during preview mode (for performance)
+  hideNonPreviewEvents: boolean;
+  setHideNonPreviewEvents: (hide: boolean) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -130,6 +141,17 @@ const CalendarContext = createContext<{
   // Callback when a task is scheduled
   onTaskScheduled: undefined,
   setOnTaskScheduled: () => undefined,
+  // Preview events
+  previewEvents: [],
+  setPreviewEvents: () => undefined,
+  clearPreviewEvents: () => undefined,
+  // Affected events
+  affectedEventIds: new Set<string>(),
+  setAffectedEventIds: () => undefined,
+  clearAffectedEventIds: () => undefined,
+  // Hide non-preview events
+  hideNonPreviewEvents: false,
+  setHideNonPreviewEvents: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -280,6 +302,44 @@ export const CalendarProvider = ({
     (() => void) | undefined
   >(undefined);
 
+  // Preview events state (for demo/preview mode)
+  const [previewEvents, setPreviewEventsState] = useState<CalendarEvent[]>([]);
+
+  // Affected events state (events that will be modified/deleted during preview)
+  const [affectedEventIds, setAffectedEventIdsState] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Wrapper functions for preview events
+  const setPreviewEvents = useCallback((newEvents: CalendarEvent[]) => {
+    // Add preview flags to all events
+    const eventsWithFlags = newEvents.map((e) => ({
+      ...e,
+      _isPreview: true as const,
+    }));
+    setPreviewEventsState(eventsWithFlags);
+  }, []);
+
+  const clearPreviewEvents = useCallback(() => {
+    setPreviewEventsState([]);
+    // Also clear affected events and hide state when clearing preview
+    setAffectedEventIdsState(new Set());
+    setHideNonPreviewEvents(false);
+  }, []);
+
+  // Wrapper functions for affected events
+  const setAffectedEventIds = useCallback((ids: Set<string> | string[]) => {
+    const idSet = ids instanceof Set ? ids : new Set(ids);
+    setAffectedEventIdsState(idSet);
+  }, []);
+
+  const clearAffectedEventIds = useCallback(() => {
+    setAffectedEventIdsState(new Set());
+  }, []);
+
+  // Hide non-preview events state (for performance during preview)
+  const [hideNonPreviewEvents, setHideNonPreviewEvents] = useState(false);
+
   // Event getters
   const getEvent = useCallback(
     (eventId: string) => {
@@ -349,7 +409,10 @@ export const CalendarProvider = ({
     });
   }, [events]);
 
-  const getEvents = useCallback(() => events, [events]);
+  // Merge real events with preview events
+  const getEvents = useCallback(() => {
+    return [...events, ...previewEvents];
+  }, [events, previewEvents]);
 
   // Event level calculation for overlapping events
   const getEventLevel = useCallback(
@@ -1528,22 +1591,25 @@ export const CalendarProvider = ({
       const hasSchedulingConfigured =
         task.total_duration && task.total_duration > 0 && task.calendar_hours;
 
-      // If task doesn't have scheduling configured, set up defaults
-      if (!hasSchedulingConfigured) {
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update({
+      // Always enable auto_schedule when dragging to calendar
+      // If task doesn't have scheduling configured, also set up defaults
+      const updatePayload = hasSchedulingConfigured
+        ? { auto_schedule: true } // Just enable auto_schedule
+        : {
             total_duration: scheduledHours,
-            calendar_hours: 'personal_hours',
+            calendar_hours: 'personal_hours' as const,
             is_splittable: false,
             auto_schedule: true,
-          })
-          .eq('id', taskId);
+          };
 
-        if (updateError) {
-          console.error('Failed to update task scheduling:', updateError);
-          // Don't throw - we can still create the event
-        }
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update(updatePayload)
+        .eq('id', taskId);
+
+      if (updateError) {
+        console.error('Failed to update task scheduling:', updateError);
+        // Don't throw - we can still create the event
       }
 
       // Map priority to color (priority can be string like 'critical', 'high', etc.)
@@ -1682,6 +1748,17 @@ export const CalendarProvider = ({
     scheduleTaskAsEvent,
     onTaskScheduled,
     setOnTaskScheduled,
+    // Preview events
+    previewEvents,
+    setPreviewEvents,
+    clearPreviewEvents,
+    // Affected events
+    affectedEventIds,
+    setAffectedEventIds,
+    clearAffectedEventIds,
+    // Hide non-preview events
+    hideNonPreviewEvents,
+    setHideNonPreviewEvents,
   };
 
   // Clean up any pending updates when component unmounts

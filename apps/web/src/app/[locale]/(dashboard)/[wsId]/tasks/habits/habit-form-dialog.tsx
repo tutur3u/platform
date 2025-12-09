@@ -34,7 +34,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface HabitFormDialogProps {
   open: boolean;
@@ -161,6 +161,35 @@ export default function HabitFormDialog({
   const [autoSchedule, setAutoSchedule] = useState(
     habit?.auto_schedule !== false
   );
+
+  // Reset form state when habit prop changes (for edit mode)
+  useEffect(() => {
+    if (open) {
+      setName(habit?.name || '');
+      setDescription(habit?.description || '');
+      setColor(habit?.color || 'BLUE');
+      setPriority(habit?.priority || 'normal');
+      setCalendarHours(habit?.calendar_hours || 'personal_hours');
+      setDurationMinutes(habit?.duration_minutes || 30);
+      setMinDuration(habit?.min_duration_minutes ?? undefined);
+      setMaxDuration(habit?.max_duration_minutes ?? undefined);
+      setIdealTime(habit?.ideal_time || '');
+      setTimePreference(habit?.time_preference || '');
+      setFrequency(habit?.frequency || 'daily');
+      setRecurrenceInterval(habit?.recurrence_interval || 1);
+      setDaysOfWeek(habit?.days_of_week || []);
+      setMonthlyType(habit?.monthly_type || 'day_of_month');
+      setDayOfMonth(habit?.day_of_month || 1);
+      setWeekOfMonth(habit?.week_of_month || 1);
+      setDayOfWeekMonthly(habit?.day_of_week_monthly || 0);
+      setStartDate(
+        habit?.start_date || (new Date().toISOString().split('T')[0] ?? '')
+      );
+      setEndDate(habit?.end_date || '');
+      setIsActive(habit?.is_active !== false);
+      setAutoSchedule(habit?.auto_schedule !== false);
+    }
+  }, [habit, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -220,9 +220,9 @@ export function TaskSchedulerPanel({
     totalTasks - fullyScheduledTasks - partiallyScheduledTasks;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       {/* Header */}
-      <div className="space-y-3 border-b p-3">
+      <div className="w-full shrink-0 space-y-3 overflow-hidden border-b p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CalendarClock className="h-4 w-4" />
@@ -245,12 +245,12 @@ export function TaskSchedulerPanel({
         </div>
 
         {/* Summary Stats */}
-        <div className="flex gap-2 text-xs">
+        <div className="flex flex-wrap gap-1.5 text-xs">
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
-                className="cursor-help bg-dynamic-green/10 text-dynamic-green"
+                className="cursor-help shrink-0 bg-dynamic-green/10 text-dynamic-green"
               >
                 <CheckCircle className="mr-1 h-3 w-3" />
                 {fullyScheduledTasks}
@@ -262,7 +262,7 @@ export function TaskSchedulerPanel({
             <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
-                className="cursor-help bg-dynamic-yellow/10 text-dynamic-yellow"
+                className="cursor-help shrink-0 bg-dynamic-yellow/10 text-dynamic-yellow"
               >
                 <Clock className="mr-1 h-3 w-3" />
                 {partiallyScheduledTasks}
@@ -274,9 +274,9 @@ export function TaskSchedulerPanel({
             <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
-                className="cursor-help bg-muted text-muted-foreground"
+                className="cursor-help shrink-0 bg-muted text-muted-foreground"
               >
-                {unscheduledTasks} unscheduled
+                {unscheduledTasks} pending
               </Badge>
             </TooltipTrigger>
             <TooltipContent>Not yet scheduled</TooltipContent>
@@ -285,8 +285,8 @@ export function TaskSchedulerPanel({
       </div>
 
       {/* Task List */}
-      <ScrollArea className="flex-1">
-        <div className="space-y-1 p-2">
+      <ScrollArea className="w-full flex-1">
+        <div className="w-full space-y-1 p-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -312,7 +312,7 @@ export function TaskSchedulerPanel({
 
       {/* Batch Schedule Button */}
       {unscheduledTasks > 0 && (
-        <div className="border-t p-3">
+        <div className="w-full shrink-0 border-t p-3">
           <Button
             variant="default"
             size="sm"
@@ -379,14 +379,14 @@ function TaskSchedulerItem({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={cn(
-        'group rounded-md border p-2.5 transition-colors',
+        'group w-full min-w-0 overflow-hidden rounded-md border p-2.5 transition-colors',
         isFullyScheduled
           ? 'border-dynamic-green/30 bg-dynamic-green/5'
           : 'cursor-grab border-border hover:border-primary/50 hover:bg-accent/50 active:cursor-grabbing'
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <p
             className={cn(
               'truncate font-medium text-sm',
@@ -395,14 +395,17 @@ function TaskSchedulerItem({
           >
             {task.name || 'Untitled Task'}
           </p>
-          <div className="mt-1 flex min-w-0 items-center gap-2 text-muted-foreground text-xs">
+          <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-muted-foreground text-xs">
             <span className="flex shrink-0 items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatDuration(displayTotalMinutes)}
             </span>
             {task.is_splittable && (
-              <Badge variant="outline" className="h-4 px-1 text-[10px]">
-                Splittable
+              <Badge
+                variant="outline"
+                className="h-4 shrink-0 px-1 text-[10px]"
+              >
+                Split
               </Badge>
             )}
           </div>
@@ -432,20 +435,20 @@ function TaskSchedulerItem({
             value={progress}
             className={cn('h-1.5', isFullyScheduled && 'bg-dynamic-green/20')}
           />
-          <div className="flex min-w-0 items-center justify-between gap-1 overflow-hidden text-[10px] text-muted-foreground">
-            <span className="truncate">
-              {formatDuration(scheduledMinutes)} /{' '}
+          <div className="flex min-w-0 items-center justify-between gap-1 text-[10px] text-muted-foreground">
+            <span className="shrink-0">
+              {formatDuration(scheduledMinutes)}/
               {formatDuration(displayTotalMinutes)}
             </span>
             {hasScheduled && !isFullyScheduled && (
-              <span className="shrink-0 text-dynamic-yellow">
-                {formatDuration(rawTotalMinutes - scheduledMinutes)} remaining
+              <span className="truncate text-dynamic-yellow">
+                {formatDuration(rawTotalMinutes - scheduledMinutes)} left
               </span>
             )}
             {isFullyScheduled && (
               <span className="flex shrink-0 items-center gap-0.5 text-dynamic-green">
                 <CheckCircle className="h-3 w-3" />
-                Scheduled
+                Done
               </span>
             )}
           </div>
