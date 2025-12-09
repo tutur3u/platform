@@ -25,7 +25,7 @@ export async function PATCH(
   }
 
   const { data: subscription } = await supabase
-    .from('workspace_subscription')
+    .from('workspace_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
     .single();
@@ -128,7 +128,7 @@ export async function DELETE(
   }
 
   const { data: subscription } = await supabase
-    .from('workspace_subscription')
+    .from('workspace_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
     .single();

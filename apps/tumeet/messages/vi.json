@@ -25,8 +25,8 @@
     "contact-sales": "Liên hệ bộ phận bán hàng",
     "contact-sales-desc": "Nếu bạn có bất kỳ câu hỏi nào về gói đăng ký của mình hoặc muốn nâng cấp lên gói doanh nghiệp, vui lòng liên hệ với bộ phận bán hàng của chúng tôi.",
     "plan-desc": "* Gói đăng ký của bạn sẽ có hiệu lực ngay lập tức và sẽ tự động gia hạn hàng tháng hoặc hàng năm, tùy thuộc vào gói bạn chọn.",
-    "subscription-history": "Lịch sử đăng ký",
-    "subscription-history-desc": "Không có lịch sử đăng ký nào.",
+    "order-history": "Lịch sử thanh toán",
+    "order-history-desc": "Không có lịch sử đăng ký nào.",
     "success": {
       "loading": "Đang tải thông tin thanh toán...",
       "expired-on": "Phần tải sẽ kết thúc vào",

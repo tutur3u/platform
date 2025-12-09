@@ -1,12 +1,11 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Cron job to sync products from Polar.sh to database
+ * Cron job to sync orders from Polar.sh to database
  * Runs periodically to ensure all products are up-to-date
  */
 export async function GET(req: NextRequest) {
@@ -24,75 +23,79 @@ export async function GET(req: NextRequest) {
     const sbAdmin = await createAdminClient();
 
     let processedCount = 0;
+    let skippedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
 
-    // Fetch all products from Polar (paginated)
+    // Fetch all orders from Polar (paginated)
     let hasMore = true;
     let page = 1;
     const limit = 100;
 
     while (hasMore) {
       try {
-        const response = await polar.products.list({
+        const response = await polar.orders.list({
           limit,
           page,
         });
 
-        const products = response.result?.items ?? [];
+        const orders = response.result?.items ?? [];
 
-        if (products.length === 0) {
+        if (orders.length === 0) {
           hasMore = false;
           break;
         }
 
-        // Process each product
-        for (const product of products) {
+        // Process each order
+        for (const order of orders) {
           try {
-            // Extract product_tier from metadata
-            const validTiers = Constants.public.Enums.workspace_product_tier;
-            const metadataProductTier = product.metadata?.product_tier;
+            const ws_id = order.metadata?.wsId;
 
-            // Only set tier if it matches valid enum values
-            const tier =
-              metadataProductTier &&
-              typeof metadataProductTier === 'string' &&
-              validTiers.includes(
-                metadataProductTier.toUpperCase() as WorkspaceProductTier
-              )
-                ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-                : null;
+            // Skip orders without workspace ID in metadata
+            if (!ws_id || typeof ws_id !== 'string') {
+              skippedCount++;
+              continue;
+            }
 
-            // Extract price from first price entry
-            const price =
-              product.prices.length > 0
-                ? product.prices[0] && 'priceAmount' in product.prices[0]
-                  ? product.prices[0].priceAmount
-                  : 0
-                : 0;
+            // Verify workspace exists
+            const { data: workspace, error: workspaceError } = await sbAdmin
+              .from('workspaces')
+              .select('id')
+              .eq('id', ws_id)
+              .single();
 
-            // Prepare product data
-            const productData = {
-              id: product.id,
-              name: product.name,
-              description: product.description || '',
-              price: price,
-              recurring_interval: product.recurringInterval || 'month',
-              tier,
-              archived: product.isArchived ?? false,
+            if (workspaceError || !workspace) {
+              failedCount++;
+              errors.push(`Workspace ${ws_id}: ${workspaceError.message}`);
+              continue;
+            }
+
+            // Prepare order data
+            const orderData = {
+              ws_id: ws_id,
+              polar_order_id: order.id,
+              status: order.status,
+              polar_subscription_id: order.subscriptionId,
+              product_id: order.productId,
+              total_amount: order.totalAmount,
+              currency: order.currency,
+              billing_reason: order.billingReason,
+              user_id: order.customer.externalId,
+              created_at: order.createdAt.toISOString(),
+              updated_at: order.modifiedAt?.toISOString(),
             };
 
-            // Upsert product
+            // Upsert order
             const { error: dbError } = await sbAdmin
-              .from('workspace_subscription_products')
-              .upsert(productData, {
-                onConflict: 'id',
+              .from('workspace_orders')
+              .upsert(orderData, {
+                onConflict: 'polar_order_id',
                 ignoreDuplicates: false,
               });
 
             if (dbError) {
               failedCount++;
-              errors.push(`Product ${product.id}: ${dbError.message}`);
+              errors.push(`Order ${order.id}: ${dbError.message}`);
             } else {
               processedCount++;
             }
@@ -100,12 +103,12 @@ export async function GET(req: NextRequest) {
             failedCount++;
             const errorMessage =
               error instanceof Error ? error.message : 'Unknown error';
-            errors.push(`Product ${product.id}: ${errorMessage}`);
+            errors.push(`Order ${order.id}: ${errorMessage}`);
           }
         }
 
         // Check if there are more pages
-        if (products.length < limit) {
+        if (orders.length < limit) {
           hasMore = false;
         } else {
           page++;
@@ -119,8 +122,9 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      message: 'Product sync completed',
+      message: 'Order sync completed',
       processed: processedCount,
+      skipped: skippedCount,
       failed: failedCount,
       errors: errors.slice(0, 20), // Limit error messages
     });

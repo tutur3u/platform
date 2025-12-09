@@ -25,38 +25,11 @@ const fetchProducts = async () => {
   }
 };
 
-const checkCreator = async (wsId: string) => {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    console.error('Error checking user:', userError);
-    return false;
-  }
-
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', wsId)
-    .single();
-
-  if (error) {
-    console.error('Error checking workspace creator:', error);
-    return false;
-  }
-
-  return data.creator_id === user?.id;
-};
-
-const fetchSubscription = async ({ wsId }: { wsId: string }) => {
+const fetchSubscription = async (wsId: string) => {
   const supabase = await createClient();
 
   const { data: dbSub, error } = await supabase
-    .from('workspace_subscription')
+    .from('workspace_subscriptions')
     .select(
       `
       *,
@@ -94,31 +67,61 @@ const fetchSubscription = async ({ wsId }: { wsId: string }) => {
   };
 };
 
-const fetchWorkspaceSubscriptions = async (wsId: string) => {
-  const sbAdmin = await createClient();
+const fetchWorkspaceOrders = async (wsId: string) => {
+  try {
+    const supabase = await createClient();
+    const { data: orders, error } = await supabase
+      .from('workspace_orders')
+      .select('*, workspace_subscription_products (name)')
+      .eq('ws_id', wsId)
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-  const { data, error } = await sbAdmin
-    .from('workspace_subscription')
-    .select(
-      `
-      *,
-      workspace_subscription_products (
-        name,
-        price,
-        recurring_interval
-      )
-    `
-    )
-    .eq('ws_id', wsId)
-    .order('current_period_end', { ascending: false })
-    .limit(5);
+    if (error) {
+      console.error('Error fetching workspace orders:', error);
+      return [];
+    }
 
-  if (error) {
-    console.error('Error fetching billing history:', error);
+    return orders.map((order) => ({
+      id: order.id,
+      createdAt: order.created_at,
+      billingReason: order.billing_reason ?? 'unknown',
+      totalAmount: order.total_amount ?? 0,
+      currency: order.currency ?? 'usd',
+      status: order.status,
+      productName: order.workspace_subscription_products?.name ?? 'N/A',
+    }));
+  } catch (error) {
+    console.error('Error fetching workspace orders:', error);
     return [];
   }
+};
 
-  return data ?? [];
+const checkCreator = async (wsId: string) => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('Error checking user:', userError);
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  if (error) {
+    console.error('Error checking workspace creator:', error);
+    return false;
+  }
+
+  return data.creator_id === user?.id;
 };
 
 export default async function BillingPage({
@@ -129,13 +132,12 @@ export default async function BillingPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const [products, subscription, subscriptionHistory, isCreator] =
-          await Promise.all([
-            fetchProducts(),
-            fetchSubscription({ wsId }),
-            fetchWorkspaceSubscriptions(wsId),
-            checkCreator(wsId),
-          ]);
+        const [products, subscription, orders, isCreator] = await Promise.all([
+          fetchProducts(),
+          fetchSubscription(wsId),
+          fetchWorkspaceOrders(wsId),
+          checkCreator(wsId),
+        ]);
 
         const currentPlan = subscription
           ? {
@@ -174,26 +176,6 @@ export default async function BillingPage({
               features: ['Basic features', 'Limited usage'],
             };
 
-        const billingHistory = subscriptionHistory.map((sub) => ({
-          id: sub.id,
-          created_at: sub.created_at,
-          current_period_start: sub.current_period_start,
-          current_period_end: sub.current_period_end,
-          product_id: sub.product_id,
-          status: sub.status ?? 'unknown',
-          cancel_at_period_end: sub.cancel_at_period_end,
-          product: sub.workspace_subscription_products
-            ? {
-                name:
-                  sub.workspace_subscription_products.name || 'Unknown Plan',
-                price: sub.workspace_subscription_products.price || 0,
-                recurring_interval:
-                  sub.workspace_subscription_products.recurring_interval ||
-                  'one-time',
-              }
-            : null,
-        }));
-
         return (
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
@@ -206,7 +188,7 @@ export default async function BillingPage({
 
             <Separator className="my-8" />
 
-            <BillingHistory billingHistory={billingHistory} />
+            <BillingHistory orders={orders} />
           </div>
         );
       }}

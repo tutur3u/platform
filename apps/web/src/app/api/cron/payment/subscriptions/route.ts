@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
             if (workspaceError || !workspace) {
               skippedCount++;
               errors.push(
-                `Subscription ${subscription.id}: Workspace ${ws_id} not found`
+                `Subscription ${subscription.id}: ${workspaceError.message}`
               );
               continue;
             }
@@ -87,11 +87,12 @@ export async function GET(req: NextRequest) {
                 ? subscription.currentPeriodEnd.toISOString()
                 : null,
               cancel_at_period_end: subscription.cancelAtPeriodEnd ?? false,
-              updated_at: new Date().toISOString(),
+              created_at: subscription.createdAt.toISOString(),
+              updated_at: subscription.modifiedAt?.toISOString(),
             };
 
             const { error: dbError } = await sbAdmin
-              .from('workspace_subscription')
+              .from('workspace_subscriptions')
               .upsert(subscriptionData, {
                 onConflict: 'polar_subscription_id',
               });
@@ -127,7 +128,6 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      ok: true,
       message: 'Subscription sync completed',
       processed: processedCount,
       skipped: skippedCount,
@@ -138,7 +138,6 @@ export async function GET(req: NextRequest) {
     console.error('Cron job error:', error);
     return NextResponse.json(
       {
-        ok: false,
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',
       },

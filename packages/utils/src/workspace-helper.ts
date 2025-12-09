@@ -489,7 +489,7 @@ export async function getWorkspaceTier(
   const resolvedWorkspaceId = resolveWorkspaceId(workspaceId);
 
   const { data, error } = await supabase
-    .from('workspace_subscription')
+    .from('workspace_subscriptions')
     .select('workspace_subscription_products(tier)')
     .eq('ws_id', resolvedWorkspaceId)
     .maybeSingle();

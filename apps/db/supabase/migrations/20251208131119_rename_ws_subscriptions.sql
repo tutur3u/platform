@@ -1,0 +1,1 @@
+alter table "public"."workspace_subscription" rename to "workspace_subscriptions";

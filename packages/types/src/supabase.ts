@@ -11297,6 +11297,80 @@ export type Database = {
           },
         ];
       };
+      workspace_orders: {
+        Row: {
+          billing_reason: Database['public']['Enums']['billing_reason'] | null;
+          created_at: string;
+          currency: string | null;
+          id: string;
+          polar_order_id: string;
+          polar_subscription_id: string | null;
+          product_id: string | null;
+          status: Database['public']['Enums']['order_status'];
+          total_amount: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          billing_reason?: Database['public']['Enums']['billing_reason'] | null;
+          created_at?: string;
+          currency?: string | null;
+          id?: string;
+          polar_order_id: string;
+          polar_subscription_id?: string | null;
+          product_id?: string | null;
+          status?: Database['public']['Enums']['order_status'];
+          total_amount?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          billing_reason?: Database['public']['Enums']['billing_reason'] | null;
+          created_at?: string;
+          currency?: string | null;
+          id?: string;
+          polar_order_id?: string;
+          polar_subscription_id?: string | null;
+          product_id?: string | null;
+          status?: Database['public']['Enums']['order_status'];
+          total_amount?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_orders_polar_subscription_id_fkey';
+            columns: ['polar_subscription_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_subscriptions';
+            referencedColumns: ['polar_subscription_id'];
+          },
+          {
+            foreignKeyName: 'workspace_orders_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_subscription_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_orders_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_orders_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_products: {
         Row: {
           avatar_url: string | null;
@@ -12031,7 +12105,40 @@ export type Database = {
           },
         ];
       };
-      workspace_subscription: {
+      workspace_subscription_products: {
+        Row: {
+          archived: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string | null;
+          price: number | null;
+          recurring_interval: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'] | null;
+        };
+        Insert: {
+          archived?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id: string;
+          name?: string | null;
+          price?: number | null;
+          recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
+        };
+        Update: {
+          archived?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string | null;
+          price?: number | null;
+          recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
+        };
+        Relationships: [];
+      };
+      workspace_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null;
           created_at: string;
@@ -12091,39 +12198,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      workspace_subscription_products: {
-        Row: {
-          archived: boolean;
-          created_at: string;
-          description: string | null;
-          id: string;
-          name: string | null;
-          price: number | null;
-          recurring_interval: string | null;
-          tier: Database['public']['Enums']['workspace_product_tier'] | null;
-        };
-        Insert: {
-          archived?: boolean;
-          created_at?: string;
-          description?: string | null;
-          id: string;
-          name?: string | null;
-          price?: number | null;
-          recurring_interval?: string | null;
-          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
-        };
-        Update: {
-          archived?: boolean;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          name?: string | null;
-          price?: number | null;
-          recurring_interval?: string | null;
-          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
-        };
-        Relationships: [];
       };
       workspace_task_labels: {
         Row: {
@@ -16129,6 +16203,11 @@ export type Database = {
         | 'multi_choice_quiz'
         | 'paragraph_quiz'
         | 'flashcards';
+      billing_reason:
+        | 'purchase'
+        | 'subscription_create'
+        | 'subscription_cycle'
+        | 'subscription_update';
       blacklist_entry_type: 'email' | 'domain';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
       calendar_hours: 'work_hours' | 'personal_hours' | 'meeting_hours';
@@ -16147,6 +16226,7 @@ export type Database = {
       notification_delivery_mode: 'immediate' | 'batched';
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
       notification_scope: 'user' | 'workspace' | 'system';
+      order_status: 'pending' | 'paid' | 'refunded' | 'partially_refunded';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       product:
         | 'web'
@@ -16417,6 +16497,12 @@ export const Constants = {
         'paragraph_quiz',
         'flashcards',
       ],
+      billing_reason: [
+        'purchase',
+        'subscription_create',
+        'subscription_cycle',
+        'subscription_update',
+      ],
       blacklist_entry_type: ['email', 'domain'],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
       calendar_hours: ['work_hours', 'personal_hours', 'meeting_hours'],
@@ -16436,6 +16522,7 @@ export const Constants = {
       notification_delivery_mode: ['immediate', 'batched'],
       notification_priority: ['low', 'medium', 'high', 'urgent'],
       notification_scope: ['user', 'workspace', 'system'],
+      order_status: ['pending', 'paid', 'refunded', 'partially_refunded'],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       product: [
         'web',
