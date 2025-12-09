@@ -43,7 +43,8 @@ export function useTaskLabelManagement({
     // CRITICAL: Get current task state from cache instead of stale prop
     // This ensures we read the most up-to-date state after optimistic updates
     const currentTask = taskId
-      ? (queryClient.getQueryData(['task', taskId]) as Task | undefined) ?? task
+      ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
+        task)
       : task;
 
     // Check if we're in multi-select mode with multiple tasks selected
@@ -310,13 +311,16 @@ export function useTaskLabelManagement({
 
         // CRITICAL: Also update individual task cache if taskId is provided
         if (taskId) {
-          queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
-            if (!old) return old;
-            return {
-              ...old,
-              labels: [...(old.labels || []), newLabel],
-            };
-          });
+          queryClient.setQueryData(
+            ['task', taskId],
+            (old: Task | undefined) => {
+              if (!old) return old;
+              return {
+                ...old,
+                labels: [...(old.labels || []), newLabel],
+              };
+            }
+          );
         }
 
         const { error: linkErr } = await supabase

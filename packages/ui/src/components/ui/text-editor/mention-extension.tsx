@@ -196,8 +196,10 @@ export const Mention = Node.create({
           // For task mentions, prefer data-display-number over data-display-name
           const displayName =
             entityType === 'task'
-              ? element.dataset.displayNumber ?? element.dataset.displayName ?? null
-              : element.dataset.displayName ?? null;
+              ? (element.dataset.displayNumber ??
+                element.dataset.displayName ??
+                null)
+              : (element.dataset.displayName ?? null);
           return {
             userId: element.dataset.userId ?? null,
             entityId: element.dataset.entityId ?? null,
