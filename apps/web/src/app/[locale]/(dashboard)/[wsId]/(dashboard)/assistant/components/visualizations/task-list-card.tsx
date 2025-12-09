@@ -6,17 +6,20 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  ExternalLink,
   Search,
   User,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import type { TaskListVisualization } from '../../types/visualizations';
 
 interface TaskListCardProps {
   data: TaskListVisualization['data'];
   isFullscreen?: boolean;
+  wsId?: string;
 }
 
 const priorityConfig: Record<
@@ -105,6 +108,7 @@ function formatDate(dateString: string | null): string {
 export function TaskListCard({
   data,
   isFullscreen = false,
+  wsId,
 }: TaskListCardProps) {
   const { title, category, tasks } = data;
   const categoryStyle = category ? categoryConfig[category] : null;
@@ -146,7 +150,7 @@ export function TaskListCard({
       {/* Task List */}
       <div
         className={cn(
-          'divide-y divide-border/20 overflow-y-auto scrollbar-none',
+          'scrollbar-none divide-y divide-border/20 overflow-y-auto',
           !isFullscreen && 'max-h-72'
         )}
       >
@@ -164,15 +168,8 @@ export function TaskListCard({
               category === 'overdue' ||
               (task.endDate && new Date(task.endDate) < new Date());
 
-            return (
-              <div
-                key={task.id}
-                className={cn(
-                  'group flex items-start gap-3 px-4 py-3 transition-all duration-200',
-                  'hover:bg-muted/40',
-                  task.completed && 'opacity-60'
-                )}
-              >
+            const taskContent = (
+              <>
                 {/* Completion Status */}
                 <div className="mt-0.5 transition-transform duration-200 group-hover:scale-110">
                   {task.completed ? (
@@ -238,6 +235,33 @@ export function TaskListCard({
                     )}
                   </div>
                 </div>
+
+                {/* Link indicator */}
+                {wsId && (
+                  <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
+                )}
+              </>
+            );
+
+            const itemClassName = cn(
+              'group flex items-start gap-3 px-4 py-3 transition-all duration-200',
+              'hover:bg-muted/40',
+              wsId && 'cursor-pointer',
+              task.completed && 'opacity-60'
+            );
+
+            return wsId ? (
+              <Link
+                key={task.id}
+                href={`/${wsId}/tasks/${task.id}`}
+                target="_blank"
+                className={itemClassName}
+              >
+                {taskContent}
+              </Link>
+            ) : (
+              <div key={task.id} className={itemClassName}>
+                {taskContent}
               </div>
             );
           })

@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  ExternalLink,
   Folder,
   Tag,
   User,
@@ -12,11 +13,13 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import type { TaskDetailVisualization } from '../../types/visualizations';
 
 interface TaskDetailViewProps {
   data: TaskDetailVisualization['data'];
   isFullscreen?: boolean;
+  wsId?: string;
 }
 
 const priorityConfig: Record<
@@ -99,8 +102,10 @@ function getRelativeDate(dateString: string | null): {
 export function TaskDetailView({
   data,
   isFullscreen = false,
+  wsId,
 }: TaskDetailViewProps) {
   const {
+    id,
     name,
     description,
     priority,
@@ -188,7 +193,7 @@ export function TaskDetailView({
       {/* Content Section */}
       <div
         className={cn(
-          'space-y-4 overflow-y-auto scrollbar-none p-4',
+          'scrollbar-none space-y-4 overflow-y-auto p-4',
           !isFullscreen && 'max-h-72'
         )}
       >
@@ -307,9 +312,21 @@ export function TaskDetailView({
 
       {/* Footer */}
       <div className="border-border/30 border-t bg-muted/20 px-4 py-2">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-          <Clock className="h-3 w-3" />
-          <span>Created {formatDate(createdAt)}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+            <Clock className="h-3 w-3" />
+            <span>Created {formatDate(createdAt)}</span>
+          </div>
+          {wsId && (
+            <Link
+              href={`/${wsId}/tasks/${id}`}
+              target="_blank"
+              className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 font-medium text-primary text-xs transition-colors hover:bg-primary/20"
+            >
+              View Task
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          )}
         </div>
       </div>
     </Card>

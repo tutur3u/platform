@@ -1,11 +1,5 @@
 'use client';
 
-import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
-import {
-  type ConnectionStatus,
-  LiveAPIProvider,
-  useLiveAPIContext,
-} from '@/hooks/use-live-api';
 import { Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,6 +11,12 @@ import {
 } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
+import {
+  type ConnectionStatus,
+  LiveAPIProvider,
+  useLiveAPIContext,
+} from '@/hooks/use-live-api';
 import { AudioRecorder } from './audio/audio-recorder';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
@@ -1062,7 +1062,7 @@ function GameApp({ wsId }: { wsId: string }) {
       </div>
 
       {/* Dynamic UI visualizations */}
-      <VisualizationContainer />
+      <VisualizationContainer wsId={wsId} />
 
       {/* Main content area */}
       <main className="relative z-10 flex h-[calc(100vh-12rem)] flex-1 flex-col items-center justify-center gap-8">

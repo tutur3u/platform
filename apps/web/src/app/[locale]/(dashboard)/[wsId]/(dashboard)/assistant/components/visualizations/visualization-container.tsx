@@ -20,23 +20,29 @@ import { TimelineView } from './timeline-view';
 function VisualizationContent({
   vis,
   isFullscreen = false,
+  wsId,
 }: {
   vis: Visualization;
   isFullscreen?: boolean;
+  wsId?: string;
 }) {
   return (
     <>
       {vis.type === 'task_list' && (
-        <TaskListCard data={vis.data} isFullscreen={isFullscreen} />
+        <TaskListCard data={vis.data} isFullscreen={isFullscreen} wsId={wsId} />
       )}
       {vis.type === 'gantt_timeline' && (
-        <TimelineView data={vis.data} isFullscreen={isFullscreen} />
+        <TimelineView data={vis.data} isFullscreen={isFullscreen} wsId={wsId} />
       )}
       {vis.type === 'status_distribution' && (
         <StatusChart data={vis.data} isFullscreen={isFullscreen} />
       )}
       {vis.type === 'task_detail' && (
-        <TaskDetailView data={vis.data} isFullscreen={isFullscreen} />
+        <TaskDetailView
+          data={vis.data}
+          isFullscreen={isFullscreen}
+          wsId={wsId}
+        />
       )}
       {vis.type === 'google_search' && (
         <GoogleSearchCard data={vis.data} isFullscreen={isFullscreen} />
@@ -45,7 +51,11 @@ function VisualizationContent({
         <MembersCard data={vis.data} isFullscreen={isFullscreen} />
       )}
       {vis.type === 'assignee_tasks' && (
-        <AssigneeTasksCard data={vis.data} isFullscreen={isFullscreen} />
+        <AssigneeTasksCard
+          data={vis.data}
+          isFullscreen={isFullscreen}
+          wsId={wsId}
+        />
       )}
     </>
   );
@@ -55,9 +65,11 @@ function VisualizationContent({
 function FullscreenOverlay({
   vis,
   onClose,
+  wsId,
 }: {
   vis: Visualization;
   onClose: () => void;
+  wsId?: string;
 }) {
   return (
     <motion.div
@@ -90,8 +102,8 @@ function FullscreenOverlay({
           </div>
 
           {/* Fullscreen content */}
-          <div className="h-full max-h-[90vh] overflow-auto scrollbar-none">
-            <VisualizationContent vis={vis} isFullscreen />
+          <div className="scrollbar-none h-full max-h-[90vh] overflow-auto">
+            <VisualizationContent vis={vis} isFullscreen wsId={wsId} />
           </div>
         </Card>
       </motion.div>
@@ -104,11 +116,13 @@ function VisualizationCard({
   onDismiss,
   onRemove,
   onFullscreen,
+  wsId,
 }: {
   vis: Visualization;
   onDismiss: (id: string) => void;
   onRemove: (id: string) => void;
   onFullscreen: (vis: Visualization) => void;
+  wsId?: string;
 }) {
   const slideDirection = vis.side === 'left' ? -100 : 100;
 
@@ -160,13 +174,17 @@ function VisualizationCard({
 
       {/* Visualization Content */}
       <div className="transition-transform duration-200 group-hover:scale-[1.005]">
-        <VisualizationContent vis={vis} />
+        <VisualizationContent vis={vis} wsId={wsId} />
       </div>
     </motion.div>
   );
 }
 
-export function VisualizationContainer() {
+interface VisualizationContainerProps {
+  wsId?: string;
+}
+
+export function VisualizationContainer({ wsId }: VisualizationContainerProps) {
   const {
     visualizations,
     centerVisualization,
@@ -201,7 +219,7 @@ export function VisualizationContainer() {
     <>
       {/* Left side */}
       {leftVisualizations.length > 0 && (
-        <div className="pointer-events-none absolute top-20 left-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 scrollbar-none *:pointer-events-auto">
+        <div className="scrollbar-none pointer-events-none absolute top-20 left-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 *:pointer-events-auto">
           <AnimatePresence mode="popLayout">
             {leftVisualizations.map((vis) => (
               <VisualizationCard
@@ -210,6 +228,7 @@ export function VisualizationContainer() {
                 onDismiss={dismissVisualization}
                 onRemove={removeVisualization}
                 onFullscreen={handleFullscreen}
+                wsId={wsId}
               />
             ))}
           </AnimatePresence>
@@ -218,7 +237,7 @@ export function VisualizationContainer() {
 
       {/* Right side */}
       {rightVisualizations.length > 0 && (
-        <div className="pointer-events-none fixed top-20 right-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 scrollbar-none *:pointer-events-auto">
+        <div className="scrollbar-none pointer-events-none fixed top-20 right-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 *:pointer-events-auto">
           <AnimatePresence mode="popLayout">
             {rightVisualizations.map((vis) => (
               <VisualizationCard
@@ -227,6 +246,7 @@ export function VisualizationContainer() {
                 onDismiss={dismissVisualization}
                 onRemove={removeVisualization}
                 onFullscreen={handleFullscreen}
+                wsId={wsId}
               />
             ))}
           </AnimatePresence>
@@ -261,6 +281,7 @@ export function VisualizationContainer() {
           <FullscreenOverlay
             vis={fullscreenVis}
             onClose={handleCloseFullscreen}
+            wsId={wsId}
           />
         )}
       </AnimatePresence>
