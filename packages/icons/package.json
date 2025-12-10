@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@lucide/lab": "^0.1.2",
-    "lucide-react": "^0.556.0"
+    "lucide-react": "^0.559.0"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*"
