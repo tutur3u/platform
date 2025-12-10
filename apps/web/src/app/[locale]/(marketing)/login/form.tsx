@@ -139,7 +139,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     passwordless ? 'passwordless' : 'password'
   );
   const [showPassword, setShowPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(true);
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [emailDisplay, setEmailDisplay] = useState({
