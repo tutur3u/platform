@@ -552,12 +552,13 @@
     "no-invites": "Bạn không có lời mời nào.",
     "account-info": "Thông tin tài khoản",
     "account-info-desc": "Chi tiết tài khoản và thông tin hồ sơ hiện tại của bạn.",
-    "preferences": "Tùy chỉnh",
-    "preferences-desc": "Tùy chỉnh giao diện, ngôn ngữ và các cài đặt khác.",
-    "change-theme": "Chuyển đổi giữa giao diện sáng và tối",
-    "change-language": "Thay đổi ngôn ngữ hiển thị",
     "sign-out": "Đăng xuất",
     "sign-out-desc": "Đăng xuất khỏi phiên đăng nhập hiện tại",
+    "progress": {
+      "step-of": "Bước {current} trên {total}",
+      "time-remaining": "~{minutes} phút còn lại",
+      "almost-done": "Sắp xong!"
+    },
     "waitlist": {
       "title": "Bạn đang trong danh sách chờ",
       "description": "Cảm ơn bạn đã quan tâm! Hiện tại bạn đang trong danh sách chờ. Chúng tôi sẽ thông báo cho bạn ngay khi có quyền truy cập.",
@@ -576,6 +577,7 @@
       "subtitle": "Hãy thiết lập mọi thứ chỉ trong vài bước",
       "description": "Chúng tôi sẽ giúp bạn tạo không gian làm việc và chuẩn bị mọi thứ để đội ngũ của bạn có thể cộng tác.",
       "get-started": "Bắt đầu ngay",
+      "setting-up": "Đang thiết lập...",
       "step-indicator": "Bước {current} trên {total}",
       "features": {
         "team-collaboration": {
@@ -601,82 +603,113 @@
       },
       "completion-time": "Mất ít hơn 2 phút để hoàn thành"
     },
-    "workspace-setup": {
-      "title": "Tạo không gian làm việc của bạn",
-      "subtitle": "Thiết lập căn cứ của đội ngũ bạn",
-      "workspace-name": "Tên không gian làm việc",
-      "workspace-name-placeholder": "Công ty của tôi",
-      "workspace-description": "Mô tả (Tùy chọn)",
-      "workspace-description-placeholder": "Hãy cho chúng tôi biết về không gian làm việc của bạn...",
-      "workspace-avatar": "Ảnh đại diện không gian làm việc",
-      "workspace-details": "Chi tiết không gian làm việc",
-      "upload-avatar": "Tải ảnh lên",
-      "continue": "Tiếp tục",
+    "use-case": {
+      "title": "Bạn sẽ sử dụng Tuturuuu như thế nào?",
+      "subtitle": "Điều này giúp chúng tôi cá nhân hóa trải nghiệm của bạn",
+      "personal": {
+        "title": "Chỉ mình tôi",
+        "description": "Năng suất và tổ chức cá nhân"
+      },
+      "small_team": {
+        "title": "Nhóm nhỏ",
+        "description": "Cộng tác với 2-10 người"
+      },
+      "large_team": {
+        "title": "Nhóm lớn",
+        "description": "Cộng tác toàn tổ chức"
+      },
+      "exploring": {
+        "title": "Chỉ khám phá",
+        "description": "Xem xung quanh"
+      },
+      "team-badge": "Không gian làm việc nhóm",
       "back": "Quay lại",
-      "creating-workspace": "Đang tạo không gian làm việc...",
-      "tips": {
-        "title": "💡 Mẹo cho việc chọn tên không gian làm việc:",
-        "tip1": "• Chọn tên phản ánh đội ngũ hoặc dự án của bạn",
-        "tip2": "• Giữ cho ngắn gọn và dễ nhớ",
-        "tip3": "• Bạn luôn có thể thay đổi điều này sau"
-      }
+      "continue": "Tiếp tục"
     },
-    "profile-completion": {
+    "profile": {
       "title": "Hoàn thiện hồ sơ của bạn",
       "subtitle": "Giúp đội ngũ của bạn nhận ra bạn",
       "display-name": "Tên hiển thị",
       "display-name-placeholder": "Tên của bạn",
       "bio": "Tiểu sử",
-      "bio-optional": "(tùy chọn)",
+      "optional": "tùy chọn",
       "bio-placeholder": "Hãy cho chúng tôi biết về bạn...",
-      "avatar": "Ảnh đại diện hồ sơ",
-      "profile-details": "Chi tiết hồ sơ",
-      "continue": "Hoàn thiện hồ sơ",
+      "profile-tip": "Hồ sơ của bạn giúp đồng đội nhận ra và kết nối với bạn trên toàn bộ nền tảng.",
       "back": "Quay lại",
-      "updating": "Đang cập nhật...",
-      "profile-tip": "💡 Hồ sơ của bạn giúp đồng đội nhận ra và kết nối với bạn trên toàn bộ nền tảng.",
-      "finish": "Hoàn tất & Tiếp tục"
+      "continue": "Tiếp tục",
+      "saving": "Đang lưu..."
     },
-    "feature-tour": {
-      "title": "Tour nhanh",
-      "subtitle": "Hãy khám phá những gì bạn có thể làm",
-      "skip-tour": "Bỏ qua Tour",
-      "start-tour": "Bắt đầu Tour",
-      "next": "Tiếp theo",
-      "previous": "Trước đó",
-      "finish": "Hoàn thành Tour",
-      "features": {
-        "dashboard": {
-          "title": "Bảng điều khiển",
-          "description": "Trung tâm của bạn cho tất cả hoạt động và thông tin chi tiết của không gian làm việc."
-        },
-        "projects": {
-          "title": "Dự án",
-          "description": "Tổ chức và quản lý công việc của đội ngũ với các công cụ dự án mạnh mẽ."
-        },
-        "collaboration": {
-          "title": "Cộng tác",
-          "description": "Trò chuyện, chia sẻ tệp và làm việc cùng nhau một cách liền mạch."
-        },
-        "settings": {
-          "title": "Cài đặt",
-          "description": "Tùy chỉnh không gian làm việc và quản lý quyền của đội ngũ."
-        }
-      }
+    "team-workspace": {
+      "title": "Tạo không gian làm việc nhóm",
+      "subtitle": "Không gian chung để nhóm của bạn cộng tác",
+      "name-label": "Tên không gian làm việc",
+      "name-placeholder": "Công ty ABC",
+      "description-label": "Mô tả",
+      "description-placeholder": "Nhóm của bạn làm gì?",
+      "optional": "tùy chọn",
+      "tip-title": "Mẹo",
+      "tip-description": "Chọn tên phản ánh nhóm hoặc công ty của bạn. Bạn luôn có thể thay đổi sau.",
+      "back": "Quay lại",
+      "continue": "Tiếp tục",
+      "creating": "Đang tạo không gian làm việc..."
     },
-    "completion": {
-      "title": "Đã thiết lập xong!",
-      "subtitle": "Không gian làm việc của bạn đã sẵn sàng",
-      "description": "Chúc mừng! Bạn đã thiết lập thành công không gian làm việc của mình. Giờ bạn có thể mời thành viên trong đội và bắt đầu cộng tác.",
-      "go-to-dashboard": "Đi đến Bảng điều khiển",
-      "invite-team": "Mời thành viên đội ngũ"
+    "team-invite": {
+      "title": "Mời nhóm của bạn",
+      "subtitle": "Đưa đồng đội của bạn lên",
+      "email-label": "Email thành viên nhóm",
+      "email-placeholder": "dongdoi@congty.com",
+      "invalid-email": "Vui lòng nhập địa chỉ email hợp lệ",
+      "duplicate-email": "Email này đã được thêm",
+      "no-emails-yet": "Chưa có email nào được thêm",
+      "invite-count": "{count} thành viên sẽ được mời",
+      "back": "Quay lại",
+      "continue": "Tiếp tục",
+      "send-invites": "Gửi lời mời",
+      "skip": "Bỏ qua",
+      "invites-sent": "Đã gửi {count} lời mời!"
+    },
+    "preferences": {
+      "title": "Cài đặt tùy chọn",
+      "subtitle": "Tùy chỉnh trải nghiệm của bạn",
+      "theme": {
+        "label": "Giao diện",
+        "light": "Sáng",
+        "dark": "Tối",
+        "system": "Hệ thống"
+      },
+      "language": {
+        "label": "Ngôn ngữ"
+      },
+      "notifications": {
+        "label": "Thông báo email",
+        "description": "Nhận cập nhật về hoạt động trong không gian làm việc"
+      },
+      "back": "Quay lại",
+      "continue": "Tiếp tục",
+      "skip": "Bỏ qua"
+    },
+    "celebration": {
+      "title": "Bạn đã sẵn sàng!",
+      "subtitle": "Chào mừng đến Tuturuuu",
+      "what-you-set-up": "Những gì bạn đã thiết lập",
+      "summary": {
+        "profile": "Đã tạo hồ sơ",
+        "workspace": "Đã tạo không gian làm việc \"{name}\"",
+        "invites": "Đã mời {count} thành viên",
+        "preferences": "Đã lưu tùy chọn"
+      },
+      "go-to-dashboard": "Đi đến trang chính",
+      "ready-to-explore": "Trang chính của bạn đã sẵn sàng để khám phá!"
     },
     "errors": {
       "title": "Lỗi",
       "save-progress": "Không thể lưu tiến trình. Vui lòng thử lại.",
       "create-workspace": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
       "update-profile": "Không thể cập nhật hồ sơ. Vui lòng thử lại.",
-      "workspace-limit-title": "Đã đạt giới hạn không gian làm việc"
+      "workspace-limit-title": "Đã đạt giới hạn không gian làm việc",
+      "workspace-creation-failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
+      "invite-failed": "Không thể gửi một số lời mời.",
+      "invite-partial": "Một số lời mời không thể gửi được"
     }
   },
   "meet-together": {

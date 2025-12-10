@@ -11,10 +11,153 @@ import { NextResponse } from 'next/server';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
+// Paths that should bypass onboarding check (public/marketing pages + auth flows)
+const ONBOARDING_BYPASS_PATHS = [
+  // Auth flows
+  '/onboarding',
+  '/login',
+  '/signup',
+  '/auth',
+  '/api',
+  '/logout',
+  '/verify',
+  '/reset-password',
+  '/mfa',
+  // Public/marketing pages (should match APP_PUBLIC_PATHS in public_paths.ts)
+  '/invite',
+  '/home',
+  '/pricing',
+  '/about',
+  '/contact',
+  '/features',
+  '/products',
+  '/solutions',
+  '/careers',
+  '/partners',
+  '/security',
+  '/contributors',
+  '/blog',
+  '/faq',
+  '/terms',
+  '/privacy',
+  '/branding',
+  '/changelog',
+  '/ai/chats',
+  '/qr-generator',
+  '/documents',
+  '/tumeet',
+  '/meet-together',
+  '/women-in-tech',
+  '/vietnamese-womens-day',
+  '/visualizations',
+];
+
 const WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
     : `http://localhost:${PORT}`;
+
+/**
+ * Check if user needs to complete onboarding
+ * Returns true if user should be redirected to onboarding
+ */
+async function shouldRedirectToOnboarding(userId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+
+    // Check onboarding progress
+    const { data: progress } = await supabase
+      .from('onboarding_progress')
+      .select('completed_at, profile_completed')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    // If onboarding is completed, no redirect needed
+    if (progress?.completed_at) {
+      return false;
+    }
+
+    // If no progress record exists, user needs onboarding
+    if (!progress) {
+      return true;
+    }
+
+    // If profile is not completed (display name not set), redirect to onboarding
+    if (!progress.profile_completed) {
+      return true;
+    }
+
+    // Otherwise, onboarding is in progress but not complete
+    return true;
+  } catch (error) {
+    console.error('Error checking onboarding status:', error);
+    // On error, don't block access - let them through
+    return false;
+  }
+}
+
+/**
+ * Check if user has completed onboarding
+ * Returns true if onboarding is fully complete
+ */
+async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+
+    const { data: progress } = await supabase
+      .from('onboarding_progress')
+      .select('completed_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    return !!progress?.completed_at;
+  } catch (error) {
+    console.error('Error checking onboarding completion:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if the path is the onboarding page
+ */
+function isOnboardingPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0] || '';
+  const isLocale = supportedLocales.includes(firstSegment as Locale);
+
+  const pathWithoutLocale = isLocale
+    ? '/' + segments.slice(1).join('/')
+    : pathname;
+
+  return (
+    pathWithoutLocale === '/onboarding' ||
+    pathWithoutLocale.startsWith('/onboarding/')
+  );
+}
+
+/**
+ * Check if the current path should bypass onboarding check
+ */
+function shouldBypassOnboardingCheck(pathname: string): boolean {
+  // Get path segments
+  const segments = pathname.split('/').filter(Boolean);
+
+  // Check if first segment is a locale
+  const firstSegment = segments[0] || '';
+  const isLocale = supportedLocales.includes(firstSegment as Locale);
+
+  // Get the path without locale prefix
+  const pathWithoutLocale = isLocale
+    ? '/' + segments.slice(1).join('/')
+    : pathname;
+
+  // Check against bypass paths
+  return ONBOARDING_BYPASS_PATHS.some(
+    (bypassPath) =>
+      pathWithoutLocale.startsWith(bypassPath) ||
+      pathWithoutLocale === bypassPath
+  );
+}
 
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
@@ -34,6 +177,65 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Skip locale handling for API routes
   if (req.nextUrl.pathname.startsWith('/api')) {
     return authRes;
+  }
+
+  // Check if user is on the onboarding page but has already completed onboarding
+  // If so, redirect them to their default workspace
+  if (isOnboardingPath(req.nextUrl.pathname)) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const completed = await hasCompletedOnboarding(user.id);
+        if (completed) {
+          // Get user's default workspace
+          const defaultWorkspace = await getUserDefaultWorkspace();
+          if (defaultWorkspace) {
+            const target = defaultWorkspace.personal
+              ? 'personal'
+              : defaultWorkspace.id === ROOT_WORKSPACE_ID
+                ? 'internal'
+                : defaultWorkspace.id;
+            const redirectUrl = new URL(`/${target}`, req.nextUrl);
+            return NextResponse.redirect(redirectUrl);
+          }
+          // Fallback to personal if no default workspace
+          const redirectUrl = new URL('/personal', req.nextUrl);
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
+    } catch (error) {
+      console.error(
+        'Error checking onboarding completion in middleware:',
+        error
+      );
+      // Continue with normal flow if there's an error
+    }
+  }
+
+  // Check if authenticated user needs onboarding
+  // This runs early to ensure users complete onboarding before accessing the platform
+  if (!shouldBypassOnboardingCheck(req.nextUrl.pathname)) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const needsOnboarding = await shouldRedirectToOnboarding(user.id);
+        if (needsOnboarding) {
+          const redirectUrl = new URL('/onboarding', req.nextUrl);
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking onboarding in middleware:', error);
+      // Continue with normal flow if there's an error
+    }
   }
 
   // Handle /home path - redirect to root without workspace redirect
@@ -137,7 +339,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Handle authenticated users accessing the root path or root with locale
   // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
   const isRootPath = req.nextUrl.pathname === '/';
-  const isOnboardingPath = req.nextUrl.pathname === '/onboarding';
 
   const isLocaleRootPath =
     pathSegments.length === 1 &&
@@ -148,11 +349,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
 
   if (
-    isOnboardingPath ||
-    ((isRootPath || isLocaleRootPath) &&
-      !skipWorkspaceRedirect &&
-      !isHashNavigation &&
-      !isMultiAccountFlow)
+    (isRootPath || isLocaleRootPath) &&
+    !skipWorkspaceRedirect &&
+    !isHashNavigation &&
+    !isMultiAccountFlow
   ) {
     try {
       const supabase = await createClient();

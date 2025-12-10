@@ -4,11 +4,13 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { redirect } from 'next/navigation';
 import type {
+  FlowType,
   OnboardingProgress,
   OnboardingStep,
+  UseCase,
   WhitelistStatus,
 } from './types';
-import { ONBOARDING_STEPS } from './types';
+import { FLOW_TYPES, getFlowSteps, ONBOARDING_STEPS } from './types';
 
 /**
  * Check if a user is whitelisted to access the platform
@@ -59,7 +61,14 @@ export async function getUserOnboardingProgress(
     return null;
   }
 
-  return data;
+  // Ensure flow_type has a default value and cast types properly
+  return {
+    ...data,
+    use_case: data.use_case as UseCase | null | undefined,
+    flow_type: (data.flow_type || FLOW_TYPES.PERSONAL) as FlowType,
+    invited_emails: data.invited_emails ?? undefined,
+    notifications_enabled: data.notifications_enabled ?? true,
+  };
 }
 
 /**
@@ -92,7 +101,14 @@ export async function updateOnboardingProgress(
     return null;
   }
 
-  return data;
+  // Cast types properly
+  return {
+    ...data,
+    use_case: data.use_case as UseCase | null | undefined,
+    flow_type: (data.flow_type || FLOW_TYPES.PERSONAL) as FlowType,
+    invited_emails: data.invited_emails ?? undefined,
+    notifications_enabled: data.notifications_enabled ?? true,
+  };
 }
 
 /**
@@ -105,6 +121,7 @@ export async function completeOnboardingStep(
 ): Promise<{ success: boolean; progress?: OnboardingProgress }> {
   const progress = await getUserOnboardingProgress(userId);
   const completedSteps = progress?.completed_steps || [];
+  const flowType = (progress?.flow_type || FLOW_TYPES.PERSONAL) as FlowType;
 
   if (!completedSteps.includes(step)) {
     completedSteps.push(step);
@@ -115,8 +132,8 @@ export async function completeOnboardingStep(
     current_step: nextStep || step,
   };
 
-  // Check if all steps are completed
-  const allSteps = Object.values(ONBOARDING_STEPS);
+  // Check if all steps for the current flow are completed
+  const allSteps = getFlowSteps(flowType);
   const isCompleted = allSteps.every((s) => completedSteps.includes(s));
 
   if (isCompleted) {
@@ -136,12 +153,32 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 }
 
 /**
+ * Set the use case and determine flow type
+ */
+export async function setOnboardingUseCase(
+  userId: string,
+  useCase: UseCase
+): Promise<{ success: boolean; flowType: FlowType }> {
+  const flowType: FlowType =
+    useCase === 'small_team' || useCase === 'large_team'
+      ? FLOW_TYPES.TEAM
+      : FLOW_TYPES.PERSONAL;
+
+  const result = await updateOnboardingProgress(userId, {
+    use_case: useCase,
+    flow_type: flowType,
+    current_step: ONBOARDING_STEPS.PROFILE,
+  });
+
+  return { success: !!result, flowType };
+}
+
+/**
  * Create workspace from onboarding data
  */
 export async function createWorkspaceFromOnboarding(
   userId: string,
   workspaceName: string,
-  workspaceDescription?: string,
   avatarUrl?: string
 ): Promise<{ success: boolean; workspaceId?: string; error?: string }> {
   try {
@@ -176,7 +213,6 @@ export async function createWorkspaceFromOnboarding(
       .from('workspaces')
       .insert({
         name: workspaceName,
-        description: workspaceDescription,
         avatar_url: avatarUrl,
       })
       .select('id')
@@ -228,7 +264,7 @@ export async function completeOnboardingAndRedirect(
   workspaceId: string
 ) {
   // Mark onboarding as completed
-  await completeOnboardingStep(userId, ONBOARDING_STEPS.DASHBOARD_REDIRECT);
+  await completeOnboardingStep(userId, ONBOARDING_STEPS.CELEBRATION);
 
   // Redirect to the workspace dashboard
   redirect(`/${workspaceId}`);

@@ -475,12 +475,13 @@
     "no-invites": "You have no pending invites.",
     "account-info": "Account Information",
     "account-info-desc": "Your current account details and profile information.",
-    "preferences": "Preferences",
-    "preferences-desc": "Customize your theme, language, and other settings.",
-    "change-theme": "Switch between light and dark themes",
-    "change-language": "Change display language",
     "sign-out": "Sign Out",
     "sign-out-desc": "Log out of your current session",
+    "progress": {
+      "step-of": "Step {current} of {total}",
+      "time-remaining": "~{minutes} min left",
+      "almost-done": "Almost done!"
+    },
     "waitlist": {
       "title": "You're on the waitlist",
       "description": "Thank you for your interest! You're currently on our waitlist. We'll notify you as soon as access becomes available.",
@@ -499,6 +500,7 @@
       "subtitle": "Let's get you set up in just a few steps",
       "description": "We'll help you create your workspace and get everything ready for your team to collaborate.",
       "get-started": "Get Started",
+      "setting-up": "Setting up...",
       "step-indicator": "Step {current} of {total}",
       "features": {
         "team-collaboration": {
@@ -524,82 +526,113 @@
       },
       "completion-time": "Takes less than 2 minutes to complete"
     },
-    "workspace-setup": {
-      "title": "Create Your Workspace",
-      "subtitle": "Set up your team's home base",
-      "workspace-name": "Workspace Name",
-      "workspace-name-placeholder": "My Company",
-      "workspace-description": "Description (Optional)",
-      "workspace-description-placeholder": "Tell us about your workspace...",
-      "workspace-avatar": "Workspace Avatar",
-      "workspace-details": "Workspace Details",
-      "upload-avatar": "Upload Image",
-      "continue": "Continue",
+    "use-case": {
+      "title": "How will you use Tuturuuu?",
+      "subtitle": "This helps us personalize your experience",
+      "personal": {
+        "title": "Just Me",
+        "description": "Personal productivity and organization"
+      },
+      "small_team": {
+        "title": "Small Team",
+        "description": "Collaborate with 2-10 people"
+      },
+      "large_team": {
+        "title": "Large Team",
+        "description": "Organization-wide collaboration"
+      },
+      "exploring": {
+        "title": "Just Exploring",
+        "description": "Looking around for now"
+      },
+      "team-badge": "Team workspace",
       "back": "Back",
-      "creating-workspace": "Creating workspace...",
-      "tips": {
-        "title": "💡 Tips for choosing a workspace name:",
-        "tip1": "• Choose a name that reflects your team or project",
-        "tip2": "• Keep it short and memorable",
-        "tip3": "• You can always change this later"
-      }
+      "continue": "Continue"
     },
-    "profile-completion": {
+    "profile": {
       "title": "Complete Your Profile",
       "subtitle": "Help your team recognize you",
       "display-name": "Display Name",
       "display-name-placeholder": "Your name",
       "bio": "Bio",
-      "bio-optional": "(optional)",
+      "optional": "optional",
       "bio-placeholder": "Tell us about yourself...",
-      "avatar": "Profile Avatar",
-      "profile-details": "Profile Details",
-      "continue": "Complete Profile",
+      "profile-tip": "Your profile helps teammates recognize and connect with you across the platform.",
       "back": "Back",
-      "updating": "Updating...",
-      "profile-tip": "💡 Your profile helps teammates recognize and connect with you across the platform.",
-      "finish": "Finish & Continue"
+      "continue": "Continue",
+      "saving": "Saving..."
     },
-    "feature-tour": {
-      "title": "Quick Tour",
-      "subtitle": "Let's explore what you can do",
-      "skip-tour": "Skip Tour",
-      "start-tour": "Start Tour",
-      "next": "Next",
-      "previous": "Previous",
-      "finish": "Finish Tour",
-      "features": {
-        "dashboard": {
-          "title": "Dashboard",
-          "description": "Your central hub for all workspace activities and insights."
-        },
-        "projects": {
-          "title": "Projects",
-          "description": "Organize and manage your team's work with powerful project tools."
-        },
-        "collaboration": {
-          "title": "Collaboration",
-          "description": "Chat, share files, and work together seamlessly."
-        },
-        "settings": {
-          "title": "Settings",
-          "description": "Customize your workspace and manage team permissions."
-        }
-      }
+    "team-workspace": {
+      "title": "Create Your Team Workspace",
+      "subtitle": "A shared space for your team to collaborate",
+      "name-label": "Workspace Name",
+      "name-placeholder": "Acme Inc.",
+      "description-label": "Description",
+      "description-placeholder": "What does your team work on?",
+      "optional": "optional",
+      "tip-title": "Tip",
+      "tip-description": "Choose a name that reflects your team or company. You can always change this later.",
+      "back": "Back",
+      "continue": "Continue",
+      "creating": "Creating workspace..."
     },
-    "completion": {
-      "title": "All Set!",
-      "subtitle": "Your workspace is ready",
-      "description": "Congratulations! You've successfully set up your workspace. You can now invite team members and start collaborating.",
+    "team-invite": {
+      "title": "Invite Your Team",
+      "subtitle": "Get your teammates on board",
+      "email-label": "Team member emails",
+      "email-placeholder": "colleague@company.com",
+      "invalid-email": "Please enter a valid email address",
+      "duplicate-email": "This email has already been added",
+      "no-emails-yet": "No emails added yet",
+      "invite-count": "{count} team member(s) will be invited",
+      "back": "Back",
+      "continue": "Continue",
+      "send-invites": "Send Invites",
+      "skip": "Skip for now",
+      "invites-sent": "{count} invite(s) sent!"
+    },
+    "preferences": {
+      "title": "Set Your Preferences",
+      "subtitle": "Customize your experience",
+      "theme": {
+        "label": "Appearance",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "language": {
+        "label": "Language"
+      },
+      "notifications": {
+        "label": "Email Notifications",
+        "description": "Receive updates about activity in your workspace"
+      },
+      "back": "Back",
+      "continue": "Continue",
+      "skip": "Skip"
+    },
+    "celebration": {
+      "title": "You're All Set!",
+      "subtitle": "Welcome to Tuturuuu",
+      "what-you-set-up": "What you set up",
+      "summary": {
+        "profile": "Profile created",
+        "workspace": "Workspace \"{name}\" created",
+        "invites": "{count} team member(s) invited",
+        "preferences": "Preferences saved"
+      },
       "go-to-dashboard": "Go to Dashboard",
-      "invite-team": "Invite Team Members"
+      "ready-to-explore": "Your dashboard is ready for you to explore!"
     },
     "errors": {
       "title": "Error",
       "save-progress": "Failed to save progress. Please try again.",
       "create-workspace": "Failed to create workspace. Please try again.",
       "update-profile": "Failed to update profile. Please try again.",
-      "workspace-limit-title": "Workspace Limit Reached"
+      "workspace-limit-title": "Workspace Limit Reached",
+      "workspace-creation-failed": "Failed to create workspace. Please try again.",
+      "invite-failed": "Failed to send some invites.",
+      "invite-partial": "Some invites could not be sent"
     }
   },
   "meet-together": {

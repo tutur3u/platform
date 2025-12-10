@@ -5062,9 +5062,16 @@ export type Database = {
           completed_steps: string[];
           created_at: string;
           current_step: string;
+          flow_type: string | null;
+          invited_emails: string[] | null;
+          language_preference: string | null;
+          notifications_enabled: boolean | null;
           profile_completed: boolean;
+          team_workspace_id: string | null;
+          theme_preference: string | null;
           tour_completed: boolean;
           updated_at: string;
+          use_case: string | null;
           user_id: string;
           workspace_avatar_url: string | null;
           workspace_description: string | null;
@@ -5075,9 +5082,16 @@ export type Database = {
           completed_steps?: string[];
           created_at?: string;
           current_step?: string;
+          flow_type?: string | null;
+          invited_emails?: string[] | null;
+          language_preference?: string | null;
+          notifications_enabled?: boolean | null;
           profile_completed?: boolean;
+          team_workspace_id?: string | null;
+          theme_preference?: string | null;
           tour_completed?: boolean;
           updated_at?: string;
+          use_case?: string | null;
           user_id: string;
           workspace_avatar_url?: string | null;
           workspace_description?: string | null;
@@ -5088,15 +5102,36 @@ export type Database = {
           completed_steps?: string[];
           created_at?: string;
           current_step?: string;
+          flow_type?: string | null;
+          invited_emails?: string[] | null;
+          language_preference?: string | null;
+          notifications_enabled?: boolean | null;
           profile_completed?: boolean;
+          team_workspace_id?: string | null;
+          theme_preference?: string | null;
           tour_completed?: boolean;
           updated_at?: string;
+          use_case?: string | null;
           user_id?: string;
           workspace_avatar_url?: string | null;
           workspace_description?: string | null;
           workspace_name?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'onboarding_progress_team_workspace_id_fkey';
+            columns: ['team_workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'onboarding_progress_team_workspace_id_fkey';
+            columns: ['team_workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'onboarding_progress_user_id_fkey';
             columns: ['user_id'];
@@ -14620,8 +14655,8 @@ export type Database = {
         Returns: Json;
       };
       check_ws_creator:
-        | { Args: { user_id: string; ws_id: string }; Returns: boolean }
-        | { Args: { ws_id: string }; Returns: boolean };
+        | { Args: { ws_id: string }; Returns: boolean }
+        | { Args: { user_id: string; ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_live_sessions: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
@@ -14737,7 +14772,6 @@ export type Database = {
             Args: {
               p_expiry_seconds?: number;
               p_origin_app: string;
-              p_session_data?: Json;
               p_target_app: string;
               p_user_id: string;
             };
@@ -14747,6 +14781,7 @@ export type Database = {
             Args: {
               p_expiry_seconds?: number;
               p_origin_app: string;
+              p_session_data?: Json;
               p_target_app: string;
               p_user_id: string;
             };
@@ -14949,11 +14984,7 @@ export type Database = {
       };
       get_daily_income_expense:
         | {
-            Args: {
-              _ws_id: string;
-              include_confidential?: boolean;
-              past_days?: number;
-            };
+            Args: { _ws_id: string; past_days?: number };
             Returns: {
               day: string;
               total_expense: number;
@@ -14961,7 +14992,11 @@ export type Database = {
             }[];
           }
         | {
-            Args: { _ws_id: string; past_days?: number };
+            Args: {
+              _ws_id: string;
+              include_confidential?: boolean;
+              past_days?: number;
+            };
             Returns: {
               day: string;
               total_expense: number;
@@ -15115,11 +15150,7 @@ export type Database = {
       get_mau_count: { Args: never; Returns: number };
       get_monthly_income_expense:
         | {
-            Args: {
-              _ws_id: string;
-              include_confidential?: boolean;
-              past_months?: number;
-            };
+            Args: { _ws_id: string; past_months?: number };
             Returns: {
               month: string;
               total_expense: number;
@@ -15127,7 +15158,11 @@ export type Database = {
             }[];
           }
         | {
-            Args: { _ws_id: string; past_months?: number };
+            Args: {
+              _ws_id: string;
+              include_confidential?: boolean;
+              past_months?: number;
+            };
             Returns: {
               month: string;
               total_expense: number;
@@ -15168,7 +15203,6 @@ export type Database = {
         | {
             Args: {
               p_channel: string;
-              p_email?: string;
               p_user_id: string;
               p_window_minutes?: number;
               p_ws_id: string;
@@ -15178,6 +15212,7 @@ export type Database = {
         | {
             Args: {
               p_channel: string;
+              p_email?: string;
               p_user_id: string;
               p_window_minutes?: number;
               p_ws_id: string;
@@ -15594,6 +15629,7 @@ export type Database = {
         }[];
       };
       get_wallet_expense_count:
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number }
         | {
             Args: {
               p_include_confidential?: boolean;
@@ -15601,9 +15637,9 @@ export type Database = {
               p_ws_id: string;
             };
             Returns: number;
-          }
-        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number };
+          };
       get_wallet_expense_sum:
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number }
         | {
             Args: {
               p_include_confidential?: boolean;
@@ -15611,9 +15647,9 @@ export type Database = {
               p_ws_id: string;
             };
             Returns: number;
-          }
-        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number };
+          };
       get_wallet_income_count:
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number }
         | {
             Args: {
               p_include_confidential?: boolean;
@@ -15621,8 +15657,7 @@ export type Database = {
               p_ws_id: string;
             };
             Returns: number;
-          }
-        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number };
+          };
       get_wallet_income_sum:
         | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number }
         | {

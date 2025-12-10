@@ -21,10 +21,8 @@ export async function POST() {
     .maybeSingle();
 
   if (existingPersonal) {
-    return NextResponse.json(
-      { message: 'Already has personal workspace' },
-      { status: 400 }
-    );
+    // Return existing workspace ID instead of error - this supports idempotent onboarding
+    return NextResponse.json({ id: existingPersonal.id, existing: true });
   }
 
   // Check workspace creation limits
