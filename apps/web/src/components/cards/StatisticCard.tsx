@@ -5,6 +5,9 @@ interface Props {
   title?: string;
   value?: string | number | null;
   limit?: number;
+  displayValue?: React.ReactNode;
+  displayLimit?: React.ReactNode;
+  progress?: number;
   href?: string;
   className?: string;
   onClick?: () => void;
@@ -14,6 +17,9 @@ const StatisticCard = ({
   title,
   value,
   limit,
+  displayValue,
+  displayLimit,
+  progress,
   href,
   className,
   onClick,
@@ -26,7 +32,11 @@ const StatisticCard = ({
     }`;
 
   const progressValue =
-    typeof value === 'number' && limit ? (value / limit) * 100 : 0;
+    progress !== undefined
+      ? progress
+      : typeof value === 'number' && limit
+        ? (value / limit) * 100
+        : 0;
 
   const progressColor =
     progressValue >= 100
@@ -48,16 +58,16 @@ const StatisticCard = ({
               : ''
           }`}
         >
-          {value != null ? value : 'N/A'}
-          {limit && (
+          {displayValue ?? (value != null ? value : 'N/A')}
+          {(displayLimit || limit) && (
             <span className="font-normal text-base text-muted-foreground">
               {' '}
-              / {limit}
+              / {displayLimit ?? limit}
             </span>
           )}
         </div>
       </div>
-      {limit && (
+      {(limit || displayLimit || progress !== undefined) && (
         <div className="px-4 pb-4">
           <Progress value={progressValue} indicatorClassName={progressColor} />
         </div>
