@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     '@tuturuuu/types',
     '@tuturuuu/utils',
     '@tuturuuu/supabase',
+    'jsdom',
+    'parse5',
   ],
   images: {
     remotePatterns: [
