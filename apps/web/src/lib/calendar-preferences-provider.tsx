@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   type CalendarPreferences,
   CalendarPreferencesProvider as UICalendarPreferencesProvider,
@@ -22,11 +23,28 @@ export function CalendarPreferencesProvider({
   wsId,
 }: CalendarPreferencesProviderProps) {
   const locale = useLocale();
+  const supabase = createClient();
+  const [userId, setUserId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   // Fetch user calendar settings
   const { data: userSettings } = useQuery({
-    queryKey: ['user-calendar-settings'],
+    queryKey: ['user-calendar-settings', userId],
     queryFn: async () => {
+      if (!userId) return null;
       const res = await fetch('/api/v1/users/calendar-settings');
       if (!res.ok) return null;
       const data = await res.json();
@@ -36,6 +54,7 @@ export function CalendarPreferencesProvider({
         time_format?: string | null;
       };
     },
+    enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
