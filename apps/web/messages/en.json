@@ -2289,7 +2289,9 @@
     "view_source": "View Source",
     "view_preview": "View Preview",
     "no_html_content": "HTML content is not available for this email",
-    "no_text_content": "Plain text content is not available for this email"
+    "no_text_content": "Plain text content is not available for this email",
+    "light_mode": "Light Mode",
+    "dark_mode": "Dark Mode"
   },
   "blocked-ips": {
     "plural": "Blocked IPs",
@@ -2419,6 +2421,7 @@
     "error": "Error",
     "sending": "Sending",
     "sent": "Sent",
+    "blocked": "Blocked",
     "pending": "Pending",
     "post_title_placeholder": "e.g. \"Meeting Notes\"",
     "post_content_placeholder": "e.g. \"Today we discussed the upcoming event.\"",

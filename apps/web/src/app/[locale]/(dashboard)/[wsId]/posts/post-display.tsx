@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Ban,
   Calendar,
   Check,
   Clock,
@@ -19,8 +20,8 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { useEffect } from 'react';
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
@@ -33,9 +34,13 @@ import {
 
 interface PostDisplayProps {
   postEmail: PostEmail | null;
+  blacklistedEmails?: Set<string>;
 }
 
-export function PostDisplay({ postEmail }: PostDisplayProps) {
+export function PostDisplay({
+  postEmail,
+  blacklistedEmails,
+}: PostDisplayProps) {
   const locale = useLocale();
   const [optimisticSentEmails] = useOptimisticSentEmails();
   const [optimisticLoadingEmails] = useOptimisticLoadingEmails();
@@ -53,6 +58,11 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
   // Check if email is loading (either from local state or optimistically)
   const isLoading = postEmail
     ? isOptimisticallyLoading(postEmail, optimisticLoadingEmails)
+    : false;
+
+  // Check if email is blacklisted
+  const isEmailBlacklisted = postEmail?.email
+    ? (blacklistedEmails?.has(postEmail.email) ?? false)
     : false;
 
   if (!postEmail) {
@@ -77,7 +87,10 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <PostsRowActions data={postEmail} />
+          <PostsRowActions
+            data={postEmail}
+            isEmailBlacklisted={isEmailBlacklisted}
+          />
         </div>
       </div>
 
@@ -203,7 +216,15 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   Status
                 </span>
                 <div className="flex items-center gap-2">
-                  {isLoading ? (
+                  {isEmailBlacklisted ? (
+                    <Badge
+                      variant="outline"
+                      className="border-dynamic-red/30 text-dynamic-red"
+                    >
+                      <Ban className="mr-1 h-3 w-3" />
+                      Blocked
+                    </Badge>
+                  ) : isLoading ? (
                     <Badge
                       variant="secondary"
                       className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"

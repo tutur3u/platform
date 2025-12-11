@@ -2379,7 +2379,9 @@
     "view_source": "Xem mã nguồn",
     "view_preview": "Xem trước",
     "no_html_content": "Nội dung HTML không khả dụng cho email này",
-    "no_text_content": "Nội dung văn bản thuần túy không khả dụng cho email này"
+    "no_text_content": "Nội dung văn bản thuần túy không khả dụng cho email này",
+    "light_mode": "Chế độ sáng",
+    "dark_mode": "Chế độ tối"
   },
   "blocked-ips": {
     "plural": "Địa chỉ IP bị chặn",
@@ -2509,6 +2511,7 @@
     "error": "Lỗi",
     "sending": "Đang gửi",
     "sent": "Đã gửi",
+    "blocked": "Bị chặn",
     "pending": "Chờ gửi",
     "post_title_placeholder": "vd: \"Ghi chú cuộc họp\"",
     "post_content_placeholder": "vd: \"Hôm nay chúng ta đã thảo luận về sự kiện sắp tới.\"",

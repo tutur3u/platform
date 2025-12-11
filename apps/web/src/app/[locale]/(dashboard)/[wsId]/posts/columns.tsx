@@ -12,7 +12,11 @@ export const getPostEmailColumns = (
   t: any,
   namespace: string | undefined,
   _: any,
-  extraData: { locale?: string; onEmailSent: () => void }
+  extraData: {
+    locale?: string;
+    onEmailSent: () => void;
+    blacklistedEmails?: Set<string>;
+  }
 ): ColumnDef<PostEmail>[] => [
   {
     accessorKey: 'recipient',
@@ -144,6 +148,11 @@ export const getPostEmailColumns = (
         <PostsRowActions
           data={row.original}
           onEmailSent={extraData.onEmailSent}
+          isEmailBlacklisted={
+            row.original.email
+              ? (extraData.blacklistedEmails?.has(row.original.email) ?? false)
+              : false
+          }
         />
       );
     },

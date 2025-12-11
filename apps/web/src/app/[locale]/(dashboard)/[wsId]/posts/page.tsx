@@ -1,6 +1,9 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
 import type { PostEmail } from './types';
 
@@ -37,6 +40,14 @@ export default async function PostsPage({
           searchParamsData
         );
 
+        // Extract unique emails from posts data and check blacklist status
+        const userEmails = [
+          ...new Set(
+            postsData.data.map((post) => post.email).filter(Boolean) as string[]
+          ),
+        ];
+        const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
+
         return (
           <PostsClient
             wsId={wsId}
@@ -44,6 +55,7 @@ export default async function PostsPage({
             searchParams={searchParamsData}
             postsData={postsData}
             postsStatus={{ count: sentEmailsCount }}
+            blacklistedEmails={blacklistedEmails}
           />
         );
       }}
@@ -214,4 +226,27 @@ async function getPostsData(
     postsData,
     sentEmailsCount: sentEmailsCount || 0,
   };
+}
+
+async function getEmailBlacklistStatus(emails: string[]): Promise<Set<string>> {
+  if (emails.length === 0) return new Set();
+
+  const sbAdmin = await createAdminClient();
+  const { data: blockStatuses, error } = await sbAdmin.rpc(
+    'get_email_block_statuses',
+    { p_emails: emails }
+  );
+
+  if (error) {
+    console.error('Error checking email blacklist:', error);
+    return new Set();
+  }
+
+  const blacklistedEmails = new Set(
+    (blockStatuses || [])
+      .filter((status) => status.is_blocked && status.email)
+      .map((status) => status.email as string)
+  );
+
+  return blacklistedEmails;
 }

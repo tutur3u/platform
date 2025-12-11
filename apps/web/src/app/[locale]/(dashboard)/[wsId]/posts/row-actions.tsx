@@ -1,10 +1,16 @@
-import useEmail from '@/hooks/useEmail';
-import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/icons';
+import {
+  Ban,
+  CircleAlert,
+  CircleSlash,
+  MailCheck,
+  Send,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import useEmail from '@/hooks/useEmail';
 import type { PostEmail } from './types';
 import {
   isOptimisticallyLoading,
@@ -19,9 +25,11 @@ import {
 export default function PostsRowActions({
   data,
   onEmailSent,
+  isEmailBlacklisted = false,
 }: {
   data: PostEmail;
   onEmailSent?: () => void;
+  isEmailBlacklisted?: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -129,6 +137,7 @@ export default function PostsRowActions({
           isSent ||
           !sendable ||
           data.email.includes('@easy') ||
+          isEmailBlacklisted ||
           localSuccess
         }
         variant={
@@ -136,13 +145,18 @@ export default function PostsRowActions({
             ? 'destructive'
             : isLoading
               ? 'secondary'
-              : localSuccess || isSent
+              : isEmailBlacklisted || localSuccess || isSent
                 ? 'outline'
                 : undefined
         }
         className="flex min-w-[90px] items-center gap-2"
       >
-        {data?.email?.includes('@easy') ? (
+        {isEmailBlacklisted ? (
+          <>
+            <Ban className="h-4 w-4" />
+            <span>{t('post-email-data-table.blocked')}</span>
+          </>
+        ) : data?.email?.includes('@easy') ? (
           <CircleSlash className="h-4 w-4" />
         ) : isLoading ? (
           <>

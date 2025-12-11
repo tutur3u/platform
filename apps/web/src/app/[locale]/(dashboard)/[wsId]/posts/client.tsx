@@ -1,13 +1,13 @@
 'use client';
 
-import { CustomDataTable } from '@/components/custom-data-table';
-import useEmail from '@/hooks/useEmail';
 import { MailWarning, Send } from '@tuturuuu/icons';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import useEmail from '@/hooks/useEmail';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
@@ -37,6 +37,7 @@ interface PostsClientProps {
   searchParams: SearchParams;
   postsData: { data: PostEmail[]; count: number };
   postsStatus: { count: number };
+  blacklistedEmails: Set<string>;
 }
 
 export default function PostsClient({
@@ -45,6 +46,7 @@ export default function PostsClient({
   searchParams,
   postsData,
   postsStatus,
+  blacklistedEmails,
 }: PostsClientProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -136,6 +138,7 @@ export default function PostsClient({
             extraData={{
               locale,
               onEmailSent: () => router.refresh(),
+              blacklistedEmails,
             }}
             count={postsData?.count || 0}
             filters={<PostsFilters wsId={wsId} searchParams={searchParams} />}
@@ -158,7 +161,10 @@ export default function PostsClient({
             }}
           />
         </div>
-        <PostDisplay postEmail={selectedPost} />
+        <PostDisplay
+          postEmail={selectedPost}
+          blacklistedEmails={blacklistedEmails}
+        />
       </div>
     </div>
   );

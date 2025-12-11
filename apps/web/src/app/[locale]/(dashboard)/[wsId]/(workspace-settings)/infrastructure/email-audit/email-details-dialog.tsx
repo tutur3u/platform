@@ -13,7 +13,9 @@ import {
   Hash,
   Laptop,
   Mail,
+  Moon,
   Server,
+  Sun,
   User,
   XCircle,
 } from '@tuturuuu/icons';
@@ -32,7 +34,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 import type { EmailAuditRecord } from './columns';
 
 interface EmailDetailsDialogProps {
@@ -91,7 +94,18 @@ export function EmailDetailsDialog({
   onOpenChange,
 }: EmailDetailsDialogProps) {
   const t = useTranslations('email-audit-data-table');
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [showHtmlSource, setShowHtmlSource] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<'light' | 'dark'>('light');
+
+  // Sync preview theme with resolved theme after mount
+  useEffect(() => {
+    setMounted(true);
+    if (resolvedTheme) {
+      setPreviewTheme(resolvedTheme === 'dark' ? 'dark' : 'light');
+    }
+  }, [resolvedTheme]);
 
   if (!entry) return null;
 
@@ -502,24 +516,50 @@ export function EmailDetailsDialog({
                     <span className="text-muted-foreground text-sm">
                       {t('html_preview')}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowHtmlSource(!showHtmlSource)}
-                      className="gap-2"
-                    >
-                      {showHtmlSource ? (
-                        <>
-                          <Eye className="h-4 w-4" />
-                          {t('view_preview')}
-                        </>
-                      ) : (
-                        <>
-                          <Code className="h-4 w-4" />
-                          {t('view_source')}
-                        </>
+                    <div className="flex items-center gap-2">
+                      {mounted && !showHtmlSource && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setPreviewTheme(
+                              previewTheme === 'light' ? 'dark' : 'light'
+                            )
+                          }
+                          className="gap-2"
+                        >
+                          {previewTheme === 'light' ? (
+                            <>
+                              <Moon className="h-4 w-4" />
+                              {t('dark_mode')}
+                            </>
+                          ) : (
+                            <>
+                              <Sun className="h-4 w-4" />
+                              {t('light_mode')}
+                            </>
+                          )}
+                        </Button>
                       )}
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowHtmlSource(!showHtmlSource)}
+                        className="gap-2"
+                      >
+                        {showHtmlSource ? (
+                          <>
+                            <Eye className="h-4 w-4" />
+                            {t('view_preview')}
+                          </>
+                        ) : (
+                          <>
+                            <Code className="h-4 w-4" />
+                            {t('view_source')}
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   {showHtmlSource ? (
                     <ScrollArea className="flex-1">
@@ -527,13 +567,29 @@ export function EmailDetailsDialog({
                         {htmlContent}
                       </pre>
                     </ScrollArea>
+                  ) : !mounted ? (
+                    <div className="flex flex-1 items-center justify-center">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
                   ) : (
-                    <iframe
-                      srcDoc={htmlContent}
-                      className="flex-1 border-0 bg-white"
-                      sandbox="allow-same-origin"
-                      title="Email HTML Preview"
-                    />
+                    <div
+                      className={cn(
+                        'flex-1 overflow-hidden rounded-md border border-border',
+                        previewTheme === 'dark' && 'bg-zinc-900'
+                      )}
+                    >
+                      <iframe
+                        srcDoc={htmlContent}
+                        className="h-full w-full border-0 bg-white"
+                        style={
+                          previewTheme === 'dark'
+                            ? { filter: 'invert(1) hue-rotate(180deg)' }
+                            : undefined
+                        }
+                        sandbox="allow-same-origin"
+                        title="Email HTML Preview"
+                      />
+                    </div>
                   )}
                 </>
               ) : (
