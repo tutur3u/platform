@@ -3,13 +3,13 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { type EmailAuditRecord, getEmailAuditColumns } from './columns';
 import Filters from './filters';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Email Audit',
@@ -23,6 +23,10 @@ interface SearchParams {
   pageSize?: number;
   status?: string;
   templateType?: string;
+  provider?: string;
+  dateRange?: string;
+  entityType?: string;
+  errorFilter?: string;
 }
 
 const SearchParamsSchema = z.object({
@@ -33,6 +37,12 @@ const SearchParamsSchema = z.object({
     .enum(['pending', 'sent', 'failed', 'bounced', 'complained', ''])
     .default(''),
   templateType: z.string().default(''),
+  provider: z.string().default(''),
+  dateRange: z
+    .enum(['today', 'yesterday', '7days', '30days', '90days', ''])
+    .default(''),
+  entityType: z.string().default(''),
+  errorFilter: z.enum(['has-error', 'no-error', '']).default(''),
 });
 
 interface Props {
@@ -84,6 +94,8 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
                 cc_addresses: false,
                 bcc_addresses: false,
                 reply_to_addresses: false,
+                entity_type: false,
+                entity_id: false,
               }}
               filters={<Filters />}
             />
@@ -94,12 +106,65 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
   );
 }
 
+function getDateRangeFilter(
+  dateRange: string
+): { startDate: Date; endDate: Date } | null {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (dateRange) {
+    case 'today':
+      return {
+        startDate: today,
+        endDate: now,
+      };
+    case 'yesterday': {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return {
+        startDate: yesterday,
+        endDate: today,
+      };
+    }
+    case '7days': {
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return {
+        startDate: sevenDaysAgo,
+        endDate: now,
+      };
+    }
+    case '30days': {
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return {
+        startDate: thirtyDaysAgo,
+        endDate: now,
+      };
+    }
+    case '90days': {
+      const ninetyDaysAgo = new Date(today);
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      return {
+        startDate: ninetyDaysAgo,
+        endDate: now,
+      };
+    }
+    default:
+      return null;
+  }
+}
+
 async function getData({
   q,
   page = 1,
   pageSize = 10,
   status,
   templateType,
+  provider,
+  dateRange,
+  entityType,
+  errorFilter,
   retry = true,
 }: SearchParams & { retry?: boolean } = {}): Promise<{
   data: EmailAuditRecord[];
@@ -137,6 +202,33 @@ async function getData({
     queryBuilder = queryBuilder.eq('template_type', templateType);
   }
 
+  // Filter by provider if provided
+  if (provider && provider !== '') {
+    queryBuilder = queryBuilder.eq('provider', provider);
+  }
+
+  // Filter by entity type if provided
+  if (entityType && entityType !== '') {
+    queryBuilder = queryBuilder.eq('entity_type', entityType);
+  }
+
+  // Filter by date range if provided
+  if (dateRange && dateRange !== '') {
+    const dateFilter = getDateRangeFilter(dateRange);
+    if (dateFilter) {
+      queryBuilder = queryBuilder
+        .gte('created_at', dateFilter.startDate.toISOString())
+        .lte('created_at', dateFilter.endDate.toISOString());
+    }
+  }
+
+  // Filter by error status if provided
+  if (errorFilter === 'has-error') {
+    queryBuilder = queryBuilder.not('error_message', 'is', null);
+  } else if (errorFilter === 'no-error') {
+    queryBuilder = queryBuilder.is('error_message', null);
+  }
+
   // Search filter (search in subject, source_email, and to_addresses)
   if (q) {
     queryBuilder = queryBuilder.or(
@@ -161,6 +253,10 @@ async function getData({
       pageSize,
       status,
       templateType,
+      provider,
+      dateRange,
+      entityType,
+      errorFilter,
       retry: false,
     });
   }

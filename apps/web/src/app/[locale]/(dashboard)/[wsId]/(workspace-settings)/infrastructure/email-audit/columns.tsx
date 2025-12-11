@@ -1,15 +1,39 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from '@tuturuuu/icons';
 import type { Tables } from '@tuturuuu/types/supabase';
-
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Badge } from '@tuturuuu/ui/badge';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { EmailAuditRowActions } from './row-actions';
 
 export type EmailAuditRecord = Tables<'email_audit'> & {
   users: { id: string; display_name: string } | null;
   workspaces: { id: string; name: string } | null;
+};
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return <Clock className="h-3 w-3" />;
+    case 'sent':
+      return <CheckCircle className="h-3 w-3" />;
+    case 'failed':
+      return <XCircle className="h-3 w-3" />;
+    case 'bounced':
+      return <AlertTriangle className="h-3 w-3" />;
+    case 'complained':
+      return <AlertCircle className="h-3 w-3" />;
+    default:
+      return null;
+  }
 };
 
 export const getEmailAuditColumns = (
@@ -42,13 +66,14 @@ export const getEmailAuditColumns = (
         title={t(`${namespace}.created_at`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="text-sm">
-        {moment(row.getValue<string>('created_at')).format(
-          'MMM DD, YYYY HH:mm'
-        )}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const createdAt = row.getValue<string>('created_at');
+      return (
+        <div className="text-sm" title={moment(createdAt).format('LLLL')}>
+          {moment(createdAt).fromNow()}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'status',
@@ -72,7 +97,11 @@ export const getEmailAuditColumns = (
           'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
       };
       return (
-        <Badge variant="outline" className={statusColors[status] || ''}>
+        <Badge
+          variant="outline"
+          className={`flex w-fit items-center gap-1 ${statusColors[status] || ''}`}
+        >
+          {getStatusIcon(status)}
           {status}
         </Badge>
       );
@@ -169,6 +198,46 @@ export const getEmailAuditColumns = (
     ),
   },
   {
+    accessorKey: 'entity_type',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.entity_type`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const entityType = row.getValue<string | null>('entity_type');
+      return entityType ? (
+        <Badge variant="outline" className="capitalize">
+          {entityType}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    },
+  },
+  {
+    accessorKey: 'entity_id',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.entity_id`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const entityId = row.getValue<string | null>('entity_id');
+      return entityId ? (
+        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+          {entityId.slice(0, 8)}...
+        </code>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    },
+  },
+  {
     accessorKey: 'users',
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -182,7 +251,7 @@ export const getEmailAuditColumns = (
       return user ? (
         <div className="text-sm">{user.display_name}</div>
       ) : (
-        <span className="text-muted-foreground">System</span>
+        <span className="text-muted-foreground italic">System</span>
       );
     },
   },
@@ -217,10 +286,11 @@ export const getEmailAuditColumns = (
       const errorMessage = row.getValue<string | null>('error_message');
       return errorMessage ? (
         <div
-          className="max-w-[200px] truncate text-sm text-red-600 dark:text-red-400"
+          className="flex max-w-[200px] items-center gap-1 truncate text-red-600 text-sm dark:text-red-400"
           title={errorMessage}
         >
-          {errorMessage}
+          <XCircle className="h-3 w-3 shrink-0" />
+          <span className="truncate">{errorMessage}</span>
         </div>
       ) : (
         <span className="text-muted-foreground">—</span>
@@ -239,8 +309,8 @@ export const getEmailAuditColumns = (
     cell: ({ row }) => {
       const sentAt = row.getValue<string | null>('sent_at');
       return sentAt ? (
-        <div className="text-sm">
-          {moment(sentAt).format('MMM DD, YYYY HH:mm')}
+        <div className="text-sm" title={moment(sentAt).format('LLLL')}>
+          {moment(sentAt).fromNow()}
         </div>
       ) : (
         <span className="text-muted-foreground">—</span>
@@ -398,5 +468,10 @@ export const getEmailAuditColumns = (
         )}
       </div>
     ),
+  },
+  {
+    id: 'actions',
+    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
+    cell: ({ row }) => <EmailAuditRowActions row={row} />,
   },
 ];
