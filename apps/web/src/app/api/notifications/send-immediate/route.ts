@@ -1,4 +1,4 @@
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { sendSystemEmail } from '@tuturuuu/email-service';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import DeadlineReminderEmail from '@tuturuuu/transactional/emails/deadline-reminder';
@@ -192,30 +192,6 @@ export async function POST(req: NextRequest) {
     // If no body provided, batchIds remains empty and we process all pending immediate batches
 
     const sbAdmin = await createAdminClient();
-
-    // Get AWS SES credentials
-    const { data: credentials, error: credentialsError } = await sbAdmin
-      .from('workspace_email_credentials')
-      .select('*')
-      .eq('ws_id', ROOT_WORKSPACE_ID)
-      .maybeSingle();
-
-    if (credentialsError || !credentials) {
-      console.error('Error fetching SES credentials:', credentialsError);
-      return NextResponse.json(
-        { error: 'Email credentials not configured' },
-        { status: 500 }
-      );
-    }
-
-    // Create SES client
-    const sesClient = new SESClient({
-      region: credentials.region,
-      credentials: {
-        accessKeyId: credentials.access_id,
-        secretAccessKey: credentials.access_key,
-      },
-    });
 
     // Build query for immediate batches
     let query = sbAdmin
@@ -542,26 +518,34 @@ export async function POST(req: NextRequest) {
           emailSubject = `New notification from ${workspaceName}`;
         }
 
-        // Send email
-        const sourceName = 'Tuturuuu';
-        const sourceEmail = 'notifications@tuturuuu.com';
-        const formattedSource = `${sourceName} <${sourceEmail}>`;
+        // Send email via centralized EmailService (bypasses rate limiting for system emails)
+        const templateType = config?.email_template || 'notification-digest';
 
-        const command = new SendEmailCommand({
-          Source: formattedSource,
-          Destination: { ToAddresses: [userEmail] },
-          Message: {
-            Subject: { Data: emailSubject },
-            Body: { Html: { Data: emailHtml } },
+        const result = await sendSystemEmail({
+          recipients: { to: [userEmail] },
+          content: {
+            subject: emailSubject,
+            html: emailHtml,
+          },
+          source: {
+            name: 'Tuturuuu',
+            email: 'notifications@tuturuuu.com',
+          },
+          metadata: {
+            templateType,
+            entityType: 'notification',
+            entityId: notification.id,
           },
         });
 
-        const sesResponse = await sesClient.send(command);
-
-        if (sesResponse.$metadata.httpStatusCode !== 200) {
-          throw new Error(
-            `SES returned status ${sesResponse.$metadata.httpStatusCode}`
-          );
+        if (!result.success) {
+          // Check for blocked recipients
+          if (result.blockedRecipients && result.blockedRecipients.length > 0) {
+            throw new Error(
+              `Email blocked: ${result.blockedRecipients[0]?.reason || 'unknown'}`
+            );
+          }
+          throw new Error(result.error || 'Failed to send email');
         }
 
         // Mark as sent

@@ -9,7 +9,7 @@ interface Params {
 }
 
 const BatchInviteSchema = z.object({
-  emails: z.array(z.string().email()).min(1).max(50),
+  emails: z.array(z.email()).min(1).max(50),
 });
 
 // Helper to trigger immediate notification processing

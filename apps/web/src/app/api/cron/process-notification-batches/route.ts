@@ -1,11 +1,11 @@
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { sendSystemEmail } from '@tuturuuu/email-service';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail, {
   generateSubjectLine,
   type NotificationItem,
 } from '@tuturuuu/transactional/emails/notification-digest';
-import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -28,34 +28,6 @@ export async function GET(req: NextRequest) {
     }
 
     const sbAdmin = await createAdminClient();
-
-    // Get AWS SES credentials from workspace_email_credentials
-    const { data: credentials, error: credentialsError } = await sbAdmin
-      .from('workspace_email_credentials')
-      .select('*')
-      .eq('ws_id', ROOT_WORKSPACE_ID)
-      .maybeSingle();
-
-    if (credentialsError || !credentials) {
-      console.error('Error fetching SES credentials:', credentialsError);
-      return NextResponse.json(
-        {
-          error: 'Email credentials not configured',
-          processed: 0,
-          failed: 0,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Create SES client
-    const sesClient = new SESClient({
-      region: credentials.region,
-      credentials: {
-        accessKeyId: credentials.access_id,
-        secretAccessKey: credentials.access_key,
-      },
-    });
 
     // Get all pending BATCHED notifications where window_end has passed
     // Immediate notifications are handled separately by /api/notifications/send-immediate
@@ -323,42 +295,33 @@ export async function GET(req: NextRequest) {
           })
         );
 
-        // DEBUG: Skip SES sending for testing, just log the rendered HTML
-        const DEBUG_SKIP_SES = DEV_MODE;
-        if (DEBUG_SKIP_SES) {
-          console.log('=== DEBUG: Rendered Email HTML ===');
-          console.log('Subject:', emailSubject);
-          console.log('To:', userEmail);
-          console.log('HTML:', emailHtml);
-          console.log('=== END DEBUG ===');
-        } else {
-          // Send email via SES
-          const sourceName = 'Tuturuuu';
-          const sourceEmail = 'notifications@tuturuuu.com';
-          const formattedSource = `${sourceName} <${sourceEmail}>`;
+        // Send email via centralized EmailService (bypasses rate limiting for system emails)
+        // EmailService handles dev mode internally
+        const result = await sendSystemEmail({
+          recipients: { to: [userEmail] },
+          content: {
+            subject: emailSubject,
+            html: emailHtml,
+          },
+          source: {
+            name: 'Tuturuuu',
+            email: 'notifications@tuturuuu.com',
+          },
+          metadata: {
+            templateType: 'notification-digest',
+            entityType: 'batch',
+            entityId: batch.id,
+          },
+        });
 
-          const command = new SendEmailCommand({
-            Source: formattedSource,
-            Destination: {
-              ToAddresses: [userEmail],
-            },
-            Message: {
-              Subject: {
-                Data: emailSubject,
-              },
-              Body: {
-                Html: { Data: emailHtml },
-              },
-            },
-          });
-
-          const sesResponse = await sesClient.send(command);
-
-          if (sesResponse.$metadata.httpStatusCode !== 200) {
+        if (!result.success) {
+          // Check for blocked recipients
+          if (result.blockedRecipients && result.blockedRecipients.length > 0) {
             throw new Error(
-              `SES returned status ${sesResponse.$metadata.httpStatusCode}`
+              `Email blocked: ${result.blockedRecipients[0]?.reason || 'unknown'}`
             );
           }
+          throw new Error(result.error || 'Failed to send email');
         }
 
         // Mark all delivery logs as sent

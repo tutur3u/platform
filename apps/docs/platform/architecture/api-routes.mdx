@@ -448,7 +448,7 @@ import { z } from 'zod';
 export const runtime = 'edge';
 
 const otpRequestSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export async function POST(request: NextRequest) {

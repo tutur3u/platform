@@ -69,7 +69,7 @@ const criteriaSchema = z.object({
   }),
 });
 
-const emailSchema = z.string().email({ message: 'Invalid email address' });
+const emailSchema = z.email({ message: 'Invalid email address' });
 
 const formSchema = z.object({
   title: z.string().min(3, {

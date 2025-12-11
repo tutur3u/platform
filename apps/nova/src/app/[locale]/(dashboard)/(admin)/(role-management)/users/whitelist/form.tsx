@@ -20,7 +20,7 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export const WhitelistEmailFormSchema = FormSchema;

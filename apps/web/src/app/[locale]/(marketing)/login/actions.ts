@@ -15,6 +15,7 @@ import {
   recordPasswordLoginFailure,
 } from '@tuturuuu/utils/abuse-protection';
 import {
+  checkEmailInfrastructureBlocked,
   checkIfUserExists,
   generateRandomPassword,
   validateEmail,
@@ -72,6 +73,19 @@ export async function sendOtpAction(
     }
 
     const validatedEmail = await validateEmail(email);
+
+    // Check if email is blocked by infrastructure (blacklist, bounces, complaints)
+    const infrastructureCheck =
+      await checkEmailInfrastructureBlocked(validatedEmail);
+    if (infrastructureCheck.isBlocked) {
+      console.log(
+        `[SendOTP] Email blocked by infrastructure: ${infrastructureCheck.blockType} - ${infrastructureCheck.reason}`
+      );
+      // Return generic error to avoid information disclosure
+      return {
+        error: 'Unable to send verification code to this email address.',
+      };
+    }
 
     const userId = await checkIfUserExists({ email: validatedEmail });
 

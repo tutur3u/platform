@@ -5,7 +5,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ import {
   OnboardingLayout,
 } from '../shared/onboarding-card';
 
-const emailSchema = z.string().email();
+const emailSchema = z.email();
 
 interface TeamInviteScreenProps {
   onContinue: (emails: string[]) => void;
@@ -96,7 +96,7 @@ export function TeamInviteScreen({
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Mail className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Mail className="-translate-y-1/2 absolute top-1/2 left-3 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="email"
                   value={inputValue}
@@ -139,7 +139,7 @@ export function TeamInviteScreen({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="min-h-[80px]"
+            className="min-h-20"
           >
             {emails.length > 0 ? (
               <div className="flex flex-wrap gap-2">

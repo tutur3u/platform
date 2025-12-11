@@ -74,7 +74,7 @@ export default function TeamDetailsClient({
   const [isUpdatingName, setIsUpdatingName] = useState(false);
 
   const emailFormSchema = z.object({
-    email: z.string().email({
+    email: z.email({
       message: t('validation.invalid_email'),
     }),
   });

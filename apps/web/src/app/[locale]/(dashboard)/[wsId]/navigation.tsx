@@ -59,6 +59,8 @@ import {
   ScreenShare,
   Send,
   Settings,
+  ShieldAlert,
+  ShieldBan,
   ShieldUser,
   Sparkle,
   Sparkles,
@@ -83,8 +85,6 @@ import {
   Vote,
   Wallet,
   Warehouse,
-  ShieldBan,
-  ShieldAlert,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -886,9 +886,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/usage`,
         `/${personalOrWsId}/api-keys`,
         `/${personalOrWsId}/secrets`,
-        `/${personalOrWsId}/infrastructure`,
-        `/${personalOrWsId}/infrastructure/realtime`,
-        `/${personalOrWsId}/infrastructure/calendar-sync`,
         `/${personalOrWsId}/migrations`,
         `/${personalOrWsId}/integrations`,
         `/${personalOrWsId}/integrations/discord`,
@@ -985,7 +982,6 @@ export async function WorkspaceNavigationLinks({
         null,
         {
           title: t('workspace-settings-layout.infrastructure'),
-          href: `/${personalOrWsId}/infrastructure`,
           icon: <Blocks className="h-5 w-5" />,
           disabled: withoutPermission('view_infrastructure'),
           requireRootWorkspace: true,
@@ -1011,6 +1007,11 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.email_blacklist'),
               href: `/${personalOrWsId}/infrastructure/email-blacklist`,
               icon: <MailX className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.email_audit'),
+              href: `/${personalOrWsId}/infrastructure/email-audit`,
+              icon: <Mails className="h-5 w-5" />,
             },
             {
               title: t('infrastructure-tabs.blocked_ips'),

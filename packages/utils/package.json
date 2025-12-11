@@ -37,7 +37,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/diff": "^8.0.0",
-    "@types/node": "^24.10.3",
+    "@types/node": "^25.0.0",
     "@types/react": "^19.2.7",
     "@vitejs/plugin-react": "^5.1.2",
     "typescript": "^5.9.3",

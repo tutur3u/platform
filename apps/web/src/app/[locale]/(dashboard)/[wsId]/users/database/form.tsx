@@ -1,7 +1,5 @@
 'use client';
 
-import { ImageCropper } from '@/components/image-cropper';
-import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -25,10 +23,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 import * as z from 'zod';
+import { ImageCropper } from '@/components/image-cropper';
+import { DatePicker } from '@/components/row-actions/users/date-picker';
 
 interface Props {
   wsId: string;
@@ -48,7 +48,7 @@ const FormSchema = z.object({
   id: z.string().optional(),
   full_name: z.string().optional(),
   display_name: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.email().optional(),
   phone: z.string().optional(),
   gender: z.string().optional(),
   // gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),

@@ -1812,6 +1812,127 @@ export type Database = {
           },
         ];
       };
+      email_audit: {
+        Row: {
+          bcc_addresses: string[];
+          cc_addresses: string[];
+          content_hash: string | null;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string | null;
+          error_message: string | null;
+          id: string;
+          ip_address: string | null;
+          message_id: string | null;
+          provider: string;
+          reply_to_addresses: string[];
+          sent_at: string | null;
+          source_email: string;
+          source_name: string;
+          status: string;
+          subject: string;
+          template_type: string | null;
+          to_addresses: string[];
+          updated_at: string;
+          user_agent: string | null;
+          user_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          bcc_addresses?: string[];
+          cc_addresses?: string[];
+          content_hash?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          error_message?: string | null;
+          id?: string;
+          ip_address?: string | null;
+          message_id?: string | null;
+          provider?: string;
+          reply_to_addresses?: string[];
+          sent_at?: string | null;
+          source_email: string;
+          source_name: string;
+          status?: string;
+          subject: string;
+          template_type?: string | null;
+          to_addresses: string[];
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          bcc_addresses?: string[];
+          cc_addresses?: string[];
+          content_hash?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          error_message?: string | null;
+          id?: string;
+          ip_address?: string | null;
+          message_id?: string | null;
+          provider?: string;
+          reply_to_addresses?: string[];
+          sent_at?: string | null;
+          source_email?: string;
+          source_name?: string;
+          status?: string;
+          subject?: string;
+          template_type?: string | null;
+          to_addresses?: string[];
+          updated_at?: string;
+          user_agent?: string | null;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'email_audit_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'email_audit_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'email_audit_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'email_audit_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'email_audit_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'email_audit_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       email_blacklist: {
         Row: {
           added_by_user_id: string | null;
@@ -1867,6 +1988,53 @@ export type Database = {
             columns: ['added_by_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      email_bounce_complaints: {
+        Row: {
+          bounce_subtype: string | null;
+          bounce_type: string | null;
+          complaint_feedback_id: string | null;
+          complaint_type: string | null;
+          created_at: string;
+          email_hash: string;
+          event_type: string;
+          id: string;
+          original_email_id: string | null;
+          raw_notification: Json | null;
+        };
+        Insert: {
+          bounce_subtype?: string | null;
+          bounce_type?: string | null;
+          complaint_feedback_id?: string | null;
+          complaint_type?: string | null;
+          created_at?: string;
+          email_hash: string;
+          event_type: string;
+          id?: string;
+          original_email_id?: string | null;
+          raw_notification?: Json | null;
+        };
+        Update: {
+          bounce_subtype?: string | null;
+          bounce_type?: string | null;
+          complaint_feedback_id?: string | null;
+          complaint_type?: string | null;
+          created_at?: string;
+          email_hash?: string;
+          event_type?: string;
+          id?: string;
+          original_email_id?: string | null;
+          raw_notification?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'email_bounce_complaints_original_email_id_fkey';
+            columns: ['original_email_id'];
+            isOneToOne: false;
+            referencedRelation: 'email_audit';
             referencedColumns: ['id'];
           },
         ];
@@ -14649,6 +14817,16 @@ export type Database = {
         Returns: boolean;
       };
       check_email_blocked: { Args: { p_email: string }; Returns: boolean };
+      check_email_bounce_status: {
+        Args: { p_email_hash: string; p_window_days?: number };
+        Returns: {
+          block_reason: string;
+          complaint_count: number;
+          hard_bounce_count: number;
+          is_blocked: boolean;
+          soft_bounce_count: number;
+        }[];
+      };
       check_guest_group: { Args: { group_id: string }; Returns: boolean };
       check_guest_lead_eligibility: {
         Args: { p_user_id: string; p_ws_id: string };
@@ -14925,6 +15103,16 @@ export type Database = {
           task_id: string;
         }[];
       };
+      get_bounce_complaint_stats: {
+        Args: { p_since?: string };
+        Returns: {
+          complaints: number;
+          hard_bounces: number;
+          soft_bounces: number;
+          total_events: number;
+          unique_emails_affected: number;
+        }[];
+      };
       get_browsers: {
         Args: { p_limit?: number; p_link_id: string };
         Returns: {
@@ -15018,6 +15206,26 @@ export type Database = {
         Returns: {
           count: number;
           device_type: string;
+        }[];
+      };
+      get_email_audit_stats: {
+        Args: { p_since?: string; p_ws_id: string };
+        Returns: {
+          bounced: number;
+          complained: number;
+          failed: number;
+          sent: number;
+          total: number;
+        }[];
+      };
+      get_email_audit_stats_global: {
+        Args: { p_since?: string };
+        Returns: {
+          bounced: number;
+          complained: number;
+          failed: number;
+          sent: number;
+          total: number;
         }[];
       };
       get_email_block_statuses: {
@@ -16030,6 +16238,26 @@ export type Database = {
           recurring_id: string;
           transaction_id: string;
         }[];
+      };
+      record_email_bounce: {
+        Args: {
+          p_bounce_subtype?: string;
+          p_bounce_type: string;
+          p_email_hash: string;
+          p_original_email_id?: string;
+          p_raw_notification?: Json;
+        };
+        Returns: string;
+      };
+      record_email_complaint: {
+        Args: {
+          p_complaint_feedback_id?: string;
+          p_complaint_type?: string;
+          p_email_hash: string;
+          p_original_email_id?: string;
+          p_raw_notification?: Json;
+        };
+        Returns: string;
       };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       revoke_all_cross_app_tokens: {

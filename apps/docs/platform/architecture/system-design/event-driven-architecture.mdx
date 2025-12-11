@@ -310,7 +310,7 @@ await trigger.event({
 // Or use Zod schemas for validation
 const UserRegisteredSchema = z.object({
   userId: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   firstName: z.string().optional(),
   lastName: z.string().optional()
 });

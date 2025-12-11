@@ -2,6 +2,7 @@
 
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  checkEmailInfrastructureBlocked,
   checkIfUserExists,
   generateRandomPassword,
   validateEmail,
@@ -37,6 +38,19 @@ export async function sendOtpAction(
   try {
     const { email } = input;
     const validatedEmail = await validateEmail(email);
+
+    // Check if email is blocked by infrastructure (blacklist, bounces, complaints)
+    const infrastructureCheck =
+      await checkEmailInfrastructureBlocked(validatedEmail);
+    if (infrastructureCheck.isBlocked) {
+      console.log(
+        `[SendOTP Rewise] Email blocked by infrastructure: ${infrastructureCheck.blockType} - ${infrastructureCheck.reason}`
+      );
+      // Return generic error to avoid information disclosure
+      return {
+        error: 'Unable to send verification code to this email address.',
+      };
+    }
 
     const userExists = await checkIfUserExists({ email: validatedEmail });
     const supabase = await createClient();

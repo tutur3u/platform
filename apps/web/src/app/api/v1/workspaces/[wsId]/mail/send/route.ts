@@ -1,16 +1,12 @@
 import { DEV_MODE } from '@/constants/common';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import DOMPurify from 'isomorphic-dompurify';
-import juice from 'juice';
 import { difference } from 'lodash';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-
-const domainBlacklist = ['@easy.com'];
-const ENABLE_MAIL_ON_DEV = false;
 
 export async function POST(
   req: NextRequest,
@@ -66,6 +62,12 @@ export async function POST(
 
   const sbAdmin = await createAdminClient();
 
+  // Get client IP for rate limiting
+  const ipAddress =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+
   const { data: apiKey, error: apiKeyError } = await sbAdmin
     .from('internal_email_api_keys')
     .select(
@@ -85,7 +87,8 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isValidTuturuuuEmail(apiKey?.user.email)) {
+  const userEmail = apiKey?.user?.email;
+  if (!userEmail || !isValidTuturuuuEmail(userEmail)) {
     console.error('User is not using a valid Tuturuuu email');
     return NextResponse.json(
       { message: 'Only Tuturuuu emails are allowed' },
@@ -112,70 +115,63 @@ export async function POST(
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
   }
 
-  // Get workspace email credentials
-  const { data: credentials, error: credentialsError } = await sbAdmin
-    .from('workspace_email_credentials')
-    .select('*')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .maybeSingle();
-
-  if (credentialsError) {
-    console.error('Error fetching credentials:', credentialsError);
-    return NextResponse.json(
-      { message: 'Error fetching credentials' },
-      { status: 500 }
-    );
-  }
-
-  if (!credentials) {
-    console.log('No credentials found');
-    return NextResponse.json(
-      { message: 'No credentials found' },
-      { status: 400 }
-    );
-  }
-
-  // Create SES client
-  const sesClient = new SESClient({
-    region: credentials.region,
-    credentials: {
-      accessKeyId: credentials.access_id,
-      secretAccessKey: credentials.access_key,
-    },
-  });
-
   try {
-    const sourceEmail = `${apiKey.user.display_name} <${apiKey.user.email}>`;
-
-    // Send the email via SES (unless in DEV_MODE or email sending is disabled)
-    if (!DEV_MODE || ENABLE_MAIL_ON_DEV) {
-      const emailSent = await sendEmail({
-        client: sesClient,
-        sourceEmail,
-        toAddresses: data.mail.to,
-        ccAddresses: data.mail.cc,
-        bccAddresses: data.mail.bcc,
+    // Send email using centralized EmailService with rate limiting and blacklist checks
+    const result = await sendWorkspaceEmail(ROOT_WORKSPACE_ID, {
+      recipients: {
+        to: data.mail.to,
+        cc: data.mail.cc,
+        bcc: data.mail.bcc,
+      },
+      content: {
         subject: data.mail.subject,
-        content: data.mail.content,
-      });
+        html: data.mail.content,
+      },
+      source: {
+        name: apiKey.user.display_name || 'Tuturuuu',
+        email: userEmail,
+      },
+      metadata: {
+        wsId,
+        userId: apiKey.user.id,
+        templateType: 'internal-email',
+        ipAddress,
+      },
+    });
 
-      if (!emailSent) {
+    if (!result.success) {
+      // Check if it was a rate limit issue
+      if (result.rateLimitInfo && !result.rateLimitInfo.allowed) {
         return NextResponse.json(
-          { message: 'Failed to send email' },
-          { status: 500 }
+          {
+            message: 'Rate limit exceeded',
+            retryAfter: result.rateLimitInfo.retryAfter,
+          },
+          { status: 429 }
         );
       }
+
+      // Check if all recipients were blocked
+      if (result.blockedRecipients && result.blockedRecipients.length > 0) {
+        console.log('Some recipients were blocked:', result.blockedRecipients);
+      }
+
+      console.error('Email sending failed:', result.error);
+      return NextResponse.json(
+        { message: result.error || 'Failed to send email' },
+        { status: 500 }
+      );
     }
 
     const payload = DOMPurify.sanitize(data.mail.content);
 
-    // Store the sent email in the database (always, regardless of DEV_MODE)
+    // Store the sent email in the internal_emails table for backwards compatibility
     const { error } = await sbAdmin
       .from('internal_emails')
       .insert({
         ws_id: wsId,
         user_id: apiKey.user.id,
-        source_email: sourceEmail,
+        source_email: `${apiKey.user.display_name || 'Tuturuuu'} <${userEmail}>`,
         subject: data.mail.subject,
         to_addresses: data.mail.to,
         cc_addresses: data.mail.cc || [],
@@ -189,17 +185,22 @@ export async function POST(
 
     if (error) {
       console.error('Error logging sent email:', error);
-      return NextResponse.json(
-        { message: 'Failed to save email to database' },
-        { status: 500 }
-      );
+      // Don't fail the request - email was already sent
     }
 
     const message = DEV_MODE
       ? 'Email saved (DEV_MODE, not sent)'
       : 'Email sent successfully';
 
-    return NextResponse.json({ message }, { status: 200 });
+    return NextResponse.json(
+      {
+        message,
+        messageId: result.messageId,
+        auditId: result.auditId,
+        blockedRecipients: result.blockedRecipients,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error sending email:', error);
     return NextResponse.json(
@@ -208,73 +209,3 @@ export async function POST(
     );
   }
 }
-
-const sendEmail = async ({
-  client,
-  sourceEmail,
-  toAddresses,
-  ccAddresses,
-  bccAddresses,
-  subject,
-  content,
-}: {
-  client: SESClient;
-  sourceEmail: string;
-  toAddresses: string[];
-  ccAddresses?: string[];
-  bccAddresses?: string[];
-  subject: string;
-  content: string;
-}) => {
-  try {
-    // Check if email is blacklisted
-    if (
-      domainBlacklist.some(
-        (domain) =>
-          toAddresses.some((addr) => addr.includes(domain)) ||
-          ccAddresses?.some((addr) => addr.includes(domain)) ||
-          bccAddresses?.some((addr) => addr.includes(domain))
-      )
-    ) {
-      console.log('Email domain is blacklisted:', toAddresses);
-      return false;
-    }
-
-    // Convert plain text content to HTML and inline CSS
-    const htmlContent = DOMPurify.sanitize(content);
-    const inlinedHtmlContent = juice(htmlContent);
-
-    const params = {
-      Source: sourceEmail,
-      Destination: {
-        ToAddresses: toAddresses,
-        CcAddresses: ccAddresses,
-        BccAddresses: bccAddresses,
-      },
-      Message: {
-        Subject: { Data: subject },
-        Body: {
-          Html: { Data: inlinedHtmlContent },
-          Text: { Data: content },
-        },
-      },
-    };
-
-    // Send email via SES (unless disabled)
-    console.log('Sending email:', { to: toAddresses, subject });
-    const command = new SendEmailCommand(params);
-    const sesResponse = await client.send(command);
-
-    if (sesResponse.$metadata.httpStatusCode !== 200) {
-      console.error('Error sending email:', sesResponse);
-      return false;
-    }
-
-    console.log('Email sent successfully:', { to: toAddresses, subject });
-
-    return true;
-  } catch (err) {
-    console.error('Error sending email:', err);
-    return false;
-  }
-};

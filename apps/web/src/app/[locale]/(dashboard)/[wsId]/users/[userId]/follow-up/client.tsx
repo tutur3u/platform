@@ -1,7 +1,5 @@
 'use client';
 
-import { API_URL } from '@/constants/common';
-import { availableConfigs } from '@/constants/configs/reports';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
@@ -19,15 +17,17 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
+import { API_URL } from '@/constants/common';
+import { availableConfigs } from '@/constants/configs/reports';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import ScoreDisplay from '../../reports/[reportId]/score-display';
 
 const FollowUpSchema = z.object({
   source_name: z.string().min(1),
-  source_email: z.string().email(),
+  source_email: z.email(),
   subject: z.string().min(1),
   content: z.string().min(1),
-  to_email: z.string().email().optional(),
+  to_email: z.email().optional(),
 });
 
 // Feature flag for experimental factor functionality
@@ -453,6 +453,7 @@ export default function FollowUpClient({
                       stroke="currentColor"
                       className="h-5 w-5"
                     >
+                      <title>Warning Icon</title>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"

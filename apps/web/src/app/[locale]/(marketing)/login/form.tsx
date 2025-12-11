@@ -18,11 +18,11 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { type FieldValues, useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Image from 'next/image';
@@ -90,12 +90,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
   // Schema Definitions
   const passwordFormSchema = z.object({
-    email: z.string().transform(processEmailInput).pipe(z.string().email()),
+    email: z.string().transform(processEmailInput).pipe(z.email()),
     password: z.string().min(8, t('login.password_min_length')),
   });
 
   const OTPFormSchema = z.object({
-    email: z.string().transform(processEmailInput).pipe(z.string().email()),
+    email: z.string().transform(processEmailInput).pipe(z.email()),
     otp: z.string(),
     skipOtp: z.boolean().optional(),
   });
@@ -324,8 +324,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           message: errorMessage,
         });
 
-        toast({
-          title: t('login.failed'),
+        toast.error(t('login.failed'), {
           description: errorMessage,
         });
 
@@ -372,8 +371,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         message: t('login.invalid_credentials'),
       });
 
-      toast({
-        title: t('login.failed'),
+      toast.error(t('login.failed'), {
         description: t('login.invalid_credentials'),
       });
     }
@@ -402,15 +400,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
         if (result.error) {
           // Handle error from server action
-          toast({
-            title: t('login.failed'),
+          toast.error(t('login.failed'), {
             description: result.error,
-            variant: 'destructive',
           });
         } else {
           // Success
-          toast({
-            title: t('login.success'),
+          toast.success(t('login.success'), {
             description: t('login.otp_sent'),
           });
 
@@ -430,10 +425,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         console.error('SendOTP Error:', error);
         captchaRefOtp.current?.reset();
         setCaptchaToken(undefined);
-        toast({
-          title: t('login.failed'),
+        toast.error(t('login.failed'), {
           description: t('login.failed_to_send'),
-          variant: 'destructive',
         });
       }
     });
@@ -457,10 +450,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           });
           otpForm.setValue('otp', '');
 
-          toast({
-            title: t('login.failed'),
+          toast.error(t('login.failed'), {
             description: result.error,
-            variant: 'destructive',
           });
         } else {
           // Success
@@ -480,10 +471,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         });
         otpForm.setValue('otp', '');
 
-        toast({
-          title: t('login.failed'),
+        toast.error(t('login.failed'), {
           description: t('login.failed_to_verify'),
-          variant: 'destructive',
         });
       }
     });
@@ -578,8 +567,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
       setLoading(false);
 
-      toast({
-        title: t('login.failed'),
+      toast.error(t('login.failed'), {
         description: t('login.invalid_verification_code'),
       });
     }
@@ -630,10 +618,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       }
     } catch (error) {
       console.error('Dev login error:', error);
-      toast({
-        title: t('login.failed'),
+      toast.error(t('login.failed'), {
         description: error instanceof Error ? error.message : 'Failed to login',
-        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -674,8 +660,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (error) {
       setLoading(false);
       console.error('Error signing in with Google:', error);
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description: 'Failed to sign in with Google.',
       });
     }
@@ -711,8 +696,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (error) {
       setLoading(false);
       console.error('Error signing in with GitHub:', error);
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description: 'Failed to sign in with GitHub.',
       });
     }
@@ -733,8 +717,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (!otpSent) await sendOtp({ email });
     else if (otp) await verifyOtp({ email, otp });
     else {
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description:
           'Please enter the OTP code sent to your email to continue.',
       });

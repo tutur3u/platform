@@ -14,8 +14,8 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -26,7 +26,7 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {

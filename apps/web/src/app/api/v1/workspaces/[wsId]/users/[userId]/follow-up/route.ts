@@ -1,13 +1,9 @@
-import { DEV_MODE, PROD_API_URL } from '@/constants/common';
-import { SESClient } from '@aws-sdk/client-ses';
+import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import DOMPurify from 'isomorphic-dompurify';
-import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -93,6 +89,7 @@ export async function POST(
   }
 
   const sbAdmin = await createAdminClient();
+
   // Get user information for the receiver
   const { data: receiver, error: receiverError } = await sbAdmin
     .from('workspace_users')
@@ -117,147 +114,85 @@ export async function POST(
     );
   }
 
-  // Check if email is blacklisted using RPC function
-  const { data: isBlocked, error: checkError } = await supabase.rpc(
-    'check_email_blocked',
-    { p_email: toEmail }
-  );
-
-  if (checkError) {
-    console.error('Error checking email blacklist:', checkError);
-    return NextResponse.json(
-      { message: 'Error checking email blacklist' },
-      { status: 500 }
-    );
-  }
-
-  if (isBlocked) {
-    console.log('Email is blacklisted:', toEmail);
-    return NextResponse.json(
-      { message: 'Email is blacklisted' },
-      { status: 400 }
-    );
-  }
+  // Get client IP for rate limiting
+  const ipAddress =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
 
   try {
-    // Prepare email sending logic based on DEV_MODE
     let emailSent = false;
     let message = '';
+    let messageId: string | undefined;
 
-    let sourceName: string | undefined;
-    let sourceEmail: string | undefined;
+    let sourceName = 'Tuturuuu';
+    let sourceEmail = 'notifications@tuturuuu.com';
 
-    if (DEV_MODE) {
-      // Validate required environment variables for DEV_MODE
-      sourceName = process.env.SOURCE_NAME || 'Tuturuuu';
-      sourceEmail = process.env.SOURCE_EMAIL;
+    // Use EmailService for all environments
+    // In DEV_MODE, emails are logged but NOT sent (handled by EmailService internally)
+    const result = await sendWorkspaceEmail(wsId, {
+      recipients: { to: [toEmail] },
+      content: {
+        subject: data.subject,
+        html: data.content,
+      },
+      metadata: {
+        wsId,
+        userId: authUser.id,
+        templateType: 'lead-follow-up',
+        entityType: 'lead',
+        entityId: userId,
+        ipAddress,
+      },
+    });
 
-      const emailAccessKeyId = process.env.EMAIL_ACCESS_KEY_ID;
-      const emailAccessKeySecret = process.env.EMAIL_ACCESS_KEY_SECRET;
+    if (result.success) {
+      emailSent = true;
+      messageId = result.messageId;
+      message =
+        result.messageId === 'dev-mode-skip'
+          ? 'Email logged (DEV_MODE - not actually sent)'
+          : 'Email sent successfully';
 
-      if (!sourceEmail || !emailAccessKeyId || !emailAccessKeySecret) {
-        console.error('Missing required environment variables for DEV_MODE:', {
-          SOURCE_EMAIL: !!sourceEmail,
-          EMAIL_ACCESS_KEY_ID: !!emailAccessKeyId,
-          EMAIL_ACCESS_KEY_SECRET: !!emailAccessKeySecret,
-        });
-        return NextResponse.json(
-          { message: 'Missing required environment variables for DEV_MODE' },
-          { status: 500 }
-        );
-      }
-
-      const htmlContent = DOMPurify.sanitize(data.content);
-      const inlinedHtmlContent = juice(htmlContent);
-
-      // In DEV_MODE, send to the dev endpoint
-      const devApiPayload = {
-        mail: {
-          to: [sourceEmail], // Override with SOURCE_EMAIL in dev
-          subject: data.subject,
-          content: inlinedHtmlContent,
-        },
-        config: {
-          accessKeyId: emailAccessKeyId,
-          accessKeySecret: emailAccessKeySecret,
-        },
-      };
-
-      try {
-        const devResponse = await fetch(
-          `${PROD_API_URL}/v1/workspaces/${ROOT_WORKSPACE_ID}/mail/send`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(devApiPayload),
-          }
-        );
-
-        if (devResponse.ok) {
-          emailSent = true;
-          message = 'Email sent via proxy production endpoint';
-        } else {
-          console.error('Dev endpoint failed:', await devResponse.text());
-          message = 'Dev endpoint failed, but email logged';
-        }
-      } catch (error) {
-        console.error('Error calling dev endpoint:', error);
-        message = 'Dev endpoint error, but email logged';
-      }
-    } else {
-      // In production, use SES directly
-      const { data: credentials, error: credentialsError } = await sbAdmin
+      // Get credentials for RPC call
+      const { data: credentials } = await sbAdmin
         .from('workspace_email_credentials')
-        .select('*')
+        .select('source_name, source_email')
         .eq('ws_id', wsId)
         .single();
 
-      if (credentialsError || !credentials) {
-        console.error('Error fetching credentials:', credentialsError);
+      sourceName = credentials?.source_name || 'Tuturuuu';
+      sourceEmail = credentials?.source_email || 'notifications@tuturuuu.com';
+    } else {
+      // Check specific failure reasons
+      if (result.rateLimitInfo && !result.rateLimitInfo.allowed) {
         return NextResponse.json(
-          { message: 'Error fetching email credentials' },
-          { status: 500 }
+          {
+            message: 'Rate limit exceeded',
+            retryAfter: result.rateLimitInfo.retryAfter,
+          },
+          { status: 429 }
         );
       }
 
-      sourceEmail = credentials.source_email;
-      sourceName = credentials.source_name;
-
-      if (!sourceEmail || !sourceName) {
-        console.error('Source email or name is not configured properly');
+      if (result.blockedRecipients && result.blockedRecipients.length > 0) {
         return NextResponse.json(
-          { message: 'Source email or name is not configured properly' },
-          { status: 500 }
+          {
+            message: 'Email is blacklisted',
+            reason: result.blockedRecipients[0]?.reason,
+          },
+          { status: 400 }
         );
       }
 
-      const sesClient = new SESClient({
-        region: credentials.region,
-        credentials: {
-          accessKeyId: credentials.access_id,
-          secretAccessKey: credentials.access_key,
-        },
-      });
-
-      emailSent = await sendEmail({
-        client: sesClient,
-        sourceEmail: `${credentials.source_name} <${credentials.source_email}>`,
-        toAddresses: [toEmail],
-        ccAddresses: [],
-        bccAddresses: [],
-        subject: data.subject,
-        content: data.content,
-      });
-
-      message = emailSent ? 'Email sent successfully' : 'Failed to send email';
+      message = result.error || 'Failed to send email';
+      console.error('Email sending failed:', result.error);
     }
 
-    // Create RPC call payload
+    // Create RPC call payload for logging
     const rpcPayload = {
       p_ws_id: wsId,
-      p_sender_id: authUser.id, // Using authenticated user's ID as sender
+      p_sender_id: authUser.id,
       p_receiver_id: userId,
       p_source_name: sourceName,
       p_source_email: sourceEmail,
@@ -267,7 +202,7 @@ export async function POST(
       p_post_id: data.post_id || undefined,
     };
 
-    // Call the RPC function to create the guest lead email
+    // Call the RPC function to create the guest lead email record
     const { data: rpcData, error: rpcError } = await sbAdmin.rpc(
       'create_guest_lead_email',
       rpcPayload
@@ -276,7 +211,7 @@ export async function POST(
     if (rpcError) {
       console.error('Error calling RPC:', rpcError);
       return NextResponse.json(
-        { message: 'Failed to create guest lead email' },
+        { message: 'Failed to create guest lead email record' },
         { status: 500 }
       );
     }
@@ -285,7 +220,8 @@ export async function POST(
       {
         message,
         emailSent,
-        mail_id: (rpcData as any)?.mail_id,
+        messageId,
+        mail_id: (rpcData as { mail_id?: string })?.mail_id,
         status: emailSent ? 'sent' : 'logged',
       },
       { status: 200 }
@@ -298,64 +234,3 @@ export async function POST(
     );
   }
 }
-
-const sendEmail = async ({
-  client,
-  sourceEmail,
-  toAddresses,
-  ccAddresses,
-  bccAddresses,
-  subject,
-  content,
-}: {
-  client: SESClient;
-  sourceEmail: string;
-  toAddresses: string[];
-  ccAddresses?: string[];
-  bccAddresses?: string[];
-  subject: string;
-  content: string;
-}) => {
-  try {
-    // Convert plain text content to HTML and inline CSS
-    const htmlContent = DOMPurify.sanitize(content);
-    const inlinedHtmlContent = juice(htmlContent);
-
-    const params = {
-      Source: sourceEmail,
-      Destination: {
-        ToAddresses: toAddresses,
-        ...(ccAddresses && ccAddresses.length > 0
-          ? { CcAddresses: ccAddresses }
-          : {}),
-        ...(bccAddresses && bccAddresses.length > 0
-          ? { BccAddresses: bccAddresses }
-          : {}),
-      },
-      Message: {
-        Subject: { Data: subject },
-        Body: {
-          Html: { Data: inlinedHtmlContent },
-          Text: { Data: content },
-        },
-      },
-    };
-
-    // Send email via SES
-    console.log('Sending email:', { to: toAddresses, subject });
-    const { SendEmailCommand } = await import('@aws-sdk/client-ses');
-    const command = new SendEmailCommand(params);
-    const sesResponse = await client.send(command);
-
-    if (sesResponse.$metadata.httpStatusCode !== 200) {
-      console.error('Error sending email:', sesResponse);
-      return false;
-    }
-
-    console.log('Email sent successfully:', { to: toAddresses, subject });
-    return true;
-  } catch (err) {
-    console.error('Error sending email:', err);
-    return false;
-  }
-};
