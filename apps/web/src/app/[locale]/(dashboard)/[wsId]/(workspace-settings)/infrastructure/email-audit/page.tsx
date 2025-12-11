@@ -6,9 +6,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
-import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { type EmailAuditRecord, getEmailAuditColumns } from './columns';
+import { type EmailAuditRecord } from './columns';
+import { EmailAuditTable } from './email-audit-table';
 import Filters from './filters';
 
 export const metadata: Metadata = {
@@ -77,27 +77,11 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
               description={t('email-audit.description')}
             />
             <Separator className="my-4" />
-            <CustomDataTable
+            <EmailAuditTable
               data={data}
-              namespace="email-audit-data-table"
-              columnGenerator={getEmailAuditColumns}
-              extraData={{
-                locale,
-              }}
               count={count}
-              defaultVisibility={{
-                id: false,
-                content_hash: false,
-                ip_address: false,
-                user_agent: false,
-                updated_at: false,
-                cc_addresses: false,
-                bcc_addresses: false,
-                reply_to_addresses: false,
-                entity_type: false,
-                entity_id: false,
-              }}
-              filters={<Filters />}
+              locale={locale}
+              filters={<Filters key="email-audit-filters" />}
             />
           </>
         );

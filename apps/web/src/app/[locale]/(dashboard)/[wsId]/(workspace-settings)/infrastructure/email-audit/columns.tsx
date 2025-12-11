@@ -286,11 +286,11 @@ export const getEmailAuditColumns = (
       const errorMessage = row.getValue<string | null>('error_message');
       return errorMessage ? (
         <div
-          className="flex max-w-[200px] items-center gap-1 truncate text-red-600 text-sm dark:text-red-400"
+          className="flex max-w-[200px] items-center gap-1 text-red-600 text-sm dark:text-red-400"
           title={errorMessage}
         >
           <XCircle className="h-3 w-3 shrink-0" />
-          <span className="truncate">{errorMessage}</span>
+          <span className="flex-1 truncate">{errorMessage}</span>
         </div>
       ) : (
         <span className="text-muted-foreground">—</span>
@@ -472,6 +472,11 @@ export const getEmailAuditColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <EmailAuditRowActions row={row} />,
+    cell: ({ row }) => (
+      <EmailAuditRowActions
+        row={row}
+        onViewDetails={_extraData?.onViewDetails}
+      />
+    ),
   },
 ];

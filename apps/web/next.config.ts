@@ -11,11 +11,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: [
-    '@react-email/render',
-    '@react-email/components',
-    'jsdom',
-  ],
+  serverExternalPackages: ['@react-email/render', '@react-email/components'],
   transpilePackages: [
     '@tuturuuu/ai',
     '@tuturuuu/ui',
