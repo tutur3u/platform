@@ -70,20 +70,23 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
         const { data, count } = await getData(sp);
 
         return (
-          <>
-            <FeatureSummary
-              pluralTitle={t('email-audit.plural')}
-              singularTitle={t('email-audit.singular')}
-              description={t('email-audit.description')}
-            />
-            <Separator className="my-4" />
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h1 className="font-semibold text-2xl tracking-tight">
+                {t('email-audit.plural')}
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                {t('email-audit.description')}
+              </p>
+            </div>
+
             <EmailAuditTable
               data={data}
               count={count}
               locale={locale}
               filters={<Filters key="email-audit-filters" />}
             />
-          </>
+          </div>
         );
       }}
     </WorkspaceWrapper>

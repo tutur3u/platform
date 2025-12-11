@@ -81,9 +81,6 @@ export default function Filters() {
         <SelectContent>
           <SelectItem value="all">{t('all_providers')}</SelectItem>
           <SelectItem value="ses">AWS SES</SelectItem>
-          <SelectItem value="sendgrid">SendGrid</SelectItem>
-          <SelectItem value="postmark">Postmark</SelectItem>
-          <SelectItem value="resend">Resend</SelectItem>
         </SelectContent>
       </Select>
 

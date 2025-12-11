@@ -6,7 +6,12 @@ import {
   CheckCircle,
   Clock,
   Copy,
+  Globe,
+  Hash,
+  Laptop,
   Mail,
+  Server,
+  User,
   XCircle,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -20,6 +25,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import type { EmailAuditRecord } from './columns';
@@ -33,15 +39,15 @@ interface EmailDetailsDialogProps {
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'pending':
-      return <Clock className="h-4 w-4 text-yellow-500" />;
+      return <Clock className="h-4 w-4" />;
     case 'sent':
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="h-4 w-4" />;
     case 'failed':
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return <XCircle className="h-4 w-4" />;
     case 'bounced':
-      return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      return <AlertTriangle className="h-4 w-4" />;
     case 'complained':
-      return <AlertCircle className="h-4 w-4 text-purple-500" />;
+      return <AlertCircle className="h-4 w-4" />;
     default:
       return <Mail className="h-4 w-4" />;
   }
@@ -50,19 +56,23 @@ const getStatusIcon = (status: string) => {
 const getStatusBadge = (status: string) => {
   const statusColors: Record<string, string> = {
     pending:
-      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    sent: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    failed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+      'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800/30',
+    sent: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/30',
+    failed:
+      'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/30',
     bounced:
-      'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+      'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/30',
     complained:
-      'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+      'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800/30',
   };
 
   return (
     <Badge
       variant="outline"
-      className={`flex items-center gap-1.5 ${statusColors[status] || ''}`}
+      className={cn(
+        'flex items-center gap-1.5 px-3 py-1',
+        statusColors[status]
+      )}
     >
       {getStatusIcon(status)}
       <span className="capitalize">{status}</span>
@@ -87,302 +97,359 @@ export function EmailDetailsDialog({
   };
 
   const formatAddresses = (addresses: string[]) => {
-    if (!addresses || addresses.length === 0) return '—';
-    return addresses.join(', ');
+    if (!addresses || addresses.length === 0) return null;
+    return addresses.map((addr) => (
+      <div
+        key={addr}
+        className="flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1 text-sm"
+      >
+        <Mail className="h-3 w-3 text-muted-foreground" />
+        <span className="break-all">{addr}</span>
+      </div>
+    ));
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            {t('email_details')}
-          </DialogTitle>
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-0 p-0 lg:max-w-6xl">
+        <DialogHeader className="border-b p-6 pb-4">
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Mail className="h-5 w-5" />
+              {t('email_details')}
+            </DialogTitle>
+            {getStatusBadge(entry.status)}
+          </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh]">
-          <div className="space-y-6 pr-4">
-            {/* Status & Timeline Section */}
-            <div className="space-y-3">
-              <h3 className="flex items-center gap-2 font-semibold text-sm">
-                {t('status_timeline')}
-              </h3>
-              <div className="grid gap-3 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    {t('status')}
-                  </span>
-                  {getStatusBadge(entry.status)}
-                </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">
-                      {t('created_at')}
+        <ScrollArea className="flex-1">
+          <div className="space-y-6 p-6">
+            {/* Header Summary */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h2 className="font-semibold text-2xl leading-tight tracking-tight">
+                  {entry.subject}
+                </h2>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground text-sm">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium text-foreground">
+                      {entry.source_name}
                     </span>
-                    <p className="font-medium">
+                    <span className="text-muted-foreground">
+                      &lt;{entry.source_email}&gt;
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>
                       {moment(entry.created_at).format('MMM DD, YYYY HH:mm:ss')}
-                    </p>
+                    </span>
                   </div>
-                  {entry.sent_at && (
-                    <div>
-                      <span className="text-muted-foreground">
-                        {t('sent_at')}
-                      </span>
-                      <p className="font-medium">
-                        {moment(entry.sent_at).format('MMM DD, YYYY HH:mm:ss')}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Error Alert */}
+              {entry.error_message && (
+                <div className="flex gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-900 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-200">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                  <div className="space-y-1 overflow-hidden">
+                    <h4 className="font-semibold">{t('error_details')}</h4>
+                    <pre className="whitespace-pre-wrap break-all text-sm font-mono opacity-90">
+                      {entry.error_message}
+                    </pre>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Error Message Section (if applicable) */}
-            {entry.error_message && (
-              <div className="space-y-3">
-                <h3 className="flex items-center gap-2 font-semibold text-red-600 text-sm dark:text-red-400">
-                  <AlertCircle className="h-4 w-4" />
-                  {t('error_details')}
-                </h3>
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-                  <pre className="whitespace-pre-wrap break-all text-red-700 text-sm dark:text-red-300">
-                    {entry.error_message}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {/* Email Content Section */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-sm">{t('email_content')}</h3>
-              <div className="grid gap-3 rounded-lg border p-4">
-                <div>
-                  <span className="text-muted-foreground text-sm">
-                    {t('subject')}
-                  </span>
-                  <p className="font-medium">{entry.subject}</p>
-                </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">
-                      {t('source_email')}
-                    </span>
-                    <p className="font-medium">{entry.source_name}</p>
-                    <p className="text-muted-foreground">
-                      {entry.source_email}
-                    </p>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Main Content - Left Column */}
+              <div className="space-y-6 lg:col-span-2">
+                {/* Recipients Card */}
+                <div className="rounded-lg border bg-card shadow-sm">
+                  <div className="border-b px-4 py-3">
+                    <h3 className="font-semibold text-sm">
+                      {t('email_content')}
+                    </h3>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">
-                      {t('to_addresses')}
-                    </span>
-                    <p className="break-all font-medium">
-                      {formatAddresses(entry.to_addresses)}
-                    </p>
-                  </div>
-                </div>
-                {(entry.cc_addresses?.length > 0 ||
-                  entry.bcc_addresses?.length > 0) && (
-                  <>
-                    <Separator />
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {entry.cc_addresses?.length > 0 && (
-                        <div>
-                          <span className="text-muted-foreground">
-                            {t('cc_addresses')}
+                  <div className="space-y-4 p-4">
+                    <div className="space-y-2">
+                      <span className="text-muted-foreground text-xs uppercase tracking-wider">
+                        {t('to_addresses')}
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {formatAddresses(entry.to_addresses) || (
+                          <span className="text-muted-foreground text-sm">
+                            —
                           </span>
-                          <p className="break-all">
-                            {formatAddresses(entry.cc_addresses)}
-                          </p>
-                        </div>
-                      )}
-                      {entry.bcc_addresses?.length > 0 && (
-                        <div>
-                          <span className="text-muted-foreground">
-                            {t('bcc_addresses')}
-                          </span>
-                          <p className="break-all">
-                            {formatAddresses(entry.bcc_addresses)}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-                {entry.reply_to_addresses?.length > 0 && (
-                  <>
-                    <Separator />
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        {t('reply_to')}
-                      </span>
-                      <p>{formatAddresses(entry.reply_to_addresses)}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Provider & Tracking Section */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-sm">
-                {t('provider_tracking')}
-              </h3>
-              <div className="grid gap-3 rounded-lg border p-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">
-                      {t('provider')}
-                    </span>
-                    <p>
-                      <Badge variant="outline">
-                        {entry.provider.toUpperCase()}
-                      </Badge>
-                    </p>
-                  </div>
-                  {entry.template_type && (
-                    <div>
-                      <span className="text-muted-foreground">
-                        {t('template_type')}
-                      </span>
-                      <p>
-                        <Badge variant="secondary">{entry.template_type}</Badge>
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {entry.message_id && (
-                  <>
-                    <Separator />
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        {t('message_id')}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 break-all rounded bg-muted px-2 py-1 text-xs">
-                          {entry.message_id}
-                        </code>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            copyToClipboard(entry.message_id!, t('message_id'))
-                          }
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
+                        )}
                       </div>
                     </div>
-                  </>
+
+                    {(entry.cc_addresses?.length > 0 ||
+                      entry.bcc_addresses?.length > 0) && (
+                      <>
+                        <Separator />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {entry.cc_addresses?.length > 0 && (
+                            <div className="space-y-2">
+                              <span className="text-muted-foreground text-xs uppercase tracking-wider">
+                                {t('cc_addresses')}
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {formatAddresses(entry.cc_addresses)}
+                              </div>
+                            </div>
+                          )}
+                          {entry.bcc_addresses?.length > 0 && (
+                            <div className="space-y-2">
+                              <span className="text-muted-foreground text-xs uppercase tracking-wider">
+                                {t('bcc_addresses')}
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {formatAddresses(entry.bcc_addresses)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {entry.reply_to_addresses?.length > 0 && (
+                      <>
+                        <Separator />
+                        <div className="space-y-2">
+                          <span className="text-muted-foreground text-xs uppercase tracking-wider">
+                            {t('reply_to')}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {formatAddresses(entry.reply_to_addresses)}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Context Card */}
+                {(entry.entity_type ||
+                  entry.entity_id ||
+                  entry.users ||
+                  entry.workspaces) && (
+                  <div className="rounded-lg border bg-card shadow-sm">
+                    <div className="border-b px-4 py-3">
+                      <h3 className="font-semibold text-sm">
+                        {t('sender_context')}
+                      </h3>
+                    </div>
+                    <div className="grid gap-4 p-4 sm:grid-cols-2">
+                      {entry.users && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">
+                            {t('sent_by')}
+                          </span>
+                          <div className="mt-1 flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">
+                              {entry.users.display_name}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {entry.workspaces && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">
+                            {t('workspace')}
+                          </span>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Laptop className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">
+                              {entry.workspaces.name}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {entry.entity_type && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">
+                            {t('entity_type')}
+                          </span>
+                          <div className="mt-1">
+                            <Badge variant="outline" className="capitalize">
+                              {entry.entity_type}
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
+                      {entry.entity_id && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">
+                            {t('entity_id')}
+                          </span>
+                          <div className="mt-1">
+                            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                              {entry.entity_id}
+                            </code>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
 
-            {/* Entity Reference Section */}
-            {(entry.entity_type || entry.entity_id) && (
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm">
-                  {t('entity_reference')}
-                </h3>
-                <div className="grid grid-cols-2 gap-4 rounded-lg border p-4 text-sm">
-                  {entry.entity_type && (
-                    <div>
-                      <span className="text-muted-foreground">
-                        {t('entity_type')}
-                      </span>
-                      <p className="capitalize">{entry.entity_type}</p>
-                    </div>
-                  )}
-                  {entry.entity_id && (
-                    <div>
-                      <span className="text-muted-foreground">
-                        {t('entity_id')}
-                      </span>
-                      <code className="rounded bg-muted px-2 py-1 text-xs">
-                        {entry.entity_id}
-                      </code>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Sender & Context Section */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-sm">{t('sender_context')}</h3>
-              <div className="grid gap-3 rounded-lg border p-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">
-                      {t('sent_by')}
-                    </span>
-                    <p className="font-medium">
-                      {entry.users?.display_name || t('system')}
-                    </p>
+              {/* Sidebar - Right Column */}
+              <div className="space-y-6">
+                {/* Timeline Card */}
+                <div className="rounded-lg border bg-card shadow-sm">
+                  <div className="border-b px-4 py-3">
+                    <h3 className="font-semibold text-sm">
+                      {t('status_timeline')}
+                    </h3>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">
-                      {t('workspace')}
-                    </span>
-                    <p className="font-medium">
-                      {entry.workspaces?.name || '—'}
-                    </p>
+                  <div className="p-4">
+                    <div className="relative border-l pl-4 dark:border-muted">
+                      <div className="mb-6 last:mb-0">
+                        <div className="-left-1.5 absolute mt-1.5 h-3 w-3 rounded-full border border-background bg-primary" />
+                        <div className="font-medium text-sm">
+                          {t('created_at')}
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {moment(entry.created_at).format(
+                            'MMM DD, YYYY HH:mm:ss'
+                          )}
+                        </div>
+                      </div>
+                      {entry.sent_at && (
+                        <div className="mb-6 last:mb-0">
+                          <div className="-left-1.5 absolute mt-1.5 h-3 w-3 rounded-full border border-background bg-green-500" />
+                          <div className="font-medium text-sm">
+                            {t('sent_at')}
+                          </div>
+                          <div className="text-muted-foreground text-xs">
+                            {moment(entry.sent_at).format(
+                              'MMM DD, YYYY HH:mm:ss'
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {(entry.ip_address || entry.user_agent) && (
-                  <>
-                    <Separator />
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {entry.ip_address && (
-                        <div>
-                          <span className="text-muted-foreground">
-                            {t('ip_address')}
-                          </span>
-                          <code className="block rounded bg-muted px-2 py-1 text-xs">
-                            {entry.ip_address === '::1'
-                              ? 'localhost'
-                              : entry.ip_address}
+
+                {/* Technical Details Card */}
+                <div className="rounded-lg border bg-card shadow-sm">
+                  <div className="border-b px-4 py-3">
+                    <h3 className="font-semibold text-sm">
+                      {t('technical_details')}
+                    </h3>
+                  </div>
+                  <div className="space-y-4 p-4">
+                    <div>
+                      <span className="text-muted-foreground text-xs">
+                        {t('provider')}
+                      </span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Server className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium text-sm uppercase">
+                          {entry.provider}
+                        </span>
+                      </div>
+                    </div>
+
+                    {entry.template_type && (
+                      <div>
+                        <span className="text-muted-foreground text-xs">
+                          {t('template_type')}
+                        </span>
+                        <div className="mt-1">
+                          <Badge variant="secondary">
+                            {entry.template_type}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+
+                    {entry.message_id && (
+                      <div>
+                        <span className="text-muted-foreground text-xs">
+                          {t('message_id')}
+                        </span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <code className="flex-1 truncate rounded bg-muted px-1.5 py-0.5 text-xs">
+                            {entry.message_id}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={() =>
+                              copyToClipboard(
+                                entry.message_id!,
+                                t('message_id')
+                              )
+                            }
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {(entry.ip_address || entry.user_agent) && (
+                      <>
+                        <Separator />
+                        <div className="space-y-3">
+                          {entry.ip_address && (
+                            <div>
+                              <span className="text-muted-foreground text-xs">
+                                {t('ip_address')}
+                              </span>
+                              <div className="mt-1 flex items-center gap-2">
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                                <code className="text-xs">
+                                  {entry.ip_address === '::1'
+                                    ? 'localhost'
+                                    : entry.ip_address}
+                                </code>
+                              </div>
+                            </div>
+                          )}
+                          {entry.user_agent && (
+                            <div>
+                              <span className="text-muted-foreground text-xs">
+                                {t('user_agent')}
+                              </span>
+                              <div
+                                className="mt-1 line-clamp-2 text-xs"
+                                title={entry.user_agent}
+                              >
+                                {entry.user_agent}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {entry.content_hash && (
+                      <div>
+                        <span className="text-muted-foreground text-xs">
+                          {t('content_hash')}
+                        </span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Hash className="h-4 w-4 text-muted-foreground" />
+                          <code className="flex-1 truncate rounded bg-muted px-1.5 py-0.5 text-xs">
+                            {entry.content_hash}
                           </code>
                         </div>
-                      )}
-                      {entry.user_agent && (
-                        <div className="col-span-2">
-                          <span className="text-muted-foreground">
-                            {t('user_agent')}
-                          </span>
-                          <p
-                            className="truncate text-xs"
-                            title={entry.user_agent}
-                          >
-                            {entry.user_agent}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Technical Details Section */}
-            {entry.content_hash && (
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm">
-                  {t('technical_details')}
-                </h3>
-                <div className="rounded-lg border p-4 text-sm">
-                  <span className="text-muted-foreground">
-                    {t('content_hash')}
-                  </span>
-                  <code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-xs">
-                    {entry.content_hash}
-                  </code>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </ScrollArea>
       </DialogContent>
