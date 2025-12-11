@@ -1851,6 +1851,7 @@
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "email_blacklist": "Danh sách đen email",
     "email_audit": "Nhật ký email",
+    "email_templates": "Mẫu Email",
     "blocked_ips": "IP bị chặn",
     "abuse_events": "Sự kiện lạm dụng",
     "translations": "Bản dịch",
@@ -2382,6 +2383,20 @@
     "no_text_content": "Nội dung văn bản thuần túy không khả dụng cho email này",
     "light_mode": "Chế độ sáng",
     "dark_mode": "Chế độ tối"
+  },
+  "email-templates": {
+    "title": "Mẫu Email",
+    "description": "Xem trước và kiểm tra tất cả mẫu email có sẵn với các đầu vào tùy chỉnh.",
+    "select_template": "Chọn Mẫu",
+    "preview": "Xem trước",
+    "copy_html": "Sao chép HTML",
+    "copied": "Đã sao chép!",
+    "template_props": "Thuộc tính Mẫu",
+    "live_preview": "Xem trước Trực tiếp",
+    "dark_mode": "Chế độ Tối",
+    "light_mode": "Chế độ Sáng",
+    "no_templates": "Không có mẫu nào",
+    "dark_mode_warning": "Lưu ý: Đây là chế độ tối giả lập. Hiển thị thực tế có thể khác nhau tùy theo ứng dụng email."
   },
   "blocked-ips": {
     "plural": "Địa chỉ IP bị chặn",

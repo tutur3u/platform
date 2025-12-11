@@ -34,7 +34,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 <div className="w-full text-center">
                   <div className="flex items-center justify-center">
                     <Img
-                      src={`${baseUrl}/static/easy.png`}
+                      src={`${baseUrl}/media/logos/easy.png`}
                       width="100"
                       height="38"
                     />

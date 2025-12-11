@@ -1762,6 +1762,7 @@
     "translations": "Translations",
     "email_blacklist": "Email Blacklist",
     "email_audit": "Email Audit",
+    "email_templates": "Email Templates",
     "blocked_ips": "Blocked IPs",
     "abuse_events": "Abuse Events",
     "realtime": "Realtime",
@@ -2292,6 +2293,20 @@
     "no_text_content": "Plain text content is not available for this email",
     "light_mode": "Light Mode",
     "dark_mode": "Dark Mode"
+  },
+  "email-templates": {
+    "title": "Email Templates",
+    "description": "Preview and test all available email templates with customizable inputs.",
+    "select_template": "Select Template",
+    "preview": "Preview",
+    "copy_html": "Copy HTML",
+    "copied": "Copied to clipboard!",
+    "template_props": "Template Properties",
+    "live_preview": "Live Preview",
+    "dark_mode": "Dark Mode",
+    "light_mode": "Light Mode",
+    "no_templates": "No templates available",
+    "dark_mode_warning": "Note: This is a simulated dark mode. Actual rendering may vary across email clients."
   },
   "blocked-ips": {
     "plural": "Blocked IPs",
