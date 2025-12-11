@@ -246,6 +246,10 @@ export interface CreateAuditRecordParams {
   entityType?: string;
   entityId?: string;
   ipAddress?: string;
+  /** HTML content of the email body */
+  htmlContent?: string;
+  /** Plain text content of the email body */
+  textContent?: string;
 }
 
 // =============================================================================

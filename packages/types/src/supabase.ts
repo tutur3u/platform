@@ -1821,6 +1821,7 @@ export type Database = {
           entity_id: string | null;
           entity_type: string | null;
           error_message: string | null;
+          html_content: string | null;
           id: string;
           ip_address: string | null;
           message_id: string | null;
@@ -1832,6 +1833,7 @@ export type Database = {
           status: string;
           subject: string;
           template_type: string | null;
+          text_content: string | null;
           to_addresses: string[];
           updated_at: string;
           user_agent: string | null;
@@ -1846,6 +1848,7 @@ export type Database = {
           entity_id?: string | null;
           entity_type?: string | null;
           error_message?: string | null;
+          html_content?: string | null;
           id?: string;
           ip_address?: string | null;
           message_id?: string | null;
@@ -1857,6 +1860,7 @@ export type Database = {
           status?: string;
           subject: string;
           template_type?: string | null;
+          text_content?: string | null;
           to_addresses: string[];
           updated_at?: string;
           user_agent?: string | null;
@@ -1871,6 +1875,7 @@ export type Database = {
           entity_id?: string | null;
           entity_type?: string | null;
           error_message?: string | null;
+          html_content?: string | null;
           id?: string;
           ip_address?: string | null;
           message_id?: string | null;
@@ -1882,6 +1887,7 @@ export type Database = {
           status?: string;
           subject?: string;
           template_type?: string | null;
+          text_content?: string | null;
           to_addresses?: string[];
           updated_at?: string;
           user_agent?: string | null;

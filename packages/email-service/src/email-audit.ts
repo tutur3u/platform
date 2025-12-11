@@ -43,6 +43,8 @@ export async function createAuditRecord(
         entity_type: params.entityType || null,
         entity_id: params.entityId || null,
         ip_address: params.ipAddress || null,
+        html_content: params.htmlContent || null,
+        text_content: params.textContent || null,
         status: 'pending',
       })
       .select('id')

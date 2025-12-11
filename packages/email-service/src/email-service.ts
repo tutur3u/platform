@@ -220,6 +220,8 @@ export class EmailService {
       entityType: params.metadata.entityType,
       entityId: params.metadata.entityId,
       ipAddress: params.metadata.ipAddress,
+      htmlContent: params.content.html,
+      textContent: params.content.text,
     });
 
     // 6. Check dev mode - skip actual sending but log as sent
@@ -391,6 +393,8 @@ export class EmailService {
       entityType: params.metadata.entityType,
       entityId: params.metadata.entityId,
       ipAddress: params.metadata.ipAddress,
+      htmlContent: params.content.html,
+      textContent: params.content.text,
     });
 
     // Check dev mode - skip actual sending but log as sent

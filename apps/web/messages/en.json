@@ -2283,7 +2283,13 @@
     "entity_reference": "Entity Reference",
     "sender_context": "Sender & Context",
     "technical_details": "Technical Details",
-    "system": "System"
+    "system": "System",
+    "html_preview": "HTML Preview",
+    "plain_text": "Plain Text",
+    "view_source": "View Source",
+    "view_preview": "View Preview",
+    "no_html_content": "HTML content is not available for this email",
+    "no_text_content": "Plain text content is not available for this email"
   },
   "blocked-ips": {
     "plural": "Blocked IPs",
