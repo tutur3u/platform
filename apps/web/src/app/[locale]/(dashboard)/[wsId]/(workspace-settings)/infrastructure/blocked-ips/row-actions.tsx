@@ -40,6 +40,7 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
   const [unblockReason, setUnblockReason] = useState('');
 
   const isActive = entry.status === 'active';
+  const displayIp = entry.ip_address === '::1' ? 'localhost' : entry.ip_address;
 
   const handleUnblock = async () => {
     if (isUnblocking) return;
@@ -57,7 +58,7 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
 
       if (res.ok) {
         toast.success(t('blocked-ips.ip-unblocked'), {
-          description: `${entry.ip_address} ${t('blocked-ips.has-been-unblocked')}`,
+          description: `${displayIp} ${t('blocked-ips.has-been-unblocked')}`,
         });
         setUnblockOpen(false);
         router.refresh();
@@ -93,7 +94,7 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
               <Label className="font-medium">
                 {t('blocked-ips.ip_address')}:
               </Label>
-              <span className="font-mono">{entry.ip_address}</span>
+              <span className="font-mono">{displayIp}</span>
             </div>
 
             <div className="space-y-2">
@@ -135,7 +136,7 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
                 <Label className="text-muted-foreground">
                   {t('blocked-ips.ip_address')}
                 </Label>
-                <p className="font-mono">{entry.ip_address}</p>
+                <p className="font-mono">{displayIp}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">

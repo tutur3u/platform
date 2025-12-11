@@ -130,12 +130,15 @@ export const getBlockedIPsColumns = (
         title={t(`${namespace}.ip_address`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 font-mono text-sm">
-        <Shield className="h-4 w-4 text-muted-foreground" />
-        {row.getValue('ip_address')}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const ip = row.getValue('ip_address') as string;
+      return (
+        <div className="flex items-center gap-2 font-mono text-sm">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          {ip === '::1' ? 'localhost' : ip}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'status',

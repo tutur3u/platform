@@ -424,7 +424,8 @@ export const getEmailAuditColumns = (
       />
     ),
     cell: ({ row }) => {
-      const ip = row.getValue<string | null>('ip_address');
+      const rawIp = row.getValue<string | null>('ip_address');
+      const ip = rawIp === '::1' ? 'localhost' : rawIp;
       return ip ? (
         <div className="font-mono text-xs">{ip}</div>
       ) : (

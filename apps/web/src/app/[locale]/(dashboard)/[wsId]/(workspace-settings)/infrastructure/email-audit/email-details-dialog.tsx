@@ -342,7 +342,9 @@ export function EmailDetailsDialog({
                             {t('ip_address')}
                           </span>
                           <code className="block rounded bg-muted px-2 py-1 text-xs">
-                            {entry.ip_address}
+                            {entry.ip_address === '::1'
+                              ? 'localhost'
+                              : entry.ip_address}
                           </code>
                         </div>
                       )}

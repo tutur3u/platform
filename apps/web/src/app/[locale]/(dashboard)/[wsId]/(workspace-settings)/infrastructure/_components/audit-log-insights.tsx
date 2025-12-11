@@ -195,7 +195,9 @@ export default function AuditLogInsightsComponent({
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-mono text-muted-foreground text-xs">
-                        {log.ip_address}
+                        {log.ip_address === '::1'
+                          ? 'localhost'
+                          : log.ip_address}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-sm">

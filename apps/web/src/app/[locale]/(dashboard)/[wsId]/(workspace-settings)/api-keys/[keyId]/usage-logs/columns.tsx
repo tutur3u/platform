@@ -32,7 +32,9 @@ function ExpandableRowContent({ log }: { log: WorkspaceApiKeyUsageLog }) {
           {log.ip_address && (
             <div>
               <span className="font-medium">IP Address:</span>{' '}
-              <code className="text-xs">{log.ip_address}</code>
+              <code className="text-xs">
+                {log.ip_address === '::1' ? 'localhost' : log.ip_address}
+              </code>
             </div>
           )}
           {log.user_agent && (
@@ -237,7 +239,7 @@ export const usageLogsColumns = (
     cell: ({ row }) => {
       const ip = row.getValue('ip_address') as string | null;
       if (!ip) return <span className="text-muted-foreground text-sm">-</span>;
-      return <code className="text-xs">{ip}</code>;
+      return <code className="text-xs">{ip === '::1' ? 'localhost' : ip}</code>;
     },
   },
   {
