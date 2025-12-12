@@ -94,7 +94,8 @@ export default function PostsRowActions({
           {
             id: data.user_id,
             email: data.email,
-            username: data.recipient || data.email || t('post-email-data-table.noName'),
+            username:
+              data.recipient || data.email || t('post-email-data-table.noName'),
             notes: data?.notes || '',
             is_completed: data?.is_completed,
           },
