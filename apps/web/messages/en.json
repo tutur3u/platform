@@ -796,6 +796,16 @@
     "error-already-member": "You are already a member of this workspace",
     "error-join-failed": "Failed to join workspace"
   },
+  "email_service": {
+    "rate_limit_exceeded_details": "Rate limit exceeded ({limitType}). Used {usage}/{limit}. Retry after {retryAfter}s.",
+    "rate_limit_blocked": "Email sending blocked by rate limits.",
+    "send_failed": "Failed to send email.",
+    "emails_blocked_count": "Emails blocked: {count}. Rate limits may apply.",
+    "emails_send_failed_count": "Failed to send {count} emails.",
+    "emails_already_sent": "Emails were already sent to these recipients.",
+    "emails_sent_success": "Successfully sent {count} emails.",
+    "unexpected_error": "An unexpected error occurred"
+  },
   "auth": {
     "password": "Password",
     "notice-p1": "By continuing, you agree to Tuturuuu's",

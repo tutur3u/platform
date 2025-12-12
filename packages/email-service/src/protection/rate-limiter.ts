@@ -109,8 +109,8 @@ export class EmailRateLimiter {
    * Does NOT increment counters - call incrementCounters() after successful send.
    */
   async checkRateLimits(
-    metadata: EmailMetadata,
-    recipientCount: number
+    metadata: EmailMetadata
+    // recipientCount: number
   ): Promise<RateLimitInfo> {
     const checks: Promise<{
       result: RateLimitInfo;
@@ -408,6 +408,8 @@ export class EmailRateLimiter {
         result: {
           allowed: false,
           remaining: 0,
+          limit: max,
+          usage: count,
           retryAfter: ttl,
           reason,
         },
@@ -419,6 +421,8 @@ export class EmailRateLimiter {
       result: {
         allowed: true,
         remaining: max - count,
+        limit: max,
+        usage: count,
       },
       limitType,
     };

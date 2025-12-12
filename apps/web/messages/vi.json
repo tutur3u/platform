@@ -873,6 +873,16 @@
     "error-already-member": "Bạn đã là thành viên của không gian làm việc này",
     "error-join-failed": "Không thể tham gia không gian làm việc"
   },
+  "email_service": {
+    "rate_limit_exceeded_details": "Vượt quá giới hạn tần suất ({limitType}). Đã sử dụng {usage}/{limit}. Thử lại sau {retryAfter} giây.",
+    "rate_limit_blocked": "Việc gửi email bị chặn do giới hạn tần suất.",
+    "send_failed": "Gửi email thất bại.",
+    "emails_blocked_count": "Đã chặn {count} email. Có thể áp dụng giới hạn tần suất.",
+    "emails_send_failed_count": "Gửi thất bại {count} email.",
+    "emails_already_sent": "Email đã được gửi đến những người nhận này.",
+    "emails_sent_success": "Đã gửi thành công {count} email.",
+    "unexpected_error": "Đã xảy ra lỗi không mong muốn"
+  },
   "auth": {
     "password": "Mật khẩu",
     "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",

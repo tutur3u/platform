@@ -108,10 +108,31 @@ export class EmailService {
       };
     }
 
+    // Determine source early for auditing
+    const source = params.source || this.config.defaultSource;
+
+    // Create audit record immediately
+    const auditId = await createAuditRecord(this.supabase, {
+      wsId: params.metadata.wsId,
+      userId: params.metadata.userId,
+      provider: this.provider.name,
+      sourceName: source.name,
+      sourceEmail: source.email,
+      toAddresses: params.recipients.to,
+      ccAddresses: params.recipients.cc || [],
+      bccAddresses: params.recipients.bcc || [],
+      subject: params.content.subject,
+      templateType: params.metadata.templateType,
+      entityType: params.metadata.entityType,
+      entityId: params.metadata.entityId,
+      ipAddress: params.metadata.ipAddress,
+      htmlContent: params.content.html,
+      textContent: params.content.text,
+    });
+
     // 1. Check sender rate limits
     const rateLimitResult = await this.rateLimiter.checkRateLimits(
-      params.metadata,
-      allRecipients.length
+      params.metadata
     );
 
     if (!rateLimitResult.allowed) {
@@ -127,10 +148,21 @@ export class EmailService {
         }
       );
 
+      if (auditId) {
+        await updateAuditRecord(
+          this.supabase,
+          auditId,
+          'failed',
+          undefined,
+          rateLimitResult.reason || 'Rate limit exceeded'
+        );
+      }
+
       return {
         success: false,
         error: rateLimitResult.reason || 'Rate limit exceeded',
         rateLimitInfo: rateLimitResult,
+        auditId: auditId || undefined,
       };
     }
 
@@ -195,34 +227,23 @@ export class EmailService {
       allowedCc.length === 0 &&
       allowedBcc.length === 0
     ) {
+      if (auditId) {
+        await updateAuditRecord(
+          this.supabase,
+          auditId,
+          'failed',
+          undefined,
+          'All recipients blocked or rate limited'
+        );
+      }
+
       return {
         success: false,
         error: 'All recipients blocked or rate limited',
         blockedRecipients,
+        auditId: auditId || undefined,
       };
     }
-
-    // 4. Determine source
-    const source = params.source || this.config.defaultSource;
-
-    // 5. Create audit record
-    const auditId = await createAuditRecord(this.supabase, {
-      wsId: params.metadata.wsId,
-      userId: params.metadata.userId,
-      provider: this.provider.name,
-      sourceName: source.name,
-      sourceEmail: source.email,
-      toAddresses: allowedTo,
-      ccAddresses: allowedCc,
-      bccAddresses: allowedBcc,
-      subject: params.content.subject,
-      templateType: params.metadata.templateType,
-      entityType: params.metadata.entityType,
-      entityId: params.metadata.entityId,
-      ipAddress: params.metadata.ipAddress,
-      htmlContent: params.content.html,
-      textContent: params.content.text,
-    });
 
     // 6. Check dev mode - skip actual sending but log as sent
     const isDevMode = DEV_MODE || this.config.devMode;
@@ -490,7 +511,13 @@ export class EmailService {
   /**
    * Create EmailService from workspace credentials stored in database.
    */
-  static async fromWorkspace(wsId: string): Promise<EmailService> {
+  static async fromWorkspace(
+    wsId: string,
+    options?: {
+      rateLimits?: Partial<RateLimitConfig>;
+      devMode?: boolean;
+    }
+  ): Promise<EmailService> {
     const { createAdminClient } = await import(
       '@tuturuuu/supabase/next/server'
     );
@@ -524,6 +551,8 @@ export class EmailService {
         name: credentials.source_name,
         email: credentials.source_email,
       },
+      rateLimits: options?.rateLimits,
+      devMode: options?.devMode,
     });
 
     service.setSupabaseClient(sbAdmin);

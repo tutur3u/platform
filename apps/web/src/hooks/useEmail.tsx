@@ -1,6 +1,8 @@
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
+import { toast } from '@tuturuuu/ui/sonner';
 import { atom, useAtom } from 'jotai';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 
 interface EmailState {
   loading: boolean;
@@ -19,6 +21,8 @@ const useEmail = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [localSuccess, setLocalSuccess] = useState(false);
+
+  const t = useTranslations();
 
   const sendEmail = async ({
     wsId,
@@ -60,12 +64,34 @@ const useEmail = () => {
         }
       );
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        const errorMessage =
-          errorData?.message ||
-          errorData?.error ||
-          `Failed to send email (${res.status})`;
+        let errorMessage =
+          data?.message ||
+          data?.error ||
+          `${t('email_service.send_failed')} (${res.status})`;
+
+        // Handle explicit blocked message
+        if (
+          res.status === 429 ||
+          errorMessage.toLowerCase().includes('rate limit')
+        ) {
+          if (data?.rateLimitInfo) {
+            errorMessage = t('email_service.rate_limit_exceeded_details', {
+              usage: data.rateLimitInfo.usage,
+              limit: data.rateLimitInfo.limit,
+              retryAfter: Math.ceil(data.rateLimitInfo.retryAfter / 1000), // ms to s
+              limitType: data.rateLimitInfo.limitType,
+            });
+          } else {
+            errorMessage = t('email_service.rate_limit_blocked');
+          }
+          toast.error(errorMessage);
+        } else {
+          toast.error(errorMessage);
+        }
+
         setLocalError(errorMessage);
         setLocalLoading(false);
         setGlobalState({
@@ -76,13 +102,49 @@ const useEmail = () => {
         return false;
       }
 
+      // Handle partial success / checking specific counts
+      const { successCount, failureCount, blockedCount, alreadySentCount } =
+        data;
+
+      if (blockedCount > 0) {
+        if (data?.rateLimitInfo) {
+          toast.warning(
+            t('email_service.rate_limit_exceeded_details', {
+              usage: data.rateLimitInfo.usage,
+              limit: data.rateLimitInfo.limit,
+              retryAfter: Math.ceil(data.rateLimitInfo.retryAfter / 1000),
+              limitType: data.rateLimitInfo.limitType,
+            })
+          );
+        } else {
+          toast.warning(
+            t('email_service.emails_blocked_count', { count: blockedCount })
+          );
+        }
+      } else if (failureCount > 0) {
+        toast.error(
+          t('email_service.emails_send_failed_count', { count: failureCount })
+        );
+      } else if (alreadySentCount > 0 && successCount === 0) {
+        toast.info(t('email_service.emails_already_sent'));
+      } else {
+        toast.success(
+          t('email_service.emails_sent_success', { count: successCount })
+        );
+      }
+
       setLocalSuccess(true);
       setLocalLoading(false);
       setGlobalState({ loading: false, error: null, success: true });
       return true;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'An unexpected error occurred';
+        error instanceof Error
+          ? error.message
+          : t('email_service.unexpected_error');
+
+      toast.error(errorMessage);
+
       setLocalError(errorMessage);
       setLocalLoading(false);
       setGlobalState({

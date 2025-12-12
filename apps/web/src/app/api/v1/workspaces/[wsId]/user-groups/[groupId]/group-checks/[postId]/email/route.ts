@@ -1,7 +1,5 @@
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
-import { EmailService } from '@tuturuuu/email-service';
 import { render } from '@react-email/render';
+import { EmailService } from '@tuturuuu/email-service';
 import {
   createAdminClient,
   createClient,
@@ -9,6 +7,8 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
 
 interface UserToEmail {
   id: string;
@@ -116,7 +116,13 @@ export async function POST(
     let sourceEmail = 'notifications@tuturuuu.com';
 
     try {
-      emailService = await EmailService.fromWorkspace(wsId);
+      emailService = await EmailService.fromWorkspace(wsId, {
+        rateLimits: isWSIDAllowed
+          ? {
+              workspacePerMinute: 100, // Increased limit for allowed workspaces
+            }
+          : undefined,
+      });
 
       // Get source info from credentials for backwards compatibility logging
       const { data: credentials } = await sbAdmin
@@ -231,7 +237,12 @@ export async function POST(
             };
           }
           if (result.rateLimitInfo && !result.rateLimitInfo.allowed) {
-            return { success: false, reason: 'rate_limited', user };
+            return {
+              success: false,
+              reason: 'rate_limited',
+              user,
+              rateLimitInfo: result.rateLimitInfo,
+            };
           }
           return {
             success: false,
@@ -252,6 +263,10 @@ export async function POST(
       (r) => r.reason === 'already_sent'
     ).length;
 
+    const rateLimitError = results.find((r) => r.reason === 'rate_limited') as
+      | { rateLimitInfo?: any }
+      | undefined;
+
     console.log(
       `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Results - Success: ${successCount}, Failures: ${failureCount}, Blocked: ${blockedCount}, Already Sent: ${alreadySentCount}`
     );
@@ -263,6 +278,7 @@ export async function POST(
         failureCount,
         blockedCount,
         alreadySentCount,
+        rateLimitInfo: rateLimitError?.rateLimitInfo,
       },
       {
         status:

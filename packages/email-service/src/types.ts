@@ -90,6 +90,9 @@ export interface BlockedRecipient {
 export interface RateLimitInfo {
   allowed: boolean;
   remaining: number;
+  // Added for better feedback
+  limit?: number;
+  usage?: number;
   retryAfter?: number;
   reason?: string;
   limitType?: RateLimitType;
