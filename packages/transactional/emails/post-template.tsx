@@ -7,17 +7,19 @@ export interface UserGroupPost {
   content: string | null;
   notes: string | null;
   created_at?: string;
+  student_name?: string | null;
 }
 
-const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
-  const forcePost: Partial<UserGroupPost> = {
-    id: '1',
-    group_name: '[COSC1234] Event Management',
-    title: 'MINDSET 2 - UNIT 8 - FESTIVALS AND TRADITIONS',
-    content: 'Listening - Exam skills',
-  };
+const DEFAULT_USER_GROUP_POST: Partial<UserGroupPost> = {
+  id: '1',
+  group_name: '[COSC1234] Event Management',
+  title: 'MINDSET 2 - UNIT 8 - FESTIVALS AND TRADITIONS',
+  content: 'Listening - Exam skills',
+  student_name: 'Huỳnh Tấn Phát',
+};
 
-  const nextPost = forcePost.id ? forcePost : post;
+const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
+  const nextPost = DEFAULT_USER_GROUP_POST.id ? DEFAULT_USER_GROUP_POST : post;
 
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
@@ -67,7 +69,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
               <p className="text-muted-foreground text-sm">
                 Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
                 <span className="font-semibold text-purple-600">
-                  Huỳnh Tấn Phát
+                  {nextPost.student_name}
                 </span>{' '}
                 trong ngày{' '}
                 {new Date().toLocaleDateString('vi', {
@@ -107,7 +109,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 Easy Center kindly sends parents a report on the learning
                 progress of{' '}
                 <span className="font-semibold text-purple-600">
-                  Huỳnh Tấn Phát
+                  {nextPost.student_name}
                 </span>{' '}
                 on{' '}
                 {new Date().toLocaleDateString('en-US', {

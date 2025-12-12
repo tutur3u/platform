@@ -1,7 +1,7 @@
 import { Progress } from '@tuturuuu/ui/progress';
 import Link from 'next/link';
 
-interface Props {
+interface StatisticCardProps {
   title?: string;
   value?: string | number | null;
   limit?: number;
@@ -13,6 +13,41 @@ interface Props {
   onClick?: () => void;
 }
 
+// A container that renders either a Link or a button, reusing the same classes and structure
+type CardContainerProps = {
+  href?: string;
+  onClick?: () => void;
+  className: string;
+  children: React.ReactNode;
+};
+
+const generateOuterColor = (enableHoverEffect: boolean) =>
+  `${
+    enableHoverEffect
+      ? 'border-border hover:bg-foreground/[0.025] dark:hover:bg-foreground/5'
+      : 'border-border/50'
+  }`;
+
+const CardContainer = ({
+  href,
+  onClick,
+  className,
+  children,
+}: CardContainerProps) => {
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {children}
+    </button>
+  );
+};
+
 const StatisticCard = ({
   title,
   value,
@@ -23,13 +58,8 @@ const StatisticCard = ({
   href,
   className,
   onClick,
-}: Props) => {
-  const generateOuterColor = (enableHoverEffect: boolean) =>
-    `${
-      enableHoverEffect
-        ? 'border-border hover:bg-foreground/[0.025] dark:hover:bg-foreground/5'
-        : 'border-border/50'
-    }`;
+}: StatisticCardProps) => {
+  const hasInteraction = !!onClick || !!href;
 
   const progressValue =
     progress !== undefined
@@ -53,7 +83,7 @@ const StatisticCard = ({
         </div>
         <div
           className={`m-2 mt-0 line-clamp-1 rounded border border-border/30 bg-foreground/5 p-4 text-center font-bold text-2xl text-foreground ${
-            !!onClick || !!href
+            hasInteraction
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
           }`}
@@ -75,29 +105,14 @@ const StatisticCard = ({
     </div>
   );
 
-  if (href)
-    return (
-      <Link
-        href={href}
-        onClick={onClick}
-        className={`group flex flex-col rounded-lg border transition-all duration-300 ${
-          onClick || href ? 'hover:rounded-xl' : 'cursor-default'
-        } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
-      >
-        {cardContent}
-      </Link>
-    );
+  const cardClassName = `group flex flex-col rounded-lg border transition-all duration-300 ${
+    hasInteraction ? 'hover:rounded-xl' : 'cursor-default'
+  } ${generateOuterColor(hasInteraction)} ${className || ''}`;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group flex flex-col rounded-lg border transition duration-300 ${
-        onClick || href ? 'hover:rounded-xl' : 'cursor-default'
-      } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
-    >
+    <CardContainer href={href} onClick={onClick} className={cardClassName}>
       {cardContent}
-    </button>
+    </CardContainer>
   );
 };
 

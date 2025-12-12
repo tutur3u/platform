@@ -27,7 +27,7 @@ export interface EmailContent {
 
 export interface EmailMetadata {
   /** Workspace ID (required for rate limiting and audit) */
-  wsId: string;
+  workspaceId: string;
   /** Platform user ID if sender is authenticated */
   userId?: string;
   /** Email template type (e.g., 'workspace-invite', 'notification-digest') */
@@ -212,11 +212,11 @@ export type EmailStatus =
 
 export interface EmailAuditRecord {
   id: string;
-  ws_id: string;
-  user_id?: string;
+  wsId: string;
+  userId?: string;
   provider: string;
   source_name: string;
-  source_email: string;
+  sourceEmail: string;
   to_addresses: string[];
   cc_addresses: string[];
   bcc_addresses: string[];

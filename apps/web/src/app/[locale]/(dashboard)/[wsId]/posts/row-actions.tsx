@@ -22,6 +22,9 @@ import {
   useOptimisticSentEmails,
 } from './use-posts';
 
+// Centralized email domain filter constant
+const EASY_EMAIL_DOMAIN = '@easy';
+
 export default function PostsRowActions({
   data,
   onEmailSent,
@@ -39,16 +42,21 @@ export default function PostsRowActions({
   const [optimisticLoadingEmails, setOptimisticLoadingEmails] =
     useOptimisticLoadingEmails();
 
-  const sendable =
-    !!data.email &&
-    !!data.ws_id &&
-    !!data.user_id &&
-    !!data.post_id &&
-    !!data.group_id &&
-    !!data.group_name &&
-    !!data.post_title &&
-    !!data.post_content &&
-    (data?.is_completed === true || data?.is_completed === false);
+  function validateEmailData(data: PostEmail): boolean {
+    return (
+      !!data.email &&
+      !!data.ws_id &&
+      !!data.user_id &&
+      !!data.post_id &&
+      !!data.group_id &&
+      !!data.group_name &&
+      !!data.post_title &&
+      !!data.post_content &&
+      (data?.is_completed === true || data?.is_completed === false)
+    );
+  }
+
+  const sendable = validateEmailData(data);
 
   // Check if email is sent (either from server data or optimistically)
   const isSent =
@@ -60,17 +68,7 @@ export default function PostsRowActions({
   const handleSendEmail = async () => {
     // The local loading, error, and success states are now managed by useEmail hook
 
-    if (
-      !!data.email &&
-      !!data.ws_id &&
-      !!data.user_id &&
-      !!data.post_id &&
-      !!data.group_id &&
-      !!data.group_name &&
-      !!data.post_title &&
-      !!data.post_content &&
-      (data?.is_completed === true || data?.is_completed === false)
-    ) {
+    if (validateEmailData(data)) {
       // Mark as optimistically loading immediately
       markAsOptimisticallyLoading(
         data,
@@ -96,7 +94,7 @@ export default function PostsRowActions({
           {
             id: data.user_id,
             email: data.email,
-            username: data.recipient || data.email || '<Chưa có tên>',
+            username: data.recipient || data.email || t('post-email-data-table.noName'),
             notes: data?.notes || '',
             is_completed: data?.is_completed,
           },
@@ -136,7 +134,7 @@ export default function PostsRowActions({
           !data.email ||
           isSent ||
           !sendable ||
-          data.email.includes('@easy') ||
+          data.email.includes(EASY_EMAIL_DOMAIN) ||
           isEmailBlacklisted ||
           localSuccess
         }
@@ -156,7 +154,7 @@ export default function PostsRowActions({
             <Ban className="h-4 w-4" />
             <span>{t('post-email-data-table.blocked')}</span>
           </>
-        ) : data?.email?.includes('@easy') ? (
+        ) : data?.email?.includes(EASY_EMAIL_DOMAIN) ? (
           <CircleSlash className="h-4 w-4" />
         ) : isLoading ? (
           <>
