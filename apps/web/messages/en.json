@@ -2441,7 +2441,8 @@
     "post_title_placeholder": "e.g. \"Meeting Notes\"",
     "post_content_placeholder": "e.g. \"Today we discussed the upcoming event.\"",
     "notes_placeholder": "e.g. \"Remember to follow up with the team.\"",
-    "noName": "No name"
+    "noName": "No name",
+    "missingWorkspaceId": "Workspace ID is required to send email"
   },
   "course-data-table": {
     "id": "ID",

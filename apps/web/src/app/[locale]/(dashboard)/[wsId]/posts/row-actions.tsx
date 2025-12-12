@@ -76,6 +76,12 @@ export default function PostsRowActions({
         setOptimisticLoadingEmails
       );
 
+      // Type guard: ensure ws_id is non-null (validated by validateEmailData)
+      if (!data.ws_id) {
+        toast.error(t('post-email-data-table.missingWorkspaceId'));
+        return;
+      }
+
       const success = await sendEmail({
         wsId: data.ws_id,
         postId: data.post_id,

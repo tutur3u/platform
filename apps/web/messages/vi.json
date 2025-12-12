@@ -2531,7 +2531,8 @@
     "post_title_placeholder": "vd: \"Ghi chú cuộc họp\"",
     "post_content_placeholder": "vd: \"Hôm nay chúng ta đã thảo luận về sự kiện sắp tới.\"",
     "notes_placeholder": "vd: \"Nhớ theo dõi với đội ngũ.\"",
-    "noName": "Chưa có tên"
+    "noName": "Chưa có tên",
+    "missingWorkspaceId": "Cần có mã không gian làm việc để gửi email"
   },
   "course-data-table": {
     "id": "Mã số",
