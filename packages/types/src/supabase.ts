@@ -16636,7 +16636,210 @@ export type Database = {
         | 'CreditCard'
         | 'Wallet'
         | 'ThumbsUp'
-        | 'Trophy';
+        | 'Trophy'
+        | 'Smartphone'
+        | 'Tablet'
+        | 'Cpu'
+        | 'HardDrive'
+        | 'Wifi'
+        | 'Bluetooth'
+        | 'Camera'
+        | 'Headphones'
+        | 'Speaker'
+        | 'Tv'
+        | 'Printer'
+        | 'Keyboard'
+        | 'Mouse'
+        | 'DollarSign'
+        | 'Banknote'
+        | 'Receipt'
+        | 'Calculator'
+        | 'TrendingDown'
+        | 'BarChart'
+        | 'BarChart2'
+        | 'LineChart'
+        | 'Activity'
+        | 'Coins'
+        | 'PiggyBank'
+        | 'Send'
+        | 'AtSign'
+        | 'Hash'
+        | 'MessageCircle'
+        | 'MessagesSquare'
+        | 'Share'
+        | 'Share2'
+        | 'Megaphone'
+        | 'Radio'
+        | 'Rss'
+        | 'File'
+        | 'FileCode'
+        | 'FileImage'
+        | 'FileAudio'
+        | 'FileVideo'
+        | 'FileSpreadsheet'
+        | 'FileCheck'
+        | 'FilePlus'
+        | 'FolderPlus'
+        | 'FolderCheck'
+        | 'Archive'
+        | 'ClipboardCheck'
+        | 'UserPlus'
+        | 'UserCheck'
+        | 'UserX'
+        | 'UserMinus'
+        | 'UsersRound'
+        | 'UserRound'
+        | 'Crown'
+        | 'Contact'
+        | 'Handshake'
+        | 'Map'
+        | 'Navigation'
+        | 'Compass'
+        | 'Locate'
+        | 'Milestone'
+        | 'Signpost'
+        | 'Route'
+        | 'Sun'
+        | 'Cloud'
+        | 'CloudRain'
+        | 'Snowflake'
+        | 'Wind'
+        | 'Thermometer'
+        | 'Umbrella'
+        | 'Rainbow'
+        | 'Leaf'
+        | 'Trees'
+        | 'Flower2'
+        | 'Mountain'
+        | 'HeartPulse'
+        | 'Stethoscope'
+        | 'Pill'
+        | 'Syringe'
+        | 'Dumbbell'
+        | 'Bike'
+        | 'Footprints'
+        | 'Brain'
+        | 'Salad'
+        | 'UtensilsCrossed'
+        | 'Coffee'
+        | 'Wine'
+        | 'Beer'
+        | 'Pizza'
+        | 'Cake'
+        | 'Cookie'
+        | 'IceCream2'
+        | 'Apple'
+        | 'Plane'
+        | 'Car'
+        | 'Bus'
+        | 'Train'
+        | 'Ship'
+        | 'Anchor'
+        | 'Luggage'
+        | 'Ticket'
+        | 'Hotel'
+        | 'Gamepad2'
+        | 'Dice1'
+        | 'Clapperboard'
+        | 'Popcorn'
+        | 'Drama'
+        | 'PartyPopper'
+        | 'Sparkles'
+        | 'Film'
+        | 'Tv2'
+        | 'Book'
+        | 'Library'
+        | 'PenTool'
+        | 'Highlighter'
+        | 'Ruler'
+        | 'School'
+        | 'Presentation'
+        | 'Languages'
+        | 'FlaskConical'
+        | 'Microscope'
+        | 'Atom'
+        | 'Dna'
+        | 'Telescope'
+        | 'Orbit'
+        | 'Satellite'
+        | 'Code'
+        | 'Code2'
+        | 'Terminal'
+        | 'GitBranch'
+        | 'GitMerge'
+        | 'GitPullRequest'
+        | 'Hammer'
+        | 'Axe'
+        | 'Scissors'
+        | 'Brush'
+        | 'Palette'
+        | 'Pipette'
+        | 'Eraser'
+        | 'CircleDot'
+        | 'Square'
+        | 'Triangle'
+        | 'Pentagon'
+        | 'Hexagon'
+        | 'Octagon'
+        | 'Diamond'
+        | 'Shapes'
+        | 'ShieldCheck'
+        | 'ShieldAlert'
+        | 'Fingerprint'
+        | 'ScanFace'
+        | 'KeyRound'
+        | 'LockKeyhole'
+        | 'UnlockKeyhole'
+        | 'Armchair'
+        | 'Bed'
+        | 'Bath'
+        | 'Lamp'
+        | 'Sofa'
+        | 'Shirt'
+        | 'Watch'
+        | 'Glasses'
+        | 'Gem'
+        | 'Award'
+        | 'Medal'
+        | 'BadgeCheck'
+        | 'Flag'
+        | 'Bookmark2'
+        | 'Pin'
+        | 'Magnet'
+        | 'Battery'
+        | 'Power'
+        | 'Plug'
+        | 'Infinity'
+        | 'QrCode'
+        | 'Barcode'
+        | 'Scan'
+        | 'Bot'
+        | 'BrainCircuit'
+        | 'Sparkle'
+        | 'Blocks'
+        | 'Layers'
+        | 'LayoutGrid'
+        | 'LayoutList'
+        | 'LayoutDashboard'
+        | 'ArrowRight'
+        | 'ArrowUp'
+        | 'ArrowDown'
+        | 'ArrowLeft'
+        | 'RefreshCw'
+        | 'RotateCcw'
+        | 'Repeat'
+        | 'Shuffle'
+        | 'Move'
+        | 'Maximize2'
+        | 'Minimize2'
+        | 'AlertCircle'
+        | 'AlertTriangle'
+        | 'Info'
+        | 'CircleCheck'
+        | 'CircleX'
+        | 'CircleAlert'
+        | 'BellRing'
+        | 'BellOff';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -17015,6 +17218,209 @@ export const Constants = {
         'Wallet',
         'ThumbsUp',
         'Trophy',
+        'Smartphone',
+        'Tablet',
+        'Cpu',
+        'HardDrive',
+        'Wifi',
+        'Bluetooth',
+        'Camera',
+        'Headphones',
+        'Speaker',
+        'Tv',
+        'Printer',
+        'Keyboard',
+        'Mouse',
+        'DollarSign',
+        'Banknote',
+        'Receipt',
+        'Calculator',
+        'TrendingDown',
+        'BarChart',
+        'BarChart2',
+        'LineChart',
+        'Activity',
+        'Coins',
+        'PiggyBank',
+        'Send',
+        'AtSign',
+        'Hash',
+        'MessageCircle',
+        'MessagesSquare',
+        'Share',
+        'Share2',
+        'Megaphone',
+        'Radio',
+        'Rss',
+        'File',
+        'FileCode',
+        'FileImage',
+        'FileAudio',
+        'FileVideo',
+        'FileSpreadsheet',
+        'FileCheck',
+        'FilePlus',
+        'FolderPlus',
+        'FolderCheck',
+        'Archive',
+        'ClipboardCheck',
+        'UserPlus',
+        'UserCheck',
+        'UserX',
+        'UserMinus',
+        'UsersRound',
+        'UserRound',
+        'Crown',
+        'Contact',
+        'Handshake',
+        'Map',
+        'Navigation',
+        'Compass',
+        'Locate',
+        'Milestone',
+        'Signpost',
+        'Route',
+        'Sun',
+        'Cloud',
+        'CloudRain',
+        'Snowflake',
+        'Wind',
+        'Thermometer',
+        'Umbrella',
+        'Rainbow',
+        'Leaf',
+        'Trees',
+        'Flower2',
+        'Mountain',
+        'HeartPulse',
+        'Stethoscope',
+        'Pill',
+        'Syringe',
+        'Dumbbell',
+        'Bike',
+        'Footprints',
+        'Brain',
+        'Salad',
+        'UtensilsCrossed',
+        'Coffee',
+        'Wine',
+        'Beer',
+        'Pizza',
+        'Cake',
+        'Cookie',
+        'IceCream2',
+        'Apple',
+        'Plane',
+        'Car',
+        'Bus',
+        'Train',
+        'Ship',
+        'Anchor',
+        'Luggage',
+        'Ticket',
+        'Hotel',
+        'Gamepad2',
+        'Dice1',
+        'Clapperboard',
+        'Popcorn',
+        'Drama',
+        'PartyPopper',
+        'Sparkles',
+        'Film',
+        'Tv2',
+        'Book',
+        'Library',
+        'PenTool',
+        'Highlighter',
+        'Ruler',
+        'School',
+        'Presentation',
+        'Languages',
+        'FlaskConical',
+        'Microscope',
+        'Atom',
+        'Dna',
+        'Telescope',
+        'Orbit',
+        'Satellite',
+        'Code',
+        'Code2',
+        'Terminal',
+        'GitBranch',
+        'GitMerge',
+        'GitPullRequest',
+        'Hammer',
+        'Axe',
+        'Scissors',
+        'Brush',
+        'Palette',
+        'Pipette',
+        'Eraser',
+        'CircleDot',
+        'Square',
+        'Triangle',
+        'Pentagon',
+        'Hexagon',
+        'Octagon',
+        'Diamond',
+        'Shapes',
+        'ShieldCheck',
+        'ShieldAlert',
+        'Fingerprint',
+        'ScanFace',
+        'KeyRound',
+        'LockKeyhole',
+        'UnlockKeyhole',
+        'Armchair',
+        'Bed',
+        'Bath',
+        'Lamp',
+        'Sofa',
+        'Shirt',
+        'Watch',
+        'Glasses',
+        'Gem',
+        'Award',
+        'Medal',
+        'BadgeCheck',
+        'Flag',
+        'Bookmark2',
+        'Pin',
+        'Magnet',
+        'Battery',
+        'Power',
+        'Plug',
+        'Infinity',
+        'QrCode',
+        'Barcode',
+        'Scan',
+        'Bot',
+        'BrainCircuit',
+        'Sparkle',
+        'Blocks',
+        'Layers',
+        'LayoutGrid',
+        'LayoutList',
+        'LayoutDashboard',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'RefreshCw',
+        'RotateCcw',
+        'Repeat',
+        'Shuffle',
+        'Move',
+        'Maximize2',
+        'Minimize2',
+        'AlertCircle',
+        'AlertTriangle',
+        'Info',
+        'CircleCheck',
+        'CircleX',
+        'CircleAlert',
+        'BellRing',
+        'BellOff',
       ],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
