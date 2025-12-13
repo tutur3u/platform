@@ -60,22 +60,22 @@ export function useTaskFormState({
 
   // Scheduling fields
   const [totalDuration, setTotalDuration] = useState<number | null>(
-    task?.total_duration ?? null
+    (task as any)?.total_duration ?? null
   );
   const [isSplittable, setIsSplittable] = useState<boolean>(
-    task?.is_splittable ?? true
+    (task as any)?.is_splittable ?? false
   );
   const [minSplitDurationMinutes, setMinSplitDurationMinutes] = useState<
     number | null
-  >(task?.min_split_duration_minutes ?? null);
+  >((task as any)?.min_split_duration_minutes ?? null);
   const [maxSplitDurationMinutes, setMaxSplitDurationMinutes] = useState<
     number | null
-  >(task?.max_split_duration_minutes ?? null);
+  >((task as any)?.max_split_duration_minutes ?? null);
   const [calendarHours, setCalendarHours] = useState<CalendarHoursType | null>(
-    task?.calendar_hours ?? null
+    (task as any)?.calendar_hours ?? null
   );
   const [autoSchedule, setAutoSchedule] = useState<boolean>(
-    task?.auto_schedule ?? true
+    (task as any)?.auto_schedule ?? false
   );
 
   // Draft state
@@ -125,6 +125,7 @@ export function useTaskFormState({
 
   // Reset form state
   const resetFormState = useCallback((newTask?: Task) => {
+    const legacyScheduling = newTask as any;
     setName(newTask?.name || '');
     setDescription(getDescriptionContent(newTask?.description) || null);
     setPriority(newTask?.priority || null);
@@ -138,12 +139,16 @@ export function useTaskFormState({
     setSelectedAssignees(newTask?.assignees || []);
     setSelectedProjects(newTask?.projects || []);
     // Reset scheduling fields
-    setTotalDuration(newTask?.total_duration ?? null);
-    setIsSplittable(newTask?.is_splittable ?? true);
-    setMinSplitDurationMinutes(newTask?.min_split_duration_minutes ?? null);
-    setMaxSplitDurationMinutes(newTask?.max_split_duration_minutes ?? null);
-    setCalendarHours(newTask?.calendar_hours ?? null);
-    setAutoSchedule(newTask?.auto_schedule ?? true);
+    setTotalDuration(legacyScheduling?.total_duration ?? null);
+    setIsSplittable(legacyScheduling?.is_splittable ?? false);
+    setMinSplitDurationMinutes(
+      legacyScheduling?.min_split_duration_minutes ?? null
+    );
+    setMaxSplitDurationMinutes(
+      legacyScheduling?.max_split_duration_minutes ?? null
+    );
+    setCalendarHours(legacyScheduling?.calendar_hours ?? null);
+    setAutoSchedule(legacyScheduling?.auto_schedule ?? false);
   }, []);
 
   // Load draft when opening in create mode

@@ -23,6 +23,12 @@ type TaskSchedulerPanelProps = {
   wsId: string;
   userId: string;
   onEventCreated?: () => void;
+  /**
+   * Personal calendar mode:
+   * - scheduling creates events in the current user's personal workspace calendar
+   * - progress counts only events in that personal calendar
+   */
+  isPersonalWorkspace?: boolean;
 };
 
 function formatDuration(totalMinutes: number): string {
@@ -35,17 +41,26 @@ function formatDuration(totalMinutes: number): string {
 
 async function fetchSchedulableTasks(
   userId: string,
+  calendarWsId: string,
+  // kept for backward compatibility; progress is always scoped to calendarWsId now
+  _isPersonalWorkspace: boolean,
   searchQuery?: string
 ): Promise<TaskWithScheduling[]> {
   const supabase = createClient();
 
-  // Fetch tasks assigned to user that have duration set
-  // Include workspace ID via task_lists -> workspace_boards relation
-  let query = supabase
-    .from('task_assignees')
+  // Scheduling settings are per-user: load tasks via task_user_scheduling_settings
+  // then join the task (and its workspace via list -> board).
+  let settingsQuery = (supabase as any)
+    .from('task_user_scheduling_settings')
     .select(
       `
-      ...tasks!inner(
+      total_duration,
+      is_splittable,
+      min_split_duration_minutes,
+      max_split_duration_minutes,
+      calendar_hours,
+      auto_schedule,
+      tasks!inner(
         *,
         task_lists!inner(
           workspace_boards!inner(
@@ -56,21 +71,21 @@ async function fetchSchedulableTasks(
     `
     )
     .eq('user_id', userId)
-    .gt('tasks.total_duration', 0);
+    .gt('total_duration', 0);
 
   if (searchQuery?.trim()) {
-    query = query.ilike('tasks.name', `%${searchQuery}%`);
+    settingsQuery = settingsQuery.ilike('tasks.name', `%${searchQuery}%`);
   }
 
-  const { data: assignedTasks, error } = await query;
-
+  const { data: rows, error } = await settingsQuery;
   if (error) {
     console.error('Error fetching schedulable tasks:', error);
     return [];
   }
 
   // Fetch scheduled events for these tasks
-  const taskIds = assignedTasks?.map((t: any) => t.id) || [];
+  const taskIds =
+    (rows as any[] | null)?.map((r) => r.tasks?.id).filter(Boolean) || [];
 
   if (taskIds.length === 0) {
     return [];
@@ -81,17 +96,36 @@ async function fetchSchedulableTasks(
   // 2. workspace_calendar_events with task_id (for direct reference)
 
   // First, try the junction table
-  const { data: junctionEvents } = await (supabase as any)
+  let junctionQuery = (supabase as any)
     .from('task_calendar_events')
-    .select('task_id, scheduled_minutes, completed')
+    .select(
+      `
+      task_id,
+      scheduled_minutes,
+      completed,
+      workspace_calendar_events!inner(ws_id)
+    `
+    )
     .in('task_id', taskIds);
 
+  // Always scope progress to the current calendar workspace.
+  junctionQuery = junctionQuery.eq(
+    'workspace_calendar_events.ws_id',
+    calendarWsId
+  );
+
+  const { data: junctionEvents } = await junctionQuery;
+
   // Also query directly from calendar events with task_id
-  const { data: directEvents } = await supabase
+  let directQuery = supabase
     .from('workspace_calendar_events')
     .select('task_id, start_at, end_at')
     .in('task_id', taskIds)
     .not('task_id', 'is', null);
+
+  directQuery = directQuery.eq('ws_id', calendarWsId);
+
+  const { data: directEvents } = await directQuery;
 
   // Calculate scheduled and completed minutes per task
   const taskSchedulingMap = new Map<
@@ -147,28 +181,40 @@ async function fetchSchedulableTasks(
     }
   });
 
-  // Merge scheduling info into tasks and extract workspace ID
-  return (assignedTasks || []).map((task: any) => {
-    const scheduling = taskSchedulingMap.get(task.id) || {
-      scheduled_minutes: 0,
-      completed_minutes: 0,
-    };
-    // Extract ws_id from nested relation and remove the nested objects
-    const wsId = task.task_lists?.workspace_boards?.ws_id;
-    const { task_lists: _task_lists, ...taskWithoutLists } = task;
-    return {
-      ...taskWithoutLists,
-      ws_id: wsId,
-      scheduled_minutes: scheduling.scheduled_minutes,
-      completed_minutes: scheduling.completed_minutes,
-    };
-  });
+  // Merge per-user settings + scheduling info into tasks and extract workspace ID
+  return ((rows as any[]) || [])
+    .map((row: any) => {
+      const task = row.tasks;
+      if (!task?.id) return null;
+
+      const scheduling = taskSchedulingMap.get(task.id) || {
+        scheduled_minutes: 0,
+        completed_minutes: 0,
+      };
+      // Extract ws_id from nested relation and remove the nested objects
+      const wsId = task.task_lists?.workspace_boards?.ws_id;
+      const { task_lists: _task_lists, ...taskWithoutLists } = task;
+      return {
+        ...taskWithoutLists,
+        ws_id: wsId,
+        total_duration: row.total_duration,
+        is_splittable: row.is_splittable,
+        min_split_duration_minutes: row.min_split_duration_minutes,
+        max_split_duration_minutes: row.max_split_duration_minutes,
+        calendar_hours: row.calendar_hours,
+        auto_schedule: row.auto_schedule,
+        scheduled_minutes: scheduling.scheduled_minutes,
+        completed_minutes: scheduling.completed_minutes,
+      };
+    })
+    .filter(Boolean);
 }
 
 export function TaskSchedulerPanel({
   wsId,
   userId,
   onEventCreated,
+  isPersonalWorkspace = false,
 }: TaskSchedulerPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
@@ -178,8 +224,15 @@ export function TaskSchedulerPanel({
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ['schedulable-tasks', userId, searchQuery],
-    queryFn: () => fetchSchedulableTasks(userId, searchQuery),
+    queryKey: [
+      'schedulable-tasks',
+      userId,
+      wsId,
+      isPersonalWorkspace,
+      searchQuery,
+    ],
+    queryFn: () =>
+      fetchSchedulableTasks(userId, wsId, isPersonalWorkspace, searchQuery),
     staleTime: 30000,
   });
 
@@ -188,12 +241,11 @@ export function TaskSchedulerPanel({
 
     setSchedulingTaskId(task.id);
 
-    // Use the task's workspace ID for the API call, not the current workspace
-    const taskWsId = task.ws_id || wsId;
-
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${taskWsId}/tasks/${task.id}/schedule`,
+        isPersonalWorkspace
+          ? `/api/v1/users/me/tasks/${task.id}/schedule`
+          : `/api/v1/workspaces/${task.ws_id || wsId}/tasks/${task.id}/schedule`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

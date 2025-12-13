@@ -7694,6 +7694,81 @@ export type Database = {
           },
         ];
       };
+      task_user_scheduling_settings: {
+        Row: {
+          auto_schedule: boolean;
+          calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
+          created_at: string;
+          is_splittable: boolean;
+          max_split_duration_minutes: number | null;
+          min_split_duration_minutes: number | null;
+          task_id: string;
+          total_duration: number | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          auto_schedule?: boolean;
+          calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
+          created_at?: string;
+          is_splittable?: boolean;
+          max_split_duration_minutes?: number | null;
+          min_split_duration_minutes?: number | null;
+          task_id: string;
+          total_duration?: number | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          auto_schedule?: boolean;
+          calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
+          created_at?: string;
+          is_splittable?: boolean;
+          max_split_duration_minutes?: number | null;
+          min_split_duration_minutes?: number | null;
+          task_id?: string;
+          total_duration?: number | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_user_scheduling_settings_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_scheduling_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_scheduling_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_scheduling_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_scheduling_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_watchers: {
         Row: {
           created_at: string;
@@ -7753,9 +7828,7 @@ export type Database = {
       };
       tasks: {
         Row: {
-          auto_schedule: boolean | null;
           board_id: string | null;
-          calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
           closed_at: string | null;
           completed: boolean | null;
           completed_at: string | null;
@@ -7770,20 +7843,14 @@ export type Database = {
           estimation_points: number | null;
           fts: unknown;
           id: string;
-          is_splittable: boolean | null;
           list_id: string | null;
-          max_split_duration_minutes: number | null;
-          min_split_duration_minutes: number | null;
           name: string;
           priority: Database['public']['Enums']['task_priority'] | null;
           sort_key: number | null;
           start_date: string | null;
-          total_duration: number | null;
         };
         Insert: {
-          auto_schedule?: boolean | null;
           board_id?: string | null;
-          calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
           completed_at?: string | null;
@@ -7798,20 +7865,14 @@ export type Database = {
           estimation_points?: number | null;
           fts?: unknown;
           id?: string;
-          is_splittable?: boolean | null;
           list_id?: string | null;
-          max_split_duration_minutes?: number | null;
-          min_split_duration_minutes?: number | null;
           name: string;
           priority?: Database['public']['Enums']['task_priority'] | null;
           sort_key?: number | null;
           start_date?: string | null;
-          total_duration?: number | null;
         };
         Update: {
-          auto_schedule?: boolean | null;
           board_id?: string | null;
-          calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
           completed_at?: string | null;
@@ -7826,15 +7887,11 @@ export type Database = {
           estimation_points?: number | null;
           fts?: unknown;
           id?: string;
-          is_splittable?: boolean | null;
           list_id?: string | null;
-          max_split_duration_minutes?: number | null;
-          min_split_duration_minutes?: number | null;
           name?: string;
           priority?: Database['public']['Enums']['task_priority'] | null;
           sort_key?: number | null;
           start_date?: string | null;
-          total_duration?: number | null;
         };
         Relationships: [
           {
@@ -15766,7 +15823,6 @@ export type Database = {
           p_ws_id?: string;
         };
         Returns: {
-          task_calendar_hours: Database['public']['Enums']['calendar_hours'];
           task_closed_at: string;
           task_completed_at: string;
           task_created_at: string;
@@ -15776,14 +15832,10 @@ export type Database = {
           task_end_date: string;
           task_estimation_points: number;
           task_id: string;
-          task_is_splittable: boolean;
           task_list_id: string;
-          task_max_split_duration_minutes: number;
-          task_min_split_duration_minutes: number;
           task_name: string;
           task_priority: Database['public']['Enums']['task_priority'];
           task_start_date: string;
-          task_total_duration: number;
         }[];
       };
       get_user_activity_cohorts: {

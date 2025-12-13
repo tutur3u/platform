@@ -14,7 +14,6 @@ import {
   convertHourSettingsToActiveHours,
   convertWebEventsToLocked,
   convertWebTaskToSchedulerTask,
-  getEffectivePriority,
   scheduleTasks,
 } from '@tuturuuu/ai/scheduling';
 import type { SupabaseClient } from '@tuturuuu/supabase';
@@ -280,7 +279,7 @@ export async function scheduleTask(
       .select(`
         event_id,
         scheduled_minutes,
-        workspace_calendar_events!inner(start_at)
+        workspace_calendar_events!inner(start_at, ws_id)
       `)
       .eq('task_id', task.id);
 
@@ -289,6 +288,10 @@ export async function scheduleTask(
 
       for (const link of existingLinks) {
         const eventStartAt = link.workspace_calendar_events?.start_at;
+        const eventWsId = link.workspace_calendar_events?.ws_id;
+        // Only re-optimize events that belong to the target calendar workspace.
+        // This prevents one user's personal scheduling from deleting another user's events.
+        if (eventWsId && eventWsId !== wsId) continue;
         if (eventStartAt) {
           const eventStart = new Date(eventStartAt);
           if (eventStart >= now) {
@@ -356,7 +359,6 @@ export async function scheduleTask(
   const isUrgent =
     taskEndDate &&
     (taskEndDate.getTime() - now.getTime()) / (1000 * 60 * 60) <= 48;
-  const tasksToReschedule: string[] = []; // Track tasks that need re-scheduling
 
   if (isUrgent && taskEndDate) {
     // Find events from other tasks that have later deadlines and are blocking our urgent time window
@@ -369,7 +371,7 @@ export async function scheduleTask(
         .select(`
           event_id,
           task_id,
-          tasks!inner(id, end_date, auto_schedule),
+          tasks!inner(id, end_date),
           workspace_calendar_events!inner(id, start_at, end_at)
         `)
         .neq('task_id', task.id)
@@ -391,14 +393,6 @@ export async function scheduleTask(
           // Move event if: other task has no deadline, or deadline is after our urgent task's deadline
           if (!otherTaskEndDate || otherTaskEndDate > taskEndDate) {
             eventsToMove.push(be.event_id);
-
-            // Track tasks with auto_schedule enabled for re-scheduling
-            if (
-              be.tasks?.auto_schedule &&
-              !tasksToReschedule.includes(be.task_id)
-            ) {
-              tasksToReschedule.push(be.task_id);
-            }
           }
         }
 
@@ -642,129 +636,17 @@ async function rescheduleTasksOnly(
   errors: string[];
   warnings: string[];
 }> {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  let rescheduledCount = 0;
-
-  try {
-    // 1. Fetch ALL auto-schedule tasks
-    const { data: autoScheduleTasks, error } = await supabase
-      .from('tasks')
-      .select(`
-        *,
-        task_lists!inner(
-          workspace_boards!inner(ws_id)
-        )
-      `)
-      .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('auto_schedule', true)
-      .gt('total_duration', 0);
-
-    if (error) {
-      console.error('Error fetching auto-schedule tasks:', error);
-      return { rescheduledCount: 0, errors: [error.message], warnings: [] };
-    }
-
-    if (!autoScheduleTasks || autoScheduleTasks.length === 0) {
-      return { rescheduledCount: 0, errors: [], warnings: [] };
-    }
-
-    // 2. Sort by effective priority (inferred from deadline if not set) then deadline
-    const sortedTasks = [...autoScheduleTasks].sort((a: any, b: any) => {
-      // Primary: Effective priority (highest first)
-      const aPriority = getEffectivePriority({
-        priority: a.priority,
-        end_date: a.end_date,
-      });
-      const bPriority = getEffectivePriority({
-        priority: b.priority,
-        end_date: b.end_date,
-      });
-
-      const priorityOrder: Record<string, number> = {
-        critical: 0,
-        high: 1,
-        normal: 2,
-        low: 3,
-      };
-
-      const priorityDiff =
-        (priorityOrder[aPriority] ?? 2) - (priorityOrder[bPriority] ?? 2);
-      if (priorityDiff !== 0) return priorityDiff;
-
-      // Secondary: Deadline (earliest first, null deadlines last)
-      if (!a.end_date && !b.end_date) return 0;
-      if (!a.end_date) return 1;
-      if (!b.end_date) return -1;
-      return new Date(a.end_date).getTime() - new Date(b.end_date).getTime();
-    });
-
-    // 3. Delete ALL future events from ALL these tasks first
-    const taskIds = sortedTasks.map((t: any) => t.id);
-    const now = new Date();
-
-    try {
-      const { data: allLinks } = await (supabase as any)
-        .from('task_calendar_events')
-        .select('event_id, task_id, workspace_calendar_events!inner(start_at)')
-        .in('task_id', taskIds);
-
-      if (allLinks && allLinks.length > 0) {
-        const futureEventIds = allLinks
-          .filter(
-            (link: any) =>
-              new Date(link.workspace_calendar_events.start_at) >= now
-          )
-          .map((link: any) => link.event_id);
-
-        if (futureEventIds.length > 0) {
-          await supabase
-            .from('workspace_calendar_events')
-            .delete()
-            .in('id', futureEventIds);
-        }
-      }
-    } catch (deleteError) {
-      console.error('Error deleting future events:', deleteError);
-      // Continue with scheduling even if deletion fails
-    }
-
-    // 4. Schedule each task in priority + deadline order
-    for (const taskData of sortedTasks) {
-      try {
-        const result = await scheduleTask(
-          supabase,
-          wsId,
-          taskData as TaskWithScheduling
-        );
-        if (result.success) {
-          rescheduledCount++;
-          if (result.warning) {
-            warnings.push(`${taskData.name || 'Task'}: ${result.warning}`);
-          }
-        } else {
-          errors.push(`${taskData.name || 'Task'}: ${result.message}`);
-        }
-      } catch (rescheduleError: unknown) {
-        const errorMessage =
-          rescheduleError instanceof Error
-            ? rescheduleError.message
-            : 'Unknown error';
-        console.error(
-          `Failed to re-schedule task ${taskData.id}:`,
-          rescheduleError
-        );
-        errors.push(`${taskData.name || taskData.id}: ${errorMessage}`);
-      }
-    }
-  } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error in rescheduleTasksOnly:', error);
-    errors.push(errorMessage);
-  }
-
-  return { rescheduledCount, errors, warnings };
+  // Legacy task-only scheduling depended on `tasks.auto_schedule` and duration fields.
+  // Task scheduling is now per-user via `task_user_scheduling_settings`. Without a
+  // user context, this mode cannot run safely.
+  void supabase;
+  return {
+    rescheduledCount: 0,
+    errors: [],
+    warnings: [
+      `Skipped legacy workspace task-only scheduling for ws_id=${wsId} (task scheduling is user-scoped).`,
+    ],
+  };
 }
 
 /**

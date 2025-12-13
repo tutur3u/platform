@@ -1,11 +1,8 @@
-import {
-  rescheduleAllAutoScheduleTasks,
-  scheduleTask,
-} from '@/lib/calendar/task-scheduler';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { scheduleTask } from '@/lib/calendar/task-scheduler';
 
 interface ScheduleParams {
   wsId: string;
@@ -73,7 +70,7 @@ export async function POST(
       );
     }
 
-    // Fetch the task with scheduling fields
+    // Fetch the task base fields (scheduling settings are per-user)
     const { data: task, error: taskError } = await supabase
       .from('tasks')
       .select(
@@ -104,12 +101,40 @@ export async function POST(
       );
     }
 
-    // Check if task has duration set
-    if (!taskWithLists.total_duration || taskWithLists.total_duration <= 0) {
+    // Load per-user scheduling settings
+    const { data: settingsRow } = await (supabase as any)
+      .from('task_user_scheduling_settings')
+      .select(
+        `
+        total_duration,
+        is_splittable,
+        min_split_duration_minutes,
+        max_split_duration_minutes,
+        calendar_hours,
+        auto_schedule
+      `
+      )
+      .eq('task_id', taskId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const settings = settingsRow as any;
+
+    // Check if user has duration set
+    if (!settings?.total_duration || settings.total_duration <= 0) {
       return NextResponse.json(
         {
           error:
             'Task has no duration set. Please set an estimated duration before scheduling.',
+        },
+        { status: 400 }
+      );
+    }
+    if (!settings?.calendar_hours) {
+      return NextResponse.json(
+        {
+          error:
+            'Hour type is required. Please select an hour type before scheduling.',
         },
         { status: 400 }
       );
@@ -119,7 +144,12 @@ export async function POST(
     // scheduleTask() handles re-optimization internally (removes future events, keeps past)
     const taskWithScheduling: TaskWithScheduling = {
       ...taskWithLists,
-      // start_date, end_date, and priority are included from the * select
+      total_duration: settings.total_duration,
+      is_splittable: settings.is_splittable ?? false,
+      min_split_duration_minutes: settings.min_split_duration_minutes ?? null,
+      max_split_duration_minutes: settings.max_split_duration_minutes ?? null,
+      calendar_hours: settings.calendar_hours,
+      auto_schedule: settings.auto_schedule ?? false,
     };
 
     // Schedule the task
@@ -133,27 +163,13 @@ export async function POST(
       return NextResponse.json({ error: result.message }, { status: 400 });
     }
 
-    // Reschedule ALL auto-schedule tasks (including the current one) in deadline order
-    // This ensures optimal calendar distribution - tasks with earlier deadlines get earlier slots
-    const rescheduleResult = await rescheduleAllAutoScheduleTasks(
-      supabase as any,
-      wsId
-    );
-
-    // Combine warnings from both operations
-    const allWarnings = [
-      ...(result.warning ? [result.warning] : []),
-      ...rescheduleResult.warnings,
-    ].filter(Boolean);
-
     return NextResponse.json({
       success: true,
       message: result.message,
       events: result.events,
       totalScheduledMinutes: result.totalScheduledMinutes,
-      warning: allWarnings.length > 0 ? allWarnings.join('; ') : undefined,
-      warnings: allWarnings,
-      rescheduledOtherTasks: rescheduleResult.rescheduledCount,
+      warning: result.warning,
+      warnings: result.warning ? [result.warning] : [],
     });
   } catch (error) {
     console.error('Error scheduling task:', error);
@@ -209,19 +225,13 @@ export async function GET(
       );
     }
 
-    // Fetch task with scheduling fields
-    // Note: auto_schedule column requires migration to be applied
+    // Fetch task base fields and verify it belongs to the specified workspace
     const { data: task, error: taskError } = await supabase
       .from('tasks')
       .select(
         `
         id,
         name,
-        total_duration,
-        is_splittable,
-        min_split_duration_minutes,
-        max_split_duration_minutes,
-        calendar_hours,
         task_lists!inner (
           workspace_boards!inner (
             ws_id
@@ -246,6 +256,25 @@ export async function GET(
         { status: 403 }
       );
     }
+
+    // Fetch per-user scheduling settings for this task
+    const { data: settingsRow } = await (supabase as any)
+      .from('task_user_scheduling_settings')
+      .select(
+        `
+        total_duration,
+        is_splittable,
+        min_split_duration_minutes,
+        max_split_duration_minutes,
+        calendar_hours,
+        auto_schedule
+      `
+      )
+      .eq('task_id', taskId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const settings = settingsRow as any;
 
     // Fetch scheduled events for this task
     // Note: task_calendar_events table requires migration to be applied
@@ -276,20 +305,20 @@ export async function GET(
         (sum, e) => sum + (e.completed ? e.scheduled_minutes || 0 : 0),
         0
       ) ?? 0;
-    const totalMinutes = (taskWithRelations.total_duration ?? 0) * 60;
+    const totalMinutes = (settings?.total_duration ?? 0) * 60;
 
     return NextResponse.json({
       task: {
         id: taskWithRelations.id,
         name: taskWithRelations.name,
-        total_duration: taskWithRelations.total_duration,
-        is_splittable: taskWithRelations.is_splittable,
+        total_duration: settings?.total_duration ?? null,
+        is_splittable: settings?.is_splittable ?? false,
         min_split_duration_minutes:
-          taskWithRelations.min_split_duration_minutes,
+          settings?.min_split_duration_minutes ?? null,
         max_split_duration_minutes:
-          taskWithRelations.max_split_duration_minutes,
-        calendar_hours: taskWithRelations.calendar_hours,
-        auto_schedule: taskWithRelations.auto_schedule ?? false,
+          settings?.max_split_duration_minutes ?? null,
+        calendar_hours: settings?.calendar_hours ?? null,
+        auto_schedule: settings?.auto_schedule ?? false,
       },
       scheduling: {
         totalMinutes,

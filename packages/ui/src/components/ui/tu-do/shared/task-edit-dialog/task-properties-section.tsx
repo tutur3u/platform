@@ -1546,7 +1546,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
                       >
                         <Zap className="h-3.5 w-3.5" />
-                        Auto-schedule
+                        Auto-schedule (for me)
                       </Label>
                       <Switch
                         id="auto-schedule"

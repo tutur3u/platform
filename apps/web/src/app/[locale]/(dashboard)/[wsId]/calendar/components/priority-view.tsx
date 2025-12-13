@@ -231,8 +231,12 @@ export default function PriorityView({
   const { data: scheduledMinutesMap = {} } = useQuery({
     queryKey: [
       'scheduled-events-batch',
-      wsId,
-      tasksWithScheduling.map((t) => t.id).join(','),
+      // Include workspace context because personal workspace can include cross-workspace tasks.
+      tasksWithScheduling
+        .map((t) => `${t.ws_id ?? wsId}:${t.id}`)
+        .sort()
+        .join(','),
+      isPersonalWorkspace ? 'personal' : 'workspace',
     ],
     queryFn: async () => {
       if (tasksWithScheduling.length === 0) return {};
@@ -241,7 +245,9 @@ export default function PriorityView({
       const results = await Promise.allSettled(
         tasksWithScheduling.map(async (task) => {
           const response = await fetch(
-            `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
+            isPersonalWorkspace
+              ? `/api/v1/users/me/tasks/${task.id}/schedule`
+              : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`
           );
           if (!response.ok) return { taskId: task.id, minutes: 0 };
           const data = await response.json();
@@ -322,10 +328,10 @@ export default function PriorityView({
   }, 500);
 
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
-    // TODO: Implement API call to update task priority
-    console.log('Updating task priority:', taskId, newPriority);
+    const task = combinedTasks.find((t) => t.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
 
-    const response = await fetch(`/api/${wsId}/task/${taskId}/edit`, {
+    const response = await fetch(`/api/${taskWsId}/task/${taskId}/edit`, {
       method: 'PATCH',
       body: JSON.stringify({ priority: newPriority }),
     });
@@ -655,7 +661,7 @@ export default function PriorityView({
                               {/* Task Name */}
                               <div
                                 className={cn(
-                                  'line-clamp-2 cursor-pointer break-words font-medium text-sm transition-colors hover:text-primary',
+                                  'wrap-break-word line-clamp-2 cursor-pointer font-medium text-sm transition-colors hover:text-primary',
                                   isCompleted && 'text-muted-foreground'
                                 )}
                               >
@@ -825,6 +831,7 @@ export default function PriorityView({
         task={selectedTask}
         open={schedulingDialogOpen}
         onOpenChange={setSchedulingDialogOpen}
+        isPersonalWorkspace={isPersonalWorkspace}
       />
       <QuickTaskDialog
         wsId={wsId}

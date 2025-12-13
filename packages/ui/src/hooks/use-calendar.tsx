@@ -60,7 +60,11 @@ const CalendarContext = createContext<{
   deleteEvent: (eventId: string) => Promise<void>;
   isModalOpen: boolean;
   activeEvent: CalendarEvent | undefined;
-  openModal: (eventId?: string, modalType?: 'all-day' | 'event') => void;
+  openModal: (
+    eventId?: string,
+    modalType?: 'all-day' | 'event',
+    options?: { defaultNewEventTab?: 'manual' | 'ai' }
+  ) => void;
   closeModal: () => void;
   isEditing: () => boolean;
   hideModal: () => void;
@@ -105,6 +109,8 @@ const CalendarContext = createContext<{
   // Hide non-preview events during preview mode (for performance)
   hideNonPreviewEvents: boolean;
   setHideNonPreviewEvents: (hide: boolean) => void;
+  // UX: allow callers (e.g. create button) to influence default tab for *new* events.
+  defaultNewEventTab: 'manual' | 'ai';
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -152,6 +158,7 @@ const CalendarContext = createContext<{
   // Hide non-preview events
   hideNonPreviewEvents: false,
   setHideNonPreviewEvents: () => undefined,
+  defaultNewEventTab: 'ai',
 });
 
 // Add this interface before the updateEvent function
@@ -171,7 +178,8 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
 async function syncTaskDurationAfterEventChange(
   supabase: any, // Using any to avoid Supabase type issues with task_calendar_events
   eventId: string,
-  eventData: { start_at: string; end_at: string; task_id?: string | null }
+  eventData: { start_at: string; end_at: string; task_id?: string | null },
+  options?: { calendarWsId?: string; isPersonalCalendar?: boolean }
 ) {
   try {
     // Get task_id either from event or junction table
@@ -216,11 +224,18 @@ async function syncTaskDurationAfterEventChange(
       return;
     }
 
-    // Get all scheduled events for this task and sum their minutes
+    // Get all scheduled events for this task *in the active calendar workspace* and sum their minutes
+    const calendarWsId = options?.calendarWsId;
     const { data: allEvents, error: eventsError } = await supabase
       .from('task_calendar_events')
-      .select('scheduled_minutes')
-      .eq('task_id', taskId);
+      .select(
+        `
+        scheduled_minutes,
+        workspace_calendar_events!inner(ws_id)
+      `
+      )
+      .eq('task_id', taskId)
+      .eq('workspace_calendar_events.ws_id', calendarWsId);
 
     if (eventsError) {
       console.error('Failed to fetch task events:', eventsError);
@@ -234,26 +249,68 @@ async function syncTaskDurationAfterEventChange(
     );
     const totalScheduledHours = totalScheduledMinutes / 60;
 
-    // Get current task duration
-    const { data: task, error: taskError } = await supabase
-      .from('tasks')
-      .select('total_duration')
-      .eq('id', taskId)
-      .single();
+    // Personal workspace calendars should not mutate shared task duration.
+    // Instead, keep a per-user scheduling estimate.
+    if (options?.isPersonalCalendar) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) return;
 
-    if (taskError) {
-      console.error('Failed to fetch task:', taskError);
+      const { data: existing } = await supabase
+        .from('task_user_scheduling_settings')
+        .select('total_duration')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const currentDuration = (existing as any)?.total_duration || 0;
+      if (totalScheduledHours > currentDuration) {
+        const { error: updateError } = await supabase
+          .from('task_user_scheduling_settings')
+          .upsert(
+            {
+              task_id: taskId,
+              user_id: user.id,
+              total_duration: totalScheduledHours,
+            },
+            { onConflict: 'task_id,user_id' }
+          );
+        if (updateError) {
+          console.error(
+            'Failed to update personal task duration:',
+            updateError
+          );
+        }
+      }
       return;
     }
 
-    const currentDuration = task?.total_duration || 0;
+    // Non-personal calendars also use per-user scheduling settings.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.id) return;
 
-    // If scheduled exceeds current duration, update the task
+    const { data: existing } = await supabase
+      .from('task_user_scheduling_settings')
+      .select('total_duration')
+      .eq('task_id', taskId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const currentDuration = (existing as any)?.total_duration || 0;
     if (totalScheduledHours > currentDuration) {
       const { error: updateError } = await supabase
-        .from('tasks')
-        .update({ total_duration: totalScheduledHours })
-        .eq('id', taskId);
+        .from('task_user_scheduling_settings')
+        .upsert(
+          {
+            task_id: taskId,
+            user_id: user.id,
+            total_duration: totalScheduledHours,
+          },
+          { onConflict: 'task_id,user_id' }
+        );
 
       if (updateError) {
         console.error('Failed to update task duration:', updateError);
@@ -296,6 +353,9 @@ export const CalendarProvider = ({
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
+  const [defaultNewEventTab, setDefaultNewEventTab] = useState<'manual' | 'ai'>(
+    'ai'
+  );
 
   // Callback for when a task is scheduled (allows components to refresh)
   const [onTaskScheduled, setOnTaskScheduled] = useState<
@@ -710,11 +770,16 @@ export const CalendarProvider = ({
 
         // If event times changed, sync task's total_duration
         if (data && (cleanUpdateData.start_at || cleanUpdateData.end_at)) {
-          await syncTaskDurationAfterEventChange(supabase, eventId, {
-            start_at: data.start_at,
-            end_at: data.end_at,
-            task_id: data.task_id,
-          });
+          await syncTaskDurationAfterEventChange(
+            supabase,
+            eventId,
+            {
+              start_at: data.start_at,
+              end_at: data.end_at,
+              task_id: data.task_id,
+            },
+            { calendarWsId: ws?.id, isPersonalCalendar: !!ws?.personal }
+          );
           // Invalidate task-related queries to refresh sidebar
           queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
           queryClient.invalidateQueries({
@@ -752,7 +817,7 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws?.id, queryClient, onTaskScheduled]);
+  }, [refresh, events, ws?.id, ws?.personal, queryClient, onTaskScheduled]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -1319,31 +1384,40 @@ export const CalendarProvider = ({
   );
 
   // Modal management
-  const openModal = useCallback((eventId?: string) => {
-    if (eventId) {
-      // Opening an existing event
-      setActiveEventId(eventId);
-      setPendingNewEvent(null);
-    } else {
-      // Creating a new event
-      const now = roundToNearest15Minutes(new Date());
-      const oneHourLater = new Date(now);
-      oneHourLater.setHours(oneHourLater.getHours() + 1);
+  const openModal = useCallback(
+    (
+      eventId?: string,
+      _modalType?: 'all-day' | 'event',
+      options?: { defaultNewEventTab?: 'manual' | 'ai' }
+    ) => {
+      if (eventId) {
+        // Opening an existing event
+        setActiveEventId(eventId);
+        setPendingNewEvent(null);
+      } else {
+        // Creating a new event
+        setDefaultNewEventTab(options?.defaultNewEventTab ?? 'ai');
 
-      // Create a pending new event
-      const newEvent: Omit<CalendarEvent, 'id'> = {
-        title: '',
-        description: '',
-        start_at: now.toISOString(),
-        end_at: oneHourLater.toISOString(),
-        color: 'BLUE',
-      };
+        const now = roundToNearest15Minutes(new Date());
+        const oneHourLater = new Date(now);
+        oneHourLater.setHours(oneHourLater.getHours() + 1);
 
-      setPendingNewEvent(newEvent);
-      setActiveEventId('new');
-    }
-    setModalHidden(false);
-  }, []);
+        // Create a pending new event
+        const newEvent: Omit<CalendarEvent, 'id'> = {
+          title: '',
+          description: '',
+          start_at: now.toISOString(),
+          end_at: oneHourLater.toISOString(),
+          color: 'BLUE',
+        };
+
+        setPendingNewEvent(newEvent);
+        setActiveEventId('new');
+      }
+      setModalHidden(false);
+    },
+    []
+  );
 
   const closeModal = useCallback(() => {
     setActiveEventId(null);
@@ -1569,12 +1643,10 @@ export const CalendarProvider = ({
 
       const supabase = createClient();
 
-      // Fetch task details including duration and scheduling fields
+      // Fetch task base details (scheduling is per-user)
       const { data: task, error: taskError } = await supabase
         .from('tasks')
-        .select(
-          'name, priority, total_duration, calendar_hours, is_splittable, auto_schedule'
-        )
+        .select('name, priority')
         .eq('id', taskId)
         .single();
 
@@ -1587,14 +1659,31 @@ export const CalendarProvider = ({
       const scheduledHours =
         (endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60);
 
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError || !user?.id) {
+        throw authError ?? new Error('Not signed in');
+      }
+
+      const { data: existingSettings } = await (supabase as any)
+        .from('task_user_scheduling_settings')
+        .select('total_duration, calendar_hours')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       // Check if task has scheduling configured (has duration and calendar_hours)
       const hasSchedulingConfigured =
-        task.total_duration && task.total_duration > 0 && task.calendar_hours;
+        existingSettings?.total_duration &&
+        existingSettings.total_duration > 0 &&
+        existingSettings?.calendar_hours;
 
-      // Always enable auto_schedule when dragging to calendar
-      // If task doesn't have scheduling configured, also set up defaults
+      // Always enable auto_schedule when dragging to calendar.
+      // Task scheduling settings are per-user regardless of calendar type.
       const updatePayload = hasSchedulingConfigured
-        ? { auto_schedule: true } // Just enable auto_schedule
+        ? { auto_schedule: true }
         : {
             total_duration: scheduledHours,
             calendar_hours: 'personal_hours' as const,
@@ -1602,14 +1691,18 @@ export const CalendarProvider = ({
             auto_schedule: true,
           };
 
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update(updatePayload)
-        .eq('id', taskId);
-
+      const { error: updateError } = await (supabase as any)
+        .from('task_user_scheduling_settings')
+        .upsert(
+          {
+            task_id: taskId,
+            user_id: user.id,
+            ...updatePayload,
+          },
+          { onConflict: 'task_id,user_id' }
+        );
       if (updateError) {
         console.error('Failed to update task scheduling:', updateError);
-        // Don't throw - we can still create the event
       }
 
       // Map priority to color (priority can be string like 'critical', 'high', etc.)
@@ -1667,13 +1760,19 @@ export const CalendarProvider = ({
         // Sync total_duration if total scheduled exceeds current duration
         // Use the new duration if we just set defaults, otherwise use existing
         const currentDuration = hasSchedulingConfigured
-          ? task.total_duration || 0
+          ? existingSettings?.total_duration || 0
           : scheduledHours;
 
         const { data: allJunctions } = await (supabase as any)
           .from('task_calendar_events')
-          .select('scheduled_minutes')
-          .eq('task_id', taskId);
+          .select(
+            `
+            scheduled_minutes,
+            workspace_calendar_events!inner(ws_id)
+          `
+          )
+          .eq('task_id', taskId)
+          .eq('workspace_calendar_events.ws_id', ws.id);
 
         const totalScheduledMinutes = (allJunctions || []).reduce(
           (sum: number, j: { scheduled_minutes?: number }) =>
@@ -1682,15 +1781,25 @@ export const CalendarProvider = ({
         );
         const totalScheduledHours = totalScheduledMinutes / 60;
 
-        // If scheduled exceeds current duration, update the task
+        // If scheduled exceeds current duration, update per-user duration.
         if (totalScheduledHours > currentDuration) {
-          const { error: updateError } = await supabase
-            .from('tasks')
-            .update({ total_duration: totalScheduledHours })
-            .eq('id', taskId);
-
-          if (updateError) {
-            console.error('Failed to update task duration:', updateError);
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user?.id) {
+            const { error: updateError } = await (supabase as any)
+              .from('task_user_scheduling_settings')
+              .upsert(
+                {
+                  task_id: taskId,
+                  user_id: user.id,
+                  total_duration: totalScheduledHours,
+                },
+                { onConflict: 'task_id,user_id' }
+              );
+            if (updateError) {
+              console.error('Failed to update task duration:', updateError);
+            }
           }
         }
       }
@@ -1759,6 +1868,7 @@ export const CalendarProvider = ({
     // Hide non-preview events
     hideNonPreviewEvents,
     setHideNonPreviewEvents,
+    defaultNewEventTab,
   };
 
   // Clean up any pending updates when component unmounts

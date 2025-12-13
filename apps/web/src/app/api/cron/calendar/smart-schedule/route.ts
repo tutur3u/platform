@@ -39,42 +39,25 @@ export async function GET(req: NextRequest) {
   try {
     const sbAdmin = await createAdminClient();
 
-    // Get unique workspace IDs that have either:
-    // 1. Habits with auto_schedule = true
-    // 2. Tasks with auto_schedule = true
+    // Get unique workspace IDs that have habits with auto_schedule = true.
+    // NOTE: Task scheduling is per-user via `task_user_scheduling_settings`,
+    // so it cannot be safely executed via cron without a user context.
     const habitsQuery = sbAdmin
       .from('workspace_habits')
       .select('ws_id')
       .eq('auto_schedule', true)
       .eq('is_active', true);
 
-    const tasksQuery = sbAdmin
-      .from('tasks')
-      .select('task_lists!inner(workspace_boards!inner(ws_id))')
-      .eq('auto_schedule', true)
-      .eq('archived', false);
-
-    const [habitsResult, tasksResult] = await Promise.all([
-      habitsQuery,
-      tasksQuery,
-    ]);
-
     // Combine and deduplicate workspace IDs
+    const habitsResult = await habitsQuery;
     const habitWsIds = habitsResult.data?.map((h) => h.ws_id) ?? [];
-    const taskWsIds =
-      tasksResult.data?.map(
-        (t) =>
-          (t.task_lists as unknown as { workspace_boards: { ws_id: string } })
-            .workspace_boards.ws_id
-      ) ?? [];
-    const allWsIds = [...new Set([...habitWsIds, ...taskWsIds])];
+    const allWsIds = [...new Set(habitWsIds)];
 
-    console.log(`Found ${allWsIds.length} workspaces with auto-schedule items`);
     console.log(
-      `- ${habitWsIds.length} habits across ${new Set(habitWsIds).size} workspaces`
+      `Found ${allWsIds.length} workspaces with auto-schedule habits`
     );
     console.log(
-      `- ${taskWsIds.length} tasks across ${new Set(taskWsIds).size} workspaces`
+      `- ${habitWsIds.length} habits across ${new Set(habitWsIds).size} workspaces`
     );
 
     if (allWsIds.length === 0) {

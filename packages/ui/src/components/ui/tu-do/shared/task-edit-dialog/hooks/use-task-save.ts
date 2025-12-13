@@ -3,8 +3,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
+import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   createTaskRelationship,
@@ -247,12 +246,6 @@ export function useTaskSave({
       endDate,
       selectedListId,
       estimationPoints,
-      totalDuration,
-      isSplittable,
-      minSplitDurationMinutes,
-      maxSplitDurationMinutes,
-      calendarHours,
-      autoSchedule,
       collaborationMode,
       flushEditorPendingRef,
       updateTaskMutation,
@@ -432,14 +425,46 @@ async function handleCreateTask({
       start_date: startDate ? startDate.toISOString() : undefined,
       end_date: endDate ? endDate.toISOString() : undefined,
       estimation_points: estimationPoints ?? null,
-      total_duration: totalDuration,
-      is_splittable: isSplittable,
-      min_split_duration_minutes: minSplitDurationMinutes,
-      max_split_duration_minutes: maxSplitDurationMinutes,
-      calendar_hours: calendarHours,
-      auto_schedule: autoSchedule,
+      // IMPORTANT: scheduling settings are personal and stored separately
+      // (task_user_scheduling_settings). Do not persist them to the shared task row.
     };
     const newTask = await createTask(supabase, selectedListId, taskData);
+
+    // Save per-user scheduling settings for the creator (if any were provided)
+    if (user?.id) {
+      const hasAnySchedulingValue =
+        totalDuration != null ||
+        calendarHours != null ||
+        autoSchedule === true ||
+        isSplittable === true ||
+        minSplitDurationMinutes != null ||
+        maxSplitDurationMinutes != null;
+
+      if (hasAnySchedulingValue) {
+        const { error: schedulingError } = await (supabase as any)
+          .from('task_user_scheduling_settings')
+          .upsert(
+            {
+              task_id: newTask.id,
+              user_id: user.id,
+              total_duration: totalDuration,
+              is_splittable: isSplittable,
+              min_split_duration_minutes: minSplitDurationMinutes,
+              max_split_duration_minutes: maxSplitDurationMinutes,
+              calendar_hours: calendarHours,
+              auto_schedule: autoSchedule,
+            },
+            { onConflict: 'task_id,user_id' }
+          );
+
+        if (schedulingError) {
+          console.error(
+            'Failed to save personal scheduling settings:',
+            schedulingError
+          );
+        }
+      }
+    }
 
     // Handle parent task relationship
     if (parentTaskId) {
@@ -645,12 +670,6 @@ async function handleUpdateTask({
   endDate,
   selectedListId,
   estimationPoints,
-  totalDuration,
-  isSplittable,
-  minSplitDurationMinutes,
-  maxSplitDurationMinutes,
-  calendarHours,
-  autoSchedule,
   collaborationMode,
   flushEditorPendingRef,
   updateTaskMutation,
@@ -668,12 +687,6 @@ async function handleUpdateTask({
   endDate: Date | undefined;
   selectedListId: string;
   estimationPoints: number | null | undefined;
-  totalDuration: number | null;
-  isSplittable: boolean;
-  minSplitDurationMinutes: number | null;
-  maxSplitDurationMinutes: number | null;
-  calendarHours: CalendarHoursType | null;
-  autoSchedule: boolean;
   collaborationMode: boolean;
   flushEditorPendingRef: React.MutableRefObject<
     (() => JSONContent | null) | undefined
@@ -692,12 +705,8 @@ async function handleUpdateTask({
     end_date: endDate ? endDate.toISOString() : undefined,
     list_id: selectedListId,
     estimation_points: estimationPoints ?? null,
-    total_duration: totalDuration,
-    is_splittable: isSplittable,
-    min_split_duration_minutes: minSplitDurationMinutes,
-    max_split_duration_minutes: maxSplitDurationMinutes,
-    calendar_hours: calendarHours,
-    auto_schedule: autoSchedule,
+    // IMPORTANT: scheduling settings are personal and stored separately
+    // (task_user_scheduling_settings). Do not persist them to the shared task row.
   };
 
   if (collaborationMode && flushEditorPendingRef.current) {

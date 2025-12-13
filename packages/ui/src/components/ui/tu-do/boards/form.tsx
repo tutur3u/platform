@@ -76,7 +76,8 @@ export function TaskBoardForm({
     defaultValues: {
       id: data?.id,
       name: data?.name || '',
-      icon: data?.icon ?? null,
+      // Prefer undefined for "no icon" (avoids null vs undefined TS mismatch)
+      icon: data?.icon ?? undefined,
     },
   });
 

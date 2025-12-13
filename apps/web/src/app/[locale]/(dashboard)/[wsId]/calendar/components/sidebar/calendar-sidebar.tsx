@@ -97,7 +97,7 @@ export function CalendarSidebar({
   return (
     <div className="@container ml-2 hidden h-full w-80 shrink-0 flex-col rounded-lg border border-border bg-background/60 shadow-xl backdrop-blur-md xl:flex">
       {/* Header with TimeTracker and Collapse Button */}
-      <div className="flex flex-row items-center justify-between border-b border-border/50 bg-background/80 p-3 backdrop-blur-sm">
+      <div className="flex flex-row items-center justify-between border-border/50 border-b bg-background/80 p-3 backdrop-blur-sm">
         <div className="transition-all duration-300 hover:scale-105">
           <TimeTracker wsId={wsId} tasks={tasks} />
         </div>
@@ -113,7 +113,7 @@ export function CalendarSidebar({
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-border/50 bg-muted/10 p-2">
+      <div className="border-border/50 border-b bg-muted/10 p-2">
         <div className="flex flex-row gap-1">
           {SIDEBAR_TABS.map((tab) => (
             <button
@@ -128,7 +128,7 @@ export function CalendarSidebar({
               )}
             >
               <tab.icon className="h-4 w-4" />
-              <span className="hidden @[200px]:inline">{tab.label}</span>
+              <span className="@[200px]:inline hidden">{tab.label}</span>
               <span className="@[200px]:hidden">{tab.shortLabel}</span>
             </button>
           ))}
@@ -162,6 +162,7 @@ export function CalendarSidebar({
               wsId={wsId}
               userId={assigneeId}
               onEventCreated={onEventCreated}
+              isPersonalWorkspace={isPersonalWorkspace}
             />
           </div>
         )}

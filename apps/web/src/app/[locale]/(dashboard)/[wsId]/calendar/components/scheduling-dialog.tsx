@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Briefcase,
   CalendarClock,
@@ -11,6 +11,7 @@ import {
   Scissors,
   Zap,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -105,13 +106,21 @@ interface SchedulingDialogProps {
   task: ExtendedWorkspaceTask | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * NOTE: Scheduling settings are stored per-user in `task_user_scheduling_settings`.
+   * This flag is kept only for UX differences in personal calendar views.
+   */
+  isPersonalWorkspace?: boolean;
 }
 
 export function SchedulingDialog({
-  wsId,
+  // wsId retained for legacy routes; per-user scheduling no longer needs it
+  wsId: _wsId,
   task,
   open,
   onOpenChange,
+  // retained for UX differences; not used in logic currently
+  isPersonalWorkspace: _isPersonalWorkspace = false,
 }: SchedulingDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -127,19 +136,43 @@ export function SchedulingDialog({
   );
   const [autoSchedule, setAutoSchedule] = useState(false);
 
+  // Always read per-user settings (works for both personal and workspace calendars).
+  const { data: personalSchedule } = useQuery({
+    queryKey: ['task-personal-schedule', task?.id, open],
+    enabled: open && !!task?.id,
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/users/me/tasks/${task!.id}/schedule`);
+      if (!res.ok) return null;
+      return (await res.json()) as null | {
+        task: {
+          total_duration: number | null;
+          is_splittable: boolean | null;
+          min_split_duration_minutes: number | null;
+          max_split_duration_minutes: number | null;
+          calendar_hours: CalendarHoursType | null;
+          auto_schedule: boolean | null;
+        };
+      };
+    },
+    staleTime: 30_000,
+  });
+
   // Initialize form state when task changes
   useEffect(() => {
-    if (task) {
-      const totalMinutes = (task.total_duration ?? 0) * 60;
-      setDurationHours(Math.floor(totalMinutes / 60));
-      setDurationMinutes(totalMinutes % 60);
-      setIsSplittable(task.is_splittable ?? false);
-      setMinSplitMinutes(task.min_split_duration_minutes ?? 30);
-      setMaxSplitMinutes(task.max_split_duration_minutes ?? 120);
-      setCalendarHours(task.calendar_hours ?? null);
-      setAutoSchedule(task.auto_schedule ?? false);
-    }
-  }, [task]);
+    if (!task) return;
+    const source = personalSchedule?.task;
+
+    if (!source) return;
+
+    const totalMinutes = (source.total_duration ?? 0) * 60;
+    setDurationHours(Math.floor(totalMinutes / 60));
+    setDurationMinutes(totalMinutes % 60);
+    setIsSplittable(!!source.is_splittable);
+    setMinSplitMinutes(source.min_split_duration_minutes ?? 30);
+    setMaxSplitMinutes(source.max_split_duration_minutes ?? 120);
+    setCalendarHours((source.calendar_hours as any) ?? null);
+    setAutoSchedule(!!source.auto_schedule);
+  }, [task, personalSchedule?.task]);
 
   // Update mutation
   const updateMutation = useMutation({
@@ -153,24 +186,38 @@ export function SchedulingDialog({
     }) => {
       if (!task) throw new Error('No task selected');
 
-      // Use the task's workspace ID if available, fall back to current workspace
-      const taskWsId = task.ws_id || wsId;
-      const response = await fetch(`/api/${taskWsId}/task/${task.id}/edit`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const supabase = createClient();
+      return supabase.auth.getUser().then(async ({ data: authData, error }) => {
+        if (error || !authData.user?.id) {
+          throw error ?? new Error('Not signed in');
+        }
+
+        const { error: upsertError } = await (supabase as any)
+          .from('task_user_scheduling_settings')
+          .upsert(
+            {
+              task_id: task.id,
+              user_id: authData.user.id,
+              total_duration: data.total_duration,
+              is_splittable: data.is_splittable,
+              min_split_duration_minutes: data.min_split_duration_minutes,
+              max_split_duration_minutes: data.max_split_duration_minutes,
+              calendar_hours: data.calendar_hours,
+              auto_schedule: data.auto_schedule,
+            },
+            { onConflict: 'task_id,user_id' }
+          );
+
+        if (upsertError) throw upsertError;
+        return { ok: true };
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update task');
-      }
-
-      return response.json();
     },
     onSuccess: () => {
       toast.success('Scheduling settings updated');
       queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+      queryClient.invalidateQueries({
+        queryKey: ['task-personal-schedule', task?.id],
+      });
       router.refresh();
       onOpenChange(false);
     },

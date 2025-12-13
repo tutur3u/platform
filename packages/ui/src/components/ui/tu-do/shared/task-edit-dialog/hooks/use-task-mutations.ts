@@ -348,49 +348,47 @@ export function useTaskMutations({
 
       setSchedulingSaving(true);
 
-      // Optimistic update - prevents flicker
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId
-              ? {
-                  ...task,
-                  total_duration: settings.totalDuration,
-                  is_splittable: settings.isSplittable,
-                  min_split_duration_minutes: settings.minSplitDurationMinutes,
-                  max_split_duration_minutes: settings.maxSplitDurationMinutes,
-                  calendar_hours: settings.calendarHours,
-                  auto_schedule: settings.autoSchedule,
-                }
-              : task
-          );
-        }
-      );
+      // Optimistic update - scoped to the current user.
+      // Scheduling is personal: multiple users can have different settings for the same task.
+      queryClient.setQueryData(['task-user-scheduling', taskId], settings);
 
       try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({
-            total_duration: settings.totalDuration,
-            is_splittable: settings.isSplittable,
-            min_split_duration_minutes: settings.minSplitDurationMinutes,
-            max_split_duration_minutes: settings.maxSplitDurationMinutes,
-            calendar_hours: settings.calendarHours,
-            auto_schedule: settings.autoSchedule,
-          })
-          .eq('id', taskId);
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+        if (authError || !user?.id)
+          throw authError ?? new Error('Not signed in');
+
+        // NOTE: table is added via migration: task_user_scheduling_settings
+        // Using `any` types until the user runs migrations + typegen.
+        const { error } = await (supabase as any)
+          .from('task_user_scheduling_settings')
+          .upsert(
+            {
+              task_id: taskId,
+              user_id: user.id,
+              total_duration: settings.totalDuration,
+              is_splittable: settings.isSplittable,
+              min_split_duration_minutes: settings.minSplitDurationMinutes,
+              max_split_duration_minutes: settings.maxSplitDurationMinutes,
+              calendar_hours: settings.calendarHours,
+              auto_schedule: settings.autoSchedule,
+            },
+            { onConflict: 'task_id,user_id' }
+          );
 
         if (error) throw error;
 
-        // Don't invalidate cache - realtime sync handles updates
+        // Keep any related query data consistent
+        queryClient.invalidateQueries({
+          queryKey: ['task-personal-schedule', taskId],
+        });
 
-        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
-        // Settings are saved here; the unified scheduler will use them when triggered
         toast({
           title: 'Scheduling settings saved',
-          description: 'Task scheduling configuration has been updated.',
+          description:
+            'Saved to your personal scheduling profile for this task.',
         });
 
         onUpdate();
@@ -398,7 +396,9 @@ export function useTaskMutations({
       } catch (e: any) {
         console.error('Failed updating scheduling settings', e);
         // Revert optimistic update on error
-        await invalidateTaskCaches(queryClient, boardId);
+        queryClient.invalidateQueries({
+          queryKey: ['task-user-scheduling', taskId],
+        });
         toast({
           title: 'Failed to save scheduling settings',
           description: e.message || 'Please try again',
@@ -409,7 +409,7 @@ export function useTaskMutations({
         setSchedulingSaving(false);
       }
     },
-    [isCreateMode, taskId, queryClient, boardId, toast, onUpdate]
+    [isCreateMode, taskId, queryClient, toast, onUpdate]
   );
 
   return {

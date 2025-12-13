@@ -1044,7 +1044,7 @@ export function generatePreview(
       const slots = findAvailableSlotsInDay(
         searchDate,
         hourSettings,
-        task.calendar_hours,
+        task.calendar_hours ?? null,
         occupiedSlots,
         minDuration,
         resolvedTimezone

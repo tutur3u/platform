@@ -33,7 +33,7 @@ export default async function TasksSidebar({
   });
 
   // Map RPC results to match expected structure (same as my-tasks-data-loader.tsx)
-  const tasks = (rpcTasks?.map((task) => ({
+  const tasksBase = (rpcTasks?.map((task) => ({
     id: task.task_id,
     name: task.task_name,
     description: task.task_description,
@@ -48,21 +48,104 @@ export default async function TasksSidebar({
     deleted_at: task.task_deleted_at,
     estimation_points: task.task_estimation_points,
     created_at: task.task_created_at,
-    calendar_hours: task.task_calendar_hours,
-    total_duration: task.task_total_duration,
-    is_splittable: task.task_is_splittable,
-    min_split_duration_minutes: task.task_min_split_duration_minutes,
-    max_split_duration_minutes: task.task_max_split_duration_minutes,
+    // Scheduling fields are per-user now. These legacy RPC fields may not exist after migration.
   })) || []) as ExtendedWorkspaceTask[];
+
+  // Enrich tasks with the *actual* workspace UUID (ws_id) via list -> board relation.
+  // This is critical for personal workspace views where tasks may belong to other workspaces.
+  const listIds = Array.from(
+    new Set(tasksBase.map((t) => t.list_id).filter(Boolean))
+  ) as string[];
+
+  const wsIdByListId = new Map<string, string>();
+  if (listIds.length > 0) {
+    const { data: lists } = await supabase
+      .from('task_lists')
+      .select(
+        `
+        id,
+        workspace_boards!inner (
+          ws_id
+        )
+      `
+      )
+      .in('id', listIds);
+
+    (lists as any[] | null)?.forEach((l) => {
+      const resolvedTaskWsId = l?.workspace_boards?.ws_id;
+      if (l?.id && resolvedTaskWsId) wsIdByListId.set(l.id, resolvedTaskWsId);
+    });
+  }
+
+  const tasks = tasksBase.map((t) => ({
+    ...t,
+    ws_id:
+      (t.list_id ? wsIdByListId.get(t.list_id) : undefined) ??
+      // Fallback: if a task is list-less, treat it as current workspace-scoped.
+      resolvedWsId,
+  })) as ExtendedWorkspaceTask[];
+
+  // Merge per-user scheduling settings so the calendar UI can still show duration/hour type.
+  const taskIds = tasks.map((t) => t.id).filter(Boolean);
+  const settingsByTaskId = new Map<
+    string,
+    {
+      total_duration: number | null;
+      is_splittable: boolean | null;
+      min_split_duration_minutes: number | null;
+      max_split_duration_minutes: number | null;
+      calendar_hours: any;
+      auto_schedule: boolean | null;
+    }
+  >();
+
+  if (taskIds.length > 0) {
+    const { data: schedulingRows } = await (supabase as any)
+      .from('task_user_scheduling_settings')
+      .select(
+        `
+        task_id,
+        total_duration,
+        is_splittable,
+        min_split_duration_minutes,
+        max_split_duration_minutes,
+        calendar_hours,
+        auto_schedule
+      `
+      )
+      .eq('user_id', user.id)
+      .in('task_id', taskIds);
+
+    (schedulingRows as any[] | null)?.forEach((r) => {
+      if (r?.task_id) settingsByTaskId.set(r.task_id, r);
+    });
+  }
+
+  const tasksWithScheduling = tasks.map((t) => {
+    const s = settingsByTaskId.get(t.id);
+    return s
+      ? ({
+          ...t,
+          total_duration: s.total_duration,
+          is_splittable: s.is_splittable ?? false,
+          min_split_duration_minutes: s.min_split_duration_minutes ?? null,
+          max_split_duration_minutes: s.max_split_duration_minutes ?? null,
+          calendar_hours: s.calendar_hours ?? null,
+          auto_schedule: s.auto_schedule ?? false,
+        } as ExtendedWorkspaceTask)
+      : t;
+  });
 
   // Personal workspace = workspace ID matches user ID (no need for auto-assignment)
   const isPersonalWorkspace = resolvedWsId === user.id;
 
   return (
     <CalendarSidebar
-      wsId={wsId}
+      // IMPORTANT: child components (task scheduler, schedule endpoints) expect a UUID.
+      // Always pass the resolved workspace UUID, not the route slug (e.g. "personal").
+      wsId={resolvedWsId}
       assigneeId={user.id}
-      tasks={tasks}
+      tasks={tasksWithScheduling}
       locale={locale}
       isPersonalWorkspace={isPersonalWorkspace}
     />

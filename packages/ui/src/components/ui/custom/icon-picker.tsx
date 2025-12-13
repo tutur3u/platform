@@ -383,6 +383,8 @@ export const WORKSPACE_BOARD_ICON_VALUES = [
   'GraduationCap',
   'BookOpen',
   'Bookmark',
+  // Back-compat: old DB enum value, map to Bookmark icon
+  'Bookmark2',
   'Newspaper',
   'PieChart',
   'Play',
@@ -696,6 +698,8 @@ export const ICON_OPTIONS: IconOption[] = [
   { value: 'GraduationCap', label: 'Graduation Cap', Icon: GraduationCap },
   { value: 'BookOpen', label: 'Book Open', Icon: BookOpen },
   { value: 'Bookmark', label: 'Bookmark', Icon: Bookmark },
+  // Back-compat: use Bookmark icon for Bookmark2
+  { value: 'Bookmark2', label: 'Bookmark', Icon: Bookmark },
   { value: 'Newspaper', label: 'Newspaper', Icon: Newspaper },
   { value: 'PieChart', label: 'Pie Chart', Icon: PieChart },
   { value: 'Play', label: 'Play', Icon: Play },

@@ -57,8 +57,9 @@ export async function PATCH(
       );
     }
 
-    // 5. Build update object with validated fields
-    const updateData: Record<string, unknown> = {};
+    // 5. Build update objects with validated fields
+    const taskUpdateData: Record<string, unknown> = {};
+    const schedulingUpdateData: Record<string, unknown> = {};
 
     // Priority
     if (body.priority !== undefined) {
@@ -71,10 +72,10 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.priority = body.priority;
+      taskUpdateData.priority = body.priority;
     }
 
-    // Scheduling fields
+    // Scheduling fields (per-user: task_user_scheduling_settings)
     if (body.total_duration !== undefined) {
       if (typeof body.total_duration !== 'number' || body.total_duration < 0) {
         return NextResponse.json(
@@ -82,7 +83,7 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.total_duration = body.total_duration;
+      schedulingUpdateData.total_duration = body.total_duration;
     }
 
     if (body.is_splittable !== undefined) {
@@ -92,7 +93,7 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.is_splittable = body.is_splittable;
+      schedulingUpdateData.is_splittable = body.is_splittable;
     }
 
     if (body.min_split_duration_minutes !== undefined) {
@@ -105,7 +106,8 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.min_split_duration_minutes = body.min_split_duration_minutes;
+      schedulingUpdateData.min_split_duration_minutes =
+        body.min_split_duration_minutes;
     }
 
     if (body.max_split_duration_minutes !== undefined) {
@@ -118,7 +120,8 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.max_split_duration_minutes = body.max_split_duration_minutes;
+      schedulingUpdateData.max_split_duration_minutes =
+        body.max_split_duration_minutes;
     }
 
     if (body.calendar_hours !== undefined) {
@@ -136,7 +139,7 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.calendar_hours = body.calendar_hours;
+      schedulingUpdateData.calendar_hours = body.calendar_hours;
     }
 
     if (body.auto_schedule !== undefined) {
@@ -146,29 +149,71 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      updateData.auto_schedule = body.auto_schedule;
+      schedulingUpdateData.auto_schedule = body.auto_schedule;
     }
 
     // Check if there's anything to update
-    if (Object.keys(updateData).length === 0) {
+    if (
+      Object.keys(taskUpdateData).length === 0 &&
+      Object.keys(schedulingUpdateData).length === 0
+    ) {
       return NextResponse.json(
         { error: 'No valid fields to update' },
         { status: 400 }
       );
     }
 
-    // 6. Update task
-    const { data: updatedTask, error: updateError } = await supabase
+    // 6. Apply updates
+    if (Object.keys(taskUpdateData).length > 0) {
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update(taskUpdateData)
+        .eq('id', taskId);
+
+      if (updateError) {
+        console.error('Error updating task:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to update task' },
+          { status: 500 }
+        );
+      }
+    }
+
+    if (Object.keys(schedulingUpdateData).length > 0) {
+      const { error: schedulingError } = await (supabase as any)
+        .from('task_user_scheduling_settings')
+        .upsert(
+          {
+            task_id: taskId,
+            user_id: user.id,
+            ...schedulingUpdateData,
+          },
+          {
+            onConflict: 'task_id,user_id',
+          }
+        );
+
+      if (schedulingError) {
+        console.error(
+          'Error updating task_user_scheduling_settings:',
+          schedulingError
+        );
+        return NextResponse.json(
+          { error: 'Failed to update task scheduling settings' },
+          { status: 500 }
+        );
+      }
+    }
+
+    const { data: updatedTask, error: fetchUpdatedError } = await supabase
       .from('tasks')
-      .update(updateData)
+      .select('*')
       .eq('id', taskId)
-      .select()
       .single();
 
-    if (updateError) {
-      console.error('Error updating task:', updateError);
+    if (fetchUpdatedError || !updatedTask) {
       return NextResponse.json(
-        { error: 'Failed to update task' },
+        { error: 'Failed to fetch updated task' },
         { status: 500 }
       );
     }

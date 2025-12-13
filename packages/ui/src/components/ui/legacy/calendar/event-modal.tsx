@@ -108,6 +108,7 @@ export function EventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
+    defaultNewEventTab,
   } = useCalendar();
   const { settings } = useCalendarSettings();
 
@@ -140,7 +141,7 @@ export function EventModal() {
 
   // Shared state
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'preview'>(
-    isEditing ? 'manual' : 'ai' // Default to AI for new events
+    isEditing ? 'manual' : defaultNewEventTab // Default tab for new events
   );
   const [isAllDay, setIsAllDay] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -261,7 +262,7 @@ export function EventModal() {
       checkForOverlaps(cleanEventData);
 
       // Set active tab to manual when editing an existing event
-      setActiveTab('manual');
+      setActiveTab(isEditing ? 'manual' : defaultNewEventTab);
     } else {
       // Set default values for new event
       const now = new Date();
@@ -287,7 +288,7 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, checkForOverlaps, aiForm]);
+  }, [activeEvent, checkForOverlaps, aiForm, defaultNewEventTab, isEditing]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -875,7 +876,7 @@ export function EventModal() {
                   <Image
                     src="/media/google-calendar-icon.png"
                     alt="Google Calendar"
-                    className="inline-block h-[18px] w-[18px] align-middle"
+                    className="inline-block h-4.5 w-4.5 align-middle"
                     title="Synced from Google Calendar"
                     data-testid="google-calendar-logo"
                     width={18}
@@ -1197,7 +1198,7 @@ export function EventModal() {
                                     {...field}
                                     autoFocus
                                     placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:outline-none focus:ring-1 focus:ring-ring"
+                                    className="min-h-50 w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:outline-none focus:ring-1 focus:ring-ring"
                                     disabled={
                                       isLoading ||
                                       isRecording ||

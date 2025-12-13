@@ -312,51 +312,79 @@ export function TaskEditDialog({
     setLocalCalendarEvents(task?.calendar_events);
   }, [task?.calendar_events]);
 
-  // Fetch calendar events
+  const { data: personalScheduleData } = useQuery({
+    queryKey: ['task-personal-schedule', task?.id, isOpen],
+    enabled: !!isOpen && !isCreateMode && !!task?.id,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/users/me/tasks/${task!.id}/schedule`
+      );
+      if (!response.ok) return null;
+      return (await response.json()) as null | {
+        task: {
+          total_duration: number | null;
+          is_splittable: boolean | null;
+          min_split_duration_minutes: number | null;
+          max_split_duration_minutes: number | null;
+          calendar_hours: any;
+          auto_schedule: boolean | null;
+        };
+        events: Array<{
+          id: string;
+          title: string;
+          start_at: string;
+          end_at: string;
+          scheduled_minutes: number;
+          completed: boolean;
+        }>;
+      };
+    },
+    staleTime: 15_000,
+  });
+
+  // Sync scheduled events into local state for rendering
   useEffect(() => {
-    if (
-      !isOpen ||
-      isCreateMode ||
-      !task?.id ||
-      !wsId ||
-      !task.total_duration ||
-      task.total_duration <= 0
-    )
-      return;
-    const fetchCalendarEvents = async () => {
-      try {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
-        );
-        if (!response.ok) return;
-        const data = await response.json();
-        if (data.events && Array.isArray(data.events)) {
-          setLocalCalendarEvents(
-            data.events.map(
-              (e: {
-                id: string;
-                title: string;
-                start_at: string;
-                end_at: string;
-                scheduled_minutes: number;
-                completed: boolean;
-              }) => ({
-                id: e.id,
-                title: e.title,
-                start_at: e.start_at,
-                end_at: e.end_at,
-                scheduled_minutes: e.scheduled_minutes,
-                completed: e.completed,
-              })
-            )
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching calendar events:', error);
-      }
-    };
-    fetchCalendarEvents();
-  }, [isOpen, isCreateMode, task?.id, task?.total_duration, wsId]);
+    if (!personalScheduleData?.events) return;
+    setLocalCalendarEvents(
+      personalScheduleData.events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        start_at: e.start_at,
+        end_at: e.end_at,
+        scheduled_minutes: e.scheduled_minutes,
+        completed: e.completed,
+      }))
+    );
+  }, [personalScheduleData?.events]);
+
+  // Sync "my scheduling settings" into the form state when opening the dialog
+  useEffect(() => {
+    if (!personalScheduleData?.task || !isOpen || isCreateMode) return;
+    formState.setTotalDuration(
+      personalScheduleData.task.total_duration ?? null
+    );
+    formState.setIsSplittable(!!personalScheduleData.task.is_splittable);
+    formState.setMinSplitDurationMinutes(
+      personalScheduleData.task.min_split_duration_minutes ?? null
+    );
+    formState.setMaxSplitDurationMinutes(
+      personalScheduleData.task.max_split_duration_minutes ?? null
+    );
+    formState.setCalendarHours(
+      personalScheduleData.task.calendar_hours ?? null
+    );
+    formState.setAutoSchedule(!!personalScheduleData.task.auto_schedule);
+  }, [
+    personalScheduleData?.task,
+    isOpen,
+    isCreateMode,
+    formState.setTotalDuration,
+    formState.setIsSplittable,
+    formState.setMinSplitDurationMinutes,
+    formState.setMaxSplitDurationMinutes,
+    formState.setCalendarHours,
+    formState.setAutoSchedule,
+  ]);
 
   const draftStorageKey = getDraftStorageKey(boardId);
 
@@ -1120,16 +1148,22 @@ export function TaskEditDialog({
                   onAutoScheduleChange={formState.setAutoSchedule}
                   isCreateMode={isCreateMode}
                   savedSchedulingSettings={
-                    task
+                    personalScheduleData?.task
                       ? {
-                          totalDuration: task.total_duration ?? null,
-                          isSplittable: task.is_splittable ?? false,
+                          totalDuration:
+                            personalScheduleData.task.total_duration ?? null,
+                          isSplittable:
+                            !!personalScheduleData.task.is_splittable,
                           minSplitDurationMinutes:
-                            task.min_split_duration_minutes ?? null,
+                            personalScheduleData.task
+                              .min_split_duration_minutes ?? null,
                           maxSplitDurationMinutes:
-                            task.max_split_duration_minutes ?? null,
-                          calendarHours: task.calendar_hours ?? null,
-                          autoSchedule: task.auto_schedule ?? false,
+                            personalScheduleData.task
+                              .max_split_duration_minutes ?? null,
+                          calendarHours:
+                            personalScheduleData.task.calendar_hours ?? null,
+                          autoSchedule:
+                            !!personalScheduleData.task.auto_schedule,
                         }
                       : undefined
                   }

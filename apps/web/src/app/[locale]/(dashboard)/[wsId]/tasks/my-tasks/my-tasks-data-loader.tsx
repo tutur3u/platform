@@ -61,15 +61,51 @@ export async function MyTasksDataLoader({
     deleted_at: task.task_deleted_at,
     estimation_points: task.task_estimation_points,
     created_at: task.task_created_at,
-    calendar_hours: task.task_calendar_hours,
-    total_duration: task.task_total_duration,
-    is_splittable: task.task_is_splittable,
-    min_split_duration_minutes: task.task_min_split_duration_minutes,
-    max_split_duration_minutes: task.task_max_split_duration_minutes,
   }));
 
   // Fetch related data for all tasks
   const taskIds = allTasks?.map((t) => t.id) || [];
+
+  // Merge per-user scheduling settings (duration, hour type, auto-schedule) for the viewer.
+  const schedulingByTaskId = new Map<
+    string,
+    {
+      total_duration: number | null;
+      is_splittable: boolean | null;
+      min_split_duration_minutes: number | null;
+      max_split_duration_minutes: number | null;
+      calendar_hours: string | null;
+      auto_schedule: boolean | null;
+    }
+  >();
+  if (taskIds.length > 0) {
+    const { data: schedulingRows } = await (supabase as any)
+      .from('task_user_scheduling_settings')
+      .select(
+        `
+        task_id,
+        total_duration,
+        is_splittable,
+        min_split_duration_minutes,
+        max_split_duration_minutes,
+        calendar_hours,
+        auto_schedule
+      `
+      )
+      .eq('user_id', userId)
+      .in('task_id', taskIds);
+    (schedulingRows as any[] | null)?.forEach((r) => {
+      if (!r?.task_id) return;
+      schedulingByTaskId.set(r.task_id, {
+        total_duration: r.total_duration ?? null,
+        is_splittable: r.is_splittable ?? null,
+        min_split_duration_minutes: r.min_split_duration_minutes ?? null,
+        max_split_duration_minutes: r.max_split_duration_minutes ?? null,
+        calendar_hours: r.calendar_hours ?? null,
+        auto_schedule: r.auto_schedule ?? null,
+      });
+    });
+  }
 
   let assigneesData: TaskAssignee[] | null = [];
   let labelsData: TaskLabel[] | null = [];
@@ -174,6 +210,7 @@ export async function MyTasksDataLoader({
   // Map the data to match the expected structure
   const tasksWithRelations = allTasks?.map((task) => ({
     ...task,
+    ...(schedulingByTaskId.get(task.id) ?? {}),
     list: listsData?.find((l) => l.id === task.list_id) || null,
     assignees: assigneesByTaskId.get(task.id) || [],
     labels: labelsByTaskId.get(task.id) || [],

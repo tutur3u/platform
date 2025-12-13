@@ -215,7 +215,8 @@ export async function createTask(
   const highestSortKey = existingTasks?.[0]?.sort_key ?? null;
   const newSortKey = calculateSortKey(highestSortKey, null);
 
-  // Prepare task data with only the fields that exist in the database
+  // Prepare task data with only the fields that exist in the database.
+  // Note: legacy scheduling fields were moved to `task_user_scheduling_settings`.
   // Note: display_number and board_id are auto-assigned by database trigger
   const taskData = {
     name: task.name.trim(),
@@ -227,13 +228,6 @@ export async function createTask(
     estimation_points: task.estimation_points ?? null,
     sort_key: newSortKey,
     created_at: new Date().toISOString(),
-    // Scheduling fields
-    total_duration: task.total_duration ?? null,
-    is_splittable: task.is_splittable ?? false,
-    min_split_duration_minutes: task.min_split_duration_minutes ?? null,
-    max_split_duration_minutes: task.max_split_duration_minutes ?? null,
-    calendar_hours: task.calendar_hours ?? null,
-    auto_schedule: task.auto_schedule ?? false,
   };
 
   // Now try the normal insert with the fixed database
@@ -279,6 +273,35 @@ export async function createTask(
     (enhancedError as { originalError?: unknown }).originalError = error;
 
     throw enhancedError;
+  }
+
+  // Scheduling settings are now per-user (task_user_scheduling_settings).
+  // This should not block task creation if it fails (RLS / rollout), so we best-effort it.
+  if (data?.id) {
+    try {
+      await (supabase as any).from('task_user_scheduling_settings').upsert(
+        {
+          task_id: data.id,
+          user_id: user.id,
+          total_duration: (task as any).total_duration ?? null,
+          is_splittable: (task as any).is_splittable ?? false,
+          min_split_duration_minutes:
+            (task as any).min_split_duration_minutes ?? null,
+          max_split_duration_minutes:
+            (task as any).max_split_duration_minutes ?? null,
+          calendar_hours: (task as any).calendar_hours ?? null,
+          auto_schedule: (task as any).auto_schedule ?? false,
+        },
+        {
+          onConflict: 'task_id,user_id',
+        }
+      );
+    } catch (settingsError) {
+      console.warn(
+        'Task created but failed to upsert task_user_scheduling_settings:',
+        settingsError
+      );
+    }
   }
 
   // Generate embedding in development mode (client-side)

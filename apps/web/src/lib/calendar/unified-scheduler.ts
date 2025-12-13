@@ -416,17 +416,33 @@ async function fetchWorkspaceTimezone(
  */
 async function fetchSchedulableTasks(
   supabase: SupabaseClient,
-  wsId: string
+  wsId: string,
+  userId?: string | null
 ): Promise<TaskWithScheduling[]> {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select(`
-      *,
-      task_lists!inner(
-        workspace_boards!inner(ws_id)
+  // Task scheduling settings are per-user. Without a user context (e.g. cron),
+  // we cannot safely schedule tasks.
+  if (!userId) return [];
+
+  const { data, error } = await (supabase as any)
+    .from('task_user_scheduling_settings')
+    .select(
+      `
+      total_duration,
+      is_splittable,
+      min_split_duration_minutes,
+      max_split_duration_minutes,
+      calendar_hours,
+      auto_schedule,
+      tasks!inner(
+        *,
+        task_lists!inner(
+          workspace_boards!inner(ws_id)
+        )
       )
-    `)
-    .eq('task_lists.workspace_boards.ws_id', wsId)
+    `
+    )
+    .eq('user_id', userId)
+    .eq('tasks.task_lists.workspace_boards.ws_id', wsId)
     .eq('auto_schedule', true)
     .gt('total_duration', 0);
 
@@ -435,7 +451,15 @@ async function fetchSchedulableTasks(
     return [];
   }
 
-  return (data as TaskWithScheduling[]) || [];
+  return ((data as any[] | null)?.map((row) => ({
+    ...(row.tasks as any),
+    total_duration: row.total_duration,
+    is_splittable: row.is_splittable,
+    min_split_duration_minutes: row.min_split_duration_minutes,
+    max_split_duration_minutes: row.max_split_duration_minutes,
+    calendar_hours: row.calendar_hours,
+    auto_schedule: row.auto_schedule,
+  })) || []) as TaskWithScheduling[];
 }
 
 /**
@@ -983,7 +1007,7 @@ async function scheduleHabitsPhase(
       // For habits with time preferences, use the first slot from preferredSlots
       // (already sorted by proximity to ideal time)
       // For habits without preferences, use AI scoring
-      let bestSlot;
+      let bestSlot: any;
       if (habit.ideal_time || habit.time_preference) {
         // preferredSlots is already sorted by proximity to ideal time
         // Find the first slot that meets minimum duration
@@ -1355,7 +1379,7 @@ async function scheduleTasksPhase(
       let slots = findAvailableSlotsInDay(
         searchDate,
         hourSettings,
-        task.calendar_hours,
+        task.calendar_hours ?? null,
         occupiedSlots,
         minDuration
       );
@@ -1459,7 +1483,7 @@ async function scheduleTasksPhase(
         slots = findAvailableSlotsInDay(
           searchDate,
           hourSettings,
-          task.calendar_hours,
+          task.calendar_hours ?? null,
           occupiedSlots,
           minDuration
         );
@@ -1495,7 +1519,7 @@ async function scheduleTasksPhase(
       while (remainingMinutes > 0 && futureSlots.length > 0) {
         // For tasks without tight deadlines, prefer the earliest available slot to reduce gaps
         // For urgent tasks, let the scoring function decide based on deadline proximity
-        let bestSlot;
+        let bestSlot: any;
         if (!taskIsUrgent && futureSlots.length > 0) {
           // Prefer earliest slot for non-urgent tasks to fill gaps
           bestSlot = futureSlots.find(
@@ -1838,7 +1862,7 @@ async function rescheduleBumpedHabits(
 
     // For habits with time preferences, use the first slot from preferredSlots
     // (already sorted by proximity to ideal time)
-    let bestSlot;
+    let bestSlot: any;
     if (habit.ideal_time || habit.time_preference) {
       bestSlot = preferredSlots.find(
         (slot) => slot.maxAvailable >= (minDuration || 15)
@@ -2123,9 +2147,10 @@ export async function scheduleWorkspace(
   options: {
     windowDays?: number;
     forceReschedule?: boolean;
+    userId?: string | null;
   } = {}
 ): Promise<ScheduleResult> {
-  const { windowDays = 30, forceReschedule = false } = options;
+  const { windowDays = 30, forceReschedule = false, userId = null } = options;
 
   const logger = new SchedulingLogger();
   logger.log('info', 'Starting Smart Schedule', {
@@ -2139,7 +2164,7 @@ export async function scheduleWorkspace(
       fetchHourSettings(supabase, wsId),
       fetchAllBlockedEvents(supabase, wsId, windowDays),
       fetchSchedulableHabits(supabase, wsId),
-      fetchSchedulableTasks(supabase, wsId),
+      fetchSchedulableTasks(supabase, wsId, userId),
       fetchWorkspaceBreakSettings(supabase, wsId),
       fetchWorkspaceTimezone(supabase, wsId),
     ]);

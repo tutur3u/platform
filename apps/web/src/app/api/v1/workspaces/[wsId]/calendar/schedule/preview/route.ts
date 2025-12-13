@@ -26,6 +26,16 @@ interface RouteParams {
   wsId: string;
 }
 
+type PersonalTaskSchedulingRow = {
+  total_duration: number | null;
+  is_splittable: boolean | null;
+  min_split_duration_minutes: number | null;
+  max_split_duration_minutes: number | null;
+  calendar_hours: string | null;
+  auto_schedule: boolean | null;
+  tasks: any;
+};
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<RouteParams> }
@@ -95,7 +105,7 @@ export async function POST(
       habitsResult,
       tasksResult,
       eventsResult,
-      timezoneResult,
+      workspaceResult,
     ] = await Promise.all([
       // Hour settings
       fetchHourSettings(supabase as any, wsId),
@@ -110,18 +120,108 @@ export async function POST(
         .eq('is_visible_in_calendar', true)
         .is('deleted_at', null),
 
-      // Tasks with auto_schedule enabled and duration set
-      supabase
-        .from('tasks')
-        .select(`
-          *,
-          task_lists!inner(
-            workspace_boards!inner(ws_id)
-          )
-        `)
-        .eq('task_lists.workspace_boards.ws_id', wsId)
-        .eq('auto_schedule', true)
-        .gt('total_duration', 0),
+      // Tasks (workspace mode) OR per-user task settings (personal mode)
+      // NOTE: personal mode uses task_user_scheduling_settings so each user can have different estimates.
+      (supabase as any)
+        .from('workspaces')
+        .select('personal')
+        .eq('id', wsId)
+        .single()
+        .then(async (wsRow: any) => {
+          if (wsRow?.data?.personal) {
+            const { data } = await (supabase as any)
+              .from('task_user_scheduling_settings')
+              .select(
+                `
+                total_duration,
+                is_splittable,
+                min_split_duration_minutes,
+                max_split_duration_minutes,
+                calendar_hours,
+                auto_schedule,
+                tasks!inner(
+                  *,
+                  task_lists!inner(
+                    workspace_boards!inner(ws_id)
+                  )
+                )
+              `
+              )
+              .eq('user_id', user.id)
+              .eq('auto_schedule', true)
+              .gt('total_duration', 0);
+
+            const rows = (data as PersonalTaskSchedulingRow[] | null) ?? [];
+            const mapped = rows
+              .map((r) => {
+                const task = r.tasks;
+                const resolvedTaskWsId =
+                  task?.task_lists?.workspace_boards?.ws_id ?? undefined;
+                return {
+                  ...task,
+                  ws_id: resolvedTaskWsId,
+                  total_duration: r.total_duration ?? null,
+                  is_splittable: r.is_splittable ?? false,
+                  min_split_duration_minutes:
+                    r.min_split_duration_minutes ?? null,
+                  max_split_duration_minutes:
+                    r.max_split_duration_minutes ?? null,
+                  calendar_hours: r.calendar_hours ?? null,
+                  auto_schedule: r.auto_schedule ?? false,
+                } satisfies TaskWithScheduling;
+              })
+              .filter(Boolean);
+
+            return { data: mapped, error: null };
+          }
+
+          // Workspace mode: tasks are also per-user (requires signed-in user).
+          const { data } = await (supabase as any)
+            .from('task_user_scheduling_settings')
+            .select(
+              `
+              total_duration,
+              is_splittable,
+              min_split_duration_minutes,
+              max_split_duration_minutes,
+              calendar_hours,
+              auto_schedule,
+              tasks!inner(
+                *,
+                task_lists!inner(
+                  workspace_boards!inner(ws_id)
+                )
+              )
+            `
+            )
+            .eq('user_id', user.id)
+            .eq('tasks.task_lists.workspace_boards.ws_id', wsId)
+            .eq('auto_schedule', true)
+            .gt('total_duration', 0);
+
+          const rows = (data as PersonalTaskSchedulingRow[] | null) ?? [];
+          const mapped = rows
+            .map((r) => {
+              const task = r.tasks;
+              const resolvedTaskWsId =
+                task?.task_lists?.workspace_boards?.ws_id ?? undefined;
+              return {
+                ...task,
+                ws_id: resolvedTaskWsId,
+                total_duration: r.total_duration ?? null,
+                is_splittable: r.is_splittable ?? false,
+                min_split_duration_minutes:
+                  r.min_split_duration_minutes ?? null,
+                max_split_duration_minutes:
+                  r.max_split_duration_minutes ?? null,
+                calendar_hours: r.calendar_hours ?? null,
+                auto_schedule: r.auto_schedule ?? false,
+              } satisfies TaskWithScheduling;
+            })
+            .filter(Boolean);
+
+          return { data: mapped, error: null };
+        }),
 
       // All existing calendar events in the window (including locked ones)
       supabase
@@ -131,10 +231,10 @@ export async function POST(
         .gt('end_at', now.toISOString())
         .lt('start_at', endDate.toISOString()),
 
-      // Workspace timezone
+      // Workspace timezone + mode
       supabase
         .from('workspaces')
-        .select('timezone')
+        .select('timezone, personal')
         .eq('id', wsId)
         .single(),
     ]);
@@ -179,7 +279,7 @@ export async function POST(
     // Resolve timezone:
     // - If workspace has a fixed IANA timezone, use it.
     // - If workspace timezone is auto/unset, require clientTimezone (browser) for user-initiated requests.
-    const configuredTimezone = timezoneResult.data?.timezone || 'auto';
+    const configuredTimezone = workspaceResult.data?.timezone || 'auto';
     const needsClientTimezone =
       !configuredTimezone || configuredTimezone === 'auto';
     const resolvedTimezone = !needsClientTimezone
@@ -242,6 +342,7 @@ export async function POST(
       },
       configuredTimezone,
       resolvedTimezone,
+      mode: workspaceResult.data?.personal ? 'personal' : 'workspace',
       // Full habit details for debugging
       habitDetails: habits.map((h) => ({
         id: h.id,

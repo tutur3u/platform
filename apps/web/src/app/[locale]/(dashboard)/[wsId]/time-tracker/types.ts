@@ -60,6 +60,17 @@ export interface ExtendedWorkspaceTask extends WorkspaceTask {
   }>;
   /** Workspace ID from task_lists -> workspace_boards relation */
   ws_id?: string;
+
+  /**
+   * Per-user scheduling settings (stored in `task_user_scheduling_settings`).
+   * These are intentionally optional because the base `tasks` row no longer owns them.
+   */
+  total_duration?: number | null;
+  is_splittable?: boolean | null;
+  min_split_duration_minutes?: number | null;
+  max_split_duration_minutes?: number | null;
+  calendar_hours?: any;
+  auto_schedule?: boolean | null;
 }
 
 // Task filters interface for timer controls

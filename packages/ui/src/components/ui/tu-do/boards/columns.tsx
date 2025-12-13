@@ -66,7 +66,9 @@ export const projectColumns = (
         >
           <span className="inline-flex items-center gap-2">
             {(() => {
-              const Icon = getIconComponentByKey(row.original.icon);
+              const Icon = getIconComponentByKey(
+                row.original.icon ?? undefined
+              );
               return Icon ? (
                 <Icon className="h-4 w-4 text-muted-foreground" />
               ) : null;
