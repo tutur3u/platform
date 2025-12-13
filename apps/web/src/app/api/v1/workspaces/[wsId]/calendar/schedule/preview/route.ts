@@ -13,6 +13,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
+import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
@@ -159,6 +160,12 @@ export async function POST(
       locked: e.locked,
     })) as CalendarEvent[];
 
+    // Filter out all-day events - they shouldn't block hour-level scheduling
+    // All-day events (midnight-to-midnight, multiple of 24h) represent full-day
+    // commitments like holidays, not specific time blocks.
+    const nonAllDayEvents = existingEvents.filter((e) => !isAllDayEvent(e));
+    const allDayEventsCount = existingEvents.length - nonAllDayEvents.length;
+
     const isValidTz = (tz: string) => {
       try {
         // eslint-disable-next-line no-new
@@ -186,11 +193,11 @@ export async function POST(
           return clientTimezone;
         })();
 
-    // Generate preview
+    // Generate preview with non-all-day events only
     const preview = generatePreview(
       habits,
       tasks,
-      existingEvents,
+      nonAllDayEvents,
       hourSettingsResult as HourSettings,
       {
         windowDays,
@@ -198,17 +205,22 @@ export async function POST(
       }
     );
 
-    // Format hour settings for debug log - extract first time block from each category
-    const formatHourRange = (weekRanges: any) => {
+    // Format hour settings for debug log - extract ALL time blocks from each category
+    const formatHourRanges = (
+      weekRanges: any
+    ): Array<{ start: string; end: string }> | null => {
       if (!weekRanges) return null;
       // Get Monday as representative (or first enabled day)
       const day =
         weekRanges.monday || weekRanges.tuesday || weekRanges.wednesday;
-      if (!day?.enabled || !day?.timeBlocks?.[0]) return null;
-      return {
-        start: day.timeBlocks[0].startTime,
-        end: day.timeBlocks[0].endTime,
-      };
+      if (!day?.enabled || !day?.timeBlocks?.length) return null;
+      // Return all time blocks
+      return day.timeBlocks.map(
+        (block: { startTime: string; endTime: string }) => ({
+          start: block.startTime,
+          end: block.endTime,
+        })
+      );
     };
 
     // Count locked vs unlocked events
@@ -222,10 +234,11 @@ export async function POST(
       existingEventsCount: existingEvents.length,
       lockedEventsCount: lockedEvents.length,
       unlockedEventsCount: unlockedEvents.length,
+      allDayEventsCount,
       hourSettings: {
-        working_hours: formatHourRange(hourSettingsResult?.workHours),
-        personal_hours: formatHourRange(hourSettingsResult?.personalHours),
-        meeting_hours: formatHourRange(hourSettingsResult?.meetingHours),
+        working_hours: formatHourRanges(hourSettingsResult?.workHours),
+        personal_hours: formatHourRanges(hourSettingsResult?.personalHours),
+        meeting_hours: formatHourRanges(hourSettingsResult?.meetingHours),
       },
       configuredTimezone,
       resolvedTimezone,

@@ -16,7 +16,6 @@ import {
   resolveTimeFormat,
   resolveTimezone,
 } from '../../../../../lib/calendar-settings-resolver';
-import AddEventDialog from './components/add-event-dialog';
 import CalendarConnectionsManager from './components/calendar-connections-manager';
 import QuickCalendarToggle from './components/quick-calendar-toggle';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
@@ -36,7 +35,6 @@ export default function CalendarClientPage({
 }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
-  const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
 
   const [calendarGateCompleted, setCalendarGateCompleted] = useState(false);
 
@@ -118,7 +116,6 @@ export default function CalendarClientPage({
           />
         </>
       )}
-      {/* <AddEventButton onOpenDialog={() => setIsAddEventDialogOpen(true)} /> */}
       {/* {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />} */}
       {/* {DEV_MODE && (
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
@@ -159,11 +156,6 @@ export default function CalendarClientPage({
           initialSettings={initialSettings}
         />
       )}
-      <AddEventDialog
-        wsId={workspace.id}
-        isOpen={isAddEventDialogOpen}
-        onClose={() => setIsAddEventDialogOpen(false)}
-      />
       {DEV_MODE && <SyncDebugPanel />}
     </>
   );
