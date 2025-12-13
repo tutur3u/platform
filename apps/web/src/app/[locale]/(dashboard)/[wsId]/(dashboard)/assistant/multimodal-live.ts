@@ -1,10 +1,4 @@
-import type {
-  Content,
-  FunctionCall,
-  GenerationConfig,
-  GenerativeContentBlob,
-  Part,
-} from '@google/generative-ai';
+import type { Content, FunctionCall, Modality, Part } from '@google/genai';
 
 /**
  * this module contains type-definitions and Type-Guards
@@ -50,14 +44,37 @@ export type ToolConfig = {
  */
 export type LiveConfig = {
   model: string;
-  systemInstruction?: { parts: Part[] };
+  /**
+   * Gemini Live now supports passing system instructions directly as a string.
+   * We also keep compatibility with the older { parts } shape used elsewhere in this folder.
+   */
+  systemInstruction?: string | { parts: Part[] };
+  /**
+   * Preferred location for response modality selection in the Live API config.
+   * Example: { responseModalities: [Modality.AUDIO] }
+   */
+  responseModalities?: Modality[];
+  /**
+   * Optional generation config. Note: response modalities are handled at top-level for Live.
+   */
   generationConfig?: Partial<LiveGenerationConfig>;
   tools?: LiveTool[];
   toolConfig?: ToolConfig;
 };
 
-export type LiveGenerationConfig = GenerationConfig & {
-  responseModalities: 'text' | 'audio' | 'image';
+export type LiveGenerationConfig = {
+  /**
+   * Legacy compatibility: older code paths used a single modality string.
+   * Newer Live API examples pass modalities at top-level via responseModalities.
+   */
+  responseModalities?:
+    | 'text'
+    | 'audio'
+    | 'image'
+    | Array<'text' | 'audio' | 'image'>;
+  // Most generation config fields are accepted by the Live API config.
+  // Keep this open to avoid over-constraining evolving SDK types.
+  [key: string]: unknown;
   speechConfig?: {
     voiceConfig?: {
       prebuiltVoiceConfig?: {
@@ -88,7 +105,7 @@ export type ClientContentMessage = {
 
 export type RealtimeInputMessage = {
   realtimeInput: {
-    mediaChunks: GenerativeContentBlob[];
+    mediaChunks: Array<{ mimeType: string; data: string }>;
   };
 };
 
@@ -173,6 +190,8 @@ export type ToolCallMessage = {
 
 export type LiveFunctionCall = FunctionCall & {
   id: string;
+  name: string;
+  args: Record<string, unknown>;
 };
 
 /**

@@ -1,5 +1,6 @@
 'use client';
 
+import { Modality } from '@google/genai';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
@@ -111,8 +112,8 @@ function AltairComponent() {
     setConfig({
       // Use Gemini 2.5 Flash Native Audio for better voice experience
       model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+      responseModalities: [Modality.AUDIO],
       generationConfig: {
-        responseModalities: 'audio',
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName: 'Aoede' },
@@ -121,10 +122,7 @@ function AltairComponent() {
         // Enable affective dialog for more expressive, emotionally engaging responses
         enableAffectiveDialog: true,
       },
-      systemInstruction: {
-        parts: [
-          {
-            text: `You are Mira, the AI voice assistant for Tuturuuu—a unified productivity platform. You help users manage their tasks through natural voice conversation. Your responses should feel like talking to a helpful, capable colleague, not a robot reading data.
+      systemInstruction: `You are Mira, the AI voice assistant for Tuturuuu—a unified productivity platform. You help users manage their tasks through natural voice conversation. Your responses should feel like talking to a helpful, capable colleague, not a robot reading data.
 
 CORE PERSONALITY:
 - Conversational & Concise: You're speaking out loud, not writing a report. Keep responses brief and natural.
@@ -148,9 +146,6 @@ PRIORITY MAPPING:
 - "important/high priority" -> high  
 - "normal/regular" -> normal
 - "low priority/no rush" -> low`,
-          },
-        ],
-      },
       tools: [
         // there is a free-tier quota for search
         { googleSearch: {} },

@@ -1,4 +1,4 @@
-import type { Part } from '@google/generative-ai';
+import type { Part } from '@google/genai';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
 import type { ReactNode } from 'react';
@@ -87,18 +87,21 @@ const RenderPart = ({ part }: { part: Part }) =>
     <div className="part part-executableCode">
       <h5>executableCode: {part.executableCode.language}</h5>
       <SyntaxHighlighter
-        language={part.executableCode.language.toLowerCase()}
+        language={(part.executableCode.language ?? 'text').toLowerCase()}
         style={dark}
-      >
-        {part.executableCode.code}
-      </SyntaxHighlighter>
+        children={part.executableCode.code ?? ''}
+      />
     </div>
   ) : part.codeExecutionResult ? (
     <div className="part part-codeExecutionResult">
       <h5>codeExecutionResult: {part.codeExecutionResult.outcome}</h5>
-      <SyntaxHighlighter language="json" style={dark}>
-        {tryParseCodeExecutionResult(part.codeExecutionResult.output)}
-      </SyntaxHighlighter>
+      <SyntaxHighlighter
+        language="json"
+        style={dark}
+        children={tryParseCodeExecutionResult(
+          part.codeExecutionResult.output ?? ''
+        )}
+      />
     </div>
   ) : (
     <div className="part part-inlinedata">
@@ -114,7 +117,7 @@ const ClientContentLog = ({ message }: Message) => {
       <h4 className="roler-user">User</h4>
       {turns.map((turn, i) => (
         <div key={`message-turn-${i}`}>
-          {turn.parts
+          {(turn.parts ?? [])
             .filter((part) => !(part.text && part.text === '\n'))
             .map((part, j) => (
               <RenderPart part={part} key={`message-turh-${i}-part-${j}`} />

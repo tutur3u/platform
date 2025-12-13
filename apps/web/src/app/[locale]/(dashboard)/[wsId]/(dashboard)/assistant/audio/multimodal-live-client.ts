@@ -15,6 +15,41 @@ import type {
   ToolResponseMessage,
 } from '../multimodal-live';
 
+export function resolveLiveResponseModalities(config: LiveConfig): Modality[] {
+  if (
+    Array.isArray(config.responseModalities) &&
+    config.responseModalities.length > 0
+  ) {
+    return config.responseModalities;
+  }
+
+  const legacy = (
+    config.generationConfig as { responseModalities?: unknown } | undefined
+  )?.responseModalities;
+
+  const legacyList = Array.isArray(legacy)
+    ? legacy
+    : typeof legacy === 'string'
+      ? [legacy]
+      : [];
+
+  const mapped: Modality[] = [];
+  for (const entry of legacyList) {
+    const normalized = String(entry).toLowerCase();
+    if (normalized === 'audio') mapped.push(Modality.AUDIO);
+    else if (normalized === 'text') mapped.push(Modality.TEXT);
+    else if (normalized === 'image') mapped.push(Modality.IMAGE);
+  }
+
+  return mapped.length > 0 ? mapped : [Modality.AUDIO];
+}
+
+export function shouldTreatMissingMimeTypeAsAudio(
+  modalities: Modality[]
+): boolean {
+  return modalities.length === 1 && modalities[0] === Modality.AUDIO;
+}
+
 /**
  * Grounding metadata from Google Search
  */
@@ -76,6 +111,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
   private session: Session | null = null;
   protected config: LiveConfig | null = null;
   public url: string = '';
+  private responseModalities: Modality[] = [Modality.AUDIO];
 
   // Expose ws-like property for compatibility checks
   public get ws(): Session | null {
@@ -120,9 +156,16 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     try {
       // Build SDK config matching official example
       // See: https://ai.google.dev/gemini-api/docs/live-tools
-      const sdkConfig: Record<string, unknown> = {
-        responseModalities: [Modality.AUDIO],
-      };
+      const sdkConfig: Record<string, unknown> = {};
+
+      // Resolve response modalities.
+      // - Prefer the new top-level config.responseModalities
+      // - Fallback to legacy generationConfig.responseModalities
+      // - Default to audio
+      const resolvedModalities = resolveLiveResponseModalities(config);
+      this.responseModalities = resolvedModalities;
+
+      sdkConfig.responseModalities = resolvedModalities;
 
       // Add system instruction (CRITICAL for guiding tool usage)
       if (config.systemInstruction) {
@@ -137,6 +180,19 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       // Add tool config for function calling behavior
       if (config.toolConfig) {
         sdkConfig.toolConfig = config.toolConfig;
+      }
+
+      // Add generation config if provided (excluding legacy responseModalities)
+      if (config.generationConfig) {
+        const generationConfig = {
+          ...(config.generationConfig as Record<string, unknown>),
+        };
+        if ('responseModalities' in generationConfig) {
+          delete generationConfig.responseModalities;
+        }
+        if (Object.keys(generationConfig).length > 0) {
+          sdkConfig.generationConfig = generationConfig;
+        }
       }
 
       // Detect ephemeral token usage: no tools/systemInstruction in client config
@@ -343,16 +399,28 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       if (serverContent.modelTurn?.parts) {
         const parts = serverContent.modelTurn.parts;
 
+        const configuredAudioOnly = shouldTreatMissingMimeTypeAsAudio(
+          this.responseModalities
+        );
+
         // Extract audio parts
         for (const part of parts) {
-          if (part.inlineData?.mimeType?.startsWith('audio/')) {
-            const base64 = part.inlineData.data;
-            if (base64) {
-              const data = this.base64ToArrayBuffer(base64);
-              this.emit('audio', data);
-              this.log('server.audio', `buffer (${data.byteLength})`);
-            }
-          }
+          const base64 = part.inlineData?.data;
+          if (!base64) continue;
+
+          // Latest examples may omit inlineData.mimeType for audio.
+          // If we're in audio-only mode, treat missing mimeType as audio.
+          const mimeType = part.inlineData?.mimeType;
+          const isAudio =
+            typeof mimeType === 'string'
+              ? mimeType.startsWith('audio/')
+              : configuredAudioOnly;
+
+          if (!isAudio) continue;
+
+          const data = this.base64ToArrayBuffer(base64);
+          this.emit('audio', data);
+          this.log('server.audio', `buffer (${data.byteLength})`);
         }
 
         // Extract text parts, filtering out "thought" content (internal model reasoning)
@@ -361,11 +429,16 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
             (p: {
               text?: string;
               thought?: boolean;
-              inlineData?: { mimeType?: string };
+              inlineData?: { mimeType?: string; data?: string };
             }) =>
               // Include if has text AND is not a "thought" (internal reasoning)
               (p.text && !p.thought) ||
-              (p.inlineData && !p.inlineData.mimeType?.startsWith('audio/'))
+              // If inlineData exists, only include it as "text" when it isn't audio.
+              // (When mimeType is missing and we're audio-only, treat it as audio and exclude.)
+              (p.inlineData &&
+                (typeof p.inlineData.mimeType === 'string'
+                  ? !p.inlineData.mimeType.startsWith('audio/')
+                  : !configuredAudioOnly))
           )
           .map((p: { text?: string }) => ({ text: p.text || '' }));
         if (textParts.length > 0) {
