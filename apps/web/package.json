@@ -145,7 +145,7 @@
     "@types/lodash": "^4.17.21",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^25.0.1",
-    "@types/papaparse": "^5.5.1",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/sanitize-html": "^2.16.0",
