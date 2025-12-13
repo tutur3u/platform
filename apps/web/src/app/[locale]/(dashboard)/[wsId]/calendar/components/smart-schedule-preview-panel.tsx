@@ -147,8 +147,6 @@ export function SmartSchedulePreviewPanel({
   const [animationSpeed] = useState(600);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
-  const isDev = process.env.NODE_ENV === 'development';
-
   const convertToCalendarEvents = useCallback(
     (events: PreviewEvent[]): CalendarEvent[] => {
       return events.map((e) => ({
@@ -812,18 +810,16 @@ ${previewData.warnings.join('\n') || 'None'}
         {/* Footer */}
         {previewData && (
           <div className="flex items-center justify-between border-t px-4 py-3">
-            {isDev && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={downloadDebugLog}
-              >
-                <Bug className="mr-1 h-3 w-3" />
-                Debug
-              </Button>
-            )}
-            <div className={cn('flex gap-2', !isDev && 'ml-auto')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={downloadDebugLog}
+            >
+              <Bug className="mr-1 h-3 w-3" />
+              Debug
+            </Button>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"

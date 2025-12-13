@@ -323,7 +323,6 @@ export function SmartSchedulePreviewDialog({
 
   const stepsWithEvents = previewData?.steps.filter((s) => s.event) || [];
   const totalSteps = stepsWithEvents.length;
-  const isDev = process.env.NODE_ENV === 'development';
 
   const downloadFullDebugLog = () => {
     if (!previewData) return;
@@ -523,7 +522,7 @@ Share this log with engineers for debugging assistance.
             <span className="text-muted-foreground text-xs">
               Preview events are shown on the calendar with a dashed border
             </span>
-            {isDev && previewData && (
+            {previewData && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -559,8 +558,6 @@ Share this log with engineers for debugging assistance.
 }
 
 function EmptyPreviewState({ debug }: { debug?: PreviewData['debug'] }) {
-  const isDev = process.env.NODE_ENV === 'development';
-
   const downloadDebugLog = () => {
     const logContent = `Smart Schedule Preview Debug Log
 Generated: ${new Date().toISOString()}
@@ -621,17 +618,15 @@ ${
         </div>
       )}
 
-      {isDev && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-4"
-          onClick={downloadDebugLog}
-        >
-          <Bug className="mr-2 h-4 w-4" />
-          Download Debug Log
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-4"
+        onClick={downloadDebugLog}
+      >
+        <Bug className="mr-2 h-4 w-4" />
+        Download Debug Log
+      </Button>
     </div>
   );
 }
