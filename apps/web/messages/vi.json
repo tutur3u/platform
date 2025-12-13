@@ -3121,8 +3121,68 @@
     "create": "Tạo bảng",
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
+    "icon_label": "Biểu tượng",
+    "icon_picker": {
+      "title": "Chọn biểu tượng",
+      "description": "Chọn một biểu tượng để đại diện cho bảng này.",
+      "search_placeholder": "Tìm biểu tượng...",
+      "clear": "Xóa"
+    },
+    "views": {
+      "cards": "Thẻ",
+      "table": "Bảng"
+    },
+    "filters": {
+      "search_label": "Tìm kiếm",
+      "search_placeholder": "Tìm bảng...",
+      "status_label": "Trạng thái",
+      "sort_label": "Sắp xếp",
+      "status": {
+        "all": "Tất cả",
+        "active": "Đang hoạt động",
+        "archived": "Đã lưu trữ",
+        "recently_deleted": "Đã xóa gần đây"
+      },
+      "sort": {
+        "name": "Tên",
+        "created_at": "Ngày tạo"
+      },
+      "sort_order": {
+        "asc": "A→Z",
+        "desc": "Z→A"
+      }
+    },
+    "empty": {
+      "title": "Không tìm thấy bảng",
+      "description": "Tạo bảng đầu tiên để bắt đầu sắp xếp công việc."
+    },
+    "stats": {
+      "lists": "cột",
+      "tasks": "công việc"
+    },
+    "actions": {
+      "duplicate": "Nhân bản bảng"
+    },
+    "edit_dialog": {
+      "title": "Chỉnh sửa bảng",
+      "description": "Cập nhật tên bảng và biểu tượng."
+    },
+    "duplicate_dialog": {
+      "title": "Nhân bản bảng",
+      "description": "Nhân bản \"{name}\" trong không gian làm việc này. Tất cả cột và công việc sẽ được bao gồm.",
+      "name_label": "Tên bảng mới",
+      "name_placeholder": "Nhập tên bảng",
+      "confirm": "Nhân bản",
+      "default_suffix": "Nhân bản",
+      "name_required": "Vui lòng nhập tên bảng",
+      "success": "Đã nhân bản bảng",
+      "failed": "Không thể nhân bản bảng"
+    },
+    "quick_create": {
+      "default_name": "Công việc"
+    },
     "row_actions": {
-      "copy": "Sao chép",
+      "copy": "Nhân bản",
       "restore": "Khôi phục",
       "delete_forever": "Xóa vĩnh viễn",
       "unarchive": "Bỏ lưu trữ",
@@ -4162,6 +4222,23 @@
       "event_suffix": "Sự kiện",
       "failed_to_load": "Không thể tải danh mục",
       "try_refreshing": "Vui lòng thử làm mới trang."
+    },
+    "timezone_required": {
+      "title": "Thiết lập múi giờ không gian làm việc",
+      "description": "Để bản xem trước lịch và Lịch thông minh hoạt động chính xác cho mọi người, vui lòng chọn múi giờ cố định và ngày bắt đầu tuần cho không gian làm việc này.",
+      "label": "Múi giờ không gian làm việc",
+      "first_day_label": "Ngày bắt đầu tuần",
+      "first_day": {
+        "auto": "Tự động",
+        "sunday": "Chủ nhật",
+        "monday": "Thứ hai",
+        "saturday": "Thứ bảy"
+      },
+      "recommended": "Đề xuất",
+      "save": "Lưu thiết lập",
+      "saving": "Đang lưu...",
+      "saved": "Đã lưu thiết lập lịch",
+      "save_failed": "Không thể lưu thiết lập lịch"
     }
   },
   "documents": {

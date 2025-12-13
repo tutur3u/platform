@@ -1,6 +1,6 @@
 'use client';
 
-import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   Bug,
@@ -23,7 +23,8 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
 
 interface SmartSchedulePreviewPanelProps {
   wsId: string;
@@ -135,10 +136,9 @@ export function SmartSchedulePreviewPanel({
     setHideNonPreviewEvents,
   } = useCalendar();
   const { refresh } = useCalendarSync();
+  const queryClient = useQueryClient();
 
-  const [isLoading, setIsLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [mode, setMode] = useState<'instant' | 'animated'>(initialMode);
 
   // Animation state
@@ -149,12 +149,71 @@ export function SmartSchedulePreviewPanel({
 
   const isDev = process.env.NODE_ENV === 'development';
 
-  // Fetch preview on panel open
-  useEffect(() => {
-    if (isOpen && !previewData && !isLoading) {
-      fetchPreview();
+  const convertToCalendarEvents = useCallback(
+    (events: PreviewEvent[]): CalendarEvent[] => {
+      return events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        start_at: e.start_at,
+        end_at: e.end_at,
+        color: e.color as any,
+        _isPreview: true,
+        _previewStep: e.step,
+        _previewType: e.type,
+        _previewSourceId: e.source_id,
+      }));
+    },
+    []
+  );
+
+  const clientTimezone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC';
     }
-  }, [isOpen]);
+  }, []);
+
+  const previewQuery = useQuery({
+    queryKey: ['smart-schedule-preview', wsId, 30, clientTimezone],
+    enabled: isOpen,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/calendar/schedule/preview`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ windowDays: 30, clientTimezone }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to generate preview');
+      }
+
+      return result as {
+        preview: PreviewData;
+        tasks?: PreviewData['tasks'];
+        habits?: PreviewData['habits'];
+        debug?: PreviewData['debug'];
+      };
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+  });
+
+  const previewData: PreviewData | null = useMemo(() => {
+    if (!previewQuery.data) return null;
+    return {
+      ...previewQuery.data.preview,
+      tasks: previewQuery.data.tasks,
+      habits: previewQuery.data.habits,
+      debug: previewQuery.data.debug,
+    };
+  }, [previewQuery.data]);
 
   // Reset mode when panel opens
   useEffect(() => {
@@ -169,15 +228,33 @@ export function SmartSchedulePreviewPanel({
       clearPreviewEvents();
       clearAffectedEventIds();
       setHideNonPreviewEvents(false);
-      setPreviewData(null);
       setCurrentStep(0);
       setIsPlaying(false);
       if (animationRef.current) {
         clearTimeout(animationRef.current);
       }
+      queryClient.removeQueries({ queryKey: ['smart-schedule-preview', wsId] });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setHideNonPreviewEvents is stable
-  }, [isOpen, clearPreviewEvents, clearAffectedEventIds]);
+  }, [
+    isOpen,
+    clearPreviewEvents,
+    clearAffectedEventIds,
+    setHideNonPreviewEvents,
+    queryClient,
+    wsId,
+  ]);
+
+  // Close panel on preview errors
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!previewQuery.isError) return;
+    toast.error(
+      previewQuery.error instanceof Error
+        ? previewQuery.error.message
+        : 'Failed to generate preview'
+    );
+    onClose();
+  }, [isOpen, previewQuery.isError, previewQuery.error, onClose]);
 
   // Update calendar preview events when mode/step changes
   useEffect(() => {
@@ -202,8 +279,23 @@ export function SmartSchedulePreviewPanel({
       const calendarEvents = convertToCalendarEvents(eventsUpToStep);
       setPreviewEvents(calendarEvents);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setHideNonPreviewEvents is stable but ESLint doesn't know
-  }, [previewData, mode, currentStep, setPreviewEvents, clearAffectedEventIds]);
+  }, [
+    previewData,
+    mode,
+    currentStep,
+    setPreviewEvents,
+    clearAffectedEventIds,
+    setHideNonPreviewEvents,
+    convertToCalendarEvents,
+  ]);
+
+  // Auto-start animation in animated mode once we have results
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialMode !== 'animated') return;
+    if (!previewData?.events?.length) return;
+    setIsPlaying(true);
+  }, [isOpen, initialMode, previewData?.events?.length]);
 
   // Animation playback
   useEffect(() => {
@@ -226,45 +318,6 @@ export function SmartSchedulePreviewPanel({
     };
   }, [isPlaying, currentStep, mode, previewData, animationSpeed]);
 
-  const fetchPreview = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/schedule/preview`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ windowDays: 30 }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate preview');
-      }
-
-      setPreviewData({
-        ...result.preview,
-        tasks: result.tasks,
-        habits: result.habits,
-        debug: result.debug,
-      });
-
-      // Auto-start animation in animated mode
-      if (initialMode === 'animated' && result.preview.events.length > 0) {
-        setIsPlaying(true);
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to generate preview'
-      );
-      onClose();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [wsId, onClose, initialMode]);
-
   const handleApply = async () => {
     if (!previewData?.events.length) {
       toast.error('No events to apply');
@@ -286,6 +339,7 @@ export function SmartSchedulePreviewPanel({
             forceReschedule: true,
             // Pass preview events directly to create exact same schedule
             previewEvents: previewData.events,
+            clientTimezone,
           }),
         }
       );
@@ -297,12 +351,12 @@ export function SmartSchedulePreviewPanel({
       }
 
       // Clear all preview state FIRST before refreshing
-      setPreviewData(null);
       clearPreviewEvents();
       clearAffectedEventIds();
       setHideNonPreviewEvents(false);
       setCurrentStep(0);
       setIsPlaying(false);
+      queryClient.removeQueries({ queryKey: ['smart-schedule-preview', wsId] });
 
       // Close panel immediately so user sees actual calendar
       onClose();
@@ -359,20 +413,6 @@ export function SmartSchedulePreviewPanel({
   const resetAnimation = () => {
     setCurrentStep(0);
     setIsPlaying(false);
-  };
-
-  const convertToCalendarEvents = (events: PreviewEvent[]): CalendarEvent[] => {
-    return events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      start_at: e.start_at,
-      end_at: e.end_at,
-      color: e.color as any,
-      _isPreview: true,
-      _previewStep: e.step,
-      _previewType: e.type,
-      _previewSourceId: e.source_id,
-    }));
   };
 
   const downloadDebugLog = () => {
@@ -551,7 +591,7 @@ ${previewData.warnings.join('\n') || 'None'}
         className={cn(
           'fixed z-50 rounded-xl border bg-background/95 shadow-2xl backdrop-blur-sm',
           // Responsive positioning
-          'bottom-4 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6',
+          'right-4 bottom-4 left-4 sm:right-6 sm:bottom-6 sm:left-auto',
           'sm:w-[380px] sm:max-w-[calc(100vw-3rem)]'
         )}
       >
@@ -573,10 +613,10 @@ ${previewData.warnings.join('\n') || 'None'}
 
         {/* Content */}
         <div className="p-4">
-          {isLoading ? (
+          {previewQuery.isFetching ? (
             <div className="flex flex-col items-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">
+              <p className="mt-3 text-muted-foreground text-sm">
                 Analyzing calendar...
               </p>
             </div>
@@ -585,12 +625,13 @@ ${previewData.warnings.join('\n') || 'None'}
               {/* Mode Toggle */}
               <div className="flex gap-1 rounded-lg bg-muted p-1">
                 <button
+                  type="button"
                   onClick={() => {
                     setMode('instant');
                     setIsPlaying(false);
                   }}
                   className={cn(
-                    'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    'flex-1 rounded-md px-3 py-1.5 font-medium text-sm transition-colors',
                     mode === 'instant'
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -599,9 +640,10 @@ ${previewData.warnings.join('\n') || 'None'}
                   Instant
                 </button>
                 <button
+                  type="button"
                   onClick={() => setMode('animated')}
                   className={cn(
-                    'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    'flex-1 rounded-md px-3 py-1.5 font-medium text-sm transition-colors',
                     mode === 'animated'
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -614,19 +656,19 @@ ${previewData.warnings.join('\n') || 'None'}
               {/* Stats */}
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div className="rounded-lg bg-muted/50 p-2">
-                  <p className="text-lg font-bold text-dynamic-blue">
+                  <p className="font-bold text-dynamic-blue text-lg">
                     {previewData.summary.totalEvents}
                   </p>
                   <p className="text-[10px] text-muted-foreground">Events</p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-2">
-                  <p className="text-lg font-bold text-dynamic-green">
+                  <p className="font-bold text-dynamic-green text-lg">
                     {previewData.summary.habitsScheduled}
                   </p>
                   <p className="text-[10px] text-muted-foreground">Habits</p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-2">
-                  <p className="text-lg font-bold text-dynamic-purple">
+                  <p className="font-bold text-dynamic-purple text-lg">
                     {previewData.summary.tasksScheduled}
                   </p>
                   <p className="text-[10px] text-muted-foreground">Tasks</p>
@@ -634,7 +676,7 @@ ${previewData.warnings.join('\n') || 'None'}
                 <div className="rounded-lg bg-muted/50 p-2">
                   <p
                     className={cn(
-                      'text-lg font-bold',
+                      'font-bold text-lg',
                       previewData.summary.partiallyScheduledTasks > 0
                         ? 'text-dynamic-orange'
                         : 'text-muted-foreground'
@@ -650,10 +692,10 @@ ${previewData.warnings.join('\n') || 'None'}
               {previewData.summary.totalEvents === 0 && (
                 <div className="rounded-lg border border-dashed p-4 text-center">
                   <Info className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                  <p className="mt-2 text-sm font-medium">
+                  <p className="mt-2 font-medium text-sm">
                     No events to schedule
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-muted-foreground text-xs">
                     {previewData.debug?.habitsWithAutoSchedule === 0 &&
                     previewData.debug?.tasksWithAutoSchedule === 0
                       ? 'Enable auto-schedule on tasks or habits'
@@ -706,7 +748,7 @@ ${previewData.warnings.join('\n') || 'None'}
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {currentStep + 1} / {totalSteps}
                     </span>
                   </div>
@@ -724,11 +766,11 @@ ${previewData.warnings.join('\n') || 'None'}
                       animate={{ opacity: 1, x: 0 }}
                       className="rounded-lg bg-muted/50 p-3"
                     >
-                      <p className="text-sm font-medium line-clamp-2">
+                      <p className="line-clamp-2 font-medium text-sm">
                         {currentStepData.description}
                       </p>
                       {currentStepData.event && (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 text-muted-foreground text-xs">
                           {new Date(
                             currentStepData.event.start_at
                           ).toLocaleTimeString([], {
@@ -757,7 +799,7 @@ ${previewData.warnings.join('\n') || 'None'}
                     <p className="font-medium text-dynamic-orange">
                       {previewData.warnings.length} warning(s)
                     </p>
-                    <p className="mt-0.5 text-muted-foreground line-clamp-2">
+                    <p className="mt-0.5 line-clamp-2 text-muted-foreground">
                       {previewData.warnings[0]}
                     </p>
                   </div>
@@ -796,7 +838,7 @@ ${previewData.warnings.join('\n') || 'None'}
                 onClick={handleApply}
                 disabled={
                   isApplying ||
-                  isLoading ||
+                  previewQuery.isFetching ||
                   previewData.summary.totalEvents === 0
                 }
               >

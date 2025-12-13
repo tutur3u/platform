@@ -1,6 +1,5 @@
 'use client';
 
-import { SmartSchedulePreviewPanel } from './smart-schedule-preview-panel';
 import {
   ChevronDown,
   Eye,
@@ -20,6 +19,7 @@ import {
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { SmartSchedulePreviewPanel } from './smart-schedule-preview-panel';
 
 interface SmartScheduleButtonProps {
   wsId: string;
@@ -34,6 +34,14 @@ export function SmartScheduleButton({ wsId }: SmartScheduleButtonProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { refresh } = useCalendarSync();
 
+  const clientTimezone = (() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC';
+    }
+  })();
+
   const handleSmartSchedule = async () => {
     setDropdownOpen(false); // Close dropdown immediately
     setIsLoading(true);
@@ -45,7 +53,11 @@ export function SmartScheduleButton({ wsId }: SmartScheduleButtonProps) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ windowDays: 30, forceReschedule: true }),
+          body: JSON.stringify({
+            windowDays: 30,
+            forceReschedule: true,
+            clientTimezone,
+          }),
         }
       );
 
@@ -112,7 +124,7 @@ export function SmartScheduleButton({ wsId }: SmartScheduleButtonProps) {
             <Zap className="mr-2 h-4 w-4 text-dynamic-yellow" />
             <div className="flex flex-col">
               <span className="font-medium">Execute Now</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground text-xs">
                 Apply immediately
               </span>
             </div>
@@ -125,7 +137,7 @@ export function SmartScheduleButton({ wsId }: SmartScheduleButtonProps) {
             <Eye className="mr-2 h-4 w-4 text-dynamic-blue" />
             <div className="flex flex-col">
               <span className="font-medium">Preview</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground text-xs">
                 See all changes first
               </span>
             </div>
@@ -137,7 +149,7 @@ export function SmartScheduleButton({ wsId }: SmartScheduleButtonProps) {
             <Play className="mr-2 h-4 w-4 text-dynamic-green" />
             <div className="flex flex-col">
               <span className="font-medium">Animated Demo</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground text-xs">
                 Watch step-by-step
               </span>
             </div>

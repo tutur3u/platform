@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -12,9 +13,10 @@ export async function PUT(req: Request, { params }: Params) {
   const { boardId: id } = await params;
 
   const data = (await req.json()) as {
-    name: string;
-    color: string;
-    group_ids: string[];
+    name?: string;
+    icon?: Database['public']['Enums']['workspace_board_icon'] | null;
+    color?: string;
+    group_ids?: string[];
   };
 
   const { group_ids: _, ...coreData } = data;

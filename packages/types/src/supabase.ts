@@ -9779,6 +9779,7 @@ export type Database = {
             | Database['public']['Enums']['estimation_type']
             | null;
           extended_estimation: boolean;
+          icon: Database['public']['Enums']['workspace_board_icon'] | null;
           id: string;
           name: string | null;
           next_task_number: number;
@@ -9797,6 +9798,7 @@ export type Database = {
             | Database['public']['Enums']['estimation_type']
             | null;
           extended_estimation?: boolean;
+          icon?: Database['public']['Enums']['workspace_board_icon'] | null;
           id?: string;
           name?: string | null;
           next_task_number?: number;
@@ -9815,6 +9817,7 @@ export type Database = {
             | Database['public']['Enums']['estimation_type']
             | null;
           extended_estimation?: boolean;
+          icon?: Database['public']['Enums']['workspace_board_icon'] | null;
           id?: string;
           name?: string | null;
           next_task_number?: number;
@@ -16557,6 +16560,83 @@ export type Database = {
         | 'gemini-2.5-pro'
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
+      workspace_board_icon:
+        | 'Users'
+        | 'User'
+        | 'Briefcase'
+        | 'Target'
+        | 'Rocket'
+        | 'TrendingUp'
+        | 'ClipboardList'
+        | 'ListChecks'
+        | 'CheckSquare'
+        | 'Calendar'
+        | 'CalendarDays'
+        | 'CalendarCheck'
+        | 'Clock'
+        | 'AlarmClock'
+        | 'Bell'
+        | 'Star'
+        | 'Settings'
+        | 'Shield'
+        | 'Tag'
+        | 'Folder'
+        | 'FolderOpen'
+        | 'FileText'
+        | 'Database'
+        | 'Server'
+        | 'Inbox'
+        | 'Mail'
+        | 'MessageSquare'
+        | 'Phone'
+        | 'Video'
+        | 'Mic'
+        | 'Image'
+        | 'Paperclip'
+        | 'Link'
+        | 'ExternalLink'
+        | 'Download'
+        | 'Upload'
+        | 'Search'
+        | 'Eye'
+        | 'EyeOff'
+        | 'Lock'
+        | 'Key'
+        | 'Wrench'
+        | 'Paintbrush'
+        | 'Wand2'
+        | 'Lightbulb'
+        | 'Bug'
+        | 'GraduationCap'
+        | 'BookOpen'
+        | 'Bookmark'
+        | 'Newspaper'
+        | 'PieChart'
+        | 'Play'
+        | 'PlusSquare'
+        | 'Puzzle'
+        | 'Package'
+        | 'Truck'
+        | 'Monitor'
+        | 'Laptop'
+        | 'Music'
+        | 'Timer'
+        | 'Trash2'
+        | 'Heart'
+        | 'HelpCircle'
+        | 'Moon'
+        | 'Zap'
+        | 'Flame'
+        | 'Gift'
+        | 'Globe'
+        | 'MapPin'
+        | 'Home'
+        | 'Building2'
+        | 'ShoppingCart'
+        | 'CreditCard'
+        | 'Wallet'
+        | 'ThumbsUp'
+        | 'Trophy';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -16857,6 +16937,84 @@ export const Constants = {
         'gemini-2.5-pro',
         'gemini-2.0-flash-lite',
         'gemini-2.5-flash-lite',
+      ],
+      workspace_board_icon: [
+        'Users',
+        'User',
+        'Briefcase',
+        'Target',
+        'Rocket',
+        'TrendingUp',
+        'ClipboardList',
+        'ListChecks',
+        'CheckSquare',
+        'Calendar',
+        'CalendarDays',
+        'CalendarCheck',
+        'Clock',
+        'AlarmClock',
+        'Bell',
+        'Star',
+        'Settings',
+        'Shield',
+        'Tag',
+        'Folder',
+        'FolderOpen',
+        'FileText',
+        'Database',
+        'Server',
+        'Inbox',
+        'Mail',
+        'MessageSquare',
+        'Phone',
+        'Video',
+        'Mic',
+        'Image',
+        'Paperclip',
+        'Link',
+        'ExternalLink',
+        'Download',
+        'Upload',
+        'Search',
+        'Eye',
+        'EyeOff',
+        'Lock',
+        'Key',
+        'Wrench',
+        'Paintbrush',
+        'Wand2',
+        'Lightbulb',
+        'Bug',
+        'GraduationCap',
+        'BookOpen',
+        'Bookmark',
+        'Newspaper',
+        'PieChart',
+        'Play',
+        'PlusSquare',
+        'Puzzle',
+        'Package',
+        'Truck',
+        'Monitor',
+        'Laptop',
+        'Music',
+        'Timer',
+        'Trash2',
+        'Heart',
+        'HelpCircle',
+        'Moon',
+        'Zap',
+        'Flame',
+        'Gift',
+        'Globe',
+        'MapPin',
+        'Home',
+        'Building2',
+        'ShoppingCart',
+        'CreditCard',
+        'Wallet',
+        'ThumbsUp',
+        'Trophy',
       ],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [

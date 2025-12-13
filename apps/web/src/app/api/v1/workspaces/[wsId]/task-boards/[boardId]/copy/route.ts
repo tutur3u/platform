@@ -28,6 +28,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Hard lock: copying boards across workspaces is not allowed (UI should not expose it).
+    // This enforces the rule server-side as well.
+    if (targetWorkspaceId !== wsId) {
+      return NextResponse.json(
+        { error: 'Copying boards to another workspace is not allowed' },
+        { status: 403 }
+      );
+    }
+
     const supabase = await createClient();
 
     // Get authenticated user
@@ -131,6 +140,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       deleted_at: null,
       created_at: new Date().toISOString(),
       template_id: sourceBoard.template_id,
+      icon: sourceBoard.icon ?? null,
     };
 
     const { data: createdBoard, error: boardError } = await supabase

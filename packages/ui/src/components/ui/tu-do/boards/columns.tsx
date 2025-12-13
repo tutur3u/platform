@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
+import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
@@ -63,7 +64,15 @@ export const projectColumns = (
           className="line-clamp-1 max-w-32 break-all font-semibold hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
-          {row.getValue('name') || '-'}
+          <span className="inline-flex items-center gap-2">
+            {(() => {
+              const Icon = getIconComponentByKey(row.original.icon);
+              return Icon ? (
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              ) : null;
+            })()}
+            <span>{row.getValue('name') || '-'}</span>
+          </span>
         </Link>
       </div>
     ),

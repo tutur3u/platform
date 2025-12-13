@@ -3022,8 +3022,68 @@
     "create": "Create board",
     "create_description": "Create a task board",
     "description": "Task boards are used to manage tasks that are related to a specific project or goal.",
+    "icon_label": "Icon",
+    "icon_picker": {
+      "title": "Select an icon",
+      "description": "Choose an icon to represent this board.",
+      "search_placeholder": "Search icons...",
+      "clear": "Clear"
+    },
+    "views": {
+      "cards": "Cards",
+      "table": "Table"
+    },
+    "filters": {
+      "search_label": "Search",
+      "search_placeholder": "Search boards...",
+      "status_label": "Status",
+      "sort_label": "Sort",
+      "status": {
+        "all": "All",
+        "active": "Active",
+        "archived": "Archived",
+        "recently_deleted": "Recently deleted"
+      },
+      "sort": {
+        "name": "Name",
+        "created_at": "Created"
+      },
+      "sort_order": {
+        "asc": "A→Z",
+        "desc": "Z→A"
+      }
+    },
+    "empty": {
+      "title": "No boards found",
+      "description": "Create your first board to start organizing tasks."
+    },
+    "stats": {
+      "lists": "lists",
+      "tasks": "tasks"
+    },
+    "actions": {
+      "duplicate": "Duplicate board"
+    },
+    "edit_dialog": {
+      "title": "Edit board",
+      "description": "Update the board name and icon."
+    },
+    "duplicate_dialog": {
+      "title": "Duplicate board",
+      "description": "Duplicate \"{name}\" in this workspace. All columns and tasks will be included.",
+      "name_label": "New board name",
+      "name_placeholder": "Enter board name",
+      "confirm": "Duplicate",
+      "default_suffix": "Duplicate",
+      "name_required": "Please enter a board name",
+      "success": "Board duplicated",
+      "failed": "Failed to duplicate board"
+    },
+    "quick_create": {
+      "default_name": "Tasks"
+    },
     "row_actions": {
-      "copy": "Copy",
+      "copy": "Duplicate",
       "restore": "Restore",
       "delete_forever": "Delete Forever",
       "unarchive": "Unarchive",
@@ -4049,6 +4109,23 @@
       "event_suffix": "Event",
       "failed_to_load": "Failed to load categories",
       "try_refreshing": "Please try refreshing the page."
+    },
+    "timezone_required": {
+      "title": "Set workspace timezone",
+      "description": "To ensure calendar previews and Smart Schedule work correctly for everyone, please choose a fixed timezone and first day of week for this workspace.",
+      "label": "Workspace timezone",
+      "first_day_label": "First day of week",
+      "first_day": {
+        "auto": "Auto",
+        "sunday": "Sunday",
+        "monday": "Monday",
+        "saturday": "Saturday"
+      },
+      "recommended": "Recommended",
+      "save": "Save settings",
+      "saving": "Saving...",
+      "saved": "Calendar settings saved",
+      "save_failed": "Failed to save calendar settings"
     }
   },
   "documents": {

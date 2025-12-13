@@ -26,6 +26,14 @@ import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import {
+  addZonedDaysUtc,
+  getZonedDateParts,
+  getZonedWeekday,
+  isValidTimeZone,
+  startOfZonedDayUtc,
+  zonedDateTimeToUtc,
+} from './timezone-utils';
 
 // ============================================================================
 // PREVIEW TYPES
@@ -223,21 +231,48 @@ function getLocalHour(date: Date, timezone: string | null | undefined): number {
   }
 }
 
+function getLocalMinute(
+  date: Date,
+  timezone: string | null | undefined
+): number {
+  if (!timezone || timezone === 'auto') {
+    return date.getMinutes(); // Use system local time, not UTC
+  }
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      minute: 'numeric',
+    });
+    const parts = formatter.formatToParts(date);
+    const minutePart = parts.find((p) => p.type === 'minute');
+    return parseInt(minutePart?.value || '0', 10);
+  } catch {
+    return date.getMinutes(); // Fallback to system local time, not UTC
+  }
+}
+
 function generatePreviewId(): string {
   return `preview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function formatSlotForDebug(slot: {
-  start: Date;
-  end: Date;
-  maxAvailable: number;
-}): SlotDebugInfo {
+function formatSlotForDebug(
+  slot: {
+    start: Date;
+    end: Date;
+    maxAvailable: number;
+  },
+  timezone: string | null | undefined
+): SlotDebugInfo {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayIdx =
+    timezone && timezone !== 'auto'
+      ? getZonedWeekday(slot.start, timezone)
+      : slot.start.getDay();
   return {
     start: slot.start.toISOString(),
     end: slot.end.toISOString(),
     maxAvailable: Math.round(slot.maxAvailable),
-    dayOfWeek: dayNames[slot.start.getDay()] || 'Unknown',
+    dayOfWeek: dayNames[dayIdx] || 'Unknown',
   };
 }
 
@@ -297,7 +332,7 @@ function calculateDeviationMinutes(
   }
 
   const actualHour = getLocalHour(actualStartTime, timezone);
-  const actualMin = actualStartTime.getMinutes();
+  const actualMin = getLocalMinute(actualStartTime, timezone);
   const actualTimeInMinutes = actualHour * 60 + actualMin;
 
   if (idealTime) {
@@ -392,11 +427,18 @@ function findAvailableSlotsInDay(
   hourSettings: HourSettings,
   calendarHours: 'personal_hours' | 'work_hours' | 'meeting_hours' | null,
   occupiedSlots: PreviewSlotTracker,
-  minDuration: number
+  minDuration: number,
+  timezone: string | null | undefined
 ): Array<{ start: Date; end: Date; maxAvailable: number }> {
-  const dayOfWeek = date.getDay();
+  const dayOfWeek =
+    timezone && timezone !== 'auto'
+      ? getZonedWeekday(date, timezone)
+      : date.getDay();
   const timeBlocks = getDayTimeBlocks(hourSettings, calendarHours, dayOfWeek);
   const slots: Array<{ start: Date; end: Date; maxAvailable: number }> = [];
+
+  const ymd =
+    timezone && timezone !== 'auto' ? getZonedDateParts(date, timezone) : null;
 
   for (const block of timeBlocks) {
     if (!block.startTime || !block.endTime) continue;
@@ -404,11 +446,39 @@ function findAvailableSlotsInDay(
     const [startHour, startMin] = block.startTime.split(':').map(Number);
     const [endHour, endMin] = block.endTime.split(':').map(Number);
 
-    const blockStart = new Date(date);
-    blockStart.setHours(startHour || 0, startMin || 0, 0, 0);
+    const blockStart =
+      timezone && timezone !== 'auto' && ymd
+        ? zonedDateTimeToUtc(
+            {
+              ...ymd,
+              hour: startHour || 0,
+              minute: startMin || 0,
+              second: 0,
+            },
+            timezone
+          )
+        : (() => {
+            const d = new Date(date);
+            d.setHours(startHour || 0, startMin || 0, 0, 0);
+            return d;
+          })();
 
-    const blockEnd = new Date(date);
-    blockEnd.setHours(endHour || 23, endMin || 59, 0, 0);
+    const blockEnd =
+      timezone && timezone !== 'auto' && ymd
+        ? zonedDateTimeToUtc(
+            {
+              ...ymd,
+              hour: endHour || 23,
+              minute: endMin || 59,
+              second: 0,
+            },
+            timezone
+          )
+        : (() => {
+            const d = new Date(date);
+            d.setHours(endHour || 23, endMin || 59, 0, 0);
+            return d;
+          })();
 
     const conflicts = occupiedSlots.getConflicts(blockStart, blockEnd);
 
@@ -511,7 +581,7 @@ function filterSlotsByTimePreference(
 
   const getDistanceFromIdealTime = (slot: { start: Date; end: Date }) => {
     const slotHour = getLocalHour(slot.start, timezone);
-    const slotMin = slot.start.getMinutes();
+    const slotMin = getLocalMinute(slot.start, timezone);
     const slotTimeInMinutes = slotHour * 60 + slotMin;
 
     if (idealHour !== null) {
@@ -584,6 +654,7 @@ function convertHabitToConfig(habit: Habit): HabitDurationConfig {
 export interface GeneratePreviewOptions {
   windowDays?: number;
   timezone?: string | null;
+  now?: Date;
 }
 
 /**
@@ -596,7 +667,11 @@ export function generatePreview(
   hourSettings: HourSettings,
   options: GeneratePreviewOptions = {}
 ): PreviewResult {
-  const { windowDays = 30, timezone = null } = options;
+  const { windowDays = 30, timezone = null, now: nowOption } = options;
+  const resolvedTimezone =
+    timezone && timezone !== 'auto' && isValidTimeZone(timezone)
+      ? timezone
+      : Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const steps: SchedulingStep[] = [];
   const allPreviewEvents: PreviewEvent[] = [];
@@ -606,14 +681,20 @@ export function generatePreview(
   const taskWarnings: string[] = [];
 
   let stepCounter = 0;
-  let bumpedHabitsCount = 0;
-  let breaksCount = 0;
+  const bumpedHabitsCount = 0;
+  const breaksCount = 0;
   let partiallyScheduledTasks = 0;
   let unscheduledTasks = 0;
 
-  const now = new Date();
-  const rangeEnd = new Date(now);
-  rangeEnd.setDate(rangeEnd.getDate() + windowDays);
+  const now = nowOption ? new Date(nowOption) : new Date();
+  const rangeEnd =
+    resolvedTimezone && resolvedTimezone !== 'auto'
+      ? addZonedDaysUtc(now, resolvedTimezone, windowDays)
+      : (() => {
+          const d = new Date(now);
+          d.setDate(d.getDate() + windowDays);
+          return d;
+        })();
 
   // Convert existing events to blocked slots
   // Only block:
@@ -653,7 +734,7 @@ export function generatePreview(
     timestamp: Date.now(),
     debug: {
       slotsAvailable: blockedEventsCount,
-      reason: `Window: ${windowDays} days from ${now.toISOString().split('T')[0]} to ${rangeEnd.toISOString().split('T')[0]}`,
+      reason: `Window: ${windowDays} days from ${now.toISOString().split('T')[0]} to ${rangeEnd.toISOString().split('T')[0]} (tz=${resolvedTimezone})`,
     },
   });
 
@@ -682,7 +763,7 @@ export function generatePreview(
 
     for (const occurrence of occurrences) {
       // Use local date string to avoid UTC/local date mismatch
-      const occurrenceDate = getLocalDateString(occurrence, timezone);
+      const occurrenceDate = getLocalDateString(occurrence, resolvedTimezone);
 
       const { min: minDuration } = getEffectiveDurationBounds({
         duration_minutes: habit.duration_minutes,
@@ -695,7 +776,8 @@ export function generatePreview(
         hourSettings,
         habit.calendar_hours,
         occupiedSlots,
-        minDuration || 15
+        minDuration || 15,
+        resolvedTimezone
       );
 
       if (slots.length === 0) {
@@ -719,20 +801,23 @@ export function generatePreview(
         habit.ideal_time,
         habit.time_preference,
         habit.duration_minutes || minDuration || 30,
-        timezone
+        resolvedTimezone
       );
       const habitConfig = convertHabitToConfig(habit);
-      let bestSlot;
+      let bestSlot:
+        | { start: Date; end: Date; maxAvailable: number }
+        | undefined;
       if (habit.ideal_time || habit.time_preference) {
         bestSlot = preferredSlots.find(
           (slot) => slot.maxAvailable >= (minDuration || 15)
         );
       } else {
-        bestSlot = findBestSlotForHabitAI(
-          habitConfig,
-          preferredSlots,
-          timezone
-        );
+        bestSlot =
+          findBestSlotForHabitAI(
+            habitConfig,
+            preferredSlots,
+            resolvedTimezone
+          ) ?? undefined;
       }
 
       if (!bestSlot) {
@@ -763,7 +848,7 @@ export function generatePreview(
         bestSlot,
         duration,
         now,
-        timezone
+        resolvedTimezone
       );
 
       const idealStartTime = roundTo15Minutes(rawIdealStartTime);
@@ -777,7 +862,7 @@ export function generatePreview(
         idealStartTime, // Use the ACTUAL scheduled time, not slot start
         habit.ideal_time,
         habit.time_preference,
-        timezone
+        resolvedTimezone
       );
       const skipCheck = shouldSkipHabitInstance(actualDeviationMinutes, habit);
       if (skipCheck.skip) {
@@ -795,7 +880,10 @@ export function generatePreview(
       }
 
       // Use the actual scheduled time's date for occurrence_date (in local timezone)
-      const actualOccurrenceDate = getLocalDateString(idealStartTime, timezone);
+      const actualOccurrenceDate = getLocalDateString(
+        idealStartTime,
+        resolvedTimezone
+      );
 
       const previewEvent: PreviewEvent = {
         id: generatePreviewId(),
@@ -810,9 +898,9 @@ export function generatePreview(
         occurrence_date: actualOccurrenceDate,
       };
 
-      const slotChosenDebug = formatSlotForDebug(bestSlot);
-      const startTimeFormatted = formatTime(idealStartTime, timezone);
-      const endTimeFormatted = formatTime(eventEnd, timezone);
+      const slotChosenDebug = formatSlotForDebug(bestSlot, resolvedTimezone);
+      const startTimeFormatted = formatTime(idealStartTime, resolvedTimezone);
+      const endTimeFormatted = formatTime(eventEnd, resolvedTimezone);
 
       steps.push({
         step: stepCounter++,
@@ -825,7 +913,9 @@ export function generatePreview(
         timestamp: Date.now(),
         debug: {
           slotsAvailable: futureSlots.length,
-          slotsConsidered: preferredSlots.slice(0, 3).map(formatSlotForDebug),
+          slotsConsidered: preferredSlots
+            .slice(0, 3)
+            .map((s) => formatSlotForDebug(s, resolvedTimezone)),
           slotChosen: slotChosenDebug,
           reason: habit.ideal_time
             ? `Preferred slot closest to ideal time ${habit.ideal_time}`
@@ -896,6 +986,15 @@ export function generatePreview(
     return 0;
   });
 
+  const zonedWindowStart =
+    resolvedTimezone && resolvedTimezone !== 'auto'
+      ? startOfZonedDayUtc(now, resolvedTimezone)
+      : (() => {
+          const d = new Date(now);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        })();
+
   for (const task of sortedTasks) {
     const totalMinutes = (task.total_duration ?? 0) * 60;
     const scheduledMinutes = task.scheduled_minutes ?? 0;
@@ -928,9 +1027,15 @@ export function generatePreview(
       dayOffset < windowDays && remainingMinutes > 0;
       dayOffset++
     ) {
-      const searchDate = new Date(now);
-      searchDate.setDate(searchDate.getDate() + dayOffset);
-      searchDate.setHours(0, 0, 0, 0);
+      const searchDate =
+        resolvedTimezone && resolvedTimezone !== 'auto'
+          ? addZonedDaysUtc(zonedWindowStart, resolvedTimezone, dayOffset)
+          : (() => {
+              const d = new Date(now);
+              d.setDate(d.getDate() + dayOffset);
+              d.setHours(0, 0, 0, 0);
+              return d;
+            })();
 
       if (task.start_date && searchDate < new Date(task.start_date)) {
         continue;
@@ -941,10 +1046,11 @@ export function generatePreview(
         hourSettings,
         task.calendar_hours,
         occupiedSlots,
-        minDuration
+        minDuration,
+        resolvedTimezone
       );
 
-      let futureSlots = filterFutureSlots(slots, now);
+      const futureSlots = filterFutureSlots(slots, now);
 
       // Sort slots by start time to enable back-to-back scheduling
       futureSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
@@ -1005,10 +1111,10 @@ export function generatePreview(
           scheduled_minutes: eventDuration,
         };
 
-        const taskStartFormatted = formatTime(startTime, timezone);
-        const taskEndFormatted = formatTime(eventEnd, timezone);
+        const taskStartFormatted = formatTime(startTime, resolvedTimezone);
+        const taskEndFormatted = formatTime(eventEnd, resolvedTimezone);
         // Use the actual event start time for the date (in local timezone)
-        const taskDateStr = getLocalDateString(startTime, timezone);
+        const taskDateStr = getLocalDateString(startTime, resolvedTimezone);
 
         steps.push({
           step: stepCounter++,
@@ -1021,8 +1127,10 @@ export function generatePreview(
           timestamp: Date.now(),
           debug: {
             slotsAvailable: futureSlots.length,
-            slotsConsidered: futureSlots.slice(0, 5).map(formatSlotForDebug),
-            slotChosen: formatSlotForDebug(bestSlot),
+            slotsConsidered: futureSlots
+              .slice(0, 5)
+              .map((s) => formatSlotForDebug(s, resolvedTimezone)),
+            slotChosen: formatSlotForDebug(bestSlot, resolvedTimezone),
             reason: `Earliest slot with ${Math.round(bestSlot.maxAvailable)}min available (back-to-back scheduling)`,
             remainingMinutes: remainingMinutes - eventDuration,
             dayOffset,

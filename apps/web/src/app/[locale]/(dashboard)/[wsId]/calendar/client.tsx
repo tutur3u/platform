@@ -19,6 +19,7 @@ import {
 import AddEventDialog from './components/add-event-dialog';
 import CalendarConnectionsManager from './components/calendar-connections-manager';
 import QuickCalendarToggle from './components/quick-calendar-toggle';
+import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
 import { SmartScheduleButton } from './components/smart-schedule-button';
 import SyncDebugPanel from './components/sync-debug-panel';
 
@@ -36,6 +37,15 @@ export default function CalendarClientPage({
   const t = useTranslations('calendar');
   const locale = useLocale();
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
+
+  const [calendarGateCompleted, setCalendarGateCompleted] = useState(false);
+
+  const needsCalendarGate =
+    !calendarGateCompleted &&
+    (!workspace.timezone ||
+      workspace.timezone === 'auto' ||
+      !workspace.first_day_of_week ||
+      workspace.first_day_of_week === 'auto');
 
   // Fetch user calendar settings to resolve effective settings
   const { data: userSettings } = useQuery({
@@ -127,20 +137,28 @@ export default function CalendarClientPage({
 
   return (
     <>
-      <SmartCalendar
-        t={t}
-        locale={locale}
-        workspace={workspace}
-        useQuery={useQuery}
-        useQueryClient={useQueryClient}
-        experimentalGoogleToken={
-          experimentalGoogleToken?.ws_id === workspace.id
-            ? experimentalGoogleToken
-            : null
-        }
-        extras={extras}
-        initialSettings={initialSettings}
-      />
+      {needsCalendarGate && (
+        <RequireWorkspaceTimezoneDialog
+          wsId={workspace.id}
+          onCompleted={() => setCalendarGateCompleted(true)}
+        />
+      )}
+      {!needsCalendarGate && (
+        <SmartCalendar
+          t={t}
+          locale={locale}
+          workspace={workspace}
+          useQuery={useQuery}
+          useQueryClient={useQueryClient}
+          experimentalGoogleToken={
+            experimentalGoogleToken?.ws_id === workspace.id
+              ? experimentalGoogleToken
+              : null
+          }
+          extras={extras}
+          initialSettings={initialSettings}
+        />
+      )}
       <AddEventDialog
         wsId={workspace.id}
         isOpen={isAddEventDialogOpen}

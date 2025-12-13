@@ -3,7 +3,6 @@
 import type { Row } from '@tanstack/react-table';
 import {
   Archive,
-  Copy,
   Edit,
   Ellipsis,
   Eye,
@@ -34,7 +33,6 @@ import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { CopyBoardDialog } from './copy-board-dialog';
 import { TaskBoardForm } from './form';
 
 interface ProjectRowActionsProps {
@@ -59,7 +57,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
-  const [showCopyDialog, setShowCopyDialog] = useState(false);
 
   // No need for onSuccess callback - mutations handle invalidation
   // React Query will automatically refetch and update the UI
@@ -126,15 +123,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   <RotateCcw className="mr-2 h-4 w-4" />
                   {t('ws-task-boards.row_actions.unarchive')}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCopyDialog(true);
-                  }}
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.row_actions.copy')}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -157,15 +145,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   {t('common.edit')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCopyDialog(true);
-                  }}
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.row_actions.copy')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -200,12 +179,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           form={<TaskBoardForm wsId={data.ws_id} data={data} />}
         />
       </div>
-
-      <CopyBoardDialog
-        board={data}
-        open={showCopyDialog}
-        onOpenChange={setShowCopyDialog}
-      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

@@ -1,6 +1,6 @@
 'use client';
 
-import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   Bug,
@@ -32,7 +32,8 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
 
 interface SmartSchedulePreviewDialogProps {
   wsId: string;
@@ -88,16 +89,81 @@ export function SmartSchedulePreviewDialog({
 }: SmartSchedulePreviewDialogProps) {
   const { setPreviewEvents, clearPreviewEvents } = useCalendar();
   const { refresh } = useCalendarSync();
+  const queryClient = useQueryClient();
 
-  const [isLoading, setIsLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [mode, setMode] = useState<'instant' | 'animated'>(initialMode);
 
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
+
+  const convertToCalendarEvents = useCallback(
+    (events: PreviewEvent[]): CalendarEvent[] => {
+      return events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        start_at: e.start_at,
+        end_at: e.end_at,
+        color: e.color as any,
+        _isPreview: true,
+        _previewStep: e.step,
+        _previewType: e.type,
+        _previewSourceId: e.source_id,
+      }));
+    },
+    []
+  );
+
+  const clientTimezone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC';
+    }
+  }, []);
+
+  const previewQuery = useQuery({
+    queryKey: ['smart-schedule-preview-dialog', wsId, 30, clientTimezone],
+    enabled: open,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/calendar/schedule/preview`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ windowDays: 30, clientTimezone }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to generate preview');
+      }
+
+      return result as {
+        preview: PreviewData;
+        tasks?: PreviewData['tasks'];
+        habits?: PreviewData['habits'];
+        debug?: PreviewData['debug'];
+      };
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+  });
+
+  const previewData: PreviewData | null = useMemo(() => {
+    if (!previewQuery.data) return null;
+    return {
+      ...previewQuery.data.preview,
+      tasks: previewQuery.data.tasks,
+      habits: previewQuery.data.habits,
+      debug: previewQuery.data.debug,
+    };
+  }, [previewQuery.data]);
 
   // Set mode when dialog opens with a different initialMode
   useEffect(() => {
@@ -106,26 +172,32 @@ export function SmartSchedulePreviewDialog({
     }
   }, [open, initialMode]);
 
-  // Fetch preview on dialog open
-  useEffect(() => {
-    if (open && !previewData && !isLoading) {
-      fetchPreview();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   // Clear preview when dialog closes
   useEffect(() => {
     if (!open) {
       clearPreviewEvents();
-      setPreviewData(null);
       setCurrentStep(0);
       setIsPlaying(false);
       if (animationRef.current) {
         clearTimeout(animationRef.current);
       }
+      queryClient.removeQueries({
+        queryKey: ['smart-schedule-preview-dialog', wsId],
+      });
     }
-  }, [open, clearPreviewEvents]);
+  }, [open, clearPreviewEvents, queryClient, wsId]);
+
+  // Close dialog on preview errors
+  useEffect(() => {
+    if (!open) return;
+    if (!previewQuery.isError) return;
+    toast.error(
+      previewQuery.error instanceof Error
+        ? previewQuery.error.message
+        : 'Failed to generate preview'
+    );
+    onOpenChange(false);
+  }, [open, previewQuery.isError, previewQuery.error, onOpenChange]);
 
   // Update calendar preview events when mode/step changes
   useEffect(() => {
@@ -145,7 +217,13 @@ export function SmartSchedulePreviewDialog({
       const calendarEvents = convertToCalendarEvents(eventsUpToStep);
       setPreviewEvents(calendarEvents);
     }
-  }, [previewData, mode, currentStep, setPreviewEvents]);
+  }, [
+    previewData,
+    mode,
+    currentStep,
+    setPreviewEvents,
+    convertToCalendarEvents,
+  ]);
 
   // Animation playback
   useEffect(() => {
@@ -168,41 +246,6 @@ export function SmartSchedulePreviewDialog({
     };
   }, [isPlaying, currentStep, mode, previewData]);
 
-  const fetchPreview = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/schedule/preview`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ windowDays: 30 }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate preview');
-      }
-
-      // Merge preview data with tasks details and debug info from top-level response
-      setPreviewData({
-        ...result.preview,
-        tasks: result.tasks,
-        habits: result.habits,
-        debug: result.debug,
-      });
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to generate preview'
-      );
-      onOpenChange(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [wsId, onOpenChange]);
-
   const handleApply = async () => {
     setIsApplying(true);
     toast.loading('Applying schedule...', { id: 'apply-schedule' });
@@ -213,7 +256,11 @@ export function SmartSchedulePreviewDialog({
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ windowDays: 30, forceReschedule: true }),
+          body: JSON.stringify({
+            windowDays: 30,
+            forceReschedule: true,
+            clientTimezone,
+          }),
         }
       );
 
@@ -272,20 +319,6 @@ export function SmartSchedulePreviewDialog({
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
-  };
-
-  const convertToCalendarEvents = (events: PreviewEvent[]): CalendarEvent[] => {
-    return events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      start_at: e.start_at,
-      end_at: e.end_at,
-      color: e.color as any,
-      _isPreview: true,
-      _previewStep: e.step,
-      _previewType: e.type,
-      _previewSourceId: e.source_id,
-    }));
   };
 
   const stepsWithEvents = previewData?.steps.filter((s) => s.event) || [];
@@ -378,10 +411,10 @@ Share this log with engineers for debugging assistance.
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
+        {previewQuery.isFetching ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-4 text-muted-foreground text-sm">
               Generating preview...
             </p>
           </div>
@@ -445,7 +478,7 @@ Share this log with engineers for debugging assistance.
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Step {currentStep + 1} of {totalSteps}
                   </span>
                 </div>
@@ -458,11 +491,11 @@ Share this log with engineers for debugging assistance.
                 {/* Current Step Info */}
                 {stepsWithEvents[currentStep] && (
                   <div className="mt-3 rounded-md bg-background p-3">
-                    <p className="text-sm font-medium">
+                    <p className="font-medium text-sm">
                       {stepsWithEvents[currentStep]?.description}
                     </p>
                     {stepsWithEvents[currentStep]?.event && (
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 text-muted-foreground text-xs">
                         {new Date(
                           stepsWithEvents[currentStep]!.event!.start_at
                         ).toLocaleString()}{' '}
@@ -487,7 +520,7 @@ Share this log with engineers for debugging assistance.
 
         <DialogFooter className="gap-2 sm:gap-0">
           <div className="flex flex-1 items-center gap-2">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               Preview events are shown on the calendar with a dashed border
             </span>
             {isDev && previewData && (
@@ -507,7 +540,10 @@ Share this log with engineers for debugging assistance.
               <X className="mr-2 h-4 w-4" />
               Discard
             </Button>
-            <Button onClick={handleApply} disabled={isApplying || isLoading}>
+            <Button
+              onClick={handleApply}
+              disabled={isApplying || previewQuery.isFetching}
+            >
               {isApplying ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -560,8 +596,8 @@ ${
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8">
       <Info className="h-12 w-12 text-muted-foreground/50" />
-      <h3 className="mt-4 text-lg font-medium">No Events to Schedule</h3>
-      <p className="mt-2 text-center text-sm text-muted-foreground">
+      <h3 className="mt-4 font-medium text-lg">No Events to Schedule</h3>
+      <p className="mt-2 text-center text-muted-foreground text-sm">
         {debug?.habitsWithAutoSchedule === 0 &&
         debug?.tasksWithAutoSchedule === 0
           ? 'No habits or tasks have auto-scheduling enabled. Enable auto_schedule on the items you want to schedule.'
@@ -609,38 +645,50 @@ function PreviewSummary({
   currentStep?: number;
   totalSteps?: number;
 }) {
+  const showStep =
+    typeof currentStep === 'number' &&
+    typeof totalSteps === 'number' &&
+    totalSteps > 0;
+
   return (
-    <div className="grid grid-cols-2 gap-4 rounded-lg border p-4 sm:grid-cols-4">
-      <div className="text-center">
-        <p className="text-2xl font-bold text-dynamic-blue">
-          {summary.totalEvents}
+    <div className="space-y-2">
+      {showStep && (
+        <p className="text-muted-foreground text-xs">
+          Step {currentStep + 1} of {totalSteps}
         </p>
-        <p className="text-xs text-muted-foreground">Total Events</p>
-      </div>
-      <div className="text-center">
-        <p className="text-2xl font-bold text-dynamic-green">
-          {summary.habitsScheduled}
-        </p>
-        <p className="text-xs text-muted-foreground">Habits</p>
-      </div>
-      <div className="text-center">
-        <p className="text-2xl font-bold text-dynamic-purple">
-          {summary.tasksScheduled}
-        </p>
-        <p className="text-xs text-muted-foreground">Tasks</p>
-      </div>
-      <div className="text-center">
-        <p
-          className={cn(
-            'text-2xl font-bold',
-            summary.partiallyScheduledTasks > 0
-              ? 'text-dynamic-orange'
-              : 'text-muted-foreground'
-          )}
-        >
-          {summary.partiallyScheduledTasks}
-        </p>
-        <p className="text-xs text-muted-foreground">Partial</p>
+      )}
+      <div className="grid grid-cols-2 gap-4 rounded-lg border p-4 sm:grid-cols-4">
+        <div className="text-center">
+          <p className="font-bold text-2xl text-dynamic-blue">
+            {summary.totalEvents}
+          </p>
+          <p className="text-muted-foreground text-xs">Total Events</p>
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-2xl text-dynamic-green">
+            {summary.habitsScheduled}
+          </p>
+          <p className="text-muted-foreground text-xs">Habits</p>
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-2xl text-dynamic-purple">
+            {summary.tasksScheduled}
+          </p>
+          <p className="text-muted-foreground text-xs">Tasks</p>
+        </div>
+        <div className="text-center">
+          <p
+            className={cn(
+              'font-bold text-2xl',
+              summary.partiallyScheduledTasks > 0
+                ? 'text-dynamic-orange'
+                : 'text-muted-foreground'
+            )}
+          >
+            {summary.partiallyScheduledTasks}
+          </p>
+          <p className="text-muted-foreground text-xs">Partial</p>
+        </div>
       </div>
     </div>
   );
@@ -667,7 +715,7 @@ function PreviewWarnings({
     return (
       <div className="flex items-center gap-2 rounded-lg border border-dynamic-green/30 bg-dynamic-green/10 p-4">
         <CheckCircle className="h-5 w-5 text-dynamic-green" />
-        <span className="text-sm text-dynamic-green">
+        <span className="text-dynamic-green text-sm">
           All items can be fully scheduled!
         </span>
       </div>
@@ -686,13 +734,13 @@ function PreviewWarnings({
           <div className="rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 p-3">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-dynamic-red" />
-              <span className="text-sm font-medium text-dynamic-red">
+              <span className="font-medium text-dynamic-red text-sm">
                 Could not schedule ({errorTasks.length})
               </span>
             </div>
             <ul className="mt-2 space-y-1">
               {errorTasks.map((task) => (
-                <li key={task.taskId} className="text-xs text-muted-foreground">
+                <li key={task.taskId} className="text-muted-foreground text-xs">
                   {task.taskName}
                 </li>
               ))}
@@ -704,13 +752,13 @@ function PreviewWarnings({
           <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-3">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-dynamic-orange" />
-              <span className="text-sm font-medium text-dynamic-orange">
+              <span className="font-medium text-dynamic-orange text-sm">
                 Partially scheduled ({warningTasks.length})
               </span>
             </div>
             <ul className="mt-2 space-y-1">
               {warningTasks.map((task) => (
-                <li key={task.taskId} className="text-xs text-muted-foreground">
+                <li key={task.taskId} className="text-muted-foreground text-xs">
                   {task.taskName}: {task.remainingMinutes}m remaining (
                   {Math.round(
                     (task.scheduledMinutes / task.totalMinutesRequired) * 100
@@ -728,13 +776,13 @@ function PreviewWarnings({
             <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-dynamic-orange" />
-                <span className="text-sm font-medium text-dynamic-orange">
+                <span className="font-medium text-dynamic-orange text-sm">
                   Warnings ({warnings.length})
                 </span>
               </div>
               <ul className="mt-2 space-y-1">
                 {warnings.map((warning, index) => (
-                  <li key={index} className="text-xs text-muted-foreground">
+                  <li key={index} className="text-muted-foreground text-xs">
                     {warning}
                   </li>
                 ))}

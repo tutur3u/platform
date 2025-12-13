@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-query';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceTaskBoard } from '@tuturuuu/types';
+import type { Database, WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -1663,7 +1663,8 @@ export async function createBoardWithTemplate(
   supabase: TypedSupabaseClient,
   wsId: string,
   name: string,
-  templateId?: string
+  templateId?: string,
+  icon?: Database['public']['Enums']['workspace_board_icon'] | null
 ) {
   const { data, error } = await supabase
     .from('workspace_boards')
@@ -1671,6 +1672,7 @@ export async function createBoardWithTemplate(
       ws_id: wsId,
       name,
       template_id: templateId,
+      icon: icon ?? null,
     })
     .select()
     .single();
@@ -1788,12 +1790,14 @@ export function useCreateBoardWithTemplate(wsId: string) {
     mutationFn: async ({
       name,
       templateId,
+      icon,
     }: {
       name: string;
       templateId?: string;
+      icon?: Database['public']['Enums']['workspace_board_icon'] | null;
     }) => {
       const supabase = createClient();
-      return createBoardWithTemplate(supabase, wsId, name, templateId);
+      return createBoardWithTemplate(supabase, wsId, name, templateId, icon);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });

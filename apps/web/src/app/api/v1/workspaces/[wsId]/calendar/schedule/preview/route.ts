@@ -9,17 +9,17 @@
  * 3. Applied to the calendar if user confirms
  */
 
-import {
-  generatePreview,
-  type HourSettings,
-} from '@/lib/calendar/unified-scheduler/preview-engine';
-import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
+import {
+  generatePreview,
+  type HourSettings,
+} from '@/lib/calendar/unified-scheduler/preview-engine';
 
 interface RouteParams {
   wsId: string;
@@ -71,10 +71,14 @@ export async function POST(
 
     // Parse optional body for options
     let windowDays = 30;
+    let clientTimezone: string | undefined;
     try {
       const body = await request.json();
       if (body.windowDays && typeof body.windowDays === 'number') {
         windowDays = Math.min(Math.max(body.windowDays, 7), 90);
+      }
+      if (typeof body.clientTimezone === 'string') {
+        clientTimezone = body.clientTimezone;
       }
     } catch {
       // No body or invalid JSON, use defaults
@@ -155,12 +159,32 @@ export async function POST(
       locked: e.locked,
     })) as CalendarEvent[];
 
-    // Resolve timezone - "auto" or null means detect server timezone
+    const isValidTz = (tz: string) => {
+      try {
+        // eslint-disable-next-line no-new
+        new Intl.DateTimeFormat('en-US', { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    // Resolve timezone:
+    // - If workspace has a fixed IANA timezone, use it.
+    // - If workspace timezone is auto/unset, require clientTimezone (browser) for user-initiated requests.
     const configuredTimezone = timezoneResult.data?.timezone || 'auto';
-    const resolvedTimezone =
-      configuredTimezone !== 'auto'
-        ? configuredTimezone
-        : Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const needsClientTimezone =
+      !configuredTimezone || configuredTimezone === 'auto';
+    const resolvedTimezone = !needsClientTimezone
+      ? configuredTimezone
+      : (() => {
+          if (!clientTimezone || !isValidTz(clientTimezone)) {
+            throw new Error(
+              'Workspace timezone is not set. Please set a fixed workspace timezone before using Smart Schedule.'
+            );
+          }
+          return clientTimezone;
+        })();
 
     // Generate preview
     const preview = generatePreview(
@@ -275,6 +299,12 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error generating schedule preview:', error);
+    if (
+      error instanceof Error &&
+      error.message.startsWith('Workspace timezone is not set')
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

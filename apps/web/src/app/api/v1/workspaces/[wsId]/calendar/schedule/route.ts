@@ -12,18 +12,18 @@
  * All scheduling uses the same algorithm as the preview panel.
  */
 
-import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
-import {
-  generatePreview,
-  type HourSettings,
-  type PreviewEvent,
-} from '@/lib/calendar/unified-scheduler/preview-engine';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
+import {
+  generatePreview,
+  type HourSettings,
+  type PreviewEvent,
+} from '@/lib/calendar/unified-scheduler/preview-engine';
 
 interface RouteParams {
   wsId: string;
@@ -85,10 +85,14 @@ export async function POST(
     // Parse optional body for options
     let windowDays = 30;
     let previewEvents: PreviewEvent[] | undefined;
+    let clientTimezone: string | undefined;
     try {
       const body = await request.json();
       if (body.windowDays && typeof body.windowDays === 'number') {
         windowDays = Math.min(Math.max(body.windowDays, 7), 90); // Limit 7-90 days
+      }
+      if (typeof body.clientTimezone === 'string') {
+        clientTimezone = body.clientTimezone;
       }
       if (Array.isArray(body.previewEvents)) {
         previewEvents = body.previewEvents as PreviewEvent[];
@@ -178,12 +182,39 @@ export async function POST(
         locked: e.locked,
       })) as CalendarEvent[];
 
-      // Resolve timezone
+      const isValidTz = (tz: string) => {
+        try {
+          // eslint-disable-next-line no-new
+          new Intl.DateTimeFormat('en-US', { timeZone: tz });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      // Resolve timezone:
+      // - If workspace has a fixed IANA timezone, use it.
+      // - If workspace timezone is auto/unset:
+      //   - Cron/background: reject (requires fixed timezone)
+      //   - User-initiated: require clientTimezone (browser)
       const configuredTimezone = timezoneResult.data?.timezone || 'auto';
-      const resolvedTimezone =
-        configuredTimezone !== 'auto'
-          ? configuredTimezone
-          : Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const needsClientTimezone =
+        !configuredTimezone || configuredTimezone === 'auto';
+      const resolvedTimezone = !needsClientTimezone
+        ? configuredTimezone
+        : (() => {
+            if (isCronAuth) {
+              throw new Error(
+                'Workspace timezone is set to auto. Please set a fixed workspace timezone to enable background scheduling.'
+              );
+            }
+            if (!clientTimezone || !isValidTz(clientTimezone)) {
+              throw new Error(
+                'Workspace timezone is not set. Please set a fixed workspace timezone before using Smart Schedule.'
+              );
+            }
+            return clientTimezone;
+          })();
 
       // Generate preview using the centralized algorithm
       const preview = generatePreview(
@@ -214,6 +245,13 @@ export async function POST(
     );
   } catch (error) {
     console.error('Error in unified schedule POST:', error);
+    if (
+      error instanceof Error &&
+      (error.message.startsWith('Workspace timezone is not set') ||
+        error.message.startsWith('Workspace timezone is set to auto'))
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -8,10 +8,11 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
+import { QuickCreateBoardDialog } from './quick-create-board-dialog';
 
 interface Props {
   params: Promise<{
@@ -122,11 +123,10 @@ export default async function WorkspaceProjectsPage({
   const page = sp.page || '1';
   const pageSize = sp.pageSize || '10';
 
-  // Prefetch with the exact same query key structure that the client will use
-  await queryClient.prefetchQuery({
-    queryKey: ['boards', wsId, q, page, pageSize],
-    queryFn: () => getData(wsId, { q, page, pageSize }),
-  });
+  const boardsQueryKey = ['boards', wsId, q, page, pageSize];
+  const initialBoards = await getData(wsId, { q, page, pageSize });
+  // Avoid duplicate DB calls by seeding the dehydrated cache directly
+  queryClient.setQueryData(boardsQueryKey, initialBoards);
 
   const t = await getTranslations();
 
@@ -150,6 +150,10 @@ export default async function WorkspaceProjectsPage({
       </div>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
+        <QuickCreateBoardDialog
+          wsId={wsId}
+          openWhenEmpty={q.trim() === '' && initialBoards.count === 0}
+        />
         <EnhancedBoardsView wsId={wsId} />
       </HydrationBoundary>
     </div>

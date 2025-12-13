@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Clock,
   Columns3Cog,
+  Copy,
   Flag,
   Gauge,
   LayoutGrid,
@@ -59,8 +60,11 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
+import { CopyBoardDialog } from '../boards/copy-board-dialog';
+import { TaskBoardForm } from '../boards/form';
 import { BoardLayoutSettings } from './board-layout-settings';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
@@ -154,7 +158,9 @@ function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
 }
 
 interface Props {
-  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'>;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
+    icon?: WorkspaceTaskBoard['icon'];
+  };
   currentUserId?: string;
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
@@ -188,9 +194,10 @@ export function BoardHeader({
   onUpdate,
   onRecycleBinOpen,
 }: Props) {
+  const t = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editedName, setEditedName] = useState(board.name);
+  const [editBoardOpen, setEditBoardOpen] = useState(false);
+  const [duplicateBoardOpen, setDuplicateBoardOpen] = useState(false);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -286,30 +293,6 @@ export function BoardHeader({
 
     return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
-
-  async function handleEdit() {
-    if (!editedName?.trim() || editedName === board.name) {
-      setIsEditDialogOpen(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const supabase = createClient();
-      await supabase
-        .from('workspace_boards')
-        .update({ name: editedName.trim() })
-        .eq('id', board.id);
-
-      setIsEditDialogOpen(false);
-      // Invalidate and refetch the board data
-      queryClient.invalidateQueries({ queryKey: ['task-board', board.id] });
-    } catch (error) {
-      console.error('Failed to update board name:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function handleDelete() {
     try {
@@ -808,14 +791,23 @@ export function BoardHeader({
               <DropdownMenuContent align="end" className="w-[200px]">
                 <DropdownMenuItem
                   onClick={() => {
-                    setEditedName(board.name);
-                    setIsEditDialogOpen(true);
+                    setEditBoardOpen(true);
                     setBoardMenuOpen(false);
                   }}
                   className="gap-2"
                 >
                   <Pencil className="h-4 w-4" />
-                  Rename board
+                  {t('common.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setDuplicateBoardOpen(true);
+                    setBoardMenuOpen(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  {t('ws-task-boards.actions.duplicate')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
@@ -890,49 +882,43 @@ export function BoardHeader({
         </div>
       </div>
 
-      {/* Edit Board Name Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Board Name</DialogTitle>
+      {/* Edit Board (name + icon) Dialog */}
+      <Dialog open={editBoardOpen} onOpenChange={setEditBoardOpen}>
+        <DialogContent className="p-0 sm:max-w-lg">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{t('ws-task-boards.edit_dialog.title')}</DialogTitle>
             <DialogDescription>
-              Change the name of your board. This will be visible to all team
-              members.
+              {t('ws-task-boards.edit_dialog.description')}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Input
-              value={editedName?.trim()}
-              onChange={(e) => setEditedName(e.target.value)}
-              placeholder="Enter board name"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleEdit();
-                }
-              }}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEdit}
-              disabled={
-                isLoading || !editedName?.trim() || editedName === board.name
-              }
-            >
-              {isLoading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
+          <TaskBoardForm
+            wsId={board.ws_id}
+            data={{
+              id: board.id,
+              name: board.name ?? '',
+              icon: board.icon ?? null,
+            }}
+            showCancel
+            onCancel={() => setEditBoardOpen(false)}
+            onFinish={() => {
+              setEditBoardOpen(false);
+              queryClient.invalidateQueries({
+                queryKey: ['task-board', board.id],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ['other-boards', board.ws_id, board.id],
+              });
+            }}
+          />
         </DialogContent>
       </Dialog>
+
+      {/* Duplicate Board Dialog */}
+      <CopyBoardDialog
+        board={{ id: board.id, ws_id: board.ws_id, name: board.name }}
+        open={duplicateBoardOpen}
+        onOpenChange={setDuplicateBoardOpen}
+      />
 
       {/* Board Layout Settings */}
       {onUpdate && (

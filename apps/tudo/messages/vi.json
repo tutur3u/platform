@@ -1442,7 +1442,64 @@
     "singular": "Bảng nhiệm vụ",
     "create": "Tạo bảng",
     "create_description": "Tạo bảng nhiệm vụ",
-    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể."
+    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
+    "icon_label": "Biểu tượng",
+    "icon_picker": {
+      "title": "Chọn biểu tượng",
+      "description": "Chọn một biểu tượng để đại diện cho bảng này.",
+      "search_placeholder": "Tìm biểu tượng...",
+      "clear": "Xóa"
+    },
+    "views": {
+      "cards": "Thẻ",
+      "table": "Bảng"
+    },
+    "filters": {
+      "search_label": "Tìm kiếm",
+      "search_placeholder": "Tìm bảng...",
+      "status_label": "Trạng thái",
+      "sort_label": "Sắp xếp",
+      "status": {
+        "all": "Tất cả",
+        "active": "Đang hoạt động",
+        "archived": "Đã lưu trữ",
+        "recently_deleted": "Đã xóa gần đây"
+      },
+      "sort": {
+        "name": "Tên",
+        "created_at": "Ngày tạo"
+      },
+      "sort_order": {
+        "asc": "A→Z",
+        "desc": "Z→A"
+      }
+    },
+    "empty": {
+      "title": "Không tìm thấy bảng",
+      "description": "Tạo bảng đầu tiên để bắt đầu sắp xếp công việc."
+    },
+    "stats": {
+      "lists": "cột",
+      "tasks": "công việc"
+    },
+    "actions": {
+      "duplicate": "Nhân bản bảng"
+    },
+    "edit_dialog": {
+      "title": "Chỉnh sửa bảng",
+      "description": "Cập nhật tên bảng và biểu tượng."
+    },
+    "duplicate_dialog": {
+      "title": "Nhân bản bảng",
+      "description": "Nhân bản \"{name}\" trong không gian làm việc này. Tất cả cột và công việc sẽ được bao gồm.",
+      "name_label": "Tên bảng mới",
+      "name_placeholder": "Nhập tên bảng",
+      "confirm": "Nhân bản",
+      "default_suffix": "Nhân bản",
+      "name_required": "Vui lòng nhập tên bảng",
+      "success": "Đã nhân bản bảng",
+      "failed": "Không thể nhân bản bảng"
+    }
   },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",

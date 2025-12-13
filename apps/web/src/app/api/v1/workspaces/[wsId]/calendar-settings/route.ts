@@ -1,4 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  INTERNAL_WORKSPACE_SLUG,
+  PERSONAL_WORKSPACE_SLUG,
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -15,6 +21,13 @@ const calendarSettingsSchema = z.object({
     .optional(),
 });
 
+const normalizeWorkspaceId = (wsIdParam: string, userId: string): string => {
+  const normalized = wsIdParam.toLowerCase();
+  if (normalized === PERSONAL_WORKSPACE_SLUG) return userId;
+  if (normalized === INTERNAL_WORKSPACE_SLUG) return ROOT_WORKSPACE_ID;
+  return resolveWorkspaceId(wsIdParam);
+};
+
 export async function GET(_: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
@@ -29,11 +42,13 @@ export async function GET(_: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = normalizeWorkspaceId(wsId, user.id);
+
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -48,7 +63,7 @@ export async function GET(_: NextRequest, { params }: Params) {
     const { data: workspace, error } = await supabase
       .from('workspaces')
       .select('timezone, first_day_of_week')
-      .eq('id', wsId)
+      .eq('id', normalizedWsId)
       .single();
 
     if (error) {
@@ -86,11 +101,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = normalizeWorkspaceId(wsId, user.id);
+
     // Verify workspace access and permissions
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -105,14 +122,26 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const validatedData = calendarSettingsSchema.parse(body);
 
+    const updatePayload: Record<string, unknown> = {};
+    if (validatedData.timezone !== undefined) {
+      updatePayload.timezone = validatedData.timezone;
+    }
+    if (validatedData.first_day_of_week !== undefined) {
+      updatePayload.first_day_of_week = validatedData.first_day_of_week;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json(
+        { error: 'No calendar settings provided' },
+        { status: 400 }
+      );
+    }
+
     // Update workspace calendar settings
     const { data, error } = await supabase
       .from('workspaces')
-      .update({
-        timezone: validatedData.timezone,
-        first_day_of_week: validatedData.first_day_of_week,
-      })
-      .eq('id', wsId)
+      .update(updatePayload)
+      .eq('id', normalizedWsId)
       .select('timezone, first_day_of_week')
       .single();
 
