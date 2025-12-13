@@ -120,6 +120,9 @@ export async function POST(
         rateLimits: isWSIDAllowed
           ? {
               workspacePerMinute: 100, // Increased limit for allowed workspaces
+              workspacePerHour: 5000,
+              userPerMinute: 100, // Match workspace limit to avoid bottleneck
+              userPerHour: 5000,
             }
           : undefined,
       });

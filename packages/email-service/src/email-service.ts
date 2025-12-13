@@ -154,7 +154,8 @@ export class EmailService {
           auditId,
           'failed',
           undefined,
-          rateLimitResult.reason || 'Rate limit exceeded'
+          rateLimitResult.reason || 'Rate limit exceeded',
+          { rateLimit: rateLimitResult }
         );
       }
 

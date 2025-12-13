@@ -444,6 +444,7 @@
     "yesterday": "Hôm qua",
     "transaction": "giao dịch",
     "transactions": "giao dịch",
+    "to": "Tới",
     "more": "thêm"
   },
   "home": {
@@ -1285,7 +1286,12 @@
     "time_tracker_requests": "Yêu cầu",
     "time-tracker": "Theo dõi thời gian",
     "boards": "Bảng nhiệm vụ",
-    "logs": "Nhật ký"
+    "plural": "Nhật ký",
+    "total_emails": "Tổng số email",
+    "sent_emails": "Đã gửi",
+    "failed_emails": "Thất bại",
+    "rate_limited_emails": "Bị giới hạn",
+    "stats_period": "24 giờ qua"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

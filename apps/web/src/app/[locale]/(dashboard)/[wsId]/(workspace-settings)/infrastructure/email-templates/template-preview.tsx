@@ -19,7 +19,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
 import { EMAIL_TEMPLATES, type PropField } from './templates';
 
 export default function TemplatePreview() {
@@ -31,8 +32,6 @@ export default function TemplatePreview() {
   );
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
   // Handle mounting and sync with system theme
   useEffect(() => {
     setMounted(true);
@@ -132,96 +131,6 @@ export default function TemplatePreview() {
 
     return () => clearTimeout(timeoutId);
   }, [selectedTemplate, parsedProps, mounted]);
-
-  // Update iframe content directly to prevent flashing
-  // Initialize iframe and update content
-  useEffect(() => {
-    if (!iframeRef.current || !renderedHtml) return;
-
-    const iframe = iframeRef.current;
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-
-    // Only write content if it's strictly different or empty
-    // We add a meta tag to prevent hydration mismatch
-    const htmlContent = `<!DOCTYPE html>
-<html class="${isDarkMode ? 'dark' : ''}">
-  <head>
-    <meta name="color-scheme" content="light dark">
-    <style>
-      :root {
-        color-scheme: light dark;
-      }
-      body {
-        margin: 0;
-        padding: 16px;
-        background-color: #ffffff;
-        color: #000000;
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
-      
-      /* Dark mode simulation using CSS filter */
-      html.dark {
-        filter: invert(1) hue-rotate(180deg);
-      }
-      
-      html.dark img, 
-      html.dark video, 
-      html.dark picture, 
-      html.dark svg, 
-      html.dark [style*="background-image"] {
-        filter: invert(1) hue-rotate(180deg);
-      }
-
-      /* Custom scrollbar to look good in both modes */
-      ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 5px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
-      
-      /* Invert scrollbar in dark mode so it looks dark */
-      html.dark ::-webkit-scrollbar-thumb {
-        background: #475569;
-      }
-      html.dark ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
-      }
-    </style>
-  </head>
-  <body>
-    ${renderedHtml}
-  </body>
-</html>`;
-
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
-  }, [renderedHtml, isDarkMode]);
-
-  // Handle dark mode toggle without reloading iframe
-  useEffect(() => {
-    if (!iframeRef.current) return;
-
-    const iframe = iframeRef.current;
-    const doc = iframe.contentDocument;
-    if (!doc || !doc.documentElement) return;
-
-    if (isDarkMode) {
-      doc.documentElement.classList.add('dark');
-    } else {
-      doc.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   const handleCopyHtml = useCallback(async () => {
     try {
@@ -411,11 +320,10 @@ export default function TemplatePreview() {
               </div>
             ) : (
               <>
-                <iframe
-                  ref={iframeRef}
-                  title="Email Preview"
+                <EmailHtmlViewer
+                  content={renderedHtml}
+                  previewTheme={isDarkMode ? 'dark' : 'light'}
                   className={`min-h-[500px] w-full flex-1 border-0 ${isDarkMode ? '' : 'rounded-b-lg'}`}
-                  sandbox="allow-same-origin"
                 />
                 {isDarkMode && (
                   <div className="rounded-b-lg border-t bg-muted/50 p-2 text-center text-muted-foreground text-xs">

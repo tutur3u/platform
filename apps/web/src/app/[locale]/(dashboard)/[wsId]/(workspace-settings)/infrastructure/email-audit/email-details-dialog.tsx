@@ -36,6 +36,7 @@ import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
 import type { EmailAuditRecord } from './columns';
 
 interface EmailDetailsDialogProps {
@@ -578,16 +579,9 @@ export function EmailDetailsDialog({
                         previewTheme === 'dark' && 'bg-zinc-900'
                       )}
                     >
-                      <iframe
-                        srcDoc={htmlContent}
-                        className="h-full w-full border-0 bg-white"
-                        style={
-                          previewTheme === 'dark'
-                            ? { filter: 'invert(1) hue-rotate(180deg)' }
-                            : undefined
-                        }
-                        sandbox="allow-same-origin"
-                        title="Email HTML Preview"
+                      <EmailHtmlViewer
+                        content={htmlContent}
+                        previewTheme={previewTheme}
                       />
                     </div>
                   )}

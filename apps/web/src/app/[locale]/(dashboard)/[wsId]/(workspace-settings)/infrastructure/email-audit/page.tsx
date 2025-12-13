@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { type EmailAuditRecord } from './columns';
+import type { EmailAuditRecord } from './columns';
 import { EmailAuditTable } from './email-audit-table';
 import Filters from './filters';
 
@@ -66,6 +66,7 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
         const sp = SearchParamsSchema.parse(await searchParams);
 
         const { data, count } = await getData(sp);
+        const stats = await getEmailStats(wsId, sp);
 
         return (
           <div className="flex flex-col gap-6">
@@ -76,6 +77,73 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
               <p className="text-muted-foreground text-sm">
                 {t('email-audit.description')}
               </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+                <div className="flex flex-row items-center justify-between space-y-0 p-6 pb-2">
+                  <h3 className="font-medium text-sm tracking-tight">
+                    {t('email-audit.total_emails')}
+                  </h3>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="font-bold text-2xl">{stats.total}</div>
+                  <p className="text-muted-foreground text-xs">
+                    {t('email-audit.stats_period')}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+                <div className="flex flex-row items-center justify-between space-y-0 p-6 pb-2">
+                  <h3 className="font-medium text-green-600 text-sm tracking-tight">
+                    {t('email-audit.sent_emails')}
+                  </h3>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="font-bold text-2xl text-green-600">
+                    {stats.sent}
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {stats.total > 0
+                      ? `${((stats.sent / stats.total) * 100).toFixed(1)}%`
+                      : '0%'}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+                <div className="flex flex-row items-center justify-between space-y-0 p-6 pb-2">
+                  <h3 className="font-medium text-red-600 text-sm tracking-tight">
+                    {t('email-audit.failed_emails')}
+                  </h3>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="font-bold text-2xl text-red-600">
+                    {stats.failed}
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {stats.total > 0
+                      ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
+                      : '0%'}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+                <div className="flex flex-row items-center justify-between space-y-0 p-6 pb-2">
+                  <h3 className="font-medium text-orange-600 text-sm tracking-tight">
+                    {t('email-audit.rate_limited_emails')}
+                  </h3>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="font-bold text-2xl text-orange-600">
+                    {stats.rateLimited}
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {stats.total > 0
+                      ? `${((stats.rateLimited / stats.total) * 100).toFixed(1)}%`
+                      : '0%'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <EmailAuditTable
@@ -89,6 +157,47 @@ export default async function EmailAuditPage({ params, searchParams }: Props) {
       }}
     </WorkspaceWrapper>
   );
+}
+
+async function getEmailStats(
+  wsId: string,
+  params: SearchParams
+): Promise<{
+  total: number;
+  sent: number;
+  failed: number;
+  rateLimited: number;
+}> {
+  const supabase = await createClient();
+
+  let startDate: Date | undefined;
+  let endDate: Date | undefined;
+
+  if (params.dateRange) {
+    const range = getDateRangeFilter(params.dateRange);
+    if (range) {
+      startDate = range.startDate;
+      endDate = range.endDate;
+    }
+  }
+
+  const { data, error } = await supabase.rpc('get_email_stats', {
+    filter_ws_id: wsId,
+    start_date: startDate?.toISOString() || null,
+    end_date: endDate?.toISOString() || null,
+  });
+
+  if (error) {
+    console.error('Error fetching email stats:', error);
+    return { total: 0, sent: 0, failed: 0, rateLimited: 0 };
+  }
+
+  return {
+    total: Number(data?.[0]?.total_count || 0),
+    sent: Number(data?.[0]?.sent_count || 0),
+    failed: Number(data?.[0]?.failed_count || 0),
+    rateLimited: Number(data?.[0]?.rate_limited_count || 0),
+  };
 }
 
 function getDateRangeFilter(

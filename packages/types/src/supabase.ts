@@ -1825,6 +1825,7 @@ export type Database = {
           id: string;
           ip_address: string | null;
           message_id: string | null;
+          metadata: Json | null;
           provider: string;
           reply_to_addresses: string[];
           sent_at: string | null;
@@ -1852,6 +1853,7 @@ export type Database = {
           id?: string;
           ip_address?: string | null;
           message_id?: string | null;
+          metadata?: Json | null;
           provider?: string;
           reply_to_addresses?: string[];
           sent_at?: string | null;
@@ -1879,6 +1881,7 @@ export type Database = {
           id?: string;
           ip_address?: string | null;
           message_id?: string | null;
+          metadata?: Json | null;
           provider?: string;
           reply_to_addresses?: string[];
           sent_at?: string | null;
@@ -15243,6 +15246,15 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      get_email_stats: {
+        Args: { end_date?: string; filter_ws_id: string; start_date?: string };
+        Returns: {
+          failed_count: number;
+          rate_limited_count: number;
+          sent_count: number;
+          total_count: number;
+        }[];
       };
       get_engagement_metrics_over_time: {
         Args: { days?: number };

@@ -1195,7 +1195,8 @@
     "time_tracker_requests": "Requests",
     "time-tracker": "Time Tracker",
     "boards": "Boards",
-    "logs": "Logs"
+    "logs": "Logs",
+    "to": "To"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -2214,7 +2215,12 @@
     "added_by": "Added By"
   },
   "email-audit": {
-    "plural": "Email Audit Logs",
+    "plural": "Audit Logs",
+    "total_emails": "Total Emails",
+    "sent_emails": "Sent Emails",
+    "failed_emails": "Failed Emails",
+    "rate_limited_emails": "Rate Limited",
+    "stats_period": "Last 24 hours",
     "singular": "Email Audit Log",
     "description": "View and monitor all outgoing email communications from your workspace."
   },

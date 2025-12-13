@@ -253,6 +253,8 @@ export interface CreateAuditRecordParams {
   htmlContent?: string;
   /** Plain text content of the email body */
   textContent?: string;
+  /** Additional metadata */
+  metadata?: Record<string, any>;
 }
 
 // =============================================================================

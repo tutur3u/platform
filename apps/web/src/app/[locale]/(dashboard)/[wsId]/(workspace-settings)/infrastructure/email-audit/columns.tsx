@@ -283,17 +283,27 @@ export const getEmailAuditColumns = (
       />
     ),
     cell: ({ row }) => {
-      const errorMessage = row.getValue<string | null>('error_message');
-      return errorMessage ? (
-        <div
-          className="flex max-w-[200px] items-center gap-1 text-red-600 text-sm dark:text-red-400"
-          title={errorMessage}
-        >
-          <XCircle className="h-3 w-3 shrink-0" />
-          <span className="flex-1 truncate">{errorMessage}</span>
+      const error = row.getValue<string>('error_message');
+      const metadata = row.original.metadata as any;
+
+      if (metadata?.rateLimit) {
+        const { limit, usage, limitType, retryAfter } = metadata.rateLimit;
+        return (
+          <div className="flex flex-col gap-1 text-destructive text-sm">
+            <div className="font-medium">{error}</div>
+            <div className="text-muted-foreground text-xs">
+              {limitType}: {usage}/{limit}
+              {retryAfter > 0 &&
+                ` (Retry after ${Math.ceil(retryAfter / 1000)}s)`}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="max-w-[500px] truncate text-sm" title={error}>
+          {error || '—'}
         </div>
-      ) : (
-        <span className="text-muted-foreground">—</span>
       );
     },
   },

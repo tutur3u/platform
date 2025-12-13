@@ -33,4 +33,22 @@ describe('EmailRateLimiter', () => {
     expect(result.limit).toBe(1);
     expect(result.usage).toBeGreaterThanOrEqual(1);
   });
+  it('should respect user rate limits', async () => {
+    const limiter = new EmailRateLimiter({
+      workspacePerMinute: 100,
+      userPerMinute: 2,
+    });
+    const metadata: EmailMetadata = { wsId: 'ws-user-limit', userId: 'user-1' };
+
+    // Send 2 emails (allowed)
+    await limiter.incrementCounters(metadata, ['test1@example.com']);
+    await limiter.incrementCounters(metadata, ['test2@example.com']);
+
+    // Check next email -> Should be blocked by user limit
+    const result = await limiter.checkRateLimits(metadata);
+
+    expect(result.allowed).toBe(false);
+    expect(result.limitType).toContain('user');
+    expect(result.limit).toBe(2);
+  });
 });

@@ -46,6 +46,7 @@ export async function createAuditRecord(
         html_content: params.htmlContent || null,
         text_content: params.textContent || null,
         status: 'pending',
+        metadata: params.metadata || null,
       })
       .select('id')
       .single();
@@ -70,7 +71,8 @@ export async function updateAuditRecord(
   auditId: string,
   status: EmailStatus,
   messageId?: string,
-  errorMessage?: string
+  errorMessage?: string,
+  metadata?: Record<string, any>
 ): Promise<boolean> {
   try {
     const updateData: {
@@ -79,6 +81,7 @@ export async function updateAuditRecord(
       error_message?: string;
       sent_at?: string;
       updated_at: string;
+      metadata?: Record<string, any>;
     } = {
       status,
       updated_at: new Date().toISOString(),
@@ -90,6 +93,10 @@ export async function updateAuditRecord(
 
     if (errorMessage) {
       updateData.error_message = errorMessage;
+    }
+
+    if (metadata) {
+      updateData.metadata = metadata;
     }
 
     if (status === 'sent') {
