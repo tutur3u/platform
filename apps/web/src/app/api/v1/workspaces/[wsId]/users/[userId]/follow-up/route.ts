@@ -3,6 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  extractIPFromHeaders,
+  isIPBlocked,
+} from '@tuturuuu/utils/abuse-protection';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -115,10 +119,27 @@ export async function POST(
   }
 
   // Get client IP for rate limiting
-  const ipAddress =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown';
+  const ipAddress = extractIPFromHeaders(req.headers);
+
+  if (ipAddress !== 'unknown') {
+    const blockInfo = await isIPBlocked(ipAddress);
+    if (blockInfo) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+      );
+
+      return NextResponse.json(
+        { message: 'Rate limit exceeded', retryAfter },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': `${retryAfter}`,
+          },
+        }
+      );
+    }
+  }
 
   try {
     let emailSent = false;

@@ -299,6 +299,7 @@ export interface BlacklistedEmail {
 export type EmailAbuseEventType =
   | 'email_rate_limit_exceeded'
   | 'email_blacklist_blocked'
+  | 'email_ip_blocked'
   | 'email_bounce'
   | 'email_complaint'
   | 'email_spam_detected';

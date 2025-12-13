@@ -14,6 +14,10 @@ import {
 } from '@tuturuuu/auth/api-keys';
 import type { PermissionId } from '@tuturuuu/types';
 import type { ApiErrorResponse } from '@tuturuuu/types/sdk';
+import {
+  extractIPFromHeaders,
+  isIPBlocked,
+} from '@tuturuuu/utils/abuse-protection';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -177,11 +181,29 @@ export function withApiAuth<T = unknown>(
     const method = request.method;
 
     // Extract IP and User-Agent
-    const ipAddress =
-      request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      null;
+    const ipAddress = extractIPFromHeaders(request.headers);
     const userAgent = request.headers.get('user-agent') || null;
+
+    // Enforce persistent IP blocks (shared across services)
+    if (ipAddress && ipAddress !== 'unknown') {
+      const blockInfo = await isIPBlocked(ipAddress);
+      if (blockInfo) {
+        const retryAfter = Math.max(
+          1,
+          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+        );
+
+        return createErrorResponse(
+          'Too Many Requests',
+          'Rate limit exceeded',
+          429,
+          'IP_BLOCKED',
+          {
+            'Retry-After': `${retryAfter}`,
+          }
+        );
+      }
+    }
 
     // Authenticate the request
     const authResult = await authenticateRequest(request);

@@ -13,6 +13,7 @@
 
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
+import { blockIP, isIPBlocked } from '@tuturuuu/utils/abuse-protection';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 import {
@@ -111,7 +112,7 @@ export class EmailService {
     // Determine source early for auditing
     const source = params.source || this.config.defaultSource;
 
-    // Create audit record immediately
+    // Create audit record immediately (even if we early-return due to protections)
     const auditId = await createAuditRecord(this.supabase, {
       wsId: params.metadata.wsId,
       userId: params.metadata.userId,
@@ -129,6 +130,72 @@ export class EmailService {
       htmlContent: params.content.html,
       textContent: params.content.text,
     });
+
+    // 0. Enforce IP blocks (shared across the platform)
+    if (params.metadata.ipAddress && params.metadata.ipAddress !== 'unknown') {
+      const blockInfo = await isIPBlocked(params.metadata.ipAddress);
+
+      if (blockInfo) {
+        const retryAfter = Math.max(
+          1,
+          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+        );
+
+        // Log for analysis/audit (should not block)
+        void logEmailAbuseEvent(
+          this.supabase,
+          'email_ip_blocked',
+          params.metadata,
+          {
+            success: false,
+            additionalMetadata: {
+              blockLevel: blockInfo.blockLevel,
+              reason: blockInfo.reason,
+              expiresAt: blockInfo.expiresAt.toISOString(),
+              retryAfter,
+              auditId: auditId || undefined,
+            },
+          }
+        );
+
+        if (auditId) {
+          await updateAuditRecord(
+            this.supabase,
+            auditId,
+            'failed',
+            undefined,
+            'IP blocked',
+            {
+              rateLimit: {
+                allowed: false,
+                remaining: 0,
+                retryAfter,
+                reason: 'IP is temporarily blocked',
+                limitType: 'ip_minute',
+              },
+              ipBlock: {
+                blockLevel: blockInfo.blockLevel,
+                reason: blockInfo.reason,
+                expiresAt: blockInfo.expiresAt.toISOString(),
+              },
+            }
+          );
+        }
+
+        return {
+          success: false,
+          error: 'Rate limit exceeded',
+          rateLimitInfo: {
+            allowed: false,
+            remaining: 0,
+            retryAfter,
+            reason: 'IP is temporarily blocked',
+            limitType: 'ip_minute',
+          },
+          auditId: auditId || undefined,
+        };
+      }
+    }
 
     // 1. Check sender rate limits
     const rateLimitResult = await this.rateLimiter.checkRateLimits(
@@ -157,6 +224,25 @@ export class EmailService {
           rateLimitResult.reason || 'Rate limit exceeded',
           { rateLimit: rateLimitResult }
         );
+      }
+
+      // If an IP-based limit is exceeded, escalate to a persistent block.
+      // This provides platform-wide enforcement (via blocked_ips) beyond Redis TTL.
+      if (
+        params.metadata.ipAddress &&
+        params.metadata.ipAddress !== 'unknown' &&
+        rateLimitResult.limitType?.startsWith('ip_')
+      ) {
+        void blockIP(params.metadata.ipAddress, 'manual', {
+          trigger: 'email_rate_limit_exceeded',
+          limitType: rateLimitResult.limitType,
+          reason: rateLimitResult.reason,
+          wsId: params.metadata.wsId,
+          userId: params.metadata.userId,
+          templateType: params.metadata.templateType,
+          entityType: params.metadata.entityType,
+          entityId: params.metadata.entityId,
+        });
       }
 
       return {
@@ -228,6 +314,10 @@ export class EmailService {
       allowedCc.length === 0 &&
       allowedBcc.length === 0
     ) {
+      // Count attempts even when recipients are fully blocked to prevent bypassing
+      // rate limits via intentionally-invalid recipient lists.
+      await this.rateLimiter.incrementCounters(params.metadata, []);
+
       if (auditId) {
         await updateAuditRecord(
           this.supabase,
@@ -248,6 +338,13 @@ export class EmailService {
 
     // 6. Check dev mode - skip actual sending but log as sent
     const isDevMode = DEV_MODE || this.config.devMode;
+
+    // Increment rate limit counters for the send attempt (counts attempts, not just successes)
+    await this.rateLimiter.incrementCounters(params.metadata, [
+      ...allowedTo,
+      ...allowedCc,
+      ...allowedBcc,
+    ]);
 
     if (isDevMode) {
       console.log('[EmailService] DEV_MODE - email logged but NOT sent:', {
@@ -299,13 +396,6 @@ export class EmailService {
           providerResult.messageId
         );
       }
-
-      // Increment rate limit counters AFTER successful send
-      await this.rateLimiter.incrementCounters(params.metadata, [
-        ...allowedTo,
-        ...allowedCc,
-        ...allowedBcc,
-      ]);
     } else {
       if (auditId) {
         await updateAuditRecord(

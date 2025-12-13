@@ -1,12 +1,16 @@
-import { DEV_MODE } from '@/constants/common';
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  extractIPFromHeaders,
+  isIPBlocked,
+} from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import DOMPurify from 'isomorphic-dompurify';
 import { difference } from 'lodash';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 export async function POST(
   req: NextRequest,
@@ -63,10 +67,27 @@ export async function POST(
   const sbAdmin = await createAdminClient();
 
   // Get client IP for rate limiting
-  const ipAddress =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown';
+  const ipAddress = extractIPFromHeaders(req.headers);
+
+  if (ipAddress !== 'unknown') {
+    const blockInfo = await isIPBlocked(ipAddress);
+    if (blockInfo) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+      );
+
+      return NextResponse.json(
+        { message: 'Rate limit exceeded', retryAfter },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': `${retryAfter}`,
+          },
+        }
+      );
+    }
+  }
 
   const { data: apiKey, error: apiKeyError } = await sbAdmin
     .from('internal_email_api_keys')
