@@ -1,14 +1,5 @@
 'use client';
 
-import { AudioStreamer } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/audio-streamer';
-import { MultimodalLiveClient } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client';
-import { audioContext } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/utils';
-import VolMeterWorket from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/worklets/vol-meter';
-import type {
-  LiveConfig,
-  ToolCall,
-  ToolResponse,
-} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
 import {
   createContext,
   type FC,
@@ -20,6 +11,15 @@ import {
   useRef,
   useState,
 } from 'react';
+import { AudioStreamer } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/audio-streamer';
+import { MultimodalLiveClient } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client';
+import { audioContext } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/utils';
+import VolMeterWorket from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/worklets/vol-meter';
+import type {
+  LiveConfig,
+  ToolCall,
+  ToolResponse,
+} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
 
 export type ConnectionStatus =
   | 'disconnected'
@@ -87,7 +87,7 @@ export function useLiveAPI({
   const [config, setConfig] = useState<LiveConfig>({
     // Use gemini-2.0-flash-live for multimodal support (audio + video)
     // Note: gemini-2.5-flash-native-audio-preview is audio-only
-    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
     // NOTE: When using ephemeral tokens, systemInstruction, tools, and toolConfig
     // are embedded in the token itself. Passing them here can cause conflicts.
     // Leave config minimal to avoid overriding token settings.

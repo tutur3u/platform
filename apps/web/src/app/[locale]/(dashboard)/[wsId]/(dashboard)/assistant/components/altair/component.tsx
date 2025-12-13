@@ -110,7 +110,7 @@ function AltairComponent() {
   useEffect(() => {
     setConfig({
       // Use Gemini 2.5 Flash Native Audio for better voice experience
-      model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+      model: 'gemini-2.5-flash-native-audio-preview-12-2025',
       generationConfig: {
         responseModalities: 'audio',
         speechConfig: {

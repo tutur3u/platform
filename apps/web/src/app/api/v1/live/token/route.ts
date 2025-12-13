@@ -508,7 +508,7 @@ export async function POST() {
         liveConnectConstraints: {
           // Use gemini-2.0-flash-live for multimodal support (audio + video + function calling)
           // Note: gemini-2.5-flash-native-audio-preview is audio-only and may not support all features
-          model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+          model: 'gemini-2.5-flash-native-audio-preview-12-2025',
           config: {
             responseModalities: [Modality.AUDIO],
             proactivity: { proactiveAudio: true },
