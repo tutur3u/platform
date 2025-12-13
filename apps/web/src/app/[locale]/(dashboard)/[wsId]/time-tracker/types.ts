@@ -58,6 +58,8 @@ export interface ExtendedWorkspaceTask extends WorkspaceTask {
     avatar_url?: string;
     email?: string;
   }>;
+  /** Workspace ID from task_lists -> workspace_boards relation */
+  ws_id?: string;
 }
 
 // Task filters interface for timer controls

@@ -6,9 +6,9 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types';
+import { CreateEventButton } from '@tuturuuu/ui/legacy/calendar/create-event-button';
 import type { CalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
@@ -20,7 +20,6 @@ import CalendarConnectionsManager from './components/calendar-connections-manage
 import QuickCalendarToggle from './components/quick-calendar-toggle';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
 import { SmartScheduleButton } from './components/smart-schedule-button';
-import SyncDebugPanel from './components/sync-debug-panel';
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
@@ -105,6 +104,7 @@ export default function CalendarClientPage({
 
   const extras = (
     <div className="grid w-full items-center gap-2 md:flex md:w-auto">
+      <CreateEventButton variant="header" label={t('new-event')} />
       {hasValidTuturuuuEmail && <SmartScheduleButton wsId={workspace.id} />}
       {experimentalGoogleToken && (
         <>
@@ -140,23 +140,21 @@ export default function CalendarClientPage({
           onCompleted={() => setCalendarGateCompleted(true)}
         />
       )}
-      {!needsCalendarGate && (
-        <SmartCalendar
-          t={t}
-          locale={locale}
-          workspace={workspace}
-          useQuery={useQuery}
-          useQueryClient={useQueryClient}
-          experimentalGoogleToken={
-            experimentalGoogleToken?.ws_id === workspace.id
-              ? experimentalGoogleToken
-              : null
-          }
-          extras={extras}
-          initialSettings={initialSettings}
-        />
-      )}
-      {DEV_MODE && <SyncDebugPanel />}
+      <SmartCalendar
+        t={t}
+        locale={locale}
+        workspace={workspace}
+        useQuery={useQuery}
+        useQueryClient={useQueryClient}
+        experimentalGoogleToken={
+          experimentalGoogleToken?.ws_id === workspace.id
+            ? experimentalGoogleToken
+            : null
+        }
+        extras={extras}
+        initialSettings={initialSettings}
+      />
+      {/*{DEV_MODE && <SyncDebugPanel />}*/}
     </>
   );
 }

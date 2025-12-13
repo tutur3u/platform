@@ -50,6 +50,8 @@ export type TaskWithScheduling = WorkspaceTask & {
   // Computed fields for progress tracking
   scheduled_minutes?: number;
   completed_minutes?: number;
+  // Workspace context for cross-workspace scheduling
+  ws_id?: string;
 };
 
 /**

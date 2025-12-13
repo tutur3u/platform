@@ -7,7 +7,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
-import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
 import { useCalendarSettings } from './settings/settings-context';
@@ -601,12 +600,7 @@ export const CalendarContent = ({
         )}
       </div>
 
-      {disabled ? null : (
-        <>
-          {workspace && <EventModal />}
-          <CreateEventButton />
-        </>
-      )}
+      {disabled ? null : workspace && <EventModal />}
     </div>
   );
 };

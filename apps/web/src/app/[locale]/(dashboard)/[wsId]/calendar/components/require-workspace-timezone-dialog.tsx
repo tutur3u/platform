@@ -152,6 +152,10 @@ export function RequireWorkspaceTimezoneDialog({
     if (!needsGate) onCompleted();
   }, [needsGate, settingsQuery.isFetching, onCompleted]);
 
+  // Don't render anything until we've fetched the settings
+  // This prevents the flash of the dialog when settings are already configured
+  if (settingsQuery.isLoading || settingsQuery.isFetching) return null;
+
   if (!needsGate) return null;
 
   return (

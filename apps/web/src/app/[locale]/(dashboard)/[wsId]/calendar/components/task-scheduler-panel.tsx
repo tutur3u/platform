@@ -40,12 +40,18 @@ async function fetchSchedulableTasks(
   const supabase = createClient();
 
   // Fetch tasks assigned to user that have duration set
+  // Include workspace ID via task_lists -> workspace_boards relation
   let query = supabase
     .from('task_assignees')
     .select(
       `
       ...tasks!inner(
-        *
+        *,
+        task_lists!inner(
+          workspace_boards!inner(
+            ws_id
+          )
+        )
       )
     `
     )
@@ -141,14 +147,18 @@ async function fetchSchedulableTasks(
     }
   });
 
-  // Merge scheduling info into tasks
+  // Merge scheduling info into tasks and extract workspace ID
   return (assignedTasks || []).map((task: any) => {
     const scheduling = taskSchedulingMap.get(task.id) || {
       scheduled_minutes: 0,
       completed_minutes: 0,
     };
+    // Extract ws_id from nested relation and remove the nested objects
+    const wsId = task.task_lists?.workspace_boards?.ws_id;
+    const { task_lists: _task_lists, ...taskWithoutLists } = task;
     return {
-      ...task,
+      ...taskWithoutLists,
+      ws_id: wsId,
       scheduled_minutes: scheduling.scheduled_minutes,
       completed_minutes: scheduling.completed_minutes,
     };
@@ -178,9 +188,12 @@ export function TaskSchedulerPanel({
 
     setSchedulingTaskId(task.id);
 
+    // Use the task's workspace ID for the API call, not the current workspace
+    const taskWsId = task.ws_id || wsId;
+
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
+        `/api/v1/workspaces/${taskWsId}/tasks/${task.id}/schedule`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -250,7 +263,7 @@ export function TaskSchedulerPanel({
             <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
-                className="cursor-help shrink-0 bg-dynamic-green/10 text-dynamic-green"
+                className="shrink-0 cursor-help bg-dynamic-green/10 text-dynamic-green"
               >
                 <CheckCircle className="mr-1 h-3 w-3" />
                 {fullyScheduledTasks}
@@ -262,7 +275,7 @@ export function TaskSchedulerPanel({
             <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
-                className="cursor-help shrink-0 bg-dynamic-yellow/10 text-dynamic-yellow"
+                className="shrink-0 cursor-help bg-dynamic-yellow/10 text-dynamic-yellow"
               >
                 <Clock className="mr-1 h-3 w-3" />
                 {partiallyScheduledTasks}
@@ -274,7 +287,7 @@ export function TaskSchedulerPanel({
             <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
-                className="cursor-help shrink-0 bg-muted text-muted-foreground"
+                className="shrink-0 cursor-help bg-muted text-muted-foreground"
               >
                 {unscheduledTasks} pending
               </Badge>

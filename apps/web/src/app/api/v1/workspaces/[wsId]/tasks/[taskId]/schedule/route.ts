@@ -194,6 +194,21 @@ export async function GET(
       );
     }
 
+    // Verify workspace access
+    const { data: memberCheck } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
     // Fetch task with scheduling fields
     // Note: auto_schedule column requires migration to be applied
     const { data: task, error: taskError } = await supabase

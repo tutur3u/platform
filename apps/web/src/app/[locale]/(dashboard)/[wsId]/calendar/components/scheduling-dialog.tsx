@@ -82,7 +82,7 @@ function DurationInput({
       >
         -
       </Button>
-      <div className="flex min-w-[3rem] items-center justify-center gap-1 rounded-md border bg-background px-2 py-1 text-sm">
+      <div className="flex min-w-12 items-center justify-center gap-1 rounded-md border bg-background px-2 py-1 text-sm">
         <span className="font-medium tabular-nums">{value}</span>
         <span className="text-muted-foreground text-xs">{label}</span>
       </div>
@@ -153,7 +153,9 @@ export function SchedulingDialog({
     }) => {
       if (!task) throw new Error('No task selected');
 
-      const response = await fetch(`/api/${wsId}/task/${task.id}/edit`, {
+      // Use the task's workspace ID if available, fall back to current workspace
+      const taskWsId = task.ws_id || wsId;
+      const response = await fetch(`/api/${taskWsId}/task/${task.id}/edit`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
