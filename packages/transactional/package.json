@@ -20,10 +20,10 @@
   "dependencies": {
     "@react-email/components": "^1.0.1",
     "react": "^19.2.3",
-    "react-email": "^5.0.7"
+    "react-email": "^5.0.8"
   },
   "devDependencies": {
-    "@react-email/preview-server": "^5.0.7",
+    "@react-email/preview-server": "^5.0.8",
     "@react-email/render": "^2.0.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.0.1",

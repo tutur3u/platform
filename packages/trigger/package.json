@@ -17,7 +17,7 @@
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@trigger.dev/sdk": "^4.2.0",
+    "@trigger.dev/sdk": "^4.3.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/types": "workspace:*",
@@ -25,7 +25,7 @@
     "dayjs": "^1.11.19"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^4.2.0",
+    "@trigger.dev/build": "^4.3.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "vitest": "^4.0.15"
   },
