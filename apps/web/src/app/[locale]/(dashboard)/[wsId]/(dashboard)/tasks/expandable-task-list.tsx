@@ -12,6 +12,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  getIconComponentByKey,
+  type WorkspaceBoardIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
@@ -23,8 +27,8 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Task {
@@ -42,6 +46,7 @@ interface Task {
     board: {
       id: string;
       name: string | null;
+      icon?: string | null;
       ws_id: string;
       estimation_type?: string | null;
       extended_estimation?: boolean;
@@ -259,21 +264,29 @@ export default function ExpandableTaskList({
                 )}
 
                 {/* Board */}
-                {task.list?.board?.id && task.list?.board?.ws_id && (
-                  <>
-                    <Link
-                      href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 rounded-md bg-dynamic-green/10 px-2 py-0.5 font-medium text-dynamic-green transition-colors hover:underline"
-                    >
-                      <LayoutGrid className="h-3 w-3" />
-                      {task.list?.board?.name || t('board')}
-                    </Link>
-                    {task.list?.name && (
-                      <span className="text-muted-foreground/40">›</span>
-                    )}
-                  </>
-                )}
+                {task.list?.board?.id &&
+                  task.list?.board?.ws_id &&
+                  (() => {
+                    const BoardIcon =
+                      getIconComponentByKey(
+                        task.list.board.icon as WorkspaceBoardIconKey | null
+                      ) ?? LayoutGrid;
+                    return (
+                      <>
+                        <Link
+                          href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 rounded-md bg-dynamic-green/10 px-2 py-0.5 font-medium text-dynamic-green transition-colors hover:underline"
+                        >
+                          <BoardIcon className="h-3 w-3" />
+                          {task.list?.board?.name || t('board')}
+                        </Link>
+                        {task.list?.name && (
+                          <span className="text-muted-foreground/40">›</span>
+                        )}
+                      </>
+                    );
+                  })()}
 
                 {/* List */}
                 {task.list?.name && (

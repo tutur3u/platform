@@ -16,8 +16,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { isPast, isToday, isTomorrow } from 'date-fns';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import ExpandableTaskList from './expandable-task-list';
 
 interface TasksAssignedToMeProps {
@@ -118,6 +118,7 @@ export default async function TasksAssignedToMe({
       board:workspace_boards!inner(
         id,
         name,
+        icon,
         ws_id,
         estimation_type,
         extended_estimation,

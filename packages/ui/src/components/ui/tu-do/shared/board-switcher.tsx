@@ -20,14 +20,21 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
+import {
+  getIconComponentByKey,
+  type WorkspaceBoardIconKey,
+} from '../../custom/icon-picker';
 
 interface BoardSwitcherProps {
-  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'>;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
+    icon?: WorkspaceTaskBoard['icon'];
+  };
 }
 
 type BoardWithStatus = {
   id: string;
   name: string | null;
+  icon: string | null;
   archived_at: string | null;
   deleted_at: string | null;
   created_at: string | null;
@@ -51,7 +58,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_boards')
-        .select('id, name, archived_at, deleted_at, created_at')
+        .select('id, name, icon, archived_at, deleted_at, created_at')
         .eq('ws_id', board.ws_id)
         .order('name');
 
@@ -69,10 +76,18 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
   const archivedBoards = boards.filter((b) => b.archived_at && !b.deleted_at);
   const deletedBoards = boards.filter((b) => b.deleted_at);
 
+  // Get current board's icon
+  const CurrentBoardIcon =
+    getIconComponentByKey(board.icon as WorkspaceBoardIconKey | null) ??
+    LayoutGrid;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="group flex cursor-pointer items-center gap-2 transition-colors hover:text-foreground">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+            <CurrentBoardIcon className="h-4 w-4" />
+          </div>
           <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
             {board.name}
           </h1>
@@ -99,6 +114,10 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                 </DropdownMenuLabel>
                 {activeBoards.map((otherBoard) => {
                   const isCurrentBoard = otherBoard.id === board.id;
+                  const BoardIcon =
+                    getIconComponentByKey(
+                      otherBoard.icon as WorkspaceBoardIconKey | null
+                    ) ?? LayoutGrid;
                   return (
                     <DropdownMenuItem
                       key={otherBoard.id}
@@ -113,7 +132,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       )}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
-                        <LayoutGrid className="h-4 w-4" />
+                        <BoardIcon className="h-4 w-4" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="truncate font-medium text-sm leading-none">
@@ -144,6 +163,10 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                 </DropdownMenuLabel>
                 {archivedBoards.map((otherBoard) => {
                   const isCurrentBoard = otherBoard.id === board.id;
+                  const BoardIcon =
+                    getIconComponentByKey(
+                      otherBoard.icon as WorkspaceBoardIconKey | null
+                    ) ?? LayoutGrid;
                   return (
                     <DropdownMenuItem
                       key={otherBoard.id}
@@ -159,7 +182,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       )}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                        <LayoutGrid className="h-4 w-4" />
+                        <BoardIcon className="h-4 w-4" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="truncate font-medium text-sm leading-none">
@@ -195,6 +218,10 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                     otherBoard.deleted_at ?? ''
                   );
                   const isCurrentBoard = otherBoard.id === board.id;
+                  const BoardIcon =
+                    getIconComponentByKey(
+                      otherBoard.icon as WorkspaceBoardIconKey | null
+                    ) ?? LayoutGrid;
 
                   return (
                     <DropdownMenuItem
@@ -211,7 +238,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       )}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-destructive/10 text-destructive">
-                        <LayoutGrid className="h-4 w-4" />
+                        <BoardIcon className="h-4 w-4" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="truncate font-medium text-sm leading-none">
