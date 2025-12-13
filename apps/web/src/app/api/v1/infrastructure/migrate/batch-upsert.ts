@@ -2,7 +2,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 
 interface BatchUpsertOptions {
   table: string;
