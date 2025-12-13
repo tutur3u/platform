@@ -183,8 +183,8 @@ async function getEmailStats(
 
   const { data, error } = await supabase.rpc('get_email_stats', {
     filter_ws_id: wsId,
-    start_date: startDate?.toISOString() || null,
-    end_date: endDate?.toISOString() || null,
+    start_date: startDate?.toISOString() || undefined,
+    end_date: endDate?.toISOString() || undefined,
   });
 
   if (error) {
