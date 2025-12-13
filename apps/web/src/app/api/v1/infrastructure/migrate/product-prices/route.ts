@@ -1,25 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
 export async function PUT(req: Request) {
-  const supabase = await createClient();
-
   const json = await req.json();
-
-  const { error } = await supabase
-    .from('inventory_products')
-    .upsert(json?.data || [], {
-      onConflict: 'product_id,unit_id,warehouse_id',
-      ignoreDuplicates: false,
-    });
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error migrating product prices' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  const result = await batchUpsert({
+    table: 'inventory_products',
+    data: json?.data || [],
+    onConflict: 'product_id,unit_id,warehouse_id',
+  });
+  return createMigrationResponse(result, 'product prices');
 }

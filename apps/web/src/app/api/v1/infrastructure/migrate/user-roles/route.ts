@@ -1,22 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
 export async function PUT(req: Request) {
-  const supabase = await createClient();
-
   const json = await req.json();
-
-  const { error } = await supabase
-    .from('workspace_user_groups_users')
-    .upsert(json?.data || []);
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error migrating workspace users' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  const result = await batchUpsert({
+    table: 'workspace_user_groups_users',
+    data: json?.data || [],
+  });
+  return createMigrationResponse(result, 'user roles');
 }

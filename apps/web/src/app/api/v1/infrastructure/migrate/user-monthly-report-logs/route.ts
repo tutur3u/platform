@@ -1,27 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
 export async function PUT(req: Request) {
-  const supabase = await createClient();
-
   const json = await req.json();
-
-  // external_user_monthly_report_logs has 'id' as primary key (UUID)
-  // Use id-based upsert for proper deduplication
-  const { error } = await supabase
-    .from('external_user_monthly_report_logs')
-    .upsert(json?.data || [], {
-      onConflict: 'id',
-      ignoreDuplicates: false,
-    });
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error migrating user monthly report logs' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  const result = await batchUpsert({
+    table: 'external_user_monthly_report_logs',
+    data: json?.data || [],
+    onConflict: 'id',
+  });
+  return createMigrationResponse(result, 'user monthly report logs');
 }
