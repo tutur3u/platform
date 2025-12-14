@@ -44,7 +44,7 @@
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -80,7 +80,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -119,7 +119,7 @@
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -179,7 +179,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.21",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@types/uuid": "^11.0.0",
@@ -211,7 +211,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -271,7 +271,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.21",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@types/uuid": "^11.0.0",
@@ -303,7 +303,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -343,7 +343,7 @@
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -382,7 +382,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -426,9 +426,9 @@
         "@tiptap/html": "^3.13.0",
         "@tiptap/react": "^3.13.0",
         "@tiptap/starter-kit": "^3.13.0",
-        "@trpc/client": "^11.7.2",
-        "@trpc/react-query": "^11.7.2",
-        "@trpc/server": "^11.7.2",
+        "@trpc/client": "^11.8.0",
+        "@trpc/react-query": "^11.8.0",
+        "@trpc/server": "^11.8.0",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -515,7 +515,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.21",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/papaparse": "^5.5.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
@@ -578,7 +578,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "typescript": "^5.9.3",
       },
@@ -598,7 +598,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "typescript": "^5.9.3",
       },
@@ -617,7 +617,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "typescript": "^5.9.3",
@@ -639,7 +639,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "typescript": "^5.9.3",
         "vitest": "^4.0.15",
       },
@@ -660,7 +660,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@vitejs/plugin-react": "^5.1.2",
         "typescript": "^5.9.3",
@@ -677,7 +677,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@vitejs/plugin-react": "^5.1.2",
         "typescript": "^5.9.3",
@@ -706,7 +706,7 @@
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.0",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.2",
@@ -736,7 +736,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "typescript": "^5.9.3",
         "vitest": "^4.0.15",
       },
@@ -755,7 +755,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "next": "^16.0.10",
         "react": "^19.2.3",
@@ -781,7 +781,7 @@
         "@react-email/preview-server": "^5.0.8",
         "@react-email/render": "^2.0.0",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "vitest": "^4.0.15",
       },
@@ -814,7 +814,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "typescript": "^5.9.3",
       },
@@ -946,7 +946,7 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/html2canvas": "^1.0.0",
         "@types/lodash": "^4.17.21",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@types/react-resizable": "^3.0.8",
@@ -996,7 +996,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/diff": "^8.0.0",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@vitejs/plugin-react": "^5.1.2",
         "typescript": "^5.9.3",
@@ -1014,7 +1014,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.1",
+        "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@vitejs/plugin-react": "^5.1.2",
         "typescript": "^5.9.3",
@@ -2196,11 +2196,11 @@
 
     "@trigger.dev/sdk": ["@trigger.dev/sdk@4.3.0", "", { "dependencies": { "@opentelemetry/api": "1.9.0", "@opentelemetry/semantic-conventions": "1.36.0", "@trigger.dev/core": "4.3.0", "chalk": "^5.2.0", "cronstrue": "^2.21.0", "debug": "^4.3.4", "evt": "^2.4.13", "slug": "^6.0.0", "ulid": "^2.3.0", "uncrypto": "^0.1.3", "uuid": "^9.0.0", "ws": "^8.11.0" }, "peerDependencies": { "ai": "^4.2.0 || ^5.0.0", "zod": "^3.0.0 || ^4.0.0" }, "optionalPeers": ["ai"] }, "sha512-54wyCtXaumNfv1ou8PMGs7gb5+wNz94RjwznTWLoBAMhMmPsiqSTa6qxwjjWbpxAb/FWvasUnfbHxOmio2xdMg=="],
 
-    "@trpc/client": ["@trpc/client@11.7.2", "", { "peerDependencies": { "@trpc/server": "11.7.2", "typescript": ">=5.7.2" } }, "sha512-OQxqUMfpDvjcszo9dbnqWQXnW2L5IbrKSz2H7l8s+mVM3EvYw7ztQ/gjFIN3iy0NcamiQfd4eE6qjcb9Lm+63A=="],
+    "@trpc/client": ["@trpc/client@11.8.0", "", { "peerDependencies": { "@trpc/server": "11.8.0", "typescript": ">=5.7.2" } }, "sha512-imJQeESX1hAapDaC4JB91yvXg41AZfBuTh/scnEiN/hAubZa5s/ikp0n+w29q2GCf+hREkr3WptUFKFJoDAIug=="],
 
-    "@trpc/react-query": ["@trpc/react-query@11.7.2", "", { "peerDependencies": { "@tanstack/react-query": "^5.80.3", "@trpc/client": "11.7.2", "@trpc/server": "11.7.2", "react": ">=18.2.0", "react-dom": ">=18.2.0", "typescript": ">=5.7.2" } }, "sha512-IcLDMqx2mvlGRxkr0/m37TtPvRQ8nonITH3EwYv436x0Igx8eduR9z4tdgGBsjJY9e5W1G7cZ4zKCwrizSimFQ=="],
+    "@trpc/react-query": ["@trpc/react-query@11.8.0", "", { "peerDependencies": { "@tanstack/react-query": "^5.80.3", "@trpc/client": "11.8.0", "@trpc/server": "11.8.0", "react": ">=18.2.0", "react-dom": ">=18.2.0", "typescript": ">=5.7.2" } }, "sha512-zJG22PqhGUBq6ke58McGxRBGWGDTHlmsgpxp/rQx8iT2yi0Ja1H2/UcSsjZ/MG65DhCfpKvMVH0OVivTn9FWwA=="],
 
-    "@trpc/server": ["@trpc/server@11.7.2", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-AgB26PXY69sckherIhCacKLY49rxE2XP5h38vr/KMZTbLCL1p8IuIoKPjALTcugC2kbyQ7Lbqo2JDVfRSmPmfQ=="],
+    "@trpc/server": ["@trpc/server@11.8.0", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-DphyQnLuyX2nwJCQGWQ9zYz4hZGvRhSBqDhQ0SH3tDhQ3PU4u68xofA0pJ741Ir4InEAFD+TtJVLAQy+wVOkiQ=="],
 
     "@tuturuuu/ai": ["@tuturuuu/ai@workspace:packages/ai"],
 
@@ -2378,7 +2378,7 @@
 
     "@types/negotiator": ["@types/negotiator@0.6.4", "", {}, "sha512-elf6BsTq+AkyNsb2h5cGNst2Mc7dPliVoAPm1fXglC/BM3f2pFA40BaSSv3E5lyHteEawVKLP+8TwiY1DMNb3A=="],
 
-    "@types/node": ["@types/node@25.0.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-czWPzKIAXucn9PtsttxmumiQ9N0ok9FrBwgRWrwmVLlp86BrMExzvXRLFYRJ+Ex3g6yqj+KuaxfX1JTgV2lpfg=="],
+    "@types/node": ["@types/node@25.0.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-gWEkeiyYE4vqjON/+Obqcoeffmk0NF15WSBwSs7zwVA2bAbTaE0SJ7P0WNGoJn8uE7fiaV5a7dKYIJriEqOrmA=="],
 
     "@types/papaparse": ["@types/papaparse@5.5.2", "", { "dependencies": { "@types/node": "*" } }, "sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA=="],
 
@@ -4453,6 +4453,8 @@
     "@types/cors/@types/node": ["@types/node@24.10.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ=="],
 
     "@types/dompurify/dompurify": ["dompurify@3.3.0", "", { "optionalDependencies": { "@types/trusted-types": "^2.0.7" } }, "sha512-r+f6MYR1gGN1eJv0TVQbhA7if/U7P87cdPl3HN5rikqaBSBxLiCb/b9O+2eG0cxz0ghyU+mU1QkbsOwERMYlWQ=="],
+
+    "@types/papaparse/@types/node": ["@types/node@25.0.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-czWPzKIAXucn9PtsttxmumiQ9N0ok9FrBwgRWrwmVLlp86BrMExzvXRLFYRJ+Ex3g6yqj+KuaxfX1JTgV2lpfg=="],
 
     "@types/ws/@types/node": ["@types/node@24.10.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ=="],
 

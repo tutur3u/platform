@@ -26,7 +26,7 @@
     "@react-email/preview-server": "^5.0.8",
     "@react-email/render": "^2.0.0",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.0.1",
+    "@types/node": "^25.0.2",
     "@types/react": "^19.2.7",
     "vitest": "^4.0.15"
   },
