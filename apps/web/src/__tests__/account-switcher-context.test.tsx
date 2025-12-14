@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import type { ReactNode } from 'react';

@@ -11,32 +11,53 @@ interface CalendarEvent {
   _isPreview?: boolean;
 }
 
+type CalendarHoursType = 'work_hours' | 'personal_hours' | 'meeting_hours';
+
+type TaskPriority = 'low' | 'normal' | 'high' | 'critical';
+
+type TimeOfDayPreference = 'morning' | 'afternoon' | 'evening' | 'night';
+type HabitFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+
 interface Habit {
   id: string;
   name: string;
-  frequency: string;
+  frequency: HabitFrequency;
   duration_minutes: number;
-  calendar_hours: string;
-  priority: string;
+  calendar_hours: CalendarHoursType;
+  priority: TaskPriority;
   auto_schedule: boolean;
   is_visible_in_calendar: boolean;
   is_active: boolean;
   ideal_time?: string;
-  ws_id?: string;
-  color?: string;
-  recurrence_interval?: number;
-  start_date?: string;
+  ws_id: string;
+  color: string;
+  recurrence_interval: number;
+  start_date: string;
   end_date?: string | null;
-  time_preference?: string;
-  created_at?: string;
-  updated_at?: string;
+  time_preference?: TimeOfDayPreference;
+  created_at: string;
+  updated_at: string;
 }
 
 // Mock minimal hour settings for tests - use null for optional fields
+const emptyDay = {
+  enabled: true,
+  timeBlocks: [{ startTime: '00:00', endTime: '23:59' }],
+};
+const validMockWeek = {
+  sunday: emptyDay,
+  monday: emptyDay,
+  tuesday: emptyDay,
+  wednesday: emptyDay,
+  thursday: emptyDay,
+  friday: emptyDay,
+  saturday: emptyDay,
+};
+
 const mockHourSettings = {
-  workHours: null,
-  personalHours: null,
-  meetingHours: null,
+  workHours: validMockWeek,
+  personalHours: validMockWeek,
+  meetingHours: validMockWeek,
 } as any;
 
 describe('generatePreview', () => {
@@ -139,6 +160,12 @@ describe('generatePreview', () => {
           is_visible_in_calendar: true,
           is_active: true,
           ideal_time: '12:00:00',
+          ws_id: 'ws-1',
+          color: 'blue',
+          recurrence_interval: 1,
+          start_date: '2025-12-14',
+          created_at: '2025-01-01T00:00:00Z',
+          updated_at: '2025-01-01T00:00:00Z',
         },
       ];
 
@@ -146,6 +173,7 @@ describe('generatePreview', () => {
         windowDays: 7,
         now,
         existingHabitDays,
+        timezone: 'UTC',
       });
 
       // Habit for 2025-12-15 should be skipped (already exists)
@@ -175,6 +203,12 @@ describe('generatePreview', () => {
           is_visible_in_calendar: true,
           is_active: true,
           ideal_time: '12:00:00',
+          ws_id: 'ws-1',
+          color: 'blue',
+          recurrence_interval: 1,
+          start_date: '2025-12-14',
+          created_at: '2025-01-01T00:00:00Z',
+          updated_at: '2025-01-01T00:00:00Z',
         },
       ];
 
@@ -182,6 +216,7 @@ describe('generatePreview', () => {
         windowDays: 3,
         now,
         existingHabitDays,
+        timezone: 'UTC',
       });
 
       // Days 14 and 15 already have events, so only day 16+ should be scheduled
