@@ -83,6 +83,7 @@ const CalendarSyncContext = createContext<{
   calendarConnections: CalendarConnection[];
   enabledCalendarIds: Set<string>;
   updateCalendarConnection: (connectionId: string, isEnabled: boolean) => void;
+  setCalendarConnections: (connections: CalendarConnection[]) => void;
 
   // Sync status
   syncStatus: SyncStatus;
@@ -116,6 +117,7 @@ const CalendarSyncContext = createContext<{
   calendarConnections: [],
   enabledCalendarIds: new Set(),
   updateCalendarConnection: () => {},
+  setCalendarConnections: () => {},
 
   // Sync status
   syncStatus: { state: 'idle' },
@@ -177,7 +179,7 @@ export const CalendarSyncProvider = ({
   const queryClient = useQueryClient();
 
   // Calendar connections state
-  const [calendarConnections, setCalendarConnections] = useState<
+  const [calendarConnections, setCalendarConnectionsState] = useState<
     CalendarConnection[]
   >(initialCalendarConnections);
 
@@ -193,11 +195,18 @@ export const CalendarSyncProvider = ({
   // Update calendar connection state
   const updateCalendarConnection = useCallback(
     (connectionId: string, isEnabled: boolean) => {
-      setCalendarConnections((prev) =>
+      setCalendarConnectionsState((prev) =>
         prev.map((conn) =>
           conn.id === connectionId ? { ...conn, is_enabled: isEnabled } : conn
         )
       );
+    },
+    []
+  );
+
+  const setCalendarConnections = useCallback(
+    (connections: CalendarConnection[]) => {
+      setCalendarConnectionsState(connections);
     },
     []
   );
@@ -1101,6 +1110,7 @@ export const CalendarSyncProvider = ({
     calendarConnections,
     enabledCalendarIds,
     updateCalendarConnection,
+    setCalendarConnections,
 
     // Sync status
     syncStatus,

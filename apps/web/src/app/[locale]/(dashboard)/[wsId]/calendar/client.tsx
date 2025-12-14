@@ -16,8 +16,7 @@ import {
   resolveTimeFormat,
   resolveTimezone,
 } from '../../../../../lib/calendar-settings-resolver';
-import CalendarConnectionsManager from './components/calendar-connections-manager';
-import QuickCalendarToggle from './components/quick-calendar-toggle';
+import CalendarConnections from './components/calendar-connections';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
 import { SmartScheduleButton } from './components/smart-schedule-button';
 
@@ -108,8 +107,7 @@ export default function CalendarClientPage({
       {enableSmartScheduling && <SmartScheduleButton wsId={workspace.id} />}
       {experimentalGoogleToken && (
         <>
-          <QuickCalendarToggle />
-          <CalendarConnectionsManager
+          <CalendarConnections
             wsId={workspace.id}
             initialConnections={calendarConnections}
             hasGoogleAuth={!!experimentalGoogleToken}

@@ -137,7 +137,11 @@ export function SchedulingDialog({
   const [autoSchedule, setAutoSchedule] = useState(false);
 
   // Always read per-user settings (works for both personal and workspace calendars).
-  const { data: personalSchedule } = useQuery({
+  const {
+    data: personalSchedule,
+    isLoading: isLoadingPersonalSchedule,
+    isFetching: isFetchingPersonalSchedule,
+  } = useQuery({
     queryKey: ['task-personal-schedule', task?.id, open],
     enabled: open && !!task?.id,
     queryFn: async () => {
@@ -156,6 +160,11 @@ export function SchedulingDialog({
     },
     staleTime: 30_000,
   });
+
+  const isScheduleSettingsReady =
+    !open || !task?.id
+      ? true
+      : !isLoadingPersonalSchedule && !isFetchingPersonalSchedule;
 
   // Initialize form state when task changes
   useEffect(() => {
@@ -274,6 +283,13 @@ export function SchedulingDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {!isScheduleSettingsReady && (
+            <div className="flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Loading scheduling settings...
+            </div>
+          )}
+
           {/* Duration */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5 text-sm">
@@ -288,7 +304,7 @@ export function SchedulingDialog({
                 min={0}
                 max={999}
                 label="h"
-                disabled={updateMutation.isPending}
+                disabled={!isScheduleSettingsReady || updateMutation.isPending}
               />
               <DurationInput
                 value={durationMinutes}
@@ -297,7 +313,7 @@ export function SchedulingDialog({
                 max={45}
                 step={15}
                 label="m"
-                disabled={updateMutation.isPending}
+                disabled={!isScheduleSettingsReady || updateMutation.isPending}
               />
             </div>
           </div>
@@ -318,7 +334,9 @@ export function SchedulingDialog({
                     key={option.value}
                     type="button"
                     onClick={() => setCalendarHours(option.value)}
-                    disabled={updateMutation.isPending}
+                    disabled={
+                      !isScheduleSettingsReady || updateMutation.isPending
+                    }
                     className={cn(
                       'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors',
                       isSelected
@@ -352,7 +370,7 @@ export function SchedulingDialog({
               id="splittable"
               checked={isSplittable}
               onCheckedChange={setIsSplittable}
-              disabled={updateMutation.isPending}
+              disabled={!isScheduleSettingsReady || updateMutation.isPending}
             />
           </div>
 
@@ -372,7 +390,9 @@ export function SchedulingDialog({
                   max={maxSplitMinutes}
                   step={15}
                   label="min"
-                  disabled={updateMutation.isPending}
+                  disabled={
+                    !isScheduleSettingsReady || updateMutation.isPending
+                  }
                 />
               </div>
               <div className="space-y-1.5">
@@ -388,7 +408,9 @@ export function SchedulingDialog({
                   max={480}
                   step={15}
                   label="min"
-                  disabled={updateMutation.isPending}
+                  disabled={
+                    !isScheduleSettingsReady || updateMutation.isPending
+                  }
                 />
               </div>
             </div>
@@ -412,7 +434,7 @@ export function SchedulingDialog({
               id="auto-schedule"
               checked={autoSchedule}
               onCheckedChange={setAutoSchedule}
-              disabled={updateMutation.isPending}
+              disabled={!isScheduleSettingsReady || updateMutation.isPending}
             />
           </div>
         </div>
@@ -427,7 +449,9 @@ export function SchedulingDialog({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!isValid || updateMutation.isPending}
+            disabled={
+              !isScheduleSettingsReady || !isValid || updateMutation.isPending
+            }
           >
             {updateMutation.isPending ? (
               <>

@@ -95,6 +95,15 @@ function formatDuration(totalMinutes: number): string {
   return `${hours}h ${minutes}m`;
 }
 
+type TaskScheduleSettings = {
+  total_duration: number | null;
+  is_splittable: boolean | null;
+  min_split_duration_minutes: number | null;
+  max_split_duration_minutes: number | null;
+  calendar_hours: string | null;
+  auto_schedule: boolean | null;
+};
+
 export default function PriorityView({
   wsId,
   allTasks,
@@ -219,59 +228,87 @@ export default function PriorityView({
   // Quick task dialog state
   const [quickTaskDialogOpen, setQuickTaskDialogOpen] = useState(false);
 
-  // Get task IDs that have scheduling configured (for fetching scheduled events)
-  const tasksWithScheduling = useMemo(
-    () => allTasks.filter((t) => (t.total_duration ?? 0) > 0 && !t.closed_at),
-    [allTasks]
+  // Fetch task schedule settings + scheduled minutes in one batched query.
+  // Important: schedule settings are stored per-user, so `allTasks` may not include them.
+  const tasksToFetchSchedule = useMemo(
+    () => combinedTasks.filter((t) => !t.closed_at),
+    [combinedTasks]
   );
 
-  // Fetch scheduled events for tasks with scheduling configured
-  // This fetches events in parallel and aggregates scheduled minutes per task
-  const { data: scheduledMinutesMap = {} } = useQuery({
+  const {
+    data: scheduleBatch,
+    isLoading: isLoadingScheduleBatch,
+    isFetching: isFetchingScheduleBatch,
+  } = useQuery({
     queryKey: [
-      'scheduled-events-batch',
+      'task-schedule-batch',
       // Include workspace context because personal workspace can include cross-workspace tasks.
-      tasksWithScheduling
+      tasksToFetchSchedule
         .map((t) => `${t.ws_id ?? wsId}:${t.id}`)
         .sort()
         .join(','),
       isPersonalWorkspace ? 'personal' : 'workspace',
     ],
     queryFn: async () => {
-      if (tasksWithScheduling.length === 0) return {};
+      if (tasksToFetchSchedule.length === 0) {
+        return {
+          minutesByTaskId: {} as Record<string, number>,
+          settingsByTaskId: {} as Record<string, TaskScheduleSettings | null>,
+        };
+      }
 
-      // Fetch events for all tasks in parallel
       const results = await Promise.allSettled(
-        tasksWithScheduling.map(async (task) => {
+        tasksToFetchSchedule.map(async (task) => {
           const response = await fetch(
             isPersonalWorkspace
               ? `/api/v1/users/me/tasks/${task.id}/schedule`
               : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`
           );
-          if (!response.ok) return { taskId: task.id, minutes: 0 };
-          const data = await response.json();
+          if (!response.ok) {
+            return {
+              taskId: task.id,
+              minutes: 0,
+              settings: null as TaskScheduleSettings | null,
+            };
+          }
+
+          const data = (await response.json()) as {
+            task?: TaskScheduleSettings | null;
+            events?: Array<{ scheduled_minutes?: number }>;
+          };
+
           const totalScheduled = (data.events || []).reduce(
             (sum: number, e: { scheduled_minutes?: number }) =>
               sum + (e.scheduled_minutes || 0),
             0
           );
-          return { taskId: task.id, minutes: totalScheduled };
+
+          return {
+            taskId: task.id,
+            minutes: totalScheduled,
+            settings: (data.task ?? null) as TaskScheduleSettings | null,
+          };
         })
       );
 
-      // Create a map of taskId -> scheduledMinutes
-      const map: Record<string, number> = {};
+      const minutesByTaskId: Record<string, number> = {};
+      const settingsByTaskId: Record<string, TaskScheduleSettings | null> = {};
+
       for (const result of results) {
-        if (result.status === 'fulfilled') {
-          map[result.value.taskId] = result.value.minutes;
-        }
+        if (result.status !== 'fulfilled') continue;
+        minutesByTaskId[result.value.taskId] = result.value.minutes;
+        settingsByTaskId[result.value.taskId] = result.value.settings;
       }
-      return map;
+
+      return { minutesByTaskId, settingsByTaskId };
     },
     staleTime: 30000, // Cache for 30 seconds
     refetchOnWindowFocus: false,
-    enabled: tasksWithScheduling.length > 0,
+    enabled: tasksToFetchSchedule.length > 0,
   });
+
+  const scheduledMinutesMap = scheduleBatch?.minutesByTaskId ?? {};
+  const scheduleSettingsByTaskId = scheduleBatch?.settingsByTaskId ?? {};
 
   const toggleGroup = (priorityKey: string) => {
     setCollapsedGroups((prev) => {
@@ -500,11 +537,13 @@ export default function PriorityView({
     e: React.DragEvent<HTMLDivElement>,
     task: ExtendedWorkspaceTask
   ) => {
+    const scheduleSettings = scheduleSettingsByTaskId[task.id];
     const dragData = {
       type: 'task',
       taskId: task.id,
       taskName: task.name || 'Untitled Task',
-      totalDuration: task.total_duration ?? 0,
+      totalDuration:
+        scheduleSettings?.total_duration ?? task.total_duration ?? 0,
       priority: task.priority,
       listId: task.list_id,
     };
@@ -620,7 +659,20 @@ export default function PriorityView({
                   <div className="w-full space-y-1.5 overflow-hidden bg-background/80 p-2 backdrop-blur-sm">
                     {tasks.map((task) => {
                       // Calculate total and scheduled minutes for progress display
-                      const totalMinutes = (task.total_duration ?? 0) * 60;
+                      const hasLoadedScheduleSettings = Object.hasOwn(
+                        scheduleSettingsByTaskId,
+                        task.id
+                      );
+
+                      const scheduleSettings = hasLoadedScheduleSettings
+                        ? scheduleSettingsByTaskId[task.id]
+                        : null;
+
+                      const totalMinutes =
+                        ((scheduleSettings?.total_duration ??
+                          task.total_duration ??
+                          0) ||
+                          0) * 60;
                       // Get scheduled minutes from the fetched data
                       const scheduledMinutes =
                         scheduledMinutesMap[task.id] ?? 0;
@@ -633,11 +685,26 @@ export default function PriorityView({
                           : 0;
                       const isFullyScheduled =
                         scheduledMinutes >= totalMinutes && totalMinutes > 0;
+                      const calendarHours =
+                        scheduleSettings?.calendar_hours ?? task.calendar_hours;
                       const hasScheduleSettings =
-                        (task.total_duration ?? 0) > 0 && task.calendar_hours;
-                      const CalendarHoursIcon = task.calendar_hours
-                        ? CALENDAR_HOURS_ICONS[task.calendar_hours]?.icon
+                        totalMinutes > 0 && !!calendarHours;
+                      const CalendarHoursIcon = calendarHours
+                        ? CALENDAR_HOURS_ICONS[calendarHours]?.icon
                         : null;
+                      const isSplittable =
+                        scheduleSettings?.is_splittable ?? task.is_splittable;
+                      const minSplitDurationMinutes =
+                        scheduleSettings?.min_split_duration_minutes ??
+                        task.min_split_duration_minutes;
+                      const maxSplitDurationMinutes =
+                        scheduleSettings?.max_split_duration_minutes ??
+                        task.max_split_duration_minutes;
+                      const autoSchedule =
+                        scheduleSettings?.auto_schedule ?? task.auto_schedule;
+                      const isScheduleInfoLoading =
+                        (isLoadingScheduleBatch || isFetchingScheduleBatch) &&
+                        !hasLoadedScheduleSettings;
                       // Use task completion status for visual styling
                       const isCompleted = !!task.closed_at;
 
@@ -687,7 +754,21 @@ export default function PriorityView({
                                 )}
 
                                 {/* Duration */}
-                                {(task.total_duration ?? 0) > 0 && (
+                                {isScheduleInfoLoading && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/40 px-1 py-0.5 text-[10px] text-muted-foreground">
+                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        Loading
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Loading scheduling settings
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+
+                                {hasScheduleSettings && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-blue/10 px-1 py-0.5 text-[10px] text-dynamic-blue">
@@ -710,15 +791,14 @@ export default function PriorityView({
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      {CALENDAR_HOURS_ICONS[
-                                        task.calendar_hours!
-                                      ]?.label ?? 'Schedule type'}
+                                      {CALENDAR_HOURS_ICONS[calendarHours!]
+                                        ?.label ?? 'Schedule type'}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
 
                                 {/* Splittable Indicator */}
-                                {task.is_splittable && (
+                                {isSplittable && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div className="inline-flex shrink-0 items-center rounded bg-dynamic-orange/10 px-1 py-0.5 text-[10px] text-dynamic-orange">
@@ -728,11 +808,11 @@ export default function PriorityView({
                                     <TooltipContent>
                                       Splittable (
                                       {formatDuration(
-                                        task.min_split_duration_minutes ?? 30
+                                        minSplitDurationMinutes ?? 30
                                       )}{' '}
                                       -{' '}
                                       {formatDuration(
-                                        task.max_split_duration_minutes ?? 120
+                                        maxSplitDurationMinutes ?? 120
                                       )}
                                       )
                                     </TooltipContent>
@@ -740,7 +820,7 @@ export default function PriorityView({
                                 )}
 
                                 {/* Auto-schedule Indicator */}
-                                {task.auto_schedule && (
+                                {autoSchedule && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div className="inline-flex shrink-0 items-center rounded bg-dynamic-sky/10 px-1 py-0.5 text-[10px] text-dynamic-sky">
