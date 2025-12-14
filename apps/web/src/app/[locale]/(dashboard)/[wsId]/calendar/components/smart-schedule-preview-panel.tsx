@@ -21,8 +21,10 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
 
@@ -133,10 +135,12 @@ export function SmartSchedulePreviewPanel({
     setPreviewEvents,
     clearPreviewEvents,
     clearAffectedEventIds,
+    setAffectedEventIds,
     setHideNonPreviewEvents,
   } = useCalendar();
   const { refresh } = useCalendarSync();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [isApplying, setIsApplying] = useState(false);
   const [mode, setMode] = useState<'instant' | 'animated'>(initialMode);
@@ -147,6 +151,9 @@ export function SmartSchedulePreviewPanel({
   const [animationSpeed] = useState(600);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Toggle to hide existing events during preview (default ON for cleaner view)
+  const [hideExistingEvents, setHideExistingEvents] = useState(true);
+
   const convertToCalendarEvents = useCallback(
     (events: PreviewEvent[]): CalendarEvent[] => {
       return events.map((e) => ({
@@ -156,6 +163,7 @@ export function SmartSchedulePreviewPanel({
         end_at: e.end_at,
         color: e.color as any,
         _isPreview: true,
+        _isReused: e.is_reused, // Events at same position as existing
         _previewStep: e.step,
         _previewType: e.type,
         _previewSourceId: e.source_id,
@@ -196,6 +204,7 @@ export function SmartSchedulePreviewPanel({
         tasks?: PreviewData['tasks'];
         habits?: PreviewData['habits'];
         debug?: PreviewData['debug'];
+        affectedEventIds?: string[];
       };
     },
     staleTime: 0,
@@ -262,8 +271,12 @@ export function SmartSchedulePreviewPanel({
       return;
     }
 
-    // Hide all non-preview events during preview for better UX and performance
-    setHideNonPreviewEvents(true);
+    // Set affected event IDs so events that will be modified are dimmed
+    const affectedIds = previewQuery.data?.affectedEventIds || [];
+    setAffectedEventIds(affectedIds);
+
+    // Hide non-preview events if user toggled the option
+    setHideNonPreviewEvents(hideExistingEvents);
 
     if (mode === 'instant') {
       const calendarEvents = convertToCalendarEvents(previewData.events);
@@ -279,9 +292,12 @@ export function SmartSchedulePreviewPanel({
     }
   }, [
     previewData,
+    previewQuery.data?.affectedEventIds,
     mode,
     currentStep,
+    hideExistingEvents,
     setPreviewEvents,
+    setAffectedEventIds,
     clearAffectedEventIds,
     setHideNonPreviewEvents,
     convertToCalendarEvents,
@@ -355,12 +371,18 @@ export function SmartSchedulePreviewPanel({
       setCurrentStep(0);
       setIsPlaying(false);
       queryClient.removeQueries({ queryKey: ['smart-schedule-preview', wsId] });
+      // Invalidate scheduled events query to refresh sidebar task duration counters
+      queryClient.invalidateQueries({
+        queryKey: ['scheduled-events-batch'],
+      });
 
       // Close panel immediately so user sees actual calendar
       onClose();
 
       // Then refresh to fetch actual data from database
       refresh();
+      // Also refresh SSR data for sidebar task durations
+      router.refresh();
 
       toast.success(
         `Scheduled ${result.summary.eventsTotal} events (${result.summary.eventsCreated} new, ${result.summary.eventsUpdated} updated)`,
@@ -472,10 +494,27 @@ export function SmartSchedulePreviewPanel({
         .join('\n') || 'None';
 
     const hourSettings = previewData.debug?.hourSettings;
+    // hourSettings values can be arrays like [{ start: '07:00', end: '23:00' }] or single objects
+    const formatHours = (
+      hours:
+        | Array<{ start: string; end: string }>
+        | { start: string; end: string }
+        | null
+        | undefined
+    ) => {
+      if (!hours) return 'Not set';
+      // Handle single object
+      if (!Array.isArray(hours)) {
+        return `${hours.start} - ${hours.end}`;
+      }
+      // Handle array
+      if (hours.length === 0) return 'Not set';
+      return hours.map((h) => `${h.start} - ${h.end}`).join(', ');
+    };
     const hourSettingsLog = hourSettings
-      ? `Working Hours: ${hourSettings.working_hours?.start ?? 'Not set'} - ${hourSettings.working_hours?.end ?? 'Not set'}
-Personal Hours: ${hourSettings.personal_hours?.start ?? 'Not set'} - ${hourSettings.personal_hours?.end ?? 'Not set'}
-Meeting Hours: ${hourSettings.meeting_hours?.start ?? 'Not set'} - ${hourSettings.meeting_hours?.end ?? 'Not set'}`
+      ? `Working Hours: ${formatHours(hourSettings.working_hours)}
+Personal Hours: ${formatHours(hourSettings.personal_hours)}
+Meeting Hours: ${formatHours(hourSettings.meeting_hours)}`
       : 'Not configured (using defaults: 07:00-23:00)';
 
     // Format habit details
@@ -649,6 +688,17 @@ ${previewData.warnings.join('\n') || 'None'}
                 >
                   Animated
                 </button>
+              </div>
+
+              {/* Toggle to hide existing events */}
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                <span className="text-muted-foreground text-sm">
+                  Hide existing events
+                </span>
+                <Switch
+                  checked={hideExistingEvents}
+                  onCheckedChange={setHideExistingEvents}
+                />
               </div>
 
               {/* Stats */}

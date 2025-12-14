@@ -145,6 +145,14 @@ export function SmartSchedulePreviewDialog({
 
       return result as {
         preview: PreviewData;
+        lockedEvents?: Array<{
+          id: string;
+          title: string;
+          start_at: string;
+          end_at: string;
+          color?: string;
+          locked: true;
+        }>;
         tasks?: PreviewData['tasks'];
         habits?: PreviewData['habits'];
         debug?: PreviewData['debug'];
@@ -154,6 +162,20 @@ export function SmartSchedulePreviewDialog({
     refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
+
+  // Convert locked events to CalendarEvents with a special marker
+  const lockedCalendarEvents = useMemo((): CalendarEvent[] => {
+    if (!previewQuery.data?.lockedEvents) return [];
+    return previewQuery.data.lockedEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      start_at: e.start_at,
+      end_at: e.end_at,
+      color: e.color as any,
+      locked: true,
+      _isLocked: true, // Special marker to indicate this is a locked event in preview
+    }));
+  }, [previewQuery.data?.lockedEvents]);
 
   const previewData: PreviewData | null = useMemo(() => {
     if (!previewQuery.data) return null;
@@ -203,10 +225,13 @@ export function SmartSchedulePreviewDialog({
   useEffect(() => {
     if (!previewData) return;
 
+    let newPreviewEvents: CalendarEvent[];
+
     if (mode === 'instant') {
       // Show all events instantly
       const calendarEvents = convertToCalendarEvents(previewData.events);
-      setPreviewEvents(calendarEvents);
+      // Include locked events so users can see blocked time slots
+      newPreviewEvents = [...lockedCalendarEvents, ...calendarEvents];
     } else {
       // Show events up to current step
       const stepsWithEvents = previewData.steps.filter((s) => s.event);
@@ -215,14 +240,18 @@ export function SmartSchedulePreviewDialog({
         .map((s) => s.event!)
         .filter(Boolean);
       const calendarEvents = convertToCalendarEvents(eventsUpToStep);
-      setPreviewEvents(calendarEvents);
+      // Include locked events so users can see blocked time slots
+      newPreviewEvents = [...lockedCalendarEvents, ...calendarEvents];
     }
+
+    setPreviewEvents(newPreviewEvents);
   }, [
     previewData,
     mode,
     currentStep,
     setPreviewEvents,
     convertToCalendarEvents,
+    lockedCalendarEvents,
   ]);
 
   // Animation playback

@@ -6,6 +6,7 @@ import {
   Briefcase,
   Calendar,
   CheckCircle,
+  CheckIcon,
   ChevronDown,
   Clock,
   horseHead,
@@ -15,6 +16,7 @@ import {
   Rabbit,
   Scissors,
   Search,
+  Sparkles,
   Turtle,
   User,
   unicornHead,
@@ -219,10 +221,7 @@ export default function PriorityView({
 
   // Get task IDs that have scheduling configured (for fetching scheduled events)
   const tasksWithScheduling = useMemo(
-    () =>
-      allTasks.filter(
-        (t) => (t.total_duration ?? 0) > 0 && t.calendar_hours && !t.closed_at
-      ),
+    () => allTasks.filter((t) => (t.total_duration ?? 0) > 0 && !t.closed_at),
     [allTasks]
   );
 
@@ -740,6 +739,20 @@ export default function PriorityView({
                                   </Tooltip>
                                 )}
 
+                                {/* Auto-schedule Indicator */}
+                                {task.auto_schedule && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="inline-flex shrink-0 items-center rounded bg-dynamic-sky/10 px-1 py-0.5 text-[10px] text-dynamic-sky">
+                                        <Sparkles className="h-2.5 w-2.5" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Auto-schedule enabled
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+
                                 {/* Completed Indicator */}
                                 {isCompleted && (
                                   <Tooltip>
@@ -764,8 +777,9 @@ export default function PriorityView({
                                       {formatDuration(totalMinutes)}
                                     </span>
                                     {isFullyScheduled && (
-                                      <span className="text-dynamic-green">
-                                        ✓ Scheduled
+                                      <span className="flex items-center gap-0.5 text-dynamic-green">
+                                        <CheckIcon className="h-2.5 w-2.5" />
+                                        Scheduled
                                       </span>
                                     )}
                                   </div>

@@ -100,12 +100,18 @@ export async function POST(
     const endDate = new Date(now);
     endDate.setDate(endDate.getDate() + windowDays);
 
+    // Start of today (midnight) for habit event queries - include events that already started today
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
     const [
       hourSettingsResult,
       habitsResult,
       tasksResult,
       eventsResult,
       workspaceResult,
+      habitEventsResult,
+      taskEventsResult,
     ] = await Promise.all([
       // Hour settings
       fetchHourSettings(supabase as any, wsId),
@@ -237,6 +243,33 @@ export async function POST(
         .select('timezone, personal')
         .eq('id', wsId)
         .single(),
+
+      // Existing habit events via junction table - used to skip days that already have events
+      supabase
+        .from('habit_calendar_events')
+        .select(
+          `
+          habit_id,
+          occurrence_date,
+          workspace_calendar_events!inner(id, start_at, ws_id)
+        `
+        )
+        .eq('workspace_calendar_events.ws_id', wsId)
+        .gte('workspace_calendar_events.start_at', startOfToday.toISOString())
+        .lte('workspace_calendar_events.start_at', endDate.toISOString()),
+
+      // Task calendar events - to calculate already scheduled time per task
+      // Include events that have STARTED (both completed and in-progress count)
+      supabase
+        .from('task_calendar_events')
+        .select(
+          `
+          task_id,
+          workspace_calendar_events!inner(id, start_at, end_at, ws_id)
+        `
+        )
+        .eq('workspace_calendar_events.ws_id', wsId)
+        .lt('workspace_calendar_events.start_at', now.toISOString()),
     ]);
 
     if (habitsResult.error) {
@@ -293,27 +326,87 @@ export async function POST(
           return clientTimezone;
         })();
 
+    // Build Set of existing habit+day combinations to skip (e.g., "habitId:2025-12-14")
+    // This prevents scheduling a new habit event on a day that already has one
+    // Use the event's start_at date converted to local date string with timezone for consistent matching
+    const existingHabitDays = new Set<string>();
+    if (habitEventsResult?.data) {
+      for (const he of habitEventsResult.data as any[]) {
+        const habitId = he.habit_id;
+        const eventStartAt = he.workspace_calendar_events?.start_at;
+        if (habitId && eventStartAt) {
+          // Convert start_at to local date string using resolved timezone
+          const eventDate = new Date(eventStartAt);
+          const localDateStr = eventDate.toLocaleDateString('en-CA', {
+            timeZone: resolvedTimezone || undefined,
+          });
+          existingHabitDays.add(`${habitId}:${localDateStr}`);
+        }
+      }
+    }
+
+    // Build set of habit event IDs that should stay in place (not be replaced)
+    // These need to block their time slots during scheduling
+    const habitEventIdsToKeep = new Set<string>();
+    if (habitEventsResult?.data) {
+      for (const he of habitEventsResult.data as any[]) {
+        const eventId = he.workspace_calendar_events?.id;
+        if (eventId) {
+          habitEventIdsToKeep.add(eventId);
+        }
+      }
+    }
+
+    // Calculate already-scheduled minutes per task from PAST events
+    // This prevents double-scheduling tasks that already have completed events
+    const taskScheduledMinutes = new Map<string, number>();
+    if (taskEventsResult?.data) {
+      for (const te of taskEventsResult.data as any[]) {
+        const taskId = te.task_id;
+        const startAt = te.workspace_calendar_events?.start_at;
+        const endAt = te.workspace_calendar_events?.end_at;
+        if (taskId && startAt && endAt) {
+          const duration =
+            (new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000; // minutes
+          const current = taskScheduledMinutes.get(taskId) || 0;
+          taskScheduledMinutes.set(taskId, current + duration);
+        }
+      }
+    }
+
+    // Add scheduled_minutes to each task
+    const tasksWithScheduledTime = tasks.map((task: any) => ({
+      ...task,
+      scheduled_minutes: taskScheduledMinutes.get(task.id) || 0,
+    }));
+
     // Generate preview with non-all-day events only
     const preview = generatePreview(
       habits,
-      tasks,
+      tasksWithScheduledTime,
       nonAllDayEvents,
       hourSettingsResult as HourSettings,
       {
         windowDays,
         timezone: resolvedTimezone,
+        existingHabitDays, // Pass existing habit+day combinations to skip
+        habitEventIds: habitEventIdsToKeep, // Pass habit event IDs that should remain blocked
       }
     );
 
     // Format hour settings for debug log - extract ALL time blocks from each category
+    // Returns default hours (07:00-23:00) if not explicitly configured
     const formatHourRanges = (
       weekRanges: any
-    ): Array<{ start: string; end: string }> | null => {
-      if (!weekRanges) return null;
+    ): Array<{ start: string; end: string }> => {
+      // Default hours used when not configured
+      const defaultHours = [{ start: '07:00', end: '23:00' }];
+
+      if (!weekRanges) return defaultHours;
       // Get Monday as representative (or first enabled day)
       const day =
         weekRanges.monday || weekRanges.tuesday || weekRanges.wednesday;
-      if (!day?.enabled || !day?.timeBlocks?.length) return null;
+      if (!day?.enabled || !day?.timeBlocks?.length) return defaultHours;
       // Return all time blocks
       return day.timeBlocks.map(
         (block: { startTime: string; endTime: string }) => ({
@@ -377,14 +470,61 @@ export async function POST(
       })),
     };
 
+    // Include locked events for display in preview calendar
+    const lockedEventsForPreview = existingEvents
+      .filter((e) => e.locked)
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        start_at: e.start_at,
+        end_at: e.end_at,
+        color: e.color,
+        locked: true,
+      }));
+
+    // Compute affected event IDs: unlocked future events that will be modified/deleted when applying
+    // EXCLUDE existing habit events that are already scheduled correctly (they stay in place)
+    // habitEventIdsToKeep is already built earlier
+
+    const affectedEventIds = existingEvents
+      .filter(
+        (e) =>
+          !e.locked &&
+          new Date(e.start_at) >= now &&
+          !habitEventIdsToKeep.has(e.id) // Exclude habit events that stay in place
+      )
+      .map((e) => e.id);
+
+    // Create a map of existing event signatures for comparison
+    // A preview event is "reused" if it matches an existing event at the exact same position
+    // Use epoch milliseconds for reliable timestamp comparison (avoids format differences)
+    const existingEventSignatures = new Map<string, string>();
+    for (const e of existingEvents) {
+      const startEpoch = new Date(e.start_at).getTime();
+      const endEpoch = new Date(e.end_at).getTime();
+      const signature = `${e.title}|${startEpoch}|${endEpoch}`;
+      existingEventSignatures.set(signature, e.id);
+    }
+
+    // Mark preview events as reused if they match existing events
+    const eventsWithReusedFlag = preview.events.map((e) => {
+      const startEpoch = new Date(e.start_at).getTime();
+      const endEpoch = new Date(e.end_at).getTime();
+      const signature = `${e.title}|${startEpoch}|${endEpoch}`;
+      const is_reused = existingEventSignatures.has(signature);
+      return { ...e, is_reused };
+    });
+
     return NextResponse.json({
       success: true,
       preview: {
-        events: preview.events,
+        events: eventsWithReusedFlag,
         steps: preview.steps,
         summary: preview.summary,
         warnings: preview.warnings,
       },
+      lockedEvents: lockedEventsForPreview,
+      affectedEventIds, // IDs of events that will be modified/deleted
       habits: {
         total: habits.length,
         scheduled: preview.habits.events.length,

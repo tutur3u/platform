@@ -665,6 +665,18 @@ async function createEventsFromPreview(
       existingEvent = candidates.find((e) => !usedEventIds.has(e.id));
     }
 
+    // IMPORTANT: Do NOT update events that have already started
+    // Events that started before "now" should not be moved - create new ones instead
+    if (existingEvent) {
+      const existingEventStart = new Date(existingEvent.start_at);
+      if (existingEventStart < windowStart) {
+        console.log(
+          `[Schedule] Skipping in-progress/past event "${existingEvent.title}" (started ${existingEvent.start_at}) - will create new event instead`
+        );
+        existingEvent = undefined; // Force creation of new event
+      }
+    }
+
     if (existingEvent && !usedEventIds.has(existingEvent.id)) {
       // ============================================================================
       // UPDATE existing event
@@ -826,6 +838,8 @@ async function createEventsFromPreview(
 
   const orphanedEventIds = existingEvents
     .filter((e) => !usedEventIds.has(e.id))
+    // Only delete TASK events, not habit events - habits should be preserved
+    .filter((e) => e.junction_type !== 'habit')
     .map((e) => e.id);
 
   // Safety check: only delete orphans if we actually processed some events

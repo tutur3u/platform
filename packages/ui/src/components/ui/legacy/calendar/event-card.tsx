@@ -79,11 +79,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _habitCompleted,
     // Preview flags (from preview mode)
     _isPreview,
+    _isReused,
     _previewType,
   } = event as CalendarEvent & {
     _isHabit?: boolean;
     _habitCompleted?: boolean;
     _isPreview?: boolean;
+    _isReused?: boolean;
     _previewType?: 'habit' | 'task';
   };
 
@@ -102,13 +104,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     hoveredEventColumn,
     setHoveredEventColumn,
     affectedEventIds,
-    hideNonPreviewEvents,
   } = useCalendar();
 
-  // Hide non-preview events during preview mode for better performance
-  if (hideNonPreviewEvents && !_isPreview) {
-    return null;
-  }
+  // NOTE: Event filtering for hideNonPreviewEvents is handled in CalendarEventMatrix
+  // This ensures proper elevation calculation. We no longer hide events here.
   const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
@@ -1052,8 +1051,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'border-l-[3px]': hasCalendarInfo, // Thicker border for calendar events
               // Habit-specific styling (icon only, no dashed border)
               'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
-              // Preview-specific styling - dashed border only (no animation/glow for performance)
-              'border-dashed border-2': _isPreview,
+              // Preview-specific styling - dashed border only for NEW/MOVED events (not reused)
+              'border-2 border-dashed': _isPreview && !_isReused,
             },
             level ? 'border border-l-2' : 'border-l-2',
             border,
@@ -1206,7 +1205,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
-                {_isPreview && (
+                {_isPreview && !_isReused && (
                   <Eye
                     className={cn(
                       'mr-1 inline-block h-3 w-3 align-middle opacity-80',
@@ -1222,10 +1221,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   <Lock className="mr-1 inline-block h-3 w-3 align-middle opacity-70" />
                 )}
                 <span>{localEvent.title || 'Untitled event'}</span>
-                {_isPreview && (
+                {_isPreview && !_isReused && (
                   <span
                     className={cn(
-                      'ml-1 rounded px-1 text-[10px] font-medium',
+                      'ml-1 rounded px-1 font-medium text-[10px]',
                       _previewType === 'habit'
                         ? 'bg-dynamic-green/20 text-dynamic-green'
                         : _previewType === 'task'

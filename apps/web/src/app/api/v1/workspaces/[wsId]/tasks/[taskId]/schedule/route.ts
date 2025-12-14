@@ -298,13 +298,28 @@ export async function GET(
       .eq('task_id', taskId);
 
     const typedEvents = taskEvents as TaskCalendarEventRow[] | null;
-    const scheduledMinutes =
-      typedEvents?.reduce((sum, e) => sum + (e.scheduled_minutes || 0), 0) ?? 0;
-    const completedMinutes =
-      typedEvents?.reduce(
-        (sum, e) => sum + (e.completed ? e.scheduled_minutes || 0 : 0),
-        0
-      ) ?? 0;
+
+    // Calculate real duration based on event times to ensure accuracy
+    const eventsWithRealDuration =
+      typedEvents?.map((te) => {
+        const ev = te.workspace_calendar_events;
+        if (ev?.start_at && ev.end_at) {
+          const start = new Date(ev.start_at).getTime();
+          const end = new Date(ev.end_at).getTime();
+          const duration = Math.round((end - start) / 60000);
+          return { ...te, scheduled_minutes: duration };
+        }
+        return { ...te, scheduled_minutes: 0 };
+      }) ?? [];
+
+    const scheduledMinutes = eventsWithRealDuration.reduce(
+      (sum, e) => sum + e.scheduled_minutes,
+      0
+    );
+    const completedMinutes = eventsWithRealDuration.reduce(
+      (sum, e) => sum + (e.completed ? e.scheduled_minutes : 0),
+      0
+    );
     const totalMinutes = (settings?.total_duration ?? 0) * 60;
 
     return NextResponse.json({
@@ -330,7 +345,7 @@ export async function GET(
         isFullyScheduled: scheduledMinutes >= totalMinutes,
       },
       events:
-        typedEvents?.map((te) => ({
+        eventsWithRealDuration.map((te) => ({
           id: te.workspace_calendar_events?.id,
           title: te.workspace_calendar_events?.title,
           start_at: te.workspace_calendar_events?.start_at,

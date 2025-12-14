@@ -40,11 +40,26 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const wsId = params?.wsId as string;
   const { settings } = useCalendarSettings();
   const { eventsWithoutAllDays } = useCalendarSync();
-  const { previewEvents } = useCalendar();
+  const { previewEvents, hideNonPreviewEvents, affectedEventIds } =
+    useCalendar();
   const tz = settings?.timezone?.timezone;
 
+  // When hideNonPreviewEvents is ON, filter out affected events at matrix level
+  // This ensures proper elevation calculation without affected events
+  const filteredRealEvents = hideNonPreviewEvents
+    ? eventsWithoutAllDays.filter(
+        (e) => !affectedEventIds.has(e.id) || e._isPreview
+      )
+    : eventsWithoutAllDays;
+
   // Merge real events with preview events for visual demo
-  const allEvents = [...eventsWithoutAllDays, ...previewEvents];
+  // Deduplicate by ID: if a preview event has the same ID as a real event,
+  // prefer the real event (this happens when locked events are included in preview)
+  const realEventIds = new Set(filteredRealEvents.map((e) => e.id));
+  const filteredPreviewEvents = previewEvents.filter(
+    (e) => !realEventIds.has(e.id)
+  );
+  const allEvents = [...filteredRealEvents, ...filteredPreviewEvents];
 
   // Process events to handle multi-day events
   // Events ending at exactly midnight are treated as ending on the previous day

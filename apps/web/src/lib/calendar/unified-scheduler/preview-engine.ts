@@ -51,6 +51,8 @@ export interface PreviewEvent {
   step: number;
   occurrence_date?: string;
   scheduled_minutes?: number;
+  // If true, this event exactly matches an existing event (same position) and won't be moved
+  is_reused?: boolean;
 }
 
 export interface SlotDebugInfo {
@@ -580,14 +582,28 @@ function filterSlotsByTimePreference(
     : null;
 
   const getDistanceFromIdealTime = (slot: { start: Date; end: Date }) => {
-    const slotHour = getLocalHour(slot.start, timezone);
-    const slotMin = getLocalMinute(slot.start, timezone);
-    const slotTimeInMinutes = slotHour * 60 + slotMin;
+    const slotStartHour = getLocalHour(slot.start, timezone);
+    const slotStartMin = getLocalMinute(slot.start, timezone);
+    const slotEndHour = getLocalHour(slot.end, timezone);
+    const slotEndMin = getLocalMinute(slot.end, timezone);
+    const slotStartMinutes = slotStartHour * 60 + slotStartMin;
+    const slotEndMinutes = slotEndHour * 60 + slotEndMin;
 
     if (idealHour !== null) {
       const idealTimeInMinutes = idealHour * 60 + (idealMin ?? 0);
-      const diff = Math.abs(slotTimeInMinutes - idealTimeInMinutes);
-      return Math.min(diff, 24 * 60 - diff);
+
+      // If ideal time is WITHIN the slot, distance is 0 (perfect fit)
+      if (
+        idealTimeInMinutes >= slotStartMinutes &&
+        idealTimeInMinutes < slotEndMinutes
+      ) {
+        return 0;
+      }
+
+      // Otherwise, calculate distance to nearest slot edge
+      const distToStart = Math.abs(idealTimeInMinutes - slotStartMinutes);
+      const distToEnd = Math.abs(idealTimeInMinutes - slotEndMinutes);
+      return Math.min(distToStart, distToEnd);
     }
 
     if (timePreference) {
@@ -600,7 +616,16 @@ function filterSlotsByTimePreference(
       const range = preferenceRanges[timePreference.toLowerCase()];
       if (range) {
         const centerMinutes = ((range.start + range.end) / 2) * 60;
-        return Math.abs(slotTimeInMinutes - centerMinutes);
+        // Check if center of preference range is within slot
+        if (
+          centerMinutes >= slotStartMinutes &&
+          centerMinutes < slotEndMinutes
+        ) {
+          return 0;
+        }
+        const distToStart = Math.abs(centerMinutes - slotStartMinutes);
+        const distToEnd = Math.abs(centerMinutes - slotEndMinutes);
+        return Math.min(distToStart, distToEnd);
       }
     }
 
@@ -655,6 +680,10 @@ export interface GeneratePreviewOptions {
   windowDays?: number;
   timezone?: string | null;
   now?: Date;
+  /** Set of 'habitId:YYYY-MM-DD' strings for existing habit events - skip these */
+  existingHabitDays?: Set<string>;
+  /** Set of event IDs that are habit events and should remain blocked (not replaced) */
+  habitEventIds?: Set<string>;
 }
 
 /**
@@ -667,7 +696,13 @@ export function generatePreview(
   hourSettings: HourSettings,
   options: GeneratePreviewOptions = {}
 ): PreviewResult {
-  const { windowDays = 30, timezone = null, now: nowOption } = options;
+  const {
+    windowDays = 30,
+    timezone = null,
+    now: nowOption,
+    existingHabitDays = new Set<string>(),
+    habitEventIds = new Set<string>(),
+  } = options;
   const resolvedTimezone =
     timezone && timezone !== 'auto' && isValidTimeZone(timezone)
       ? timezone
@@ -695,19 +730,23 @@ export function generatePreview(
           d.setDate(d.getDate() + windowDays);
           return d;
         })();
-
   // Convert existing events to blocked slots
-  // Only block:
-  // 1. Locked events (user-protected, can't be moved)
-  // 2. Events that have already started (start_at < now) - in-progress or past
-  // Future unlocked events are NOT blocked - they could be rescheduled
+  // Block events that SHOULD NOT be overlapped:
+  // - Locked events: User-protected, can't be moved
+  // - Past/in-progress events: Already started, can't be moved
+  // - Habit events: Must respect existing habit time slots (via habitEventIds)
+  // Task events CAN be replaced, so don't block them (unless they're habits)
   const blockedEvents = existingEvents
     .filter((e) => {
       if (e._isPreview) return false; // Never block preview events
       if (e.locked) return true; // Always block locked events
       // Block events that have already started (in-progress or past)
       const eventStart = new Date(e.start_at);
-      return eventStart < now;
+      if (eventStart < now) return true;
+      // Block existing habit events (tasks must respect habit time slots)
+      if (habitEventIds.has(e.id)) return true;
+      // Don't block future task events - they will be replaced
+      return false;
     })
     .map((e) => ({
       id: e.id,
@@ -764,6 +803,14 @@ export function generatePreview(
     for (const occurrence of occurrences) {
       // Use local date string to avoid UTC/local date mismatch
       const occurrenceDate = getLocalDateString(occurrence, resolvedTimezone);
+
+      // Skip if this habit already has an event for this day
+      // Habits are strictly once per day - don't create duplicates
+      const habitDayKey = `${habit.id}:${occurrenceDate}`;
+      if (existingHabitDays.has(habitDayKey)) {
+        // Silently skip - this is expected behavior, not a warning
+        continue;
+      }
 
       const { min: minDuration } = getEffectiveDurationBounds({
         duration_minutes: habit.duration_minutes,
