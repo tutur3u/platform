@@ -2,7 +2,11 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getSecret,
+  getSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -35,7 +39,11 @@ export default async function CalendarPage({ params }: PageProps) {
         } = await supabase.auth.getUser();
 
         // Fetch Google auth token, calendar connections, and user email in parallel for better performance
-        const [{ data: googleToken }, { data: calendarConnections }] = user?.id
+        const [
+          { data: googleToken },
+          { data: calendarConnections },
+          workspaceSecrets,
+        ] = user?.id
           ? await Promise.all([
               supabase
                 .from('calendar_auth_tokens')
@@ -47,6 +55,7 @@ export default async function CalendarPage({ params }: PageProps) {
                 .select('*')
                 .eq('ws_id', wsId)
                 .order('created_at', { ascending: true }),
+              getSecrets({ wsId, forceAdmin: true }),
             ])
           : [
               {
@@ -55,12 +64,17 @@ export default async function CalendarPage({ params }: PageProps) {
               {
                 data: null,
               },
+              [],
             ];
 
         if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
 
         // Check if user has valid Tuturuuu email for Smart Schedule feature
         const hasValidTuturuuuEmail = isValidTuturuuuEmail(user?.email);
+        const enableSmartScheduling =
+          hasValidTuturuuuEmail ||
+          getSecret('ENABLE_SMART_SCHEDULING', workspaceSecrets)?.value ===
+            'true';
 
         const isPersonalWorkspace = workspace.id === user?.id;
 
@@ -80,9 +94,9 @@ export default async function CalendarPage({ params }: PageProps) {
                   experimentalGoogleToken={googleToken}
                   calendarConnections={calendarConnections || []}
                   workspace={workspace}
-                  hasValidTuturuuuEmail={hasValidTuturuuuEmail}
+                  enableSmartScheduling={enableSmartScheduling}
                 />
-                {isValidTuturuuuEmail(user?.email) && (
+                {enableSmartScheduling && (
                   <TasksSidebar wsId={wsId} locale={locale} />
                 )}
               </div>

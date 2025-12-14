@@ -25,12 +25,12 @@ export default function CalendarClientPage({
   experimentalGoogleToken,
   calendarConnections,
   workspace,
-  hasValidTuturuuuEmail,
+  enableSmartScheduling,
 }: {
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   calendarConnections: CalendarConnection[];
   workspace: Workspace;
-  hasValidTuturuuuEmail: boolean;
+  enableSmartScheduling: boolean;
 }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
@@ -105,7 +105,7 @@ export default function CalendarClientPage({
   const extras = (
     <div className="grid w-full items-center gap-2 md:flex md:w-auto">
       <CreateEventButton variant="header" label={t('new-event')} />
-      {hasValidTuturuuuEmail && <SmartScheduleButton wsId={workspace.id} />}
+      {enableSmartScheduling && <SmartScheduleButton wsId={workspace.id} />}
       {experimentalGoogleToken && (
         <>
           <QuickCalendarToggle />
