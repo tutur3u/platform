@@ -3,17 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
-  Check,
   Clock,
-  Flame,
-  Loader2,
   Pencil,
-  Play,
   Plus,
   RefreshCw,
   Repeat,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Habit, HabitStreak } from '@tuturuuu/types/primitives/Habit';
 import { getRecurrenceDescription } from '@tuturuuu/types/primitives/Habit';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -24,10 +19,8 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
 import Link from 'next/link';
 import { useState } from 'react';
-import { scheduleHabit } from '@/lib/calendar/habit-scheduler';
 import HabitFormDialog from '../../tasks/habits/habit-form-dialog';
 
 interface HabitWithStreak extends Habit {
@@ -57,17 +50,10 @@ const priorityColors: Record<string, string> = {
   low: 'text-muted-foreground',
 };
 
-export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
-  const [schedulingHabitId, setSchedulingHabitId] = useState<string | null>(
-    null
-  );
-  const [completingHabitId, setCompletingHabitId] = useState<string | null>(
-    null
-  );
+export function HabitsPanel({ wsId }: HabitsPanelProps) {
   const [isHabitDialogOpen, setIsHabitDialogOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   // Fetch habits with React Query
   const {
@@ -149,51 +135,6 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
       habitId,
       isVisible: !currentVisibility,
     });
-  };
-
-  const handleSchedule = async (habit: Habit) => {
-    setSchedulingHabitId(habit.id);
-    try {
-      const result = await scheduleHabit(supabase, wsId, habit, 30);
-
-      if (result.eventsCreated > 0) {
-        toast.success(`Scheduled ${result.eventsCreated} occurrence(s)`);
-        queryClient.invalidateQueries({ queryKey: ['calendarEvents', wsId] });
-        onEventCreated?.();
-      } else {
-        toast.info('No new events to schedule');
-      }
-    } catch {
-      toast.error('Failed to schedule habit');
-    } finally {
-      setSchedulingHabitId(null);
-    }
-  };
-
-  const handleComplete = async (habitId: string) => {
-    setCompletingHabitId(habitId);
-    try {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/habits/${habitId}/complete`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ occurrence_date: today, completed: true }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to complete habit');
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['habits', wsId] });
-      toast.success('Habit completed!');
-    } catch {
-      toast.error('Failed to complete habit');
-    } finally {
-      setCompletingHabitId(null);
-    }
   };
 
   const handleEditHabit = (habit: Habit) => {
@@ -298,8 +239,6 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
           {habits.map((habit) => {
             const colorClass = colorMap[habit.color] || colorMap.BLUE;
             const isVisible = habit.is_visible_in_calendar ?? true;
-            const isScheduling = schedulingHabitId === habit.id;
-            const isCompleting = completingHabitId === habit.id;
 
             return (
               <Card
@@ -358,38 +297,6 @@ export function HabitsPanel({ wsId, onEventCreated }: HabitsPanelProps) {
                         {habit.streak.current_streak}
                       </Badge>
                     )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="mt-2 flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 flex-1 text-xs"
-                      onClick={() => handleSchedule(habit)}
-                      disabled={isScheduling}
-                    >
-                      {isScheduling ? (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Play className="mr-1 h-3 w-3" />
-                      )}
-                      Schedule
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 flex-1 text-xs"
-                      onClick={() => handleComplete(habit.id)}
-                      disabled={isCompleting}
-                    >
-                      {isCompleting ? (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Check className="mr-1 h-3 w-3" />
-                      )}
-                      Complete
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
