@@ -230,27 +230,18 @@ export async function decryptEventFromStorage<
 }
 
 /**
- * Helper to encrypt a single event if it's in the encrypted set.
- * Shared logic for both encryptEventsWithKnownIds and encryptGoogleSyncEvents.
+ * Helper to encrypt a single event.
+ * When workspace E2EE is enabled, ALL events get encrypted.
+ * The encryptedEventIds set is used only for logging/debugging purposes.
  */
-function encryptSingleEventIfNeeded<
+function encryptSingleEvent<
   T extends {
     google_event_id: string;
     title: string;
     description?: string;
     location?: string | null;
   },
->(
-  event: T,
-  encryptedEventIds: Set<string>,
-  key: Buffer
-): T & { is_encrypted: boolean } {
-  if (!encryptedEventIds.has(event.google_event_id)) {
-    // Event is not encrypted, keep as plaintext
-    return { ...event, is_encrypted: false };
-  }
-
-  // Event is encrypted - encrypt the incoming Google data
+>(event: T, key: Buffer): T & { is_encrypted: boolean } {
   const encrypted = encryptCalendarEventFields(
     {
       title: event.title || '',
@@ -270,8 +261,10 @@ function encryptSingleEventIfNeeded<
 }
 
 /**
- * Helper to encrypt events using a known set of encrypted IDs
- * Used when we have pre-cached the encrypted status before any deletes happen
+ * Helper to encrypt events when workspace has E2EE enabled.
+ * ALL events are encrypted since the workspace key exists.
+ * The encryptedEventIds set is used for debugging - to log new inserts
+ * that weren't previously encrypted.
  */
 function encryptEventsWithKnownIds<
   T extends {
@@ -285,21 +278,21 @@ function encryptEventsWithKnownIds<
   encryptedEventIds: Set<string>,
   key: Buffer
 ): (T & { is_encrypted: boolean })[] {
-  // Log events NOT in cache (helpful for debugging)
+  // Log events NOT in cache (these are new inserts - helpful for debugging)
   const notInCache = events.filter(
     (e) => !encryptedEventIds.has(e.google_event_id)
   );
   if (notInCache.length > 0) {
-    console.log('⚠️ [E2EE DEBUG] Events NOT in encrypted cache:', {
+    console.log('🔍 [E2EE DEBUG] New events (not in cache) being encrypted:', {
       count: notInCache.length,
       cacheSize: encryptedEventIds.size,
       eventIds: notInCache.slice(0, 3).map((e) => e.google_event_id),
     });
   }
 
-  return events.map((event) =>
-    encryptSingleEventIfNeeded(event, encryptedEventIds, key)
-  );
+  // CRITICAL FIX: When workspace has E2EE enabled, encrypt ALL events
+  // Previously this only encrypted events in the cache, leaving new inserts unencrypted
+  return events.map((event) => encryptSingleEvent(event, key));
 }
 
 /**
@@ -387,13 +380,6 @@ export async function encryptGoogleSyncEvents<
     }
   }
 
-  // Create a set of google_event_ids that are encrypted (excluding nulls)
-  const encryptedEventIds = new Set(
-    allExistingEvents
-      .filter((e) => e.is_encrypted === true && e.google_event_id != null)
-      .map((e) => e.google_event_id as string)
-  );
-
   // Debug: Log events that exist in DB but are NOT encrypted
   const existingButNotEncrypted = allExistingEvents
     .filter((e) => e.is_encrypted !== true)
@@ -406,22 +392,21 @@ export async function encryptGoogleSyncEvents<
     });
   }
 
-  // Debug: Count events NOT found in DB at all
+  // Debug: Count events NOT found in DB at all (new inserts)
   const allExistingIds = new Set(
     allExistingEvents.map((e) => e.google_event_id)
   );
   const notInDb = events.filter((e) => !allExistingIds.has(e.google_event_id));
   if (notInDb.length > 0) {
-    console.log('⚠️ [E2EE DEBUG] Events NOT in DB (new inserts):', {
+    console.log('🔍 [E2EE DEBUG] New events (not in DB) being encrypted:', {
       count: notInDb.length,
       ids: notInDb.slice(0, 5).map((e) => e.google_event_id),
     });
   }
 
-  // Encrypt the events that need it using the shared helper
-  return events.map((event) =>
-    encryptSingleEventIfNeeded(event, encryptedEventIds, key)
-  );
+  // CRITICAL FIX: When workspace has E2EE enabled (key exists), encrypt ALL events
+  // This includes new inserts that weren't previously in the database
+  return events.map((event) => encryptSingleEvent(event, key));
 }
 
 // Re-export decryptField for direct field decryption
