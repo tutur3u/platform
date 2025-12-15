@@ -24,10 +24,19 @@ const IV_LENGTH = 12; // 96 bits for GCM
 const AUTH_TAG_LENGTH = 16; // 128 bits
 
 // Scrypt parameters (explicit for documentation and security auditing)
-// N=16384 (2^14) - CPU/memory cost parameter
-// r=8 - block size
-// p=1 - parallelization parameter
-// These are the Node.js defaults but we make them explicit for clarity
+//
+// SECURITY RATIONALE:
+// N=16384 (2^14), r=8, p=1 are used for key derivation from the master key.
+// OWASP recommends N>=2^17 for PASSWORD HASHING, but this is KEY DERIVATION:
+// - The master key is a high-entropy secret from environment variables
+// - Key derivation doesn't need the same protection against brute-force as password hashing
+// - Lower cost reduces latency for encryption/decryption operations
+// - The threat model assumes the master key is not guessed (it's a 256-bit secret)
+//
+// TODO: Re-evaluate cost parameters periodically. Consider:
+// - Increasing N if server performance allows
+// - Using per-workspace salt instead of fixed salt for additional isolation
+//
 const SCRYPT_COST = 16384;
 const SCRYPT_BLOCK_SIZE = 8;
 const SCRYPT_PARALLELISM = 1;
@@ -154,6 +163,18 @@ export function encryptField(
     return ''; // Don't encrypt empty strings
   }
 
+  // Validate workspace key before using it
+  if (!Buffer.isBuffer(workspaceKey)) {
+    throw new Error(
+      `Invalid workspaceKey: expected Buffer, got ${typeof workspaceKey}`
+    );
+  }
+  if (workspaceKey.length !== KEY_LENGTH) {
+    throw new Error(
+      `Invalid workspaceKey: expected ${KEY_LENGTH} bytes for AES-256, got ${workspaceKey.length} bytes`
+    );
+  }
+
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, workspaceKey, iv, {
     authTagLength: AUTH_TAG_LENGTH,
@@ -202,14 +223,28 @@ export function decryptField(
   const authTag = data.subarray(data.length - AUTH_TAG_LENGTH);
   const encrypted = data.subarray(IV_LENGTH, data.length - AUTH_TAG_LENGTH);
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, workspaceKey, iv, {
-    authTagLength: AUTH_TAG_LENGTH,
-  });
-  decipher.setAuthTag(authTag);
+  try {
+    const decipher = crypto.createDecipheriv(ALGORITHM, workspaceKey, iv, {
+      authTagLength: AUTH_TAG_LENGTH,
+    });
+    decipher.setAuthTag(authTag);
 
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
-    'utf8'
-  );
+    return Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch (error) {
+    // Decryption failed - log scrubbed warning and return original for backward compatibility
+    const scrubbedSample = `${ciphertext.slice(0, 8)}...`;
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    console.warn(
+      `[decryptField] Decryption failed: ${errorMessage}. ` +
+        `Ciphertext sample: "${scrubbedSample}" (length: ${ciphertext.length}). ` +
+        `Returning original value for backward compatibility.`
+    );
+    return ciphertext;
+  }
 }
 
 /**

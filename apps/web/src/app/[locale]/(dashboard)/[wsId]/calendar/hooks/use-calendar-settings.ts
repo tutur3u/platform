@@ -31,9 +31,21 @@ export function useCalendarSettings(
   const { data: userSettings } = useQuery({
     queryKey: ['user-calendar-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/users/calendar-settings');
-      if (!res.ok) return null;
-      return res.json() as Promise<UserCalendarSettings>;
+      try {
+        const res = await fetch('/api/v1/users/calendar-settings');
+        if (!res.ok) {
+          const errorBody = await res.text().catch(() => 'Unknown error');
+          const error = new Error(
+            `Failed to fetch calendar settings: ${res.status} ${res.statusText} - ${errorBody}`
+          );
+          console.error('[useCalendarSettings] API error:', error.message);
+          throw error;
+        }
+        return res.json() as Promise<UserCalendarSettings>;
+      } catch (error) {
+        console.error('[useCalendarSettings] Fetch error:', error);
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

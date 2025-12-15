@@ -1,16 +1,11 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 
 /**
- * Minimal user information returned from Supabase auth
+ * Re-export Supabase's User type for backward compatibility.
+ * Uses the canonical Supabase type to avoid schema drift.
  */
-export interface AuthUser {
-  id: string;
-  email?: string;
-  app_metadata?: Record<string, unknown>;
-  user_metadata?: Record<string, unknown>;
-  aud?: string;
-  created_at?: string;
-}
+export type AuthUser = SupabaseUser;
 
 /**
  * Result type for the checkE2EEPermission function

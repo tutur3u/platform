@@ -32,6 +32,14 @@ interface CalendarEventMaybeEncrypted {
 }
 
 /**
+ * Helper to extract encrypted_key from Supabase query result.
+ * Avoids repeated type assertions throughout the module.
+ */
+function extractEncryptedKey(data: unknown): string {
+  return (data as { encrypted_key: string }).encrypted_key;
+}
+
+/**
  * Get or create the encryption key for a workspace
  * Returns the decrypted workspace key ready for use
  */
@@ -59,8 +67,7 @@ export async function getOrCreateWorkspaceKey(
     }
 
     if (existingKey) {
-      const key = (existingKey as unknown as { encrypted_key: string })
-        .encrypted_key;
+      const key = extractEncryptedKey(existingKey);
       return await decryptWorkspaceKey(key, masterKey);
     }
 
@@ -109,7 +116,7 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
       return null;
     }
 
-    const key = (data as unknown as { encrypted_key: string }).encrypted_key;
+    const key = extractEncryptedKey(data);
     return await decryptWorkspaceKey(key, masterKey);
   } catch (error) {
     console.warn('Failed to get workspace key:', error);
@@ -223,6 +230,46 @@ export async function decryptEventFromStorage<
 }
 
 /**
+ * Helper to encrypt a single event if it's in the encrypted set.
+ * Shared logic for both encryptEventsWithKnownIds and encryptGoogleSyncEvents.
+ */
+function encryptSingleEventIfNeeded<
+  T extends {
+    google_event_id: string;
+    title: string;
+    description?: string;
+    location?: string | null;
+  },
+>(
+  event: T,
+  encryptedEventIds: Set<string>,
+  key: Buffer
+): T & { is_encrypted: boolean } {
+  if (!encryptedEventIds.has(event.google_event_id)) {
+    // Event is not encrypted, keep as plaintext
+    return { ...event, is_encrypted: false };
+  }
+
+  // Event is encrypted - encrypt the incoming Google data
+  const encrypted = encryptCalendarEventFields(
+    {
+      title: event.title || '',
+      description: event.description || '',
+      location: event.location || undefined,
+    },
+    key
+  );
+
+  return {
+    ...event,
+    title: encrypted.title,
+    description: encrypted.description,
+    location: encrypted.location ?? null,
+    is_encrypted: true,
+  };
+}
+
+/**
  * Helper to encrypt events using a known set of encrypted IDs
  * Used when we have pre-cached the encrypted status before any deletes happen
  */
@@ -237,7 +284,7 @@ function encryptEventsWithKnownIds<
   events: T[],
   encryptedEventIds: Set<string>,
   key: Buffer
-): (T & { is_encrypted?: boolean })[] {
+): (T & { is_encrypted: boolean })[] {
   // Log events NOT in cache (helpful for debugging)
   const notInCache = events.filter(
     (e) => !encryptedEventIds.has(e.google_event_id)
@@ -250,30 +297,9 @@ function encryptEventsWithKnownIds<
     });
   }
 
-  return events.map((event) => {
-    if (!encryptedEventIds.has(event.google_event_id)) {
-      // Event is not encrypted, keep as plaintext
-      return { ...event, is_encrypted: false };
-    }
-
-    // Event is encrypted - encrypt the incoming Google data
-    const encrypted = encryptCalendarEventFields(
-      {
-        title: event.title || '',
-        description: event.description || '',
-        location: event.location || undefined,
-      },
-      key
-    );
-
-    return {
-      ...event,
-      title: encrypted.title,
-      description: encrypted.description,
-      location: encrypted.location ?? null,
-      is_encrypted: true,
-    };
-  });
+  return events.map((event) =>
+    encryptSingleEventIfNeeded(event, encryptedEventIds, key)
+  );
 }
 
 /**
@@ -361,11 +387,11 @@ export async function encryptGoogleSyncEvents<
     }
   }
 
-  // Create a set of google_event_ids that are encrypted
+  // Create a set of google_event_ids that are encrypted (excluding nulls)
   const encryptedEventIds = new Set(
     allExistingEvents
-      .filter((e) => e.is_encrypted === true)
-      .map((e) => e.google_event_id) || []
+      .filter((e) => e.is_encrypted === true && e.google_event_id != null)
+      .map((e) => e.google_event_id as string)
   );
 
   // Debug: Log events that exist in DB but are NOT encrypted
@@ -392,31 +418,10 @@ export async function encryptGoogleSyncEvents<
     });
   }
 
-  // Encrypt the events that need it
-  return events.map((event) => {
-    if (!encryptedEventIds.has(event.google_event_id)) {
-      // Event is not encrypted, keep as plaintext
-      return { ...event, is_encrypted: false };
-    }
-
-    // Event is encrypted - encrypt the incoming Google data
-    const encrypted = encryptCalendarEventFields(
-      {
-        title: event.title || '',
-        description: event.description || '',
-        location: event.location || undefined,
-      },
-      key
-    );
-
-    return {
-      ...event,
-      title: encrypted.title,
-      description: encrypted.description,
-      location: encrypted.location ?? null,
-      is_encrypted: true,
-    };
-  });
+  // Encrypt the events that need it using the shared helper
+  return events.map((event) =>
+    encryptSingleEventIfNeeded(event, encryptedEventIds, key)
+  );
 }
 
 // Re-export decryptField for direct field decryption
