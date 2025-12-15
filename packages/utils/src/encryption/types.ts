@@ -29,15 +29,9 @@ export interface CalendarEventWithEncryption {
 
 /**
  * Workspace encryption key record from database
+ * Re-exported from auto-generated types to stay in sync with schema
  */
-export interface WorkspaceEncryptionKey {
-  id: string;
-  ws_id: string;
-  encrypted_key: string;
-  key_version: number;
-  created_at: string;
-  updated_at: string;
-}
+export type { WorkspaceEncryptionKey } from '@tuturuuu/types';
 
 /**
  * Encryption configuration

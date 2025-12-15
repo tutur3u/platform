@@ -189,7 +189,7 @@ export async function POST(_: Request, { params }: Params) {
   const masterKey = getMasterKey();
   const encryptedKeyString = (keyRecord as unknown as { encrypted_key: string })
     .encrypted_key;
-  const workspaceKey = decryptWorkspaceKey(encryptedKeyString, masterKey);
+  const workspaceKey = await decryptWorkspaceKey(encryptedKeyString, masterKey);
 
   // Get all unencrypted events
   const { data: events, error: fetchError } = await adminClient

@@ -332,7 +332,7 @@ export function RequireWorkspaceTimezoneDialog({
               <Separator />
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <ShieldCheck className="h-5 w-5 text-dynamic-green" />
                   <Label className="font-medium text-base">
                     {t('e2ee.setup_title')}
                   </Label>
@@ -342,9 +342,9 @@ export function RequireWorkspaceTimezoneDialog({
                 </p>
 
                 {hasE2EE ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                    <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <span className="font-medium text-green-600 text-sm dark:text-green-400">
+                  <div className="flex items-center gap-2 rounded-lg border border-dynamic-green/50 bg-dynamic-green/10 p-3">
+                    <ShieldCheck className="h-4 w-4 text-dynamic-green" />
+                    <span className="font-medium text-dynamic-green text-sm">
                       {t('e2ee.already_enabled')}
                     </span>
                   </div>
@@ -353,7 +353,7 @@ export function RequireWorkspaceTimezoneDialog({
                     variant="outline"
                     onClick={() => enableE2EE.mutate()}
                     disabled={enableE2EE.isPending}
-                    className="w-full border-green-500/50 hover:bg-green-500/10"
+                    className="w-full border-dynamic-green/50 hover:bg-dynamic-green/10"
                   >
                     {enableE2EE.isPending ? (
                       <>

@@ -60,12 +60,12 @@ export async function getOrCreateWorkspaceKey(
     if (existingKey) {
       const key = (existingKey as unknown as { encrypted_key: string })
         .encrypted_key;
-      return decryptWorkspaceKey(key, masterKey);
+      return await decryptWorkspaceKey(key, masterKey);
     }
 
     // Create new key for this workspace
     const newKey = generateWorkspaceKey();
-    const encryptedKey = encryptWorkspaceKey(newKey, masterKey);
+    const encryptedKey = await encryptWorkspaceKey(newKey, masterKey);
 
     const { error: insertError } = await supabase
       .from('workspace_encryption_keys')
@@ -109,7 +109,7 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
     }
 
     const key = (data as unknown as { encrypted_key: string }).encrypted_key;
-    return decryptWorkspaceKey(key, masterKey);
+    return await decryptWorkspaceKey(key, masterKey);
   } catch (error) {
     console.warn('Failed to get workspace key:', error);
     return null;

@@ -144,7 +144,7 @@ export async function POST(_: Request, { params }: Params) {
   try {
     const masterKey = getMasterKey();
     const newKey = generateWorkspaceKey();
-    const encryptedKey = encryptWorkspaceKey(newKey, masterKey);
+    const encryptedKey = await encryptWorkspaceKey(newKey, masterKey);
 
     const { error: insertError } = await adminClient
       .from('workspace_encryption_keys')

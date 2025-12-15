@@ -126,6 +126,7 @@ export type TaskWithRelations = {
 };
 
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
+export type WorkspaceEncryptionKey = Tables<'workspace_encryption_keys'>;
 export type CalendarConnection = Tables<'calendar_connections'>;
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;

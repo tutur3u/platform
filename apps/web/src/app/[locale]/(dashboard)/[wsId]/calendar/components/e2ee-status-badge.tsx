@@ -68,10 +68,10 @@ export function E2EEStatusBadge({
               onClick={onVerify}
               className={`flex h-auto items-center gap-1.5 px-2 py-1 transition-all ${
                 isVerifying
-                  ? 'border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  ? 'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue'
                   : isFixing
-                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                    : 'border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20 dark:text-green-400'
+                    ? 'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                    : 'border-dynamic-green/50 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
               }`}
             >
               {isVerifying ? (
@@ -108,7 +108,7 @@ export function E2EEStatusBadge({
               size="sm"
               onClick={onMigrate}
               disabled={isMigrating}
-              className="flex items-center gap-1.5 border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
+              className="flex items-center gap-1.5 border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber hover:bg-dynamic-amber/20"
             >
               {isMigrating ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -146,7 +146,7 @@ export function E2EEStatusBadge({
               size="sm"
               onClick={onEnable}
               disabled={isEnabling}
-              className="flex items-center gap-1.5 border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
+              className="flex items-center gap-1.5 border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber hover:bg-dynamic-amber/20"
             >
               {isEnabling ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

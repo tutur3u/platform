@@ -41,32 +41,38 @@ describe('encryption-service', () => {
   });
 
   describe('workspace key encryption/decryption', () => {
-    it('should encrypt and decrypt workspace key correctly', () => {
+    it('should encrypt and decrypt workspace key correctly', async () => {
       const originalKey = generateWorkspaceKey();
-      const encryptedKey = encryptWorkspaceKey(originalKey, TEST_MASTER_KEY);
+      const encryptedKey = await encryptWorkspaceKey(
+        originalKey,
+        TEST_MASTER_KEY
+      );
 
       expect(encryptedKey).toBeTruthy();
       expect(typeof encryptedKey).toBe('string');
 
-      const decryptedKey = decryptWorkspaceKey(encryptedKey, TEST_MASTER_KEY);
+      const decryptedKey = await decryptWorkspaceKey(
+        encryptedKey,
+        TEST_MASTER_KEY
+      );
       expect(decryptedKey.equals(originalKey)).toBe(true);
     });
 
-    it('should produce different ciphertext for same key (random IV)', () => {
+    it('should produce different ciphertext for same key (random IV)', async () => {
       const key = generateWorkspaceKey();
-      const encrypted1 = encryptWorkspaceKey(key, TEST_MASTER_KEY);
-      const encrypted2 = encryptWorkspaceKey(key, TEST_MASTER_KEY);
+      const encrypted1 = await encryptWorkspaceKey(key, TEST_MASTER_KEY);
+      const encrypted2 = await encryptWorkspaceKey(key, TEST_MASTER_KEY);
 
       expect(encrypted1).not.toBe(encrypted2);
     });
 
-    it('should fail decryption with wrong master key', () => {
+    it('should fail decryption with wrong master key', async () => {
       const key = generateWorkspaceKey();
-      const encryptedKey = encryptWorkspaceKey(key, TEST_MASTER_KEY);
+      const encryptedKey = await encryptWorkspaceKey(key, TEST_MASTER_KEY);
 
-      expect(() => {
-        decryptWorkspaceKey(encryptedKey, 'wrong-master-key');
-      }).toThrow();
+      await expect(
+        decryptWorkspaceKey(encryptedKey, 'wrong-master-key')
+      ).rejects.toThrow();
     });
   });
 

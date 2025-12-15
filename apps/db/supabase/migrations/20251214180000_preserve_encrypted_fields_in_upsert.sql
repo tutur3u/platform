@@ -30,7 +30,7 @@ as $$
       (event->>'end_at')::timestamptz,
       event->>'location',
       event->>'color',
-      coalesce((event->>'locked')::boolean, true),
+      coalesce((event->>'locked')::boolean, false),
       case
         when event->>'task_id' is not null and event->>'task_id' != ''
         then (event->>'task_id')::uuid

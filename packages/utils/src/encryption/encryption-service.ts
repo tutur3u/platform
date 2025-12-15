@@ -23,6 +23,49 @@ const KEY_LENGTH = 32; // 256 bits
 const IV_LENGTH = 12; // 96 bits for GCM
 const AUTH_TAG_LENGTH = 16; // 128 bits
 
+// Scrypt parameters (explicit for documentation and security auditing)
+// N=16384 (2^14) - CPU/memory cost parameter
+// r=8 - block size
+// p=1 - parallelization parameter
+// These are the Node.js defaults but we make them explicit for clarity
+const SCRYPT_COST = 16384;
+const SCRYPT_BLOCK_SIZE = 8;
+const SCRYPT_PARALLELISM = 1;
+const SCRYPT_KEY_LENGTH = 32; // 256 bits
+const SCRYPT_SALT = 'workspace-key-salt'; // Fixed salt (per-workspace salt is a future enhancement)
+
+// Cache for derived keys to avoid repeated scrypt calls
+// Key: masterKey, Value: derived key buffer
+const derivedKeyCache = new Map<string, Buffer>();
+
+/**
+ * Derive a key from master key using scrypt (async, non-blocking)
+ * Results are cached to avoid repeated derivation
+ */
+async function getDerivedKey(masterKey: string): Promise<Buffer> {
+  const cached = derivedKeyCache.get(masterKey);
+  if (cached) {
+    return cached;
+  }
+
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(
+      masterKey,
+      SCRYPT_SALT,
+      SCRYPT_KEY_LENGTH,
+      { N: SCRYPT_COST, r: SCRYPT_BLOCK_SIZE, p: SCRYPT_PARALLELISM },
+      (err, derivedKey) => {
+        if (err) {
+          reject(err);
+        } else {
+          derivedKeyCache.set(masterKey, derivedKey);
+          resolve(derivedKey);
+        }
+      }
+    );
+  });
+}
+
 /**
  * Generate a new workspace encryption key (256-bit)
  */
@@ -36,12 +79,12 @@ export function generateWorkspaceKey(): Buffer {
  * @param masterKey - The master key (from environment variable)
  * @returns Base64-encoded encrypted key
  */
-export function encryptWorkspaceKey(
+export async function encryptWorkspaceKey(
   workspaceKey: Buffer,
   masterKey: string
-): string {
-  // Derive a consistent key from the master key string
-  const derivedKey = crypto.scryptSync(masterKey, 'workspace-key-salt', 32);
+): Promise<string> {
+  // Derive a consistent key from the master key string (async, cached)
+  const derivedKey = await getDerivedKey(masterKey);
   const iv = crypto.randomBytes(IV_LENGTH);
 
   const cipher = crypto.createCipheriv(ALGORITHM, derivedKey, iv, {
@@ -64,11 +107,11 @@ export function encryptWorkspaceKey(
  * @param masterKey - The master key (from environment variable)
  * @returns The decrypted workspace key
  */
-export function decryptWorkspaceKey(
+export async function decryptWorkspaceKey(
   encryptedKey: string,
   masterKey: string
-): Buffer {
-  const derivedKey = crypto.scryptSync(masterKey, 'workspace-key-salt', 32);
+): Promise<Buffer> {
+  const derivedKey = await getDerivedKey(masterKey);
   const data = Buffer.from(encryptedKey, 'base64');
 
   const iv = data.subarray(0, IV_LENGTH);
