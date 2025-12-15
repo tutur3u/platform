@@ -3,8 +3,9 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 import ExpandableEventList from './expandable-event-list';
 
 interface UpcomingCalendarEventsProps {
@@ -38,9 +39,13 @@ export default async function UpcomingCalendarEvents({
     return null;
   }
 
+  // Decrypt events if they are encrypted
+  const decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
+
   // Filter out all-day events and limit to 10
   const upcomingEvents =
-    allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) || [];
+    decryptedEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) ||
+    [];
 
   return (
     <Card className="group overflow-hidden border-dynamic-cyan/20 bg-linear-to-br from-card via-card to-dynamic-cyan/5 shadow-lg ring-1 ring-dynamic-cyan/10 transition-all duration-300 hover:border-dynamic-cyan/30 hover:shadow-xl hover:ring-dynamic-cyan/20">
