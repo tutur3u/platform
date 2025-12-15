@@ -45,27 +45,32 @@ export default async function UpcomingCalendarEvents({
     return null;
   }
 
-  // Decrypt events with robust error handling
-  let decryptionFailed = false;
-  let encryptedEventsCount = 0;
-  let decryptedEvents: typeof allEvents = [];
+  // Decrypt events and check for any that couldn't be decrypted
+  // Note: decryptEventsFromStorage doesn't throw on key unavailability - it returns
+  // encrypted events unchanged. We must check the result for still-encrypted events.
+  const decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
 
-  try {
-    decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
-  } catch (decryptError) {
-    console.error('Failed to decrypt calendar events:', decryptError);
-    decryptionFailed = true;
-    // Count encrypted events and filter to only unencrypted ones as fallback
-    encryptedEventsCount = (allEvents || []).filter(
-      (e) => e.is_encrypted
-    ).length;
-    decryptedEvents = (allEvents || []).filter((e) => !e.is_encrypted);
+  // Check if any events are still encrypted after decryption attempt
+  // This happens when the encryption key is unavailable (user lacks permission,
+  // key doesn't exist, etc.)
+  const stillEncryptedEvents = decryptedEvents.filter((e) => e.is_encrypted);
+  const encryptedEventsCount = stillEncryptedEvents.length;
+  const decryptionFailed = encryptedEventsCount > 0;
+
+  if (decryptionFailed) {
+    console.warn(
+      `${encryptedEventsCount} calendar events could not be decrypted for workspace ${wsId}`
+    );
   }
+
+  // Filter out encrypted events that couldn't be decrypted (would show garbled base64)
+  const viewableEvents = decryptionFailed
+    ? decryptedEvents.filter((e) => !e.is_encrypted)
+    : decryptedEvents;
 
   // Filter out all-day events and limit to 10
   const upcomingEvents =
-    decryptedEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) ||
-    [];
+    viewableEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) || [];
 
   return (
     <Card className="group overflow-hidden border-dynamic-cyan/20 bg-linear-to-br from-card via-card to-dynamic-cyan/5 shadow-lg ring-1 ring-dynamic-cyan/10 transition-all duration-300 hover:border-dynamic-cyan/30 hover:shadow-xl hover:ring-dynamic-cyan/20">

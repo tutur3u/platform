@@ -209,16 +209,10 @@ export async function decryptEventsFromStorage<
     return events;
   }
 
-  // Convert to the format expected by decryptCalendarEvents and cast back
-  const eventsWithFlag = events.map((e) => ({
-    ...e,
-    is_encrypted: e.is_encrypted ?? false,
-  }));
-  const decrypted = decryptCalendarEvents(
-    eventsWithFlag as unknown as Parameters<typeof decryptCalendarEvents>[0],
-    key
-  );
-  return decrypted as unknown as T[];
+  // Convert to the format expected by decryptCalendarEvents
+  // We don't need the complex casting now that decryptCalendarEvents is more flexible
+  const decrypted = decryptCalendarEvents(events, key);
+  return decrypted;
 }
 
 /**
@@ -241,12 +235,14 @@ export async function decryptEventFromStorage<
     return event;
   }
 
-  const eventWithFlag = { ...event, is_encrypted: event.is_encrypted ?? false };
-  const [decrypted] = decryptCalendarEvents(
-    [eventWithFlag] as unknown as Parameters<typeof decryptCalendarEvents>[0],
-    key
-  );
-  return decrypted as unknown as T;
+  const [decrypted] = decryptCalendarEvents([event], key);
+
+  if (!decrypted) {
+    // Should never happen as decryptCalendarEvents preserves array length
+    return event;
+  }
+
+  return decrypted;
 }
 
 /**

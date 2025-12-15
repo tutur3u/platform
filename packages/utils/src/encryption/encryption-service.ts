@@ -11,11 +11,7 @@
  */
 
 import crypto from 'node:crypto';
-import type {
-  CalendarEventWithEncryption,
-  EncryptedCalendarEventFields,
-  EncryptedField,
-} from './types';
+import type { EncryptedCalendarEventFields, EncryptedField } from './types';
 
 // Encryption constants
 const ALGORITHM = 'aes-256-gcm';
@@ -309,10 +305,15 @@ export function getMasterKey(): string {
 /**
  * Batch decrypt multiple calendar events
  */
-export function decryptCalendarEvents<T extends CalendarEventWithEncryption>(
-  events: T[],
-  workspaceKey: Buffer
-): T[] {
+export function decryptCalendarEvents<
+  T extends {
+    is_encrypted?: boolean;
+    title?: string | null;
+    description?: string | null;
+    location?: string | null;
+    [key: string]: any;
+  },
+>(events: T[], workspaceKey: Buffer): T[] {
   return events.map((event) => {
     if (!event.is_encrypted) {
       return event; // Already plaintext

@@ -110,8 +110,10 @@ export async function checkE2EEPermission(
  *
  * IMPORTANT: Empty strings are valid encrypted values because the encryption service
  * intentionally preserves empty strings without encryption (see encryptField in
- * packages/utils/src/encryption/encryption-service.ts lines 162-164).
+ * packages/utils/src/encryption/encryption-service.ts).
  * Therefore, empty strings should return true to avoid false positive "integrity_issue" warnings.
+ *
+ * Example: looksLikeEncryptedData('') === true
  *
  * @param value - The string to check
  * @returns true if the string appears to be encrypted (or is an empty string which is valid)

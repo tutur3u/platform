@@ -98,12 +98,25 @@ function DurationInput({
   };
 
   const handleInputSubmit = () => {
-    const parsed = parseInt(inputValue, 10);
-    if (!Number.isNaN(parsed)) {
-      // Clamp to min/max for typed values
-      const clamped = Math.max(min, Math.min(max, parsed));
-      onChange(clamped);
+    // 1. Handle empty input (reset to min or 0)
+    if (inputValue.trim() === '') {
+      onChange(min);
+      setIsEditing(false);
+      return;
     }
+
+    // 2. Parse input and handle numbers
+    const parsed = parseInt(inputValue, 10);
+
+    // If it's not a number (e.g. "-"), don't call onChange,
+    // and don't exit editing mode so user can fix it.
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+
+    // 3. It's a valid number, clamp and save
+    const clamped = Math.max(min, Math.min(max, parsed));
+    onChange(clamped);
     setIsEditing(false);
   };
 
@@ -370,14 +383,19 @@ export function SchedulingDialog({
       setDurationMinutes(remainingMinutes);
       setDurationHours((h) => h + extraHours);
     } else if (snapped < 0) {
-      // If decrementing below 0 and we have hours, wrap to 45 and decrement hour
-      if (durationHours > 0) {
-        setDurationMinutes(45);
-        setDurationHours((h) => h - 1);
-      } else {
-        // Can't go below 0 hours and 0 minutes
-        setDurationMinutes(0);
-      }
+      // Use functional update to atomically check and modify hours
+      // This ensures we read the latest hours value, avoiding stale closure issues
+      setDurationHours((h) => {
+        if (h > 0) {
+          // Wrap to 45 minutes and decrement hour
+          setDurationMinutes(45);
+          return h - 1;
+        } else {
+          // Can't go below 0 hours and 0 minutes
+          setDurationMinutes(0);
+          return h;
+        }
+      });
     } else {
       setDurationMinutes(snapped);
     }
