@@ -34,13 +34,20 @@ const SCRYPT_PARALLELISM = 1;
 const SCRYPT_KEY_LENGTH = 32; // 256 bits
 const SCRYPT_SALT = 'workspace-key-salt'; // Fixed salt (per-workspace salt is a future enhancement)
 
+/**
+ * Maximum number of derived keys to cache.
+ * Prevents unbounded memory growth in long-running processes.
+ */
+const MAX_CACHE_SIZE = 100;
+
 // Cache for derived keys to avoid repeated scrypt calls
 // Key: masterKey, Value: derived key buffer
 const derivedKeyCache = new Map<string, Buffer>();
 
 /**
  * Derive a key from master key using scrypt (async, non-blocking)
- * Results are cached to avoid repeated derivation
+ * Results are cached to avoid repeated derivation.
+ * Cache is bounded to MAX_CACHE_SIZE entries using FIFO eviction.
  */
 async function getDerivedKey(masterKey: string): Promise<Buffer> {
   const cached = derivedKeyCache.get(masterKey);
@@ -58,6 +65,13 @@ async function getDerivedKey(masterKey: string): Promise<Buffer> {
         if (err) {
           reject(err);
         } else {
+          // Evict oldest entry if cache is at capacity (FIFO eviction)
+          if (derivedKeyCache.size >= MAX_CACHE_SIZE) {
+            const oldestKey = derivedKeyCache.keys().next().value;
+            if (oldestKey !== undefined) {
+              derivedKeyCache.delete(oldestKey);
+            }
+          }
           derivedKeyCache.set(masterKey, derivedKey);
           resolve(derivedKey);
         }
@@ -171,7 +185,16 @@ export function decryptField(
   const data = Buffer.from(ciphertext, 'base64');
 
   if (data.length < IV_LENGTH + AUTH_TAG_LENGTH) {
-    // Data too short to be encrypted, return as-is (for backward compatibility)
+    // Data too short to be encrypted - may indicate corruption or truncation
+    // Log a warning with diagnostic info (scrubbed to avoid leaking sensitive data)
+    const expectedMinLength = IV_LENGTH + AUTH_TAG_LENGTH;
+    const scrubbedSample = `${ciphertext.slice(0, 8)}...`;
+    console.warn(
+      `[decryptField] Data too short to decrypt: got ${data.length} bytes, ` +
+        `expected at least ${expectedMinLength} bytes. ` +
+        `Ciphertext sample: "${scrubbedSample}" (length: ${ciphertext.length}). ` +
+        `Returning original value for backward compatibility.`
+    );
     return ciphertext;
   }
 
@@ -261,9 +284,9 @@ export function decryptCalendarEvents<T extends CalendarEventWithEncryption>(
     }
     const decrypted = decryptCalendarEventFields(
       {
-        title: event.title,
-        description: event.description,
-        location: event.location,
+        title: event.title ?? '',
+        description: event.description ?? '',
+        location: event.location ?? undefined,
       },
       workspaceKey
     );

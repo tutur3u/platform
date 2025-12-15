@@ -12,6 +12,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { EncryptedCalendarEventFields } from '@tuturuuu/utils/encryption';
 import {
   decryptCalendarEvents,
+  decryptField,
   decryptWorkspaceKey,
   encryptCalendarEventFields,
   encryptWorkspaceKey,
@@ -417,3 +418,6 @@ export async function encryptGoogleSyncEvents<
     };
   });
 }
+
+// Re-export decryptField for direct field decryption
+export { decryptField };

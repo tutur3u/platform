@@ -25,6 +25,7 @@ import {
   type PreviewEvent,
 } from '@/lib/calendar/unified-scheduler/preview-engine';
 import {
+  decryptField,
   encryptEventForStorage,
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
@@ -694,15 +695,23 @@ async function createEventsFromPreview(
       usedEventIds.add(existingEvent.id);
 
       // Compare titles correctly based on encryption status
-      // For encrypted events: compare encrypted preview title to encrypted existing title
-      // For plaintext events: compare plaintext directly
+      // For encrypted events: decrypt both and compare plaintext
+      // For plaintext events: compare directly
       let titleMatches = false;
       if (existingEvent.is_encrypted && workspaceKey) {
-        // Note: Due to random IV, encrypted titles will never match exactly
-        // (each encryption produces different ciphertext even for same plaintext)
-        // So encrypted events will always be marked as needing update on title
-        // This is acceptable for schedule events since times/colors usually change anyway
-        titleMatches = false;
+        // Decrypt both titles and compare plaintext
+        try {
+          const decryptedExisting = decryptField(
+            existingEvent.title || '',
+            workspaceKey
+          );
+          // Preview title is already plaintext, compare directly
+          titleMatches = decryptedExisting === previewEvent.title;
+        } catch {
+          // On decryption error, fall back to assuming titles don't match
+          // This ensures the event gets updated with fresh encryption
+          titleMatches = false;
+        }
       } else {
         // Compare plaintext titles directly
         titleMatches = existingEvent.title === previewEvent.title;

@@ -2,6 +2,8 @@
  * Type definitions for workspace encryption
  */
 
+import type { Tables } from '@tuturuuu/types';
+
 /**
  * Encrypted calendar event - fields that can be encrypted
  */
@@ -12,20 +14,26 @@ export interface EncryptedCalendarEventFields {
 }
 
 /**
- * Calendar event with encryption metadata
+ * Base calendar event type from database schema
  */
-export interface CalendarEventWithEncryption {
-  id: string;
-  title: string;
-  description: string;
-  location?: string;
-  start_at: string;
-  end_at: string;
-  color?: string;
-  ws_id: string;
-  is_encrypted: boolean;
-  // ... other fields
-}
+type BaseCalendarEvent = Tables<'workspace_calendar_events'>;
+
+/**
+ * Calendar event with encryption metadata
+ * Derived from canonical DB types to stay in sync with schema changes
+ */
+export type CalendarEventWithEncryption = Pick<
+  BaseCalendarEvent,
+  | 'id'
+  | 'title'
+  | 'description'
+  | 'location'
+  | 'start_at'
+  | 'end_at'
+  | 'color'
+  | 'ws_id'
+  | 'is_encrypted'
+>;
 
 /**
  * Workspace encryption key record from database

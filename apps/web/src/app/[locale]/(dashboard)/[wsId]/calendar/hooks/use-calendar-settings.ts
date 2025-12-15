@@ -16,7 +16,18 @@ interface UserCalendarSettings {
   time_format: string;
 }
 
-export function useCalendarSettings(workspace: Workspace, locale: string) {
+/**
+ * Return type for the useCalendarSettings hook
+ */
+export interface UseCalendarSettingsResult {
+  initialSettings: Partial<CalendarSettings>;
+  needsCalendarGate: boolean;
+}
+
+export function useCalendarSettings(
+  workspace: Workspace,
+  locale: string
+): UseCalendarSettingsResult {
   const { data: userSettings } = useQuery({
     queryKey: ['user-calendar-settings'],
     queryFn: async () => {

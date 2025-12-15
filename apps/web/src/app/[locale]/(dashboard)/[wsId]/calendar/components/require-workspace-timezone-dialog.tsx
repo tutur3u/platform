@@ -236,8 +236,11 @@ export function RequireWorkspaceTimezoneDialog({
 
   if (!needsGate) return null;
 
-  const isTimezoneComplete =
-    selectedTimezone && selectedTimezone !== 'auto' && selectedFirstDay;
+  const isTimezoneComplete = !!(
+    selectedTimezone &&
+    selectedTimezone !== 'auto' &&
+    selectedFirstDay
+  );
 
   const canComplete = isTimezoneComplete && (isE2EEAvailable ? hasE2EE : true);
 

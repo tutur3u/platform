@@ -1,6 +1,30 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
 /**
+ * Minimal user information returned from Supabase auth
+ */
+export interface AuthUser {
+  id: string;
+  email?: string;
+  app_metadata?: Record<string, unknown>;
+  user_metadata?: Record<string, unknown>;
+  aud?: string;
+  created_at?: string;
+}
+
+/**
+ * Result type for the checkE2EEPermission function
+ */
+export type CheckE2EEResult =
+  | { authorized: true; user: AuthUser; reason?: undefined }
+  | { authorized: false; user: null; reason?: undefined }
+  | {
+      authorized: false;
+      user: AuthUser;
+      reason: 'not_a_member' | 'no_permission';
+    };
+
+/**
  * Check if the current user has the manage_e2ee permission for a workspace.
  *
  * This checks:
@@ -15,7 +39,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 export async function checkE2EEPermission(
   supabase: TypedSupabaseClient,
   wsId: string
-) {
+): Promise<CheckE2EEResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
