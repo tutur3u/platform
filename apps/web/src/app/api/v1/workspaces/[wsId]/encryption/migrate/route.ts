@@ -9,6 +9,7 @@ import {
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
 import { NextResponse } from 'next/server';
+import { checkE2EEPermission, looksLikeEncryptedData } from '../utils';
 
 interface Params {
   params: Promise<{
@@ -19,6 +20,7 @@ interface Params {
 /**
  * GET - Verify encryption status of events
  * Returns detailed info about encrypted vs unencrypted events
+ * Any workspace member can check encryption status
  */
 export async function GET(_: Request, { params }: Params) {
   const { wsId } = await params;
@@ -41,7 +43,7 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has access to this workspace
+  // Check if user has access to this workspace (any member can view status)
   const { data: member } = await supabase
     .from('workspace_members')
     .select('user_id')
@@ -85,15 +87,8 @@ export async function GET(_: Request, { params }: Params) {
   }> = [];
 
   for (const event of events) {
-    // Check if title looks encrypted (base64-encoded binary data)
-    // Encrypted format is: iv (12 bytes) + ciphertext + authTag (16 bytes) = minimum 28 bytes
-    // Base64 encoding of 28+ bytes = at least 40 characters of pure base64
-    // Also, encrypted data won't have typical plaintext patterns like spaces
-    const titleLooksEncrypted =
-      typeof event.title === 'string' &&
-      event.title.length >= 40 &&
-      /^[A-Za-z0-9+/]+=*$/.test(event.title) &&
-      !event.title.includes(' ');
+    // Use shared utility for consistent encryption detection
+    const titleLooksEncrypted = looksLikeEncryptedData(event.title);
 
     if (event.is_encrypted) {
       if (titleLooksEncrypted) {
@@ -138,6 +133,7 @@ export async function GET(_: Request, { params }: Params) {
 
 /**
  * POST - Encrypt all unencrypted calendar events in the workspace
+ * Requires manage_e2ee permission
  */
 export async function POST(_: Request, { params }: Params) {
   const { wsId } = await params;
@@ -151,25 +147,26 @@ export async function POST(_: Request, { params }: Params) {
 
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Check if user has manage_e2ee permission
+  const { authorized, user, reason } = await checkE2EEPermission(
+    supabase,
+    wsId
+  );
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has access to this workspace
-  const { data: member } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (!member) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  if (!authorized) {
+    return NextResponse.json(
+      {
+        error:
+          reason === 'not_a_member'
+            ? 'You are not a member of this workspace'
+            : 'You do not have permission to manage E2EE settings',
+      },
+      { status: 403 }
+    );
   }
 
   const adminClient = await createAdminClient();

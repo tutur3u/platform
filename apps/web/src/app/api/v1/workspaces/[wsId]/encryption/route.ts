@@ -9,6 +9,7 @@ import {
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
 import { NextResponse } from 'next/server';
+import { checkE2EEPermission } from './utils';
 
 interface Params {
   params: Promise<{
@@ -18,6 +19,7 @@ interface Params {
 
 /**
  * GET - Check if E2EE is enabled for this workspace
+ * Any workspace member can check E2EE status
  */
 export async function GET(_: Request, { params }: Params) {
   const { wsId } = await params;
@@ -42,7 +44,7 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has access to this workspace
+  // Check if user has access to this workspace (any member can view status)
   const { data: member } = await supabase
     .from('workspace_members')
     .select('user_id')
@@ -85,6 +87,7 @@ export async function GET(_: Request, { params }: Params) {
 
 /**
  * POST - Generate a new E2EE key for this workspace
+ * Requires manage_e2ee permission
  */
 export async function POST(_: Request, { params }: Params) {
   const { wsId } = await params;
@@ -98,34 +101,27 @@ export async function POST(_: Request, { params }: Params) {
 
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Check if user has manage_e2ee permission
+  const { authorized, user, reason } = await checkE2EEPermission(
+    supabase,
+    wsId
+  );
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has access to this workspace
-  const { data: member } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (!member) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  if (!authorized) {
+    return NextResponse.json(
+      {
+        error:
+          reason === 'not_a_member'
+            ? 'You are not a member of this workspace'
+            : 'You do not have permission to manage E2EE settings',
+      },
+      { status: 403 }
+    );
   }
-
-  // Only owners can enable E2EE
-  // if (member.role !== 'owner') {
-  //   return NextResponse.json(
-  //     { error: 'Only workspace owners can enable E2EE' },
-  //     { status: 403 }
-  //   );
-  // }
 
   const adminClient = await createAdminClient();
 
@@ -181,22 +177,39 @@ export async function POST(_: Request, { params }: Params) {
 
 /**
  * DELETE - Remove E2EE key for this workspace (use with caution!)
+ * Requires manage_e2ee permission
+ * WARNING: This will make all encrypted data unreadable!
  */
 export async function DELETE(_: Request, { params }: Params) {
   const { wsId } = await params;
 
+  if (!isEncryptionEnabled()) {
+    return NextResponse.json(
+      { error: 'E2EE is not enabled on this server' },
+      { status: 400 }
+    );
+  }
+
   const supabase = await createClient();
 
-  // Check if user is a workspace member
-  const { data: member, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .maybeSingle();
+  // Check if user has manage_e2ee permission
+  const { authorized, user, reason } = await checkE2EEPermission(
+    supabase,
+    wsId
+  );
 
-  if (memberError || !member) {
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!authorized) {
     return NextResponse.json(
-      { error: 'Only workspace members can manage E2EE' },
+      {
+        error:
+          reason === 'not_a_member'
+            ? 'You are not a member of this workspace'
+            : 'You do not have permission to manage E2EE settings',
+      },
       { status: 403 }
     );
   }

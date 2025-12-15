@@ -3819,6 +3819,8 @@
     "manage_workspace_settings_description": "Cho phép các thành viên thay đổi tên và logo của không gian làm việc.",
     "manage_workspace_security": "Quản lý bảo mật",
     "manage_workspace_security_description": "Cho phép các thành viên quản lý khoá API và khả năng xóa không gian làm việc.",
+    "manage_e2ee": "Quản lý mã hóa đầu cuối",
+    "manage_e2ee_description": "Cho phép các thành viên bật, cấu hình và quản lý cài đặt mã hóa đầu cuối cho dữ liệu nhạy cảm.",
     "manage_workspace_audit_logs": "Quản lý nhật ký kiểm toán",
     "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
     "manage_changelog": "Quản lý Nhật ký thay đổi",

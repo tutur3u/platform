@@ -17004,7 +17004,8 @@ export type Database = {
         | 'manage_time_tracking_requests'
         | 'bypass_time_tracking_request_approval'
         | 'manage_changelog'
-        | 'manage_subscription';
+        | 'manage_subscription'
+        | 'manage_e2ee';
     };
     CompositeTypes: {
       email_block_status: {
@@ -17587,6 +17588,7 @@ export const Constants = {
         'bypass_time_tracking_request_approval',
         'manage_changelog',
         'manage_subscription',
+        'manage_e2ee',
       ],
     },
   },

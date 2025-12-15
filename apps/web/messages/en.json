@@ -3706,6 +3706,8 @@
     "manage_workspace_settings_description": "Allows members to change workspace name and logo.",
     "manage_workspace_security": "Manage workspace security",
     "manage_workspace_security_description": "Allows members to manage API keys and delete the workspace.",
+    "manage_e2ee": "Manage end-to-end encryption",
+    "manage_e2ee_description": "Allows members to enable, configure, and manage end-to-end encryption settings for sensitive data.",
     "manage_workspace_audit_logs": "Manage workspace audit logs",
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
     "manage_changelog": "Manage Changelog",

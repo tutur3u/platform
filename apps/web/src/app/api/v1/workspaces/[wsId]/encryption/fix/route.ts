@@ -9,6 +9,7 @@ import {
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
 import { NextResponse } from 'next/server';
+import { checkE2EEPermission, looksLikeEncryptedData } from '../utils';
 
 interface Params {
   params: Promise<{
@@ -20,6 +21,7 @@ interface Params {
  * POST - Fix integrity issues (events marked encrypted but contain plaintext)
  * Re-encrypts all events that are marked as encrypted but don't look encrypted
  * Returns streaming response with progress updates
+ * Requires manage_e2ee permission
  */
 export async function POST(_: Request, { params }: Params) {
   const { wsId } = await params;
@@ -33,25 +35,26 @@ export async function POST(_: Request, { params }: Params) {
 
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Check if user has manage_e2ee permission
+  const { authorized, user, reason } = await checkE2EEPermission(
+    supabase,
+    wsId
+  );
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has access to this workspace
-  const { data: member } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (!member) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  if (!authorized) {
+    return NextResponse.json(
+      {
+        error:
+          reason === 'not_a_member'
+            ? 'You are not a member of this workspace'
+            : 'You do not have permission to manage E2EE settings',
+      },
+      { status: 403 }
+    );
   }
 
   const adminClient = await createAdminClient();
@@ -102,13 +105,10 @@ export async function POST(_: Request, { params }: Params) {
   }
 
   // Find events that look like plaintext (not encrypted)
+  // Uses the correct detection logic for AES-256-GCM encrypted data
   const corruptEvents = events.filter((event) => {
-    // Check if title looks encrypted (base64:base64 pattern)
-    const titleLooksEncrypted =
-      typeof event.title === 'string' &&
-      event.title.includes(':') &&
-      /^[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+$/.test(event.title);
-
+    // Check if title looks encrypted using proper detection
+    const titleLooksEncrypted = looksLikeEncryptedData(event.title);
     return !titleLooksEncrypted;
   });
 
