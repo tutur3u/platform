@@ -164,7 +164,33 @@ export async function PUT(request: Request, { params }: Params) {
         updatePayload.is_encrypted = true;
       }
     } else if (hasSensitiveUpdates) {
-      // No encryption key - just update the fields as plaintext
+      // No encryption key available - check if the existing event is encrypted
+      // to avoid data corruption (encrypted fields becoming unreadable gibberish)
+      const { data: existingEvent, error: fetchError } = await supabase
+        .from('workspace_calendar_events')
+        .select('is_encrypted')
+        .eq('id', eventId)
+        .eq('ws_id', wsId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (existingEvent?.is_encrypted === true) {
+        // CRITICAL: Cannot update an encrypted event without the encryption key
+        // If we proceeded, we'd either:
+        // 1. Set is_encrypted=false but leave non-updated fields as encrypted blobs (data corruption)
+        // 2. Or only update some fields while others remain encrypted (inconsistent state)
+        return NextResponse.json(
+          {
+            error:
+              'Cannot update encrypted event: encryption key unavailable. Please contact your workspace administrator.',
+            code: 'E2EE_KEY_UNAVAILABLE',
+          },
+          { status: 400 }
+        );
+      }
+
+      // Event is not encrypted - safe to update as plaintext
       if (updates.title !== undefined) {
         updatePayload.title = updates.title;
       }
@@ -174,9 +200,7 @@ export async function PUT(request: Request, { params }: Params) {
       if (updates.location !== undefined) {
         updatePayload.location = updates.location;
       }
-      // Explicitly set is_encrypted = false to ensure previously-encrypted
-      // events are correctly marked as plaintext after rewrite
-      updatePayload.is_encrypted = false;
+      // is_encrypted remains false (event was never encrypted)
     }
 
     // Handle non-sensitive fields - only include if provided

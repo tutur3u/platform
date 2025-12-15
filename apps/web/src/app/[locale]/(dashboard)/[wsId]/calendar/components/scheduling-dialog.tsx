@@ -363,10 +363,12 @@ export function SchedulingDialog({
     // Snap to 15-minute intervals
     const snapped = Math.round(value / 15) * 15;
 
-    // If incrementing past 59, wrap to 0 and increment hour
+    // If >= 60, convert excess minutes to hours
     if (snapped >= 60) {
-      setDurationMinutes(0);
-      setDurationHours((h) => h + 1);
+      const extraHours = Math.floor(snapped / 60);
+      const remainingMinutes = snapped % 60;
+      setDurationMinutes(remainingMinutes);
+      setDurationHours((h) => h + extraHours);
     } else if (snapped < 0) {
       // If decrementing below 0 and we have hours, wrap to 45 and decrement hour
       if (durationHours > 0) {
