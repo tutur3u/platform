@@ -4157,6 +4157,8 @@
       "setup_description": "Enable encryption to protect your calendar events. Once enabled, your event titles, descriptions, and locations will be encrypted before being stored.",
       "already_enabled": "E2EE is enabled for this workspace",
       "enabling": "Enabling E2EE...",
+      "encrypting": "Encrypting...",
+      "encrypting_progress": "Encrypting {current}/{total} events...",
       "enable_for_workspace": "Enable E2EE for this workspace"
     }
   },

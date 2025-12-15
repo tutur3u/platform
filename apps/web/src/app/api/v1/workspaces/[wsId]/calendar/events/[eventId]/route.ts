@@ -117,14 +117,18 @@ export async function PUT(request: Request, { params }: Params) {
 
     if (error) throw error;
 
-    // If sensitive fields were updated, return them decrypted
-    // Otherwise, decrypt the full event from storage
+    // If sensitive fields were updated, we need to return decrypted values
+    // For fields not updated, we must decrypt the stored (encrypted) values first
     if (hasSensitiveUpdates) {
+      // Decrypt the stored event to get plaintext for any fields not in updates
+      const decryptedStored = await decryptEventFromStorage(data, wsId);
+
       return NextResponse.json({
         ...data,
-        title: updates.title ?? data.title,
-        description: updates.description ?? data.description,
-        location: updates.location ?? data.location,
+        // Use update value if provided, otherwise use decrypted stored value
+        title: updates.title ?? decryptedStored.title,
+        description: updates.description ?? decryptedStored.description,
+        location: updates.location ?? decryptedStored.location,
       });
     }
 

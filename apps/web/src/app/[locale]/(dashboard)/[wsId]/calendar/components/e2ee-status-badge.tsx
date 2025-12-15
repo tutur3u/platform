@@ -111,23 +111,42 @@ export function E2EEStatusBadge({
               className="flex items-center gap-1.5 border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber hover:bg-dynamic-amber/20"
             >
               {isMigrating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span className="hidden text-xs sm:inline">
+                    {fixProgress
+                      ? `${fixProgress.current}/${fixProgress.total} (${fixProgress.progress}%)`
+                      : t('e2ee.encrypting')}
+                  </span>
+                  <span className="text-xs sm:hidden">
+                    {fixProgress ? `${fixProgress.progress}%` : '...'}
+                  </span>
+                </>
               ) : (
-                <ShieldCheck className="h-3.5 w-3.5" />
+                <>
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">
+                    {t('e2ee.encrypt_events', {
+                      count: status.unencryptedCount,
+                    })}
+                  </span>
+                  <span className="sm:hidden">{status.unencryptedCount}</span>
+                </>
               )}
-              <span className="hidden sm:inline">
-                {t('e2ee.encrypt_events', {
-                  count: status.unencryptedCount,
-                })}
-              </span>
-              <span className="sm:hidden">{status.unencryptedCount}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              {t('e2ee.unencrypted_warning', {
-                count: status.unencryptedCount,
-              })}
+              {isMigrating
+                ? fixProgress
+                  ? t('e2ee.encrypting_progress', {
+                      current: fixProgress.current,
+                      total: fixProgress.total,
+                    })
+                  : t('e2ee.encrypting')
+                : t('e2ee.unencrypted_warning', {
+                    count: status.unencryptedCount,
+                  })}
             </p>
           </TooltipContent>
         </Tooltip>

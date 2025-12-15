@@ -4270,6 +4270,8 @@
       "setup_description": "Bật mã hóa để bảo vệ các sự kiện lịch của bạn. Khi được bật, tiêu đề, mô tả và địa điểm sự kiện sẽ được mã hóa trước khi lưu trữ.",
       "already_enabled": "E2EE đã được bật cho không gian làm việc này",
       "enabling": "Đang bật E2EE...",
+      "encrypting": "Đang mã hóa...",
+      "encrypting_progress": "Đang mã hóa {current}/{total} sự kiện...",
       "enable_for_workspace": "Bật E2EE cho không gian làm việc này"
     }
   },

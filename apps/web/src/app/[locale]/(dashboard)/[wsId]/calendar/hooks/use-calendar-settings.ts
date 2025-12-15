@@ -4,17 +4,21 @@ import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types';
 import type { CalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import { useMemo } from 'react';
+import { z } from 'zod';
 import {
   resolveFirstDayOfWeek,
   resolveTimeFormat,
   resolveTimezone,
 } from '@/lib/calendar-settings-resolver';
 
-interface UserCalendarSettings {
-  timezone: string;
-  first_day_of_week: string;
-  time_format: string;
-}
+/**
+ * Zod schema for validating user calendar settings API response
+ */
+const UserCalendarSettingsSchema = z.object({
+  timezone: z.string(),
+  first_day_of_week: z.string(),
+  time_format: z.string(),
+});
 
 /**
  * Return type for the useCalendarSettings hook
@@ -41,7 +45,26 @@ export function useCalendarSettings(
           console.error('[useCalendarSettings] API error:', error.message);
           throw error;
         }
-        return res.json() as Promise<UserCalendarSettings>;
+
+        const data = await res.json();
+
+        // Validate response with Zod schema
+        const parseResult = UserCalendarSettingsSchema.safeParse(data);
+        if (!parseResult.success) {
+          const issues = parseResult.error.issues
+            .map((i) => `${i.path.join('.')}: ${i.message}`)
+            .join('; ');
+          const error = new Error(
+            `Invalid calendar settings response: ${issues}`
+          );
+          console.error(
+            '[useCalendarSettings] Validation error:',
+            error.message
+          );
+          throw error;
+        }
+
+        return parseResult.data;
       } catch (error) {
         console.error('[useCalendarSettings] Fetch error:', error);
         throw error;

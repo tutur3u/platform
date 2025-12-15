@@ -33,7 +33,7 @@ const AUTH_TAG_LENGTH = 16; // 128 bits
 // - Lower cost reduces latency for encryption/decryption operations
 // - The threat model assumes the master key is not guessed (it's a 256-bit secret)
 //
-// TODO: Re-evaluate cost parameters periodically. Consider:
+// NOTE: Re-evaluate cost parameters periodically. Consider:
 // - Increasing N if server performance allows
 // - Using per-workspace salt instead of fixed salt for additional isolation
 //
