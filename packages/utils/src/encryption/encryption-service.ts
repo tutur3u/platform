@@ -304,6 +304,8 @@ export function getMasterKey(): string {
 
 /**
  * Batch decrypt multiple calendar events
+ * After successful decryption, is_encrypted is set to false to indicate
+ * the event data is now plaintext (in memory).
  */
 export function decryptCalendarEvents<
   T extends {
@@ -329,6 +331,7 @@ export function decryptCalendarEvents<
     return {
       ...event,
       ...decrypted,
+      is_encrypted: false, // Mark as decrypted (plaintext in memory)
     };
   });
 }
