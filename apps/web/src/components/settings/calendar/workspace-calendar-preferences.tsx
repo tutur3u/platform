@@ -20,7 +20,7 @@ import {
   detectSystemTimezone,
   resolveFirstDayOfWeek,
   resolveTimezone,
-} from '../../../lib/calendar-settings-resolver';
+} from '@/lib/calendar-settings-resolver';
 
 type WorkspaceCalendarPreferencesProps = {
   wsId: string;

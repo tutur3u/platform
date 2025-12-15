@@ -15,6 +15,7 @@ import {
   decryptField,
   decryptWorkspaceKey,
   encryptCalendarEventFields,
+  encryptField,
   encryptWorkspaceKey,
   generateWorkspaceKey,
   getMasterKey,
@@ -124,13 +125,20 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
   }
 }
 
+// Helper type to allow nulls for optional fields (since DB allows nulls)
+type LooseEncryptedCalendarEventFields = {
+  [K in keyof EncryptedCalendarEventFields]?:
+    | EncryptedCalendarEventFields[K]
+    | null;
+};
+
 /**
  * Encrypt calendar event fields before storing
  * If workspaceKey is provided, skips the key lookup
  * Returns all input fields plus is_encrypted flag
  */
 export async function encryptEventForStorage<
-  T extends EncryptedCalendarEventFields,
+  T extends LooseEncryptedCalendarEventFields,
 >(
   wsId: string,
   event: T,
@@ -145,20 +153,32 @@ export async function encryptEventForStorage<
     return { ...event, is_encrypted: false };
   }
 
-  const encrypted = encryptCalendarEventFields(
-    {
-      title: event.title,
-      description: event.description,
-      location: event.location,
-    },
-    key
-  );
+  // Manually encrypt fields that are present
+  // We use encryptField directly instead of encryptCalendarEventFields
+  // to support partial updates (encryptCalendarEventFields requires all fields)
+  // We also check for null because LooseEncryptedCalendarEventFields allows nulls
+  const encryptedTitle =
+    event.title !== undefined && event.title !== null
+      ? encryptField(event.title, key)
+      : undefined;
+
+  const encryptedDescription =
+    event.description !== undefined && event.description !== null
+      ? encryptField(event.description, key)
+      : undefined;
+
+  const encryptedLocation =
+    event.location !== undefined && event.location !== null
+      ? encryptField(event.location, key)
+      : event.location; // undefined or null is preserved
 
   return {
     ...event,
-    title: encrypted.title,
-    description: encrypted.description,
-    location: encrypted.location,
+    ...(encryptedTitle !== undefined ? { title: encryptedTitle } : {}),
+    ...(encryptedDescription !== undefined
+      ? { description: encryptedDescription }
+      : {}),
+    ...(encryptedLocation !== undefined ? { location: encryptedLocation } : {}),
     is_encrypted: true,
   };
 }

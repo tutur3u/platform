@@ -16,16 +16,7 @@ import {
  */
 const UserCalendarSettingsSchema = z.object({
   timezone: z.string(),
-  first_day_of_week: z.enum([
-    'auto',
-    'sunday',
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-  ]),
+  first_day_of_week: z.enum(['auto', 'sunday', 'monday', 'saturday']),
   time_format: z.enum(['12h', '24h', 'auto']),
 });
 

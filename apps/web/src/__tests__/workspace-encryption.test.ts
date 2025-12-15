@@ -123,11 +123,16 @@ describe('workspace-encryption', () => {
       });
     });
 
-    it('should encrypt new inserts even if not in cached encrypted IDs set', () => {
+    // Specification check: Validates that if we have a set of known encrypted IDs,
+    // and we encounter new events not in that set, the encryption utility is capable
+    // of encrypting them (i.e. the encryption function works on new data).
+    // Note: This does not test the actual filtering logic in encryptGoogleSyncEvents,
+    // but rather the fundamental requirement that new events CAN be encrypted.
+    it('should be capable of encrypting new events (unit test for encryption utility)', () => {
       const workspaceKey = generateWorkspaceKey();
 
-      // Simulate cached set containing only existing encrypted events
-      const cachedEncryptedIds = new Set([
+      // Simulate a scenario where we have existing encrypted events
+      const _cachedEncryptedIds = new Set([
         'existing-event-1',
         'existing-event-2',
       ]);
@@ -168,9 +173,9 @@ describe('workspace-encryption', () => {
         };
       });
 
-      // Verify cache doesn't contain these events (simulating new inserts)
+      // Verify cache doesn't contain these events (conceptually)
       newEvents.forEach((event) => {
-        expect(cachedEncryptedIds.has(event.google_event_id)).toBe(false);
+        expect(_cachedEncryptedIds.has(event.google_event_id)).toBe(false);
       });
 
       // But they should still be encrypted!

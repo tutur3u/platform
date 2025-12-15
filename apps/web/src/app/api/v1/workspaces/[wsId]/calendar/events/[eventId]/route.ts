@@ -114,11 +114,18 @@ export async function PUT(request: Request, { params }: Params) {
 
       const isCurrentlyEncrypted = existingEvent?.is_encrypted === true;
 
+      // Helper interface for type safety
+      interface EncryptableEventFields {
+        title: string;
+        description: string;
+        location?: string | null;
+      }
+
       if (isCurrentlyEncrypted) {
         // Event is already encrypted - only encrypt the updated fields
         // Construct a reduced object with only present updates to avoid encrypting
         // undefined fields as empty strings, which would overwrite existing data
-        const fieldsToEncrypt: any = {};
+        const fieldsToEncrypt: Partial<EncryptableEventFields> = {};
         if (updates.title !== undefined) fieldsToEncrypt.title = updates.title;
         if (updates.description !== undefined)
           fieldsToEncrypt.description = updates.description;
