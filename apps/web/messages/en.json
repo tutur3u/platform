@@ -4108,10 +4108,16 @@
     "failed_to_add": "Failed to add calendar",
     "calendar_enabled": "Calendar enabled",
     "calendar_disabled": "Calendar disabled",
+    "google_auth_failed": "Google authentication failed",
+    "auth_url_invalid": "Invalid authentication URL received",
+    "errors": {
+      "unauthorized": "Unauthorized access",
+      "forbidden": "Access forbidden",
+      "unknown_error": "An unknown error occurred"
+    },
     "failed_to_update": "Failed to update calendar",
     "failed_to_update_visibility": "Failed to update calendar visibility",
-    "google_auth_failed": "Failed to initiate Google authentication",
-    "auth_url_invalid": "Received invalid authentication URL",
+
     "unknown_error": "An unknown error occurred",
     "please_reconnect": "Please reconnect your Google Calendar",
     "reconnect_desc": "Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.",

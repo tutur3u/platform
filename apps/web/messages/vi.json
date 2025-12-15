@@ -4221,10 +4221,16 @@
     "failed_to_add": "Không thể thêm lịch",
     "calendar_enabled": "Lịch đã được bật",
     "calendar_disabled": "Lịch đã bị tắt",
+    "google_auth_failed": "Xác thực Google thất bại",
+    "auth_url_invalid": "URL xác thực không hợp lệ",
+    "errors": {
+      "unauthorized": "Truy cập trái phép",
+      "forbidden": "Truy cập bị cấm",
+      "unknown_error": "Đã xảy ra lỗi không xác định"
+    },
     "failed_to_update": "Không thể cập nhật lịch",
     "failed_to_update_visibility": "Không thể cập nhật trạng thái hiển thị lịch",
-    "google_auth_failed": "Không thể khởi tạo xác thực Google",
-    "auth_url_invalid": "URL xác thực không hợp lệ",
+
     "unknown_error": "Đã xảy ra lỗi không xác định",
     "please_reconnect": "Vui lòng kết nối lại Google Calendar",
     "reconnect_desc": "Kết nối hiện tại của bạn cần thêm quyền. Vui lòng ngắt kết nối và kết nối lại Google Calendar.",

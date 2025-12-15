@@ -237,7 +237,7 @@ export function WorkspaceCalendarPreferences({
           onValueChange={handleFirstDayChange}
           disabled={updateCalendarSettings.isPending}
         >
-          <SelectTrigger id="workspace-first-day" className="w-full md:w-75">
+          <SelectTrigger id="workspace-first-day" className="w-full md:w-72">
             <SelectValue placeholder={t('settings-appearance.auto')} />
           </SelectTrigger>
           <SelectContent>

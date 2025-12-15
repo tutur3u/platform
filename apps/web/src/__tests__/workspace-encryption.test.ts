@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock environment variables
+// NOTE: Duplicated from packages/utils/src/encryption/__tests__/test-helpers.ts to avoid package boundary issues
 const TEST_MASTER_KEY = 'test-master-key-for-unit-testing-only';
 
 // Mock Supabase admin client

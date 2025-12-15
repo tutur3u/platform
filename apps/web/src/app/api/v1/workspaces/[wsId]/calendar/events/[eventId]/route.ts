@@ -116,13 +116,18 @@ export async function PUT(request: Request, { params }: Params) {
 
       if (isCurrentlyEncrypted) {
         // Event is already encrypted - only encrypt the updated fields
+        // Construct a reduced object with only present updates to avoid encrypting
+        // undefined fields as empty strings, which would overwrite existing data
+        const fieldsToEncrypt: any = {};
+        if (updates.title !== undefined) fieldsToEncrypt.title = updates.title;
+        if (updates.description !== undefined)
+          fieldsToEncrypt.description = updates.description;
+        if (updates.location !== undefined)
+          fieldsToEncrypt.location = updates.location;
+
         const encryptedFields = await encryptEventForStorage(
           wsId,
-          {
-            title: updates.title ?? '',
-            description: updates.description ?? '',
-            location: updates.location,
-          },
+          fieldsToEncrypt,
           workspaceKey
         );
 

@@ -51,6 +51,10 @@ type GoogleCalendar = {
   accessRole: string;
 };
 
+interface AuthResponse {
+  authUrl: string;
+}
+
 export function QuickCalendarToggle() {
   const {
     calendarConnections,
@@ -268,7 +272,7 @@ export default function CalendarConnections({
   const [isAddingCalendar, setIsAddingCalendar] = useState(false);
 
   // Replaced manual fetch with useMutation
-  const googleAuthMutation = useMutation({
+  const googleAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationKey: ['calendar', 'google-auth', wsId],
     mutationFn: async () => {
       const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
@@ -276,29 +280,32 @@ export default function CalendarConnections({
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(
+          response.status === 401
+            ? 'unauthorized'
+            : response.status === 403
+              ? 'forbidden'
+              : 'unknown_error'
+        );
       }
 
-      return response.json();
+      return (await response.json()) as AuthResponse;
     },
     onSuccess: (data) => {
-      if (
-        data.authUrl &&
-        typeof data.authUrl === 'string' &&
-        data.authUrl.length > 0
-      ) {
-        window.location.href = data.authUrl;
+      const { authUrl } = data;
+      if (authUrl) {
+        window.location.href = authUrl;
       } else {
-        toast.error(t('google_auth_failed'), {
-          description: t('auth_url_invalid'),
-        });
+        toast.error(t('auth_url_invalid'));
       }
     },
     onError: (error) => {
-      console.error('Error initiating Google auth:', error);
+      const errorKey =
+        error.message === 'unauthorized' || error.message === 'forbidden'
+          ? error.message
+          : 'unknown_error';
       toast.error(t('google_auth_failed'), {
-        description:
-          error instanceof Error ? error.message : t('unknown_error'),
+        description: t(`errors.${errorKey}`),
       });
     },
   });
