@@ -118,7 +118,7 @@
     "react-quizlet-flashcard": "^4.0.22",
     "react-textarea-autosize": "^8.5.9",
     "react-use": "^17.6.0",
-    "recharts": "3.5.1",
+    "recharts": "3.6.0",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
