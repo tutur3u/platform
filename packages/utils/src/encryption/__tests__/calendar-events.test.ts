@@ -191,6 +191,37 @@ describe('encryption-service', () => {
         });
       });
 
+      it('should set is_encrypted to false after successful decryption', () => {
+        // This test verifies that after decryption, is_encrypted is set to false
+        // so that filtering logic can correctly identify decrypted vs failed events
+        const originalEvents = [
+          { title: 'Event 1', description: 'Desc 1', location: 'Loc 1' },
+        ];
+
+        const encrypted = encryptCalendarEvents(originalEvents, workspaceKey);
+
+        // Verify encrypted event has is_encrypted: true
+        expect(encrypted[0]!.is_encrypted).toBe(true);
+
+        const eventsWithMetadata = encrypted.map((event, index) => ({
+          ...event,
+          id: `event-${index}`,
+          start_at: '2024-01-01T10:00:00Z',
+          end_at: '2024-01-01T11:00:00Z',
+          color: 'blue' as const,
+          ws_id: 'ws-123',
+        }));
+
+        const decrypted = decryptCalendarEvents(
+          eventsWithMetadata,
+          workspaceKey
+        );
+
+        // After successful decryption, is_encrypted should be false
+        expect(decrypted[0]!.is_encrypted).toBe(false);
+        expect(decrypted[0]!.title).toBe('Event 1');
+      });
+
       it('should skip non-encrypted events', () => {
         const events = [
           {

@@ -372,34 +372,36 @@ export function SchedulingDialog({
   ]);
 
   // Round minutes to 15-minute intervals, handle wrap-around to hours
-  const handleMinutesChange = (value: number) => {
-    // Snap to 15-minute intervals
-    const snapped = Math.round(value / 15) * 15;
+  const handleMinutesChange = useCallback(
+    (value: number) => {
+      // Snap to 15-minute intervals
+      const snapped = Math.round(value / 15) * 15;
 
-    // If >= 60, convert excess minutes to hours
-    if (snapped >= 60) {
-      const extraHours = Math.floor(snapped / 60);
-      const remainingMinutes = snapped % 60;
-      setDurationMinutes(remainingMinutes);
-      setDurationHours((h) => h + extraHours);
-    } else if (snapped < 0) {
-      // Use functional update to atomically check and modify hours
-      // This ensures we read the latest hours value, avoiding stale closure issues
-      setDurationHours((h) => {
-        if (h > 0) {
+      // If >= 60, convert excess minutes to hours
+      if (snapped >= 60) {
+        const extraHours = Math.floor(snapped / 60);
+        const remainingMinutes = snapped % 60;
+        // Set both states atomically (React 18+ batches these automatically)
+        setDurationMinutes(remainingMinutes);
+        setDurationHours((h) => h + extraHours);
+      } else if (snapped < 0) {
+        // Decrementing below 0 minutes - need to borrow from hours
+        // Read current hours via callback to ensure we have latest value
+        // and compute both new values before setting
+        if (durationHours > 0) {
           // Wrap to 45 minutes and decrement hour
           setDurationMinutes(45);
-          return h - 1;
+          setDurationHours((h) => Math.max(0, h - 1));
         } else {
-          // Can't go below 0 hours and 0 minutes
+          // Can't go below 0 hours and 0 minutes - clamp to 0
           setDurationMinutes(0);
-          return h;
         }
-      });
-    } else {
-      setDurationMinutes(snapped);
-    }
-  };
+      } else {
+        setDurationMinutes(snapped);
+      }
+    },
+    [durationHours]
+  );
 
   // Handle hours change, prevent going below 0
   const handleHoursChange = (value: number) => {

@@ -260,15 +260,26 @@ export async function POST(
 
       // Task calendar events - to calculate already scheduled time per task
       // Include events that have STARTED (both completed and in-progress count)
-      supabase
-        .from('task_calendar_events')
-        .select(
+      // Also include future LOCKED events (they count as "firmly scheduled")
+      // Limit to relevant time window: past 90 days to end of scheduling window
+      (() => {
+        const historicalStart = new Date(now);
+        historicalStart.setDate(historicalStart.getDate() - 90);
+        return supabase
+          .from('task_calendar_events')
+          .select(
+            `
+            task_id,
+            workspace_calendar_events!inner(id, start_at, end_at, ws_id, locked)
           `
-          task_id,
-          workspace_calendar_events!inner(id, start_at, end_at, ws_id, locked)
-        `
-        )
-        .eq('workspace_calendar_events.ws_id', wsId),
+          )
+          .eq('workspace_calendar_events.ws_id', wsId)
+          .gte(
+            'workspace_calendar_events.start_at',
+            historicalStart.toISOString()
+          )
+          .lte('workspace_calendar_events.start_at', endDate.toISOString());
+      })(),
     ]);
 
     if (habitsResult.error) {
