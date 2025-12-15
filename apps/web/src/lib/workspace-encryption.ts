@@ -1,0 +1,429 @@
+/**
+ * Workspace encryption utilities for API routes
+ *
+ * Provides helper functions to manage workspace encryption keys
+ * and encrypt/decrypt calendar event data transparently.
+ *
+ * Note: This module requires the workspace_encryption_keys migration to be applied.
+ * Until then, encryption will be gracefully disabled.
+ */
+
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { EncryptedCalendarEventFields } from '@tuturuuu/utils/encryption';
+import {
+  decryptCalendarEvents,
+  decryptField,
+  decryptWorkspaceKey,
+  encryptCalendarEventFields,
+  encryptField,
+  encryptWorkspaceKey,
+  generateWorkspaceKey,
+  getMasterKey,
+  isEncryptionEnabled,
+} from '@tuturuuu/utils/encryption';
+
+// Type for events with optional is_encrypted field (backward compatible)
+interface CalendarEventMaybeEncrypted {
+  id: string;
+  title: string;
+  description: string;
+  location?: string | null;
+  is_encrypted?: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Helper to extract encrypted_key from Supabase query result.
+ * Avoids repeated type assertions throughout the module.
+ */
+function extractEncryptedKey(data: unknown): string {
+  return (data as { encrypted_key: string }).encrypted_key;
+}
+
+/**
+ * Get or create the encryption key for a workspace
+ * Returns the decrypted workspace key ready for use
+ */
+export async function getOrCreateWorkspaceKey(
+  wsId: string
+): Promise<Buffer | null> {
+  if (!isEncryptionEnabled()) {
+    return null;
+  }
+
+  try {
+    const masterKey = getMasterKey();
+    const supabase = await createAdminClient();
+
+    const { data: existingKey, error: selectError } = await supabase
+      .from('workspace_encryption_keys')
+      .select('encrypted_key')
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (selectError) {
+      // Table might not exist yet
+      console.warn('Encryption keys table not available:', selectError.message);
+      return null;
+    }
+
+    if (existingKey) {
+      const key = extractEncryptedKey(existingKey);
+      return await decryptWorkspaceKey(key, masterKey);
+    }
+
+    // Create new key for this workspace
+    const newKey = generateWorkspaceKey();
+    const encryptedKey = await encryptWorkspaceKey(newKey, masterKey);
+
+    const { error: insertError } = await supabase
+      .from('workspace_encryption_keys')
+      .insert({
+        ws_id: wsId,
+        encrypted_key: encryptedKey,
+      } as never);
+
+    if (insertError) {
+      console.error('Failed to create workspace encryption key:', insertError);
+      return null;
+    }
+
+    return newKey;
+  } catch (error) {
+    console.warn('Encryption not available:', error);
+    return null;
+  }
+}
+
+/**
+ * Get the encryption key for a workspace (read-only, does not create)
+ */
+export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
+  if (!isEncryptionEnabled()) {
+    return null;
+  }
+
+  try {
+    const masterKey = getMasterKey();
+    const supabase = await createAdminClient();
+
+    const { data, error } = await supabase
+      .from('workspace_encryption_keys')
+      .select('encrypted_key')
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const key = extractEncryptedKey(data);
+    return await decryptWorkspaceKey(key, masterKey);
+  } catch (error) {
+    console.warn('Failed to get workspace key:', error);
+    return null;
+  }
+}
+
+// Helper type to allow nulls for optional fields (since DB allows nulls)
+type LooseEncryptedCalendarEventFields = {
+  [K in keyof EncryptedCalendarEventFields]?:
+    | EncryptedCalendarEventFields[K]
+    | null;
+};
+
+/**
+ * Encrypt calendar event fields before storing
+ * If workspaceKey is provided, skips the key lookup
+ * Returns all input fields plus is_encrypted flag
+ */
+export async function encryptEventForStorage<
+  T extends LooseEncryptedCalendarEventFields,
+>(
+  wsId: string,
+  event: T,
+  workspaceKey?: Buffer | null
+): Promise<T & { is_encrypted: boolean }> {
+  const key =
+    workspaceKey !== undefined
+      ? workspaceKey
+      : await getOrCreateWorkspaceKey(wsId);
+
+  if (!key) {
+    return { ...event, is_encrypted: false };
+  }
+
+  // Manually encrypt fields that are present
+  // We use encryptField directly instead of encryptCalendarEventFields
+  // to support partial updates (encryptCalendarEventFields requires all fields)
+  // We also check for null because LooseEncryptedCalendarEventFields allows nulls
+  const encryptedTitle =
+    event.title !== undefined && event.title !== null
+      ? encryptField(event.title, key)
+      : undefined;
+
+  const encryptedDescription =
+    event.description !== undefined && event.description !== null
+      ? encryptField(event.description, key)
+      : undefined;
+
+  const encryptedLocation =
+    event.location !== undefined && event.location !== null
+      ? encryptField(event.location, key)
+      : event.location; // undefined or null is preserved
+
+  return {
+    ...event,
+    ...(encryptedTitle !== undefined ? { title: encryptedTitle } : {}),
+    ...(encryptedDescription !== undefined
+      ? { description: encryptedDescription }
+      : {}),
+    ...(encryptedLocation !== undefined ? { location: encryptedLocation } : {}),
+    is_encrypted: true,
+  };
+}
+
+/**
+ * Decrypt calendar events after fetching
+ */
+export async function decryptEventsFromStorage<
+  T extends CalendarEventMaybeEncrypted,
+>(events: T[], wsId: string): Promise<T[]> {
+  if (!events.length) {
+    return events;
+  }
+
+  // Check if any events are encrypted
+  const hasEncryptedEvents = events.some((e) => e.is_encrypted);
+  if (!hasEncryptedEvents) {
+    return events;
+  }
+
+  const key = await getWorkspaceKey(wsId);
+
+  if (!key) {
+    console.error(
+      'Encrypted events found but no encryption key available for workspace:',
+      wsId
+    );
+    return events;
+  }
+
+  // Convert to the format expected by decryptCalendarEvents
+  // We don't need the complex casting now that decryptCalendarEvents is more flexible
+  const decrypted = decryptCalendarEvents(events, key);
+  return decrypted;
+}
+
+/**
+ * Decrypt a single calendar event
+ */
+export async function decryptEventFromStorage<
+  T extends CalendarEventMaybeEncrypted,
+>(event: T, wsId: string): Promise<T> {
+  if (!event.is_encrypted) {
+    return event;
+  }
+
+  const key = await getWorkspaceKey(wsId);
+
+  if (!key) {
+    console.error(
+      'Encrypted event found but no encryption key available for workspace:',
+      wsId
+    );
+    return event;
+  }
+
+  const [decrypted] = decryptCalendarEvents([event], key);
+
+  if (!decrypted) {
+    // Should never happen as decryptCalendarEvents preserves array length
+    return event;
+  }
+
+  return decrypted;
+}
+
+/**
+ * Helper to encrypt a single event.
+ * When workspace E2EE is enabled, ALL events get encrypted.
+ * The encryptedEventIds set is used only for logging/debugging purposes.
+ */
+function encryptSingleEvent<
+  T extends {
+    google_event_id: string;
+    title: string;
+    description?: string;
+    location?: string | null;
+  },
+>(event: T, key: Buffer): T & { is_encrypted: boolean } {
+  const encrypted = encryptCalendarEventFields(
+    {
+      title: event.title || '',
+      description: event.description || '',
+      location: event.location || undefined,
+    },
+    key
+  );
+
+  return {
+    ...event,
+    title: encrypted.title,
+    description: encrypted.description,
+    location: encrypted.location ?? null,
+    is_encrypted: true,
+  };
+}
+
+/**
+ * Helper to encrypt events when workspace has E2EE enabled.
+ * ALL events are encrypted since the workspace key exists.
+ * The encryptedEventIds set is used for debugging - to log new inserts
+ * that weren't previously encrypted.
+ */
+function encryptEventsWithKnownIds<
+  T extends {
+    google_event_id: string;
+    title: string;
+    description?: string;
+    location?: string | null;
+  },
+>(
+  events: T[],
+  encryptedEventIds: Set<string>,
+  key: Buffer
+): (T & { is_encrypted: boolean })[] {
+  // Log events NOT in cache (these are new inserts - helpful for debugging)
+  const notInCache = events.filter(
+    (e) => !encryptedEventIds.has(e.google_event_id)
+  );
+  if (notInCache.length > 0) {
+    console.log('🔍 [E2EE DEBUG] New events (not in cache) being encrypted:', {
+      count: notInCache.length,
+      cacheSize: encryptedEventIds.size,
+      eventIds: notInCache.slice(0, 3).map((e) => e.google_event_id),
+    });
+  }
+
+  // CRITICAL FIX: When workspace has E2EE enabled, encrypt ALL events
+  // Previously this only encrypted events in the cache, leaving new inserts unencrypted
+  return events.map((event) => encryptSingleEvent(event, key));
+}
+
+/**
+ * Encrypt incoming Google Calendar events before upsert
+ *
+ * This implements "decrypt, compare, re-encrypt" for Google sync:
+ * 1. Query which existing events are encrypted
+ * 2. For events that are encrypted, encrypt the incoming Google data
+ * 3. For events that are not encrypted, leave them as plaintext
+ *
+ * This allows Google Calendar updates to flow through while maintaining encryption.
+ *
+ * @param wsId - Workspace ID
+ * @param events - Events from Google Calendar to process
+ * @param preCachedEncryptedIds - Optional pre-cached set of encrypted event IDs (to avoid race conditions with parallel deletes)
+ */
+export async function encryptGoogleSyncEvents<
+  T extends {
+    google_event_id: string;
+    title: string;
+    description?: string;
+    location?: string | null;
+  },
+>(
+  wsId: string,
+  events: T[],
+  preCachedEncryptedIds?: Set<string>
+): Promise<(T & { is_encrypted?: boolean })[]> {
+  if (!isEncryptionEnabled() || events.length === 0) {
+    return events;
+  }
+
+  const key = await getWorkspaceKey(wsId);
+  if (!key) {
+    // No encryption key = don't encrypt
+    return events;
+  }
+
+  // If pre-cached IDs are provided, use them directly (avoids race condition with parallel deletes)
+  if (preCachedEncryptedIds && preCachedEncryptedIds.size > 0) {
+    console.log('🔍 [E2EE DEBUG] Using pre-cached encrypted IDs:', {
+      count: preCachedEncryptedIds.size,
+    });
+    return encryptEventsWithKnownIds(events, preCachedEncryptedIds, key);
+  }
+
+  const supabase = await createAdminClient();
+
+  // Get all google_event_ids from incoming events
+  const googleEventIds = events
+    .map((e) => e.google_event_id)
+    .filter((id): id is string => !!id);
+
+  if (googleEventIds.length === 0) {
+    return events;
+  }
+
+  // Query which events are currently encrypted in the database
+  // Batch the query to avoid URL length limits (max ~100 IDs per query)
+  const BATCH_SIZE = 100;
+  const allExistingEvents: Array<{
+    google_event_id: string | null;
+    is_encrypted: boolean | null;
+  }> = [];
+
+  for (let i = 0; i < googleEventIds.length; i += BATCH_SIZE) {
+    const batchIds = googleEventIds.slice(i, i + BATCH_SIZE);
+    const { data: batchEvents, error } = await supabase
+      .from('workspace_calendar_events')
+      .select('google_event_id, is_encrypted')
+      .eq('ws_id', wsId)
+      .in('google_event_id', batchIds);
+
+    if (error) {
+      console.warn(
+        `Failed to check encrypted events batch ${i / BATCH_SIZE + 1}:`,
+        error
+      );
+      // Continue with other batches instead of returning early
+      continue;
+    }
+
+    if (batchEvents) {
+      allExistingEvents.push(...batchEvents);
+    }
+  }
+
+  // Debug: Log events that exist in DB but are NOT encrypted
+  const existingButNotEncrypted = allExistingEvents
+    .filter((e) => e.is_encrypted !== true)
+    .map((e) => e.google_event_id);
+
+  if (existingButNotEncrypted.length > 0) {
+    console.log('⚠️ [E2EE DEBUG] Events in DB but NOT encrypted:', {
+      count: existingButNotEncrypted.length,
+      ids: existingButNotEncrypted.slice(0, 5), // First 5 for brevity
+    });
+  }
+
+  // Debug: Count events NOT found in DB at all (new inserts)
+  const allExistingIds = new Set(
+    allExistingEvents.map((e) => e.google_event_id)
+  );
+  const notInDb = events.filter((e) => !allExistingIds.has(e.google_event_id));
+  if (notInDb.length > 0) {
+    console.log('🔍 [E2EE DEBUG] New events (not in DB) being encrypted:', {
+      count: notInDb.length,
+      ids: notInDb.slice(0, 5).map((e) => e.google_event_id),
+    });
+  }
+
+  // CRITICAL FIX: When workspace has E2EE enabled (key exists), encrypt ALL events
+  // This includes new inserts that weren't previously in the database
+  return events.map((event) => encryptSingleEvent(event, key));
+}
+
+// Re-export decryptField for direct field decryption
+export { decryptField };

@@ -260,16 +260,26 @@ export async function POST(
 
       // Task calendar events - to calculate already scheduled time per task
       // Include events that have STARTED (both completed and in-progress count)
-      supabase
-        .from('task_calendar_events')
-        .select(
+      // Also include future LOCKED events (they count as "firmly scheduled")
+      // Limit to relevant time window: past 90 days to end of scheduling window
+      (() => {
+        const historicalStart = new Date(now);
+        historicalStart.setDate(historicalStart.getDate() - 90);
+        return supabase
+          .from('task_calendar_events')
+          .select(
+            `
+            task_id,
+            workspace_calendar_events!inner(id, start_at, end_at, ws_id, locked)
           `
-          task_id,
-          workspace_calendar_events!inner(id, start_at, end_at, ws_id)
-        `
-        )
-        .eq('workspace_calendar_events.ws_id', wsId)
-        .lt('workspace_calendar_events.start_at', now.toISOString()),
+          )
+          .eq('workspace_calendar_events.ws_id', wsId)
+          .gte(
+            'workspace_calendar_events.start_at',
+            historicalStart.toISOString()
+          )
+          .lte('workspace_calendar_events.start_at', endDate.toISOString());
+      })(),
     ]);
 
     if (habitsResult.error) {
@@ -365,11 +375,19 @@ export async function POST(
         const taskId = te.task_id;
         const startAt = te.workspace_calendar_events?.start_at;
         const endAt = te.workspace_calendar_events?.end_at;
+        const isLocked = te.workspace_calendar_events?.locked;
+
         if (taskId && startAt && endAt) {
-          const duration =
-            (new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000; // minutes
-          const current = taskScheduledMinutes.get(taskId) || 0;
-          taskScheduledMinutes.set(taskId, current + duration);
+          // Include if event is in the past OR if it's future but locked
+          // Locked future events are considered "firmly scheduled" and count towards the requirement
+          const isPast = new Date(startAt).getTime() < now.getTime();
+
+          if (isPast || isLocked) {
+            const duration =
+              (new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000; // minutes
+            const current = taskScheduledMinutes.get(taskId) || 0;
+            taskScheduledMinutes.set(taskId, current + duration);
+          }
         }
       }
     }

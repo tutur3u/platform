@@ -24,6 +24,10 @@ import type {
   TimeOfDayPreference,
 } from '@tuturuuu/types/primitives/Habit';
 import { getTimeRangeForPreference } from '@tuturuuu/types/primitives/Habit';
+import {
+  encryptEventForStorage,
+  getWorkspaceKey,
+} from '../workspace-encryption';
 import { fetchHourSettings } from './task-scheduler';
 import { scheduleWorkspace } from './unified-scheduler';
 
@@ -125,6 +129,9 @@ export async function scheduleHabit(
   const createdEvents: HabitScheduleResult['events'] = [];
   let eventsCreated = 0;
 
+  // Get workspace encryption key
+  const workspaceKey = await getWorkspaceKey(wsId);
+
   // Schedule each unscheduled occurrence
   for (const occurrence of unscheduledOccurrences) {
     const occurrenceDate = occurrence.toISOString().split('T')[0];
@@ -142,17 +149,30 @@ export async function scheduleHabit(
       continue;
     }
 
-    // Create calendar event
+    // Create calendar event with encryption
     const eventTitle = habit.name;
-    const { data: event, error: eventError } = await supabase
-      .from('workspace_calendar_events')
-      .insert({
-        ws_id: wsId,
+    const eventData = await encryptEventForStorage(
+      wsId,
+      {
         title: eventTitle,
         description: habit.description || '',
         start_at: slot.start.toISOString(),
         end_at: slot.end.toISOString(),
         color: habit.color,
+      },
+      workspaceKey
+    );
+
+    const { data: event, error: eventError } = await supabase
+      .from('workspace_calendar_events')
+      .insert({
+        ws_id: wsId,
+        title: eventData.title,
+        description: eventData.description,
+        start_at: eventData.start_at,
+        end_at: eventData.end_at,
+        color: eventData.color,
+        is_encrypted: eventData.is_encrypted,
       })
       .select()
       .single();

@@ -13,13 +13,13 @@ interface CalendarSettings {
   timeFormat: '12h' | '24h';
 }
 
-interface User {
+export interface CalendarUserSettings {
   timezone?: string | null;
   first_day_of_week?: string | null;
   time_format?: string | null;
 }
 
-interface Workspace {
+export interface CalendarWorkspaceSettings {
   timezone?: string | null;
   first_day_of_week?: string | null;
 }
@@ -91,7 +91,7 @@ export function detectLocaleTimeFormat(locale?: string): '12h' | '24h' {
  * Resolves the effective time format based on user setting
  */
 export function resolveTimeFormat(
-  user?: User | null,
+  user?: Pick<CalendarUserSettings, 'time_format'> | null,
   locale?: string
 ): '12h' | '24h' {
   // User setting takes priority
@@ -107,8 +107,8 @@ export function resolveTimeFormat(
  * Resolves the effective timezone based on priority system
  */
 export function resolveTimezone(
-  user?: User | null,
-  workspace?: Workspace | null
+  user?: Pick<CalendarUserSettings, 'timezone'> | null,
+  workspace?: Pick<CalendarWorkspaceSettings, 'timezone'> | null
 ): string {
   // Priority 1: User setting
   if (user?.timezone && user.timezone !== 'auto') {
@@ -128,8 +128,8 @@ export function resolveTimezone(
  * Resolves the effective first day of week based on priority system
  */
 export function resolveFirstDayOfWeek(
-  user?: User | null,
-  workspace?: Workspace | null,
+  user?: Pick<CalendarUserSettings, 'first_day_of_week'> | null,
+  workspace?: Pick<CalendarWorkspaceSettings, 'first_day_of_week'> | null,
   locale?: string
 ): FirstDayOfWeek {
   // Priority 1: User setting
@@ -150,8 +150,8 @@ export function resolveFirstDayOfWeek(
  * Resolves all calendar settings at once
  */
 export function resolveCalendarSettings(
-  user?: User | null,
-  workspace?: Workspace | null,
+  user?: CalendarUserSettings | null,
+  workspace?: CalendarWorkspaceSettings | null,
   locale?: string
 ): CalendarSettings {
   return {

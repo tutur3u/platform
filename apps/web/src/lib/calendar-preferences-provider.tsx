@@ -1,11 +1,11 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   type CalendarPreferences,
   CalendarPreferencesProvider as UICalendarPreferencesProvider,
 } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { useQuery } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import * as React from 'react';
 import {
@@ -42,7 +42,7 @@ export function CalendarPreferencesProvider({
 
   // Fetch user calendar settings
   const { data: userSettings } = useQuery({
-    queryKey: ['user-calendar-settings', userId],
+    queryKey: ['users', 'calendar-settings', userId],
     queryFn: async () => {
       if (!userId) return null;
       const res = await fetch('/api/v1/users/calendar-settings');

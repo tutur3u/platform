@@ -7,6 +7,7 @@ import {
   ChartBar,
   CircleCheck,
   CircuitBoard,
+  Clock,
   DatabaseZap,
   Download,
   Edit,
@@ -21,6 +22,7 @@ import {
   LayoutTemplate,
   ListTodo,
   Lock,
+  MessageCircleIcon,
   MessagesSquare,
   Newspaper,
   Plus,
@@ -39,8 +41,6 @@ import {
   UserPlus,
   Users,
   UserX,
-  Clock,
-  MessageCircleIcon,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
@@ -181,6 +181,14 @@ export const permissionGroups = ({
             icon: <Shield />,
             title: t('ws-roles.manage_workspace_security'),
             description: t('ws-roles.manage_workspace_security_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'manage_e2ee',
+            icon: <Lock />,
+            title: t('ws-roles.manage_e2ee'),
+            description: t('ws-roles.manage_e2ee_description'),
             disableOnProduction: false,
             disabled: false,
           },

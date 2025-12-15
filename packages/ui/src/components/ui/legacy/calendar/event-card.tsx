@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -109,6 +110,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // NOTE: Event filtering for hideNonPreviewEvents is handled in CalendarEventMatrix
   // This ensures proper elevation calculation. We no longer hide events here.
   const { settings } = useCalendarSettings();
+  const queryClient = useQueryClient();
   const tz = settings?.timezone?.timezone;
 
   // Local state for immediate UI updates
@@ -629,6 +631,11 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           pendingUpdateRef.current = null;
         }
 
+        // Invalidate task schedule query to refresh sidebar
+        queryClient.invalidateQueries({
+          queryKey: ['task-schedule-batch'],
+        });
+
         // Clean up
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -653,6 +660,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     scheduleUpdate,
     showStatusFeedback, // Update visual state
     updateVisualState,
+    queryClient,
   ]);
 
   // Event dragging - only enable for non-multi-day events

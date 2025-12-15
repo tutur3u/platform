@@ -1,10 +1,10 @@
-import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { updateLastUpsert } from '@tuturuuu/trigger/calendar-sync-coordination';
 import { NextResponse } from 'next/server';
+import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 
 export async function POST(request: Request) {
   const routeStartTime = Date.now();
@@ -139,7 +139,51 @@ export async function POST(request: Request) {
 
     console.log('🔍 [DEBUG] Syncing from calendars:', calendarIds);
 
-    // 5. Fetch eventsToUpsert and eventsToDelete from incremental active sync for each calendar
+    // 5. Query ALL encrypted event IDs for this workspace BEFORE any calendar processing
+    // This prevents race conditions where one calendar deletes an event before another checks encryption status
+    console.log(
+      '🔍 [DEBUG] Pre-caching all encrypted event IDs for workspace...'
+    );
+    const globalEncryptedIds = new Set<string>();
+    const QUERY_BATCH_SIZE = 500;
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data: encryptedEvents, error: encryptedError } = await sbAdmin
+        .from('workspace_calendar_events')
+        .select('google_event_id')
+        .eq('ws_id', wsId)
+        .eq('is_encrypted', true)
+        .not('google_event_id', 'is', null)
+        .range(offset, offset + QUERY_BATCH_SIZE - 1);
+
+      if (encryptedError) {
+        console.warn(
+          '❌ [DEBUG] Error fetching encrypted event IDs:',
+          encryptedError
+        );
+        break;
+      }
+
+      if (encryptedEvents && encryptedEvents.length > 0) {
+        encryptedEvents.forEach((e) => {
+          if (e.google_event_id) {
+            globalEncryptedIds.add(e.google_event_id);
+          }
+        });
+        offset += QUERY_BATCH_SIZE;
+        hasMore = encryptedEvents.length === QUERY_BATCH_SIZE;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    console.log('✅ [DEBUG] Global encrypted IDs cached:', {
+      count: globalEncryptedIds.size,
+    });
+
+    // 6. Fetch eventsToUpsert and eventsToDelete from incremental active sync for each calendar
     // Process all calendars IN PARALLEL for much better performance
     console.log(
       `🔍 [DEBUG] Starting parallel sync for ${calendarIds.length} calendars...`
@@ -156,7 +200,8 @@ export async function POST(request: Request) {
           user.id,
           calendarId,
           startDate,
-          endDate
+          endDate,
+          globalEncryptedIds
         );
 
         // Check if the result is a NextResponse (error case) or a success object
