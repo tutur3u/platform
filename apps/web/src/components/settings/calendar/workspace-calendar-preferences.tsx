@@ -93,12 +93,12 @@ export function WorkspaceCalendarPreferences({
         queryKey: ['users', 'calendar-settings'],
       });
       toast.success(t('common.success'), {
-        description: 'Workspace calendar settings updated successfully',
+        description: t('calendar.settings_updated_success'),
       });
     },
     onError: () => {
       toast.error(t('common.error'), {
-        description: 'Failed to update workspace calendar settings',
+        description: t('calendar.settings_updated_error'),
       });
     },
   });
@@ -164,16 +164,17 @@ export function WorkspaceCalendarPreferences({
     <div className="space-y-6">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="workspace-timezone">Workspace Timezone</Label>
+          <Label htmlFor="workspace-timezone">
+            {t('calendar.workspace_timezone')}
+          </Label>
           {userHasTimezoneOverride && (
             <Badge variant="secondary" className="text-xs">
-              Overridden by your settings
+              {t('calendar.overridden_by_settings')}
             </Badge>
           )}
         </div>
         <p className="text-muted-foreground text-sm">
-          Set the default timezone for this workspace. Members can override this
-          in their personal settings.
+          {t('calendar.workspace_timezone_desc')}
         </p>
         <Select
           value={calendarSettings?.timezone || 'auto'}
@@ -200,16 +201,15 @@ export function WorkspaceCalendarPreferences({
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="text-muted-foreground text-sm">
               <p>
-                You have set your personal timezone to{' '}
-                <span className="font-medium text-foreground">
-                  {userSettings?.timezone}
-                </span>
-                , which overrides this workspace setting. Your effective
-                timezone is{' '}
-                <span className="font-medium text-foreground">
-                  {effectiveTimezone}
-                </span>
-                . Change it in Appearance & Theme settings.
+                {t.rich('calendar.personal_timezone_override_desc', {
+                  timezone: userSettings?.timezone,
+                  effectiveTimezone,
+                  bold: (chunks) => (
+                    <span className="font-medium text-foreground">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </p>
             </div>
           </div>
@@ -221,17 +221,16 @@ export function WorkspaceCalendarPreferences({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="workspace-first-day">
-            Workspace First Day of Week
+            {t('calendar.workspace_first_day')}
           </Label>
           {userHasFirstDayOverride && (
             <Badge variant="secondary" className="text-xs">
-              Overridden by your settings
+              {t('calendar.overridden_by_settings')}
             </Badge>
           )}
         </div>
         <p className="text-muted-foreground text-sm">
-          Set the first day of the week for calendar display in this workspace.
-          Members can override this in their personal settings.
+          {t('calendar.workspace_first_day_desc')}
         </p>
         <Select
           value={calendarSettings?.first_day_of_week || 'auto'}
@@ -259,16 +258,17 @@ export function WorkspaceCalendarPreferences({
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="text-muted-foreground text-sm">
               <p>
-                You have set your personal first day of week to{' '}
-                <span className="font-medium text-foreground">
-                  {getFirstDayLabel(userSettings?.first_day_of_week || 'auto')}
-                </span>
-                , which overrides this workspace setting. Your effective first
-                day is{' '}
-                <span className="font-medium text-foreground">
-                  {getFirstDayLabel(effectiveFirstDay)}
-                </span>
-                . Change it in Appearance & Theme settings.
+                {t.rich('calendar.personal_first_day_override_desc', {
+                  firstDay: getFirstDayLabel(
+                    userSettings?.first_day_of_week || 'auto'
+                  ),
+                  effectiveFirstDay: getFirstDayLabel(effectiveFirstDay),
+                  bold: (chunks) => (
+                    <span className="font-medium text-foreground">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </p>
             </div>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
   Calendar,
@@ -27,6 +27,7 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type CalendarConnection = {
@@ -59,6 +60,7 @@ export function QuickCalendarToggle() {
     syncToTuturuuu,
     isSyncing,
   } = useCalendarSync();
+  const t = useTranslations('calendar');
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const [isOpen, setIsOpen] = useState(false);
 
@@ -94,11 +96,11 @@ export function QuickCalendarToggle() {
       if (!response.ok) {
         updateCalendarConnection(connectionId, currentState);
         const data = await response.json();
-        toast.error(data.error || 'Failed to update calendar visibility');
+        toast.error(data.error || t('failed_to_update_visibility'));
       }
     } catch (_error) {
       updateCalendarConnection(connectionId, currentState);
-      toast.error('Failed to update calendar visibility');
+      toast.error(t('failed_to_update_visibility'));
     } finally {
       setTogglingIds((prev) => {
         const next = new Set(prev);
@@ -113,7 +115,7 @@ export function QuickCalendarToggle() {
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Calendar className="h-4 w-4" />
-          <span>Calendars</span>
+          <span>{t('calendars')}</span>
           {enabledCount > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">
               {enabledCount}
@@ -125,10 +127,10 @@ export function QuickCalendarToggle() {
         <div className="space-y-4">
           <div className="space-y-1">
             <h4 className="font-medium text-sm leading-none">
-              Visible Calendars
+              {t('visible_calendars')}
             </h4>
             <p className="text-muted-foreground text-xs">
-              Toggle which calendars to show
+              {t('toggle_calendars_desc')}
             </p>
           </div>
 
@@ -170,8 +172,11 @@ export function QuickCalendarToggle() {
 
           <div className="space-y-2 border-border border-t pt-2">
             <p className="text-muted-foreground text-xs">
-              {enabledCount} of {calendarConnections.length} calendar
-              {calendarConnections.length !== 1 ? 's' : ''} visible
+              {t('visible_calendars_count', {
+                count: enabledCount,
+                total: calendarConnections.length,
+                s: calendarConnections.length !== 1 ? 's' : '',
+              })}
             </p>
 
             {syncStatus.state !== 'idle' && (
@@ -212,7 +217,8 @@ export function QuickCalendarToggle() {
                 ) : (
                   <RefreshCw className="h-3 w-3" />
                 )}
-                <span className="text-xs">From Google</span>
+
+                <span className="text-xs">{t('sync_from_google')}</span>
               </Button>
               <Button
                 size="sm"
@@ -226,7 +232,7 @@ export function QuickCalendarToggle() {
                 ) : (
                   <Upload className="h-3 w-3" />
                 )}
-                <span className="text-xs">To Google</span>
+                <span className="text-xs">{t('sync_to_google')}</span>
               </Button>
             </div>
           </div>
@@ -255,15 +261,16 @@ export default function CalendarConnections({
     isSyncing,
   } = useCalendarSync();
 
+  const t = useTranslations('calendar');
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const [isQuickOpen, setIsQuickOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isAddingCalendar, setIsAddingCalendar] = useState(false);
-  const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
 
-  const handleGoogleAuth = async () => {
-    setIsGoogleAuthenticating(true);
-    try {
+  // Replaced manual fetch with useMutation
+  const googleAuthMutation = useMutation({
+    mutationKey: ['calendar', 'google-auth', wsId],
+    mutationFn: async () => {
       const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
         method: 'GET',
       });
@@ -272,13 +279,32 @@ export default function CalendarConnections({
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const { authUrl } = await response.json();
-      window.location.href = authUrl;
-    } catch (error) {
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (
+        data.authUrl &&
+        typeof data.authUrl === 'string' &&
+        data.authUrl.length > 0
+      ) {
+        window.location.href = data.authUrl;
+      } else {
+        toast.error(t('google_auth_failed'), {
+          description: t('auth_url_invalid'),
+        });
+      }
+    },
+    onError: (error) => {
       console.error('Error initiating Google auth:', error);
-      toast.error('Failed to initiate Google authentication');
-      setIsGoogleAuthenticating(false);
-    }
+      toast.error(t('google_auth_failed'), {
+        description:
+          error instanceof Error ? error.message : t('unknown_error'),
+      });
+    },
+  });
+
+  const handleGoogleAuth = () => {
+    googleAuthMutation.mutate();
   };
 
   const enabledCount = useMemo(
@@ -314,20 +340,17 @@ export default function CalendarConnections({
 
         // Handle 403 (insufficient scope) specially
         if (response.status === 403 && data.requiresReauth) {
-          toast.error('Please reconnect your Google Calendar', {
-            description:
-              'Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.',
+          toast.error(t('please_reconnect'), {
+            description: t('reconnect_desc'),
             duration: 5000,
           });
         } else if (data.requiresReauth) {
-          toast.error('Please reconnect your Google Calendar', {
-            description:
-              data.error ||
-              'Your Google Calendar connection needs to be refreshed.',
+          toast.error(t('please_reconnect'), {
+            description: data.error || t('refresh_connection'),
             duration: 5000,
           });
         } else {
-          toast.error(data.error || 'Failed to fetch calendars');
+          toast.error(data.error || t('failed_to_fetch_calendars'));
         }
 
         return [] as GoogleCalendar[];
@@ -367,13 +390,13 @@ export default function CalendarConnections({
       if (!response.ok) {
         updateCalendarConnection(connectionId, currentState);
         const data = await response.json();
-        toast.error(data.error || 'Failed to update calendar visibility');
+        toast.error(data.error || t('failed_to_update_visibility'));
       } else {
         await refreshConnections();
       }
     } catch (_error) {
       updateCalendarConnection(connectionId, currentState);
-      toast.error('Failed to update calendar visibility');
+      toast.error(t('failed_to_update_visibility'));
     } finally {
       setTogglingIds((prev) => {
         const next = new Set(prev);
@@ -402,15 +425,17 @@ export default function CalendarConnections({
 
       if (response.ok) {
         await refreshConnections();
-        toast.success(isEnabled ? 'Calendar enabled' : 'Calendar disabled');
+        toast.success(
+          isEnabled ? t('calendar_enabled') : t('calendar_disabled')
+        );
       } else {
         updateCalendarConnection(connectionId, prevState);
         const data = await response.json();
-        toast.error(data.error || 'Failed to update calendar');
+        toast.error(data.error || t('failed_to_update'));
       }
     } catch (_error) {
       updateCalendarConnection(connectionId, prevState);
-      toast.error('Failed to update calendar');
+      toast.error(t('failed_to_update'));
     }
   };
 
@@ -432,13 +457,13 @@ export default function CalendarConnections({
 
       if (response.ok) {
         await refreshConnections();
-        toast.success(`Added ${calendar.name}`);
+        toast.success(t('added_calendar', { name: calendar.name }));
       } else {
         const data = await response.json();
-        toast.error(data.error || 'Failed to add calendar');
+        toast.error(data.error || t('failed_to_add'));
       }
     } catch (_error) {
-      toast.error('Failed to add calendar');
+      toast.error(t('failed_to_add'));
     } finally {
       setIsAddingCalendar(false);
     }
@@ -456,13 +481,13 @@ export default function CalendarConnections({
 
       if (response.ok) {
         await refreshConnections();
-        toast.success(`Removed ${calendarName}`);
+        toast.success(t('removed_calendar', { name: calendarName }));
       } else {
         const data = await response.json();
-        toast.error(data.error || 'Failed to remove calendar');
+        toast.error(data.error || t('failed_to_remove'));
       }
     } catch (_error) {
-      toast.error('Failed to remove calendar');
+      toast.error(t('failed_to_remove'));
     }
   };
 
@@ -472,16 +497,16 @@ export default function CalendarConnections({
         variant="outline"
         size="sm"
         onClick={handleGoogleAuth}
-        disabled={isGoogleAuthenticating}
+        disabled={googleAuthMutation.isPending}
         className="gap-2"
       >
-        {isGoogleAuthenticating ? (
+        {googleAuthMutation.isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <Link className="h-4 w-4" />
         )}
-        <span className="hidden sm:inline">Connect Google Calendar</span>
-        <span className="sm:hidden">Connect</span>
+        <span className="hidden sm:inline">{t('connect_google_calendar')}</span>
+        <span className="sm:hidden">{t('connect')}</span>
       </Button>
     );
   }
@@ -502,7 +527,7 @@ export default function CalendarConnections({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
               <Calendar className="h-4 w-4" />
-              <span>Calendars</span>
+              <span>{t('calendars')}</span>
               {enabledCount > 0 && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">
                   {enabledCount}
@@ -514,10 +539,10 @@ export default function CalendarConnections({
             <div className="space-y-4">
               <div className="space-y-1">
                 <h4 className="font-medium text-sm leading-none">
-                  Visible Calendars
+                  {t('visible_calendars')}
                 </h4>
                 <p className="text-muted-foreground text-xs">
-                  Toggle which calendars to show
+                  {t('toggle_calendars_desc')}
                 </p>
               </div>
 
@@ -561,8 +586,11 @@ export default function CalendarConnections({
 
               <div className="space-y-2 border-border border-t pt-2">
                 <p className="text-muted-foreground text-xs">
-                  {enabledCount} of {calendarConnections.length} calendar
-                  {calendarConnections.length !== 1 ? 's' : ''} visible
+                  {t('visible_calendars_count', {
+                    count: enabledCount,
+                    total: calendarConnections.length,
+                    s: calendarConnections.length !== 1 ? 's' : '',
+                  })}
                 </p>
 
                 {syncStatus.state !== 'idle' && (
@@ -609,7 +637,7 @@ export default function CalendarConnections({
                     ) : (
                       <RefreshCw className="h-3 w-3" />
                     )}
-                    <span className="text-xs">From Google</span>
+                    <span className="text-xs">{t('sync_from_google')}</span>
                   </Button>
                   <Button
                     size="sm"
@@ -624,7 +652,7 @@ export default function CalendarConnections({
                     ) : (
                       <Upload className="h-3 w-3" />
                     )}
-                    <span className="text-xs">To Google</span>
+                    <span className="text-xs">{t('sync_to_google')}</span>
                   </Button>
                 </div>
 
@@ -638,7 +666,7 @@ export default function CalendarConnections({
                   className="w-full gap-2"
                 >
                   <Settings className="h-3 w-3" />
-                  <span className="text-xs">Manage Calendars</span>
+                  <span className="text-xs">{t('manage_calendars')}</span>
                 </Button>
               </div>
             </div>
@@ -654,26 +682,27 @@ export default function CalendarConnections({
           onClick={() => setIsManageOpen(true)}
         >
           <Calendar className="mr-2 h-4 w-4" />
-          Calendars
+          {t('calendars')}
         </Button>
       )}
 
       <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Manage Google Calendars</DialogTitle>
+            <DialogTitle>{t('manage_google_calendars_title')}</DialogTitle>
             <DialogDescription>
-              Choose which Google Calendars to sync with your workspace
+              {t('manage_google_calendars_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
             <div>
-              <h3 className="mb-3 font-medium text-sm">Connected Calendars</h3>
+              <h3 className="mb-3 font-medium text-sm">
+                {t('connected_calendars')}
+              </h3>
               {calendarConnections.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
-                  No calendars connected yet. Add calendars below to start
-                  syncing.
+                  {t('no_calendars_connected')}
                 </p>
               ) : (
                 <div className="max-w-md space-y-2">
@@ -725,15 +754,17 @@ export default function CalendarConnections({
             </div>
 
             <div>
-              <h3 className="mb-3 font-medium text-sm">Add More Calendars</h3>
+              <h3 className="mb-3 font-medium text-sm">
+                {t('add_more_calendars')}
+              </h3>
               {isLoadingCalendars ? (
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading calendars...
+                  {t('loading_calendars')}
                 </div>
               ) : unconnectedCalendars.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
-                  All your Google Calendars are already connected.
+                  {t('all_calendars_connected')}
                 </p>
               ) : (
                 <div className="max-w-md space-y-2">
@@ -754,7 +785,7 @@ export default function CalendarConnections({
                             </p>
                             {calendar.primary && (
                               <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
-                                Primary
+                                {t('primary')}
                               </span>
                             )}
                           </div>
@@ -772,7 +803,7 @@ export default function CalendarConnections({
                         disabled={isAddingCalendar}
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Add
+                        {t('add')}
                       </Button>
                     </div>
                   ))}

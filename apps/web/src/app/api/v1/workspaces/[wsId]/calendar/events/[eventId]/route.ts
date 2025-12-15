@@ -1,11 +1,21 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   decryptEventFromStorage,
   encryptEventForStorage,
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
+
+const updateEventSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  start_at: z.string().datetime().optional(),
+  end_at: z.string().datetime().optional(),
+  color: z.string().optional(),
+  locked: z.boolean().optional(),
+});
 
 interface Params {
   params: Promise<{
@@ -26,7 +36,12 @@ export async function GET(_: Request, { params }: Params) {
       .eq('ws_id', wsId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({}, { status: 404 });
+      }
+      throw error;
+    }
 
     // Decrypt if encrypted
     const decryptedEvent = await decryptEventFromStorage(event, wsId);
@@ -46,7 +61,28 @@ export async function PUT(request: Request, { params }: Params) {
   const { wsId, eventId } = await params;
 
   try {
-    const updates: Partial<CalendarEvent> = await request.json();
+    // Validate UUIDs
+    try {
+      z.string().uuid().parse(wsId);
+      z.string().uuid().parse(eventId);
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid workspace or event ID' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const validationResult = updateEventSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid payload', details: validationResult.error },
+        { status: 400 }
+      );
+    }
+
+    const updates = validationResult.data;
 
     // Get workspace encryption key (read-only, does not auto-create)
     // This ensures encryption only happens if E2EE was explicitly enabled
@@ -168,7 +204,15 @@ export async function PUT(request: Request, { params }: Params) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Event not found or not updated' },
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
 
     // If sensitive fields were updated, we need to return decrypted values
     // For fields not updated, we must decrypt the stored (encrypted) values first

@@ -6,6 +6,8 @@ import type { CalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/set
 import { useMemo } from 'react';
 import { z } from 'zod';
 import {
+  type User as ResolverUser,
+  type Workspace as ResolverWorkspace,
   resolveFirstDayOfWeek,
   resolveTimeFormat,
   resolveTimezone,
@@ -84,18 +86,22 @@ export function useCalendarSettings(
 
   const initialSettings = useMemo((): Partial<CalendarSettings> => {
     const effectiveFirstDay = resolveFirstDayOfWeek(
-      { first_day_of_week: userSettings?.first_day_of_week },
-      { first_day_of_week: workspace.first_day_of_week },
+      // Pass partial user object with only relevant field
+      { first_day_of_week: userSettings?.first_day_of_week } as ResolverUser,
+      // Pass partial workspace object with only relevant field
+      { first_day_of_week: workspace.first_day_of_week } as ResolverWorkspace,
       locale
     );
 
     const effectiveTimezone = resolveTimezone(
-      { timezone: userSettings?.timezone },
-      { timezone: workspace.timezone }
+      // Pass partial objects for timezone resolution
+      { timezone: userSettings?.timezone } as ResolverUser,
+      { timezone: workspace.timezone } as ResolverWorkspace
     );
 
     const effectiveTimeFormat = resolveTimeFormat(
-      { time_format: userSettings?.time_format },
+      // Pass partial user object for time format resolution
+      { time_format: userSettings?.time_format } as ResolverUser,
       locale
     );
 

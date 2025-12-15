@@ -13,13 +13,13 @@ interface CalendarSettings {
   timeFormat: '12h' | '24h';
 }
 
-interface User {
+export interface User {
   timezone?: string | null;
   first_day_of_week?: string | null;
   time_format?: string | null;
 }
 
-interface Workspace {
+export interface Workspace {
   timezone?: string | null;
   first_day_of_week?: string | null;
 }

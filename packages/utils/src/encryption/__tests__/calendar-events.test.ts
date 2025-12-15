@@ -5,6 +5,7 @@ import {
   encryptCalendarEventFields,
   encryptCalendarEvents,
 } from '../encryption-service';
+import type { CalendarEventWithEncryption } from '../types';
 import { generateWorkspaceKey } from './test-helpers';
 
 describe('encryption-service', () => {
@@ -268,7 +269,10 @@ describe('encryption-service', () => {
         ];
 
         // Call decryptCalendarEvents and capture result
-        const result = decryptCalendarEvents(events as any, workspaceKey);
+        const result = decryptCalendarEvents(
+          events as unknown as CalendarEventWithEncryption[],
+          workspaceKey
+        );
 
         // Verify the result is an array with one event
         expect(result).toHaveLength(1);
@@ -286,6 +290,90 @@ describe('encryption-service', () => {
         expect(decryptedEvent.title).toBe('');
         expect(decryptedEvent.description).toBe('');
         expect(decryptedEvent.location).toBeUndefined(); // null location becomes undefined
+      });
+
+      describe('negative tests and degradations', () => {
+        it('should return original ciphertext when decryption fails due to incorrect key', () => {
+          const events = [
+            { title: 'Secret', description: 'Desc', location: 'Loc' },
+          ];
+          const encrypted = encryptCalendarEvents(events, workspaceKey);
+
+          // Use a different key
+          const wrongKey = generateWorkspaceKey();
+
+          // Add metadata
+          const eventsWithMetadata = encrypted.map((e) => ({
+            ...e,
+            id: '1',
+            ws_id: 'ws',
+            start_at: '2024-01-01T10:00:00Z',
+            end_at: '2024-01-01T11:00:00Z',
+            color: 'blue' as const,
+          }));
+
+          const result = decryptCalendarEvents(eventsWithMetadata, wrongKey);
+
+          // Should contain ciphertext (not decrypted, not empty)
+          // The service returns the original ciphertext on failure check
+          expect(result[0]!.title).toBe(encrypted[0]!.title);
+          expect(result[0]!.title).not.toBe('Secret');
+        });
+
+        it('should handle corrupted encrypted fields gracefully', () => {
+          const events = [{ title: 'Secret', description: 'Desc' }];
+          const encrypted = encryptCalendarEvents(events, workspaceKey);
+
+          // Corrupt the title
+          // We modify the middle of the string to invalidate the auth tag or ciphertext
+          const originalTitleCipher = encrypted[0]!.title!;
+          // Ensure we have enough length to splice. Base64 is usually long enough.
+          const corruptedTitle =
+            originalTitleCipher.substring(0, 10) +
+            (originalTitleCipher.charAt(10) === 'A' ? 'B' : 'A') +
+            originalTitleCipher.substring(11);
+
+          const eventsWithMetadata = [
+            {
+              ...encrypted[0],
+              title: corruptedTitle,
+              id: '1',
+              ws_id: 'ws',
+              start_at: '2024-01-01T10:00:00Z',
+              end_at: '2024-01-01T11:00:00Z',
+              color: 'blue' as const,
+              location: undefined,
+            },
+          ];
+
+          const result = decryptCalendarEvents(
+            eventsWithMetadata as unknown as CalendarEventWithEncryption[],
+            workspaceKey
+          );
+
+          // Should return the corrupted string (fallback)
+          expect(result[0]!.title).toBe(corruptedTitle);
+        });
+
+        it('should correct invalid input formats even if marked encrypted', () => {
+          const events = [
+            {
+              id: '1',
+              ws_id: 'ws',
+              start_at: '2024-01-01T10:00:00Z',
+              end_at: '2024-01-01T11:00:00Z',
+              color: 'blue' as const,
+              title: 'too-short', // Short string, not valid encrypted format
+              description: 'not-base-64-!!', // Likely fails invalid length or decode
+              location: null,
+              is_encrypted: true,
+            } as unknown as CalendarEventWithEncryption,
+          ];
+
+          const result = decryptCalendarEvents(events, workspaceKey);
+          // Short string returns as is because length check fails
+          expect(result[0]!.title).toBe('too-short');
+        });
       });
     });
   });

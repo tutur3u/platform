@@ -452,7 +452,11 @@ describe('workspace-encryption', () => {
     it('should return true for valid encrypted data (base64 encoded)', () => {
       const workspaceKey = generateWorkspaceKey();
       const encrypted = encryptCalendarEventFields(
-        { title: 'Test Event', description: 'Description', location: undefined },
+        {
+          title: 'Test Event',
+          description: 'Description',
+          location: undefined,
+        },
         workspaceKey
       );
 
@@ -497,7 +501,9 @@ describe('workspace-encryption', () => {
       };
 
       // Empty title is a valid encrypted state (not a corruption)
-      const titleLooksEncrypted = looksLikeEncryptedData(eventWithEmptyTitle.title);
+      const titleLooksEncrypted = looksLikeEncryptedData(
+        eventWithEmptyTitle.title
+      );
       expect(titleLooksEncrypted).toBe(true);
 
       // This should NOT be flagged as "markedEncryptedButPlaintext"

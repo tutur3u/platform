@@ -10,7 +10,6 @@ import {
   Plus,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -140,6 +139,7 @@ export function QuickTaskDialog({
       setSelectedBoardId('');
       setSelectedListId('');
       setTaskName('');
+      setShowBoardCreation(false);
     }
   }, [open]);
 
@@ -225,9 +225,7 @@ export function QuickTaskDialog({
                   data={{ name: defaultBoardName }}
                   showCancel
                   onCancel={() => setShowBoardCreation(false)}
-                  onFinish={(
-                    data: { id?: string } & Partial<WorkspaceTaskBoard>
-                  ) => {
+                  onFinish={(data) => {
                     setShowBoardCreation(false);
                     // Invalidate boards query to refetch with new board
                     queryClient.invalidateQueries({

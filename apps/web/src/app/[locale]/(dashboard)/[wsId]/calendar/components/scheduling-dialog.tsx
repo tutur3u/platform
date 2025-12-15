@@ -431,6 +431,7 @@ export function SchedulingDialog({
                   disabled={
                     !isScheduleSettingsReady || updateMutation.isPending
                   }
+                  canDecrement={durationHours * 60 + durationMinutes > 0}
                 />
                 <DurationInput
                   value={durationMinutes}
@@ -440,6 +441,7 @@ export function SchedulingDialog({
                   disabled={
                     !isScheduleSettingsReady || updateMutation.isPending
                   }
+                  canDecrement={durationHours * 60 + durationMinutes > 0}
                 />
               </div>
             </div>
@@ -552,6 +554,7 @@ export function SchedulingDialog({
                       }
                       min={15}
                       max={maxSplitMinutes}
+                      canDecrement={minSplitMinutes > 15}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -572,6 +575,7 @@ export function SchedulingDialog({
                       }
                       min={minSplitMinutes}
                       max={480}
+                      canDecrement={maxSplitMinutes > minSplitMinutes}
                     />
                   </div>
                 </div>
