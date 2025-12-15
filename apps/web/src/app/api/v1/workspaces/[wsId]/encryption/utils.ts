@@ -55,10 +55,7 @@ export async function checkE2EEPermission(
     )
     .eq('user_id', user.id)
     .eq('workspace_roles.ws_id', wsId)
-    .eq(
-      'workspace_roles.workspace_role_permissions.permission',
-      'manage_e2ee'
-    )
+    .eq('workspace_roles.workspace_role_permissions.permission', 'manage_e2ee')
     .eq('workspace_roles.workspace_role_permissions.enabled', true)
     .maybeSingle();
 
@@ -92,7 +89,9 @@ export async function checkE2EEPermission(
  * @param value - The string to check
  * @returns true if the string appears to be encrypted
  */
-export function looksLikeEncryptedData(value: string | null | undefined): boolean {
+export function looksLikeEncryptedData(
+  value: string | null | undefined
+): boolean {
   if (typeof value !== 'string' || !value) {
     return false;
   }

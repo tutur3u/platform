@@ -42,11 +42,8 @@ function getSupportedTimezones(): string[] {
   }
 }
 
-interface E2EEStatus {
-  enabled: boolean;
-  hasKey: boolean;
-  reason?: string;
-}
+// Import E2EEStatus type from hooks
+import type { E2EEStatus } from '../hooks/use-e2ee';
 
 export interface RequireWorkspaceTimezoneDialogProps {
   wsId: string;
@@ -89,10 +86,29 @@ export function RequireWorkspaceTimezoneDialog({
   // Fetch E2EE status
   const e2eeQuery = useQuery<E2EEStatus>({
     queryKey: ['workspace-e2ee-status', wsId],
-    queryFn: async () => {
+    queryFn: async (): Promise<E2EEStatus> => {
       const res = await fetch(`/api/v1/workspaces/${wsId}/encryption`);
-      if (!res.ok) return { enabled: false, hasKey: false };
-      return res.json();
+      if (!res.ok) return { status: 'unknown' };
+
+      const data = await res.json();
+
+      // Transform API response to discriminated union
+      if (!data.enabled) {
+        return {
+          status: 'disabled',
+          reason: data.reason || 'E2EE not available',
+        };
+      }
+
+      if (!data.hasKey) {
+        return { status: 'no-key' };
+      }
+
+      return {
+        status: 'enabled',
+        createdAt: data.createdAt,
+        unencryptedCount: data.unencryptedCount ?? 0,
+      };
     },
     staleTime: 0,
     refetchOnMount: 'always',
@@ -165,7 +181,12 @@ export function RequireWorkspaceTimezoneDialog({
 
   const currentTimezone = settingsQuery.data?.timezone;
   const currentFirstDay = settingsQuery.data?.first_day_of_week;
-  const hasE2EE = e2eeQuery.data?.hasKey;
+
+  // Use type guards to check E2EE status
+  const e2eeStatus = e2eeQuery.data;
+  const isE2EEAvailable =
+    e2eeStatus?.status === 'enabled' || e2eeStatus?.status === 'no-key';
+  const hasE2EE = e2eeStatus?.status === 'enabled';
 
   const needsTimezoneGate =
     !currentTimezone ||
@@ -173,7 +194,7 @@ export function RequireWorkspaceTimezoneDialog({
     !currentFirstDay ||
     currentFirstDay === 'auto';
 
-  const needsE2EEGate = e2eeQuery.data?.enabled && !hasE2EE;
+  const needsE2EEGate = isE2EEAvailable && !hasE2EE;
 
   const needsGate = needsTimezoneGate || needsE2EEGate;
 
@@ -209,8 +230,7 @@ export function RequireWorkspaceTimezoneDialog({
   const isTimezoneComplete =
     selectedTimezone && selectedTimezone !== 'auto' && selectedFirstDay;
 
-  const canComplete =
-    isTimezoneComplete && (e2eeQuery.data?.enabled ? hasE2EE : true);
+  const canComplete = isTimezoneComplete && (isE2EEAvailable ? hasE2EE : true);
 
   return (
     <Dialog open={true} onOpenChange={() => {}}>
@@ -307,7 +327,7 @@ export function RequireWorkspaceTimezoneDialog({
           </div>
 
           {/* E2EE Section - Only shown if E2EE is enabled on server */}
-          {e2eeQuery.data?.enabled && (
+          {isE2EEAvailable && (
             <>
               <Separator />
               <div className="space-y-3">

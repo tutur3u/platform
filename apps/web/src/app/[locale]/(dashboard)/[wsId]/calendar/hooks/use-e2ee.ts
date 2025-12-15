@@ -5,12 +5,50 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-export interface E2EEStatus {
-  enabled: boolean;
-  hasKey: boolean;
-  reason?: string;
-  createdAt?: string | null;
-  unencryptedCount?: number;
+// Discriminated union for E2EE status
+// Each variant has a `status` discriminant that determines which properties are available
+export type E2EEStatus =
+  | {
+      status: 'disabled';
+      reason: string;
+    }
+  | {
+      status: 'no-key';
+      // E2EE is enabled on server but workspace has no key yet
+    }
+  | {
+      status: 'enabled';
+      createdAt: string;
+      unencryptedCount: number;
+    }
+  | {
+      status: 'unknown';
+      // Initial/loading state or error state
+    };
+
+// Type guard functions for discriminated union
+export function isE2EEDisabled(
+  status: E2EEStatus | undefined
+): status is Extract<E2EEStatus, { status: 'disabled' }> {
+  return status?.status === 'disabled';
+}
+
+export function isE2EENoKey(
+  status: E2EEStatus | undefined
+): status is Extract<E2EEStatus, { status: 'no-key' }> {
+  return status?.status === 'no-key';
+}
+
+export function isE2EEEnabled(
+  status: E2EEStatus | undefined
+): status is Extract<E2EEStatus, { status: 'enabled' }> {
+  return status?.status === 'enabled';
+}
+
+export function isE2EEUnknown(
+  status: E2EEStatus | undefined
+): status is Extract<E2EEStatus, { status: 'unknown' }> {
+  return status?.status === 'unknown' || status === undefined;
 }
 
 export interface FixProgress {
@@ -36,10 +74,29 @@ export function useE2EE(workspaceId: string) {
     refetch,
   } = useQuery<E2EEStatus>({
     queryKey,
-    queryFn: async () => {
+    queryFn: async (): Promise<E2EEStatus> => {
       const res = await fetch(`/api/v1/workspaces/${workspaceId}/encryption`);
-      if (!res.ok) return { enabled: false, hasKey: false };
-      return res.json();
+      if (!res.ok) return { status: 'unknown' };
+
+      const data = await res.json();
+
+      // Transform API response to discriminated union
+      if (!data.enabled) {
+        return {
+          status: 'disabled',
+          reason: data.reason || 'E2EE not available',
+        };
+      }
+
+      if (!data.hasKey) {
+        return { status: 'no-key' };
+      }
+
+      return {
+        status: 'enabled',
+        createdAt: data.createdAt,
+        unencryptedCount: data.unencryptedCount ?? 0,
+      };
     },
     staleTime: 30 * 1000,
     refetchOnMount: true,
@@ -76,7 +133,9 @@ export function useE2EE(workspaceId: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({
+        queryKey: ['databaseCalendarEvents', workspaceId],
+      });
       toast.success(
         t('e2ee.migration_success', { count: data.migratedCount || 0 })
       );
@@ -143,7 +202,9 @@ export function useE2EE(workspaceId: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({
+        queryKey: ['databaseCalendarEvents', workspaceId],
+      });
       if (data?.fixedCount) {
         toast.success(t('e2ee.fix_success', { count: data.fixedCount }));
       }
@@ -182,9 +243,8 @@ export function useE2EE(workspaceId: string) {
     }
   };
 
-  const hasUnencryptedEvents = Boolean(
-    status?.hasKey && (status?.unencryptedCount ?? 0) > 0
-  );
+  const hasUnencryptedEvents =
+    isE2EEEnabled(status) && status.unencryptedCount > 0;
 
   return {
     status,

@@ -136,6 +136,34 @@ describe('encryption-service', () => {
         decryptField(ciphertext, wrongKey);
       }).toThrow();
     });
+
+    it('should fail decryption when ciphertext is tampered', () => {
+      const plaintext = 'Sensitive Meeting Notes';
+      const ciphertext = encryptField(plaintext, workspaceKey);
+
+      // Tamper with a byte in the middle of the ciphertext
+      // The ciphertext is base64-encoded, so we modify a character in the middle
+      const midIndex = Math.floor(ciphertext.length / 2);
+      const tamperedChar =
+        ciphertext[midIndex] === 'A'
+          ? 'B'
+          : ciphertext[midIndex] === 'a'
+            ? 'b'
+            : 'X';
+      const tamperedCiphertext =
+        ciphertext.slice(0, midIndex) +
+        tamperedChar +
+        ciphertext.slice(midIndex + 1);
+
+      // Ensure we actually changed something
+      expect(tamperedCiphertext).not.toBe(ciphertext);
+      expect(tamperedCiphertext.length).toBe(ciphertext.length);
+
+      // Decryption should fail due to authentication tag mismatch
+      expect(() => {
+        decryptField(tamperedCiphertext, workspaceKey);
+      }).toThrow();
+    });
   });
 
   describe('calendar event field encryption', () => {

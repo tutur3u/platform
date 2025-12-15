@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import type { E2EEStatus, FixProgress } from '../hooks/use-e2ee';
+import { isE2EEEnabled, isE2EENoKey } from '../hooks/use-e2ee';
 
 interface E2EEStatusBadgeProps {
   status: E2EEStatus | undefined;
@@ -55,7 +56,7 @@ export function E2EEStatusBadge({
   }
 
   // E2EE Active - All Encrypted (Click to verify)
-  if (status?.enabled && status?.hasKey && !hasUnencryptedEvents) {
+  if (isE2EEEnabled(status) && !hasUnencryptedEvents) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -97,7 +98,7 @@ export function E2EEStatusBadge({
   }
 
   // Has Unencrypted Events - Show migration button
-  if (hasUnencryptedEvents) {
+  if (hasUnencryptedEvents && isE2EEEnabled(status)) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -116,16 +117,16 @@ export function E2EEStatusBadge({
               )}
               <span className="hidden sm:inline">
                 {t('e2ee.encrypt_events', {
-                  count: status?.unencryptedCount || 0,
+                  count: status.unencryptedCount,
                 })}
               </span>
-              <span className="sm:hidden">{status?.unencryptedCount}</span>
+              <span className="sm:hidden">{status.unencryptedCount}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>
               {t('e2ee.unencrypted_warning', {
-                count: status?.unencryptedCount || 0,
+                count: status.unencryptedCount,
               })}
             </p>
           </TooltipContent>
@@ -134,8 +135,8 @@ export function E2EEStatusBadge({
     );
   }
 
-  // Enable E2EE Button
-  if (status?.enabled && !status?.hasKey) {
+  // Enable E2EE Button - E2EE is available but workspace has no key
+  if (isE2EENoKey(status)) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -164,6 +165,7 @@ export function E2EEStatusBadge({
     );
   }
 
+  // Disabled or unknown state - don't show anything
   return null;
 }
 

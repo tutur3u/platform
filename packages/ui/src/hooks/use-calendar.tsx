@@ -1177,7 +1177,7 @@ export const CalendarProvider = ({
           // Check if there are any significant changes in the event details that require an update
           // For encrypted events, we only check non-encrypted fields (dates, color)
           // since we can't compare encrypted content with plaintext Google data
-          const isEncrypted = (localEvent as any).is_encrypted === true;
+          const isEncrypted = localEvent.is_encrypted === true;
 
           const hasNonEncryptedChanges =
             localEvent.start_at !== gEvent.start_at ||
