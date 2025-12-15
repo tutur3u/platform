@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  Link,
   Loader2,
   Plus,
   RefreshCw,
@@ -258,6 +259,27 @@ export default function CalendarConnections({
   const [isQuickOpen, setIsQuickOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isAddingCalendar, setIsAddingCalendar] = useState(false);
+  const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
+
+  const handleGoogleAuth = async () => {
+    setIsGoogleAuthenticating(true);
+    try {
+      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const { authUrl } = await response.json();
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error initiating Google auth:', error);
+      toast.error('Failed to initiate Google authentication');
+      setIsGoogleAuthenticating(false);
+    }
+  };
 
   const enabledCount = useMemo(
     () => calendarConnections.filter((c) => c.is_enabled).length,
@@ -444,7 +466,25 @@ export default function CalendarConnections({
     }
   };
 
-  if (!hasGoogleAuth) return null;
+  if (!hasGoogleAuth) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleGoogleAuth}
+        disabled={isGoogleAuthenticating}
+        className="gap-2"
+      >
+        {isGoogleAuthenticating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Link className="h-4 w-4" />
+        )}
+        <span className="hidden sm:inline">Connect Google Calendar</span>
+        <span className="sm:hidden">Connect</span>
+      </Button>
+    );
+  }
 
   const showQuickToggle = calendarConnections.length > 0;
 

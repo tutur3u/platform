@@ -265,11 +265,10 @@ export async function POST(
         .select(
           `
           task_id,
-          workspace_calendar_events!inner(id, start_at, end_at, ws_id)
+          workspace_calendar_events!inner(id, start_at, end_at, ws_id, locked)
         `
         )
-        .eq('workspace_calendar_events.ws_id', wsId)
-        .lt('workspace_calendar_events.start_at', now.toISOString()),
+        .eq('workspace_calendar_events.ws_id', wsId),
     ]);
 
     if (habitsResult.error) {
@@ -365,11 +364,19 @@ export async function POST(
         const taskId = te.task_id;
         const startAt = te.workspace_calendar_events?.start_at;
         const endAt = te.workspace_calendar_events?.end_at;
+        const isLocked = te.workspace_calendar_events?.locked;
+
         if (taskId && startAt && endAt) {
-          const duration =
-            (new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000; // minutes
-          const current = taskScheduledMinutes.get(taskId) || 0;
-          taskScheduledMinutes.set(taskId, current + duration);
+          // Include if event is in the past OR if it's future but locked
+          // Locked future events are considered "firmly scheduled" and count towards the requirement
+          const isPast = new Date(startAt).getTime() < now.getTime();
+
+          if (isPast || isLocked) {
+            const duration =
+              (new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000; // minutes
+            const current = taskScheduledMinutes.get(taskId) || 0;
+            taskScheduledMinutes.set(taskId, current + duration);
+          }
         }
       }
     }

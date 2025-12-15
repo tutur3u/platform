@@ -284,13 +284,13 @@ export async function createTask(
           task_id: data.id,
           user_id: user.id,
           total_duration: (task as any).total_duration ?? null,
-          is_splittable: (task as any).is_splittable ?? false,
+          is_splittable: (task as any).is_splittable ?? true,
           min_split_duration_minutes:
             (task as any).min_split_duration_minutes ?? null,
           max_split_duration_minutes:
             (task as any).max_split_duration_minutes ?? null,
           calendar_hours: (task as any).calendar_hours ?? null,
-          auto_schedule: (task as any).auto_schedule ?? false,
+          auto_schedule: (task as any).auto_schedule ?? true,
         },
         {
           onConflict: 'task_id,user_id',

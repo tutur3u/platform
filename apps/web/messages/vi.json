@@ -6485,6 +6485,7 @@
     "days": "ngày",
     "tomorrow": "Ngày mai",
     "upcoming": "sắp tới",
+    "encrypted_events_unavailable": "sự kiện mã hóa không khả dụng",
     "untitled_event": "Sự kiện chưa có tên",
     "in_minutes": "trong {count} phút",
     "in_hours": "trong {count} giờ",

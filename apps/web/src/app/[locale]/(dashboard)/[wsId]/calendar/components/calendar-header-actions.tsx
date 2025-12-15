@@ -70,13 +70,11 @@ export function CalendarHeaderActions({
 
       {enableSmartScheduling && <SmartScheduleButton wsId={workspaceId} />}
 
-      {experimentalGoogleToken && (
-        <CalendarConnections
-          wsId={workspaceId}
-          initialConnections={calendarConnections}
-          hasGoogleAuth={!!experimentalGoogleToken}
-        />
-      )}
+      <CalendarConnections
+        wsId={workspaceId}
+        initialConnections={calendarConnections}
+        hasGoogleAuth={!!experimentalGoogleToken}
+      />
     </div>
   );
 }

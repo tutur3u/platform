@@ -289,7 +289,7 @@ export function decryptCalendarEventFields(
  * Check if encryption is enabled (master key is configured)
  */
 export function isEncryptionEnabled(): boolean {
-  return !!process.env.ENCRYPTION_MASTER_KEY;
+  return !!process.env.ENCRYPTION_MASTER_KEY?.trim();
 }
 
 /**
@@ -297,7 +297,7 @@ export function isEncryptionEnabled(): boolean {
  * @throws Error if master key is not configured
  */
 export function getMasterKey(): string {
-  const masterKey = process.env.ENCRYPTION_MASTER_KEY;
+  const masterKey = process.env.ENCRYPTION_MASTER_KEY?.trim();
   if (!masterKey) {
     throw new Error(
       'ENCRYPTION_MASTER_KEY environment variable is not configured'

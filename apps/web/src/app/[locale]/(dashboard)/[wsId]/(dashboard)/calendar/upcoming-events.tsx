@@ -1,4 +1,10 @@
-import { ArrowRight, Calendar, CalendarClock, Sparkles } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  Calendar,
+  CalendarClock,
+  Lock,
+  Sparkles,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -39,8 +45,22 @@ export default async function UpcomingCalendarEvents({
     return null;
   }
 
-  // Decrypt events if they are encrypted
-  const decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
+  // Decrypt events with robust error handling
+  let decryptionFailed = false;
+  let encryptedEventsCount = 0;
+  let decryptedEvents: typeof allEvents = [];
+
+  try {
+    decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
+  } catch (decryptError) {
+    console.error('Failed to decrypt calendar events:', decryptError);
+    decryptionFailed = true;
+    // Count encrypted events and filter to only unencrypted ones as fallback
+    encryptedEventsCount = (allEvents || []).filter(
+      (e) => e.is_encrypted
+    ).length;
+    decryptedEvents = (allEvents || []).filter((e) => !e.is_encrypted);
+  }
 
   // Filter out all-day events and limit to 10
   const upcomingEvents =
@@ -63,6 +83,12 @@ export default async function UpcomingCalendarEvents({
               <span className="font-medium text-dynamic-cyan text-xs">
                 {upcomingEvents.length} {t('upcoming')}
               </span>
+              {decryptionFailed && encryptedEventsCount > 0 && (
+                <span className="flex items-center gap-1 text-dynamic-orange text-xs">
+                  <Lock className="h-3 w-3" />
+                  {encryptedEventsCount} {t('encrypted_events_unavailable')}
+                </span>
+              )}
             </div>
           </CardTitle>
           {showNavigation && (

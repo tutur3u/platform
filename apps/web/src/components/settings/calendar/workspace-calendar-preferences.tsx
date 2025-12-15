@@ -18,8 +18,8 @@ import { useTranslations } from 'next-intl';
 import {
   detectLocaleFirstDay,
   detectSystemTimezone,
-  resolveTimezone,
   resolveFirstDayOfWeek,
+  resolveTimezone,
 } from '../../../lib/calendar-settings-resolver';
 
 type WorkspaceCalendarPreferencesProps = {
@@ -57,7 +57,7 @@ export function WorkspaceCalendarPreferences({
 
   // Fetch user calendar settings to show overrides
   const { data: userSettings, isLoading: isLoadingUser } = useQuery({
-    queryKey: ['user-calendar-settings'],
+    queryKey: ['users', 'calendar-settings'],
     queryFn: async () => {
       const res = await fetch('/api/v1/users/calendar-settings');
       if (!res.ok) throw new Error('Failed to fetch user calendar settings');
@@ -89,7 +89,9 @@ export function WorkspaceCalendarPreferences({
         queryKey: ['workspace-calendar-settings', wsId],
       });
       queryClient.invalidateQueries({ queryKey: ['workspace', wsId] });
-      queryClient.invalidateQueries({ queryKey: ['user-calendar-settings'] });
+      queryClient.invalidateQueries({
+        queryKey: ['users', 'calendar-settings'],
+      });
       toast.success(t('common.success'), {
         description: 'Workspace calendar settings updated successfully',
       });
@@ -236,10 +238,7 @@ export function WorkspaceCalendarPreferences({
           onValueChange={handleFirstDayChange}
           disabled={updateCalendarSettings.isPending}
         >
-          <SelectTrigger
-            id="workspace-first-day"
-            className="w-full md:w-[300px]"
-          >
+          <SelectTrigger id="workspace-first-day" className="w-full md:w-75">
             <SelectValue placeholder={t('settings-appearance.auto')} />
           </SelectTrigger>
           <SelectContent>

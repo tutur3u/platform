@@ -42,7 +42,7 @@ export function useCalendarSettings(
   locale: string
 ): UseCalendarSettingsResult {
   const { data: userSettings } = useQuery({
-    queryKey: ['user-calendar-settings'],
+    queryKey: ['users', 'calendar-settings'],
     queryFn: async () => {
       try {
         const res = await fetch('/api/v1/users/calendar-settings');

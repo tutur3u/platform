@@ -133,7 +133,9 @@ export async function PUT(request: Request, { params }: Params) {
       if (updates.location !== undefined) {
         updatePayload.location = updates.location;
       }
-      // Keep is_encrypted = false (no encryption)
+      // Explicitly set is_encrypted = false to ensure previously-encrypted
+      // events are correctly marked as plaintext after rewrite
+      updatePayload.is_encrypted = false;
     }
 
     // Handle non-sensitive fields - only include if provided
