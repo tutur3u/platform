@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import {
   decryptEventsFromStorage,
   encryptEventForStorage,
+  getWorkspaceKey,
 } from '@/lib/workspace-encryption';
 
 interface Params {
@@ -66,12 +67,20 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const event: Omit<CalendarEvent, 'id'> = await request.json();
 
-    // Encrypt sensitive fields
-    const encryptedFields = await encryptEventForStorage(wsId, {
-      title: event.title || '',
-      description: event.description || '',
-      location: event.location,
-    });
+    // Get workspace encryption key (read-only, does not auto-create)
+    // This ensures encryption only happens if E2EE was explicitly enabled
+    const workspaceKey = await getWorkspaceKey(wsId);
+
+    // Encrypt sensitive fields only if encryption is already enabled
+    const encryptedFields = await encryptEventForStorage(
+      wsId,
+      {
+        title: event.title || '',
+        description: event.description || '',
+        location: event.location,
+      },
+      workspaceKey
+    );
 
     const { data, error } = await supabase
       .from('workspace_calendar_events')
