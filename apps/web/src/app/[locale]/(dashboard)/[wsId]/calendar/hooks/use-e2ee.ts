@@ -58,7 +58,25 @@ export interface FixProgress {
   message: string;
 }
 
-export function useE2EE(workspaceId: string) {
+/**
+ * Return type for the useE2EE hook
+ */
+export interface UseE2EEReturn {
+  status: E2EEStatus | undefined;
+  isLoading: boolean;
+  isVerifying: boolean;
+  fixProgress: FixProgress | null;
+  hasUnencryptedEvents: boolean;
+  enable: () => void;
+  isEnabling: boolean;
+  migrate: () => void;
+  isMigrating: boolean;
+  fix: () => void;
+  isFixing: boolean;
+  verify: () => Promise<void>;
+}
+
+export function useE2EE(workspaceId: string): UseE2EEReturn {
   const t = useTranslations('calendar');
   const queryClient = useQueryClient();
 

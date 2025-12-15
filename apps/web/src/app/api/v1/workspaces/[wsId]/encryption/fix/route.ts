@@ -224,6 +224,7 @@ export async function POST(_: Request, { params }: Params) {
       'Content-Type': 'text/plain; charset=utf-8',
       'Transfer-Encoding': 'chunked',
       'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
     },
   });
 }

@@ -39,7 +39,10 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { encryptEventForStorage } from '@/lib/workspace-encryption';
+import {
+  encryptEventForStorage,
+  getWorkspaceKey,
+} from '@/lib/workspace-encryption';
 import { fetchHourSettings } from './task-scheduler';
 
 // ============================================================================
@@ -900,6 +903,9 @@ async function scheduleHabitsPhase(
   const rangeEnd = new Date(now);
   rangeEnd.setDate(rangeEnd.getDate() + windowDays);
 
+  // Pre-fetch workspace key once for all encryption operations
+  const workspaceKey = await getWorkspaceKey(wsId);
+
   for (const habit of sortedHabits) {
     logger.log(
       'habit',
@@ -1162,11 +1168,15 @@ async function scheduleHabitsPhase(
 
       // Create calendar event
       // Encrypt title/description if encryption is enabled for this workspace
-      const eventData = await encryptEventForStorage(wsId, {
-        title: habit.name,
-        description: habit.description || '',
-        location: undefined,
-      });
+      const eventData = await encryptEventForStorage(
+        wsId,
+        {
+          title: habit.name,
+          description: habit.description || '',
+          location: undefined,
+        },
+        workspaceKey
+      );
 
       const { data: event, error: eventError } = await supabase
         .from('workspace_calendar_events')
@@ -1315,6 +1325,9 @@ async function scheduleTasksPhase(
   });
 
   const now = new Date();
+
+  // Pre-fetch workspace key once for all encryption operations
+  const workspaceKey = await getWorkspaceKey(wsId);
 
   for (const task of sortedTasks) {
     logger.log(
@@ -1667,11 +1680,15 @@ async function scheduleTasksPhase(
 
         // Create calendar event
         // Encrypt title/description if encryption is enabled for this workspace
-        const taskEventData = await encryptEventForStorage(wsId, {
-          title: eventTitle,
-          description: task.description || '',
-          location: undefined,
-        });
+        const taskEventData = await encryptEventForStorage(
+          wsId,
+          {
+            title: eventTitle,
+            description: task.description || '',
+            location: undefined,
+          },
+          workspaceKey
+        );
 
         const { data: event, error: eventError } = await supabase
           .from('workspace_calendar_events')
@@ -1827,6 +1844,9 @@ async function rescheduleBumpedHabits(
     );
   }
 
+  // Pre-fetch workspace key once for all encryption operations
+  const workspaceKey = await getWorkspaceKey(wsId);
+
   for (const bumped of bumpedEvents) {
     const { habit, occurrence, originalEvent } = bumped;
     logger.log(
@@ -1955,11 +1975,15 @@ async function rescheduleBumpedHabits(
 
     // Create new calendar event
     // Encrypt title/description if encryption is enabled for this workspace
-    const rescheduledEventData = await encryptEventForStorage(wsId, {
-      title: habit.name,
-      description: habit.description || '',
-      location: undefined,
-    });
+    const rescheduledEventData = await encryptEventForStorage(
+      wsId,
+      {
+        title: habit.name,
+        description: habit.description || '',
+        location: undefined,
+      },
+      workspaceKey
+    );
 
     const { data: event, error: eventError } = await supabase
       .from('workspace_calendar_events')

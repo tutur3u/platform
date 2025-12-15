@@ -88,7 +88,16 @@ export function RequireWorkspaceTimezoneDialog({
     queryKey: ['workspace-e2ee-status', wsId],
     queryFn: async (): Promise<E2EEStatus> => {
       const res = await fetch(`/api/v1/workspaces/${wsId}/encryption`);
-      if (!res.ok) return { status: 'unknown' };
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        console.error(
+          `[E2EE] Failed to fetch encryption status (${res.status}):`,
+          errorText
+        );
+        // Return unknown status on error - allows the UI to continue
+        // while still logging the issue for debugging
+        return { status: 'unknown' };
+      }
 
       const data = await res.json();
 

@@ -57,6 +57,12 @@ export async function GET(_: Request, { params }: Params) {
 
   const adminClient = await createAdminClient();
 
+  // Get total count of events for accurate reporting
+  const { count: totalEventsCount } = await adminClient
+    .from('workspace_calendar_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('ws_id', wsId);
+
   // Get sample of events to verify encryption
   const { data: events } = await adminClient
     .from('workspace_calendar_events')
@@ -67,7 +73,8 @@ export async function GET(_: Request, { params }: Params) {
   if (!events || events.length === 0) {
     return NextResponse.json({
       enabled: true,
-      totalEvents: 0,
+      totalEvents: totalEventsCount ?? 0,
+      sampledEventsCount: 0,
       encryptedCount: 0,
       unencryptedCount: 0,
       verificationStatus: 'no_events',
@@ -111,7 +118,8 @@ export async function GET(_: Request, { params }: Params) {
 
   return NextResponse.json({
     enabled: true,
-    totalEvents: events.length,
+    totalEvents: totalEventsCount ?? events.length,
+    sampledEventsCount: events.length,
     trueEncrypted,
     falseEncrypted,
     markedEncryptedButPlaintext,

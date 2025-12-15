@@ -106,10 +106,5 @@ export function looksLikeEncryptedData(
     return false;
   }
 
-  // Encrypted data shouldn't contain spaces (plaintext indicator)
-  if (value.includes(' ')) {
-    return false;
-  }
-
   return true;
 }

@@ -216,6 +216,24 @@ export async function DELETE(_: Request, { params }: Params) {
 
   const adminClient = await createAdminClient();
 
+  // Check if encrypted events exist - prevent deletion that would cause data loss
+  const { count: encryptedCount } = await adminClient
+    .from('workspace_calendar_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('ws_id', wsId)
+    .eq('is_encrypted', true);
+
+  if (encryptedCount && encryptedCount > 0) {
+    return NextResponse.json(
+      {
+        error: 'Cannot delete encryption key while encrypted events exist',
+        encryptedCount,
+        hint: 'Decrypt all events first or delete them manually before removing the encryption key.',
+      },
+      { status: 409 }
+    );
+  }
+
   const { error: deleteError } = await adminClient
     .from('workspace_encryption_keys')
     .delete()

@@ -8,7 +8,7 @@ import {
   resolveFirstDayOfWeek,
   resolveTimeFormat,
   resolveTimezone,
-} from '../../../../../../lib/calendar-settings-resolver';
+} from '@/lib/calendar-settings-resolver';
 
 interface UserCalendarSettings {
   timezone: string;

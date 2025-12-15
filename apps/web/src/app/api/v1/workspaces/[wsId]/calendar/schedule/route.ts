@@ -528,6 +528,7 @@ async function createEventsFromPreview(
     task_id: string | null;
     locked: boolean;
     color: string | null;
+    is_encrypted: boolean | null;
     occurrence_date?: string;
     junction_type?: 'habit' | 'task';
   }
@@ -542,7 +543,7 @@ async function createEventsFromPreview(
       habit_id,
       occurrence_date,
       event_id,
-      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, ws_id)
+      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, is_encrypted, ws_id)
     `)
     .eq('workspace_calendar_events.ws_id', wsId)
     .eq('workspace_calendar_events.locked', false)
@@ -562,6 +563,7 @@ async function createEventsFromPreview(
           task_id: null,
           locked: event.locked,
           color: event.color,
+          is_encrypted: event.is_encrypted,
           occurrence_date: link.occurrence_date,
           junction_type: 'habit',
         });
@@ -575,7 +577,7 @@ async function createEventsFromPreview(
     .select(`
       task_id,
       event_id,
-      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, ws_id)
+      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, is_encrypted, ws_id)
     `)
     .eq('workspace_calendar_events.ws_id', wsId)
     .eq('workspace_calendar_events.locked', false)
@@ -595,6 +597,7 @@ async function createEventsFromPreview(
           task_id: link.task_id,
           locked: event.locked,
           color: event.color,
+          is_encrypted: event.is_encrypted,
           junction_type: 'task',
         });
       }
@@ -690,22 +693,25 @@ async function createEventsFromPreview(
       // ============================================================================
       usedEventIds.add(existingEvent.id);
 
-      // Encrypt preview event title to compare with existing (which is already encrypted)
-      // This ensures we compare ciphertext to ciphertext, avoiding unnecessary updates
-      const encryptedPreviewTitle = workspaceKey
-        ? (
-            await encryptEventForStorage(
-              wsId,
-              { title: previewEvent.title, description: '' },
-              workspaceKey
-            )
-          ).title
-        : previewEvent.title;
+      // Compare titles correctly based on encryption status
+      // For encrypted events: compare encrypted preview title to encrypted existing title
+      // For plaintext events: compare plaintext directly
+      let titleMatches = false;
+      if (existingEvent.is_encrypted && workspaceKey) {
+        // Note: Due to random IV, encrypted titles will never match exactly
+        // (each encryption produces different ciphertext even for same plaintext)
+        // So encrypted events will always be marked as needing update on title
+        // This is acceptable for schedule events since times/colors usually change anyway
+        titleMatches = false;
+      } else {
+        // Compare plaintext titles directly
+        titleMatches = existingEvent.title === previewEvent.title;
+      }
 
       const needsUpdate =
         existingEvent.start_at !== previewEvent.start_at ||
         existingEvent.end_at !== previewEvent.end_at ||
-        existingEvent.title !== encryptedPreviewTitle ||
+        !titleMatches ||
         existingEvent.color !== (previewEvent.color || 'BLUE');
 
       if (needsUpdate) {

@@ -469,11 +469,20 @@ async function incrementalActiveSync(
       const QUERY_BATCH_SIZE = 100;
       for (let i = 0; i < googleEventIds.length; i += QUERY_BATCH_SIZE) {
         const batchIds = googleEventIds.slice(i, i + QUERY_BATCH_SIZE);
-        const { data: existingEvents } = await supabase
+        const { data: existingEvents, error: batchError } = await supabase
           .from('workspace_calendar_events')
           .select('google_event_id, is_encrypted')
           .eq('ws_id', wsId)
           .in('google_event_id', batchIds);
+
+        if (batchError) {
+          console.error(
+            `[incremental-active-sync] Failed to query encrypted events batch (wsId: ${wsId}, batchSize: ${batchIds.length}):`,
+            batchError.message
+          );
+          // Continue to next batch - this is best-effort caching
+          continue;
+        }
 
         if (existingEvents) {
           existingEvents
