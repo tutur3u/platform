@@ -61,28 +61,79 @@ export async function PUT(request: Request, { params }: Params) {
     // Build update object with only the fields that were provided
     const updatePayload: Record<string, unknown> = {};
 
-    // Handle sensitive fields - only encrypt if they're being updated
-    if (hasSensitiveUpdates) {
-      const encryptedFields = await encryptEventForStorage(
-        wsId,
-        {
-          title: updates.title ?? '',
-          description: updates.description ?? '',
-          location: updates.location,
-        },
-        workspaceKey
-      );
+    // Handle sensitive fields with encryption
+    // CRITICAL: When E2EE is enabled and the existing event is NOT encrypted,
+    // we must encrypt ALL sensitive fields (not just the updated ones) to avoid
+    // a mixed state where is_encrypted=true but some fields remain as plaintext.
+    if (hasSensitiveUpdates && workspaceKey) {
+      // Fetch the existing event to check its encryption state
+      const { data: existingEvent, error: fetchError } = await supabase
+        .from('workspace_calendar_events')
+        .select('title, description, location, is_encrypted')
+        .eq('id', eventId)
+        .eq('ws_id', wsId)
+        .single();
 
-      if (updates.title !== undefined) {
+      if (fetchError) throw fetchError;
+
+      const isCurrentlyEncrypted = existingEvent?.is_encrypted === true;
+
+      if (isCurrentlyEncrypted) {
+        // Event is already encrypted - only encrypt the updated fields
+        const encryptedFields = await encryptEventForStorage(
+          wsId,
+          {
+            title: updates.title ?? '',
+            description: updates.description ?? '',
+            location: updates.location,
+          },
+          workspaceKey
+        );
+
+        if (updates.title !== undefined) {
+          updatePayload.title = encryptedFields.title;
+        }
+        if (updates.description !== undefined) {
+          updatePayload.description = encryptedFields.description;
+        }
+        if (updates.location !== undefined) {
+          updatePayload.location = encryptedFields.location;
+        }
+        // Keep is_encrypted = true (already encrypted)
+        updatePayload.is_encrypted = true;
+      } else {
+        // Event is NOT encrypted but E2EE is enabled for workspace
+        // Must encrypt ALL sensitive fields to avoid mixed plaintext/encrypted state
+        // Decrypt existing fields first (they're plaintext, so just use as-is)
+        const encryptedFields = await encryptEventForStorage(
+          wsId,
+          {
+            title: updates.title ?? existingEvent?.title ?? '',
+            description:
+              updates.description ?? existingEvent?.description ?? '',
+            location: updates.location ?? existingEvent?.location ?? undefined,
+          },
+          workspaceKey
+        );
+
+        // Always update all sensitive fields when transitioning to encrypted
         updatePayload.title = encryptedFields.title;
+        updatePayload.description = encryptedFields.description;
+        updatePayload.location = encryptedFields.location;
+        updatePayload.is_encrypted = true;
+      }
+    } else if (hasSensitiveUpdates) {
+      // No encryption key - just update the fields as plaintext
+      if (updates.title !== undefined) {
+        updatePayload.title = updates.title;
       }
       if (updates.description !== undefined) {
-        updatePayload.description = encryptedFields.description;
+        updatePayload.description = updates.description;
       }
       if (updates.location !== undefined) {
-        updatePayload.location = encryptedFields.location;
+        updatePayload.location = updates.location;
       }
-      updatePayload.is_encrypted = encryptedFields.is_encrypted;
+      // Keep is_encrypted = false (no encryption)
     }
 
     // Handle non-sensitive fields - only include if provided

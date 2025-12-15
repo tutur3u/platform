@@ -128,8 +128,18 @@ describe('encryption-service', () => {
       const key = generateWorkspaceKey();
       const encrypted = await encryptWorkspaceKey(key, TEST_MASTER_KEY);
 
-      // Corrupt the encrypted data
-      const corrupted = encrypted.slice(0, 10) + 'X' + encrypted.slice(11);
+      // Corrupt the encrypted data by modifying the auth tag (last 16 bytes)
+      // This guarantees decryption will fail because AES-GCM uses auth tag for integrity
+      const decoded = Buffer.from(encrypted, 'base64');
+      // Flip bits in the auth tag (last 16 bytes) - decoded is guaranteed to have min size
+      const lastIdx = decoded.length - 1;
+      const secondLastIdx = decoded.length - 2;
+      decoded.writeUInt8(decoded.readUInt8(lastIdx) ^ 0xff, lastIdx);
+      decoded.writeUInt8(
+        decoded.readUInt8(secondLastIdx) ^ 0xff,
+        secondLastIdx
+      );
+      const corrupted = decoded.toString('base64');
 
       await expect(
         decryptWorkspaceKey(corrupted, TEST_MASTER_KEY)
