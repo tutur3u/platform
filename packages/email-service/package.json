@@ -25,7 +25,7 @@
     "@upstash/redis": "^1.35.8",
     "isomorphic-dompurify": "^2.34.0",
     "juice": "^11.0.3",
-    "zod": "^4.1.13"
+    "zod": "^4.2.0"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

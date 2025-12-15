@@ -43,7 +43,7 @@
     "react-dom": "^19.2.3",
     "streamdown": "^1.6.10",
     "uuid": "^13.0.0",
-    "zod": "^4.1.13"
+    "zod": "^4.2.0"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",

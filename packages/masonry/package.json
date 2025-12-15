@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/react": "^16.3.1",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.0.2",
     "@types/react": "^19.2.7",

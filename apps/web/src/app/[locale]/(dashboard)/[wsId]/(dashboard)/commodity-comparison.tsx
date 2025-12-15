@@ -406,7 +406,9 @@ const CommodityComparison = ({
                           borderRadius: '6px',
                           padding: '8px 12px',
                         }}
-                        formatter={(value: number) => [formatCurrency(value)]}
+                        formatter={(value: number | undefined) => [
+                          formatCurrency(value ?? 0),
+                        ]}
                         labelStyle={{ color: colors.tooltip.text }}
                       />
                       <Legend
@@ -474,7 +476,9 @@ const CommodityComparison = ({
                           borderRadius: '6px',
                           padding: '8px 12px',
                         }}
-                        formatter={(value: number) => [formatCurrency(value)]}
+                        formatter={(value: number | undefined) => [
+                          formatCurrency(value ?? 0),
+                        ]}
                         labelStyle={{ color: colors.tooltip.text }}
                       />
                       <Legend

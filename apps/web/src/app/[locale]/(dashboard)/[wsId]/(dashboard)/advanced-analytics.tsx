@@ -464,12 +464,15 @@ const MetricsChart = ({
                 borderRadius: '8px',
                 padding: '12px 16px',
               }}
-              formatter={(value: number, name: string) => [
-                name === 'directionalAccuracy' ||
-                name === 'turningPointAccuracy'
-                  ? (value * 100).toFixed(3)
-                  : value.toFixed(3),
-                name === 'rmse'
+              formatter={(
+                value: number | undefined,
+                name: string | undefined
+              ) => [
+                (name ?? '') === 'directionalAccuracy' ||
+                (name ?? '') === 'turningPointAccuracy'
+                  ? ((value ?? 0) * 100).toFixed(3)
+                  : (value ?? 0).toFixed(3),
+                (name ?? '')
                   ? 'RMSE'
                   : name === 'directionalAccuracy'
                     ? t('aurora.directional_accuracy')

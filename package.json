@@ -1,13 +1,13 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.8",
+    "@biomejs/biome": "^2.3.9",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20251214.1",
+    "@typescript/native-preview": "^7.0.0-dev.20251215.1",
     "@vitest/coverage-v8": "^4.0.15",
     "turbo": "^2.6.3",
     "typescript": "^5.9.3",
-    "vite": "^7.2.7",
+    "vite": "^7.3.0",
     "vitest": "^4.0.15"
   },
   "engines": {

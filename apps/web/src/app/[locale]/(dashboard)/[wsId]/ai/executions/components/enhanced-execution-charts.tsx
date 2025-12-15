@@ -598,9 +598,14 @@ export function EnhancedExecutionCharts({
                             border: `1px solid ${colors.tooltip.border}`,
                             color: colors.tooltip.text,
                           }}
-                          formatter={(value: number, name: string) => [
-                            name === 'cost' ? formatCost(value) : value,
-                            name === 'cost' ? t('cost') : t('executions'),
+                          formatter={(
+                            value: number | undefined,
+                            name: string | undefined
+                          ) => [
+                            (name ?? '') === 'cost'
+                              ? formatCost(value ?? 0)
+                              : (value ?? 0),
+                            name ?? '',
                           ]}
                           labelFormatter={(value) =>
                             new Date(value).toLocaleDateString()
@@ -746,9 +751,12 @@ export function EnhancedExecutionCharts({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(value: number, name: string) => [
-                          formatCost(value),
-                          name === 'cost'
+                        formatter={(
+                          value: number | undefined,
+                          name: string | undefined
+                        ) => [
+                          formatCost(value ?? 0),
+                          (name ?? '') === 'cost'
                             ? t('total_cost')
                             : t('avg_cost_per_execution'),
                         ]}
@@ -912,9 +920,14 @@ export function EnhancedExecutionCharts({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(value: number, name: string) => [
-                          name === 'totalCost' ? formatCost(value) : value,
-                          name === 'totalCost'
+                        formatter={(
+                          value: number | undefined,
+                          name: string | undefined
+                        ) => [
+                          (name ?? '') === 'totalCost'
+                            ? formatCost(value ?? 0)
+                            : (value ?? 0),
+                          (name ?? '') === 'totalCost'
                             ? t('total_cost')
                             : t('executions'),
                         ]}
