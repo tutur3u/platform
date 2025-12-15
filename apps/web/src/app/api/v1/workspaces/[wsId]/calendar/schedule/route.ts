@@ -690,10 +690,22 @@ async function createEventsFromPreview(
       // ============================================================================
       usedEventIds.add(existingEvent.id);
 
+      // Encrypt preview event title to compare with existing (which is already encrypted)
+      // This ensures we compare ciphertext to ciphertext, avoiding unnecessary updates
+      const encryptedPreviewTitle = workspaceKey
+        ? (
+            await encryptEventForStorage(
+              wsId,
+              { title: previewEvent.title, description: '' },
+              workspaceKey
+            )
+          ).title
+        : previewEvent.title;
+
       const needsUpdate =
         existingEvent.start_at !== previewEvent.start_at ||
         existingEvent.end_at !== previewEvent.end_at ||
-        existingEvent.title !== previewEvent.title ||
+        existingEvent.title !== encryptedPreviewTitle ||
         existingEvent.color !== (previewEvent.color || 'BLUE');
 
       if (needsUpdate) {

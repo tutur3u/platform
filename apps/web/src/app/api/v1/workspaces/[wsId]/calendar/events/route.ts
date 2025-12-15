@@ -78,6 +78,7 @@ export async function POST(request: Request, { params }: Params) {
       .insert({
         title: encryptedFields.title,
         description: encryptedFields.description,
+        location: encryptedFields.location,
         start_at: event.start_at,
         end_at: event.end_at,
         color: event.color || 'blue',

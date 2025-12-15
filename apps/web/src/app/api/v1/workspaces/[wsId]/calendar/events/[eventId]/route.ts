@@ -59,6 +59,7 @@ export async function PUT(request: Request, { params }: Params) {
       .update({
         title: encryptedFields.title,
         description: encryptedFields.description,
+        location: encryptedFields.location,
         start_at: updates.start_at,
         end_at: updates.end_at,
         color: updates.color,
