@@ -9995,6 +9995,7 @@ export type Database = {
           google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
+          is_encrypted: boolean;
           location: string | null;
           locked: boolean;
           start_at: string;
@@ -10010,6 +10011,7 @@ export type Database = {
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
+          is_encrypted?: boolean;
           location?: string | null;
           locked?: boolean;
           start_at: string;
@@ -10025,6 +10027,7 @@ export type Database = {
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
+          is_encrypted?: boolean;
           location?: string | null;
           locked?: boolean;
           start_at?: string;
@@ -11025,6 +11028,48 @@ export type Database = {
             foreignKeyName: 'workspace_email_invites_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_encryption_keys: {
+        Row: {
+          created_at: string;
+          encrypted_key: string;
+          id: string;
+          key_version: number;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          encrypted_key: string;
+          id?: string;
+          key_version?: number;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          encrypted_key?: string;
+          id?: string;
+          key_version?: number;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_encryption_keys_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_encryption_keys_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
@@ -16959,7 +17004,8 @@ export type Database = {
         | 'manage_time_tracking_requests'
         | 'bypass_time_tracking_request_approval'
         | 'manage_changelog'
-        | 'manage_subscription';
+        | 'manage_subscription'
+        | 'manage_e2ee';
     };
     CompositeTypes: {
       email_block_status: {
@@ -17542,6 +17588,7 @@ export const Constants = {
         'bypass_time_tracking_request_approval',
         'manage_changelog',
         'manage_subscription',
+        'manage_e2ee',
       ],
     },
   },

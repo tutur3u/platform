@@ -1,9 +1,5 @@
 'use client';
 
-import {
-  detectLocaleTimeFormat,
-  detectSystemTimezone,
-} from '@/lib/calendar-settings-resolver';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Label } from '@tuturuuu/ui/label';
@@ -17,10 +13,14 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
+import {
+  detectLocaleTimeFormat,
+  detectSystemTimezone,
+} from '@/lib/calendar-settings-resolver';
 
 export default function AppearanceSettings() {
   const t = useTranslations();
@@ -32,7 +32,7 @@ export default function AppearanceSettings() {
 
   // Fetch user calendar settings
   const { data: calendarSettings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ['user-calendar-settings'],
+    queryKey: ['users', 'calendar-settings'],
     queryFn: async () => {
       const res = await fetch('/api/v1/users/calendar-settings');
       if (!res.ok) throw new Error('Failed to fetch calendar settings');
@@ -61,7 +61,9 @@ export default function AppearanceSettings() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-calendar-settings'] });
+      queryClient.invalidateQueries({
+        queryKey: ['users', 'calendar-settings'],
+      });
       // Also invalidate workspace calendar settings to refresh override badges
       queryClient.invalidateQueries({
         queryKey: ['workspace-calendar-settings'],
@@ -169,7 +171,7 @@ export default function AppearanceSettings() {
           onValueChange={handleLocaleChange}
           disabled={isPending}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-50">
             <SelectValue placeholder={t('common.select-language')} />
           </SelectTrigger>
           <SelectContent>
@@ -190,7 +192,7 @@ export default function AppearanceSettings() {
           onValueChange={handleTimezoneChange}
           disabled={isLoadingSettings || updateCalendarSettings.isPending}
         >
-          <SelectTrigger className="w-[300px]">
+          <SelectTrigger className="w-75">
             <SelectValue placeholder={t('settings-appearance.auto-detect')} />
           </SelectTrigger>
           <SelectContent>
@@ -217,7 +219,7 @@ export default function AppearanceSettings() {
           onValueChange={handleFirstDayChange}
           disabled={isLoadingSettings || updateCalendarSettings.isPending}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-50">
             <SelectValue placeholder={t('settings-appearance.auto')} />
           </SelectTrigger>
           <SelectContent>
@@ -248,7 +250,7 @@ export default function AppearanceSettings() {
           onValueChange={handleTimeFormatChange}
           disabled={isLoadingSettings || updateCalendarSettings.isPending}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-50">
             <SelectValue placeholder={t('settings-appearance.auto')} />
           </SelectTrigger>
           <SelectContent>

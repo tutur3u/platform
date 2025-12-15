@@ -24,6 +24,11 @@ import {
   type HourSettings,
   type PreviewEvent,
 } from '@/lib/calendar/unified-scheduler/preview-engine';
+import {
+  decryptField,
+  encryptEventForStorage,
+  getWorkspaceKey,
+} from '@/lib/workspace-encryption';
 
 interface RouteParams {
   wsId: string;
@@ -503,6 +508,9 @@ async function createEventsFromPreview(
     reused: 0,
   };
 
+  // Get workspace encryption key (if encryption is enabled)
+  const workspaceKey = await getWorkspaceKey(wsId);
+
   // Calculate the scheduling window
   const windowStart = new Date();
   const windowEnd = new Date();
@@ -521,6 +529,7 @@ async function createEventsFromPreview(
     task_id: string | null;
     locked: boolean;
     color: string | null;
+    is_encrypted: boolean | null;
     occurrence_date?: string;
     junction_type?: 'habit' | 'task';
   }
@@ -535,7 +544,7 @@ async function createEventsFromPreview(
       habit_id,
       occurrence_date,
       event_id,
-      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, ws_id)
+      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, is_encrypted, ws_id)
     `)
     .eq('workspace_calendar_events.ws_id', wsId)
     .eq('workspace_calendar_events.locked', false)
@@ -555,6 +564,7 @@ async function createEventsFromPreview(
           task_id: null,
           locked: event.locked,
           color: event.color,
+          is_encrypted: event.is_encrypted,
           occurrence_date: link.occurrence_date,
           junction_type: 'habit',
         });
@@ -568,7 +578,7 @@ async function createEventsFromPreview(
     .select(`
       task_id,
       event_id,
-      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, ws_id)
+      workspace_calendar_events!inner(id, title, start_at, end_at, locked, color, is_encrypted, ws_id)
     `)
     .eq('workspace_calendar_events.ws_id', wsId)
     .eq('workspace_calendar_events.locked', false)
@@ -588,6 +598,7 @@ async function createEventsFromPreview(
           task_id: link.task_id,
           locked: event.locked,
           color: event.color,
+          is_encrypted: event.is_encrypted,
           junction_type: 'task',
         });
       }
@@ -683,20 +694,57 @@ async function createEventsFromPreview(
       // ============================================================================
       usedEventIds.add(existingEvent.id);
 
+      // Compare titles correctly based on encryption status
+      // For encrypted events: decrypt both and compare plaintext
+      // For plaintext events: compare directly
+      let titleMatches = false;
+      if (existingEvent.is_encrypted && workspaceKey) {
+        // Decrypt both titles and compare plaintext
+        try {
+          const decryptedExisting = decryptField(
+            existingEvent.title || '',
+            workspaceKey
+          );
+          // Preview title is already plaintext, compare directly
+          titleMatches = decryptedExisting === previewEvent.title;
+        } catch {
+          // On decryption error, fall back to assuming titles don't match
+          // This ensures the event gets updated with fresh encryption
+          titleMatches = false;
+        }
+      } else {
+        // Compare plaintext titles directly
+        titleMatches = existingEvent.title === previewEvent.title;
+      }
+
       const needsUpdate =
         existingEvent.start_at !== previewEvent.start_at ||
         existingEvent.end_at !== previewEvent.end_at ||
-        existingEvent.title !== previewEvent.title ||
+        !titleMatches ||
         existingEvent.color !== (previewEvent.color || 'BLUE');
 
       if (needsUpdate) {
-        const { error: updateError } = await supabase
-          .from('workspace_calendar_events')
-          .update({
+        // Encrypt the event data if encryption is enabled
+        const eventData = await encryptEventForStorage(
+          wsId,
+          {
             title: previewEvent.title,
+            description: '', // Schedule events don't have descriptions
             start_at: previewEvent.start_at,
             end_at: previewEvent.end_at,
             color: previewEvent.color || 'BLUE',
+          },
+          workspaceKey
+        );
+
+        const { error: updateError } = await supabase
+          .from('workspace_calendar_events')
+          .update({
+            title: eventData.title,
+            start_at: eventData.start_at,
+            end_at: eventData.end_at,
+            color: eventData.color || 'BLUE',
+            is_encrypted: eventData.is_encrypted,
           })
           .eq('id', existingEvent.id);
 
@@ -759,13 +807,27 @@ async function createEventsFromPreview(
         `[Schedule] Creating new event: "${previewEvent.title}" (${previewEvent.type})`
       );
 
+      // Encrypt the event data if encryption is enabled
+      const eventData = await encryptEventForStorage(
+        wsId,
+        {
+          title: previewEvent.title,
+          description: '', // Schedule events don't have descriptions
+          start_at: previewEvent.start_at,
+          end_at: previewEvent.end_at,
+          color: previewEvent.color || 'BLUE',
+        },
+        workspaceKey
+      );
+
       const insertData = {
-        title: previewEvent.title,
-        start_at: previewEvent.start_at,
-        end_at: previewEvent.end_at,
+        title: eventData.title,
+        start_at: eventData.start_at,
+        end_at: eventData.end_at,
         ws_id: wsId,
-        color: previewEvent.color || 'BLUE',
+        color: eventData.color || 'BLUE',
         locked: false, // Auto-scheduled events are not locked
+        is_encrypted: eventData.is_encrypted,
       };
 
       const { data: newEvent, error: insertError } = await supabase

@@ -18,6 +18,10 @@ import {
 } from '@tuturuuu/ai/scheduling';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { CalendarHoursType, TaskWithScheduling } from '@tuturuuu/types';
+import {
+  encryptEventForStorage,
+  getWorkspaceKey,
+} from '@/lib/workspace-encryption';
 import { scheduleWorkspace } from './unified-scheduler';
 
 type TimeBlock = {
@@ -267,6 +271,9 @@ export async function scheduleTask(
   // Fetch hour settings (returns defaults if none configured)
   const hourSettings = await fetchHourSettings(supabase, wsId);
 
+  // Get workspace encryption key (read-only, does not auto-create)
+  const workspaceKey = await getWorkspaceKey(wsId);
+
   const totalMinutes = (task.total_duration ?? 0) * 60;
   const now = new Date();
 
@@ -466,14 +473,27 @@ export async function scheduleTask(
         : task.name || 'Task';
 
     // Create calendar event
+    // Encrypt title/description only if encryption is already enabled for this workspace
+    // (passing workspaceKey prevents auto-creation of encryption keys)
+    const encryptedData = await encryptEventForStorage(
+      wsId,
+      {
+        title: eventTitle,
+        description: task.description || '',
+        location: undefined,
+      },
+      workspaceKey
+    );
+
     // Note: task_id is optional - only include if the column exists
     const eventData: Record<string, unknown> = {
       ws_id: wsId,
-      title: eventTitle,
-      description: task.description || '',
+      title: encryptedData.title,
+      description: encryptedData.description,
       start_at: slot.start.toISOString(),
       end_at: slot.end.toISOString(),
       color: getColorForHourType(task.calendar_hours),
+      is_encrypted: encryptedData.is_encrypted,
     };
 
     const { data: event, error: eventError } = await supabase

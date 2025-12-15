@@ -15,6 +15,9 @@ export interface CalendarEvent {
   google_event_id?: string;
   google_calendar_id?: string; // The Google Calendar ID this event belongs to (e.g., 'primary', 'work@gmail.com')
 
+  // Properties for E2EE (end-to-end encryption)
+  is_encrypted?: boolean;
+
   // Properties for multi-day events
   _originalId?: string;
   _isMultiDay?: boolean;

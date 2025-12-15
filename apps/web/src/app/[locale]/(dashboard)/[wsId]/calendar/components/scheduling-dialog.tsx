@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Briefcase,
   CalendarClock,
+  ChevronDown,
+  ChevronRight,
   Clock,
   Coffee,
   Handshake,
@@ -26,7 +28,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 
 // Calendar hours type for task scheduling (matches database enum)
@@ -43,32 +45,88 @@ const CALENDAR_HOURS_OPTIONS: Array<{
   { value: 'meeting_hours', label: 'Meeting', icon: Handshake },
 ];
 
-// Duration input component
+// Duration input component with inline editing
 function DurationInput({
   value,
   onChange,
-  min = 0,
-  max = 999,
   step = 1,
   label,
   disabled,
+  canDecrement = true,
+  min = 0,
+  max = 999,
 }: {
   value: number;
   onChange: (value: number) => void;
-  min?: number;
-  max?: number;
   step?: number;
   label: string;
   disabled?: boolean;
+  /** Whether decrement button should be enabled (independent of disabled prop) */
+  canDecrement?: boolean;
+  /** Minimum value for typed input validation */
+  min?: number;
+  /** Maximum value for typed input validation */
+  max?: number;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(String(value));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync input value when value prop changes (and not editing)
+  useEffect(() => {
+    if (!isEditing) {
+      setInputValue(String(value));
+    }
+  }, [value, isEditing]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   const handleDecrement = () => {
-    const newValue = Math.max(min, value - step);
-    onChange(newValue);
+    // Let the onChange handler decide what to do (allows wrap-around)
+    onChange(value - step);
   };
 
   const handleIncrement = () => {
-    const newValue = Math.min(max, value + step);
-    onChange(newValue);
+    // Let the onChange handler decide what to do (allows wrap-around)
+    onChange(value + step);
+  };
+
+  const handleInputSubmit = () => {
+    // 1. Handle empty input (reset to min or 0)
+    if (inputValue.trim() === '') {
+      onChange(min);
+      setIsEditing(false);
+      return;
+    }
+
+    // 2. Parse input and handle numbers
+    const parsed = parseInt(inputValue, 10);
+
+    // If it's not a number (e.g. "-"), don't call onChange,
+    // and don't exit editing mode so user can fix it.
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+
+    // 3. It's a valid number, clamp and save
+    const clamped = Math.max(min, Math.min(max, parsed));
+    onChange(clamped);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleInputSubmit();
+    } else if (e.key === 'Escape') {
+      setInputValue(String(value));
+      setIsEditing(false);
+    }
   };
 
   return (
@@ -79,21 +137,40 @@ function DurationInput({
         size="icon"
         className="h-7 w-7 shrink-0"
         onClick={handleDecrement}
-        disabled={disabled || value <= min}
+        disabled={disabled || !canDecrement}
       >
         -
       </Button>
-      <div className="flex min-w-12 items-center justify-center gap-1 rounded-md border bg-background px-2 py-1 text-sm">
-        <span className="font-medium tabular-nums">{value}</span>
-        <span className="text-muted-foreground text-xs">{label}</span>
-      </div>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="number"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={handleInputSubmit}
+          onKeyDown={handleKeyDown}
+          className="h-7 w-16 rounded-md border bg-background px-2 text-center font-medium text-sm tabular-nums outline-none ring-1 ring-primary focus:ring-2"
+          min={min}
+          max={max}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => !disabled && setIsEditing(true)}
+          disabled={disabled}
+          className="flex min-w-12 cursor-text items-center justify-center gap-1 rounded-md border bg-background px-2 py-1 text-sm transition-colors hover:border-primary hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="font-medium tabular-nums">{value}</span>
+          <span className="text-muted-foreground text-xs">{label}</span>
+        </button>
+      )}
       <Button
         type="button"
         variant="outline"
         size="icon"
         className="h-7 w-7 shrink-0"
         onClick={handleIncrement}
-        disabled={disabled || value >= max}
+        disabled={disabled}
       >
         +
       </Button>
@@ -125,16 +202,20 @@ export function SchedulingDialog({
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Local state for form fields
-  const [durationHours, setDurationHours] = useState(0);
+  // Track whether we've initialized from fetched data to avoid re-initializing
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Local state for form fields - defaults optimized for quick scheduling
+  const [durationHours, setDurationHours] = useState(1); // Default to 1 hour
   const [durationMinutes, setDurationMinutes] = useState(0);
-  const [isSplittable, setIsSplittable] = useState(false);
+  const [isSplittable, setIsSplittable] = useState(true); // Default to splittable
+  const [isSplitSettingsExpanded, setIsSplitSettingsExpanded] = useState(false);
   const [minSplitMinutes, setMinSplitMinutes] = useState(30);
   const [maxSplitMinutes, setMaxSplitMinutes] = useState(120);
   const [calendarHours, setCalendarHours] = useState<CalendarHoursType | null>(
-    null
+    'personal_hours' // Default to personal hours
   );
-  const [autoSchedule, setAutoSchedule] = useState(false);
+  const [autoSchedule, setAutoSchedule] = useState(true); // Default to auto-schedule
 
   // Always read per-user settings (works for both personal and workspace calendars).
   const {
@@ -166,22 +247,55 @@ export function SchedulingDialog({
       ? true
       : !isLoadingPersonalSchedule && !isFetchingPersonalSchedule;
 
-  // Initialize form state when task changes
+  // Reset initialization state and form defaults when dialog opens with a new task
   useEffect(() => {
-    if (!task) return;
+    if (open) {
+      setHasInitialized(false);
+      // Reset to defaults
+      setDurationHours(1);
+      setDurationMinutes(0);
+      setAutoSchedule(true);
+      setIsSplittable(true);
+      setMinSplitMinutes(30);
+      setMaxSplitMinutes(120);
+      setCalendarHours('personal_hours');
+      setIsSplitSettingsExpanded(false);
+    }
+  }, [open]);
+
+  // Initialize form state when task changes or data is loaded
+  useEffect(() => {
+    if (!task || !isScheduleSettingsReady || hasInitialized) return;
+
     const source = personalSchedule?.task;
 
-    if (!source) return;
+    // Mark as initialized - we'll use defaults if no saved settings
+    setHasInitialized(true);
 
-    const totalMinutes = (source.total_duration ?? 0) * 60;
-    setDurationHours(Math.floor(totalMinutes / 60));
-    setDurationMinutes(totalMinutes % 60);
-    setIsSplittable(!!source.is_splittable);
-    setMinSplitMinutes(source.min_split_duration_minutes ?? 30);
-    setMaxSplitMinutes(source.max_split_duration_minutes ?? 120);
-    setCalendarHours((source.calendar_hours as any) ?? null);
-    setAutoSchedule(!!source.auto_schedule);
-  }, [task, personalSchedule?.task]);
+    // If we have saved settings, use them; otherwise keep the defaults
+    if (source) {
+      const totalMinutes = (source.total_duration ?? 1) * 60; // Default 1 hour if null
+      setDurationHours(Math.floor(totalMinutes / 60) || 1);
+      setDurationMinutes(totalMinutes % 60);
+      // Use saved values - only override defaults if explicitly set (not null/undefined)
+      // Check for null/undefined explicitly since false and 0 are valid saved values
+      if (source.is_splittable !== null && source.is_splittable !== undefined) {
+        setIsSplittable(source.is_splittable);
+      }
+      setMinSplitMinutes(source.min_split_duration_minutes ?? 30);
+      setMaxSplitMinutes(source.max_split_duration_minutes ?? 120);
+      if (
+        source.calendar_hours !== null &&
+        source.calendar_hours !== undefined
+      ) {
+        setCalendarHours(source.calendar_hours);
+      }
+      if (source.auto_schedule !== null && source.auto_schedule !== undefined) {
+        setAutoSchedule(source.auto_schedule);
+      }
+    }
+    // If no source, the defaults from useState are already set correctly
+  }, [task, personalSchedule?.task, isScheduleSettingsReady, hasInitialized]);
 
   // Update mutation
   const updateMutation = useMutation({
@@ -230,7 +344,7 @@ export function SchedulingDialog({
       router.refresh();
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to update scheduling settings');
     },
   });
@@ -257,11 +371,45 @@ export function SchedulingDialog({
     updateMutation,
   ]);
 
-  // Round minutes to 15-minute intervals
-  const handleMinutesChange = (value: number) => {
-    // Snap to 15-minute intervals
-    const snapped = Math.round(value / 15) * 15;
-    setDurationMinutes(snapped);
+  // Round minutes to 15-minute intervals, handle wrap-around to hours
+  const handleMinutesChange = useCallback(
+    (value: number) => {
+      // Snap to 15-minute intervals
+      const snapped = Math.round(value / 15) * 15;
+
+      // If >= 60, convert excess minutes to hours
+      if (snapped >= 60) {
+        const extraHours = Math.floor(snapped / 60);
+        const remainingMinutes = snapped % 60;
+        // Set both states atomically (React 18+ batches these automatically)
+        setDurationMinutes(remainingMinutes);
+        setDurationHours((h) => h + extraHours);
+      } else if (snapped < 0) {
+        // Decrementing below 0 minutes - need to borrow from hours
+        // Read current hours via callback to ensure we have latest value
+        // and compute both new values before setting
+        if (durationHours > 0) {
+          // Wrap to 45 minutes and decrement hour
+          setDurationMinutes(45);
+          setDurationHours((h) => Math.max(0, h - 1));
+        } else {
+          // Can't go below 0 hours and 0 minutes - clamp to 0
+          setDurationMinutes(0);
+        }
+      } else {
+        setDurationMinutes(snapped);
+      }
+    },
+    [durationHours]
+  );
+
+  // Handle hours change, prevent going below 0
+  const handleHoursChange = (value: number) => {
+    if (value < 0) {
+      setDurationHours(0);
+    } else {
+      setDurationHours(value);
+    }
   };
 
   if (!task) return null;
@@ -282,162 +430,203 @@ export function SchedulingDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {!isScheduleSettingsReady && (
-            <div className="flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        {!isScheduleSettingsReady ? (
+          <div className="flex items-center justify-center gap-2 py-12">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="text-muted-foreground text-sm">
               Loading scheduling settings...
-            </div>
-          )}
-
-          {/* Duration */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              Estimated Duration
-              <span className="text-dynamic-red">*</span>
-            </Label>
-            <div className="flex items-center gap-3">
-              <DurationInput
-                value={durationHours}
-                onChange={setDurationHours}
-                min={0}
-                max={999}
-                label="h"
-                disabled={!isScheduleSettingsReady || updateMutation.isPending}
-              />
-              <DurationInput
-                value={durationMinutes}
-                onChange={handleMinutesChange}
-                min={0}
-                max={45}
-                step={15}
-                label="m"
-                disabled={!isScheduleSettingsReady || updateMutation.isPending}
-              />
-            </div>
+            </span>
           </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Estimated Duration
+                <span className="text-dynamic-red">*</span>
+              </Label>
+              <div className="flex items-center gap-3">
+                <DurationInput
+                  value={durationHours}
+                  onChange={handleHoursChange}
+                  label="h"
+                  disabled={
+                    !isScheduleSettingsReady || updateMutation.isPending
+                  }
+                  canDecrement={durationHours * 60 + durationMinutes > 0}
+                />
+                <DurationInput
+                  value={durationMinutes}
+                  onChange={handleMinutesChange}
+                  step={15}
+                  label="m"
+                  disabled={
+                    !isScheduleSettingsReady || updateMutation.isPending
+                  }
+                  canDecrement={durationHours * 60 + durationMinutes > 0}
+                />
+              </div>
+            </div>
 
-          {/* Calendar Hours Type */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5 text-sm">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-              Hour Type
-              <span className="text-dynamic-red">*</span>
-            </Label>
-            <div className="inline-flex rounded-md border p-0.5">
-              {CALENDAR_HOURS_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                const isSelected = calendarHours === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setCalendarHours(option.value)}
-                    disabled={
-                      !isScheduleSettingsReady || updateMutation.isPending
+            {/* Calendar Hours Type */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                Hour Type
+                <span className="text-dynamic-red">*</span>
+              </Label>
+              <div className="inline-flex rounded-md border p-0.5">
+                {CALENDAR_HOURS_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = calendarHours === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setCalendarHours(option.value)}
+                      disabled={
+                        !isScheduleSettingsReady || updateMutation.isPending
+                      }
+                      className={cn(
+                        'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors',
+                        isSelected
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Splittable */}
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() =>
+                      setIsSplitSettingsExpanded(!isSplitSettingsExpanded)
                     }
-                    className={cn(
-                      'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors',
-                      isSelected
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    )}
+                    disabled={
+                      !isSplittable ||
+                      !isScheduleSettingsReady ||
+                      updateMutation.isPending
+                    }
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Splittable */}
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <Label
-              htmlFor="splittable"
-              className="flex cursor-pointer items-center gap-2"
-            >
-              <Scissors className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="text-sm">Splittable</div>
-                <div className="text-muted-foreground text-xs">
-                  Allow breaking into multiple sessions
+                    {isSplitSettingsExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Label
+                    htmlFor="splittable"
+                    className="flex cursor-pointer items-center gap-2"
+                  >
+                    <Scissors className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-sm">Splittable</div>
+                      <div className="text-muted-foreground text-xs">
+                        Allow breaking into multiple sessions
+                      </div>
+                    </div>
+                  </Label>
                 </div>
-              </div>
-            </Label>
-            <Switch
-              id="splittable"
-              checked={isSplittable}
-              onCheckedChange={setIsSplittable}
-              disabled={!isScheduleSettingsReady || updateMutation.isPending}
-            />
-          </div>
-
-          {/* Min/Max Split Duration */}
-          {isSplittable && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-xs">
-                  Min split
-                </Label>
-                <DurationInput
-                  value={minSplitMinutes}
-                  onChange={(value) =>
-                    setMinSplitMinutes(Math.min(value, maxSplitMinutes))
-                  }
-                  min={15}
-                  max={maxSplitMinutes}
-                  step={15}
-                  label="min"
+                <Switch
+                  id="splittable"
+                  checked={isSplittable}
+                  onCheckedChange={(checked) => {
+                    setIsSplittable(checked);
+                    if (checked) {
+                      setIsSplitSettingsExpanded(true);
+                    } else {
+                      setIsSplitSettingsExpanded(false);
+                    }
+                  }}
                   disabled={
                     !isScheduleSettingsReady || updateMutation.isPending
                   }
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-xs">
-                  Max split
-                </Label>
-                <DurationInput
-                  value={maxSplitMinutes}
-                  onChange={(value) =>
-                    setMaxSplitMinutes(Math.max(value, minSplitMinutes))
-                  }
-                  min={minSplitMinutes}
-                  max={480}
-                  step={15}
-                  label="min"
-                  disabled={
-                    !isScheduleSettingsReady || updateMutation.isPending
-                  }
-                />
-              </div>
-            </div>
-          )}
 
-          {/* Auto-schedule */}
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <Label
-              htmlFor="auto-schedule"
-              className="flex cursor-pointer items-center gap-2"
-            >
-              <Zap className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="text-sm">Auto-schedule</div>
-                <div className="text-muted-foreground text-xs">
-                  Automatically find time slots
+              {/* Min/Max Split Duration */}
+              {isSplittable && isSplitSettingsExpanded && (
+                <div className="ml-8 grid grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs">
+                      Min split
+                    </Label>
+                    <DurationInput
+                      value={minSplitMinutes}
+                      onChange={(value) =>
+                        setMinSplitMinutes(
+                          Math.max(15, Math.min(value, maxSplitMinutes))
+                        )
+                      }
+                      step={15}
+                      label="min"
+                      disabled={
+                        !isScheduleSettingsReady || updateMutation.isPending
+                      }
+                      min={15}
+                      max={maxSplitMinutes}
+                      canDecrement={minSplitMinutes > 15}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs">
+                      Max split
+                    </Label>
+                    <DurationInput
+                      value={maxSplitMinutes}
+                      onChange={(value) =>
+                        setMaxSplitMinutes(
+                          Math.min(480, Math.max(value, minSplitMinutes))
+                        )
+                      }
+                      step={15}
+                      label="min"
+                      disabled={
+                        !isScheduleSettingsReady || updateMutation.isPending
+                      }
+                      min={minSplitMinutes}
+                      max={480}
+                      canDecrement={maxSplitMinutes > minSplitMinutes}
+                    />
+                  </div>
                 </div>
-              </div>
-            </Label>
-            <Switch
-              id="auto-schedule"
-              checked={autoSchedule}
-              onCheckedChange={setAutoSchedule}
-              disabled={!isScheduleSettingsReady || updateMutation.isPending}
-            />
+              )}
+            </div>
+
+            {/* Auto-schedule */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <Label
+                htmlFor="auto-schedule"
+                className="flex cursor-pointer items-center gap-2"
+              >
+                <Zap className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm">Auto-schedule</div>
+                  <div className="text-muted-foreground text-xs">
+                    Automatically find time slots
+                  </div>
+                </div>
+              </Label>
+              <Switch
+                id="auto-schedule"
+                checked={autoSchedule}
+                onCheckedChange={setAutoSchedule}
+                disabled={!isScheduleSettingsReady || updateMutation.isPending}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <DialogFooter>
           <Button

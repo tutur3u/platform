@@ -6,128 +6,56 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types';
-import { CreateEventButton } from '@tuturuuu/ui/legacy/calendar/create-event-button';
-import type { CalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import {
-  resolveFirstDayOfWeek,
-  resolveTimeFormat,
-  resolveTimezone,
-} from '../../../../../lib/calendar-settings-resolver';
-import CalendarConnections from './components/calendar-connections';
+import { useState } from 'react';
+import { CalendarHeaderActions } from './components/calendar-header-actions';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
-import { SmartScheduleButton } from './components/smart-schedule-button';
+import { useCalendarSettings, useE2EE } from './hooks';
+
+interface CalendarClientPageProps {
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  calendarConnections: CalendarConnection[];
+  workspace: Workspace;
+  enableSmartScheduling: boolean;
+}
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
   calendarConnections,
   workspace,
   enableSmartScheduling,
-}: {
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  calendarConnections: CalendarConnection[];
-  workspace: Workspace;
-  enableSmartScheduling: boolean;
-}) {
+}: CalendarClientPageProps) {
   const t = useTranslations('calendar');
   const locale = useLocale();
 
   const [calendarGateCompleted, setCalendarGateCompleted] = useState(false);
 
-  const needsCalendarGate =
-    !calendarGateCompleted &&
-    (!workspace.timezone ||
-      workspace.timezone === 'auto' ||
-      !workspace.first_day_of_week ||
-      workspace.first_day_of_week === 'auto');
+  // Custom hooks for E2EE and calendar settings
+  const e2ee = useE2EE(workspace.id);
+  const { initialSettings, needsCalendarGate: settingsNeedGate } =
+    useCalendarSettings(workspace, locale);
 
-  // Fetch user calendar settings to resolve effective settings
-  const { data: userSettings } = useQuery({
-    queryKey: ['user-calendar-settings'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/users/calendar-settings');
-      if (!res.ok) return null;
-      return res.json() as Promise<{
-        timezone: string;
-        first_day_of_week: string;
-        time_format: string;
-      }>;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Build initial settings using resolved values (user > workspace > auto)
-  const initialSettings = useMemo((): Partial<CalendarSettings> => {
-    const effectiveFirstDay = resolveFirstDayOfWeek(
-      { first_day_of_week: userSettings?.first_day_of_week },
-      { first_day_of_week: workspace.first_day_of_week },
-      locale
-    );
-
-    const effectiveTimezone = resolveTimezone(
-      { timezone: userSettings?.timezone },
-      { timezone: workspace.timezone }
-    );
-
-    const effectiveTimeFormat = resolveTimeFormat(
-      { time_format: userSettings?.time_format },
-      locale
-    );
-
-    return {
-      appearance: {
-        firstDayOfWeek: effectiveFirstDay,
-        showWeekends: true,
-        theme: 'system',
-        timeFormat: effectiveTimeFormat,
-        defaultView: 'week',
-        showWeekNumbers: false,
-        showDeclinedEvents: false,
-        compactView: false,
-      },
-      timezone: {
-        timezone: effectiveTimezone,
-        showSecondaryTimezone: false,
-      },
-    };
-  }, [
-    userSettings?.first_day_of_week,
-    userSettings?.timezone,
-    userSettings?.time_format,
-    workspace.first_day_of_week,
-    workspace.timezone,
-    locale,
-  ]);
+  const needsCalendarGate = !calendarGateCompleted && settingsNeedGate;
 
   const extras = (
-    <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-      <CreateEventButton variant="header" label={t('new-event')} />
-      {enableSmartScheduling && <SmartScheduleButton wsId={workspace.id} />}
-      {experimentalGoogleToken && (
-        <>
-          <CalendarConnections
-            wsId={workspace.id}
-            initialConnections={calendarConnections}
-            hasGoogleAuth={!!experimentalGoogleToken}
-          />
-        </>
-      )}
-      {/* {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />} */}
-      {/* {DEV_MODE && (
-        <AutoScheduleComprehensiveDialog wsId={workspace.id}>
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 md:w-fit"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Auto-Schedule
-          </Button>
-        </AutoScheduleComprehensiveDialog>
-      )} */}
-    </div>
+    <CalendarHeaderActions
+      workspaceId={workspace.id}
+      e2eeStatus={e2ee.status}
+      e2eeLoading={e2ee.isLoading}
+      isVerifying={e2ee.isVerifying}
+      isFixing={e2ee.isFixing}
+      isMigrating={e2ee.isMigrating}
+      isEnabling={e2ee.isEnabling}
+      fixProgress={e2ee.fixProgress}
+      hasUnencryptedEvents={e2ee.hasUnencryptedEvents ?? false}
+      onVerify={e2ee.verify}
+      onMigrate={e2ee.migrate}
+      onEnable={e2ee.enable}
+      enableSmartScheduling={enableSmartScheduling}
+      experimentalGoogleToken={experimentalGoogleToken}
+      calendarConnections={calendarConnections}
+    />
   );
 
   return (
@@ -152,7 +80,6 @@ export default function CalendarClientPage({
         extras={extras}
         initialSettings={initialSettings}
       />
-      {/*{DEV_MODE && <SyncDebugPanel />}*/}
     </>
   );
 }

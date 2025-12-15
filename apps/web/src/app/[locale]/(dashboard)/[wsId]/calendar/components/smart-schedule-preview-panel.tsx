@@ -375,6 +375,9 @@ export function SmartSchedulePreviewPanel({
       queryClient.invalidateQueries({
         queryKey: ['scheduled-events-batch'],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['task-schedule-batch'],
+      });
 
       // Close panel immediately so user sees actual calendar
       onClose();
@@ -629,7 +632,7 @@ ${previewData.warnings.join('\n') || 'None'}
           'fixed z-50 rounded-xl border bg-background/95 shadow-2xl backdrop-blur-sm',
           // Responsive positioning
           'right-4 bottom-4 left-4 sm:right-6 sm:bottom-6 sm:left-auto',
-          'sm:w-[380px] sm:max-w-[calc(100vw-3rem)]'
+          'sm:w-95 sm:max-w-[calc(100vw-3rem)]'
         )}
       >
         {/* Header */}

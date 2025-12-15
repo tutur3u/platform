@@ -531,7 +531,6 @@ export const CalendarProvider = ({
   const addEvent = useCallback(
     async (event: Omit<CalendarEvent, 'id'>) => {
       if (!ws) throw new Error('No workspace selected');
-      const supabase = createClient();
 
       // Round start and end times to nearest 15-minute interval
       const startDate = roundToNearest15Minutes(new Date(event.start_at));
@@ -557,23 +556,30 @@ export const CalendarProvider = ({
         return duplicates[0];
       }
 
-      // No duplicates, proceed with creating the event
-      const { data, error } = await supabase
-        .from('workspace_calendar_events')
-        .insert({
-          title: event.title || '',
-          description: event.description || '',
-          start_at: startDate.toISOString(),
-          end_at: endDate.toISOString(),
-          color: eventColor as SupportedColor,
-          location: event.location || '',
-          ws_id: ws?.id ?? '',
-          locked: true,
-        })
-        .select()
-        .single();
+      // No duplicates, proceed with creating the event via API (handles E2EE encryption)
+      const response = await fetch(
+        `/api/v1/workspaces/${ws.id}/calendar/events`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: event.title || '',
+            description: event.description || '',
+            start_at: startDate.toISOString(),
+            end_at: endDate.toISOString(),
+            color: eventColor as SupportedColor,
+            location: event.location || '',
+            locked: true,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create event');
+      }
+
+      const data = (await response.json()) as CalendarEvent;
 
       // Refresh the query cache after adding an event
       refresh();
@@ -732,11 +738,8 @@ export const CalendarProvider = ({
       }
 
       try {
-        // Perform the actual update
-        const supabase = createClient();
-
         // Clean up the update data to ensure no undefined values and exclude system fields
-        const cleanUpdateData: any = {
+        const cleanUpdateData: Partial<CalendarEvent> = {
           ...(updateData.title !== undefined && { title: updateData.title }),
           ...(updateData.description !== undefined && {
             description: updateData.description,
@@ -752,24 +755,32 @@ export const CalendarProvider = ({
           ...(updateData.locked !== undefined && { locked: updateData.locked }),
         };
 
-        // Remove system fields that shouldn't be updated (just in case they're present)
-        delete cleanUpdateData.id;
-        delete cleanUpdateData.ws_id;
-        delete cleanUpdateData.google_event_id;
+        // ws is guaranteed to be defined here (validated above at line 732)
+        const wsId = ws!.id;
 
-        const { data, error } = await supabase
-          .from('workspace_calendar_events')
-          .update(cleanUpdateData)
-          .eq('id', eventId)
-          .select()
-          .single();
+        // Use API endpoint which handles E2EE encryption
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/calendar/events/${eventId}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cleanUpdateData),
+          }
+        );
 
-        if (error) {
-          throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update event');
         }
+
+        // The API response includes task_id from the database which is not in CalendarEvent type
+        const data = (await response.json()) as CalendarEvent & {
+          task_id?: string | null;
+        };
 
         // If event times changed, sync task's total_duration
         if (data && (cleanUpdateData.start_at || cleanUpdateData.end_at)) {
+          const supabase = createClient();
           await syncTaskDurationAfterEventChange(
             supabase,
             eventId,
@@ -778,7 +789,7 @@ export const CalendarProvider = ({
               end_at: data.end_at,
               task_id: data.task_id,
             },
-            { calendarWsId: ws?.id, isPersonalCalendar: !!ws?.personal }
+            { calendarWsId: wsId, isPersonalCalendar: !!ws?.personal }
           );
           // Invalidate task-related queries to refresh sidebar
           queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
@@ -817,7 +828,7 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws?.id, ws?.personal, queryClient, onTaskScheduled]);
+  }, [refresh, events, ws, queryClient, onTaskScheduled]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -1175,28 +1186,52 @@ export const CalendarProvider = ({
 
         if (localEvent) {
           // Check if there are any significant changes in the event details that require an update
-          const hasChanges =
-            localEvent.title !== gEvent.title ||
-            localEvent.description !== (gEvent.description || '') ||
+          // For encrypted events, we only check non-encrypted fields (dates, color)
+          // since we can't compare encrypted content with plaintext Google data
+          const isEncrypted = localEvent.is_encrypted === true;
+
+          const hasNonEncryptedChanges =
             localEvent.start_at !== gEvent.start_at ||
             localEvent.end_at !== gEvent.end_at ||
-            localEvent.color !== gEvent.color ||
-            localEvent.location !== (gEvent.location || '');
+            localEvent.color !== gEvent.color;
+
+          const hasContentChanges =
+            !isEncrypted &&
+            (localEvent.title !== gEvent.title ||
+              localEvent.description !== (gEvent.description || '') ||
+              localEvent.location !== (gEvent.location || ''));
+
+          const hasChanges = hasNonEncryptedChanges || hasContentChanges;
 
           // Only update if there are actual changes
           if (hasChanges) {
             changesMade = true;
-            eventsToUpdate.push({
-              id: localEvent.id,
-              data: {
-                title: gEvent.title,
-                description: gEvent.description || '',
-                start_at: gEvent.start_at,
-                end_at: gEvent.end_at,
-                color: gEvent.color || 'BLUE',
-                location: gEvent.location || '',
-              },
-            });
+
+            // For encrypted events, only update non-encrypted fields (dates, color)
+            // to preserve the encrypted title/description/location
+            if (isEncrypted) {
+              eventsToUpdate.push({
+                id: localEvent.id,
+                data: {
+                  start_at: gEvent.start_at,
+                  end_at: gEvent.end_at,
+                  color: gEvent.color || 'BLUE',
+                  // Don't update title, description, location - they are encrypted
+                },
+              });
+            } else {
+              eventsToUpdate.push({
+                id: localEvent.id,
+                data: {
+                  title: gEvent.title,
+                  description: gEvent.description || '',
+                  start_at: gEvent.start_at,
+                  end_at: gEvent.end_at,
+                  color: gEvent.color || 'BLUE',
+                  location: gEvent.location || '',
+                },
+              });
+            }
           }
         } else {
           // Check for content-based duplicates before adding

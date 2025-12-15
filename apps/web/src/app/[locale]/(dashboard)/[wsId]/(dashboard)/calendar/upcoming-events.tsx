@@ -1,10 +1,17 @@
-import { ArrowRight, Calendar, CalendarClock, Sparkles } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  Calendar,
+  CalendarClock,
+  Lock,
+  Sparkles,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 import ExpandableEventList from './expandable-event-list';
 
 interface UpcomingCalendarEventsProps {
@@ -38,9 +45,32 @@ export default async function UpcomingCalendarEvents({
     return null;
   }
 
+  // Decrypt events and check for any that couldn't be decrypted
+  // Note: decryptEventsFromStorage doesn't throw on key unavailability - it returns
+  // encrypted events unchanged. We must check the result for still-encrypted events.
+  const decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
+
+  // Check if any events are still encrypted after decryption attempt
+  // This happens when the encryption key is unavailable (user lacks permission,
+  // key doesn't exist, etc.)
+  const stillEncryptedEvents = decryptedEvents.filter((e) => e.is_encrypted);
+  const encryptedEventsCount = stillEncryptedEvents.length;
+  const decryptionFailed = encryptedEventsCount > 0;
+
+  if (decryptionFailed) {
+    console.warn(
+      `${encryptedEventsCount} calendar events could not be decrypted for workspace ${wsId}`
+    );
+  }
+
+  // Filter out encrypted events that couldn't be decrypted (would show garbled base64)
+  const viewableEvents = decryptionFailed
+    ? decryptedEvents.filter((e) => !e.is_encrypted)
+    : decryptedEvents;
+
   // Filter out all-day events and limit to 10
   const upcomingEvents =
-    allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) || [];
+    viewableEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) || [];
 
   return (
     <Card className="group overflow-hidden border-dynamic-cyan/20 bg-linear-to-br from-card via-card to-dynamic-cyan/5 shadow-lg ring-1 ring-dynamic-cyan/10 transition-all duration-300 hover:border-dynamic-cyan/30 hover:shadow-xl hover:ring-dynamic-cyan/20">
@@ -58,6 +88,12 @@ export default async function UpcomingCalendarEvents({
               <span className="font-medium text-dynamic-cyan text-xs">
                 {upcomingEvents.length} {t('upcoming')}
               </span>
+              {decryptionFailed && encryptedEventsCount > 0 && (
+                <span className="flex items-center gap-1 text-dynamic-orange text-xs">
+                  <Lock className="h-3 w-3" />
+                  {encryptedEventsCount} {t('encrypted_events_unavailable')}
+                </span>
+              )}
             </div>
           </CardTitle>
           {showNavigation && (
