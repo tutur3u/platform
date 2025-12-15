@@ -316,28 +316,42 @@ export const CalendarSyncProvider = ({
         return cachedData.dbEvents;
       }
 
-      // Otherwise fetch fresh data
-      const supabase = createClient();
+      // Otherwise fetch fresh data via API (which handles E2EE decryption)
       const startDate = dayjs(dates[0]).startOf('day');
       const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
-      // Fix: Use correct overlap condition for multi-day events
-      // Event overlaps with visible range if: event_start < visible_end AND event_end > visible_start
-      const { data: fetchedData, error: dbError } = await supabase
-        .from('workspace_calendar_events')
-        .select('*')
-        .eq('ws_id', wsId)
-        .lt('start_at', endDate.add(1, 'day').toISOString()) // Event starts before visible range ends
-        .gt('end_at', startDate.toISOString()) // Event ends after visible range starts
-        .order('start_at', { ascending: true });
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/calendar/events?start_at=${startDate.toISOString()}&end_at=${endDate.add(1, 'day').toISOString()}`
+        );
 
-      if (dbError) {
-        setError(dbError);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch events');
+        }
+
+        const result = await response.json();
+        const fetchedData = result.data || [];
+
+        // Update cache with new data and reset isForced flag
+        updateCache(cacheKey, {
+          dbEvents: fetchedData,
+          dbLastUpdated: Date.now(),
+        });
+
+        // Reset the ref immediately (synchronous)
+        isForcedRef.current = false;
+
+        setData(fetchedData);
+        return fetchedData;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load calendar events';
+        setError(err instanceof Error ? err : new Error(errorMessage));
 
         // Notify user of database fetch failure
         toast.error('Failed to load calendar events', {
-          description:
-            dbError.message || 'Could not retrieve events from database',
+          description: errorMessage,
           duration: 5000,
         });
 
@@ -349,18 +363,6 @@ export const CalendarSyncProvider = ({
 
         return null;
       }
-
-      // Update cache with new data and reset isForced flag
-      updateCache(cacheKey, {
-        dbEvents: fetchedData,
-        dbLastUpdated: Date.now(),
-      });
-
-      // Reset the ref immediately (synchronous)
-      isForcedRef.current = false;
-
-      setData(fetchedData);
-      return fetchedData;
     },
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
   });

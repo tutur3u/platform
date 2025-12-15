@@ -8,6 +8,7 @@ import {
   storeSyncToken,
 } from '@tuturuuu/trigger/google-calendar-sync';
 import { NextResponse } from 'next/server';
+import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
 
 /**
  * Filters events by date range and status using a pipe pattern
@@ -43,7 +44,8 @@ export async function performIncrementalActiveSync(
   userId: string,
   calendarId: string = 'primary',
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  globalEncryptedIds?: Set<string>
 ) {
   const syncStartTime = Date.now();
 
@@ -339,7 +341,8 @@ export async function performIncrementalActiveSync(
           allEvents,
           startDateObj,
           endDateObj,
-          calendarId
+          calendarId,
+          globalEncryptedIds
         );
         metrics.eventProcessingMs = result.timings.eventProcessingMs;
         metrics.databaseWritesMs = result.timings.databaseWritesMs;
@@ -407,7 +410,8 @@ async function incrementalActiveSync(
   eventsToSync: calendar_v3.Schema$Event[],
   startDate: Date,
   endDate: Date,
-  calendarId: string = 'primary'
+  calendarId: string = 'primary',
+  globalEncryptedIds?: Set<string>
 ) {
   const processingStart = Date.now();
   const supabase = await createClient();
@@ -451,6 +455,42 @@ async function incrementalActiveSync(
   const dbWriteStart = Date.now();
   let batchCount = 0;
 
+  // IMPORTANT: Query for encrypted events BEFORE any deletes happen
+  // This prevents race conditions where an event is deleted by one calendar
+  // before another calendar checks its encryption status
+  const preDeleteEncryptedIds: Set<string> = new Set();
+  if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
+    const googleEventIds = formattedEventsToUpsert
+      .map((e) => e.google_event_id)
+      .filter((id): id is string => !!id);
+
+    if (googleEventIds.length > 0) {
+      // Query in batches to avoid URL length limits
+      const QUERY_BATCH_SIZE = 100;
+      for (let i = 0; i < googleEventIds.length; i += QUERY_BATCH_SIZE) {
+        const batchIds = googleEventIds.slice(i, i + QUERY_BATCH_SIZE);
+        const { data: existingEvents } = await supabase
+          .from('workspace_calendar_events')
+          .select('google_event_id, is_encrypted')
+          .eq('ws_id', wsId)
+          .in('google_event_id', batchIds);
+
+        if (existingEvents) {
+          existingEvents
+            .filter((e) => e.is_encrypted === true)
+            .forEach((e) => {
+              if (e.google_event_id) {
+                preDeleteEncryptedIds.add(e.google_event_id);
+              }
+            });
+        }
+      }
+      console.log('🔍 [DEBUG] Pre-delete encrypted IDs cached:', {
+        count: preDeleteEncryptedIds.size,
+      });
+    }
+  }
+
   if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
     console.log('🔍 [DEBUG] Deleting events...');
     const validEventIds = formattedEventsToDelete
@@ -477,6 +517,9 @@ async function incrementalActiveSync(
         const batch = deleteBatches[i];
         if (!batch) continue;
 
+        // Delete events marked as cancelled by Google
+        // Encryption preservation is handled by encryptGoogleSyncEvents which
+        // uses the global cache to re-encrypt any re-inserted events
         const { error: deleteError } = await supabase
           .from('workspace_calendar_events')
           .delete()
@@ -510,18 +553,50 @@ async function incrementalActiveSync(
   if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
     console.log('🔍 [DEBUG] Upserting events...');
 
+    // Encrypt events that need it (events that are already encrypted in DB)
+    // This implements "decrypt, compare, re-encrypt" - incoming Google data
+    // is encrypted for events that have E2EE enabled
+    // Use global cache if provided (avoids race condition with parallel calendar syncs)
+    // Otherwise use local pre-delete cache (avoids race within single calendar sync)
+    const encryptedIdsToUse =
+      globalEncryptedIds && globalEncryptedIds.size > 0
+        ? globalEncryptedIds
+        : preDeleteEncryptedIds;
+
+    console.log('🔍 [DEBUG] Using encrypted IDs cache:', {
+      source:
+        globalEncryptedIds && globalEncryptedIds.size > 0 ? 'global' : 'local',
+      count: encryptedIdsToUse.size,
+    });
+
+    const eventsWithEncryption = await encryptGoogleSyncEvents(
+      wsId,
+      formattedEventsToUpsert as Array<{
+        google_event_id: string;
+        title: string;
+        description?: string;
+        location?: string | null;
+      }>,
+      encryptedIdsToUse
+    );
+
+    console.log('🔍 [DEBUG] Events encrypted:', {
+      total: eventsWithEncryption.length,
+      encrypted: eventsWithEncryption.filter((e) => e.is_encrypted).length,
+    });
+
     // Batch large event sets for better performance
     const BATCH_SIZE = 500; // Process 500 events at a time
     const batches = [];
 
-    for (let i = 0; i < formattedEventsToUpsert.length; i += BATCH_SIZE) {
-      batches.push(formattedEventsToUpsert.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < eventsWithEncryption.length; i += BATCH_SIZE) {
+      batches.push(eventsWithEncryption.slice(i, i + BATCH_SIZE));
     }
 
     batchCount += batches.length;
 
     console.log(
-      `🔍 [DEBUG] Processing ${formattedEventsToUpsert.length} events in ${batches.length} batches`
+      `🔍 [DEBUG] Processing ${eventsWithEncryption.length} events in ${batches.length} batches`
     );
 
     // Process batches in parallel for better performance

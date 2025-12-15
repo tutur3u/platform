@@ -24,6 +24,10 @@ import {
   type HourSettings,
   type PreviewEvent,
 } from '@/lib/calendar/unified-scheduler/preview-engine';
+import {
+  encryptEventForStorage,
+  getWorkspaceKey,
+} from '@/lib/workspace-encryption';
 
 interface RouteParams {
   wsId: string;
@@ -503,6 +507,9 @@ async function createEventsFromPreview(
     reused: 0,
   };
 
+  // Get workspace encryption key (if encryption is enabled)
+  const workspaceKey = await getWorkspaceKey(wsId);
+
   // Calculate the scheduling window
   const windowStart = new Date();
   const windowEnd = new Date();
@@ -690,13 +697,27 @@ async function createEventsFromPreview(
         existingEvent.color !== (previewEvent.color || 'BLUE');
 
       if (needsUpdate) {
-        const { error: updateError } = await supabase
-          .from('workspace_calendar_events')
-          .update({
+        // Encrypt the event data if encryption is enabled
+        const eventData = await encryptEventForStorage(
+          wsId,
+          {
             title: previewEvent.title,
+            description: '', // Schedule events don't have descriptions
             start_at: previewEvent.start_at,
             end_at: previewEvent.end_at,
             color: previewEvent.color || 'BLUE',
+          },
+          workspaceKey
+        );
+
+        const { error: updateError } = await supabase
+          .from('workspace_calendar_events')
+          .update({
+            title: eventData.title,
+            start_at: eventData.start_at,
+            end_at: eventData.end_at,
+            color: eventData.color || 'BLUE',
+            is_encrypted: eventData.is_encrypted,
           })
           .eq('id', existingEvent.id);
 
@@ -759,13 +780,27 @@ async function createEventsFromPreview(
         `[Schedule] Creating new event: "${previewEvent.title}" (${previewEvent.type})`
       );
 
+      // Encrypt the event data if encryption is enabled
+      const eventData = await encryptEventForStorage(
+        wsId,
+        {
+          title: previewEvent.title,
+          description: '', // Schedule events don't have descriptions
+          start_at: previewEvent.start_at,
+          end_at: previewEvent.end_at,
+          color: previewEvent.color || 'BLUE',
+        },
+        workspaceKey
+      );
+
       const insertData = {
-        title: previewEvent.title,
-        start_at: previewEvent.start_at,
-        end_at: previewEvent.end_at,
+        title: eventData.title,
+        start_at: eventData.start_at,
+        end_at: eventData.end_at,
         ws_id: wsId,
-        color: previewEvent.color || 'BLUE',
+        color: eventData.color || 'BLUE',
         locked: false, // Auto-scheduled events are not locked
+        is_encrypted: eventData.is_encrypted,
       };
 
       const { data: newEvent, error: insertError } = await supabase

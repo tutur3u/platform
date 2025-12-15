@@ -1175,28 +1175,52 @@ export const CalendarProvider = ({
 
         if (localEvent) {
           // Check if there are any significant changes in the event details that require an update
-          const hasChanges =
-            localEvent.title !== gEvent.title ||
-            localEvent.description !== (gEvent.description || '') ||
+          // For encrypted events, we only check non-encrypted fields (dates, color)
+          // since we can't compare encrypted content with plaintext Google data
+          const isEncrypted = (localEvent as any).is_encrypted === true;
+
+          const hasNonEncryptedChanges =
             localEvent.start_at !== gEvent.start_at ||
             localEvent.end_at !== gEvent.end_at ||
-            localEvent.color !== gEvent.color ||
-            localEvent.location !== (gEvent.location || '');
+            localEvent.color !== gEvent.color;
+
+          const hasContentChanges =
+            !isEncrypted &&
+            (localEvent.title !== gEvent.title ||
+              localEvent.description !== (gEvent.description || '') ||
+              localEvent.location !== (gEvent.location || ''));
+
+          const hasChanges = hasNonEncryptedChanges || hasContentChanges;
 
           // Only update if there are actual changes
           if (hasChanges) {
             changesMade = true;
-            eventsToUpdate.push({
-              id: localEvent.id,
-              data: {
-                title: gEvent.title,
-                description: gEvent.description || '',
-                start_at: gEvent.start_at,
-                end_at: gEvent.end_at,
-                color: gEvent.color || 'BLUE',
-                location: gEvent.location || '',
-              },
-            });
+
+            // For encrypted events, only update non-encrypted fields (dates, color)
+            // to preserve the encrypted title/description/location
+            if (isEncrypted) {
+              eventsToUpdate.push({
+                id: localEvent.id,
+                data: {
+                  start_at: gEvent.start_at,
+                  end_at: gEvent.end_at,
+                  color: gEvent.color || 'BLUE',
+                  // Don't update title, description, location - they are encrypted
+                },
+              });
+            } else {
+              eventsToUpdate.push({
+                id: localEvent.id,
+                data: {
+                  title: gEvent.title,
+                  description: gEvent.description || '',
+                  start_at: gEvent.start_at,
+                  end_at: gEvent.end_at,
+                  color: gEvent.color || 'BLUE',
+                  location: gEvent.location || '',
+                },
+              });
+            }
           }
         } else {
           // Check for content-based duplicates before adding

@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/ai/scheduling';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { CalendarHoursType, TaskWithScheduling } from '@tuturuuu/types';
+import { encryptEventForStorage } from '@/lib/workspace-encryption';
 import { scheduleWorkspace } from './unified-scheduler';
 
 type TimeBlock = {
@@ -466,14 +467,22 @@ export async function scheduleTask(
         : task.name || 'Task';
 
     // Create calendar event
+    // Encrypt title/description if encryption is enabled for this workspace
+    const encryptedData = await encryptEventForStorage(wsId, {
+      title: eventTitle,
+      description: task.description || '',
+      location: undefined,
+    });
+
     // Note: task_id is optional - only include if the column exists
     const eventData: Record<string, unknown> = {
       ws_id: wsId,
-      title: eventTitle,
-      description: task.description || '',
+      title: encryptedData.title,
+      description: encryptedData.description,
       start_at: slot.start.toISOString(),
       end_at: slot.end.toISOString(),
       color: getColorForHourType(task.calendar_hours),
+      is_encrypted: encryptedData.is_encrypted,
     };
 
     const { data: event, error: eventError } = await supabase
