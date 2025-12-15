@@ -3181,6 +3181,7 @@
     "quick_create": {
       "default_name": "Công việc"
     },
+    "no_boards_found": "Chưa có bảng nào. Tạo bảng đầu tiên để bắt đầu.",
     "row_actions": {
       "copy": "Nhân bản",
       "restore": "Khôi phục",

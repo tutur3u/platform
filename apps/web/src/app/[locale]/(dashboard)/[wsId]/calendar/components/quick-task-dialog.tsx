@@ -7,8 +7,10 @@ import {
   LayoutGrid,
   List,
   Loader2,
+  Plus,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -28,9 +30,11 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
-import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface TaskList {
   id: string;
@@ -66,6 +70,7 @@ export function QuickTaskDialog({
   userId,
   isPersonalWorkspace = false,
 }: QuickTaskDialogProps) {
+  const t = useTranslations();
   const queryClient = useQueryClient();
   const supabase = createClient();
 
@@ -74,6 +79,14 @@ export function QuickTaskDialog({
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [taskName, setTaskName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Board creation state
+  const [showBoardCreation, setShowBoardCreation] = useState(false);
+
+  // Default board name for quick creation
+  const defaultBoardName = useMemo(
+    () => t('ws-task-boards.quick_create.default_name'),
+    [t]
+  );
 
   // Fetch boards with lists
   const { data: boardsData, isLoading: isLoadingBoards } = useQuery({
@@ -187,12 +200,46 @@ export function QuickTaskDialog({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : boards.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center">
-              <Folder className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-2 text-muted-foreground text-sm">
-                No boards found. Create a board first.
-              </p>
+          ) : boards.length === 0 || showBoardCreation ? (
+            <div className="space-y-4">
+              {!showBoardCreation && (
+                <div className="rounded-lg border border-dashed p-6 text-center">
+                  <Folder className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <p className="mt-2 text-muted-foreground text-sm">
+                    {t('ws-task-boards.no_boards_found')}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => setShowBoardCreation(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.create')}
+                  </Button>
+                </div>
+              )}
+              {showBoardCreation && (
+                <TaskBoardForm
+                  wsId={wsId}
+                  data={{ name: defaultBoardName }}
+                  showCancel
+                  onCancel={() => setShowBoardCreation(false)}
+                  onFinish={(
+                    data: { id?: string } & Partial<WorkspaceTaskBoard>
+                  ) => {
+                    setShowBoardCreation(false);
+                    // Invalidate boards query to refetch with new board
+                    queryClient.invalidateQueries({
+                      queryKey: ['boards-with-lists', wsId],
+                    });
+                    // Auto-select the newly created board
+                    if (data.id) {
+                      setSelectedBoardId(data.id);
+                    }
+                  }}
+                />
+              )}
             </div>
           ) : (
             <>

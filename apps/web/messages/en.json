@@ -3082,6 +3082,7 @@
     "quick_create": {
       "default_name": "Tasks"
     },
+    "no_boards_found": "No boards yet. Create your first board to get started.",
     "row_actions": {
       "copy": "Duplicate",
       "restore": "Restore",
