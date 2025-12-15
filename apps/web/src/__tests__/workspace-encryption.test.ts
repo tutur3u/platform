@@ -50,6 +50,7 @@ import {
   generateWorkspaceKey,
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
+import { looksLikeEncryptedData } from '../app/api/v1/workspaces/[wsId]/encryption/utils';
 
 describe('workspace-encryption', () => {
   let originalEnv: string | undefined;
@@ -441,6 +442,66 @@ describe('workspace-encryption', () => {
       ciphertexts.forEach((ct) => {
         expect(decryptField(ct, workspaceKey)).toBe(plaintext);
       });
+    });
+  });
+
+  // ============================================================================
+  // looksLikeEncryptedData Utility Tests
+  // ============================================================================
+  describe('looksLikeEncryptedData', () => {
+    it('should return true for valid encrypted data (base64 encoded)', () => {
+      const workspaceKey = generateWorkspaceKey();
+      const encrypted = encryptCalendarEventFields(
+        { title: 'Test Event', description: 'Description', location: undefined },
+        workspaceKey
+      );
+
+      expect(looksLikeEncryptedData(encrypted.title)).toBe(true);
+      expect(looksLikeEncryptedData(encrypted.description)).toBe(true);
+    });
+
+    it('should return true for empty strings (valid encrypted state)', () => {
+      // CRITICAL: Empty strings are preserved without encryption by encryptField()
+      // Events with is_encrypted=true and empty title/description are valid
+      expect(looksLikeEncryptedData('')).toBe(true);
+    });
+
+    it('should return false for plaintext with spaces', () => {
+      expect(looksLikeEncryptedData('Team Meeting')).toBe(false);
+      expect(looksLikeEncryptedData('This is a description')).toBe(false);
+    });
+
+    it('should return false for short strings that cannot be encrypted data', () => {
+      expect(looksLikeEncryptedData('abc')).toBe(false);
+      expect(looksLikeEncryptedData('short')).toBe(false);
+    });
+
+    it('should return false for null and undefined', () => {
+      expect(looksLikeEncryptedData(null)).toBe(false);
+      expect(looksLikeEncryptedData(undefined)).toBe(false);
+    });
+
+    it('should return false for strings with invalid base64 characters', () => {
+      expect(looksLikeEncryptedData('Hello World!')).toBe(false);
+      expect(looksLikeEncryptedData('test@example.com')).toBe(false);
+    });
+
+    it('should correctly identify events with empty encrypted fields as valid', () => {
+      // This test simulates the exact scenario that caused false positives:
+      // An event with is_encrypted=true but empty title should be considered valid
+      const eventWithEmptyTitle = {
+        id: 'event-123',
+        title: '',
+        description: 'Some description that got encrypted',
+        is_encrypted: true,
+      };
+
+      // Empty title is a valid encrypted state (not a corruption)
+      const titleLooksEncrypted = looksLikeEncryptedData(eventWithEmptyTitle.title);
+      expect(titleLooksEncrypted).toBe(true);
+
+      // This should NOT be flagged as "markedEncryptedButPlaintext"
+      // because empty strings are intentionally preserved by encryptField()
     });
   });
 });

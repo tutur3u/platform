@@ -67,6 +67,8 @@ export async function checkE2EEPermission(
   }
 
   // Check if user has manage_e2ee permission via roles
+  // Use .limit(1) before .maybeSingle() because a user can belong to multiple roles
+  // that all have manage_e2ee enabled; we only need to verify at least one exists
   const { data: rolePermission } = await supabase
     .from('workspace_role_members')
     .select(
@@ -76,6 +78,7 @@ export async function checkE2EEPermission(
     .eq('workspace_roles.ws_id', wsId)
     .eq('workspace_roles.workspace_role_permissions.permission', 'manage_e2ee')
     .eq('workspace_roles.workspace_role_permissions.enabled', true)
+    .limit(1)
     .maybeSingle();
 
   if (rolePermission) {
@@ -105,14 +108,26 @@ export async function checkE2EEPermission(
  * Base64 encoding of 28+ bytes = at least 40 characters of pure base64
  * Also, encrypted data won't have typical plaintext patterns like spaces
  *
+ * IMPORTANT: Empty strings are valid encrypted values because the encryption service
+ * intentionally preserves empty strings without encryption (see encryptField in
+ * packages/utils/src/encryption/encryption-service.ts lines 162-164).
+ * Therefore, empty strings should return true to avoid false positive "integrity_issue" warnings.
+ *
  * @param value - The string to check
- * @returns true if the string appears to be encrypted
+ * @returns true if the string appears to be encrypted (or is an empty string which is valid)
  */
 export function looksLikeEncryptedData(
   value: string | null | undefined
 ): boolean {
-  if (typeof value !== 'string' || !value) {
+  // null/undefined values are not valid encrypted data
+  if (value === null || value === undefined) {
     return false;
+  }
+
+  // Empty strings are valid - the encryption service preserves them without encryption
+  // An event with is_encrypted=true and empty title is legitimate
+  if (value === '') {
+    return true;
   }
 
   // Minimum length check: 28 bytes base64 encoded = ~40 characters
