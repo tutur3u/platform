@@ -300,7 +300,7 @@ export function useSuggestionMenus({
         const slashMenuHeight = 328; // header ~40px + max-h-72 (288px)
         const mentionMenuHeight = 360; // header ~40px + max-h-80 (320px)
         const verticalGap = 8;
-        
+
         let left = coords.left;
         if (viewportWidth) {
           left = Math.min(
@@ -312,17 +312,20 @@ export function useSuggestionMenus({
 
         // Calculate vertical position with automatic flip when near bottom
         let top = coords.bottom + verticalGap;
-        
+
         if (viewportHeight) {
           const spaceBelow = viewportHeight - coords.bottom;
           const spaceAbove = coords.top;
-          
+
           // Determine menu height based on context (slash vs mention)
           // Both need similar space, so use mention menu height as it's larger
           const menuHeight = mentionMenuHeight;
-          
+
           // If not enough space below and more space above, position above the text
-          if (spaceBelow < menuHeight + verticalGap && spaceAbove > menuHeight + verticalGap) {
+          if (
+            spaceBelow < menuHeight + verticalGap &&
+            spaceAbove > menuHeight + verticalGap
+          ) {
             top = coords.top - menuHeight - verticalGap;
           }
         }
