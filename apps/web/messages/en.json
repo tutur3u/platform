@@ -4209,7 +4209,24 @@
       "encrypting": "Encrypting...",
       "encrypting_progress": "Encrypting {current}/{total} events...",
       "enable_for_workspace": "Enable E2EE for this workspace"
-    }
+    },
+    "connected_accounts": "Connected Accounts",
+    "manage_calendar_accounts": "Manage Calendar Accounts",
+    "manage_calendar_accounts_desc": "Connect multiple Google and Microsoft accounts to sync calendars from all your accounts.",
+    "add_google_account": "Add Google Account",
+    "add_microsoft_account": "Add Microsoft Account",
+    "no_google_accounts": "No Google accounts connected yet.",
+    "no_microsoft_accounts": "No Microsoft accounts connected yet.",
+    "account_disconnected": "Account disconnected successfully",
+    "failed_to_disconnect": "Failed to disconnect account",
+    "unknown_account": "Unknown account",
+    "refresh_needed": "Refresh needed",
+    "microsoft_auth_failed": "Microsoft authentication failed",
+    "connect_calendar": "Connect Calendar",
+    "no_calendars_synced": "No calendars synced yet.",
+    "no_calendars_found": "No calendars found for this account.",
+    "toggle_failed": "Failed to update calendar visibility.",
+    "synced": "Synced"
   },
   "documents": {
     "documents": "Documents",

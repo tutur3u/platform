@@ -663,24 +663,39 @@ export type Database = {
       calendar_auth_tokens: {
         Row: {
           access_token: string;
+          account_email: string | null;
+          account_name: string | null;
           created_at: string;
+          expires_at: string | null;
           id: string;
+          is_active: boolean;
+          provider: string;
           refresh_token: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           access_token: string;
+          account_email?: string | null;
+          account_name?: string | null;
           created_at?: string;
+          expires_at?: string | null;
           id?: string;
+          is_active?: boolean;
+          provider?: string;
           refresh_token: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
           access_token?: string;
+          account_email?: string | null;
+          account_name?: string | null;
           created_at?: string;
+          expires_at?: string | null;
           id?: string;
+          is_active?: boolean;
+          provider?: string;
           refresh_token?: string;
           user_id?: string;
           ws_id?: string;
@@ -732,36 +747,49 @@ export type Database = {
       };
       calendar_connections: {
         Row: {
+          auth_token_id: string | null;
           calendar_id: string;
           calendar_name: string;
           color: string | null;
           created_at: string;
           id: string;
           is_enabled: boolean;
+          provider: string;
           updated_at: string;
           ws_id: string;
         };
         Insert: {
+          auth_token_id?: string | null;
           calendar_id: string;
           calendar_name: string;
           color?: string | null;
           created_at?: string;
           id?: string;
           is_enabled?: boolean;
+          provider?: string;
           updated_at?: string;
           ws_id: string;
         };
         Update: {
+          auth_token_id?: string | null;
           calendar_id?: string;
           calendar_name?: string;
           color?: string | null;
           created_at?: string;
           id?: string;
           is_enabled?: boolean;
+          provider?: string;
           updated_at?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'calendar_connections_auth_token_id_fkey';
+            columns: ['auth_token_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_auth_tokens';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'calendar_connections_ws_id_fkey';
             columns: ['ws_id'];

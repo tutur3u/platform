@@ -45,7 +45,8 @@ export async function performIncrementalActiveSync(
   calendarId: string = 'primary',
   startDate: Date,
   endDate: Date,
-  globalEncryptedIds?: Set<string>
+  globalEncryptedIds?: Set<string>,
+  authTokenId?: string | null // Optional: specific auth token ID for multi-account support
 ) {
   const syncStartTime = Date.now();
 
@@ -73,6 +74,7 @@ export async function performIncrementalActiveSync(
     wsId,
     userId,
     calendarId,
+    authTokenId,
     startDate: startDateObj.toISOString(),
     endDate: endDateObj.toISOString(),
   });
@@ -100,13 +102,24 @@ export async function performIncrementalActiveSync(
   const supabase = await createClient();
   console.log('✅ [DEBUG] Supabase client created successfully');
 
+  // Build token query based on whether we have a specific authTokenId
   console.log('🔍 [DEBUG] Querying calendar_auth_tokens table...');
-  const result = await supabase
+  let tokenQuery = supabase
     .from('calendar_auth_tokens')
     .select('access_token, refresh_token')
-    .eq('user_id', userId)
-    .eq('ws_id', wsId) // Add ws_id to the query
-    .maybeSingle();
+    .eq('ws_id', wsId);
+
+  if (authTokenId) {
+    // Use specific auth token for multi-account support
+    tokenQuery = tokenQuery.eq('id', authTokenId);
+    console.log('🔍 [DEBUG] Using specific authTokenId:', authTokenId);
+  } else {
+    // Fallback to user_id query (legacy single-account behavior)
+    tokenQuery = tokenQuery.eq('user_id', userId);
+    console.log('🔍 [DEBUG] Using userId for token lookup (legacy mode)');
+  }
+
+  const result = await tokenQuery.maybeSingle();
 
   metrics.tokenOperationsMs = Date.now() - tokenOpStart;
 

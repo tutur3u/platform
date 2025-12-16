@@ -16,6 +16,14 @@ const getGoogleAuthClient = (tokens: {
   return oauth2Client;
 };
 
+interface CalendarToken {
+  id: string;
+  access_token: string;
+  refresh_token: string | null;
+  account_email: string | null;
+  account_name: string | null;
+}
+
 export async function GET(request: Request) {
   const supabase = await createClient();
   const {
@@ -31,9 +39,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Get wsId from query parameters
     const url = new URL(request.url);
     const wsId = url.searchParams.get('wsId');
+    const accountId = url.searchParams.get('accountId'); // Optional: specific account
 
     if (!wsId) {
       return NextResponse.json(
@@ -42,81 +50,110 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get the user's OAuth tokens for this workspace
-    const { data: tokens, error: tokensError } = await supabase
+    // Build query based on whether accountId is provided
+    let query = supabase
       .from('calendar_auth_tokens')
-      .select('access_token, refresh_token')
+      .select('id, access_token, refresh_token, account_email, account_name')
       .eq('user_id', user.id)
       .eq('ws_id', wsId)
-      .maybeSingle();
+      .eq('provider', 'google')
+      .eq('is_active', true);
 
-    if (tokensError || !tokens?.access_token) {
+    if (accountId) {
+      query = query.eq('id', accountId);
+    }
+
+    const { data: tokens, error: tokensError } = await query;
+
+    if (tokensError || !tokens || tokens.length === 0) {
       return NextResponse.json(
-        { error: 'Google Calendar not authenticated for this workspace' },
+        { error: 'No Google Calendar accounts found for this workspace' },
         { status: 401 }
       );
     }
 
-    // Create Google Calendar API client
-    const auth = getGoogleAuthClient(tokens);
-    const calendar = google.calendar({ version: 'v3', auth });
+    // Fetch calendars for all accounts
+    const allCalendars: Array<{
+      id: string;
+      name: string;
+      description: string;
+      primary: boolean;
+      backgroundColor: string;
+      foregroundColor: string;
+      accessRole: string;
+      accountId: string;
+      accountEmail: string | null;
+    }> = [];
 
-    // Fetch the list of calendars
-    const response = await calendar.calendarList.list({
-      minAccessRole: 'reader', // Only show calendars user can read
-      showHidden: false, // Don't show hidden calendars
-      showDeleted: false, // Don't show deleted calendars
-    });
+    for (const token of tokens as CalendarToken[]) {
+      try {
+        const auth = getGoogleAuthClient({
+          access_token: token.access_token,
+          refresh_token: token.refresh_token || undefined,
+        });
+        const calendar = google.calendar({ version: 'v3', auth });
 
-    const calendars = response.data.items || [];
+        const response = await calendar.calendarList.list({
+          minAccessRole: 'reader',
+          showHidden: false,
+          showDeleted: false,
+        });
 
-    // Format the response
-    const formattedCalendars = calendars.map((cal) => ({
-      id: cal.id || '',
-      name: cal.summary || 'Untitled Calendar',
-      description: cal.description || '',
-      primary: cal.primary || false,
-      backgroundColor: cal.backgroundColor || '#4285F4',
-      foregroundColor: cal.foregroundColor || '#FFFFFF',
-      accessRole: cal.accessRole || 'reader',
-    }));
+        const calendars = response.data.items || [];
+
+        for (const cal of calendars) {
+          allCalendars.push({
+            id: cal.id || '',
+            name: cal.summary || 'Untitled Calendar',
+            description: cal.description || '',
+            primary: cal.primary || false,
+            backgroundColor: cal.backgroundColor || '#4285F4',
+            foregroundColor: cal.foregroundColor || '#FFFFFF',
+            accessRole: cal.accessRole || 'reader',
+            accountId: token.id,
+            accountEmail: token.account_email,
+          });
+        }
+      } catch (error) {
+        console.error(
+          `Error fetching calendars for account ${token.id}:`,
+          error
+        );
+        // Continue with other accounts
+      }
+    }
+
+    // Group calendars by account
+    const calendarsByAccount = tokens.reduce(
+      (acc: Record<string, typeof allCalendars>, token: CalendarToken) => {
+        acc[token.id] = allCalendars.filter((c) => c.accountId === token.id);
+        return acc;
+      },
+      {}
+    );
 
     return NextResponse.json(
-      { calendars: formattedCalendars },
+      {
+        calendars: allCalendars,
+        byAccount: calendarsByAccount,
+        accounts: tokens.map((t: CalendarToken) => ({
+          id: t.id,
+          email: t.account_email,
+          name: t.account_name,
+        })),
+      },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching Google Calendar list:', error);
-
-    // Handle invalid_grant error (token expired or revoked)
-    if (error.response?.data?.error?.message?.includes('invalid_grant')) {
-      return NextResponse.json(
-        {
-          error: 'Google token invalid, please re-authenticate',
-          requiresReauth: true,
-        },
-        { status: 401 }
-      );
-    }
-
-    // Handle insufficient scope error (403)
-    if (error.code === 403 || error.status === 403) {
-      return NextResponse.json(
-        {
-          error:
-            'Insufficient permissions. Please disconnect and reconnect your Google Calendar to grant required permissions.',
-          requiresReauth: true,
-          details: 'The calendar.readonly scope is required to list calendars',
-        },
-        { status: 403 }
-      );
-    }
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json(
       {
         error: 'Failed to fetch calendar list',
         details:
-          process.env.NODE_ENV === 'development' ? error.message : undefined,
+          process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

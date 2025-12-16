@@ -4322,7 +4322,24 @@
       "encrypting": "Đang mã hóa...",
       "encrypting_progress": "Đang mã hóa {current}/{total} sự kiện...",
       "enable_for_workspace": "Bật E2EE cho không gian làm việc này"
-    }
+    },
+    "connected_accounts": "Tài khoản đã kết nối",
+    "manage_calendar_accounts": "Quản lý tài khoản lịch",
+    "manage_calendar_accounts_desc": "Kết nối nhiều tài khoản Google và Microsoft để đồng bộ lịch từ tất cả các tài khoản của bạn.",
+    "add_google_account": "Thêm tài khoản Google",
+    "add_microsoft_account": "Thêm tài khoản Microsoft",
+    "no_google_accounts": "Chưa có tài khoản Google nào được kết nối.",
+    "no_microsoft_accounts": "Chưa có tài khoản Microsoft nào được kết nối.",
+    "account_disconnected": "Đã ngắt kết nối tài khoản thành công",
+    "failed_to_disconnect": "Không thể ngắt kết nối tài khoản",
+    "unknown_account": "Tài khoản không xác định",
+    "refresh_needed": "Cần làm mới",
+    "microsoft_auth_failed": "Xác thực Microsoft thất bại",
+    "connect_calendar": "Kết nối Lịch",
+    "no_calendars_synced": "Chưa có lịch nào được đồng bộ.",
+    "no_calendars_found": "Không tìm thấy lịch cho tài khoản này.",
+    "toggle_failed": "Không thể cập nhật trạng thái hiển thị lịch.",
+    "synced": "Đã đồng bộ"
   },
   "documents": {
     "documents": "Tài liệu",

@@ -1,4 +1,4 @@
-import { OAuth2Client } from '@tuturuuu/google';
+import { google, OAuth2Client } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 import { NextResponse } from 'next/server';
@@ -54,6 +54,32 @@ export async function GET(request: Request) {
     }
 
     const refreshToken = tokens.refresh_token ?? '';
+    const expiresAt = tokens.expiry_date
+      ? new Date(tokens.expiry_date).toISOString()
+      : null;
+
+    // Fetch user info from Google to get account email
+    console.log('🔍 [DEBUG] Fetching Google user info...');
+    auth.setCredentials(tokens);
+    const oauth2 = google.oauth2({ version: 'v2', auth });
+    let accountEmail: string | null = null;
+    let accountName: string | null = null;
+
+    try {
+      const userInfoResponse = await oauth2.userinfo.get();
+      accountEmail = userInfoResponse.data.email || null;
+      accountName = userInfoResponse.data.name || null;
+      console.log('🔍 [DEBUG] Google user info:', {
+        email: accountEmail,
+        name: accountName,
+      });
+    } catch (userInfoError) {
+      console.error(
+        '⚠️ [DEBUG] Failed to fetch Google user info:',
+        userInfoError
+      );
+      // Continue without user info - token will still be saved
+    }
 
     console.log('🔍 [DEBUG] Creating Supabase client...');
     // Initialize Supabase client with cookies to access the current session
@@ -83,13 +109,36 @@ export async function GET(request: Request) {
     }
 
     console.log('🔍 [DEBUG] Checking for existing tokens...');
-    // Check if tokens already exist for this user
-    const { data: existingToken, error: fetchError } = await supabase
-      .from('calendar_auth_tokens')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('ws_id', wsId)
-      .single();
+    // Check if this specific Google account is already connected
+    // For multi-account support, we check by account_email if available
+    let existingToken = null;
+    let fetchError = null;
+
+    if (accountEmail) {
+      // Multi-account: Check for existing token with same email
+      const result = await supabase
+        .from('calendar_auth_tokens')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('ws_id', wsId)
+        .eq('provider', 'google')
+        .eq('account_email', accountEmail)
+        .single();
+      existingToken = result.data;
+      fetchError = result.error;
+    } else {
+      // Fallback: Check for any Google token without email (legacy)
+      const result = await supabase
+        .from('calendar_auth_tokens')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('ws_id', wsId)
+        .eq('provider', 'google')
+        .is('account_email', null)
+        .single();
+      existingToken = result.data;
+      fetchError = result.error;
+    }
 
     console.log('🔍 [DEBUG] Existing token check:', {
       hasExistingToken: !!existingToken,
@@ -115,6 +164,9 @@ export async function GET(request: Request) {
         .update({
           access_token: tokens.access_token,
           refresh_token: refreshToken,
+          expires_at: expiresAt,
+          account_name: accountName,
+          is_active: true,
           created_at: new Date().toISOString(),
         })
         .eq('id', existingToken.id);
@@ -129,14 +181,19 @@ export async function GET(request: Request) {
       console.log('✅ [DEBUG] Token updated successfully');
     } else {
       console.log('🔍 [DEBUG] Inserting new token...');
-      // Insert new token
+      // Insert new token with multi-account fields
       const { error: insertError } = await supabase
         .from('calendar_auth_tokens')
         .insert({
           user_id: user.id,
           ws_id: wsId,
+          provider: 'google',
           access_token: tokens.access_token,
           refresh_token: refreshToken,
+          account_email: accountEmail,
+          account_name: accountName,
+          expires_at: expiresAt,
+          is_active: true,
           created_at: new Date().toISOString(),
         });
 
@@ -198,10 +255,101 @@ export async function GET(request: Request) {
       // Don't fail the authentication flow if sync fails
     }
 
+    // Auto-add all calendars to calendar_connections after successful authentication
+    try {
+      console.log('🔍 [DEBUG] Fetching user calendars to auto-add...');
+
+      // Get the newly inserted/updated token ID
+      let tokenQuery = supabase
+        .from('calendar_auth_tokens')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('ws_id', wsId)
+        .eq('provider', 'google')
+        .eq('is_active', true);
+
+      if (accountEmail) {
+        tokenQuery = tokenQuery.eq('account_email', accountEmail);
+      } else {
+        tokenQuery = tokenQuery.is('account_email', null);
+      }
+
+      const { data: tokenRecord } = await tokenQuery.single();
+
+      if (tokenRecord?.id) {
+        // Create calendar client with the new tokens
+        auth.setCredentials(tokens);
+        const calendar = google.calendar({ version: 'v3', auth });
+
+        // Fetch all calendars for this account
+        const calendarListResponse = await calendar.calendarList.list({
+          minAccessRole: 'reader',
+          showHidden: false,
+          showDeleted: false,
+        });
+
+        const calendars = calendarListResponse.data.items || [];
+        console.log(`🔍 [DEBUG] Found ${calendars.length} calendars to add`);
+
+        // Insert each calendar into calendar_connections
+        for (const cal of calendars) {
+          if (!cal.id) continue;
+
+          // Check if this calendar connection already exists
+          const { data: existing } = await supabase
+            .from('calendar_connections')
+            .select('id')
+            .eq('ws_id', wsId)
+            .eq('calendar_id', cal.id)
+            .maybeSingle();
+
+          if (!existing) {
+            // Insert new calendar connection
+            const { error: insertError } = await supabase
+              .from('calendar_connections')
+              .insert({
+                ws_id: wsId,
+                calendar_id: cal.id,
+                calendar_name: cal.summary || 'Untitled Calendar',
+                is_enabled: true,
+                color: cal.backgroundColor || '#4285F4',
+                auth_token_id: tokenRecord.id,
+              });
+
+            if (insertError) {
+              console.error(
+                `⚠️ [DEBUG] Failed to add calendar ${cal.id}:`,
+                insertError
+              );
+            } else {
+              console.log(`✅ [DEBUG] Added calendar: ${cal.summary}`);
+            }
+          } else {
+            // Update existing connection to link to this token
+            await supabase
+              .from('calendar_connections')
+              .update({
+                auth_token_id: tokenRecord.id,
+                is_enabled: true,
+              })
+              .eq('id', existing.id);
+            console.log(`🔄 [DEBUG] Updated existing calendar: ${cal.summary}`);
+          }
+        }
+
+        console.log(
+          `✅ [DEBUG] Auto-added ${calendars.length} calendars to connections`
+        );
+      }
+    } catch (calendarAddError) {
+      console.error('⚠️ [DEBUG] Error auto-adding calendars:', calendarAddError);
+      // Don't fail the authentication flow if calendar add fails
+    }
+
     console.log('🔍 [DEBUG] Redirecting to calendar page...');
-    // Redirect to the calendar page without tokens in the URL
+    // Redirect to the calendar page with success indicator
     return NextResponse.redirect(
-      new URL(`/${wsId}/calendar`, request.url),
+      new URL(`/${wsId}/calendar?provider=google&connected=true`, request.url),
       302
     );
   } catch (error) {
