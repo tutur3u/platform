@@ -297,7 +297,6 @@ export function useSuggestionMenus({
         const viewportHeight =
           typeof window !== 'undefined' ? window.innerHeight : undefined;
         const horizontalPadding = 16;
-        const slashMenuHeight = 328; // header ~40px + max-h-72 (288px)
         const mentionMenuHeight = 360; // header ~40px + max-h-80 (320px)
         const verticalGap = 8;
 
