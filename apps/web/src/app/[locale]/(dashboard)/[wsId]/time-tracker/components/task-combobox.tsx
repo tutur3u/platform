@@ -57,7 +57,7 @@ export function TaskCombobox({
   id,
   disabled = false,
 }: TaskComboboxProps) {
-    const t = useTranslations('time-tracker.missed_entry_dialog');
+  const t = useTranslations('time-tracker.missed_entry_dialog');
   const [open, setOpen] = useState(false);
 
   const selectedTask = tasks?.find((task) => task.id === value);
