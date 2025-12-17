@@ -308,20 +308,21 @@ export const syncWorkspaceBatched = async (payload: {
 export const storeSyncToken = async (
   ws_id: string,
   syncToken: string,
-  lastSyncedAt: Date
+  _lastSyncedAt: Date,
+  calendarId: string = 'primary'
 ) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
-    p_calendar_id: 'primary',
+    p_calendar_id: calendarId,
     p_operation: 'update',
     p_sync_token: syncToken,
   });
 
   if (error) {
     console.error(
-      `[${ws_id}] Error storing sync token for active sync calendar primary`,
+      `[${ws_id}] Error storing sync token for calendar ${calendarId}`,
       error
     );
     throw error;
@@ -333,17 +334,20 @@ export const storeSyncToken = async (
   }
 };
 
-export const getSyncToken = async (ws_id: string): Promise<string | null> => {
+export const getSyncToken = async (
+  ws_id: string,
+  calendarId: string = 'primary'
+): Promise<string | null> => {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
-    p_calendar_id: 'primary',
+    p_calendar_id: calendarId,
     p_operation: 'get',
   });
 
   if (error) {
     console.error(
-      `[${ws_id}] Error fetching active sync token:`,
+      `[${ws_id}] Error fetching sync token for calendar ${calendarId}:`,
       error.message
     );
     return null;
@@ -353,17 +357,23 @@ export const getSyncToken = async (ws_id: string): Promise<string | null> => {
   return result?.success ? result.sync_token : null;
 };
 
-export const clearSyncToken = async (ws_id: string) => {
+export const clearSyncToken = async (
+  ws_id: string,
+  calendarId: string = 'primary'
+) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
     p_ws_id: ws_id,
-    p_calendar_id: 'primary',
+    p_calendar_id: calendarId,
     p_operation: 'clear',
   });
 
   if (error) {
-    console.error(`[${ws_id}] Error clearing sync token:`, error.message);
+    console.error(
+      `[${ws_id}] Error clearing sync token for calendar ${calendarId}:`,
+      error.message
+    );
     throw error;
   }
 

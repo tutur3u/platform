@@ -4,9 +4,9 @@ import {
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
+  type SyncOrchestratorResult,
   storeSyncToken,
   syncWorkspaceBatched,
-  type SyncOrchestratorResult,
 } from './google-calendar-sync';
 
 async function performIncrementalSyncForWorkspace(
@@ -22,7 +22,7 @@ async function performIncrementalSyncForWorkspace(
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {
-    const syncToken = await getSyncToken(ws_id);
+    const syncToken = await getSyncToken(ws_id, calendarId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let allEvents: any[] = [];
     let pageToken: string | undefined;
@@ -47,7 +47,7 @@ async function performIncrementalSyncForWorkspace(
     }
 
     if (nextSyncToken) {
-      await storeSyncToken(ws_id, nextSyncToken, new Date());
+      await storeSyncToken(ws_id, nextSyncToken, new Date(), calendarId);
     }
 
     return allEvents;

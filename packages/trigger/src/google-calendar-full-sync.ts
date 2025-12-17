@@ -4,9 +4,9 @@ import dayjs from 'dayjs';
 import {
   getGoogleAuthClient,
   getWorkspacesForSync,
+  type SyncOrchestratorResult,
   storeSyncToken,
   syncWorkspaceBatched,
-  type SyncOrchestratorResult,
 } from './google-calendar-sync';
 
 export async function performFullSyncForWorkspace(
@@ -81,7 +81,7 @@ export async function performFullSyncForWorkspace(
 
     if (syncToken) {
       console.log(`[${ws_id}] Storing sync tokens...`);
-      await storeSyncToken(ws_id, syncToken, new Date());
+      await storeSyncToken(ws_id, syncToken, new Date(), calendarId);
       console.log(`[${ws_id}] Sync tokens stored successfully`);
     } else {
       console.log(`[${ws_id}] No sync token received from Google Calendar API`);

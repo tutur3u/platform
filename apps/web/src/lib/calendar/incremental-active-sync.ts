@@ -228,10 +228,11 @@ export async function performIncrementalActiveSync(
 
   try {
     console.log('🔍 [DEBUG] Getting active sync token...');
-    const syncToken = await getSyncToken(wsId);
+    const syncToken = await getSyncToken(wsId, calendarId);
     console.log('🔍 [DEBUG] Sync token result:', {
       hasSyncToken: !!syncToken,
       syncToken,
+      calendarId,
     });
 
     metrics.syncTokenUsed = !!syncToken;
@@ -320,7 +321,7 @@ export async function performIncrementalActiveSync(
 
           // Clear the sync token from database since it's invalid
           try {
-            await clearSyncToken(wsId);
+            await clearSyncToken(wsId, calendarId);
             console.log('✅ [DEBUG] Invalid sync token cleared from database');
           } catch (clearError) {
             console.error(
@@ -372,7 +373,7 @@ export async function performIncrementalActiveSync(
 
         if (nextSyncToken) {
           console.log('🔍 [DEBUG] Storing next sync token...');
-          await storeSyncToken(wsId, nextSyncToken, new Date());
+          await storeSyncToken(wsId, nextSyncToken, new Date(), calendarId);
           console.log('✅ [DEBUG] Next sync token stored successfully');
         }
 

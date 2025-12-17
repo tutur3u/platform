@@ -12,6 +12,7 @@ import timezone from 'dayjs/plugin/timezone';
 import Image from 'next/image';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MIN_COLUMN_WIDTH } from './config';
+import { isLocationEvent, LocationTimeline } from './location-timeline';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(isBetween);
@@ -33,12 +34,16 @@ interface EventSpan {
   actualStartDate: dayjs.Dayjs; // Actual start date of the event
   actualEndDate: dayjs.Dayjs; // Actual end date of the event
   row: number; // Add row property for proper stacking
+  // For merged events
+  isMerged?: boolean;
+  mergedEventIds?: string[];
 }
 
 interface EventLayout {
   spans: EventSpan[];
   maxVisibleEventsPerDay: number;
   eventsByDay: EventSpan[][];
+  locationSpansFromMerge: EventSpan[];
 }
 
 // Drag state interface
@@ -80,7 +85,7 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 );
 
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { openModal, updateEvent } = useCalendar();
+  const { openModal, updateEvent, addEvent, deleteEvent } = useCalendar();
   const { allDayEvents } = useCalendarSync();
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
@@ -437,13 +442,121 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       }
     });
 
-    // Second pass: assign rows using proper stacking algorithm
-    // Sort events by start date, then by duration (longer events first to minimize conflicts)
-    const sortedTempSpans = tempSpans.sort((a, b) => {
-      const startDiff = a.actualStartDate.diff(b.actualStartDate);
-      if (startDiff !== 0) return startDiff;
-      // If start dates are the same, longer events get priority (lower row numbers)
-      return b.span - a.span;
+    // Second pass: Merge consecutive SINGLE-DAY events with same title and color
+    // Only merge events that span exactly 1 day and are consecutive in the visible range
+    // This creates unified "spans" for daily events like "Home" that appear on consecutive days
+    const mergedTempSpans: Omit<EventSpan, 'row'>[] = [];
+    const processedIds = new Set<string>();
+
+    // Sort by start index for merging
+    const sortedForMerge = [...tempSpans].sort(
+      (a, b) => a.startIndex - b.startIndex
+    );
+
+    for (const span of sortedForMerge) {
+      if (processedIds.has(span.event.id)) continue;
+
+      // Only merge single-day events (span === 1)
+      if (span.span !== 1) {
+        // Multi-day events - don't merge, just add directly
+        processedIds.add(span.event.id);
+        mergedTempSpans.push(span);
+        continue;
+      }
+
+      // Look for consecutive single-day events with same title and color to merge
+      const mergeKey = `${(span.event.title ?? '').toLowerCase().trim()}|${span.event.color ?? 'BLUE'}`;
+      let mergedSpan = { ...span };
+      const mergedIds = [span.event.id];
+
+      // Iteratively find and merge consecutive spans
+      let foundMerge = true;
+      while (foundMerge) {
+        foundMerge = false;
+        for (const candidateSpan of sortedForMerge) {
+          if (processedIds.has(candidateSpan.event.id)) continue;
+          if (candidateSpan.event.id === span.event.id) continue;
+          if (mergedIds.includes(candidateSpan.event.id)) continue;
+
+          // Only merge with other single-day events
+          if (candidateSpan.span !== 1) continue;
+
+          const candidateKey = `${(candidateSpan.event.title ?? '').toLowerCase().trim()}|${candidateSpan.event.color ?? 'BLUE'}`;
+          if (candidateKey !== mergeKey) continue;
+
+          // Check if truly consecutive (immediately adjacent days)
+          const isNextDay =
+            candidateSpan.startIndex === mergedSpan.endIndex + 1;
+          const isPrevDay =
+            candidateSpan.endIndex === mergedSpan.startIndex - 1;
+
+          if (isNextDay || isPrevDay) {
+            // Merge the spans
+            const newStartIndex = Math.min(
+              mergedSpan.startIndex,
+              candidateSpan.startIndex
+            );
+            const newEndIndex = Math.max(
+              mergedSpan.endIndex,
+              candidateSpan.endIndex
+            );
+            mergedSpan = {
+              ...mergedSpan,
+              startIndex: newStartIndex,
+              endIndex: newEndIndex,
+              span: newEndIndex - newStartIndex + 1,
+              isCutOffStart:
+                mergedSpan.isCutOffStart || candidateSpan.isCutOffStart,
+              isCutOffEnd: mergedSpan.isCutOffEnd || candidateSpan.isCutOffEnd,
+              actualStartDate: mergedSpan.actualStartDate.isBefore(
+                candidateSpan.actualStartDate
+              )
+                ? mergedSpan.actualStartDate
+                : candidateSpan.actualStartDate,
+              actualEndDate: mergedSpan.actualEndDate.isAfter(
+                candidateSpan.actualEndDate
+              )
+                ? mergedSpan.actualEndDate
+                : candidateSpan.actualEndDate,
+              isMerged: true,
+              mergedEventIds: [...mergedIds, candidateSpan.event.id],
+            };
+
+            mergedIds.push(candidateSpan.event.id);
+            processedIds.add(candidateSpan.event.id);
+            foundMerge = true;
+            break; // Restart search with expanded range
+          }
+        }
+      }
+
+      processedIds.add(span.event.id);
+      if (mergedIds.length > 1) {
+        mergedSpan.isMerged = true;
+        mergedSpan.mergedEventIds = mergedIds;
+      }
+      mergedTempSpans.push(mergedSpan);
+    }
+
+    // Third pass: assign rows (ONLY for non-location events)
+    // Location events will be rendered separately as a compact timeline strip
+    // Extract location spans before filtering them out for row assignment
+    const locationSpansFromMerge = mergedTempSpans
+      .filter((span) => isLocationEvent(span.event.title ?? '') !== null)
+      .map((span) => ({ ...span, row: 0 })); // Give them row 0 as placeholder
+
+    const nonLocationSpans = mergedTempSpans.filter(
+      (span) => isLocationEvent(span.event.title ?? '') === null
+    );
+
+    // Sort: 1) by span length (longer events first for better packing), 2) by start date
+    const sortedTempSpans = nonLocationSpans.sort((a, b) => {
+      // Longer events first (they need to claim their full row first)
+      const spanDiff = b.span - a.span;
+      if (spanDiff !== 0) return spanDiff;
+
+      // Then by start date
+      return a.actualStartDate.diff(b.actualStartDate);
     });
 
     // Track occupied rows for each day
@@ -520,8 +633,56 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       maxVisibleEventsPerDay = Math.max(maxVisibleEventsPerDay, visibleCount);
     });
 
-    return { spans, maxVisibleEventsPerDay, eventsByDay };
+    return {
+      spans,
+      maxVisibleEventsPerDay,
+      eventsByDay,
+      locationSpansFromMerge,
+    };
   }, [allDayEvents, visibleDates, tz, expandedDates]);
+
+  // Extract location events (Home/Office) for compact timeline display
+  // Deduplicate: only show one location event per day cell (first one wins)
+  const locationSpans = useMemo(() => {
+    const allLocationSpans = eventLayout.locationSpansFromMerge || [];
+
+    // Track which day indices have been claimed by a location event
+    const claimedDays = new Set<number>();
+    const deduplicatedSpans: EventSpan[] = [];
+
+    // Sort by start index to process in order
+    const sortedSpans = [...allLocationSpans].sort(
+      (a, b) => a.startIndex - b.startIndex
+    );
+
+    for (const span of sortedSpans) {
+      // Check if any day in this span is already claimed
+      let hasConflict = false;
+      for (let day = span.startIndex; day <= span.endIndex; day++) {
+        if (claimedDays.has(day)) {
+          hasConflict = true;
+          break;
+        }
+      }
+
+      if (!hasConflict) {
+        // Claim all days for this span
+        for (let day = span.startIndex; day <= span.endIndex; day++) {
+          claimedDays.add(day);
+        }
+        deduplicatedSpans.push(span);
+      }
+    }
+
+    return deduplicatedSpans;
+  }, [eventLayout.locationSpansFromMerge]);
+
+  // Get non-location spans for regular event display
+  const regularSpans = useMemo(() => {
+    return eventLayout.spans.filter(
+      (span) => isLocationEvent(span.event.title ?? '') === null
+    );
+  }, [eventLayout.spans]);
 
   // Get unique events for a specific date (for expansion logic)
   const getUniqueEventsForDate = (dateIndex: number): EventSpan[] => {
@@ -756,7 +917,19 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           )}
 
         {/* Absolute positioned spanning events */}
-        {eventLayout.spans.map((eventSpan) => {
+        {/* Location timeline strip at the top */}
+        <LocationTimeline
+          visibleDates={visibleDates}
+          locationSpans={locationSpans}
+          tz={tz}
+          addEvent={addEvent}
+          updateEvent={updateEvent}
+          openModal={openModal}
+          deleteEvent={deleteEvent}
+        />
+
+        {/* Absolute positioned spanning events */}
+        {regularSpans.map((eventSpan) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
             eventSpan;
           const { bg, border, text } = getEventStyles(event.color || 'BLUE');
@@ -790,6 +963,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           const isDraggedEvent =
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
+          // Calculate top offset based on location strip presence
+          const topOffset = locationSpans.length > 0 ? 1.5 : 0;
+
           return (
             <div
               key={`spanning-event-${event.id}`}
@@ -811,7 +987,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               style={{
                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                top: `${eventRow * 1.6 + 0.25}rem`,
+                top: `${eventRow * 1.6 + 0.25 + topOffset}rem`,
                 height: '1.35rem',
                 zIndex: isDraggedEvent ? 10 : 5,
               }}
