@@ -371,7 +371,7 @@ export function SessionHistory({
                     // Sort by date descending (newest first)
                     const dateA = dayjs(keyA, 'dddd, MMMM D, YYYY', true);
                     const dateB = dayjs(keyB, 'dddd, MMMM D, YYYY', true);
-                    
+
                     // If either date is invalid, fall back to deterministic comparison
                     if (!dateA.isValid() || !dateB.isValid()) {
                       // Sort date keys before non-date keys, then by string comparison
@@ -380,7 +380,7 @@ export function SessionHistory({
                       }
                       return keyA.localeCompare(keyB);
                     }
-                    
+
                     return dateB.diff(dateA);
                   })
                   .map(([groupTitle, groupSessions]) => {

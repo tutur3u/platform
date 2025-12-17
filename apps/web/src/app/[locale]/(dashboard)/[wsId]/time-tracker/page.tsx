@@ -90,7 +90,6 @@ function StatsCardSkeleton() {
   );
 }
 
-
 function HeatmapCardSkeleton() {
   return (
     <Card className="relative overflow-x-auto">
@@ -166,7 +165,11 @@ export default async function TimeTrackerPage({
 
             {/* Heatmap */}
             <Suspense fallback={<HeatmapCardSkeleton />}>
-              <HeatmapCardClient wsId={wsId} userId={user.id} isPersonal={isPersonal} />
+              <HeatmapCardClient
+                wsId={wsId}
+                userId={user.id}
+                isPersonal={isPersonal}
+              />
             </Suspense>
           </div>
         );

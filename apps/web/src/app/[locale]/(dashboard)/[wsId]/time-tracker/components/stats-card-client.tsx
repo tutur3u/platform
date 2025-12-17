@@ -107,10 +107,10 @@ export function StatsCardClient({
                 </p>
                 {isWeekend && <span className="text-sm">🏖️</span>}
               </div>
-              <p className="text-muted-foreground/80 text-xs">
-                {weekdayName}
+              <p className="text-muted-foreground/80 text-xs">{weekdayName}</p>
+              <p className="font-bold text-lg">
+                {formatDuration(stats.todayTime)}
               </p>
-              <p className="font-bold text-lg">{formatDuration(stats.todayTime)}</p>
             </div>
           </div>
 
@@ -134,7 +134,9 @@ export function StatsCardClient({
                   day: 'numeric',
                 })}
               </p>
-              <p className="font-bold text-lg">{formatDuration(stats.weekTime)}</p>
+              <p className="font-bold text-lg">
+                {formatDuration(stats.weekTime)}
+              </p>
             </div>
           </div>
 
