@@ -32,7 +32,6 @@ interface SimpleTimerControlsProps {
   elapsedTime: number;
   isRunning: boolean;
   categories: TimeTrackingCategory[];
-  tasks: ExtendedWorkspaceTask[];
   apiCall: (
     url: string,
     options?: RequestInit
@@ -47,7 +46,6 @@ export function SimpleTimerControls({
   elapsedTime,
   isRunning,
   categories,
-  tasks,
   apiCall,
   currentUserId,
   headerAction,
@@ -576,7 +574,6 @@ export function SimpleTimerControls({
           onOpenChange={setShowExceededThresholdDialog}
           session={currentSession}
           categories={categories}
-          tasks={tasks}
           wsId={wsId}
           thresholdDays={thresholdDays ?? null}
           onSessionDiscarded={handleSessionDiscarded}
