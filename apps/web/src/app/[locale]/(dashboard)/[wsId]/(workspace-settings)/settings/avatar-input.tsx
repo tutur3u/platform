@@ -2,7 +2,7 @@
 
 import { Loader2, UserIcon, AlertTriangle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceUser } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import React, { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
+import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 
 interface Props {
   workspace: Workspace;
@@ -90,6 +91,12 @@ export default function AvatarInput({
   const t = useTranslations();
   const router = useRouter();
   const supabase = createClient();
+  
+  // Fetch current workspace user
+  const {
+    data: user,
+    isLoading: isUserLoading
+  } = useWorkspaceUser();
 
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
@@ -102,10 +109,13 @@ export default function AvatarInput({
   );
 
   // Check if user has manage_workspace_settings permission
+  // Only check permission once user data is loaded
   const { hasPermission, isLoading: isCheckingPermission } =
     useWorkspacePermission({
       wsId: workspace.id,
       permission: 'manage_workspace_settings',
+      user: user ?? {} as WorkspaceUser,
+      enabled: !!user, // Only run query when user is loaded
     });
 
   // Notify parent component when permission check completes
@@ -119,8 +129,9 @@ export default function AvatarInput({
     resolver: zodResolver(FormSchema),
   });
 
-  // Determine if upload should be disabled
-  const isUploadDisabled = disabled || !hasPermission || isCheckingPermission;
+  // Determine if upload should be disabled (including user loading state)
+  const isUploadDisabled =
+    disabled || !hasPermission || isCheckingPermission || isUserLoading;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
