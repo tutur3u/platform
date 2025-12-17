@@ -344,6 +344,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
         color: string | null;
         isFromAPI: boolean;
         connectionExists: boolean;
+        accountId: string;
       }>
     >
   );
