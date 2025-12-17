@@ -24,7 +24,7 @@ export function HeatmapCardClient({
 }: HeatmapCardClientProps) {
   const userTimezone = dayjs.tz.guess();
 
-  const { data: stats, isLoading : statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['time-tracker-stats', wsId, userId, userTimezone],
     queryFn: async () => {
       const response = await fetch(
@@ -43,21 +43,21 @@ export function HeatmapCardClient({
   }
 
   if (statsLoading) {
-    return(
-            <Card className="relative overflow-x-auto">
-      <div className="flex items-center gap-3 p-6">
-        <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
-        <div className="space-y-2">
-          <div className="h-5 w-40 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-56 animate-pulse rounded bg-muted" />
+    return (
+      <Card className="relative overflow-x-auto">
+        <div className="flex items-center gap-3 p-6">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-56 animate-pulse rounded bg-muted" />
+          </div>
         </div>
-      </div>
-      <CardContent>
-        <div className="h-64 animate-pulse rounded-lg bg-muted" />
-      </CardContent>
-    </Card>
-    )
-    }
+        <CardContent>
+          <div className="h-64 animate-pulse rounded-lg bg-muted" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="relative overflow-x-auto">
