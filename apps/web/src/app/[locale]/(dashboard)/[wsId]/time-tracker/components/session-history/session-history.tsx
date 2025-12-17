@@ -365,8 +365,14 @@ export function SessionHistory({
               <SessionStats periodStats={periodStats} />
 
               <div className="space-y-6">
-                {Object.entries(groupedStackedSessions).map(
-                  ([groupTitle, groupSessions]) => {
+                {Object.entries(groupedStackedSessions)
+                  .sort(([keyA], [keyB]) => {
+                    // Sort by date descending (newest first)
+                    const dateA = dayjs(keyA, 'dddd, MMMM D, YYYY');
+                    const dateB = dayjs(keyB, 'dddd, MMMM D, YYYY');
+                    return dateB.diff(dateA);
+                  })
+                  .map(([groupTitle, groupSessions]) => {
                     const groupTotalDuration = groupSessions.reduce(
                       (sum, session) => sum + session.periodDuration,
                       0
@@ -403,8 +409,7 @@ export function SessionHistory({
                         </div>
                       </div>
                     );
-                  }
-                )}
+                  })}
               </div>
             </>
           )}

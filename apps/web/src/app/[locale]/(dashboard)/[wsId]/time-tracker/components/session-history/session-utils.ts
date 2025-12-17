@@ -123,12 +123,16 @@ export const getSessionDays = (
  * @param sessions - Sessions to stack together
  * @param userTimezone - User's timezone for duration calculations
  * @param displayDate - The date this stack is displayed under (for split overnight sessions)
+ * @param periodStart - Start of the period (for month view duration calculation)
+ * @param periodEnd - End of the period (for month view duration calculation)
  * @returns A StackedSession object or null if invalid
  */
 export const createStackedSession = (
   sessions: SessionWithRelations[],
   userTimezone?: string,
-  displayDate?: string
+  displayDate?: string,
+  periodStart?: dayjs.Dayjs,
+  periodEnd?: dayjs.Dayjs
 ): StackedSession | null => {
   if (sessions.length === 0) {
     throw new Error('Cannot create stacked session from empty array');
@@ -141,12 +145,34 @@ export const createStackedSession = (
     0
   );
 
-  // Calculate period duration (duration that falls within the display date)
+  // Calculate period duration (duration that falls within the display date or period)
   let periodDuration = totalDuration;
   if (displayDate) {
     const displayDay = dayjs.tz(displayDate, tz);
+    
+    // Check if this is from month view by checking if periodStart/periodEnd spans more than 7 days
+    const isMonthView = periodStart && periodEnd && periodEnd.diff(periodStart, 'day') > 7;
+    
+    if (isMonthView) {
+      // Month view: displayDate is the week start, calculate duration for that entire week
+      const weekStart = displayDay.startOf('isoWeek');
+      const weekEnd = displayDay.endOf('isoWeek');
+      periodDuration = sessions.reduce(
+        (sum, s) =>
+          sum + getSessionDurationInPeriod(s, weekStart, weekEnd, tz),
+        0
+      );
+    } else {
+      // Day/week view: displayDate is a specific day, calculate duration for that day
+      periodDuration = sessions.reduce(
+        (sum, s) => sum + getSessionDurationForDay(s, displayDay, tz),
+        0
+      );
+    }
+  } else if (periodStart && periodEnd) {
+    // No displayDate: calculate duration within the period boundaries
     periodDuration = sessions.reduce(
-      (sum, s) => sum + getSessionDurationForDay(s, displayDay, tz),
+      (sum, s) => sum + getSessionDurationInPeriod(s, periodStart, periodEnd, tz),
       0
     );
   }
@@ -205,12 +231,49 @@ export const stackSessions = (
 
   sessions?.forEach((session) => {
     if (viewMode === 'month') {
-      // For month view, group by name and category only (ignore day)
-      const groupKey = `${session.title}-${session.category_id || 'none'}-${session.task_id || 'none'}`;
-      if (!groups[groupKey]) {
-        groups[groupKey] = { sessions: [] };
+      // For month view, split sessions by week boundaries (similar to day splitting)
+      const sessionStart = dayjs.utc(session.start_time).tz(userTimezone);
+      const sessionEnd = session.end_time
+        ? dayjs.utc(session.end_time).tz(userTimezone)
+        : dayjs().tz(userTimezone);
+
+      // Get the week start for the session start time
+      const startWeek = sessionStart.startOf('isoWeek');
+      const endWeek = sessionEnd.startOf('isoWeek');
+
+      // Collect all weeks this session spans
+      const weeks: dayjs.Dayjs[] = [];
+      let current = startWeek;
+
+      while (current.isBefore(endWeek) || current.isSame(endWeek, 'week')) {
+        // Only include weeks that overlap with the period we're viewing
+        if (periodStart && periodEnd) {
+          const weekEnd = current.endOf('isoWeek');
+          // Check if this week overlaps with the viewing period
+          if (
+            weekEnd.isBefore(periodStart.startOf('day')) ||
+            current.isAfter(periodEnd.endOf('day'))
+          ) {
+            current = current.add(1, 'week');
+            continue;
+          }
+        }
+        weeks.push(current.clone()); // Store the week start date
+        current = current.add(1, 'week');
       }
-      groups[groupKey]?.sessions.push(session);
+
+      // Create a group for each week this session spans
+      weeks.forEach((weekStart) => {
+        const weekKey = weekStart.format('YYYY-MM-DD'); // Store as ISO date string
+        const groupKey = `${weekKey}-${session.title}-${session.category_id || 'none'}-${session.task_id || 'none'}`;
+        if (!groups[groupKey]) {
+          groups[groupKey] = { sessions: [], displayDate: weekKey };
+        }
+        // Only add the session once per group (avoid duplicates)
+        if (!groups[groupKey]?.sessions.some((s) => s.id === session.id)) {
+          groups[groupKey]?.sessions.push(session);
+        }
+      });
     } else {
       // For day/week view, split sessions that span multiple days
       const sessionDays = getSessionDays(session, userTimezone);
@@ -251,7 +314,9 @@ export const stackSessions = (
       const newStack = createStackedSession(
         sortedSessions,
         userTimezone,
-        group.displayDate
+        group.displayDate,
+        periodStart,
+        periodEnd
       );
       if (newStack) stacks.push(newStack);
     }

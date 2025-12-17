@@ -196,8 +196,21 @@ export function MonthView({
           <History className="h-5 w-5" />
           {t('weekly_breakdown')}
         </h3>
-        {Object.entries(groupedStackedSessions).map(
-          ([groupTitle, groupSessions]) => {
+        {Object.entries(groupedStackedSessions)
+          .sort(([keyA], [keyB]) => {
+            // Extract week start dates from keys like "Week Dec 15 - Dec 21"
+            // Parse the date after "Week " and before " -"
+            const extractDate = (key: string) => {
+              const match = key.match(/Week (\w+ \d+)/);
+              if (match) {
+                // Convert "Dec 15" to a date for comparison
+                return new Date(`${match[1]}, ${new Date().getFullYear()}`);
+              }
+              return new Date(0); // fallback
+            };
+            return extractDate(keyB).getTime() - extractDate(keyA).getTime(); // Descending order
+          })
+          .map(([groupTitle, groupSessions]) => {
             const groupTotalDuration = groupSessions.reduce(
               (sum, session) => sum + session.periodDuration,
               0

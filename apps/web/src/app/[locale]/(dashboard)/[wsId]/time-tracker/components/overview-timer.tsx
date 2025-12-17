@@ -13,7 +13,6 @@ import { SimpleTimerControls } from './simple-timer-controls';
 interface OverviewTimerProps {
   wsId: string;
   categories: TimeTrackingCategory[];
-  tasks: ExtendedWorkspaceTask[];
   initialRunningSession: SessionWithRelations | null;
 }
 

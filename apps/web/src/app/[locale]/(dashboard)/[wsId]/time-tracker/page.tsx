@@ -8,6 +8,9 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -17,7 +20,10 @@ import { formatDuration } from '@/lib/time-format';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
 import { ActivityHeatmap } from './components/activity-heatmap';
 import OverviewTimer from './components/overview-timer';
-import type { ExtendedWorkspaceTask, SessionWithRelations } from './types';
+import type { SessionWithRelations } from './types';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('time-tracker');
@@ -35,11 +41,15 @@ async function fetchTimeTrackingStats(
 ) {
   const supabase = await createClient();
 
-  // Call the database function to get pre-calculated stats
+  // Get user's timezone
+  const userTimezone = dayjs.tz.guess();
+
+  // Call the database function to get pre-calculated stats with timezone awareness
   const { data, error } = await supabase.rpc('get_time_tracker_stats', {
     p_user_id: userId,
     p_ws_id: wsId,
     p_is_personal: isPersonal,
+    p_timezone: userTimezone,
   });
 
   if (error) {
@@ -78,7 +88,7 @@ async function fetchTimeTrackingStats(
 async function fetchTimerData(userId: string, wsId: string) {
   const sbAdmin = await createClient();
 
-  const [categoriesResult, runningSessionResult, tasksResult] =
+  const [categoriesResult, runningSessionResult] =
     await Promise.all([
       sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
       sbAdmin
@@ -88,29 +98,7 @@ async function fetchTimerData(userId: string, wsId: string) {
         .eq('user_id', userId)
         .is('duration_seconds', null)
         .single(),
-      sbAdmin
-        .from('tasks')
-        .select(`
-        *,
-        list:task_lists!inner(
-          id,
-          name,
-          status,
-          board:workspace_boards!inner(
-            id,
-            name,
-            ws_id
-          )
-        )
-      `)
-        .eq('list.board.ws_id', wsId)
-        .is('deleted_at', null)
-        .is('closed_at', null)
-        .in('list.status', ['not_started', 'active'])
-        .eq('list.deleted', false)
-        .order('created_at', { ascending: false })
-        .limit(100),
-    ]);
+     ])
 
   // Handle categories result
   let categories: typeof categoriesResult.data = [];
@@ -140,30 +128,9 @@ async function fetchTimerData(userId: string, wsId: string) {
     runningSession = runningSessionResult.data as SessionWithRelations;
   }
 
-  // Handle tasks result
-  let tasks: ExtendedWorkspaceTask[] = [];
-  if (tasksResult.error) {
-    if (tasksResult.error.code !== 'PGRST116') {
-      console.error(
-        '[time-tracker] Error fetching tasks:',
-        tasksResult.error.code,
-        tasksResult.error.message
-      );
-    }
-  } else if (tasksResult.data) {
-    // Transform tasks to match ExtendedWorkspaceTask interface
-    tasks = tasksResult.data.map((task) => ({
-      ...task,
-      board_id: task.list?.board?.id,
-      board_name: task.list?.board?.name,
-      list_id: task.list?.id,
-      list_name: task.list?.name,
-    })) as ExtendedWorkspaceTask[];
-  }
 
   return {
     categories,
-    tasks,
     runningSession,
   };
 }
@@ -468,7 +435,6 @@ async function TimerCardWrapper({
     <OverviewTimer
       wsId={wsId}
       categories={timerData.categories}
-      tasks={timerData.tasks}
       initialRunningSession={timerData.runningSession}
     />
   );
