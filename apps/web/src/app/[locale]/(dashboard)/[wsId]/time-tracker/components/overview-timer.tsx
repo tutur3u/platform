@@ -20,7 +20,6 @@ interface OverviewTimerProps {
 export default function OverviewTimer({
   wsId,
   categories,
-  tasks,
   initialRunningSession,
 }: OverviewTimerProps) {
   const tModes = useTranslations('time-tracker.modes');
@@ -117,7 +116,6 @@ export default function OverviewTimer({
       elapsedTime={elapsedTime}
       isRunning={isRunning}
       categories={categories}
-      tasks={tasks}
       apiCall={apiCall}
       headerAction={
         <Link href={`/${wsId}/time-tracker/timer?mode=advanced`}>
