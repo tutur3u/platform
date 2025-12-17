@@ -3,6 +3,7 @@
  *
  * Handles the OAuth callback from Microsoft, exchanges code for tokens,
  * fetches user info, and stores tokens in the database.
+ * Uses PKCE (Proof Key for Code Exchange) for security.
  */
 
 import {
@@ -13,6 +14,7 @@ import {
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -45,6 +47,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'No code provided' }, { status: 400 });
   }
 
+  // Retrieve the PKCE code verifier from the cookie
+  const cookieStore = await cookies();
+  const codeVerifier = cookieStore.get('ms_pkce_verifier')?.value;
+
+  if (!codeVerifier) {
+    console.error('❌ [DEBUG] Missing PKCE code verifier');
+    return NextResponse.redirect(
+      new URL(
+        `/${wsId}/calendar?error=microsoft_auth_failed&message=${encodeURIComponent('PKCE verification failed. Please try again.')}`,
+        request.url
+      ),
+      302
+    );
+  }
+
   const config: MicrosoftOAuthConfig = {
     clientId: process.env.MICROSOFT_CLIENT_ID || '',
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
@@ -69,6 +86,7 @@ export async function GET(request: Request) {
       code,
       scopes: MICROSOFT_CALENDAR_SCOPES,
       redirectUri: config.redirectUri,
+      codeVerifier, // Include the PKCE code verifier
     });
 
     if (!tokenResponse) {
@@ -194,13 +212,20 @@ export async function GET(request: Request) {
     }
 
     console.log('🔍 [DEBUG] Redirecting to calendar page...');
-    return NextResponse.redirect(
+
+    // Create redirect response and clear the PKCE cookie
+    const redirectResponse = NextResponse.redirect(
       new URL(
         `/${wsId}/calendar?provider=microsoft&connected=true`,
         request.url
       ),
       302
     );
+
+    // Clear the PKCE verifier cookie
+    redirectResponse.cookies.delete('ms_pkce_verifier');
+
+    return redirectResponse;
   } catch (error) {
     console.error('❌ [DEBUG] Error during Microsoft OAuth callback:', {
       error: error instanceof Error ? error.message : 'Unknown error',
