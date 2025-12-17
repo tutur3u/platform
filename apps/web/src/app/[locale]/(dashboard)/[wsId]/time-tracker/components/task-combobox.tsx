@@ -15,7 +15,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
 import type { TaskWithDetails } from './session-history/session-types';
-import { useTranslations } from 'next-intl';
 
 interface TaskComboboxProps {
   /**
