@@ -15,7 +15,7 @@ export async function performFullSyncForWorkspace(
   access_token: string,
   refresh_token: string
 ) {
-  console.log(`[${ws_id}] Starting full sync for workspace`);
+  console.log('Starting full sync for workspace', { wsId: ws_id });
 
   const auth = getGoogleAuthClient({
     access_token,
@@ -28,7 +28,8 @@ export async function performFullSyncForWorkspace(
   const timeMin = now.subtract(90, 'day'); // 90 days in the past
   const timeMax = now.add(180, 'day'); // 180 days in the future
 
-  console.log(`[${ws_id}] Fetching events with date range:`, {
+  console.log('Fetching events with date range:', {
+    wsId: ws_id,
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     dateRange: `${timeMin.format('YYYY-MM-DD')} to ${timeMax.format('YYYY-MM-DD')}`,
@@ -48,7 +49,8 @@ export async function performFullSyncForWorkspace(
     const events = res.data.items || [];
     const syncToken = res.data.nextSyncToken;
 
-    console.log(`[${ws_id}] Google Calendar API response:`, {
+    console.log('Google Calendar API response:', {
+      wsId: ws_id,
       eventsCount: events.length,
       hasNextSyncToken: !!syncToken,
       hasNextPageToken: !!res.data.nextPageToken,
@@ -57,39 +59,43 @@ export async function performFullSyncForWorkspace(
 
     // Log sample events for debugging
     if (events.length > 0) {
-      console.log(
-        `[${ws_id}] Sample events:`,
-        events.slice(0, 3).map((event) => ({
+      console.log('Sample events:', {
+        wsId: ws_id,
+        events: events.slice(0, 3).map((event) => ({
           id: event.id,
           summary: event.summary,
           start: event.start,
           end: event.end,
           status: event.status,
-        }))
-      );
+        })),
+      });
     }
 
     if (events.length > 0) {
-      console.log(`[${ws_id}] Processing ${events.length} events...`);
+      console.log(`Processing ${events.length} events...`, { wsId: ws_id });
       await syncWorkspaceBatched({ ws_id, events_to_sync: events });
-      console.log(
-        `[${ws_id}] Successfully synced ${events.length} events to database`
-      );
+      console.log(`Successfully synced ${events.length} events to database`, {
+        wsId: ws_id,
+      });
     } else {
-      console.log(`[${ws_id}] No events found in the specified date range`);
+      console.log('No events found in the specified date range', {
+        wsId: ws_id,
+      });
     }
 
     if (syncToken) {
-      console.log(`[${ws_id}] Storing sync tokens...`);
+      console.log('Storing sync tokens...', { wsId: ws_id });
       await storeSyncToken(ws_id, syncToken, new Date(), calendarId);
-      console.log(`[${ws_id}] Sync tokens stored successfully`);
+      console.log('Sync tokens stored successfully', { wsId: ws_id });
     } else {
-      console.log(`[${ws_id}] No sync token received from Google Calendar API`);
+      console.log('No sync token received from Google Calendar API', {
+        wsId: ws_id,
+      });
     }
 
     return events;
   } catch (error) {
-    console.error(`[${ws_id}] Error during full sync:`, {
+    console.error('Error during full sync:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       ws_id,
@@ -111,7 +117,7 @@ export const googleCalendarFullSync = task({
     refresh_token: string;
     calendarId?: string; // Optional, defaults to "primary"
   }) => {
-    console.log(`[${payload.ws_id}] Starting full sync task`);
+    console.log('Starting full sync task', { wsId: payload.ws_id });
 
     try {
       const events = await performFullSyncForWorkspace(
@@ -122,7 +128,8 @@ export const googleCalendarFullSync = task({
       );
 
       console.log(
-        `[${payload.ws_id}] Full sync completed successfully. Synced ${events.length} events.`
+        `Full sync completed successfully. Synced ${events.length} events.`,
+        { wsId: payload.ws_id }
       );
 
       return {
@@ -132,7 +139,7 @@ export const googleCalendarFullSync = task({
         events: events,
       };
     } catch (error) {
-      console.error(`[${payload.ws_id}] Error in full sync task:`, error);
+      console.error('Error in full sync task:', { wsId: payload.ws_id, error });
 
       return {
         ws_id: payload.ws_id,
@@ -168,12 +175,12 @@ export const googleCalendarFullSyncOrchestrator = task({
             status: 'triggered',
           });
 
-          console.log(`[${workspace.ws_id}] Full sync triggered`);
+          console.log('Full sync triggered', { wsId: workspace.ws_id });
         } catch (error) {
-          console.error(
-            `[${workspace.ws_id}] Error triggering full sync:`,
-            error
-          );
+          console.error('Error triggering full sync:', {
+            wsId: workspace.ws_id,
+            error,
+          });
           results.push({
             ws_id: workspace.ws_id,
             error: error instanceof Error ? error.message : 'Unknown error',
