@@ -4339,7 +4339,15 @@
     "no_calendars_synced": "Chưa có lịch nào được đồng bộ.",
     "no_calendars_found": "Không tìm thấy lịch cho tài khoản này.",
     "toggle_failed": "Không thể cập nhật trạng thái hiển thị lịch.",
-    "synced": "Đã đồng bộ"
+    "synced": "Đã đồng bộ",
+    "google": "Google",
+    "outlook": "Outlook",
+    "google_calendar": "Lịch Google",
+    "microsoft_outlook": "Microsoft Outlook",
+    "connect_google_desc": "Kết nối tài khoản Google của bạn",
+    "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
+    "add_account": "Thêm tài khoản",
+    "disconnect": "Ngắt kết nối"
   },
   "documents": {
     "documents": "Tài liệu",

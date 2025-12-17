@@ -35,28 +35,11 @@ import { Switch } from '@tuturuuu/ui/switch';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
-interface ConnectedAccount {
-  id: string;
-  provider: 'google' | 'microsoft';
-  account_email: string | null;
-  account_name: string | null;
-  is_active: boolean;
-  created_at: string;
-  expires_at: string | null;
-}
-
-interface GoogleCalendar {
-  id: string;
-  name: string;
-  description: string;
-  primary: boolean;
-  backgroundColor: string;
-  foregroundColor: string;
-  accessRole: string;
-  accountId: string;
-  accountEmail: string | null;
-}
+import type {
+  AuthResponse,
+  ConnectedAccount,
+  GoogleCalendar,
+} from './calendar-types';
 
 interface AccountsResponse {
   accounts: ConnectedAccount[];
@@ -65,10 +48,6 @@ interface AccountsResponse {
     microsoft: ConnectedAccount[];
   };
   total: number;
-}
-
-interface AuthResponse {
-  authUrl: string;
 }
 
 export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
@@ -385,9 +364,9 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                 />
               )}
               <div className="text-left">
-                <div className="font-medium">Google Calendar</div>
+                <div className="font-medium">{t('google_calendar')}</div>
                 <div className="text-muted-foreground text-xs">
-                  Connect your Google account
+                  {t('connect_google_desc')}
                 </div>
               </div>
             </Button>
@@ -408,9 +387,9 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                 />
               )}
               <div className="text-left">
-                <div className="font-medium">Microsoft Outlook</div>
+                <div className="font-medium">{t('microsoft_outlook')}</div>
                 <div className="text-muted-foreground text-xs">
-                  Connect your Microsoft account
+                  {t('connect_microsoft_desc')}
                 </div>
               </div>
             </Button>
@@ -574,7 +553,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                                 ) : (
                                   <Trash2 className="mr-2 h-4 w-4" />
                                 )}
-                                Disconnect
+                                {t('disconnect')}
                               </Button>
                             </div>
                           </CollapsibleContent>
@@ -585,7 +564,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                     {/* Add new account buttons */}
                     <div className="space-y-2 pt-2">
                       <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                        Add Account
+                        {t('add_account')}
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button
@@ -605,7 +584,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                               height={16}
                             />
                           )}
-                          Google
+                          {t('google')}
                         </Button>
                         <Button
                           variant="outline"
@@ -624,7 +603,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                               height={16}
                             />
                           )}
-                          Outlook
+                          {t('outlook')}
                         </Button>
                       </div>
                     </div>

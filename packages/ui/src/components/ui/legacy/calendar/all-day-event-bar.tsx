@@ -12,7 +12,7 @@ import timezone from 'dayjs/plugin/timezone';
 import Image from 'next/image';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MIN_COLUMN_WIDTH } from './config';
-import { isLocationEvent, LocationTimeline } from './location-timeline';
+import { getLocationType, LocationTimeline } from './location-timeline';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(isBetween);
@@ -542,11 +542,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Location events will be rendered separately as a compact timeline strip
     // Extract location spans before filtering them out for row assignment
     const locationSpansFromMerge = mergedTempSpans
-      .filter((span) => isLocationEvent(span.event.title ?? '') !== null)
+      .filter((span) => getLocationType(span.event.title ?? '') !== null)
       .map((span) => ({ ...span, row: 0 })); // Give them row 0 as placeholder
 
     const nonLocationSpans = mergedTempSpans.filter(
-      (span) => isLocationEvent(span.event.title ?? '') === null
+      (span) => getLocationType(span.event.title ?? '') === null
     );
 
     // Sort: 1) by span length (longer events first for better packing), 2) by start date
@@ -680,7 +680,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Get non-location spans for regular event display
   const regularSpans = useMemo(() => {
     return eventLayout.spans.filter(
-      (span) => isLocationEvent(span.event.title ?? '') === null
+      (span) => getLocationType(span.event.title ?? '') === null
     );
   }, [eventLayout.spans]);
 

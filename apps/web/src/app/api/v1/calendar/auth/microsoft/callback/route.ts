@@ -1,41 +1,59 @@
-/**
- * Microsoft OAuth Callback Route
- *
- * Handles the OAuth callback from Microsoft, exchanges code for tokens,
- * fetches user info, and stores tokens in the database.
- * Uses PKCE (Proof Key for Code Exchange) for security.
- */
-
 import {
   ConfidentialClientApplication,
   createGraphClient,
   createMsalConfig,
   MICROSOFT_CALENDAR_SCOPES,
-  type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
 import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  getMicrosoftOAuthConfig,
+  isMicrosoftConfigComplete,
+} from '@/lib/calendar/microsoft-config';
 
-export async function GET(request: Request) {
+const microsoftCallbackQuerySchema = z.object({
+  code: z.string().nullable(),
+  state: z.string().nullable(),
+  error: z.string().nullable(),
+  error_description: z.string().nullable(),
+});
+
+export async function GET(request: Request): Promise<NextResponse> {
   console.log('🔍 [DEBUG] Microsoft OAuth callback route called');
 
   const url = new URL(request.url);
-  const code = url.searchParams.get('code');
-  const wsId = url.searchParams.get('state');
-  const error = url.searchParams.get('error');
-  const errorDescription = url.searchParams.get('error_description');
+  const queryParams = Object.fromEntries(url.searchParams.entries());
+
+  const result = microsoftCallbackQuerySchema.safeParse(queryParams);
+  if (!result.success) {
+    return NextResponse.json(
+      { error: 'Invalid callback parameters' },
+      { status: 400 }
+    );
+  }
+
+  const { code, state: wsId, error, error_description } = result.data;
 
   if (error) {
-    console.error('❌ [DEBUG] Microsoft OAuth error:', error, errorDescription);
-    return NextResponse.redirect(
-      new URL(
-        `/${wsId}/calendar?error=microsoft_auth_failed&message=${encodeURIComponent(errorDescription || error)}`,
-        request.url
-      ),
-      302
+    console.error(
+      '❌ [DEBUG] Microsoft OAuth error:',
+      error,
+      error_description
     );
+    // Safe redirect URL construction
+    const redirectUrl = wsId
+      ? new URL(`/${wsId}/calendar`, request.url)
+      : new URL('/', request.url);
+    redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
+    redirectUrl.searchParams.set(
+      'message',
+      error_description || error || 'Unknown error'
+    );
+
+    return NextResponse.redirect(redirectUrl, 302);
   }
 
   if (!wsId) {
@@ -54,23 +72,18 @@ export async function GET(request: Request) {
 
   if (!codeVerifier) {
     console.error('❌ [DEBUG] Missing PKCE code verifier');
-    return NextResponse.redirect(
-      new URL(
-        `/${wsId}/calendar?error=microsoft_auth_failed&message=${encodeURIComponent('PKCE verification failed. Please try again.')}`,
-        request.url
-      ),
-      302
+    const redirectUrl = new URL(`/${wsId}/calendar`, request.url);
+    redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
+    redirectUrl.searchParams.set(
+      'message',
+      'PKCE verification failed. Please try again.'
     );
+    return NextResponse.redirect(redirectUrl, 302);
   }
 
-  const config: MicrosoftOAuthConfig = {
-    clientId: process.env.MICROSOFT_CLIENT_ID || '',
-    clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
-    tenantId: process.env.MICROSOFT_TENANT_ID || 'common',
-    redirectUri: process.env.MICROSOFT_REDIRECT_URI || '',
-  };
+  const config = getMicrosoftOAuthConfig();
 
-  if (!config.clientId || !config.clientSecret || !config.redirectUri) {
+  if (!isMicrosoftConfigComplete(config)) {
     return NextResponse.json(
       { error: 'Microsoft OAuth not configured' },
       { status: 500 }
@@ -234,57 +247,37 @@ export async function GET(request: Request) {
           `🔍 [DEBUG] Found ${calendars.length} Microsoft calendars to add`
         );
 
-        // Insert each calendar into calendar_connections
-        for (const cal of calendars) {
-          if (!cal.id) continue;
+        if (calendars.length > 0) {
+          // Prepare connections for batch upsert
+          const connectionsToUpsert = calendars
+            .filter((cal) => cal.id)
+            .map((cal) => ({
+              ws_id: wsId,
+              calendar_id: cal.id!,
+              calendar_name: cal.name || 'Untitled Calendar',
+              is_enabled: true,
+              color: cal.hexColor || '#0078D4',
+              auth_token_id: tokenRecord.id,
+            }));
 
-          // Check if this calendar connection already exists
-          const { data: existing } = await supabase
+          // Batch upsert into calendar_connections
+          const { error: upsertError } = await supabase
             .from('calendar_connections')
-            .select('id')
-            .eq('ws_id', wsId)
-            .eq('calendar_id', cal.id)
-            .maybeSingle();
+            .upsert(connectionsToUpsert, {
+              onConflict: 'ws_id, calendar_id',
+            });
 
-          if (!existing) {
-            // Insert new calendar connection
-            const { error: insertCalError } = await supabase
-              .from('calendar_connections')
-              .insert({
-                ws_id: wsId,
-                calendar_id: cal.id,
-                calendar_name: cal.name || 'Untitled Calendar',
-                is_enabled: true,
-                color: cal.hexColor || '#0078D4',
-                auth_token_id: tokenRecord.id,
-              });
-
-            if (insertCalError) {
-              console.error(
-                `⚠️ [DEBUG] Failed to add Microsoft calendar ${cal.id}:`,
-                insertCalError
-              );
-            } else {
-              console.log(`✅ [DEBUG] Added Microsoft calendar: ${cal.name}`);
-            }
+          if (upsertError) {
+            console.error(
+              '⚠️ [DEBUG] Failed to batch upsert Microsoft calendar connections:',
+              upsertError
+            );
           } else {
-            // Update existing connection to link to this token
-            await supabase
-              .from('calendar_connections')
-              .update({
-                auth_token_id: tokenRecord.id,
-                is_enabled: true,
-              })
-              .eq('id', existing.id);
             console.log(
-              `🔄 [DEBUG] Updated existing Microsoft calendar: ${cal.name}`
+              `✅ [DEBUG] Successfully batched upserted ${connectionsToUpsert.length} Microsoft calendars`
             );
           }
         }
-
-        console.log(
-          `✅ [DEBUG] Auto-added ${calendars.length} Microsoft calendars to connections`
-        );
       }
     } catch (calendarAddError) {
       console.error(
@@ -297,13 +290,11 @@ export async function GET(request: Request) {
     console.log('🔍 [DEBUG] Redirecting to calendar page...');
 
     // Create redirect response and clear the PKCE cookie
-    const redirectResponse = NextResponse.redirect(
-      new URL(
-        `/${wsId}/calendar?provider=microsoft&connected=true`,
-        request.url
-      ),
-      302
-    );
+    const redirectUrl = new URL(`/${wsId}/calendar`, request.url);
+    redirectUrl.searchParams.set('provider', 'microsoft');
+    redirectUrl.searchParams.set('connected', 'true');
+
+    const redirectResponse = NextResponse.redirect(redirectUrl, 302);
 
     // Clear the PKCE verifier cookie
     redirectResponse.cookies.delete('ms_pkce_verifier');

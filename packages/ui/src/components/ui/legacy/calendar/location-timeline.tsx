@@ -56,19 +56,6 @@ export const getLocationType = (title: string): LocationType => {
   return null;
 };
 
-// Check if event is a location-based event
-export const isLocationEvent = (
-  title: string
-): 'home' | 'office' | 'school' | 'custom' | null => {
-  const normalizedTitle = title.toLowerCase().trim();
-  if (normalizedTitle === 'home') return 'home';
-  if (normalizedTitle === 'office' || normalizedTitle === 'work')
-    return 'office';
-  if (normalizedTitle === 'school') return 'school';
-  if (title.startsWith('📍') || title.startsWith('Location: ')) return 'custom';
-  return null;
-};
-
 // Location colors using dynamic theme tokens
 const locationStyles = {
   home: {

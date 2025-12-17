@@ -8,8 +8,19 @@
 
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
-export async function GET(request: Request) {
+const accountsQuerySchema = z.object({
+  wsId: z.string(),
+});
+
+const disconnectQuerySchema = z.object({
+  accountId: z.string(),
+  wsId: z.string(),
+});
+
+export async function GET(request: Request): Promise<NextResponse> {
   const supabase = await createClient();
 
   const {
@@ -25,14 +36,18 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const wsId = url.searchParams.get('wsId');
+  const queryParams = Object.fromEntries(url.searchParams.entries());
 
-  if (!wsId) {
+  const result = accountsQuerySchema.safeParse(queryParams);
+  if (!result.success) {
     return NextResponse.json(
-      { error: 'Missing workspace ID' },
+      { error: 'Missing or invalid workspace ID' },
       { status: 400 }
     );
   }
+
+  const { wsId } = result.data;
+  const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   try {
     const { data: accounts, error } = await supabase
@@ -41,7 +56,7 @@ export async function GET(request: Request) {
         'id, provider, account_email, account_name, is_active, created_at, expires_at'
       )
       .eq('user_id', user.id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('is_active', true)
       .order('created_at', { ascending: true });
 
@@ -76,7 +91,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: Request): Promise<NextResponse> {
   const supabase = await createClient();
 
   const {
@@ -92,15 +107,18 @@ export async function DELETE(request: Request) {
   }
 
   const url = new URL(request.url);
-  const accountId = url.searchParams.get('accountId');
-  const wsId = url.searchParams.get('wsId');
+  const queryParams = Object.fromEntries(url.searchParams.entries());
 
-  if (!accountId || !wsId) {
+  const result = disconnectQuerySchema.safeParse(queryParams);
+  if (!result.success) {
     return NextResponse.json(
       { error: 'Missing accountId or wsId' },
       { status: 400 }
     );
   }
+
+  const { accountId, wsId } = result.data;
+  const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   try {
     // First, verify the account belongs to this user and workspace
@@ -109,7 +127,7 @@ export async function DELETE(request: Request) {
       .select('id, provider, account_email')
       .eq('id', accountId)
       .eq('user_id', user.id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (fetchError || !account) {
@@ -121,7 +139,9 @@ export async function DELETE(request: Request) {
     const { error: updateError } = await supabase
       .from('calendar_auth_tokens')
       .update({ is_active: false })
-      .eq('id', accountId);
+      .eq('id', accountId)
+      .eq('user_id', user.id)
+      .eq('ws_id', normalizedWsId);
 
     if (updateError) {
       console.error('Error disconnecting account:', updateError);
@@ -132,10 +152,15 @@ export async function DELETE(request: Request) {
     }
 
     // Also disable calendar connections for this account
-    await supabase
+    const { error: connectionsError } = await supabase
       .from('calendar_connections')
       .update({ is_enabled: false })
       .eq('auth_token_id', accountId);
+
+    if (connectionsError) {
+      console.error('Error disabling calendar connections:', connectionsError);
+      // We don't return error here because the main account is already disconnected
+    }
 
     return NextResponse.json(
       {

@@ -291,55 +291,38 @@ export async function GET(request: Request) {
         const calendars = calendarListResponse.data.items || [];
         console.log(`🔍 [DEBUG] Found ${calendars.length} calendars to add`);
 
-        // Insert each calendar into calendar_connections
-        for (const cal of calendars) {
-          if (!cal.id) continue;
+        if (calendars.length > 0) {
+          // Prepare connections for batch upsert
+          const connectionsToUpsert = calendars
+            .filter((cal) => cal.id)
+            .map((cal) => ({
+              ws_id: wsId,
+              calendar_id: cal.id!,
+              calendar_name: cal.summary || 'Untitled Calendar',
+              is_enabled: true,
+              color: cal.backgroundColor || '#4285F4',
+              auth_token_id: tokenRecord.id,
+            }));
 
-          // Check if this calendar connection already exists
-          const { data: existing } = await supabase
+          // Batch upsert into calendar_connections
+          // We use onConflict to handle existing connections
+          const { error: upsertError } = await supabase
             .from('calendar_connections')
-            .select('id')
-            .eq('ws_id', wsId)
-            .eq('calendar_id', cal.id)
-            .maybeSingle();
+            .upsert(connectionsToUpsert, {
+              onConflict: 'ws_id, calendar_id',
+            });
 
-          if (!existing) {
-            // Insert new calendar connection
-            const { error: insertError } = await supabase
-              .from('calendar_connections')
-              .insert({
-                ws_id: wsId,
-                calendar_id: cal.id,
-                calendar_name: cal.summary || 'Untitled Calendar',
-                is_enabled: true,
-                color: cal.backgroundColor || '#4285F4',
-                auth_token_id: tokenRecord.id,
-              });
-
-            if (insertError) {
-              console.error(
-                `⚠️ [DEBUG] Failed to add calendar ${cal.id}:`,
-                insertError
-              );
-            } else {
-              console.log(`✅ [DEBUG] Added calendar: ${cal.summary}`);
-            }
+          if (upsertError) {
+            console.error(
+              '⚠️ [DEBUG] Failed to batch upsert calendar connections:',
+              upsertError
+            );
           } else {
-            // Update existing connection to link to this token
-            await supabase
-              .from('calendar_connections')
-              .update({
-                auth_token_id: tokenRecord.id,
-                is_enabled: true,
-              })
-              .eq('id', existing.id);
-            console.log(`🔄 [DEBUG] Updated existing calendar: ${cal.summary}`);
+            console.log(
+              `✅ [DEBUG] Successfully batched upserted ${connectionsToUpsert.length} calendars`
+            );
           }
         }
-
-        console.log(
-          `✅ [DEBUG] Auto-added ${calendars.length} calendars to connections`
-        );
       }
     } catch (calendarAddError) {
       console.error('⚠️ [DEBUG] Error auto-adding calendars:', calendarAddError);

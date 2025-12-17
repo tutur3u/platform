@@ -5,8 +5,30 @@ import {
 import { updateLastUpsert } from '@tuturuuu/trigger/calendar-sync-coordination';
 import { NextResponse } from 'next/server';
 import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
-export async function POST(request: Request) {
+interface IncrementalSyncMetrics {
+  tokenOperationsMs: number;
+  googleApiFetchMs: number;
+  eventProcessingMs: number;
+  databaseWritesMs: number;
+  apiCallsCount: number;
+  pagesFetched: number;
+  retryCount: number;
+  eventsFetchedTotal: number;
+  eventsFilteredOut: number;
+  batchCount: number;
+  syncTokenUsed: boolean;
+}
+
+interface IncrementalSyncResult {
+  eventsInserted: number;
+  eventsUpdated: number;
+  eventsDeleted: number;
+  metrics: IncrementalSyncMetrics;
+}
+
+export async function POST(request: Request): Promise<NextResponse> {
   const routeStartTime = Date.now();
   console.log('🔍 [DEBUG] POST /api/v1/calendar/auth/active-sync called');
 
@@ -18,23 +40,41 @@ export async function POST(request: Request) {
     dashboardUpdate: 0,
   };
 
+  // Initial Supabase client and user check
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    console.log(
+      '❌ [DEBUG] User not authenticated or error fetching user:',
+      userError
+    );
+    return NextResponse.json(
+      { error: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+  timings.authComplete = Date.now() - routeStartTime;
+
   try {
     // 1. Get the wsId and start/end dates from the request
-    const { wsId, startDate, endDate } = await request.json();
+    const { wsId: wsIdParam, startDate, endDate } = await request.json();
+
+    if (!wsIdParam) {
+      console.log('❌ [DEBUG] Missing wsId in request');
+      return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+    }
+
+    const wsId = await normalizeWorkspaceId(wsIdParam);
 
     console.log('🔍 [DEBUG] Request body parsed:', {
       wsId,
       startDate,
       endDate,
-      hasWsId: !!wsId,
-      hasStartDate: !!startDate,
-      hasEndDate: !!endDate,
     });
-
-    if (!wsId) {
-      console.log('❌ [DEBUG] Missing wsId in request');
-      return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
-    }
 
     if (!startDate || !endDate) {
       console.log('❌ [DEBUG] Missing startDate or endDate in request');
@@ -43,16 +83,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // 2. Create an admin client and get the user
-    console.log('🔍 [DEBUG] Creating Supabase client...');
-    const supabase = await createClient();
-    console.log('✅ [DEBUG] Supabase client created');
-
-    console.log('🔍 [DEBUG] Getting user from auth...');
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
     console.log('🔍 [DEBUG] Auth result:', {
       hasUser: !!user,
@@ -269,24 +299,8 @@ export async function POST(request: Request) {
           }
 
           // Type assertion for the success case
-          const syncResult = incrementalActiveSyncResult as {
-            eventsInserted: number;
-            eventsUpdated: number;
-            eventsDeleted: number;
-            metrics: {
-              tokenOperationsMs: number;
-              googleApiFetchMs: number;
-              eventProcessingMs: number;
-              databaseWritesMs: number;
-              apiCallsCount: number;
-              pagesFetched: number;
-              retryCount: number;
-              eventsFetchedTotal: number;
-              eventsFilteredOut: number;
-              batchCount: number;
-              syncTokenUsed: boolean;
-            };
-          };
+          const syncResult =
+            incrementalActiveSyncResult as IncrementalSyncResult;
 
           console.log(
             `✅ [DEBUG] performIncrementalActiveSync completed for calendar ${calendarId}:`,

@@ -16,40 +16,104 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
-interface ConnectedAccount {
-  id: string;
-  provider: 'google' | 'microsoft';
-  account_email: string | null;
-  account_name: string | null;
-  is_active: boolean;
-  created_at: string;
-  expires_at: string | null;
+import type { AuthResponse, ConnectedAccount } from './calendar-types';
+
+export interface ConnectedAccountsDialogProps {
+  wsId: string;
+  children?: React.ReactNode;
 }
 
-interface AuthResponse {
-  authUrl: string;
-}
+const isTokenExpiringSoon = (expiresAt: string | null) => {
+  if (!expiresAt) return false;
+  const expiryTime = new Date(expiresAt).getTime();
+  const now = Date.now();
+  const fiveMinutes = 5 * 60 * 1000;
+  return expiryTime - now < fiveMinutes;
+};
+
+const AccountItem = React.memo(
+  ({
+    account,
+    isDisconnecting,
+    onDisconnect,
+    t,
+  }: {
+    account: ConnectedAccount;
+    isDisconnecting: boolean;
+    onDisconnect: (id: string) => void;
+    t: any;
+  }) => (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+          {account.provider === 'google' ? (
+            <Image
+              src="/media/logos/google.svg"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+          ) : (
+            <Image
+              src="/media/logos/microsoft.svg"
+              alt="Microsoft"
+              width={20}
+              height={20}
+            />
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="truncate font-medium text-sm">
+              {account.account_name ||
+                account.account_email ||
+                t('unknown_account')}
+            </p>
+            {isTokenExpiringSoon(account.expires_at) && (
+              <Badge variant="outline" className="text-dynamic-orange text-xs">
+                <AlertCircle className="mr-1 h-3 w-3" />
+                {t('refresh_needed')}
+              </Badge>
+            )}
+          </div>
+          {account.account_email && account.account_name && (
+            <p className="truncate text-muted-foreground text-xs">
+              {account.account_email}
+            </p>
+          )}
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onDisconnect(account.id)}
+        disabled={isDisconnecting}
+      >
+        {isDisconnecting ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Trash2 className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
+  )
+);
+
+AccountItem.displayName = 'AccountItem';
 
 export function ConnectedAccountsDialog({
   wsId,
   children,
-}: {
-  wsId: string;
-  children?: React.ReactNode;
-}) {
+}: ConnectedAccountsDialogProps) {
   const t = useTranslations('calendar');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
   // Fetch connected accounts
-  const {
-    data: accountsData,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data: accountsData, isLoading } = useQuery({
     queryKey: ['calendar-accounts', wsId],
     enabled: open,
     queryFn: async () => {
@@ -114,7 +178,6 @@ export function ConnectedAccountsDialog({
   // Disconnect account mutation
   const disconnectMutation = useMutation({
     mutationFn: async (accountId: string) => {
-      setDisconnectingId(accountId);
       const response = await fetch(
         `/api/v1/calendar/auth/accounts?accountId=${accountId}&wsId=${wsId}`,
         { method: 'DELETE' }
@@ -122,10 +185,12 @@ export function ConnectedAccountsDialog({
       if (!response.ok) throw new Error('Failed to disconnect');
       return response.json();
     },
+    onMutate: (accountId: string) => {
+      setDisconnectingId(accountId);
+    },
     onSuccess: () => {
       toast.success(t('account_disconnected'));
       queryClient.invalidateQueries({ queryKey: ['calendar-accounts', wsId] });
-      refetch();
     },
     onError: () => {
       toast.error(t('failed_to_disconnect'));
@@ -135,76 +200,16 @@ export function ConnectedAccountsDialog({
     },
   });
 
+  const handleDisconnect = React.useCallback(
+    (accountId: string) => {
+      disconnectMutation.mutate(accountId);
+    },
+    [disconnectMutation]
+  );
+
   const googleAccounts = accountsData?.grouped.google || [];
   const microsoftAccounts = accountsData?.grouped.microsoft || [];
   const totalAccounts = accountsData?.total || 0;
-
-  const isTokenExpiringSoon = (expiresAt: string | null) => {
-    if (!expiresAt) return false;
-    const expiryTime = new Date(expiresAt).getTime();
-    const now = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
-    return expiryTime - now < fiveMinutes;
-  };
-
-  const renderAccount = (account: ConnectedAccount) => (
-    <div
-      key={account.id}
-      className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-          {account.provider === 'google' ? (
-            <Image
-              src="/media/logos/google.svg"
-              alt="Google"
-              width={20}
-              height={20}
-            />
-          ) : (
-            <Image
-              src="/media/logos/microsoft.svg"
-              alt="Microsoft"
-              width={20}
-              height={20}
-            />
-          )}
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="truncate font-medium text-sm">
-              {account.account_name ||
-                account.account_email ||
-                t('unknown_account')}
-            </p>
-            {isTokenExpiringSoon(account.expires_at) && (
-              <Badge variant="outline" className="text-dynamic-orange text-xs">
-                <AlertCircle className="mr-1 h-3 w-3" />
-                {t('refresh_needed')}
-              </Badge>
-            )}
-          </div>
-          {account.account_email && account.account_name && (
-            <p className="truncate text-muted-foreground text-xs">
-              {account.account_email}
-            </p>
-          )}
-        </div>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => disconnectMutation.mutate(account.id)}
-        disabled={disconnectingId === account.id}
-      >
-        {disconnectingId === account.id ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Trash2 className="h-4 w-4" />
-        )}
-      </Button>
-    </div>
-  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -274,7 +279,15 @@ export function ConnectedAccountsDialog({
               </div>
             ) : (
               <div className="space-y-2">
-                {googleAccounts.map(renderAccount)}
+                {googleAccounts.map((account) => (
+                  <AccountItem
+                    key={account.id}
+                    account={account}
+                    isDisconnecting={disconnectingId === account.id}
+                    onDisconnect={handleDisconnect}
+                    t={t}
+                  />
+                ))}
               </div>
             )}
 
@@ -306,7 +319,15 @@ export function ConnectedAccountsDialog({
               </div>
             ) : (
               <div className="space-y-2">
-                {microsoftAccounts.map(renderAccount)}
+                {microsoftAccounts.map((account) => (
+                  <AccountItem
+                    key={account.id}
+                    account={account}
+                    isDisconnecting={disconnectingId === account.id}
+                    onDisconnect={handleDisconnect}
+                    t={t}
+                  />
+                ))}
               </div>
             )}
 

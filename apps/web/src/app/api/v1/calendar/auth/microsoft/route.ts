@@ -5,14 +5,23 @@
  * Implements PKCE (Proof Key for Code Exchange) for security.
  */
 
+import crypto from 'node:crypto';
 import {
   ConfidentialClientApplication,
   createMsalConfig,
   MICROSOFT_CALENDAR_SCOPES,
-  type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
-import crypto from 'crypto';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  getMicrosoftOAuthConfig,
+  isMicrosoftConfigComplete,
+} from '@/lib/calendar/microsoft-config';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+const microsoftAuthQuerySchema = z.object({
+  wsId: z.string(),
+});
 
 /**
  * Generate a cryptographically random code verifier for PKCE
@@ -29,21 +38,24 @@ function generateCodeChallenge(verifier: string): string {
   return Buffer.from(hash).toString('base64url');
 }
 
-export async function GET(request: NextRequest) {
-  const wsId = request.nextUrl.searchParams.get('wsId');
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const url = new URL(request.url);
+  const queryParams = Object.fromEntries(url.searchParams.entries());
 
-  if (!wsId) {
-    return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+  const result = microsoftAuthQuerySchema.safeParse(queryParams);
+  if (!result.success) {
+    return NextResponse.json(
+      { error: 'Missing or invalid workspace ID' },
+      { status: 400 }
+    );
   }
 
-  const config: MicrosoftOAuthConfig = {
-    clientId: process.env.MICROSOFT_CLIENT_ID || '',
-    clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
-    tenantId: process.env.MICROSOFT_TENANT_ID || 'common',
-    redirectUri: process.env.MICROSOFT_REDIRECT_URI || '',
-  };
+  const { wsId } = result.data;
+  const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-  if (!config.clientId || !config.clientSecret || !config.redirectUri) {
+  const config = getMicrosoftOAuthConfig();
+
+  if (!isMicrosoftConfigComplete(config)) {
     return NextResponse.json(
       { error: 'Microsoft OAuth not configured' },
       { status: 500 }
@@ -61,7 +73,7 @@ export async function GET(request: NextRequest) {
     const authUrl = await cca.getAuthCodeUrl({
       scopes: MICROSOFT_CALENDAR_SCOPES,
       redirectUri: config.redirectUri,
-      state: wsId,
+      state: normalizedWsId,
       prompt: 'consent',
       codeChallenge,
       codeChallengeMethod: 'S256',

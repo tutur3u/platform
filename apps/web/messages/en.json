@@ -4118,7 +4118,6 @@
     "failed_to_update": "Failed to update calendar",
     "failed_to_update_visibility": "Failed to update calendar visibility",
 
-    "unknown_error": "An unknown error occurred",
     "please_reconnect": "Please reconnect your Google Calendar",
     "reconnect_desc": "Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.",
     "refresh_connection": "Your Google Calendar connection needs to be refreshed.",
@@ -4143,6 +4142,14 @@
     "agenda": "Agenda",
     "view": "View",
     "this-month": "This month",
+    "google": "Google",
+    "outlook": "Outlook",
+    "google_calendar": "Google Calendar",
+    "microsoft_outlook": "Microsoft Outlook",
+    "connect_google_desc": "Connect your Google account",
+    "connect_microsoft_desc": "Connect your Microsoft account",
+    "add_account": "Add Account",
+    "disconnect": "Disconnect",
     "categories": {
       "title": "Category Colors",
       "description": "Customize colors for different event categories",
@@ -4222,10 +4229,10 @@
     "unknown_account": "Unknown account",
     "refresh_needed": "Refresh needed",
     "microsoft_auth_failed": "Microsoft authentication failed",
+    "toggle_failed": "Failed to toggle calendar visibility",
     "connect_calendar": "Connect Calendar",
     "no_calendars_synced": "No calendars synced yet.",
     "no_calendars_found": "No calendars found for this account.",
-    "toggle_failed": "Failed to update calendar visibility.",
     "synced": "Synced"
   },
   "documents": {

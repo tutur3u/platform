@@ -1,6 +1,13 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+const listCalendarsQuerySchema = z.object({
+  wsId: z.string(),
+  accountId: z.string().optional(),
+});
 
 const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -24,7 +31,7 @@ interface CalendarToken {
   account_name: string | null;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,22 +47,25 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    const wsId = url.searchParams.get('wsId');
-    const accountId = url.searchParams.get('accountId'); // Optional: specific account
+    const queryParams = Object.fromEntries(url.searchParams.entries());
 
-    if (!wsId) {
+    const result = listCalendarsQuerySchema.safeParse(queryParams);
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Missing workspace ID' },
+        { error: 'Missing or invalid workspace ID' },
         { status: 400 }
       );
     }
+
+    const { wsId, accountId } = result.data;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Build query based on whether accountId is provided
     let query = supabase
       .from('calendar_auth_tokens')
       .select('id, access_token, refresh_token, account_email, account_name')
       .eq('user_id', user.id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('provider', 'google')
       .eq('is_active', true);
 
@@ -65,10 +75,18 @@ export async function GET(request: Request) {
 
     const { data: tokens, error: tokensError } = await query;
 
-    if (tokensError || !tokens || tokens.length === 0) {
+    if (tokensError) {
+      console.error('Error fetching calendar tokens:', tokensError);
+      return NextResponse.json(
+        { error: 'Failed to fetch calendar accounts' },
+        { status: 500 }
+      );
+    }
+
+    if (!tokens || tokens.length === 0) {
       return NextResponse.json(
         { error: 'No Google Calendar accounts found for this workspace' },
-        { status: 401 }
+        { status: 404 }
       );
     }
 
