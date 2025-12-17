@@ -42,23 +42,33 @@ export function useWorkspacePermission({
   const { data: hasPermission, isLoading, error } = useQuery({
     queryKey: ['workspace-permission', wsId, permission],
     queryFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Fetch authenticated user – throw if auth call fails (transient error)
+      const { data: authData, error: authError } = await supabase.auth.getUser();
 
+      if (authError) {
+        throw new Error(
+          `Failed to authenticate user: ${authError.message}`
+        );
+      }
+
+      const { user } = authData;
+
+      // Explicit "no user" case: user is unauthenticated (not a transient error)
       if (!user) {
         return false;
       }
 
-      const { data, error } = await supabase.rpc('has_workspace_permission', {
+      // Check permission via RPC – throw on error (transient failures surface properly)
+      const { data, error: rpcError } = await supabase.rpc('has_workspace_permission', {
         p_user_id: user.id,
         p_ws_id: wsId,
         p_permission: permission,
       });
 
-      if (error) {
-        console.error('Error checking permission:', error);
-        return false;
+      if (rpcError) {
+        throw new Error(
+          `Failed to check workspace permission: ${rpcError.message}`
+        );
       }
 
       return data ?? false;

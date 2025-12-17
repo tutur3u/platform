@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -58,6 +58,8 @@ const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
       // Draw the cropped image (already square from cropper) to the canvas
       ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
 
+      URL.revokeObjectURL(img.src);
+
       canvas.toBlob(
         (compressedBlob) => {
           if (compressedBlob) {
@@ -71,7 +73,10 @@ const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
       );
     };
 
-    img.onerror = () => reject(new Error('Failed to load image'));
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image'));
+    };
     img.src = URL.createObjectURL(blob);
   });
 };
@@ -149,18 +154,11 @@ export default function AvatarInput({
 
       if (updateError) throw updateError;
 
-      toast({
-        title: t('settings-account.avatar_updated'),
-        description: t('settings-account.avatar_updated_description'),
-      });
+      toast.success(t('settings-account.avatar_updated_description'));
       router.refresh();
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: t('settings-account.update_failed'),
-        description: t('settings-account.avatar_update_error'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.avatar_update_error'));
     } finally {
       form.reset();
       setSaving(false);
@@ -182,16 +180,9 @@ export default function AvatarInput({
       .eq('id', workspace.id);
 
     if (updateError) {
-      toast({
-        title: t('settings-account.remove_failed'),
-        description: t('settings-account.avatar_remove_error'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.avatar_remove_error'));
     } else {
-      toast({
-        title: t('settings-account.avatar_removed'),
-        description: t('settings-account.avatar_removed_description'),
-      });
+      toast.success(t('settings-account.avatar_removed_description'));
       router.refresh();
     }
 
@@ -209,14 +200,7 @@ export default function AvatarInput({
       setCropperOpen(true);
     } catch (error) {
       console.error('Error processing file:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
-        description:
-          error instanceof Error
-            ? error.message
-            : t('settings-account.crop_failed_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.crop_failed_description'));
     } finally {
       setIsConverting(false);
     }
@@ -247,11 +231,7 @@ export default function AvatarInput({
       setSelectedFile(null);
     } catch (error) {
       console.error('Error processing cropped image:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
-        description: t('settings-account.crop_failed_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.crop_failed_description'));
     }
   };
 
@@ -303,11 +283,10 @@ export default function AvatarInput({
 
           {/* Permission denied message */}
           {!isCheckingPermission && !hasPermission && !disabled && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <AlertTriangle className="h-5 w-5 text-amber-900" />
-              <p className="text-sm text-amber-900">
-                {t('settings-account.insufficient_permissions_avatar') ||
-                  'You do not have permission to change the workspace avatar. Contact your workspace administrator.'}
+            <div className="flex items-center gap-2 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-3">
+              <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
+              <p className="text-sm text-dynamic-amber">
+                {t('settings-account.insufficient_permissions_avatar')}
               </p>
             </div>
           )}

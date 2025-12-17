@@ -4736,7 +4736,12 @@
     "avoid-public-wifi-tip": "Tránh truy cập thông tin nhạy cảm trên WiFi công cộng",
     "regular-logout-tip": "Đăng xuất khỏi các thiết bị bạn không còn sử dụng",
     "monitor-account-activity-tip": "Thường xuyên theo dõi hoạt động tài khoản của bạn",
-    "insufficient_permissions_avatar": "Bạn không có quyền thay đổi hình đại diện của không gian làm việc."
+    "insufficient_permissions_avatar": "Bạn không có quyền thay đổi hình đại diện của không gian làm việc.",
+    "avatar_updated_description": "Hình đại diện của bạn đã được cập nhật thành công.",
+    "avatar_update_error": "Đã xảy ra lỗi khi cập nhật hình đại diện của bạn. \nVui lòng thử lại.",
+    "avatar_remove_error": "Đã xảy ra lỗi khi xóa hình đại diện của bạn. \nVui lòng thử lại.",
+    "avatar_removed_description": "Hình đại diện của bạn đã được xóa thành công.",
+    "crop_failed_description": "Đã xảy ra lỗi khi cắt ảnh của bạn. \nVui lòng thử lại."
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
