@@ -4230,7 +4230,6 @@
     },
     "failed_to_update": "Không thể cập nhật lịch",
     "failed_to_update_visibility": "Không thể cập nhật trạng thái hiển thị lịch",
-
     "unknown_error": "Đã xảy ra lỗi không xác định",
     "please_reconnect": "Vui lòng kết nối lại Google Calendar",
     "reconnect_desc": "Kết nối hiện tại của bạn cần thêm quyền. Vui lòng ngắt kết nối và kết nối lại Google Calendar.",
@@ -4736,7 +4735,13 @@
     "use-strong-passwords-tip": "Sử dụng mật khẩu mạnh và duy nhất cho tất cả tài khoản",
     "avoid-public-wifi-tip": "Tránh truy cập thông tin nhạy cảm trên WiFi công cộng",
     "regular-logout-tip": "Đăng xuất khỏi các thiết bị bạn không còn sử dụng",
-    "monitor-account-activity-tip": "Thường xuyên theo dõi hoạt động tài khoản của bạn"
+    "monitor-account-activity-tip": "Thường xuyên theo dõi hoạt động tài khoản của bạn",
+    "insufficient_permissions_avatar": "Bạn không có quyền thay đổi hình đại diện của không gian làm việc.",
+    "avatar_updated_description": "Hình đại diện của bạn đã được cập nhật thành công.",
+    "avatar_update_error": "Đã xảy ra lỗi khi cập nhật hình đại diện của bạn. \nVui lòng thử lại.",
+    "avatar_remove_error": "Đã xảy ra lỗi khi xóa hình đại diện của bạn. \nVui lòng thử lại.",
+    "avatar_removed_description": "Hình đại diện của bạn đã được xóa thành công.",
+    "crop_failed_description": "Đã xảy ra lỗi khi cắt ảnh của bạn. \nVui lòng thử lại."
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
