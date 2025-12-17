@@ -210,10 +210,6 @@ export function EditSessionDialog({
                 onValueChange={(taskId) => onFormChange('taskId', taskId)}
                 tasks={tasks}
                 isLoading={isLoadingTasks}
-                searchPlaceholder={t('search_tasks')}
-                selectPlaceholder={t('select_task')}
-                noTaskLabel={t('no_task')}
-                noTasksFoundLabel={t('no_tasks_found')}
               />
             </div>
           </div>

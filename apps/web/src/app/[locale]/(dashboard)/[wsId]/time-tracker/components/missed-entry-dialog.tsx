@@ -848,10 +848,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 tasks={tasks}
                 isLoading={isLoadingTasks}
                 disabled={isLoading}
-                searchPlaceholder={t('form.searchTasks')}
-                selectPlaceholder={t('form.selectTask')}
-                noTaskLabel={t('form.noTask')}
-                noTasksFoundLabel={t('form.noTasksFound')}
               />
             </div>
           </div>

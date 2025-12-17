@@ -15,6 +15,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
 import type { TaskWithDetails } from './session-history/session-types';
+import { useTranslations } from 'next-intl';
 
 interface TaskComboboxProps {
   /**
@@ -45,22 +46,6 @@ interface TaskComboboxProps {
    * Whether the combobox is disabled
    */
   disabled?: boolean;
-  /**
-   * Placeholder text for the search input
-   */
-  searchPlaceholder?: string;
-  /**
-   * Label for "no task" option
-   */
-  noTaskLabel?: string;
-  /**
-   * Placeholder text when no task is selected
-   */
-  selectPlaceholder?: string;
-  /**
-   * Label for the "no tasks found" state
-   */
-  noTasksFoundLabel?: string;
 }
 
 export function TaskCombobox({
@@ -71,27 +56,21 @@ export function TaskCombobox({
   className,
   id,
   disabled = false,
-  searchPlaceholder = 'Search tasks...',
-  noTaskLabel = 'No task',
-  selectPlaceholder = 'Select task',
-  noTasksFoundLabel = 'No tasks found',
 }: TaskComboboxProps) {
+    const t = useTranslations('time-tracker.missed_entry_dialog');
   const [open, setOpen] = useState(false);
 
   const selectedTask = tasks?.find((task) => task.id === value);
   const displayText = isLoading
-    ? 'Loading tasks...'
+    ? t('form.loadingTasks')
     : value && value !== 'none' && selectedTask
-      ? (() => {
-          const ticketId = getTicketIdentifier(
-            selectedTask.ticket_prefix,
-            selectedTask.display_number ?? 0
-          );
-          return `${ticketId} - ${selectedTask.name}`;
-        })()
+      ? `${getTicketIdentifier(
+          selectedTask.ticket_prefix,
+          selectedTask.display_number ?? 0
+        )} - ${selectedTask.name}`
       : value === 'none'
-        ? noTaskLabel
-        : selectPlaceholder;
+        ? t('form.noTask')
+        : t('form.selectTask');
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -110,9 +89,9 @@ export function TaskCombobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput placeholder={t('form.searchTasks')} />
           <CommandList>
-            <CommandEmpty>{noTasksFoundLabel}</CommandEmpty>
+            <CommandEmpty>{t('form.noTasksFound')}</CommandEmpty>
             <CommandGroup>
               <CommandItem
                 value="none"
@@ -127,16 +106,16 @@ export function TaskCombobox({
                     value === 'none' ? 'opacity-100' : 'opacity-0'
                   )}
                 />
-                {noTaskLabel}
+                {t('form.noTask')}
               </CommandItem>
               {tasks?.map(
                 (task) =>
                   task.id && (
                     <CommandItem
                       key={task.id}
-                      value={`${getTicketIdentifier(task.ticket_prefix, task.display_number ?? 0)} ${task.name}`}
+                      value={`${getTicketIdentifier(task.ticket_prefix, task.display_number ?? 0)} - ${task.name}`}
                       onSelect={() => {
-                        onValueChange(task.id!);
+                        onValueChange(task.id);
                         setOpen(false);
                       }}
                     >

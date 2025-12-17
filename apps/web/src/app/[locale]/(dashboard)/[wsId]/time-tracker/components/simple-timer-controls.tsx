@@ -22,7 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
-import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
+import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
 import { formatDuration, formatTime } from '@/lib/time-format';
 
