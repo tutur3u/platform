@@ -10,6 +10,7 @@ import {
   ConfidentialClientApplication,
   createGraphClient,
   createMsalConfig,
+  fetchMicrosoftCalendars,
   MICROSOFT_CALENDAR_SCOPES,
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
@@ -209,6 +210,88 @@ export async function GET(request: Request) {
         );
       }
       console.log('✅ [DEBUG] Microsoft token inserted successfully');
+    }
+
+    // Auto-add all calendars to calendar_connections after successful authentication
+    try {
+      console.log('🔍 [DEBUG] Fetching Microsoft calendars to auto-add...');
+
+      // Get the newly inserted/updated token ID
+      const { data: tokenRecord } = await supabase
+        .from('calendar_auth_tokens')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('ws_id', wsId)
+        .eq('provider', 'microsoft')
+        .eq('account_email', accountEmail)
+        .eq('is_active', true)
+        .single();
+
+      if (tokenRecord?.id) {
+        // Fetch all calendars for this Microsoft account
+        const calendars = await fetchMicrosoftCalendars(graphClient);
+        console.log(
+          `🔍 [DEBUG] Found ${calendars.length} Microsoft calendars to add`
+        );
+
+        // Insert each calendar into calendar_connections
+        for (const cal of calendars) {
+          if (!cal.id) continue;
+
+          // Check if this calendar connection already exists
+          const { data: existing } = await supabase
+            .from('calendar_connections')
+            .select('id')
+            .eq('ws_id', wsId)
+            .eq('calendar_id', cal.id)
+            .maybeSingle();
+
+          if (!existing) {
+            // Insert new calendar connection
+            const { error: insertCalError } = await supabase
+              .from('calendar_connections')
+              .insert({
+                ws_id: wsId,
+                calendar_id: cal.id,
+                calendar_name: cal.name || 'Untitled Calendar',
+                is_enabled: true,
+                color: cal.hexColor || '#0078D4',
+                auth_token_id: tokenRecord.id,
+              });
+
+            if (insertCalError) {
+              console.error(
+                `⚠️ [DEBUG] Failed to add Microsoft calendar ${cal.id}:`,
+                insertCalError
+              );
+            } else {
+              console.log(`✅ [DEBUG] Added Microsoft calendar: ${cal.name}`);
+            }
+          } else {
+            // Update existing connection to link to this token
+            await supabase
+              .from('calendar_connections')
+              .update({
+                auth_token_id: tokenRecord.id,
+                is_enabled: true,
+              })
+              .eq('id', existing.id);
+            console.log(
+              `🔄 [DEBUG] Updated existing Microsoft calendar: ${cal.name}`
+            );
+          }
+        }
+
+        console.log(
+          `✅ [DEBUG] Auto-added ${calendars.length} Microsoft calendars to connections`
+        );
+      }
+    } catch (calendarAddError) {
+      console.error(
+        '⚠️ [DEBUG] Error auto-adding Microsoft calendars:',
+        calendarAddError
+      );
+      // Don't fail the authentication flow if calendar add fails
     }
 
     console.log('🔍 [DEBUG] Redirecting to calendar page...');

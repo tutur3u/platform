@@ -322,7 +322,7 @@ export const storeSyncToken = async (
 
   if (error) {
     console.error(
-      `[${ws_id}] Error storing sync token for calendar ${calendarId}`,
+      `[${ws_id}] Error storing sync token for calendar ${calendarId}:`,
       error
     );
     throw error;
@@ -347,8 +347,7 @@ export const getSyncToken = async (
 
   if (error) {
     console.error(
-      `[${ws_id}] Error fetching sync token for calendar ${calendarId}:`,
-      error.message
+      `[${ws_id}] Error fetching sync token for calendar ${calendarId}: ${error.message}`
     );
     return null;
   }
@@ -371,8 +370,7 @@ export const clearSyncToken = async (
 
   if (error) {
     console.error(
-      `[${ws_id}] Error clearing sync token for calendar ${calendarId}:`,
-      error.message
+      `[${ws_id}] Error clearing sync token for calendar ${calendarId}: ${error.message}`
     );
     throw error;
   }
