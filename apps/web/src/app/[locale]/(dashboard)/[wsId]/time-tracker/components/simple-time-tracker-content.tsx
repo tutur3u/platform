@@ -8,10 +8,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import type {
-  SessionWithRelations,
-  TimeTrackerData,
-} from '../types';
+import type { SessionWithRelations, TimeTrackerData } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
 import type { User } from '@tuturuuu/types/primitives/User';
 
