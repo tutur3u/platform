@@ -94,13 +94,7 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
-  const {
-    open,
-    onOpenChange,
-    categories,
-    wsId,
-    mode = 'normal',
-  } = props;
+  const { open, onOpenChange, categories, wsId, mode = 'normal' } = props;
 
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
