@@ -10,10 +10,10 @@ import {
   ConfidentialClientApplication,
   createGraphClient,
   createMsalConfig,
-  fetchMicrosoftCalendars,
   MICROSOFT_CALENDAR_SCOPES,
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
+import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
