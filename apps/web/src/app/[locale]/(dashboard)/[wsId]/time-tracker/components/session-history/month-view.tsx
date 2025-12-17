@@ -14,6 +14,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import dayjs from 'dayjs';
 import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../types';
 import type { StackedSession } from './session-types';
@@ -24,6 +25,7 @@ interface MonthViewProps {
   periodStats: PeriodStats;
   sessionsForPeriod: SessionWithRelations[] | undefined;
   groupedStackedSessions: { [key: string]: StackedSession[] };
+  startOfPeriod: dayjs.Dayjs;
   onResume: (session: SessionWithRelations | undefined) => void;
   onEdit: (session: SessionWithRelations | undefined) => void;
   onMove: (session: SessionWithRelations | undefined) => void;
@@ -33,6 +35,7 @@ export function MonthView({
   periodStats,
   sessionsForPeriod,
   groupedStackedSessions,
+  startOfPeriod,
   onResume,
   onEdit,
   onMove,
@@ -203,8 +206,39 @@ export function MonthView({
             const extractDate = (key: string) => {
               const match = key.match(/Week (\w+ \d+)/);
               if (match) {
-                // Convert "Dec 15" to a date for comparison
-                return new Date(`${match[1]}, ${new Date().getFullYear()}`);
+                // Extract month and day from the key (e.g., "Dec 15")
+                const dateStr = match[1];
+                // Parse with current period's year as base
+                let year = startOfPeriod.year();
+
+                // Try parsing with current year first
+                const parsedDate = dayjs(dateStr, 'MMM D');
+                if (!parsedDate.isValid()) {
+                  return new Date(0); // fallback
+                }
+
+                // Adjust year if needed: if the extracted month is December and we're viewing
+                // January (or near year boundary), the week likely belongs to the previous year
+                const extractedMonthNum = parsedDate.month(); // 0-11
+                const periodMonthNum = startOfPeriod.month();
+
+                if (
+                  extractedMonthNum > periodMonthNum &&
+                  periodMonthNum === 0
+                ) {
+                  // Extracted month (e.g., Dec=11) > period month (Jan=0) → adjust year down
+                  year -= 1;
+                } else if (
+                  extractedMonthNum < periodMonthNum &&
+                  periodMonthNum === 11
+                ) {
+                  // Extracted month (e.g., Jan=0) < period month (Dec=11) → adjust year up
+                  year += 1;
+                }
+
+                return dayjs(
+                  `${year}-${(extractedMonthNum + 1).toString().padStart(2, '0')}-${parsedDate.date().toString().padStart(2, '0')}`
+                ).toDate();
               }
               return new Date(0); // fallback
             };

@@ -355,6 +355,7 @@ export function SessionHistory({
               periodStats={periodStats}
               sessionsForPeriod={sessionsForPeriod}
               groupedStackedSessions={groupedStackedSessions}
+              startOfPeriod={startOfPeriod}
               onResume={resumeSession}
               onEdit={openEditDialog}
               onMove={openMoveDialog}
@@ -368,8 +369,18 @@ export function SessionHistory({
                 {Object.entries(groupedStackedSessions)
                   .sort(([keyA], [keyB]) => {
                     // Sort by date descending (newest first)
-                    const dateA = dayjs(keyA, 'dddd, MMMM D, YYYY');
-                    const dateB = dayjs(keyB, 'dddd, MMMM D, YYYY');
+                    const dateA = dayjs(keyA, 'dddd, MMMM D, YYYY', true);
+                    const dateB = dayjs(keyB, 'dddd, MMMM D, YYYY', true);
+                    
+                    // If either date is invalid, fall back to deterministic comparison
+                    if (!dateA.isValid() || !dateB.isValid()) {
+                      // Sort date keys before non-date keys, then by string comparison
+                      if (dateA.isValid() !== dateB.isValid()) {
+                        return dateA.isValid() ? -1 : 1;
+                      }
+                      return keyA.localeCompare(keyB);
+                    }
+                    
                     return dateB.diff(dateA);
                   })
                   .map(([groupTitle, groupSessions]) => {
