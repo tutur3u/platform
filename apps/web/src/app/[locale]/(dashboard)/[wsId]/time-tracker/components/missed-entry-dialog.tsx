@@ -43,8 +43,9 @@ import { formatDuration } from '@/lib/time-format';
 import { validateEndTime, validateStartTime } from '@/lib/time-validation';
 import type { SessionWithRelations } from '../types';
 import { getCategoryColor } from './session-history';
-import type { TaskWithDetails } from './session-history/session-types';
 import { useSessionActions } from './session-history/use-session-actions';
+import { useWorkspaceTasks } from './use-workspace-tasks';
+import { TaskCombobox } from './task-combobox';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -54,7 +55,6 @@ interface BaseMissedEntryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: TimeTrackingCategory[] | null;
-  tasks: TaskWithDetails[] | null;
   wsId: string;
 }
 
@@ -98,7 +98,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     open,
     onOpenChange,
     categories,
-    tasks,
     wsId,
     mode = 'normal',
   } = props;
@@ -120,6 +119,12 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Fetch tasks on-demand only when dialog is open
+  const { data: tasks, isLoading: isLoadingTasks } = useWorkspaceTasks({
+    wsId: open ? wsId : null,
+    enabled: open,
+  });
 
   // Only fetch threshold in normal mode (exceeded mode provides it)
   const {
@@ -842,26 +847,18 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             </div>
             <div>
               <Label htmlFor="missed-entry-task">{t('form.task')}</Label>
-              <Select
+              <TaskCombobox
+                id="missed-entry-task"
                 value={missedEntryTaskId}
                 onValueChange={setMissedEntryTaskId}
+                tasks={tasks}
+                isLoading={isLoadingTasks}
                 disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('form.selectTask')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('form.noTask')}</SelectItem>
-                  {tasks?.map(
-                    (task) =>
-                      task.id && (
-                        <SelectItem key={task.id} value={task.id}>
-                          {task.name}
-                        </SelectItem>
-                      )
-                  )}
-                </SelectContent>
-              </Select>
+                searchPlaceholder={t('form.searchTasks')}
+                selectPlaceholder={t('form.selectTask')}
+                noTaskLabel={t('form.noTask')}
+                noTasksFoundLabel={t('form.noTasksFound')}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">

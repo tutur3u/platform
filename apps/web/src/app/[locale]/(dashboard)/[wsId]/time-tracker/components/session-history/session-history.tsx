@@ -51,8 +51,7 @@ export function SessionHistory({
   wsId,
   sessions,
   categories,
-  tasks,
-}: SessionHistoryProps) {
+}: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
   const { data: thresholdDays, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
@@ -142,8 +141,8 @@ export function SessionHistory({
       category?: { name?: string } | null;
     }): string => {
       if (session.task_id) {
-        const task = tasks?.find((t) => t.id === session.task_id);
-        return task?.board_name || 'project-work';
+        // Return generic project-work if task exists - specific board name not needed for filtering
+        return 'project-work';
       }
       if (session.category?.name?.toLowerCase().includes('meeting'))
         return 'meetings';
@@ -153,7 +152,7 @@ export function SessionHistory({
         return 'administrative';
       return 'general';
     },
-    [tasks]
+    []
   );
 
   // Filtered sessions
@@ -398,7 +397,7 @@ export function SessionHistory({
                               onDelete={setSessionToDelete}
                               onMove={openMoveDialog}
                               actionStates={actionStates}
-                              tasks={tasks}
+                              tasks={null}
                             />
                           ))}
                         </div>
@@ -423,7 +422,6 @@ export function SessionHistory({
         isLoadingThreshold={isLoadingThreshold}
         thresholdDays={thresholdDays}
         categories={categories}
-        tasks={tasks}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -460,7 +458,6 @@ export function SessionHistory({
         open={showMissedEntryDialog}
         onOpenChange={setShowMissedEntryDialog}
         categories={categories}
-        tasks={tasks}
         wsId={wsId}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}

@@ -26,7 +26,7 @@ import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { SessionWithRelations } from '../../types';
-import type { EditFormState, TaskWithDetails } from './session-types';
+import type { EditFormState } from './session-types';
 import {
   getCategoryColor,
   isDatetimeMoreThanThresholdAgo,
@@ -35,6 +35,8 @@ import {
 import { validateStartTime, validateEndTime } from '@/lib/time-validation';
 import { useSessionActions } from './use-session-actions';
 import type { TimeValidationResult } from '@/lib/time-validation';
+import { useWorkspaceTasks } from '../use-workspace-tasks';
+import { TaskCombobox } from '../task-combobox';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -52,7 +54,6 @@ interface EditSessionDialogProps {
   isLoadingThreshold: boolean;
   thresholdDays: number | null | undefined;
   categories: TimeTrackingCategory[] | null;
-  tasks: TaskWithDetails[] | null;
 }
 
 export function EditSessionDialog({
@@ -65,10 +66,15 @@ export function EditSessionDialog({
   isLoadingThreshold,
   thresholdDays,
   categories,
-  tasks,
 }: EditSessionDialogProps) {
   const t = useTranslations('time-tracker.session_history');
   const userTimezone = dayjs.tz.guess();
+
+  // Fetch tasks on-demand only when dialog is open
+  const { data: tasks, isLoading: isLoadingTasks } = useWorkspaceTasks({
+    wsId: session?.ws_id || null,
+    enabled: !!session,
+  });
 
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
@@ -198,25 +204,17 @@ export function EditSessionDialog({
             </div>
             <div>
               <Label htmlFor="edit-task">{t('select_task')}</Label>
-              <Select
+              <TaskCombobox
+                id="edit-task"
                 value={formState.taskId}
-                onValueChange={(value) => onFormChange('taskId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('select_task')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('no_task')}</SelectItem>
-                  {tasks?.map(
-                    (task) =>
-                      task.id && (
-                        <SelectItem key={task.id} value={task.id}>
-                          {task.name}
-                        </SelectItem>
-                      )
-                  )}
-                </SelectContent>
-              </Select>
+                onValueChange={(taskId) => onFormChange('taskId', taskId)}
+                tasks={tasks}
+                isLoading={isLoadingTasks}
+                searchPlaceholder={t('search_tasks')}
+                selectPlaceholder={t('select_task')}
+                noTaskLabel={t('no_task')}
+                noTasksFoundLabel={t('no_tasks_found')}
+              />
             </div>
           </div>
           {session &&
