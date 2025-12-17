@@ -91,12 +91,9 @@ export default function AvatarInput({
   const t = useTranslations();
   const router = useRouter();
   const supabase = createClient();
-  
+
   // Fetch current workspace user
-  const {
-    data: user,
-    isLoading: isUserLoading
-  } = useWorkspaceUser();
+  const { data: user, isLoading: isUserLoading } = useWorkspaceUser();
 
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
@@ -114,7 +111,7 @@ export default function AvatarInput({
     useWorkspacePermission({
       wsId: workspace.id,
       permission: 'manage_workspace_settings',
-      user: user ?? {} as WorkspaceUser,
+      user: user ?? ({} as WorkspaceUser),
       enabled: !!user, // Only run query when user is loaded
     });
 

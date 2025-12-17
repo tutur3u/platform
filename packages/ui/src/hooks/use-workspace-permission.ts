@@ -49,7 +49,6 @@ export function useWorkspacePermission({
   } = useQuery({
     queryKey: ['workspace-permission', wsId, permission, user.id],
     queryFn: async () => {
-
       // Explicit "no user" case: user is unauthenticated (not a transient error)
       // Check permission via RPC – throw on error (transient failures surface properly)
       const { data, error: rpcError } = await supabase.rpc(
