@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import type { E2EEStatus, FixProgress } from '../hooks/use-e2ee';
 import { isE2EEEnabled, isE2EENoKey } from '../hooks/use-e2ee';
 
@@ -41,6 +42,43 @@ export function E2EEStatusBadge({
   onEnable,
 }: E2EEStatusBadgeProps) {
   const t = useTranslations('calendar');
+
+  // Track if we've already triggered auto-encryption to prevent duplicate calls
+  const hasAutoTriggered = useRef(false);
+
+  // Auto-encrypt pending unencrypted events when E2EE is enabled
+  useEffect(() => {
+    // Only auto-trigger once, when:
+    // 1. E2EE is enabled
+    // 2. There are unencrypted events
+    // 3. We're not already migrating/fixing/verifying
+    // 4. We haven't already auto-triggered
+    if (
+      isE2EEEnabled(status) &&
+      hasUnencryptedEvents &&
+      !isMigrating &&
+      !isFixing &&
+      !isVerifying &&
+      !isLoading &&
+      !hasAutoTriggered.current
+    ) {
+      hasAutoTriggered.current = true;
+      onMigrate();
+    }
+
+    // Reset the flag when all events are encrypted
+    if (!hasUnencryptedEvents) {
+      hasAutoTriggered.current = false;
+    }
+  }, [
+    status,
+    hasUnencryptedEvents,
+    isMigrating,
+    isFixing,
+    isVerifying,
+    isLoading,
+    onMigrate,
+  ]);
 
   // Loading state
   if (isLoading) {
