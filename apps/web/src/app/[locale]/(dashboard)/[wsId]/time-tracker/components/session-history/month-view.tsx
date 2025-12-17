@@ -322,8 +322,7 @@ export function MonthView({
                 </div>
               </div>
             );
-          }
-        )}
+          })}
       </div>
     </div>
   );

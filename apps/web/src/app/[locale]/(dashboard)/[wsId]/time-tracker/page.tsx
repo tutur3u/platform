@@ -88,17 +88,16 @@ async function fetchTimeTrackingStats(
 async function fetchTimerData(userId: string, wsId: string) {
   const sbAdmin = await createClient();
 
-  const [categoriesResult, runningSessionResult] =
-    await Promise.all([
-      sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
-      sbAdmin
-        .from('time_tracking_sessions')
-        .select('*, category:time_tracking_categories(*), task:tasks(*)')
-        .eq('ws_id', wsId)
-        .eq('user_id', userId)
-        .is('duration_seconds', null)
-        .single(),
-     ])
+  const [categoriesResult, runningSessionResult] = await Promise.all([
+    sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
+    sbAdmin
+      .from('time_tracking_sessions')
+      .select('*, category:time_tracking_categories(*), task:tasks(*)')
+      .eq('ws_id', wsId)
+      .eq('user_id', userId)
+      .is('duration_seconds', null)
+      .single(),
+  ]);
 
   // Handle categories result
   let categories: typeof categoriesResult.data = [];
@@ -127,7 +126,6 @@ async function fetchTimerData(userId: string, wsId: string) {
   } else if (runningSessionResult.data) {
     runningSession = runningSessionResult.data as SessionWithRelations;
   }
-
 
   return {
     categories,

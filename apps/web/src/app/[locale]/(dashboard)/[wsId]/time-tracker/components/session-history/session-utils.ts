@@ -149,17 +149,17 @@ export const createStackedSession = (
   let periodDuration = totalDuration;
   if (displayDate) {
     const displayDay = dayjs.tz(displayDate, tz);
-    
+
     // Check if this is from month view by checking if periodStart/periodEnd spans more than 7 days
-    const isMonthView = periodStart && periodEnd && periodEnd.diff(periodStart, 'day') > 7;
-    
+    const isMonthView =
+      periodStart && periodEnd && periodEnd.diff(periodStart, 'day') > 7;
+
     if (isMonthView) {
       // Month view: displayDate is the week start, calculate duration for that entire week
       const weekStart = displayDay.startOf('isoWeek');
       const weekEnd = displayDay.endOf('isoWeek');
       periodDuration = sessions.reduce(
-        (sum, s) =>
-          sum + getSessionDurationInPeriod(s, weekStart, weekEnd, tz),
+        (sum, s) => sum + getSessionDurationInPeriod(s, weekStart, weekEnd, tz),
         0
       );
     } else {
@@ -172,7 +172,8 @@ export const createStackedSession = (
   } else if (periodStart && periodEnd) {
     // No displayDate: calculate duration within the period boundaries
     periodDuration = sessions.reduce(
-      (sum, s) => sum + getSessionDurationInPeriod(s, periodStart, periodEnd, tz),
+      (sum, s) =>
+        sum + getSessionDurationInPeriod(s, periodStart, periodEnd, tz),
       0
     );
   }
