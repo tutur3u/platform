@@ -7,7 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
+import type { SessionWithRelations } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
 
 interface OverviewTimerProps {
