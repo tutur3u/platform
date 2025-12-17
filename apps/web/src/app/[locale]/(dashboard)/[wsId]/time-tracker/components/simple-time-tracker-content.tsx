@@ -9,7 +9,6 @@ import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type {
-  ExtendedWorkspaceTask,
   SessionWithRelations,
   TimeTrackerData,
 } from '../types';
@@ -78,7 +77,6 @@ export default function SimpleTimeTrackerContent({
   const [currentSession, setCurrentSession] =
     useState<SessionWithRelations | null>(initialData.runningSession);
   const [categories] = useState(initialData.categories || []);
-  const [tasks] = useState<ExtendedWorkspaceTask[]>(initialData.tasks || []);
 
   // Timer state
   const [elapsedTime, setElapsedTime] = useState(() => {
@@ -199,7 +197,6 @@ export default function SimpleTimeTrackerContent({
         elapsedTime={elapsedTime}
         isRunning={isRunning}
         categories={categories}
-        tasks={tasks}
         apiCall={apiCall}
         currentUserId={currentUser?.id || undefined}
       />
