@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, UserIcon } from '@tuturuuu/icons';
+import { Loader2, UserIcon, AlertTriangle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -8,6 +8,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { cn } from '@tuturuuu/utils/format';
@@ -15,7 +16,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
 
@@ -23,6 +24,7 @@ interface Props {
   workspace: Workspace;
   defaultValue?: string | null;
   disabled?: boolean;
+  onPermissionCheckComplete?: (hasPermission: boolean) => void;
 }
 
 const FormSchema = z.object({
@@ -37,7 +39,48 @@ const FormSchema = z.object({
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const AVATAR_SIZE = 500;
 
-export default function AvatarInput({ workspace, disabled }: Props) {
+const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      reject(new Error('Canvas context is null'));
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      // Set canvas size to the desired avatar size
+      canvas.width = AVATAR_SIZE;
+      canvas.height = AVATAR_SIZE;
+
+      // Draw the cropped image (already square from cropper) to the canvas
+      ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+
+      canvas.toBlob(
+        (compressedBlob) => {
+          if (compressedBlob) {
+            resolve(compressedBlob);
+          } else {
+            reject(new Error('Blob creation failed'));
+          }
+        },
+        'image/jpeg',
+        0.8 // 80% quality for good balance of quality and file size
+      );
+    };
+
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(blob);
+  });
+};
+
+export default function AvatarInput({
+  workspace,
+  disabled,
+  onPermissionCheckComplete,
+}: Props) {
   const bucket = 'avatars';
   const t = useTranslations();
   const router = useRouter();
@@ -53,46 +96,26 @@ export default function AvatarInput({ workspace, disabled }: Props) {
     workspace?.avatar_url || null
   );
 
+  // Check if user has manage_workspace_settings permission
+  const { hasPermission, isLoading: isCheckingPermission } =
+    useWorkspacePermission({
+      wsId: workspace.id,
+      permission: 'manage_workspace_settings',
+    });
+
+  // Notify parent component when permission check completes
+  useEffect(() => {
+    if (!isCheckingPermission && onPermissionCheckComplete) {
+      onPermissionCheckComplete(hasPermission ?? false);
+    }
+  }, [hasPermission, isCheckingPermission, onPermissionCheckComplete]);
+
   const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
-  const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        reject(new Error('Canvas context is null'));
-        return;
-      }
-
-      const img = new Image();
-      img.onload = () => {
-        // Set canvas size to the desired avatar size
-        canvas.width = AVATAR_SIZE;
-        canvas.height = AVATAR_SIZE;
-
-        // Draw the cropped image (already square from cropper) to the canvas
-        ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-
-        canvas.toBlob(
-          (compressedBlob) => {
-            if (compressedBlob) {
-              resolve(compressedBlob);
-            } else {
-              reject(new Error('Blob creation failed'));
-            }
-          },
-          'image/jpeg',
-          0.8 // 80% quality for good balance of quality and file size
-        );
-      };
-
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(blob);
-    });
-  };
+  // Determine if upload should be disabled
+  const isUploadDisabled = disabled || !hasPermission || isCheckingPermission;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
@@ -277,7 +300,20 @@ export default function AvatarInput({ workspace, disabled }: Props) {
               </AvatarFallback>
             </Avatar>
           </div>
-          {!disabled && (
+
+          {/* Permission denied message */}
+          {!isCheckingPermission && !hasPermission && !disabled && (
+            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <AlertTriangle className="h-5 w-5 text-amber-900" />
+              <p className="text-sm text-amber-900">
+                {t('settings-account.insufficient_permissions_avatar') ||
+                  'You do not have permission to change the workspace avatar. Contact your workspace administrator.'}
+              </p>
+            </div>
+          )}
+
+          {/* Upload controls - only show if user has permission */}
+          {!isUploadDisabled && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div>
                 <Label
@@ -299,7 +335,7 @@ export default function AvatarInput({ workspace, disabled }: Props) {
                   id="file-upload"
                   type="file"
                   accept="image/png,image/jpeg,image/jpg,image/webp"
-                  disabled={isConverting || disabled}
+                  disabled={isConverting}
                   onChange={(e) => {
                     if (e.target.files?.[0] && !isConverting) {
                       handleFileSelect(e.target.files[0]);

@@ -13,8 +13,8 @@ import {
 } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface WorkspaceInvitationProps {
@@ -96,9 +96,11 @@ export default function InvitationCard({
         <Avatar className="h-12 w-12">
           <AvatarImage
             src={
-              workspace.name
+              workspace.logo_url ||
+              workspace.avatar_url ||
+              (workspace.name
                 ? `https://avatar.vercel.sh/${workspace.name}.png`
-                : undefined
+                : undefined)
             }
             alt={workspace.name ?? ''}
           />

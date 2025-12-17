@@ -4117,7 +4117,6 @@
     },
     "failed_to_update": "Failed to update calendar",
     "failed_to_update_visibility": "Failed to update calendar visibility",
-
     "unknown_error": "An unknown error occurred",
     "please_reconnect": "Please reconnect your Google Calendar",
     "reconnect_desc": "Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.",
@@ -4582,7 +4581,8 @@
     "use-strong-passwords-tip": "Use strong, unique passwords for all accounts",
     "avoid-public-wifi-tip": "Avoid accessing sensitive information on public WiFi",
     "regular-logout-tip": "Log out from devices you no longer use",
-    "monitor-account-activity-tip": "Regularly monitor your account activity"
+    "monitor-account-activity-tip": "Regularly monitor your account activity",
+    "insufficient_permissions_avatar": "You do not have permission to change the workspace avatar."
   },
   "settings-appearance": {
     "appearance": "Appearance",
