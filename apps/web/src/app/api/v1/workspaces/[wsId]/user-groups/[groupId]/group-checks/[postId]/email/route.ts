@@ -236,10 +236,10 @@ export async function POST(
             .single();
 
           if (insertError) {
-            console.error(
-              `[sendEmail] Error logging sent email for ${user.email}:`,
-              insertError
-            );
+            console.error('[sendEmail] Error logging sent email', {
+              email: user.email,
+              error: insertError,
+            });
           } else if (sentEmail) {
             // Update user_group_post_checks with the email_id
             await supabase

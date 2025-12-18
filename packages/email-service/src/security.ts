@@ -8,7 +8,7 @@
  * - Domain verification helpers
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 // =============================================================================
 // Content Hashing

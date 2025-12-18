@@ -837,11 +837,11 @@ async function createEventsFromPreview(
         .single();
 
       if (insertError) {
-        console.error(
-          `[Schedule] Failed to create event "${previewEvent.title}":`,
-          insertError
-        );
-        console.error(`[Schedule] Insert data was:`, insertData);
+        console.error('[Schedule] Failed to create event', {
+          title: previewEvent.title,
+          error: insertError,
+        });
+        console.error('[Schedule] Insert data was:', insertData);
         warnings.push(
           `Failed to create event: ${previewEvent.title} - ${insertError.message}`
         );

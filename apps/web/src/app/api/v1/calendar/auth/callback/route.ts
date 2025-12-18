@@ -238,16 +238,17 @@ export async function GET(request: Request) {
         refreshToken
       );
       console.log(
-        `[${wsId}] Full sync completed successfully after Google Calendar connection. Synced ${events.length} events.`
+        'Full sync completed successfully after Google Calendar connection',
+        { wsId, eventCount: events.length }
       );
     } catch (syncError) {
       console.error(
-        `[${wsId}] Error performing full sync after Google Calendar connection:`,
+        'Error performing full sync after Google Calendar connection',
         {
+          wsId,
           error:
             syncError instanceof Error ? syncError.message : 'Unknown error',
           stack: syncError instanceof Error ? syncError.stack : undefined,
-          wsId,
           hasAccessToken: !!tokens.access_token,
           hasRefreshToken: !!refreshToken,
         }
