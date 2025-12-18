@@ -7615,6 +7615,8 @@
         "help": "Đặt số ngày người dùng có thể quay lại để thêm mục thời gian. Đặt về 0 để yêu cầu phê duyệt cho tất cả các mục bị thiếu.",
         "pauseExemptLabel": "Miễn trừ tạm dừng khỏi ngưỡng",
         "pauseExemptHelp": "Khi được bật, người dùng có thể tạm dừng các phiên của họ ngay cả khi họ vượt quá ngưỡng. Phê duyệt vẫn sẽ được yêu cầu khi dừng phiên làm việc cuối cùng.",
+        "resumeThresholdLabel": "Ngưỡng xác nhận tiếp tục nghỉ (phút)",
+        "resumeThresholdHelp": "Khi tiếp tục một phiên sau một khoảng thời gian nghỉ dài hơn số phút này, một hộp thoại xác nhận sẽ được hiển thị. Đặt thành 0 hoặc để trống để tắt xác nhận.",
         "examples": {
           "title": "Ví dụ:",
           "days": "ngày",
@@ -8302,6 +8304,9 @@
       "move": "Di chuyển",
       "delete": "Xóa",
       "resume": "Tiếp Tục",
+      "resume_long_break_title": "Đã Phát Hiện Khoảng Nghỉ Dài",
+      "resume_long_break_description": "Bạn đang tiếp tục phiên này sau một khoảng nghỉ dài {duration}. Bạn có chắc chắn muốn tiếp tục phiên này thay vì bắt đầu một phiên mới không?",
+      "resume_continue": "Tiếp Tục Phiên",
       "overlapping_session": "Phiên trùng lặp",
       "break": "nghỉ",
       "edit_session_title": "Chỉnh Sửa Phiên",

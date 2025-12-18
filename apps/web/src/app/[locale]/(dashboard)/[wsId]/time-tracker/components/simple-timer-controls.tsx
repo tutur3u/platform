@@ -1,9 +1,18 @@
 'use client';
 
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
-import { useRouter } from 'next/navigation';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -18,13 +27,15 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
+import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
+import { formatDuration, formatTime } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
-import { formatDuration, formatTime } from '@/lib/time-format';
 
 interface SimpleTimerControlsProps {
   wsId: string;
@@ -53,6 +64,7 @@ export function SimpleTimerControls({
   const queryClient = useQueryClient();
   const router = useRouter();
   const t = useTranslations('time-tracker.simple');
+  const tHistory = useTranslations('time-tracker.session_history');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
@@ -91,6 +103,7 @@ export function SimpleTimerControls({
   // State for exceeded threshold session dialog
   const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
     useState(false);
+  const [showResumeConfirmation, setShowResumeConfirmation] = useState(false);
 
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -280,7 +293,8 @@ export function SimpleTimerControls({
     if (!currentSession) return;
 
     // Check if session exceeds threshold - show dialog instead of pausing directly
-    if (sessionExceedsThreshold) {
+    // Only if pause is NOT exempt
+    if (sessionExceedsThreshold && !thresholdData?.pauseExempt) {
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -315,7 +329,10 @@ export function SimpleTimerControls({
       toast.success(t('timerPaused'));
     } catch (error: any) {
       // Check if error is THRESHOLD_EXCEEDED
-      if (error?.message?.includes('threshold') || error?.code === 'THRESHOLD_EXCEEDED') {
+      if (
+        error?.message?.includes('threshold') ||
+        error?.code === 'THRESHOLD_EXCEEDED'
+      ) {
         setShowExceededThresholdDialog(true);
       } else {
         console.error('Error pausing timer:', error);
@@ -324,46 +341,81 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t, sessionExceedsThreshold, currentUserId]);
+  }, [
+    currentSession,
+    apiCall,
+    wsId,
+    elapsedTime,
+    queryClient,
+    t,
+    sessionExceedsThreshold,
+    currentUserId,
+  ]);
 
   // Resume timer
-  const resumeTimer = useCallback(async () => {
-    if (!pausedSession) return;
+  const resumeTimer = useCallback(
+    async (confirmed = false) => {
+      if (!pausedSession) return;
 
-    setIsLoading(true);
-    try {
-      await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify({ action: 'resume' }),
+      // Check if break duration exceeds threshold
+      if (
+        !confirmed &&
+        thresholdData?.resumeThresholdMinutes &&
+        pauseStartTime
+      ) {
+        const breakMinutes = dayjs().diff(dayjs(pauseStartTime), 'minute');
+        if (breakMinutes > thresholdData.resumeThresholdMinutes) {
+          setShowResumeConfirmation(true);
+          return;
         }
-      );
+      }
 
-      // Clear local paused state - query will provide the running session
-      setPausedSession(null);
-      setPausedElapsedTime(0);
-      setPauseStartTime(null);
+      setIsLoading(true);
+      try {
+        await apiCall(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ action: 'resume' }),
+          }
+        );
 
-      // Invalidate queries to refetch running session and paused session
-      queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId, currentUserId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['paused-time-session', wsId, currentUserId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId, currentUserId],
-      });
+        // Clear local paused state - query will provide the running session
+        setPausedSession(null);
+        setPausedElapsedTime(0);
+        setPauseStartTime(null);
 
-      toast.success(t('timerResumed'));
-    } catch (error) {
-      console.error('Error resuming timer:', error);
-      toast.error(t('resumeTimerFailed'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pausedSession, apiCall, wsId, queryClient, t]);
+        // Invalidate queries to refetch running session and paused session
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId, currentUserId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['paused-time-session', wsId, currentUserId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', wsId, currentUserId],
+        });
+
+        toast.success(t('timerResumed'));
+        setShowResumeConfirmation(false);
+      } catch (error) {
+        console.error('Error resuming timer:', error);
+        toast.error(t('resumeTimerFailed'));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      pausedSession,
+      apiCall,
+      wsId,
+      queryClient,
+      t,
+      thresholdData?.resumeThresholdMinutes,
+      pauseStartTime,
+      currentUserId,
+    ]
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -623,6 +675,39 @@ export function SimpleTimerControls({
           onMissedEntryCreated={handleMissedEntryCreated}
         />
       )}
+
+      {/* Resume Confirmation Dialog */}
+      <AlertDialog
+        open={showResumeConfirmation}
+        onOpenChange={setShowResumeConfirmation}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {tHistory('resume_long_break_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pauseStartTime &&
+                tHistory('resume_long_break_description', {
+                  duration: formatDuration(
+                    dayjs().diff(dayjs(pauseStartTime), 'second')
+                  ),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowResumeConfirmation(false)}>
+              {tHistory('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resumeTimer(true)}
+              className="bg-dynamic-orange text-white hover:bg-dynamic-orange/90"
+            >
+              {tHistory('resume_continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

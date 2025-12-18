@@ -1952,7 +1952,6 @@ export function TimerControls({
     setPausedElapsedTime(0);
     setPauseStartTime(null);
     updateSessionProtection(false, timerMode);
-    clearPausedSessionFromStorage();
     onSessionUpdate();
   };
 
@@ -1965,7 +1964,6 @@ export function TimerControls({
     setPausedElapsedTime(0);
     setPauseStartTime(null);
     updateSessionProtection(false, timerMode);
-    clearPausedSessionFromStorage();
     onSessionUpdate();
   };
 

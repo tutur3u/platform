@@ -8,6 +8,7 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { SessionWithRelations } from '../../types';
 import type { ActionStates, EditFormState } from './session-types';
 import {
@@ -50,7 +51,7 @@ interface UseSessionActionsReturn {
   prefillEndTime: string;
 
   // Actions
-  resumeSession: (session: SessionWithRelations | undefined) => Promise<void>;
+  resumeSession: (session: SessionWithRelations | undefined, confirmed?: boolean) => Promise<void>;
   openEditDialog: (session: SessionWithRelations | undefined) => void;
   closeEditDialog: () => void;
   saveEdit: () => Promise<void>;
@@ -61,6 +62,11 @@ interface UseSessionActionsReturn {
   closeMoveDialog: () => void;
   openMissedEntryDialog: () => void;
   setShowMissedEntryDialog: (show: boolean) => void;
+
+  // Confirmation state
+  showResumeConfirmation: boolean;
+  setShowResumeConfirmation: (show: boolean) => void;
+  pendingResumeSession: SessionWithRelations | null;
 
   // Form state setters
   setEditFormState: <K extends keyof EditFormState>(
@@ -76,12 +82,17 @@ export function useSessionActions({
   const t = useTranslations('time-tracker.session_history');
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: thresholdData } = useWorkspaceTimeThreshold(wsId);
 
   // Action states
   const [actionStates, setActionStates] = useState<ActionStates>({});
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
+
+  // Confirmation states
+  const [showResumeConfirmation, setShowResumeConfirmation] = useState(false);
+  const [pendingResumeSession, setPendingResumeSession] = useState<SessionWithRelations | null>(null);
 
   // Dialog states
   const [sessionToDelete, setSessionToDelete] =
@@ -142,14 +153,33 @@ export function useSessionActions({
   );
 
   const resumeSession = useCallback(
-    async (session: SessionWithRelations | undefined) => {
+    async (session: SessionWithRelations | undefined, confirmed = false) => {
       if (!session) return;
+
+      // Check if break duration exceeds threshold
+      if (!confirmed && thresholdData?.resumeThresholdMinutes && session.end_time) {
+        const endTime = dayjs(session.end_time);
+        const now = dayjs();
+        const breakMinutes = now.diff(endTime, 'minute');
+
+        if (breakMinutes > thresholdData.resumeThresholdMinutes) {
+          setPendingResumeSession(session);
+          setShowResumeConfirmation(true);
+          return;
+        }
+      }
+
       setActionStates((prev) => ({ ...prev, [`resume-${session.id}`]: true }));
       try {
-        await fetch(
+        const response = await fetch(
           `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
           { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
         );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to resume session');
+        }
 
         // Invalidate the running session query to update sidebar
         queryClient.invalidateQueries({
@@ -158,6 +188,8 @@ export function useSessionActions({
 
         router.refresh();
         toast.success(t('started_new_session', { title: session.title }));
+        setShowResumeConfirmation(false);
+        setPendingResumeSession(null);
       } catch (error) {
         console.error('Error resuming session:', error);
         toast.error(t('failed_to_start_session'));
@@ -168,7 +200,7 @@ export function useSessionActions({
         }));
       }
     },
-    [wsId, router, queryClient, t]
+    [wsId, router, queryClient, t, thresholdData?.resumeThresholdMinutes]
   );
 
   const openEditDialog = useCallback(
@@ -503,6 +535,11 @@ export function useSessionActions({
     openMissedEntryDialog,
     setShowMissedEntryDialog,
     getValidationErrorMessage,
+
+    // Confirmation state
+    showResumeConfirmation,
+    setShowResumeConfirmation,
+    pendingResumeSession,
 
     // Form state setters
     setEditFormState,

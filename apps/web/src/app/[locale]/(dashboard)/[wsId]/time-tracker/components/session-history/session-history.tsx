@@ -89,6 +89,9 @@ export function SessionHistory({
     prefillStartTime,
     prefillEndTime,
     resumeSession,
+    showResumeConfirmation,
+    setShowResumeConfirmation,
+    pendingResumeSession,
     openEditDialog,
     closeEditDialog,
     saveEdit,
@@ -474,6 +477,41 @@ export function SessionHistory({
         currentWorkspaceId={wsId}
         isMoving={isMoving}
       />
+
+      {/* Resume Confirmation Dialog */}
+      <AlertDialog
+        open={showResumeConfirmation}
+        onOpenChange={setShowResumeConfirmation}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('resume_long_break_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingResumeSession &&
+                t('resume_long_break_description', {
+                  duration: formatDuration(
+                    dayjs().diff(dayjs(pendingResumeSession.end_time), 'second')
+                  ),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowResumeConfirmation(false)}>
+              {t('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingResumeSession) {
+                  resumeSession(pendingResumeSession, true);
+                }
+              }}
+              className="bg-dynamic-orange text-white hover:bg-dynamic-orange/90"
+            >
+              {t('resume_continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

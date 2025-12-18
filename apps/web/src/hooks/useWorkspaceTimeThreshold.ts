@@ -20,10 +20,15 @@ export function useWorkspaceTimeThreshold(wsId: string | null) {
       const data = await res.json();
       const threshold = data?.missed_entry_date_threshold;
       const pauseExempt = data?.pause_threshold_exempt;
+      const resumeThresholdMinutes = data?.break_resume_threshold_minutes;
 
       return {
         threshold: typeof threshold === 'number' ? threshold : null,
         pauseExempt: Boolean(pauseExempt),
+        resumeThresholdMinutes:
+          typeof resumeThresholdMinutes === 'number'
+            ? resumeThresholdMinutes
+            : null,
       };
     },
     enabled: !!wsId,

@@ -21,6 +21,7 @@ const UpdateThresholdSchema = z.object({
     }
   ),
   pauseThresholdExempt: z.boolean().optional(),
+  resumeThresholdMinutes: z.union([z.number().int().nonnegative(), z.null()]).optional(),
 });
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -98,6 +99,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     const threshold = validationResult.data.threshold;
     const pauseThresholdExempt = validationResult.data.pauseThresholdExempt;
+    const resumeThresholdMinutes = validationResult.data.resumeThresholdMinutes;
 
     // Update workspace settings
     const { error: updateError } = await supabase
@@ -107,6 +109,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
           ws_id: wsId,
           missed_entry_date_threshold: threshold,
           pause_threshold_exempt: pauseThresholdExempt,
+          break_resume_threshold_minutes: resumeThresholdMinutes,
           updated_at: new Date().toISOString(),
         },
         {

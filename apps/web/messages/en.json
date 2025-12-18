@@ -7813,6 +7813,8 @@
         "help": "Set the number of days users can go back to add time entries. Set to 0 to require approval for all missed entries.",
         "pauseExemptLabel": "Exempt pauses from threshold",
         "pauseExemptHelp": "When enabled, users can pause their sessions even if they exceed the threshold. Approval will still be required when finally stopping the session.",
+        "resumeThresholdLabel": "Break resume confirmation threshold (minutes)",
+        "resumeThresholdHelp": "When resuming a session after a break longer than this many minutes, a confirmation dialog will be shown. Set to 0 or leave empty to disable confirmation.",
         "examples": {
           "title": "Examples:",
           "days": "days",
@@ -8507,6 +8509,9 @@
       "move": "Move",
       "delete": "Delete",
       "resume": "Resume",
+      "resume_long_break_title": "Long Break Detected",
+      "resume_long_break_description": "You are resuming this session after a break of {duration}. Are you sure you want to continue this session instead of starting a new one?",
+      "resume_continue": "Continue Session",
       "overlapping_session": "Overlapping session",
       "break": "break",
       "edit_session_title": "Edit Session",
