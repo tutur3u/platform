@@ -4117,7 +4117,7 @@
     },
     "failed_to_update": "Failed to update calendar",
     "failed_to_update_visibility": "Failed to update calendar visibility",
-
+    "unknown_error": "An unknown error occurred",
     "please_reconnect": "Please reconnect your Google Calendar",
     "reconnect_desc": "Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.",
     "refresh_connection": "Your Google Calendar connection needs to be refreshed.",
@@ -4633,7 +4633,8 @@
     "use-strong-passwords-tip": "Use strong, unique passwords for all accounts",
     "avoid-public-wifi-tip": "Avoid accessing sensitive information on public WiFi",
     "regular-logout-tip": "Log out from devices you no longer use",
-    "monitor-account-activity-tip": "Regularly monitor your account activity"
+    "monitor-account-activity-tip": "Regularly monitor your account activity",
+    "insufficient_permissions_avatar": "You do not have permission to change the workspace avatar."
   },
   "settings-appearance": {
     "appearance": "Appearance",
@@ -8123,6 +8124,9 @@
         "noCategory": "No category",
         "task": "Task",
         "selectTask": "Select task",
+        "loadingTasks": "Loading tasks...",
+        "searchTasks": "Search tasks...",
+        "noTasksFound": "No tasks found",
         "noTask": "No task",
         "startTime": "Start Time *",
         "endTime": "End Time *"
@@ -8536,6 +8540,9 @@
       "select_category": "Select category",
       "no_category": "No category",
       "select_task": "Select task",
+      "loading_tasks": "Loading tasks...",
+      "search_tasks": "Search tasks...",
+      "no_tasks_found": "No tasks found",
       "no_task": "No task",
       "start_time": "Start Time",
       "end_time": "End Time",

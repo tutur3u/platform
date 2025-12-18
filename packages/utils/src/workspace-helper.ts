@@ -10,7 +10,11 @@ import type {
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { notFound, redirect } from 'next/navigation';
-import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+  PERSONAL_WORKSPACE_SLUG,
+} from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
 
@@ -525,4 +529,31 @@ export async function getWorkspaceTier(
   }
 
   return data.workspace_subscription_products.tier;
+}
+
+export async function normalizeWorkspaceId(wsId: string): Promise<string> {
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { data: workspace, error } = await supabase
+      .from('workspaces')
+      .select('id, workspace_members!inner(user_id)')
+      .eq('personal', true)
+      .eq('workspace_members.user_id', user.id)
+      .maybeSingle();
+
+    if (error || !workspace) {
+      throw new Error('Personal workspace not found');
+    }
+
+    return workspace.id;
+  }
+  return resolveWorkspaceId(wsId);
 }

@@ -5,9 +5,9 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
@@ -393,6 +393,7 @@ export const config = {
      * - sitemap.xml (SEO)
      * - site.webmanifest (SEO)
      * - monitoring (analytics)
+     * - .well-known (domain verification files)
      * Excludes files with the following extensions for static assets:
      * - svg
      * - png
@@ -403,7 +404,7 @@ export const config = {
      * - webp
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
 };
 

@@ -4806,7 +4806,6 @@ export function TimerControls({
           onOpenChange={setShowExceededThresholdDialog}
           session={currentSession}
           categories={categories}
-          tasks={tasks}
           wsId={wsId}
           thresholdDays={thresholdDays ?? null}
           onSessionDiscarded={handleSessionDiscarded}

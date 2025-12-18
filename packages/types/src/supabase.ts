@@ -15928,7 +15928,12 @@ export type Database = {
       };
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracker_stats: {
-        Args: { p_is_personal?: boolean; p_user_id: string; p_ws_id: string };
+        Args: {
+          p_is_personal?: boolean;
+          p_timezone?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
         Returns: {
           daily_activity: Json;
           month_time: number;
