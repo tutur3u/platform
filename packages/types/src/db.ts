@@ -126,8 +126,17 @@ export type TaskWithRelations = {
 };
 
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
+export type WorkspaceCalendar = Tables<'workspace_calendars'>;
 export type WorkspaceEncryptionKey = Tables<'workspace_encryption_keys'>;
 export type CalendarConnection = Tables<'calendar_connections'>;
+
+// Calendar enums
+export type WorkspaceCalendarType =
+  Database['public']['Enums']['workspace_calendar_type'];
+export type CalendarProvider = Database['public']['Enums']['calendar_provider'];
+export type CalendarSchedulingSource =
+  Database['public']['Enums']['calendar_scheduling_source'];
+
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;
 export type PlatformUser = Tables<'platform_user_roles'>;

@@ -756,6 +756,7 @@ export type Database = {
           is_enabled: boolean;
           provider: string;
           updated_at: string;
+          workspace_calendar_id: string | null;
           ws_id: string;
         };
         Insert: {
@@ -768,6 +769,7 @@ export type Database = {
           is_enabled?: boolean;
           provider?: string;
           updated_at?: string;
+          workspace_calendar_id?: string | null;
           ws_id: string;
         };
         Update: {
@@ -780,6 +782,7 @@ export type Database = {
           is_enabled?: boolean;
           provider?: string;
           updated_at?: string;
+          workspace_calendar_id?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -788,6 +791,13 @@ export type Database = {
             columns: ['auth_token_id'];
             isOneToOne: false;
             referencedRelation: 'calendar_auth_tokens';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_connections_workspace_calendar_id_fkey';
+            columns: ['workspace_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
             referencedColumns: ['id'];
           },
           {
@@ -10020,12 +10030,20 @@ export type Database = {
           created_at: string | null;
           description: string;
           end_at: string;
+          external_calendar_id: string | null;
+          external_event_id: string | null;
           google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
           is_encrypted: boolean;
           location: string | null;
           locked: boolean;
+          provider: Database['public']['Enums']['calendar_provider'] | null;
+          scheduling_metadata: Json | null;
+          scheduling_source:
+            | Database['public']['Enums']['calendar_scheduling_source']
+            | null;
+          source_calendar_id: string | null;
           start_at: string;
           task_id: string | null;
           title: string;
@@ -10036,12 +10054,20 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at: string;
+          external_calendar_id?: string | null;
+          external_event_id?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
           location?: string | null;
           locked?: boolean;
+          provider?: Database['public']['Enums']['calendar_provider'] | null;
+          scheduling_metadata?: Json | null;
+          scheduling_source?:
+            | Database['public']['Enums']['calendar_scheduling_source']
+            | null;
+          source_calendar_id?: string | null;
           start_at: string;
           task_id?: string | null;
           title?: string;
@@ -10052,12 +10078,20 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at?: string;
+          external_calendar_id?: string | null;
+          external_event_id?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
           location?: string | null;
           locked?: boolean;
+          provider?: Database['public']['Enums']['calendar_provider'] | null;
+          scheduling_metadata?: Json | null;
+          scheduling_source?:
+            | Database['public']['Enums']['calendar_scheduling_source']
+            | null;
+          source_calendar_id?: string | null;
           start_at?: string;
           task_id?: string | null;
           title?: string;
@@ -10070,6 +10104,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'calendar_event_colors';
             referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_events_source_calendar_id_fkey';
+            columns: ['source_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_calendar_events_ws_id_fkey';
@@ -10212,6 +10253,70 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_calendars: {
+        Row: {
+          calendar_type: Database['public']['Enums']['workspace_calendar_type'];
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          is_enabled: boolean;
+          is_system: boolean;
+          name: string;
+          position: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          is_system?: boolean;
+          name: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          is_system?: boolean;
+          name?: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_calendars_color_fkey';
+            columns: ['color'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_colors';
+            referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'workspace_calendars_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendars_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -15343,6 +15448,13 @@ export type Database = {
       };
       get_dau_count: { Args: never; Returns: number };
       get_default_ai_pricing: { Args: never; Returns: Json };
+      get_default_calendar_for_event: {
+        Args: {
+          p_scheduling_source?: Database['public']['Enums']['calendar_scheduling_source'];
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       get_device_types: {
         Args: { p_limit?: number; p_link_id: string };
         Returns: {
@@ -15557,6 +15669,16 @@ export type Database = {
           count: number;
           os: string;
         }[];
+      };
+      get_or_create_external_calendar: {
+        Args: {
+          p_calendar_id: string;
+          p_calendar_name: string;
+          p_color: string;
+          p_provider: Database['public']['Enums']['calendar_provider'];
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       get_or_create_notification_batch:
         | {
@@ -16620,6 +16742,8 @@ export type Database = {
       blacklist_entry_type: 'email' | 'domain';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
       calendar_hours: 'work_hours' | 'personal_hours' | 'meeting_hours';
+      calendar_provider: 'tuturuuu' | 'google' | 'microsoft';
+      calendar_scheduling_source: 'manual' | 'task' | 'habit';
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
@@ -16965,6 +17089,7 @@ export type Database = {
         | 'CircleAlert'
         | 'BellRing'
         | 'BellOff';
+      workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -17196,6 +17321,8 @@ export const Constants = {
       blacklist_entry_type: ['email', 'domain'],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
       calendar_hours: ['work_hours', 'personal_hours', 'meeting_hours'],
+      calendar_provider: ['tuturuuu', 'google', 'microsoft'],
+      calendar_scheduling_source: ['manual', 'task', 'habit'],
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
@@ -17548,6 +17675,7 @@ export const Constants = {
         'BellRing',
         'BellOff',
       ],
+      workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',

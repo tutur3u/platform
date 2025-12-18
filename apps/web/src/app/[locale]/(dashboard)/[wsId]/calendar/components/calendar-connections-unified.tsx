@@ -7,11 +7,15 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Lock,
   Plus,
   RefreshCw,
   Settings,
+  Sparkles,
+  Target,
   Trash2,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -51,14 +55,42 @@ interface AccountsResponse {
   total: number;
 }
 
+interface WorkspaceCalendar {
+  id: string;
+  ws_id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
+  is_system: boolean;
+  is_enabled: boolean;
+  position: number;
+}
+
+interface WorkspaceCalendarsResponse {
+  calendars: WorkspaceCalendar[];
+  grouped: {
+    system: WorkspaceCalendar[];
+    custom: WorkspaceCalendar[];
+  };
+  total: number;
+}
+
 export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   const t = useTranslations('calendar');
   const queryClient = useQueryClient();
-  const [isOpen, setIsOpen] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  const [togglingTuturuuuIds, setTogglingTuturuuuIds] = useState<Set<string>>(
+    new Set()
+  );
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(
     new Set()
+  );
+  const [expandedPopoverAccounts, setExpandedPopoverAccounts] = useState<
+    Set<string>
+  >(
+    new Set(['tuturuuu']) // Tuturuuu expanded by default
   );
 
   const {
@@ -89,6 +121,140 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
 
   const accounts = accountsData?.accounts || [];
   const hasConnectedAccounts = accounts.length > 0;
+
+  // Fetch current user's email
+  const { data: userEmail } = useQuery({
+    queryKey: ['current-user-email'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user?.email || null;
+    },
+    staleTime: Infinity, // User email rarely changes
+  });
+
+  // Fetch workspace calendars (Tuturuuu native calendars)
+  const {
+    data: workspaceCalendarsData,
+    isLoading: isLoadingWorkspaceCalendars,
+  } = useQuery({
+    queryKey: ['workspace-calendars', wsId],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/calendars`);
+      if (!response.ok)
+        return { calendars: [], grouped: { system: [], custom: [] }, total: 0 };
+      return response.json() as Promise<WorkspaceCalendarsResponse>;
+    },
+    staleTime: 30_000,
+  });
+
+  const isLoadingCalendars = isLoadingAccounts || isLoadingWorkspaceCalendars;
+
+  const workspaceCalendars = workspaceCalendarsData?.calendars || [];
+  const systemCalendars = workspaceCalendarsData?.grouped?.system || [];
+  const customCalendars = workspaceCalendarsData?.grouped?.custom || [];
+
+  // Calendar color mapping helper
+  const getCalendarColor = (color: string): string => {
+    const colorMap: Record<string, string> = {
+      BLUE: '#3b82f6',
+      RED: '#ef4444',
+      GREEN: '#22c55e',
+      YELLOW: '#eab308',
+      ORANGE: '#f97316',
+      PURPLE: '#a855f7',
+      PINK: '#ec4899',
+      CYAN: '#06b6d4',
+      GRAY: '#6b7280',
+    };
+    return colorMap[color.toUpperCase()] || color;
+  };
+
+  // Calculate total enabled calendars count
+  const tuturuuuEnabledCount = workspaceCalendars.filter(
+    (c) => c.is_enabled
+  ).length;
+
+  // Toggle workspace calendar visibility
+  const toggleWorkspaceCalendarMutation = useMutation({
+    mutationFn: async ({
+      id,
+      is_enabled,
+    }: {
+      id: string;
+      is_enabled: boolean;
+    }) => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/calendars`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_enabled }),
+      });
+      if (!response.ok) throw new Error('Failed to toggle calendar');
+      return response.json();
+    },
+    onMutate: ({ id }) => {
+      setTogglingTuturuuuIds((prev) => new Set(prev).add(id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-calendars', wsId],
+      });
+    },
+    onError: () =>
+      toast.error(t('calendar_toggle_failed') || 'Failed to toggle calendar'),
+    onSettled: (_, __, { id }) => {
+      setTogglingTuturuuuIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    },
+  });
+
+  // Create custom calendar
+  const createCalendarMutation = useMutation({
+    mutationFn: async (data: { name: string; color?: string }) => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/calendars`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to create calendar');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success(t('calendar_created') || 'Calendar created');
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-calendars', wsId],
+      });
+    },
+    onError: () =>
+      toast.error(t('calendar_creation_failed') || 'Failed to create calendar'),
+  });
+
+  // Delete custom calendar
+  const deleteCalendarMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/calendars?id=${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) throw new Error('Failed to delete calendar');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success(t('calendar_deleted') || 'Calendar deleted');
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-calendars', wsId],
+      });
+    },
+    onError: () =>
+      toast.error(t('calendar_deletion_failed') || 'Failed to delete calendar'),
+  });
 
   // Google auth mutation
   const googleAuthMutation = useMutation<AuthResponse, Error, void>({
@@ -259,7 +425,9 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
     });
   };
 
-  const enabledCount = calendarConnections.filter((c) => c.is_enabled).length;
+  const enabledCount =
+    calendarConnections.filter((c) => c.is_enabled).length +
+    tuturuuuEnabledCount;
   const syncStatusStyles =
     syncStatus.state === 'syncing'
       ? 'bg-dynamic-blue/10 text-dynamic-blue'
@@ -329,96 +497,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
     >
   );
 
-  // Show connect button if no accounts
-  if (!hasConnectedAccounts && !isLoadingAccounts) {
-    return (
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('connect_calendar')}</span>
-            <span className="sm:hidden">{t('connect')}</span>
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('connect_calendar')}</DialogTitle>
-            <DialogDescription>
-              {t('manage_calendar_accounts_desc')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 py-4">
-            <Button
-              variant="outline"
-              className="h-14 justify-start gap-3"
-              onClick={() => googleAuthMutation.mutate()}
-              disabled={googleAuthMutation.isPending}
-            >
-              {googleAuthMutation.isPending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Image
-                  src="/media/logos/google.svg"
-                  alt="Google"
-                  width={20}
-                  height={20}
-                />
-              )}
-              <div className="text-left">
-                <div className="font-medium">{t('google_calendar')}</div>
-                <div className="text-muted-foreground text-xs">
-                  {t('connect_google_desc')}
-                </div>
-              </div>
-            </Button>
-            {DEV_MODE ? (
-              <Button
-                variant="outline"
-                className="h-14 justify-start gap-3"
-                onClick={() => microsoftAuthMutation.mutate()}
-                disabled={microsoftAuthMutation.isPending}
-              >
-                {microsoftAuthMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Image
-                    src="/media/logos/microsoft.svg"
-                    alt="Microsoft"
-                    width={20}
-                    height={20}
-                  />
-                )}
-                <div className="text-left">
-                  <div className="font-medium">{t('microsoft_outlook')}</div>
-                  <div className="text-muted-foreground text-xs">
-                    {t('connect_microsoft_desc')}
-                  </div>
-                </div>
-              </Button>
-            ) : (
-              <div className="flex h-14 items-center gap-3 rounded-md border border-dashed px-4 opacity-60">
-                <Image
-                  src="/media/logos/microsoft.svg"
-                  alt="Microsoft"
-                  width={20}
-                  height={20}
-                  className="opacity-50"
-                />
-                <div className="text-left">
-                  <div className="font-medium text-muted-foreground">
-                    {t('microsoft_outlook')}
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    {t('coming_soon')}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // Note: Removed early return - we always show the full UI now so Tuturuuu calendars are visible
 
   return (
     <div className="flex items-center gap-2">
@@ -443,7 +522,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                   {t('visible_calendars')}
                 </h4>
                 <p className="text-muted-foreground text-xs">
-                  {t('toggle_calendars_desc')}
+                  {enabledCount} {t('calendars_selected') || 'selected'}
                 </p>
               </div>
               <Dialog>
@@ -461,6 +540,158 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                   </DialogHeader>
 
                   <div className="space-y-4 py-4">
+                    {/* Tuturuuu Calendars Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src="/icon-512x512.png"
+                            alt="Tuturuuu"
+                            width={24}
+                            height={24}
+                          />
+                          <span className="font-medium text-sm">
+                            {t('tuturuuu_calendars') || 'Tuturuuu Calendars'}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 text-xs"
+                          onClick={() => {
+                            const name = prompt(
+                              t('enter_calendar_name') || 'Enter calendar name:'
+                            );
+                            if (name?.trim()) {
+                              createCalendarMutation.mutate({
+                                name: name.trim(),
+                              });
+                            }
+                          }}
+                          disabled={createCalendarMutation.isPending}
+                        >
+                          {createCalendarMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Plus className="h-3 w-3" />
+                          )}
+                          {t('new') || 'New'}
+                        </Button>
+                      </div>
+
+                      {/* System Calendars */}
+                      <div className="space-y-1">
+                        {systemCalendars.map((cal) => {
+                          const Icon =
+                            cal.calendar_type === 'primary'
+                              ? Calendar
+                              : cal.calendar_type === 'tasks'
+                                ? Target
+                                : cal.calendar_type === 'habits'
+                                  ? Sparkles
+                                  : Calendar;
+                          return (
+                            <div
+                              key={cal.id}
+                              className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
+                            >
+                              <div className="flex min-w-0 flex-1 items-center gap-2">
+                                <div
+                                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded"
+                                  style={{
+                                    backgroundColor: `${getCalendarColor(cal.color || 'BLUE')}20`,
+                                  }}
+                                >
+                                  <Icon
+                                    className="h-3 w-3"
+                                    style={{
+                                      color: getCalendarColor(
+                                        cal.color || 'BLUE'
+                                      ),
+                                    }}
+                                  />
+                                </div>
+                                <span
+                                  className="line-clamp-1 break-all text-sm"
+                                  title={cal.name}
+                                >
+                                  {cal.name}
+                                </span>
+                                <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                              </div>
+                              <Switch
+                                checked={cal.is_enabled}
+                                onCheckedChange={() =>
+                                  toggleWorkspaceCalendarMutation.mutate({
+                                    id: cal.id,
+                                    is_enabled: !cal.is_enabled,
+                                  })
+                                }
+                                disabled={togglingTuturuuuIds.has(cal.id)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Calendars */}
+                      {customCalendars.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="px-2 text-muted-foreground text-xs">
+                            {t('custom_calendars') || 'Custom'}
+                          </p>
+                          {customCalendars.map((cal) => (
+                            <div
+                              key={cal.id}
+                              className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
+                            >
+                              <div className="flex min-w-0 flex-1 items-center gap-2">
+                                <div
+                                  className="h-3 w-3 shrink-0 rounded-full"
+                                  style={{
+                                    backgroundColor: getCalendarColor(
+                                      cal.color || 'BLUE'
+                                    ),
+                                  }}
+                                />
+                                <span
+                                  className="line-clamp-1 break-all text-sm"
+                                  title={cal.name}
+                                >
+                                  {cal.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                                  onClick={() =>
+                                    deleteCalendarMutation.mutate(cal.id)
+                                  }
+                                  disabled={deleteCalendarMutation.isPending}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                                <Switch
+                                  checked={cal.is_enabled}
+                                  onCheckedChange={() =>
+                                    toggleWorkspaceCalendarMutation.mutate({
+                                      id: cal.id,
+                                      is_enabled: !cal.is_enabled,
+                                    })
+                                  }
+                                  disabled={togglingTuturuuuIds.has(cal.id)}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
                     {/* Connected accounts with calendars */}
                     {accounts.map((account) => (
                       <Collapsible
@@ -648,76 +879,187 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
 
             <Separator />
 
-            {/* Calendar list grouped by account */}
+            {/* Calendar list grouped by source */}
             <div className="max-h-64 space-y-3 overflow-y-auto">
-              {accounts.map((account) => {
-                const accountCals = calendarsByAccount[account.id] || [];
-                if (accountCals.length === 0) return null;
-
-                return (
-                  <div key={account.id} className="space-y-1">
-                    <div className="flex items-center gap-2 px-1">
-                      <Image
-                        src={
-                          account.provider === 'google'
-                            ? '/media/logos/google.svg'
-                            : '/media/logos/microsoft.svg'
-                        }
-                        alt={account.provider}
-                        width={12}
-                        height={12}
-                      />
-                      <span className="truncate text-muted-foreground text-xs">
-                        {account.account_email || account.account_name}
-                      </span>
-                    </div>
-                    {accountCals.map((cal) => (
-                      <div
-                        key={cal.id}
-                        className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-muted/50"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: cal.color || '#4285f4' }}
-                          />
-                          <span className="line-clamp-1 max-w-45 break-all text-sm">
-                            {cal.calendar_name}
+              {isLoadingCalendars ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {/* Tuturuuu Calendars */}
+                  {workspaceCalendars.length > 0 && (
+                    <Collapsible
+                      open={expandedPopoverAccounts.has('tuturuuu')}
+                      onOpenChange={(open) => {
+                        setExpandedPopoverAccounts((prev) => {
+                          const next = new Set(prev);
+                          if (open) next.add('tuturuuu');
+                          else next.delete('tuturuuu');
+                          return next;
+                        });
+                      }}
+                    >
+                      <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/50">
+                        <ChevronDown
+                          className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expandedPopoverAccounts.has('tuturuuu') ? '' : '-rotate-90'}`}
+                        />
+                        <Image
+                          src="/icon-512x512.png"
+                          alt="Tuturuuu"
+                          width={14}
+                          height={14}
+                        />
+                        <div className="flex min-w-0 flex-1 flex-col text-left">
+                          <span className="font-medium text-muted-foreground text-xs">
+                            {t('tuturuuu_calendars') || 'Tuturuuu'}
                           </span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() =>
-                            handleToggle(cal.id, cal.is_enabled, {
-                              calendar_id: cal.calendar_id,
-                              calendar_name: cal.calendar_name,
-                              color: cal.color,
-                              connectionExists: cal.connectionExists,
-                              accountId: cal.accountId,
-                            })
-                          }
-                          disabled={togglingIds.has(cal.id)}
-                        >
-                          {togglingIds.has(cal.id) ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : cal.is_enabled ? (
-                            <Eye className="h-3.5 w-3.5 text-primary" />
-                          ) : (
-                            <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                          {userEmail && (
+                            <span className="truncate text-[10px] text-muted-foreground">
+                              {userEmail}
+                            </span>
                           )}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-1 pt-1">
+                        {workspaceCalendars.map((cal) => (
+                          <div
+                            key={cal.id}
+                            className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-muted/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="h-2.5 w-2.5 rounded-full"
+                                style={{
+                                  backgroundColor: getCalendarColor(
+                                    cal.color || 'BLUE'
+                                  ),
+                                }}
+                              />
+                              <span className="line-clamp-1 max-w-45 break-all text-sm">
+                                {cal.name}
+                              </span>
+                              {cal.is_system && (
+                                <Lock className="h-2.5 w-2.5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() =>
+                                toggleWorkspaceCalendarMutation.mutate({
+                                  id: cal.id,
+                                  is_enabled: !cal.is_enabled,
+                                })
+                              }
+                              disabled={togglingTuturuuuIds.has(cal.id)}
+                            >
+                              {togglingTuturuuuIds.has(cal.id) ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : cal.is_enabled ? (
+                                <Eye className="h-3.5 w-3.5 text-primary" />
+                              ) : (
+                                <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
 
-              {calendarConnections.length === 0 && (
-                <p className="py-4 text-center text-muted-foreground text-sm">
-                  {t('no_calendars_synced')}
-                </p>
+                  {/* External accounts calendars */}
+                  {accounts.map((account) => {
+                    const accountCals = calendarsByAccount[account.id] || [];
+                    if (accountCals.length === 0) return null;
+                    const accountKey = `account-${account.id}`;
+
+                    return (
+                      <Collapsible
+                        key={account.id}
+                        open={expandedPopoverAccounts.has(accountKey)}
+                        onOpenChange={(open) => {
+                          setExpandedPopoverAccounts((prev) => {
+                            const next = new Set(prev);
+                            if (open) next.add(accountKey);
+                            else next.delete(accountKey);
+                            return next;
+                          });
+                        }}
+                      >
+                        <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/50">
+                          <ChevronDown
+                            className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expandedPopoverAccounts.has(accountKey) ? '' : '-rotate-90'}`}
+                          />
+                          <Image
+                            src={
+                              account.provider === 'google'
+                                ? '/media/logos/google.svg'
+                                : '/media/logos/microsoft.svg'
+                            }
+                            alt={account.provider}
+                            width={12}
+                            height={12}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-left text-muted-foreground text-xs">
+                            {account.account_email || account.account_name}
+                          </span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-1 pt-1">
+                          {accountCals.map((cal) => (
+                            <div
+                              key={cal.id}
+                              className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-muted/50"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="h-2.5 w-2.5 rounded-full"
+                                  style={{
+                                    backgroundColor: cal.color || '#4285f4',
+                                  }}
+                                />
+                                <span className="line-clamp-1 max-w-45 break-all text-sm">
+                                  {cal.calendar_name}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() =>
+                                  handleToggle(cal.id, cal.is_enabled, {
+                                    calendar_id: cal.calendar_id,
+                                    calendar_name: cal.calendar_name,
+                                    color: cal.color,
+                                    connectionExists: cal.connectionExists,
+                                    accountId: cal.accountId,
+                                  })
+                                }
+                                disabled={togglingIds.has(cal.id)}
+                              >
+                                {togglingIds.has(cal.id) ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : cal.is_enabled ? (
+                                  <Eye className="h-3.5 w-3.5 text-primary" />
+                                ) : (
+                                  <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                                )}
+                              </Button>
+                            </div>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+
+                  {calendarConnections.length === 0 &&
+                    workspaceCalendars.length === 0 && (
+                      <p className="py-4 text-center text-muted-foreground text-sm">
+                        {t('no_calendars_synced')}
+                      </p>
+                    )}
+                </>
               )}
             </div>
 
@@ -731,7 +1073,9 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                 {syncStatus.state === 'syncing' && (
                   <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
                 )}
-                {syncStatus.message || t('synced')}
+                {syncStatus.message
+                  ? t(syncStatus.message as any) || syncStatus.message
+                  : t('synced')}
               </div>
               <div className="flex gap-1">
                 <Button
