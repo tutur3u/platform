@@ -209,7 +209,11 @@ export function StackedSessionItem({
                       {firstStartTime.format('MMM D')} at{' '}
                       {firstStartTime.format('h:mm A')}
                       {lastEndTime ? (
-                        <span> - {lastEndTime.format('h:mm A')}</span>
+                        firstStartTime.isSame(lastEndTime, 'day') ? (
+                          <span> - {lastEndTime.format('h:mm A')}</span>
+                        ) : (
+                          <span> - {lastEndTime.format('MMM D h:mm A')}</span>
+                        )
                       ) : stackedSession?.sessions.some((s) => s.is_running) ? (
                         <span className="font-medium text-green-600">
                           {' '}

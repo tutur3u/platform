@@ -38,6 +38,7 @@ import {
   getDurationCategory,
   getTimeOfDayCategory,
   sessionOverlapsPeriod,
+  sortSessionGroups,
   stackSessions,
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
@@ -355,6 +356,7 @@ export function SessionHistory({
               periodStats={periodStats}
               sessionsForPeriod={sessionsForPeriod}
               groupedStackedSessions={groupedStackedSessions}
+              startOfPeriod={startOfPeriod}
               onResume={resumeSession}
               onEdit={openEditDialog}
               onMove={openMoveDialog}
@@ -365,7 +367,7 @@ export function SessionHistory({
               <SessionStats periodStats={periodStats} />
 
               <div className="space-y-6">
-                {Object.entries(groupedStackedSessions).map(
+                {sortSessionGroups(Object.entries(groupedStackedSessions)).map(
                   ([groupTitle, groupSessions]) => {
                     const groupTotalDuration = groupSessions.reduce(
                       (sum, session) => sum + session.periodDuration,
