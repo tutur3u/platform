@@ -1,5 +1,6 @@
 'use client';
 
+import { sendOtpAction, verifyOtpAction } from './actions';
 import { DEV_MODE } from '@/constants/common';
 import { Button } from '@ncthub/ui/button';
 import {
@@ -17,7 +18,7 @@ import { Mail } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@ncthub/ui/input-otp';
 import { zodResolver } from '@ncthub/ui/resolvers';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -32,6 +33,7 @@ export default function LoginForm() {
   const t = useTranslations('login');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useLocale();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -80,12 +82,12 @@ export default function LoginForm() {
   const sendOtp = async (data: { email: string }) => {
     setLoading(true);
 
-    const res = await fetch('/api/auth/otp/send', {
-      method: 'POST',
-      body: JSON.stringify(data),
+    const result = await sendOtpAction({
+      email: data.email,
+      locale,
     });
 
-    if (res.ok) {
+    if (result.success) {
       // Notify user
       toast({
         title: t('success'),
@@ -102,7 +104,7 @@ export default function LoginForm() {
     } else {
       toast({
         title: t('failed'),
-        description: t('failed_to_send'),
+        description: result.error || t('failed_to_send'),
       });
     }
 
@@ -112,12 +114,13 @@ export default function LoginForm() {
   const verifyOtp = async (data: { email: string; otp: string }) => {
     setLoading(true);
 
-    const res = await fetch('/api/auth/otp/verify', {
-      method: 'POST',
-      body: JSON.stringify(data),
+    const result = await verifyOtpAction({
+      email: data.email,
+      otp: data.otp,
+      locale,
     });
 
-    if (res.ok) {
+    if (result.success) {
       const nextUrl = searchParams.get('nextUrl');
       router.push(nextUrl ?? '/onboarding');
       router.refresh();
@@ -129,7 +132,7 @@ export default function LoginForm() {
 
       toast({
         title: t('failed'),
-        description: t('failed_to_verify'),
+        description: result.error || t('failed_to_verify'),
       });
     }
   };
