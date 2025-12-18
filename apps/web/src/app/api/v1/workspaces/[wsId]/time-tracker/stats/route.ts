@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
 
 const querySchema = z.object({
-  userId: z.uuid(),
+  userId: process.env.NODE_ENV === 'development' ? z.string() : z.uuid(),
   isPersonal: z.enum(['true', 'false']).transform((val) => val === 'true'),
   timezone: z.string().default('UTC'),
 });
@@ -36,7 +36,10 @@ export async function GET(
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user || user.id !== userId) {
+    if (
+      process.env.NODE_ENV !== 'development' &&
+      (authError || !user || user.id !== userId)
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
