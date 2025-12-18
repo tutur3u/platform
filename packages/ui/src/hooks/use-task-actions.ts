@@ -997,23 +997,87 @@ export function useTaskActions({
       setIsLoading(true);
       setCustomDateDialogOpen?.(false); // Close dialog immediately when date is selected
 
-      updateTaskMutation.mutate(
-        { taskId: task.id, updates: { end_date: newDate } },
-        {
-          onSuccess: () => {
-            toast.success('Due date updated', {
-              description: newDate
-                ? 'Custom due date set successfully'
-                : 'Due date removed',
-            });
-          },
-          onSettled: () => {
-            setIsLoading(false);
-          },
+      // Check if we're in multi-select mode with multiple tasks selected
+      const shouldBulkUpdate =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+
+      if (shouldBulkUpdate) {
+        // Bulk update for multiple selected tasks
+        const supabase = createClient();
+        const tasksToUpdate = Array.from(selectedTasks);
+
+        // Cancel any outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+        // Snapshot the previous value BEFORE optimistic update
+        const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+          | Task[]
+          | undefined;
+
+        // Optimistic update
+        const taskIdSet = new Set(tasksToUpdate);
+        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
+          );
+        });
+
+        // Perform the actual bulk update
+        try {
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            const { error } = await supabase
+              .from('tasks')
+              .update({ end_date: newDate })
+              .eq('id', taskId);
+            if (!error) {
+              successCount++;
+            } else {
+              console.error(
+                `Failed to update custom date for task ${taskId}:`,
+                error
+              );
+            }
+          }
+
+          toast.success('Due date updated', {
+            description:
+              `${successCount} task${successCount === 1 ? '' : 's'} updated with custom date`,
+          });
+        } catch (error) {
+          console.error('Bulk custom date update failed', error);
+          // Rollback on error
+          if (previousTasks) {
+            queryClient.setQueryData(['tasks', boardId], previousTasks);
+          }
+          toast.error('Failed to update due date for selected tasks');
+        } finally {
+          setIsLoading(false);
         }
-      );
+      } else {
+        // Single task update
+        updateTaskMutation.mutate(
+          { taskId: task.id, updates: { end_date: newDate } },
+          {
+            onSuccess: () => {
+              toast.success('Due date updated', {
+                description: newDate
+                  ? 'Custom due date set successfully'
+                  : 'Due date removed',
+              });
+            },
+            onSettled: () => {
+              setIsLoading(false);
+            },
+          }
+        );
+      }
     },
-    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
+    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen, isMultiSelectMode, selectedTasks, boardId, queryClient]
   );
 
   const handleToggleAssignee = useCallback(

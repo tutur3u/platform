@@ -443,8 +443,11 @@ function TaskCardInner({
 
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
+      // Check if modifier keys are held (Shift for range select, Cmd/Ctrl for toggle)
+      const isModifierHeld = e.shiftKey || e.metaKey || e.ctrlKey;
+
       // Handle multi-select functionality
-      if (isMultiSelectMode) {
+      if (isMultiSelectMode || isModifierHeld) {
         onSelect?.(task.id, e);
       } else if (
         !isDragging &&
@@ -1017,6 +1020,17 @@ function TaskCardInner({
       style={style}
       onClick={handleCardClick}
       onContextMenu={(e) => {
+        // If modifier keys are held (Shift/Cmd/Ctrl), handle as selection
+        // (Command+Click on Mac triggers context menu, but we want it to select)
+        if (e.shiftKey || e.metaKey || e.ctrlKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Trigger selection (Command+Click fires contextmenu instead of click on Mac)
+          onSelect?.(task.id, e as any);
+          return;
+        }
+
+        // Normal right-click behavior - open context menu
         e.preventDefault();
         e.stopPropagation();
         // Open the context menu (actions dropdown) and guard first click briefly

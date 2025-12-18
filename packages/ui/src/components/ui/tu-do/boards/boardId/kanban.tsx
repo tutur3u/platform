@@ -23,20 +23,41 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRightLeft,
   Box,
+  Calendar,
   Check,
+  CheckCircle2,
+  CircleDashed,
+  CircleFadingArrowUpIcon,
+  CircleSlash,
+  Copy,
   Flag,
-  MinusCircle,
+  horseHead,
+  Icon,
+  List,
+  ListTree,
+  Loader2,
+  MoreHorizontal,
+  Move,
   Plus,
+  Rabbit,
+  Search,
   Tags,
   Timer,
+  Trash2,
+  Turtle,
+  UserStar,
+  unicornHead,
+  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -49,13 +70,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
@@ -98,6 +120,69 @@ interface Props {
   filters?: TaskFilters;
 }
 
+// Bulk Custom Date Dialog Component
+function BulkCustomDateDialog({
+  open,
+  onOpenChange,
+  onDateChange,
+  onClear,
+  isLoading,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDateChange: (date: Date | undefined) => void;
+  onClear: () => void;
+  isLoading: boolean;
+}) {
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Set Custom Due Date</DialogTitle>
+          <DialogDescription>
+            Choose a specific date and time for all selected tasks.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <DateTimePicker
+            date={undefined}
+            setDate={onDateChange}
+            showTimeSelect={true}
+            minDate={new Date()}
+            inline
+            preferences={{ weekStartsOn, timezone, timeFormat }}
+          />
+        </div>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              onClear();
+              onOpenChange(false);
+            }}
+            disabled={isLoading}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+            Remove Due Date
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function KanbanBoard({
   workspace,
   boardId,
@@ -128,6 +213,10 @@ export function KanbanBoard({
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkCustomDateOpen, setBulkCustomDateOpen] = useState(false);
+  const [labelSearchQuery, setLabelSearchQuery] = useState('');
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
   // Refs for drag state
   const pickedUpTaskColumn = useRef<string | null>(null);
@@ -654,16 +743,137 @@ export function KanbanBoard({
     enabled: isMultiSelectMode && selectedTasks.size > 0,
   });
 
+  // Workspace members for bulk operations
+  const { data: workspaceMembers = [] } = useQuery({
+    queryKey: ['workspace-members', workspace.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/workspaces/${workspace.id}/members`);
+      if (!response.ok) throw new Error('Failed to fetch members');
+
+      const { members: fetchedMembers } = await response.json();
+      return fetchedMembers || [];
+    },
+    enabled:
+      !!workspace.id &&
+      !workspace.personal &&
+      isMultiSelectMode &&
+      selectedTasks.size > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes - members rarely change
+  });
+
+  // Calculate which labels/projects/assignees are applied to ALL selected tasks
+  // Compute directly from tasks cache to sync with optimistic updates and realtime
+  const appliedLabels = useMemo(() => {
+    if (selectedTasks.size === 0) return new Set<string>();
+    const labelCounts = new Map<string, number>();
+
+    // Get labels from selected tasks
+    tasks.forEach((task) => {
+      if (selectedTasks.has(task.id)) {
+        task.labels?.forEach((label) => {
+          labelCounts.set(label.id, (labelCounts.get(label.id) || 0) + 1);
+        });
+      }
+    });
+
+    // Return labels that appear on ALL selected tasks
+    return new Set(
+      Array.from(labelCounts.entries())
+        .filter(([_, count]) => count === selectedTasks.size)
+        .map(([labelId]) => labelId)
+    );
+  }, [tasks, selectedTasks]);
+
+  const appliedProjects = useMemo(() => {
+    if (selectedTasks.size === 0) return new Set<string>();
+    const projectCounts = new Map<string, number>();
+
+    // Get projects from selected tasks
+    tasks.forEach((task) => {
+      if (selectedTasks.has(task.id)) {
+        task.projects?.forEach((project) => {
+          projectCounts.set(
+            project.id,
+            (projectCounts.get(project.id) || 0) + 1
+          );
+        });
+      }
+    });
+
+    // Return projects that appear on ALL selected tasks
+    return new Set(
+      Array.from(projectCounts.entries())
+        .filter(([_, count]) => count === selectedTasks.size)
+        .map(([projectId]) => projectId)
+    );
+  }, [tasks, selectedTasks]);
+
+  const appliedAssignees = useMemo(() => {
+    if (selectedTasks.size === 0) return new Set<string>();
+    const assigneeCounts = new Map<string, number>();
+
+    // Get assignees from selected tasks
+    tasks.forEach((task) => {
+      if (selectedTasks.has(task.id)) {
+        task.assignees?.forEach((assignee) => {
+          assigneeCounts.set(
+            assignee.id,
+            (assigneeCounts.get(assignee.id) || 0) + 1
+          );
+        });
+      }
+    });
+
+    // Return assignees that appear on ALL selected tasks
+    return new Set(
+      Array.from(assigneeCounts.entries())
+        .filter(([_, count]) => count === selectedTasks.size)
+        .map(([userId]) => userId)
+    );
+  }, [tasks, selectedTasks]);
+
+  // Filter labels and projects based on search
+  const filteredLabels = useMemo(() => {
+    return workspaceLabels.filter(
+      (label) =>
+        !labelSearchQuery ||
+        label.name.toLowerCase().includes(labelSearchQuery.toLowerCase())
+    );
+  }, [workspaceLabels, labelSearchQuery]);
+
+  const filteredProjects = useMemo(() => {
+    return workspaceProjects.filter(
+      (project: any) =>
+        !projectSearchQuery ||
+        project.name.toLowerCase().includes(projectSearchQuery.toLowerCase())
+    );
+  }, [workspaceProjects, projectSearchQuery]);
+
+  const filteredMembers = useMemo(() => {
+    return workspaceMembers.filter(
+      (member: any) =>
+        !assigneeSearchQuery ||
+        member.display_name
+          ?.toLowerCase()
+          .includes(assigneeSearchQuery.toLowerCase()) ||
+        member.email?.toLowerCase().includes(assigneeSearchQuery.toLowerCase())
+    );
+  }, [workspaceMembers, assigneeSearchQuery]);
+
   // Create bulk operations using TanStack Query mutations hook
   const {
     bulkUpdatePriority,
     bulkUpdateEstimation,
     bulkUpdateDueDate,
+    bulkUpdateCustomDueDate,
+    bulkMoveToList,
     bulkMoveToStatus,
     bulkAddLabel,
     bulkRemoveLabel,
     bulkAddProject,
     bulkRemoveProject,
+    bulkAddAssignee,
+    bulkRemoveAssignee,
     bulkDeleteTasks,
   } = useBulkOperations({
     queryClient,
@@ -689,6 +899,46 @@ export function KanbanBoard({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Keyboard shortcuts for multiselect mode (Shift for range select, Cmd/Ctrl for toggle)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Shift or Command/Control keys enable multiselect mode
+      if (e.shiftKey || e.metaKey || e.ctrlKey) {
+        if (!isMultiSelectMode) {
+          setIsMultiSelectMode(true);
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Exit multiselect mode when all modifier keys are released
+      if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        // Only exit if we have no selected tasks
+        if (isMultiSelectMode && selectedTasks.size === 0) {
+          setIsMultiSelectMode(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isMultiSelectMode, selectedTasks.size]);
 
   // On mobile, use MouseSensor instead of PointerSensor to allow touch scrolling
   const sensors = useSensors(
@@ -788,17 +1038,17 @@ export function KanbanBoard({
           <>
             {/* Stacked card effect - show up to 2 additional card shadows */}
             <div
-              className="-z-10 pointer-events-none absolute top-1 left-1 h-full w-full rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 shadow-lg"
+              className="pointer-events-none absolute top-1 left-1 -z-10 h-full w-full rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 shadow-lg"
               style={{ transform: 'translateZ(-10px)' }}
             />
             {selectedTasks.size > 2 && (
               <div
-                className="-z-20 pointer-events-none absolute top-2 left-2 h-full w-full rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/3 shadow-md"
+                className="pointer-events-none absolute top-2 left-2 -z-20 h-full w-full rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/3 shadow-md"
                 style={{ transform: 'translateZ(-20px)' }}
               />
             )}
             {/* Badge showing count */}
-            <div className="-right-2 -top-2 absolute flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-lg ring-2 ring-background">
+            <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-lg ring-2 ring-background">
               <span className="font-bold text-xs">{selectedTasks.size}</span>
             </div>
           </>
@@ -1752,285 +2002,601 @@ export function KanbanBoard({
                   className="h-6 px-2 text-xs"
                   disabled={bulkWorking}
                 >
-                  <Tags className="mr-1 h-3 w-3" /> Bulk
+                  <MoreHorizontal className="mr-1 h-3 w-3" /> Bulk
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {boardConfig?.estimation_type && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <Timer className="mr-2 h-3.5 w-3.5 text-dynamic-purple" />
-                      Estimation
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-48">
-                      <DropdownMenuItem
-                        disabled={bulkWorking}
-                        onClick={() => bulkUpdateEstimation(null)}
-                      >
-                        Clear
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      {estimationOptions.map((p) => {
-                        const disabledByExtended =
-                          !boardConfig?.extended_estimation && p > 5;
-                        return (
-                          <DropdownMenuItem
-                            key={p}
-                            disabled={bulkWorking || disabledByExtended}
-                            onClick={() => bulkUpdateEstimation(p)}
-                          >
-                            {mapEstimationPoints(
-                              p,
-                              boardConfig?.estimation_type
-                            )}
-                            {disabledByExtended && (
-                              <span className="ml-1 text-[10px] text-muted-foreground/60">
-                                (upgrade)
-                              </span>
-                            )}
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+              <DropdownMenuContent
+                align="end"
+                className="w-56"
+                sideOffset={5}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {/* Quick Completion Actions */}
+                {columns.some((c) => c.status === 'done') && (
+                  <DropdownMenuItem
+                    disabled={bulkWorking}
+                    onClick={() => bulkMoveToStatus('done')}
+                    className="cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                    Mark as Done
+                  </DropdownMenuItem>
                 )}
+                {columns.some((c) => c.status === 'closed') && (
+                  <DropdownMenuItem
+                    disabled={bulkWorking}
+                    onClick={() => bulkMoveToStatus('closed')}
+                    className="cursor-pointer"
+                  >
+                    <CircleSlash className="h-4 w-4 text-dynamic-purple" />
+                    Mark as Closed
+                  </DropdownMenuItem>
+                )}
+                {(columns.some((c) => c.status === 'done') ||
+                  columns.some((c) => c.status === 'closed')) && (
+                  <DropdownMenuSeparator />
+                )}
+
+                {/* Priority Menu - Matching TaskPriorityMenu exactly */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Flag className="mr-2 h-3.5 w-3.5 text-dynamic-green" />
-                    Due Date
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-40">
-                    <DropdownMenuItem
-                      disabled={bulkWorking}
-                      onClick={() => bulkUpdateDueDate('today')}
-                    >
-                      Today
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={bulkWorking}
-                      onClick={() => bulkUpdateDueDate('tomorrow')}
-                    >
-                      Tomorrow
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={bulkWorking}
-                      onClick={() => bulkUpdateDueDate('week')}
-                    >
-                      In 7 Days
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={bulkWorking}
-                      onClick={() => bulkUpdateDueDate('clear')}
-                    >
-                      Clear
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Flag className="mr-2 h-3.5 w-3.5 text-dynamic-blue" />
-                    Status
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-44">
-                    <DropdownMenuItem
-                      disabled={
-                        bulkWorking || !columns.some((c) => c.status === 'done')
-                      }
-                      onClick={() => bulkMoveToStatus('done')}
-                    >
-                      Mark Done
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={
-                        bulkWorking ||
-                        !columns.some((c) => c.status === 'closed')
-                      }
-                      onClick={() => bulkMoveToStatus('closed')}
-                    >
-                      Mark Closed
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Flag className="mr-2 h-3.5 w-3.5 text-dynamic-orange" />
+                    <Flag className="h-4 w-4 text-dynamic-red" />
                     Priority
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-40">
                     <DropdownMenuItem
                       disabled={bulkWorking}
-                      onClick={() => bulkUpdatePriority(null)}
-                    >
-                      Clear
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={bulkWorking}
                       onClick={() => bulkUpdatePriority('critical')}
+                      className="cursor-pointer"
                     >
-                      Critical
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded bg-dynamic-red/10">
+                          <Icon
+                            iconNode={unicornHead}
+                            className="h-3.5 w-3.5 text-dynamic-red"
+                          />
+                        </div>
+                        <span>Critical</span>
+                      </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={bulkWorking}
                       onClick={() => bulkUpdatePriority('high')}
+                      className="cursor-pointer"
                     >
-                      High
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded bg-dynamic-orange/10">
+                          <Icon
+                            iconNode={horseHead}
+                            className="h-3.5 w-3.5 text-dynamic-orange"
+                          />
+                        </div>
+                        <span>High</span>
+                      </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={bulkWorking}
                       onClick={() => bulkUpdatePriority('normal')}
+                      className="cursor-pointer"
                     >
-                      Normal
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded bg-dynamic-yellow/10">
+                          <Rabbit className="h-3.5 w-3.5 text-dynamic-yellow" />
+                        </div>
+                        <span>Normal</span>
+                      </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={bulkWorking}
                       onClick={() => bulkUpdatePriority('low')}
+                      className="cursor-pointer"
                     >
-                      Low
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded bg-dynamic-blue/10">
+                          <Turtle className="h-3.5 w-3.5 text-dynamic-blue" />
+                        </div>
+                        <span>Low</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority(null)}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                      None
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
+
+                {/* Due Date Menu */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Tags className="mr-2 h-3.5 w-3.5 text-dynamic-cyan" />
-                    Add Label
+                    <div className="h-4 w-4">
+                      <Calendar className="h-4 w-4 text-dynamic-purple" />
+                    </div>
+                    <div className="flex w-full items-center justify-between">
+                      <span>Due Date</span>
+                    </div>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
-                    {workspaceLabels.length === 0 ? (
-                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
-                        No labels
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('today')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="h-4 w-4 text-dynamic-green" />
+                      Today
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('tomorrow')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="h-4 w-4 text-dynamic-blue" />
+                      Tomorrow
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('this_week')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="h-4 w-4 text-dynamic-purple" />
+                      This Week
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('next_week')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="h-4 w-4 text-dynamic-orange" />
+                      Next Week
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => setBulkCustomDateOpen(true)}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Custom Date
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('clear')}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                      Remove Due Date
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                {/* Estimation Menu - Matching TaskEstimationMenu exactly */}
+                {boardConfig?.estimation_type && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Timer className="h-4 w-4 text-dynamic-pink" />
+                      Estimation
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-40">
+                      <div className="max-h-[200px] overflow-auto">
+                        <div className="p-1">
+                          {estimationOptions.map((idx) => {
+                            const disabledByExtended =
+                              !boardConfig?.extended_estimation && idx > 5;
+                            const label = mapEstimationPoints(
+                              idx,
+                              boardConfig?.estimation_type
+                            );
+
+                            return (
+                              <DropdownMenuItem
+                                key={idx}
+                                disabled={bulkWorking || disabledByExtended}
+                                onClick={() => bulkUpdateEstimation(idx)}
+                                className="flex cursor-pointer items-center justify-between"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Timer className="h-4 w-4 text-dynamic-pink" />
+                                  <span>
+                                    {label}
+                                    {disabledByExtended && (
+                                      <span className="ml-1 text-[10px] text-muted-foreground/60">
+                                        (upgrade)
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="border-t bg-background">
+                        <DropdownMenuItem
+                          disabled={bulkWorking}
+                          onClick={() => bulkUpdateEstimation(null)}
+                          className="cursor-pointer text-muted-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                          None
+                        </DropdownMenuItem>
+                      </div>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+
+                {/* Labels Menu - Matching TaskLabelsMenu with toggle functionality */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Tags className="h-4 w-4 text-dynamic-sky" />
+                    Labels
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-80 p-0">
+                    {/* Search Input */}
+                    <div className="border-b p-2">
+                      <div className="relative">
+                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Search labels..."
+                          value={labelSearchQuery}
+                          onChange={(e) => setLabelSearchQuery(e.target.value)}
+                          className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Labels List */}
+                    {filteredLabels.length === 0 ? (
+                      <div className="px-2 py-6 text-center text-muted-foreground text-xs">
+                        {labelSearchQuery
+                          ? 'No labels found'
+                          : 'No labels available'}
                       </div>
                     ) : (
-                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                        <div className="p-1">
-                          {workspaceLabels.map((l) => (
-                            <DropdownMenuItem
-                              key={l.id}
-                              disabled={bulkWorking}
-                              onClick={() => bulkAddLabel(l.id)}
-                              className="flex items-center gap-2"
-                            >
-                              <span
-                                className="h-3 w-3 rounded-full"
-                                style={{
-                                  backgroundColor: l.color,
-                                  opacity: 0.9,
+                      <div className="max-h-[200px] overflow-auto">
+                        <div className="flex flex-col gap-1 p-1">
+                          {filteredLabels.map((label) => {
+                            const isApplied = appliedLabels.has(label.id);
+                            return (
+                              <DropdownMenuItem
+                                key={label.id}
+                                disabled={bulkWorking}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  // Toggle: if applied to all selected tasks, remove; otherwise add
+                                  if (isApplied) {
+                                    bulkRemoveLabel(label.id);
+                                  } else {
+                                    bulkAddLabel(label.id);
+                                  }
                                 }}
-                              />
-                              {l.name}
-                            </DropdownMenuItem>
-                          ))}
+                                className={`flex cursor-pointer items-center justify-between gap-2 ${
+                                  isApplied
+                                    ? 'bg-dynamic-sky/10 text-dynamic-sky'
+                                    : ''
+                                }`}
+                              >
+                                <div className="flex min-w-0 flex-1 items-center gap-2">
+                                  <span
+                                    className="h-3 w-3 shrink-0 rounded-full"
+                                    style={{
+                                      backgroundColor: label.color,
+                                      opacity: 0.9,
+                                    }}
+                                  />
+                                  <span className="truncate text-sm">
+                                    {label.name}
+                                  </span>
+                                </div>
+                                {isApplied && (
+                                  <Check className="h-4 w-4 shrink-0" />
+                                )}
+                              </DropdownMenuItem>
+                            );
+                          })}
                         </div>
-                      </ScrollArea>
+                      </div>
                     )}
+
+                    {/* Footer with count */}
+                    {appliedLabels.size > 0 && (
+                      <div className="relative z-10 border-t bg-background shadow-sm">
+                        <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+                          {appliedLabels.size} applied to all
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Create New Label Button */}
+                    <div className="border-t">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toast.info('Create label feature coming soon');
+                        }}
+                        className="cursor-pointer text-muted-foreground hover:text-foreground"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Create New Label
+                      </DropdownMenuItem>
+                    </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
+
+                {/* Projects Menu - Matching TaskProjectsMenu with toggle functionality */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <MinusCircle className="mr-2 h-3.5 w-3.5 text-dynamic-red" />
-                    Remove Label
+                    <Box className="h-4 w-4 text-dynamic-sky" />
+                    Projects
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
-                    {workspaceLabels.length === 0 ? (
-                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
-                        No labels
+                  <DropdownMenuSubContent className="w-80 p-0">
+                    {/* Search Input */}
+                    <div className="border-b p-2">
+                      <div className="relative">
+                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Search projects..."
+                          value={projectSearchQuery}
+                          onChange={(e) =>
+                            setProjectSearchQuery(e.target.value)
+                          }
+                          className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Projects List */}
+                    {filteredProjects.length === 0 ? (
+                      <div className="px-2 py-6 text-center text-muted-foreground text-xs">
+                        {projectSearchQuery
+                          ? 'No projects found'
+                          : 'No projects available'}
                       </div>
                     ) : (
-                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                        <div className="p-1">
-                          {workspaceLabels.map((l) => (
-                            <DropdownMenuItem
-                              key={l.id}
-                              disabled={bulkWorking}
-                              onClick={() => bulkRemoveLabel(l.id)}
-                              className="flex items-center gap-2"
-                            >
-                              <span
-                                className="h-3 w-3 rounded-full ring-1 ring-border"
-                                style={{
-                                  backgroundColor: l.color,
-                                  opacity: 0.3,
+                      <div className="max-h-[200px] overflow-auto">
+                        <div className="flex flex-col gap-1 p-1">
+                          {filteredProjects.map((project: any) => {
+                            const isApplied = appliedProjects.has(project.id);
+                            return (
+                              <DropdownMenuItem
+                                key={project.id}
+                                disabled={bulkWorking}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  // Toggle: if applied to all selected tasks, remove; otherwise add
+                                  if (isApplied) {
+                                    bulkRemoveProject(project.id);
+                                  } else {
+                                    bulkAddProject(project.id);
+                                  }
                                 }}
-                              />
-                              {l.name}
-                            </DropdownMenuItem>
-                          ))}
+                                className={`flex cursor-pointer items-center justify-between gap-2 ${
+                                  isApplied
+                                    ? 'bg-dynamic-sky/10 text-dynamic-sky'
+                                    : ''
+                                }`}
+                              >
+                                <div className="flex min-w-0 flex-1 items-center gap-2">
+                                  <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
+                                  <span className="truncate text-sm">
+                                    {project.name}
+                                  </span>
+                                </div>
+                                {isApplied && (
+                                  <Check className="h-4 w-4 shrink-0" />
+                                )}
+                              </DropdownMenuItem>
+                            );
+                          })}
                         </div>
-                      </ScrollArea>
-                    )}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Plus className="mr-2 h-3.5 w-3.5 text-dynamic-indigo" />
-                    Add Project
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
-                    {workspaceProjects.length === 0 ? (
-                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
-                        No projects
                       </div>
-                    ) : (
-                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                        <div className="p-1">
-                          {workspaceProjects.map((p: any) => (
-                            <DropdownMenuItem
-                              key={p.id}
-                              disabled={bulkWorking}
-                              onClick={() => bulkAddProject(p.id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Box className="h-3 w-3 text-dynamic-sky" />
-                              {p.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </div>
-                      </ScrollArea>
                     )}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <MinusCircle className="mr-2 h-3.5 w-3.5 text-dynamic-red" />
-                    Remove Project
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
-                    {workspaceProjects.length === 0 ? (
-                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
-                        No projects
+
+                    {/* Footer with count */}
+                    {appliedProjects.size > 0 && (
+                      <div className="relative z-10 border-t bg-background shadow-sm">
+                        <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+                          {appliedProjects.size} assigned to all
+                        </div>
                       </div>
-                    ) : (
-                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                        <div className="p-1">
-                          {workspaceProjects.map((p: any) => (
-                            <DropdownMenuItem
-                              key={p.id}
-                              disabled={bulkWorking}
-                              onClick={() => bulkRemoveProject(p.id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Box className="h-3 w-3 text-muted-foreground opacity-50" />
-                              {p.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </div>
-                      </ScrollArea>
                     )}
+
+                    {/* Create New Project Button */}
+                    <div className="border-t">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toast.info('Create project feature coming soon');
+                        }}
+                        className="cursor-pointer text-muted-foreground hover:text-foreground"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Create New Project
+                      </DropdownMenuItem>
+                    </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
+
                 <DropdownMenuSeparator />
+
+                {/* Move Menu - Matching TaskMoveMenu */}
+                {columns.length > 1 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Move className="h-4 w-4 text-dynamic-blue" />
+                      Move to List
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
+                      <div className="max-h-[200px] overflow-auto">
+                        <div className="p-1">
+                          {columns.map((list) => {
+                            const getStatusIcon = (status: string) => {
+                              switch (status) {
+                                case 'done':
+                                  return CheckCircle2;
+                                case 'closed':
+                                  return CircleSlash;
+                                case 'not_started':
+                                  return CircleDashed;
+                                case 'active':
+                                  return CircleFadingArrowUpIcon;
+                                default:
+                                  return List;
+                              }
+                            };
+
+                            const getStatusColor = (status: string) => {
+                              switch (status) {
+                                case 'done':
+                                  return 'text-dynamic-green';
+                                case 'closed':
+                                  return 'text-dynamic-purple';
+                                case 'active':
+                                  return 'text-dynamic-blue';
+                                default:
+                                  return 'opacity-70';
+                              }
+                            };
+
+                            const StatusIcon = getStatusIcon(list.status);
+                            const statusColor = getStatusColor(list.status);
+
+                            return (
+                              <DropdownMenuItem
+                                key={list.id}
+                                disabled={bulkWorking}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  bulkMoveToList(list.id, list.name);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex w-full items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <StatusIcon
+                                      className={`h-4 w-4 ${statusColor}`}
+                                    />
+                                    {list.name}
+                                  </div>
+                                </div>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+
+                {/* Assignees Menu - Matching TaskAssigneesMenu */}
+                {!workspace.personal && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <UserStar className="h-4 w-4 text-dynamic-yellow" />
+                      Assignees
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-80 p-0">
+                      {/* Search Input */}
+                      <div className="border-b p-2">
+                        <div className="relative">
+                          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Search members..."
+                            value={assigneeSearchQuery}
+                            onChange={(e) =>
+                              setAssigneeSearchQuery(e.target.value)
+                            }
+                            className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Members List */}
+                      {filteredMembers.length === 0 ? (
+                        <div className="px-2 py-6 text-center text-muted-foreground text-xs">
+                          {assigneeSearchQuery
+                            ? 'No members found'
+                            : 'No workspace members available'}
+                        </div>
+                      ) : (
+                        <div className="max-h-[150px] overflow-auto">
+                          <div className="flex flex-col gap-1 p-1">
+                            {filteredMembers.map((member: any) => {
+                              const isApplied = appliedAssignees.has(member.id);
+                              return (
+                                <DropdownMenuItem
+                                  key={member.id}
+                                  disabled={bulkWorking}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    // Toggle: if applied to all selected tasks, remove; otherwise add
+                                    if (isApplied) {
+                                      bulkRemoveAssignee(member.id);
+                                    } else {
+                                      bulkAddAssignee(member.id);
+                                    }
+                                  }}
+                                  className={`flex cursor-pointer items-center justify-between gap-2 ${
+                                    isApplied
+                                      ? 'bg-dynamic-yellow/10 text-dynamic-yellow'
+                                      : ''
+                                  }`}
+                                >
+                                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                                    <Avatar className="h-4 w-4 shrink-0">
+                                      <AvatarImage src={member.avatar_url} />
+                                      <AvatarFallback className="bg-muted font-semibold text-[9px]">
+                                        {member.display_name?.[0] ||
+                                          member.email?.[0] ||
+                                          '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="truncate text-sm">
+                                      {member.display_name || member.email}
+                                    </span>
+                                  </div>
+                                  {isApplied && (
+                                    <Check className="h-4 w-4 shrink-0" />
+                                  )}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Footer with count */}
+                      {appliedAssignees.size > 0 && (
+                        <div className="relative z-10 border-t bg-background shadow-sm">
+                          <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+                            {appliedAssignees.size} assigned to all
+                          </div>
+                        </div>
+                      )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+
+                <DropdownMenuSeparator />
+
+                {/* Delete tasks */}
                 <DropdownMenuItem
                   onClick={() => setBulkDeleteOpen(true)}
-                  className="text-dynamic-red focus:text-dynamic-red"
+                  className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
                   disabled={bulkWorking}
                 >
-                  Delete selected…
+                  <Trash2 className="h-4 w-4 text-dynamic-red" />
+                  Delete tasks
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
             <Button
               variant="outline"
               size="sm"
@@ -2249,6 +2815,21 @@ export function KanbanBoard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk custom date dialog */}
+      <BulkCustomDateDialog
+        open={bulkCustomDateOpen}
+        onOpenChange={setBulkCustomDateOpen}
+        onDateChange={(date) => {
+          bulkUpdateCustomDueDate(date ?? null);
+          setBulkCustomDateOpen(false);
+        }}
+        onClear={() => {
+          bulkUpdateDueDate('clear');
+          setBulkCustomDateOpen(false);
+        }}
+        isLoading={bulkWorking}
+      />
     </div>
   );
 }
