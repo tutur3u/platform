@@ -315,7 +315,10 @@ export function SimpleTimerControls({
       toast.success(t('timerPaused'));
     } catch (error: any) {
       // Check if error is THRESHOLD_EXCEEDED
-      if (error?.message?.includes('threshold') || error?.code === 'THRESHOLD_EXCEEDED') {
+      if (
+        error?.message?.includes('threshold') ||
+        error?.code === 'THRESHOLD_EXCEEDED'
+      ) {
         setShowExceededThresholdDialog(true);
       } else {
         console.error('Error pausing timer:', error);
@@ -324,7 +327,16 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t, sessionExceedsThreshold, currentUserId]);
+  }, [
+    currentSession,
+    apiCall,
+    wsId,
+    elapsedTime,
+    queryClient,
+    t,
+    sessionExceedsThreshold,
+    currentUserId,
+  ]);
 
   // Resume timer
   const resumeTimer = useCallback(async () => {

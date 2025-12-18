@@ -123,7 +123,10 @@ interface ExceededSessionChainModeProps extends BaseMissedEntryDialogProps {
   prefillEndTime?: never;
 }
 
-type MissedEntryDialogProps = NormalModeProps | ExceededSessionModeProps | ExceededSessionChainModeProps;
+type MissedEntryDialogProps =
+  | NormalModeProps
+  | ExceededSessionModeProps
+  | ExceededSessionChainModeProps;
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
 const MAX_IMAGES = 5;
@@ -140,19 +143,18 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
   const isChainMode = mode === 'exceeded-session-chain';
-  const session = (isExceededMode || isChainMode) ? props.session : undefined;
+  const session = isExceededMode || isChainMode ? props.session : undefined;
   const chainSummary = isChainMode ? props.chainSummary : undefined;
-  const providedThresholdDays = (isExceededMode || isChainMode)
-    ? props.thresholdDays
-    : undefined;
-  const onSessionDiscarded = (isExceededMode || isChainMode)
-    ? props.onSessionDiscarded
-    : undefined;
-  const onMissedEntryCreated = (isExceededMode || isChainMode)
-    ? props.onMissedEntryCreated
-    : undefined;
-  const prefillStartTime = (!isExceededMode && !isChainMode) ? props.prefillStartTime : undefined;
-  const prefillEndTime = (!isExceededMode && !isChainMode) ? props.prefillEndTime : undefined;
+  const providedThresholdDays =
+    isExceededMode || isChainMode ? props.thresholdDays : undefined;
+  const onSessionDiscarded =
+    isExceededMode || isChainMode ? props.onSessionDiscarded : undefined;
+  const onMissedEntryCreated =
+    isExceededMode || isChainMode ? props.onMissedEntryCreated : undefined;
+  const prefillStartTime =
+    !isExceededMode && !isChainMode ? props.prefillStartTime : undefined;
+  const prefillEndTime =
+    !isExceededMode && !isChainMode ? props.prefillEndTime : undefined;
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -791,14 +793,16 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     >
       <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
         <DialogHeader className="border-b pb-4">
-          {(isExceededMode || isChainMode) ? (
+          {isExceededMode || isChainMode ? (
             <>
               <DialogTitle className="flex items-center gap-2 text-dynamic-orange">
                 <AlertTriangle className="h-5 w-5" />
                 {isChainMode ? t('exceeded.chainTitle') : t('exceeded.title')}
               </DialogTitle>
               <DialogDescription>
-                {isChainMode ? t('exceeded.chainDescription') : t('exceeded.description')}
+                {isChainMode
+                  ? t('exceeded.chainDescription')
+                  : t('exceeded.description')}
               </DialogDescription>
             </>
           ) : (
@@ -818,7 +822,9 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                     </h3>
                     <p className="text-muted-foreground text-sm mt-1">
                       {t('exceeded.chainStarted', {
-                        time: dayjs(chainSummary.original_start_time).format('MMM D, YYYY [at] h:mm A'),
+                        time: dayjs(chainSummary.original_start_time).format(
+                          'MMM D, YYYY [at] h:mm A'
+                        ),
                       })}
                     </p>
                   </div>
@@ -831,7 +837,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Totals */}
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3">
@@ -855,12 +861,15 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
               {/* Timeline */}
               <div className="space-y-3">
-                <h4 className="font-medium text-sm">{t('exceeded.timeline')}</h4>
+                <h4 className="font-medium text-sm">
+                  {t('exceeded.timeline')}
+                </h4>
                 {chainSummary.sessions?.map((sess: any, idx: number) => {
-                  const sessionBreaks = chainSummary.breaks?.filter(
-                    (b: any) => b.session_id === sess.id
-                  ) || [];
-                  
+                  const sessionBreaks =
+                    chainSummary.breaks?.filter(
+                      (b: any) => b.session_id === sess.id
+                    ) || [];
+
                   return (
                     <div key={sess.id} className="space-y-2">
                       {/* Work Session */}
@@ -869,9 +878,12 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                           {idx + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{sess.title}</div>
+                          <div className="font-medium truncate">
+                            {sess.title}
+                          </div>
                           <div className="text-muted-foreground text-xs mt-1">
-                            {dayjs(sess.start_time).format('h:mm A')} → {dayjs(sess.end_time).format('h:mm A')}
+                            {dayjs(sess.start_time).format('h:mm A')} →{' '}
+                            {dayjs(sess.end_time).format('h:mm A')}
                             <span className="ml-2 font-medium text-green-600 dark:text-green-400">
                               {formatDuration(sess.duration_seconds)}
                             </span>
@@ -881,11 +893,18 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
                       {/* Breaks after this session */}
                       {sessionBreaks.map((brk: any) => (
-                        <div key={brk.id} className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-2">
+                        <div
+                          key={brk.id}
+                          className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-2"
+                        >
                           <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
                           <div className="flex-1 min-w-0">
                             <div className="text-sm">
-                              {brk.break_type_icon && <span className="mr-1">{brk.break_type_icon}</span>}
+                              {brk.break_type_icon && (
+                                <span className="mr-1">
+                                  {brk.break_type_icon}
+                                </span>
+                              )}
                               {brk.break_type_name}
                             </div>
                             <div className="text-amber-600 dark:text-amber-400 text-xs font-medium">

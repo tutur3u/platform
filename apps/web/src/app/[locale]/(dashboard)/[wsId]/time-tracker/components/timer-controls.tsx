@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient, useQuery} from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
 import {
   Activity,
@@ -301,18 +301,15 @@ export function TimerControls({
   const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
   const [sessionMode, setSessionMode] = useState<'task' | 'manual'>('task');
 
-  const renderBreakTypeIcon = useCallback(
-    (iconName: string | null) => {
-      if (!iconName) return null;
-      const IconComponent = (Icons as any)[iconName];
-      if (!IconComponent) return null;
-      if (Array.isArray(IconComponent)) {
-        return <Icon iconNode={IconComponent} className="mr-2 h-4 w-4" />;
-      }
-      return <IconComponent className="mr-2 h-4 w-4" />;
-    },
-    []
-  );
+  const renderBreakTypeIcon = useCallback((iconName: string | null) => {
+    if (!iconName) return null;
+    const IconComponent = (Icons as any)[iconName];
+    if (!IconComponent) return null;
+    if (Array.isArray(IconComponent)) {
+      return <Icon iconNode={IconComponent} className="mr-2 h-4 w-4" />;
+    }
+    return <IconComponent className="mr-2 h-4 w-4" />;
+  }, []);
   const [showTaskSuggestion, setShowTaskSuggestion] = useState(false);
   const [templates, setTemplates] = useState<SessionTemplate[]>([]);
   const [justCompleted, setJustCompleted] =
@@ -328,7 +325,7 @@ export function TimerControls({
   const [showBreakTypeDialog, setShowBreakTypeDialog] = useState(false);
   const [selectedBreakTypeId, setSelectedBreakTypeId] = useState<string>('');
   const [customBreakTypeName, setCustomBreakTypeName] = useState('');
-  
+
   // Current break data for paused session
   const [currentBreak, setCurrentBreak] = useState<{
     id: string;
@@ -337,9 +334,10 @@ export function TimerControls({
     break_type?: { id: string; name: string; icon?: string; color?: string };
     break_start: string;
   } | null>(null);
-  
+
   // Long break resume confirmation
-  const [showLongBreakConfirmDialog, setShowLongBreakConfirmDialog] = useState(false);
+  const [showLongBreakConfirmDialog, setShowLongBreakConfirmDialog] =
+    useState(false);
   const [longBreakDuration, setLongBreakDuration] = useState<number>(0);
   const BREAK_RESUME_THRESHOLD_MINUTES = 120; // 2 hours
   const [breakDurationSeconds, setBreakDurationSeconds] = useState(0);
@@ -1790,7 +1788,7 @@ export function TimerControls({
         error?.message?.includes('threshold')
       ) {
         const errorData = error?.error ? error : await error.response?.json();
-        
+
         if (errorData?.chainSummary) {
           // Session chain exceeds threshold - show chain approval dialog
           setChainSummary(errorData.chainSummary);
@@ -1824,98 +1822,107 @@ export function TimerControls({
   ]);
 
   // Pause timer - properly maintain session state
-  const pauseTimer = useCallback(async (breakTypeId?: string, breakTypeName?: string) => {
-    if (!currentSession) return;
+  const pauseTimer = useCallback(
+    async (breakTypeId?: string, breakTypeName?: string) => {
+      if (!currentSession) return;
 
-    // Check if session exceeds threshold - show dialog instead of pausing directly
-    if (sessionExceedsThreshold) {
-      setShowExceededThresholdDialog(true);
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const body: { action: string; breakTypeId?: string; breakTypeName?: string } = {
-        action: 'pause',
-      };
-      
-      if (breakTypeId) {
-        body.breakTypeId = breakTypeId;
-      } else if (breakTypeName) {
-        body.breakTypeName = breakTypeName;
+      // Check if session exceeds threshold - show dialog instead of pausing directly
+      if (sessionExceedsThreshold) {
+        setShowExceededThresholdDialog(true);
+        return;
       }
 
-      await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(body),
+      setIsLoading(true);
+
+      try {
+        const body: {
+          action: string;
+          breakTypeId?: string;
+          breakTypeName?: string;
+        } = {
+          action: 'pause',
+        };
+
+        if (breakTypeId) {
+          body.breakTypeId = breakTypeId;
+        } else if (breakTypeName) {
+          body.breakTypeName = breakTypeName;
         }
-      );
 
-      const pauseTime = new Date();
+        await apiCall(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+          }
+        );
 
-      // Store paused session data instead of clearing it
-      setPausedSession(currentSession);
-      setPausedElapsedTime(localElapsedTime);
-      setPauseStartTime(pauseTime);
+        const pauseTime = new Date();
 
-      // Clear active session but keep paused state
-      setCurrentSession(null);
-      setIsRunning(false);
-      setElapsedTime(0);
+        // Store paused session data instead of clearing it
+        setPausedSession(currentSession);
+        setPausedElapsedTime(localElapsedTime);
+        setPauseStartTime(pauseTime);
 
-      onSessionUpdate();
-      
-      // Invalidate queries to refetch running session and paused session
-      queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['paused-time-session', wsId, currentUserId],
-      });
+        // Clear active session but keep paused state
+        setCurrentSession(null);
+        setIsRunning(false);
+        setElapsedTime(0);
 
-      toast.success(t('timer_paused'), {
-        description: t('session_title', { title: currentSession.title }),
-        duration: 4000,
-      });
-    } catch (error: any) {
-      // Check if error is THRESHOLD_EXCEEDED with chain summary
-      if (
-        error?.code === 'THRESHOLD_EXCEEDED' ||
-        error?.error?.includes('threshold') ||
-        error?.message?.includes('threshold')
-      ) {
-        const errorData = error?.error ? error : await error.response?.json().catch(() => ({}));
-        
-        if (errorData?.chainSummary) {
-          // Session chain exceeds threshold - show chain approval dialog
-          setChainSummary(errorData.chainSummary);
-          setShowExceededThresholdDialog(true);
+        onSessionUpdate();
+
+        // Invalidate queries to refetch running session and paused session
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['paused-time-session', wsId, currentUserId],
+        });
+
+        toast.success(t('timer_paused'), {
+          description: t('session_title', { title: currentSession.title }),
+          duration: 4000,
+        });
+      } catch (error: any) {
+        // Check if error is THRESHOLD_EXCEEDED with chain summary
+        if (
+          error?.code === 'THRESHOLD_EXCEEDED' ||
+          error?.error?.includes('threshold') ||
+          error?.message?.includes('threshold')
+        ) {
+          const errorData = error?.error
+            ? error
+            : await error.response?.json().catch(() => ({}));
+
+          if (errorData?.chainSummary) {
+            // Session chain exceeds threshold - show chain approval dialog
+            setChainSummary(errorData.chainSummary);
+            setShowExceededThresholdDialog(true);
+          } else {
+            // Single session exceeds threshold
+            setShowExceededThresholdDialog(true);
+          }
         } else {
-          // Single session exceeds threshold
-          setShowExceededThresholdDialog(true);
+          console.error('Error pausing timer:', error);
+          toast.error(t('failed_to_pause_timer'));
         }
-      } else {
-        console.error('Error pausing timer:', error);
-        toast.error(t('failed_to_pause_timer'));
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    currentSession,
-    wsId,
-    apiCall,
-    localElapsedTime,
-    setCurrentSession,
-    setIsRunning,
-    setElapsedTime,
-    onSessionUpdate,
-    t,
-    sessionExceedsThreshold,
-  ]);
+    },
+    [
+      currentSession,
+      wsId,
+      apiCall,
+      localElapsedTime,
+      setCurrentSession,
+      setIsRunning,
+      setElapsedTime,
+      onSessionUpdate,
+      t,
+      sessionExceedsThreshold,
+    ]
+  );
 
   // Handle break type selection for pause
   const handlePauseWithBreakType = useCallback(() => {
@@ -1925,10 +1932,10 @@ export function TimerControls({
 
   const handleBreakTypeSelected = useCallback(async () => {
     if (!currentSession) return;
-    
+
     // Close dialog first
     setShowBreakTypeDialog(false);
-    
+
     // Call pauseTimer with selected break type
     if (selectedBreakTypeId) {
       await pauseTimer(selectedBreakTypeId, undefined);
@@ -1937,7 +1944,7 @@ export function TimerControls({
     } else {
       await pauseTimer(); // No break type
     }
-    
+
     // Reset break type selection
     setSelectedBreakTypeId('');
     setCustomBreakTypeName('');
@@ -1970,84 +1977,89 @@ export function TimerControls({
   };
 
   // Resume paused timer
-  const resumeTimer = useCallback(async (skipConfirmation = false) => {
-    if (!pausedSession) return;
+  const resumeTimer = useCallback(
+    async (skipConfirmation = false) => {
+      if (!pausedSession) return;
 
-    setIsLoading(true);
+      setIsLoading(true);
 
-    try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify({ action: 'resume' }),
+      try {
+        const response = await apiCall(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ action: 'resume' }),
+          }
+        );
+
+        // Check if break duration exceeds threshold (only if not already confirmed)
+        if (!skipConfirmation && response.breakDuration) {
+          const breakMinutes = Math.floor(response.breakDuration / 60);
+          if (breakMinutes >= BREAK_RESUME_THRESHOLD_MINUTES) {
+            setLongBreakDuration(response.breakDuration);
+            setShowLongBreakConfirmDialog(true);
+            setIsLoading(false);
+            return; // Don't proceed with resume yet
+          }
         }
-      );
 
-      // Check if break duration exceeds threshold (only if not already confirmed)
-      if (!skipConfirmation && response.breakDuration) {
-        const breakMinutes = Math.floor(response.breakDuration / 60);
-        if (breakMinutes >= BREAK_RESUME_THRESHOLD_MINUTES) {
-          setLongBreakDuration(response.breakDuration);
-          setShowLongBreakConfirmDialog(true);
-          setIsLoading(false);
-          return; // Don't proceed with resume yet
-        }
+        // Restore session from paused state
+        setCurrentSession(response.session || pausedSession);
+        setElapsedTime(pausedElapsedTime);
+        setIsRunning(true);
+
+        // Restore session protection - timer is active again
+        updateSessionProtection(true, timerMode);
+
+        // Clear paused state
+        setPausedSession(null);
+        setPausedElapsedTime(0);
+        setPauseStartTime(null);
+
+        const pauseDuration = pauseStartTime
+          ? Math.floor((Date.now() - pauseStartTime.getTime()) / 1000)
+          : 0;
+
+        // Invalidate the running session query to update sidebar
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId],
+        });
+
+        onSessionUpdate();
+        toast.success(t('timer_resumed'), {
+          description:
+            pauseDuration > 0
+              ? t('paused_duration', {
+                  duration: formatDuration(pauseDuration),
+                })
+              : t('welcome_back'),
+          duration: 3000,
+        });
+      } catch (error) {
+        console.error('Error resuming timer:', error);
+        toast.error(t('failed_to_resume_timer'));
+      } finally {
+        setIsLoading(false);
       }
-
-      // Restore session from paused state
-      setCurrentSession(response.session || pausedSession);
-      setElapsedTime(pausedElapsedTime);
-      setIsRunning(true);
-
-      // Restore session protection - timer is active again
-      updateSessionProtection(true, timerMode);
-
-      // Clear paused state
-      setPausedSession(null);
-      setPausedElapsedTime(0);
-      setPauseStartTime(null);
-
-      const pauseDuration = pauseStartTime
-        ? Math.floor((Date.now() - pauseStartTime.getTime()) / 1000)
-        : 0;
-
-      // Invalidate the running session query to update sidebar
-      queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
-      });
-
-      onSessionUpdate();
-      toast.success(t('timer_resumed'), {
-        description:
-          pauseDuration > 0
-            ? t('paused_duration', { duration: formatDuration(pauseDuration) })
-            : t('welcome_back'),
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('Error resuming timer:', error);
-      toast.error(t('failed_to_resume_timer'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    pausedSession,
-    wsId,
-    apiCall,
-    pausedElapsedTime,
-    pauseStartTime,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-    updateSessionProtection,
-    timerMode,
-    queryClient,
-    onSessionUpdate,
-    formatDuration,
-    t,
-    BREAK_RESUME_THRESHOLD_MINUTES,
-  ]);
+    },
+    [
+      pausedSession,
+      wsId,
+      apiCall,
+      pausedElapsedTime,
+      pauseStartTime,
+      setCurrentSession,
+      setElapsedTime,
+      setIsRunning,
+      updateSessionProtection,
+      timerMode,
+      queryClient,
+      onSessionUpdate,
+      formatDuration,
+      t,
+      BREAK_RESUME_THRESHOLD_MINUTES,
+    ]
+  );
 
   // Handle long break resume confirmation
   const handleLongBreakResume = useCallback(async () => {
@@ -3439,7 +3451,8 @@ export function TimerControls({
                           {countdownState.sessionType === 'focus' ? (
                             <>
                               <Icon iconNode={fruit} className="h-4 w-4" />
-                              {t('focus_label')} {countdownState.pomodoroSession}
+                              {t('focus_label')}{' '}
+                              {countdownState.pomodoroSession}
                             </>
                           ) : countdownState.sessionType === 'short-break' ? (
                             <>
@@ -3530,7 +3543,8 @@ export function TimerControls({
                       </span>
                     ) : timerMode === TimerMode.custom ? (
                       <span className="flex items-center justify-center gap-1">
-                        {customTimerSettings.type === 'traditional-countdown' ? (
+                        {customTimerSettings.type ===
+                        'traditional-countdown' ? (
                           countdownState.remainingTime > 0 ? (
                             <>
                               <Timer className="h-3 w-3" />
@@ -3539,7 +3553,8 @@ export function TimerControls({
                           ) : (
                             t('countdown_complete')
                           )
-                        ) : customTimerSettings.type === 'enhanced-stopwatch' ? (
+                        ) : customTimerSettings.type ===
+                          'enhanced-stopwatch' ? (
                           hasReachedTarget ? (
                             <>
                               <Sparkles className="h-3 w-3" />
@@ -3726,22 +3741,24 @@ export function TimerControls({
                       </Badge>
                     </div>
                   )}
-                  
+
                   <div className="mb-3 flex items-center justify-center gap-2">
                     <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
                       {t('session_paused')}
                     </span>
                   </div>
-                  
+
                   {/* Work Duration */}
                   <div className="mb-2">
-                    <div className="text-muted-foreground text-xs mb-1">{t('work_duration')}</div>
+                    <div className="text-muted-foreground text-xs mb-1">
+                      {t('work_duration')}
+                    </div>
                     <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
                       {formatTime(pausedElapsedTime)}
                     </div>
                   </div>
-                  
+
                   {/* Break Duration - Live Counter */}
                   <div className="mt-4 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 p-3">
                     <div className="text-amber-700 dark:text-amber-300 text-xs mb-1">
@@ -3763,7 +3780,9 @@ export function TimerControls({
 
               {/* Session Info - Read-only during pause */}
               <div className="text-left rounded-lg border border-amber-200/50 dark:border-amber-800/50 bg-white/50 dark:bg-gray-900/50 p-4">
-                <h3 className="font-medium text-lg mb-2">{pausedSession.title}</h3>
+                <h3 className="font-medium text-lg mb-2">
+                  {pausedSession.title}
+                </h3>
                 {pausedSession.description && (
                   <p className="mt-1 text-muted-foreground text-sm whitespace-pre-wrap">
                     {getDescriptionText(pausedSession.description)}
@@ -4966,26 +4985,31 @@ export function TimerControls({
               <Coffee className="h-5 w-5 text-amber-600" />
               {t('break_type.title')}
             </DialogTitle>
-            <DialogDescription>
-              {t('break_type.description')}
-            </DialogDescription>
+            <DialogDescription>{t('break_type.description')}</DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* System Break Types - Quick Select */}
-            {(breakTypes || []).filter(bt => bt.is_system).length > 0 && (
+            {(breakTypes || []).filter((bt) => bt.is_system).length > 0 && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">{t('break_type.quick_select')}</Label>
+                <Label className="text-xs text-muted-foreground">
+                  {t('break_type.quick_select')}
+                </Label>
                 <div className="grid grid-cols-2 gap-2">
                   {(breakTypes || [])
-                    .filter(bt => bt.is_system)
+                    .filter((bt) => bt.is_system)
                     .map((breakType) => (
                       <Button
                         key={breakType.id}
-                        variant={selectedBreakTypeId === breakType.id ? 'default' : 'outline'}
+                        variant={
+                          selectedBreakTypeId === breakType.id
+                            ? 'default'
+                            : 'outline'
+                        }
                         className={cn(
                           'justify-start',
-                          selectedBreakTypeId === breakType.id && 'bg-amber-600 hover:bg-amber-700'
+                          selectedBreakTypeId === breakType.id &&
+                            'bg-amber-600 hover:bg-amber-700'
                         )}
                         onClick={() => {
                           setSelectedBreakTypeId(breakType.id);
@@ -5001,19 +5025,26 @@ export function TimerControls({
             )}
 
             {/* Custom Break Types */}
-            {(breakTypes || []).filter(bt => !bt.is_system).length > 0 && (
+            {(breakTypes || []).filter((bt) => !bt.is_system).length > 0 && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">{t('break_type.custom_types')}</Label>
+                <Label className="text-xs text-muted-foreground">
+                  {t('break_type.custom_types')}
+                </Label>
                 <div className="grid grid-cols-2 gap-2">
                   {(breakTypes || [])
-                    .filter(bt => !bt.is_system)
+                    .filter((bt) => !bt.is_system)
                     .map((breakType) => (
                       <Button
                         key={breakType.id}
-                        variant={selectedBreakTypeId === breakType.id ? 'default' : 'outline'}
+                        variant={
+                          selectedBreakTypeId === breakType.id
+                            ? 'default'
+                            : 'outline'
+                        }
                         className={cn(
                           'justify-start',
-                          selectedBreakTypeId === breakType.id && 'bg-amber-600 hover:bg-amber-700'
+                          selectedBreakTypeId === breakType.id &&
+                            'bg-amber-600 hover:bg-amber-700'
                         )}
                         onClick={() => {
                           setSelectedBreakTypeId(breakType.id);
@@ -5030,7 +5061,9 @@ export function TimerControls({
 
             {/* Custom Break Name Input */}
             <div className="space-y-2">
-              <Label htmlFor="custom-break-name">{t('break_type.custom_name')}</Label>
+              <Label htmlFor="custom-break-name">
+                {t('break_type.custom_name')}
+              </Label>
               <Input
                 id="custom-break-name"
                 placeholder={t('break_type.custom_placeholder')}
@@ -5067,7 +5100,10 @@ export function TimerControls({
       </Dialog>
 
       {/* Long Break Confirmation Dialog */}
-      <Dialog open={showLongBreakConfirmDialog} onOpenChange={setShowLongBreakConfirmDialog}>
+      <Dialog
+        open={showLongBreakConfirmDialog}
+        onOpenChange={setShowLongBreakConfirmDialog}
+      >
         <DialogContent className="max-w-md">
           <div className="space-y-4">
             <div className="flex items-start gap-3">
@@ -5075,10 +5111,12 @@ export function TimerControls({
                 <TriangleAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">{t('long_break.title')}</h3>
+                <h3 className="font-semibold text-lg">
+                  {t('long_break.title')}
+                </h3>
                 <p className="text-muted-foreground text-sm mt-1">
-                  {t('long_break.description', { 
-                    duration: formatDuration(longBreakDuration)
+                  {t('long_break.description', {
+                    duration: formatDuration(longBreakDuration),
                   })}
                 </p>
               </div>

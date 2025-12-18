@@ -242,7 +242,9 @@ export function ThresholdSettingsDialog({
                 <Checkbox
                   id="pause-exempt"
                   checked={pauseExempt}
-                  onCheckedChange={(checked) => setPauseExempt(checked === true)}
+                  onCheckedChange={(checked) =>
+                    setPauseExempt(checked === true)
+                  }
                   className="mt-1"
                 />
                 <div className="grid gap-1.5 leading-none">
