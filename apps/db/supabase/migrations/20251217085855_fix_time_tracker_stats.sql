@@ -84,11 +84,6 @@ BEGIN
   
   -- Calculate start of week (Monday) in user's timezone
   v_start_of_week := DATE_TRUNC('week', v_current_date::TIMESTAMP)::DATE;
-  -- If today is Sunday, adjust to previous Monday
-  IF EXTRACT(DOW FROM v_current_date::TIMESTAMP) = 0 THEN
-    v_start_of_week := v_start_of_week - INTERVAL '7 days';
-  END IF;
-  
   -- Calculate start of month in user's timezone
   v_start_of_month := DATE_TRUNC('month', v_current_date::TIMESTAMP)::DATE;
 

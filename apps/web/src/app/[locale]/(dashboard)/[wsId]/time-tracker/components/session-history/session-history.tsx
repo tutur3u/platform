@@ -38,6 +38,7 @@ import {
   getDurationCategory,
   getTimeOfDayCategory,
   sessionOverlapsPeriod,
+  sortSessionGroups,
   stackSessions,
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
@@ -366,24 +367,8 @@ export function SessionHistory({
               <SessionStats periodStats={periodStats} />
 
               <div className="space-y-6">
-                {Object.entries(groupedStackedSessions)
-                  .sort(([keyA], [keyB]) => {
-                    // Sort by date descending (newest first)
-                    const dateA = dayjs(keyA, 'dddd, MMMM D, YYYY', true);
-                    const dateB = dayjs(keyB, 'dddd, MMMM D, YYYY', true);
-
-                    // If either date is invalid, fall back to deterministic comparison
-                    if (!dateA.isValid() || !dateB.isValid()) {
-                      // Sort date keys before non-date keys, then by string comparison
-                      if (dateA.isValid() !== dateB.isValid()) {
-                        return dateA.isValid() ? -1 : 1;
-                      }
-                      return keyA.localeCompare(keyB);
-                    }
-
-                    return dateB.diff(dateA);
-                  })
-                  .map(([groupTitle, groupSessions]) => {
+                {sortSessionGroups(Object.entries(groupedStackedSessions)).map(
+                  ([groupTitle, groupSessions]) => {
                     const groupTotalDuration = groupSessions.reduce(
                       (sum, session) => sum + session.periodDuration,
                       0

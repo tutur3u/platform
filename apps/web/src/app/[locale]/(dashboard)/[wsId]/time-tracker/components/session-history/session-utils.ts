@@ -548,3 +548,31 @@ export const calculatePeriodStats = (
     sessionCount: sessionsForPeriod?.length,
   };
 };
+
+/**
+ * Sort session groups by date descending (newest first).
+ * Falls back to deterministic comparison for invalid dates.
+ *
+ * @param entries - Array of [groupTitle, groupSessions] entries
+ * @returns Sorted array of entries
+ */
+export const sortSessionGroups = (
+  entries: [string, StackedSession[]][]
+): [string, StackedSession[]][] => {
+  return [...entries].sort(([keyA], [keyB]) => {
+    // Sort by date descending (newest first)
+    const dateA = dayjs(keyA, 'dddd, MMMM D, YYYY', true);
+    const dateB = dayjs(keyB, 'dddd, MMMM D, YYYY', true);
+
+    // If either date is invalid, fall back to deterministic comparison
+    if (!dateA.isValid() || !dateB.isValid()) {
+      // Sort date keys before non-date keys, then by string comparison
+      if (dateA.isValid() !== dateB.isValid()) {
+        return dateA.isValid() ? -1 : 1;
+      }
+      return keyA.localeCompare(keyB);
+    }
+
+    return dateB.diff(dateA);
+  });
+};

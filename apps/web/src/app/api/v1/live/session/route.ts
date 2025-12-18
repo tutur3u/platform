@@ -1,38 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  PERSONAL_WORKSPACE_SLUG,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 /**
  * Normalizes workspace ID from slug to UUID for API routes
  */
-async function normalizeWorkspaceId(wsId: string): Promise<string> {
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const { data: workspace, error } = await supabase
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id)')
-      .eq('personal', true)
-      .eq('workspace_members.user_id', user.id)
-      .maybeSingle();
-
-    if (error || !workspace) {
-      throw new Error('Personal workspace not found');
-    }
-
-    return workspace.id;
-  }
-  return resolveWorkspaceId(wsId);
-}
 
 /**
  * GET /api/v1/live/session?wsId=...

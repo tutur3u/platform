@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/icons';
+import { Calendar, Clock, TrendingUp, Zap, TreePalm, Trophy, Star } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -105,7 +105,7 @@ export function StatsCardClient({
                 <p className="font-medium text-muted-foreground text-xs">
                   {t('stats.today.title')}
                 </p>
-                {isWeekend && <span className="text-sm">🏖️</span>}
+                {isWeekend && <TreePalm className="h-4 w-4 " />}
               </div>
               <p className="text-muted-foreground/80 text-xs">{weekdayName}</p>
               <p className="font-bold text-lg">
@@ -177,7 +177,11 @@ export function StatsCardClient({
                   {t('stats.streak.title')}
                 </p>
                 <span className="text-sm">
-                  {stats.streak >= 7 ? '🏆' : '⭐'}
+                  {stats.streak >= 7 ? (
+                    <Trophy className="h-3.5 w-3.5 text-dynamic-yellow" />
+                  ) : (
+                    <Star className="h-3.5 w-3.5 text-dynamic-yellow" />
+                  )}
                 </span>
               </div>
               <p className="text-muted-foreground/80 text-xs">

@@ -1,5 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import z from 'zod';
+
+const querySchema = z.object({
+  userId: z.uuid(),
+  isPersonal: z.enum(['true', 'false']).transform((val) => val === 'true'),
+  timezone: z.string().default('UTC'),
+});
 
 export async function GET(
   req: NextRequest,
@@ -7,17 +15,18 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const searchParams = req.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-    const isPersonal = searchParams.get('isPersonal') === 'true';
-    const timezone = searchParams.get('timezone') || 'UTC';
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const searchParams = Object.fromEntries(req.nextUrl.searchParams);
+    const result = querySchema.safeParse(searchParams);
 
-    if (!userId) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Missing userId parameter' },
+        { error: 'Invalid query parameters', issues: result.error.issues },
         { status: 400 }
       );
     }
+
+    const { userId, isPersonal, timezone } = result.data;
 
     const supabase = await createClient();
 
@@ -34,7 +43,7 @@ export async function GET(
     // Call the database function to get pre-calculated stats with timezone awareness
     const { data, error } = await supabase.rpc('get_time_tracker_stats', {
       p_user_id: userId,
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
       p_is_personal: isPersonal,
       p_timezone: timezone,
     });
