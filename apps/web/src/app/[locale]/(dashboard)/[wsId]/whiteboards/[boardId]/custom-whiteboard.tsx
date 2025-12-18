@@ -65,6 +65,14 @@ export function CustomWhiteboard({
   const previousElementsRef = useRef<readonly ExcalidrawElement[]>([]);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Helper to deep clone elements array
+  const cloneElements = useCallback(
+    (elements: readonly ExcalidrawElement[]): ExcalidrawElement[] => {
+      return elements.map((el) => ({ ...el }));
+    },
+    []
+  );
+
   // Set up collaboration
   const {
     collaborators,
@@ -86,12 +94,12 @@ export function CustomWhiteboard({
           remoteElements
         );
 
-        previousElementsRef.current = mergedElements;
+        previousElementsRef.current = cloneElements(mergedElements);
 
         // Update the scene with merged elements
         excalidrawAPI.updateScene({ elements: mergedElements });
       },
-      [excalidrawAPI]
+      [excalidrawAPI, cloneElements]
     ),
     onError: useCallback((error: Error) => {
       console.error('Collaboration error:', error);
@@ -141,13 +149,13 @@ export function CustomWhiteboard({
         elements: initialData.elements ?? [],
         files: initialData.files ?? {},
       });
-      previousElementsRef.current = initialData.elements ?? [];
+      previousElementsRef.current = cloneElements(initialData.elements ?? []);
     } else {
       lastSavedRef.current = JSON.stringify({ elements: [], files: {} });
       previousElementsRef.current = [];
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData]);
+  }, [initialData, cloneElements]);
 
   // Auto-save function
   const triggerAutoSave = useCallback(() => {
@@ -220,15 +228,15 @@ export function CustomWhiteboard({
         broadcastElementChanges(previousElementsRef.current, elements);
       }
 
-      // Update previous elements reference
-      previousElementsRef.current = elements;
+      // Update previous elements reference with deep clone
+      previousElementsRef.current = cloneElements(elements);
 
       // Trigger auto-save if there are changes
       if (hasChanges) {
         triggerAutoSave();
       }
     },
-    [broadcastElementChanges, triggerAutoSave]
+    [broadcastElementChanges, triggerAutoSave, cloneElements]
   );
 
   // Handle pointer/cursor updates

@@ -122,13 +122,9 @@ export function useExcalidrawElementSync({
   // Create debounced flush with maxWait to ensure updates during continuous drawing
   const debouncedFlush = useMemo(
     () =>
-      debounce(
-        () => {
-          flushChanges();
-        },
-        debounceMs,
-        { maxWait: debounceMs * 2 } // Ensure updates sent at least every 200ms during continuous drawing
-      ),
+      debounce(() => {
+        flushChanges();
+      }, debounceMs),
     [flushChanges, debounceMs]
   );
 
@@ -141,8 +137,6 @@ export function useExcalidrawElementSync({
       if (!enabled || !channelRef.current) return;
 
       const changes = detectElementChanges(previousElements, currentElements);
-
-      if (changes.length === 0) return;
 
       // Add to pending changes
       pendingChangesRef.current.push(...changes);
