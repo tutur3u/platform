@@ -198,6 +198,49 @@ const LocationPill = ({
     [addEvent]
   );
 
+  /**
+   * Atomic delete-and-create utility: Creates new events first, only deletes
+   * old events if all creations succeed. On failure, rolls back by deleting
+   * any newly created events.
+   */
+  const atomicDeleteAndCreate = useCallback(
+    async ({
+      eventsToDelete,
+      eventsToCreate,
+    }: {
+      eventsToDelete: string[];
+      eventsToCreate: Omit<CalendarEvent, 'id'>[];
+    }): Promise<{ success: boolean; createdIds: string[] }> => {
+      if (!deleteEvent) {
+        throw new Error('deleteEvent function not available');
+      }
+
+      const createdIds: string[] = [];
+
+      try {
+        // Step 1: Create all new events first
+        for (const eventData of eventsToCreate) {
+          const result = await addEvent(eventData);
+          if (result?.id) {
+            createdIds.push(result.id);
+          }
+        }
+
+        // Step 2: Delete old events only after all creations succeed
+        await Promise.all(eventsToDelete.map((id) => deleteEvent(id)));
+
+        return { success: true, createdIds };
+      } catch (error) {
+        // Rollback: delete any newly created events (ignore errors during rollback)
+        await Promise.all(
+          createdIds.map((id) => deleteEvent(id).catch(() => {}))
+        );
+        throw error;
+      }
+    },
+    [addEvent, deleteEvent]
+  );
+
   // Determine if this is a merged set of single-day events or a single multi-day event
   const isMergedDailyEvents = Boolean(
     eventSpan.isMerged && eventSpan.mergedEventIds
@@ -559,32 +602,27 @@ const LocationPill = ({
       const eventTitle = event.title ?? 'Home';
       const eventColor = event.color ?? 'GREEN';
 
-      // Delete all existing events first
-      if (isMergedDailyEvents && eventSpan.mergedEventIds) {
-        // Delete all merged events
-        await Promise.all(
-          eventSpan.mergedEventIds.map((id) => deleteEvent(id))
-        );
-      } else {
-        // Delete single event
-        await deleteEvent(event.id);
-      }
+      // Determine which events to delete
+      const eventsToDelete =
+        isMergedDailyEvents && eventSpan.mergedEventIds
+          ? eventSpan.mergedEventIds
+          : [event.id];
 
-      // Create new single-day events for the new range
-      const newEventsPromises: Promise<CalendarEvent | undefined>[] = [];
+      // Build list of events to create for the new range
+      const eventsToCreate: Omit<CalendarEvent, 'id'>[] = [];
       for (let i = finalStartIndex; i <= finalEndIndex; i++) {
         const dayDate = getDayjsDate(visibleDates[i] ?? new Date());
-        newEventsPromises.push(
-          addEvent({
-            title: eventTitle,
-            start_at: dayDate.startOf('day').toISOString(),
-            end_at: dayDate.add(1, 'day').startOf('day').toISOString(),
-            color: eventColor,
-          })
-        );
+        eventsToCreate.push({
+          title: eventTitle,
+          start_at: dayDate.startOf('day').toISOString(),
+          end_at: dayDate.add(1, 'day').startOf('day').toISOString(),
+          color: eventColor,
+        });
       }
 
-      await Promise.all(newEventsPromises);
+      // Use atomic utility: create first, delete only on success, rollback on failure
+      await atomicDeleteAndCreate({ eventsToDelete, eventsToCreate });
+
       // SUCCESS: Don't set isLoading to false here.
       // The parent will re-render with new locationSpans,
       // causing this component to unmount and new one to mount.
@@ -599,7 +637,7 @@ const LocationPill = ({
   }, [
     isDragging,
     deleteEvent,
-    addEvent,
+    atomicDeleteAndCreate,
     tempStartIndex,
     tempEndIndex,
     eventSpan.startIndex,

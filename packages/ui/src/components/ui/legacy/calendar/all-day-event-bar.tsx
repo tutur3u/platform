@@ -123,6 +123,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   // Constants for layout
   const EVENT_LEFT_OFFSET = 4; // 4px offset from left edge
+  /** Height of the LocationTimeline strip in rem. Used to offset regular events when location events are present. */
+  const LOCATION_TIMELINE_HEIGHT_REM = 1.5;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -443,100 +445,75 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     });
 
     // Second pass: Merge consecutive SINGLE-DAY events with same title and color
-    // Only merge events that span exactly 1 day and are consecutive in the visible range
-    // This creates unified "spans" for daily events like "Home" that appear on consecutive days
+    // Optimized O(n log n) approach: group by mergeKey, sort groups, linear scan per group
     const mergedTempSpans: Omit<EventSpan, 'row'>[] = [];
-    const processedIds = new Set<string>();
 
-    // Sort by start index for merging
-    const sortedForMerge = [...tempSpans].sort(
-      (a, b) => a.startIndex - b.startIndex
-    );
+    // Group single-day spans by mergeKey; multi-day events go directly to output
+    const groups = new Map<string, Omit<EventSpan, 'row'>[]>();
 
-    for (const span of sortedForMerge) {
-      if (processedIds.has(span.event.id)) continue;
-
-      // Only merge single-day events (span === 1)
+    for (const span of tempSpans) {
       if (span.span !== 1) {
         // Multi-day events - don't merge, just add directly
-        processedIds.add(span.event.id);
         mergedTempSpans.push(span);
         continue;
       }
 
-      // Look for consecutive single-day events with same title and color to merge
       const mergeKey = `${(span.event.title ?? '').toLowerCase().trim()}|${span.event.color ?? 'BLUE'}`;
-      let mergedSpan = { ...span };
-      const mergedIds = [span.event.id];
+      const group = groups.get(mergeKey) ?? [];
+      group.push(span);
+      groups.set(mergeKey, group);
+    }
 
-      // Iteratively find and merge consecutive spans
-      let foundMerge = true;
-      while (foundMerge) {
-        foundMerge = false;
-        for (const candidateSpan of sortedForMerge) {
-          if (processedIds.has(candidateSpan.event.id)) continue;
-          if (candidateSpan.event.id === span.event.id) continue;
-          if (mergedIds.includes(candidateSpan.event.id)) continue;
+    // Process each group with linear merge
+    for (const [, group] of groups) {
+      // Sort by startIndex (O(k log k) per group, where k is group size)
+      group.sort((a, b) => a.startIndex - b.startIndex);
 
-          // Only merge with other single-day events
-          if (candidateSpan.span !== 1) continue;
+      let currentMerged: Omit<EventSpan, 'row'> | null = null;
+      let mergedIds: string[] = [];
 
-          const candidateKey = `${(candidateSpan.event.title ?? '').toLowerCase().trim()}|${candidateSpan.event.color ?? 'BLUE'}`;
-          if (candidateKey !== mergeKey) continue;
-
-          // Check if truly consecutive (immediately adjacent days)
-          const isNextDay =
-            candidateSpan.startIndex === mergedSpan.endIndex + 1;
-          const isPrevDay =
-            candidateSpan.endIndex === mergedSpan.startIndex - 1;
-
-          if (isNextDay || isPrevDay) {
-            // Merge the spans
-            const newStartIndex = Math.min(
-              mergedSpan.startIndex,
-              candidateSpan.startIndex
-            );
-            const newEndIndex = Math.max(
-              mergedSpan.endIndex,
-              candidateSpan.endIndex
-            );
-            mergedSpan = {
-              ...mergedSpan,
-              startIndex: newStartIndex,
-              endIndex: newEndIndex,
-              span: newEndIndex - newStartIndex + 1,
-              isCutOffStart:
-                mergedSpan.isCutOffStart || candidateSpan.isCutOffStart,
-              isCutOffEnd: mergedSpan.isCutOffEnd || candidateSpan.isCutOffEnd,
-              actualStartDate: mergedSpan.actualStartDate.isBefore(
-                candidateSpan.actualStartDate
-              )
-                ? mergedSpan.actualStartDate
-                : candidateSpan.actualStartDate,
-              actualEndDate: mergedSpan.actualEndDate.isAfter(
-                candidateSpan.actualEndDate
-              )
-                ? mergedSpan.actualEndDate
-                : candidateSpan.actualEndDate,
-              isMerged: true,
-              mergedEventIds: [...mergedIds, candidateSpan.event.id],
-            };
-
-            mergedIds.push(candidateSpan.event.id);
-            processedIds.add(candidateSpan.event.id);
-            foundMerge = true;
-            break; // Restart search with expanded range
+      for (const span of group) {
+        if (!currentMerged) {
+          // Start a new potential merge chain
+          currentMerged = { ...span };
+          mergedIds = [span.event.id];
+        } else if (span.startIndex === currentMerged.endIndex + 1) {
+          // Adjacent - extend the merge
+          currentMerged.endIndex = span.endIndex;
+          currentMerged.span =
+            currentMerged.endIndex - currentMerged.startIndex + 1;
+          currentMerged.isCutOffEnd =
+            currentMerged.isCutOffEnd || span.isCutOffEnd;
+          currentMerged.actualEndDate = currentMerged.actualEndDate.isAfter(
+            span.actualEndDate
+          )
+            ? currentMerged.actualEndDate
+            : span.actualEndDate;
+          mergedIds.push(span.event.id);
+        } else {
+          // Gap - push current merged span and start a new one
+          if (mergedIds.length > 1) {
+            currentMerged.isMerged = true;
+            currentMerged.mergedEventIds = mergedIds;
           }
+          mergedTempSpans.push(currentMerged);
+          currentMerged = { ...span };
+          mergedIds = [span.event.id];
         }
       }
 
-      processedIds.add(span.event.id);
-      if (mergedIds.length > 1) {
-        mergedSpan.isMerged = true;
-        mergedSpan.mergedEventIds = mergedIds;
+      // Push the final merged span from this group
+      if (currentMerged) {
+        if (mergedIds.length > 1) {
+          currentMerged.isMerged = true;
+          currentMerged.mergedEventIds = mergedIds;
+        }
+        mergedTempSpans.push(currentMerged);
       }
-      mergedTempSpans.push(mergedSpan);
     }
+
+    // Sort final output by startIndex for consistent ordering
+    mergedTempSpans.sort((a, b) => a.startIndex - b.startIndex);
 
     // Third pass: assign rows (ONLY for non-location events)
     // Location events will be rendered separately as a compact timeline strip
@@ -964,7 +941,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
           // Calculate top offset based on location strip presence
-          const topOffset = locationSpans.length > 0 ? 1.5 : 0;
+          const topOffset =
+            locationSpans.length > 0 ? LOCATION_TIMELINE_HEIGHT_REM : 0;
 
           return (
             <div
