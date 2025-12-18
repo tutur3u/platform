@@ -299,7 +299,10 @@ function useBulkUpdateCustomDueDate(
       date: Date | null;
       taskIds: string[];
     }) => {
-      console.log('🔄 Bulk custom due date mutation called with taskIds:', taskIds);
+      console.log(
+        '🔄 Bulk custom due date mutation called with taskIds:',
+        taskIds
+      );
       const newDate = date ? date.toISOString() : null;
 
       // Update one by one to ensure triggers fire for each task
@@ -371,7 +374,10 @@ function useBulkMoveToList(
       listName: string;
       taskIds: string[];
     }) => {
-      console.log('🔄 Bulk move to list mutation called with taskIds:', taskIds);
+      console.log(
+        '🔄 Bulk move to list mutation called with taskIds:',
+        taskIds
+      );
 
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
@@ -871,7 +877,10 @@ function useBulkAddAssignee(
       assigneeId: string;
       taskIds: string[];
     }) => {
-      console.log('🔄 Bulk add assignee mutation called with taskIds:', taskIds);
+      console.log(
+        '🔄 Bulk add assignee mutation called with taskIds:',
+        taskIds
+      );
 
       // Insert one by one to ensure triggers fire for each task
       // Note: We try all tasks - duplicates are handled gracefully
@@ -978,7 +987,10 @@ function useBulkRemoveAssignee(
           .eq('task_id', taskId)
           .eq('user_id', assigneeId);
         if (error) {
-          console.error(`Failed to remove assignee from task ${taskId}:`, error);
+          console.error(
+            `Failed to remove assignee from task ${taskId}:`,
+            error
+          );
         } else {
           successCount++;
         }
@@ -1113,7 +1125,11 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     boardId
   );
   const dueDateMutation = useBulkUpdateDueDate(queryClient, supabase, boardId);
-  const customDueDateMutation = useBulkUpdateCustomDueDate(queryClient, supabase, boardId);
+  const customDueDateMutation = useBulkUpdateCustomDueDate(
+    queryClient,
+    supabase,
+    boardId
+  );
   const moveToListMutation = useBulkMoveToList(queryClient, supabase, boardId);
   const statusMutation = useBulkMoveToStatus(
     queryClient,

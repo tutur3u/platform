@@ -1019,12 +1019,15 @@ export function useTaskActions({
 
         // Optimistic update
         const taskIdSet = new Set(tasksToUpdate);
-        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
-          );
-        });
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) =>
+              taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
+            );
+          }
+        );
 
         // Perform the actual bulk update
         try {
@@ -1045,8 +1048,7 @@ export function useTaskActions({
           }
 
           toast.success('Due date updated', {
-            description:
-              `${successCount} task${successCount === 1 ? '' : 's'} updated with custom date`,
+            description: `${successCount} task${successCount === 1 ? '' : 's'} updated with custom date`,
           });
         } catch (error) {
           console.error('Bulk custom date update failed', error);
@@ -1077,7 +1079,16 @@ export function useTaskActions({
         );
       }
     },
-    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen, isMultiSelectMode, selectedTasks, boardId, queryClient]
+    [
+      task?.id,
+      updateTaskMutation,
+      setIsLoading,
+      setCustomDateDialogOpen,
+      isMultiSelectMode,
+      selectedTasks,
+      boardId,
+      queryClient,
+    ]
   );
 
   const handleToggleAssignee = useCallback(
