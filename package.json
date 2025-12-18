@@ -3,7 +3,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "7.0.0-dev.20251216.1",
+    "@typescript/native-preview": "7.0.0-dev.20251218.1",
     "@vitest/coverage-v8": "^4.0.16",
     "turbo": "^2.6.3",
     "typescript": "^5.9.3",
