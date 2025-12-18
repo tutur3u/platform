@@ -5,7 +5,6 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
  * Normalizes workspace ID from slug to UUID for API routes
  */
 
-
 /**
  * GET /api/v1/live/session?wsId=...
  * Retrieve stored session handle for resumption

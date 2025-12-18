@@ -405,7 +405,8 @@ export function SessionHistory({
                         </div>
                       </div>
                     );
-                  })}
+                  }
+                )}
               </div>
             </>
           )}

@@ -1,7 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Clock, TrendingUp, Zap, TreePalm, Trophy, Star } from '@tuturuuu/icons';
+import {
+  Calendar,
+  Clock,
+  TrendingUp,
+  Zap,
+  TreePalm,
+  Trophy,
+  Star,
+} from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
