@@ -38,10 +38,6 @@ export function HeatmapCardClient({
     staleTime: 30 * 1000,
   });
 
-  if (!stats?.dailyActivity || stats.dailyActivity.length === 0) {
-    return null;
-  }
-
   if (statsLoading) {
     return (
       <Card className="relative overflow-x-auto">
@@ -63,7 +59,7 @@ export function HeatmapCardClient({
     <Card className="relative overflow-x-auto">
       <CardContent className="pt-6">
         <div className="relative overflow-visible">
-          <ActivityHeatmap dailyActivity={stats.dailyActivity} />
+          <ActivityHeatmap dailyActivity={stats?.dailyActivity} />
         </div>
       </CardContent>
     </Card>

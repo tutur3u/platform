@@ -9,6 +9,22 @@ const querySchema = z.object({
   timezone: z.string().default('UTC'),
 });
 
+const dailyActivitySchema = z.object({
+  date: z.string(),
+  duration: z.number(),
+  sessions: z.number(),
+});
+
+const statsSchema = z.object({
+  today_time: z.number(),
+  week_time: z.number(),
+  month_time: z.number(),
+  streak: z.number(),
+  daily_activity: z.array(dailyActivitySchema),
+});
+
+type TimeTrackerStatsResponse = z.infer<typeof statsSchema>;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -60,9 +76,16 @@ export async function GET(
     }
 
     // The RPC returns an array with a single row
-    const stats = data?.[0];
+    const rawStats = data?.[0];
+    const statsResult = statsSchema.safeParse(rawStats);
 
-    if (!stats) {
+    if (!statsResult.success) {
+      if (rawStats) {
+        console.error(
+          'Time tracker stats validation failed:',
+          statsResult.error.flatten()
+        );
+      }
       return NextResponse.json({
         todayTime: 0,
         weekTime: 0,
@@ -72,12 +95,14 @@ export async function GET(
       });
     }
 
+    const stats: TimeTrackerStatsResponse = statsResult.data;
+
     return NextResponse.json({
-      todayTime: stats.today_time || 0,
-      weekTime: stats.week_time || 0,
-      monthTime: stats.month_time || 0,
-      streak: stats.streak || 0,
-      dailyActivity: stats.daily_activity || [],
+      todayTime: stats.today_time,
+      weekTime: stats.week_time,
+      monthTime: stats.month_time,
+      streak: stats.streak,
+      dailyActivity: stats.daily_activity,
     });
   } catch (error) {
     console.error('Error in time tracker stats API:', error);
