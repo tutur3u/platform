@@ -4252,7 +4252,15 @@
     "sync_completed": "Sync completed",
     "sync_in_progress": "Sync in progress",
     "failed_to_load_events": "Failed to load events",
-    "failed_to_fetch_google": "Failed to fetch from Google"
+    "failed_to_fetch_google": "Failed to fetch from Google",
+    "danger_zone": "Danger Zone",
+    "reset_calendar_data": "Reset Calendar Data",
+    "reset_calendar_confirm_title": "Reset all calendar data?",
+    "reset_calendar_confirm_desc": "This will permanently delete all calendar events, disconnect all linked accounts (Google, Microsoft), and remove custom calendars. System calendars will be preserved but emptied. This action cannot be undone.",
+    "reset_all_data": "Reset All Data",
+    "calendar_data_reset": "Calendar data reset successfully",
+    "calendar_reset_failed": "Failed to reset calendar data",
+    "cancel": "Cancel"
   },
   "documents": {
     "documents": "Documents",

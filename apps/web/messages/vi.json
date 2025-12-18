@@ -4366,7 +4366,15 @@
     "sync_completed": "Đồng bộ hoàn tất",
     "sync_in_progress": "Đang đồng bộ",
     "failed_to_load_events": "Không thể tải sự kiện",
-    "failed_to_fetch_google": "Không thể lấy dữ liệu từ Google"
+    "failed_to_fetch_google": "Không thể lấy dữ liệu từ Google",
+    "danger_zone": "Vùng nguy hiểm",
+    "reset_calendar_data": "Đặt lại dữ liệu lịch",
+    "reset_calendar_confirm_title": "Đặt lại toàn bộ dữ liệu lịch?",
+    "reset_calendar_confirm_desc": "Thao tác này sẽ xóa vĩnh viễn tất cả sự kiện lịch, ngắt kết nối tất cả tài khoản đã liên kết (Google, Microsoft), và xóa lịch tùy chỉnh. Lịch hệ thống sẽ được giữ lại nhưng dữ liệu sẽ bị xóa. Hành động này không thể hoàn tác.",
+    "reset_all_data": "Đặt lại tất cả",
+    "calendar_data_reset": "Đã đặt lại dữ liệu lịch thành công",
+    "calendar_reset_failed": "Không thể đặt lại dữ liệu lịch",
+    "cancel": "Hủy"
   },
   "documents": {
     "documents": "Tài liệu",

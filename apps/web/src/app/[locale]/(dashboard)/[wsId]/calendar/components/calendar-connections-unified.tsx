@@ -10,12 +10,24 @@ import {
   Lock,
   Plus,
   RefreshCw,
+  RotateCcw,
   Settings,
   Sparkles,
   Target,
   Trash2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -38,6 +50,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type {
@@ -78,6 +91,7 @@ interface WorkspaceCalendarsResponse {
 
 export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   const t = useTranslations('calendar');
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
@@ -96,6 +110,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   const {
     calendarConnections,
     updateCalendarConnection,
+    setCalendarConnections,
     syncStatus,
     syncToTuturuuu,
     isSyncing,
@@ -254,6 +269,52 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
     },
     onError: () =>
       toast.error(t('calendar_deletion_failed') || 'Failed to delete calendar'),
+  });
+
+  // Reset all calendar data
+  const resetCalendarDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/calendars/reset`,
+        { method: 'POST' }
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reset calendar data');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast.success(
+        t('calendar_data_reset') || 'Calendar data reset successfully'
+      );
+      // Clear the calendar connections immediately
+      setCalendarConnections([]);
+      // Refetch all calendar-related queries to ensure UI updates
+      queryClient.refetchQueries({
+        queryKey: ['workspace-calendars', wsId],
+      });
+      queryClient.refetchQueries({ queryKey: ['calendar-accounts', wsId] });
+      queryClient.refetchQueries({
+        queryKey: ['databaseCalendarEvents', wsId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ['googleCalendarEvents', wsId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ['calendar-connections'],
+      });
+      // Refresh the page to reload server data
+      router.refresh();
+      console.log('Reset results:', data);
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message ||
+          t('calendar_reset_failed') ||
+          'Failed to reset calendar data'
+      );
+    },
   });
 
   // Google auth mutation
@@ -871,6 +932,54 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* Danger Zone */}
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="font-medium text-destructive text-xs uppercase tracking-wider">
+                        {t('danger_zone') || 'Danger Zone'}
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full gap-2"
+                            disabled={resetCalendarDataMutation.isPending}
+                          >
+                            {resetCalendarDataMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4" />
+                            )}
+                            {t('reset_calendar_data') || 'Reset Calendar Data'}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t('reset_calendar_confirm_title') ||
+                                'Reset all calendar data?'}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t('reset_calendar_confirm_desc') ||
+                                'This will permanently delete all calendar events, disconnect all linked accounts (Google, Microsoft), and remove custom calendars. System calendars will be preserved but emptied. This action cannot be undone.'}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>
+                              {t('cancel') || 'Cancel'}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => resetCalendarDataMutation.mutate()}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {t('reset_all_data') || 'Reset All Data'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </DialogContent>
