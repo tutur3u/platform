@@ -54,7 +54,7 @@ export function SessionHistory({
   categories,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
-  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+  const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
 
   // Filter state
@@ -422,7 +422,7 @@ export function SessionHistory({
         onClose={closeEditDialog}
         isEditing={isEditing}
         isLoadingThreshold={isLoadingThreshold}
-        thresholdDays={thresholdDays}
+        thresholdDays={thresholdData?.threshold}
         categories={categories}
       />
 

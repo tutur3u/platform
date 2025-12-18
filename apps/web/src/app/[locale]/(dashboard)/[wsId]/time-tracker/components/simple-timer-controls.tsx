@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
@@ -61,23 +61,45 @@ export function SimpleTimerControls({
   const [justCompleted, setJustCompleted] =
     useState<SessionWithRelations | null>(null);
 
-  // Paused session state
   const [pausedSession, setPausedSession] =
     useState<SessionWithRelations | null>(null);
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
+  const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
+
+  const { data: pausedData } = useQuery({
+    queryKey: ['paused-time-session', wsId, currentUserId],
+    queryFn: async () => {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=paused`
+      );
+      return response;
+    },
+    staleTime: 30000,
+  });
+
+  // Sync paused session from query data
+  useEffect(() => {
+    if (pausedData?.session) {
+      setPausedSession(pausedData.session);
+      setPausedElapsedTime(pausedData.session.duration_seconds || 0);
+      setPauseStartTime(
+        pausedData.pauseTime ? new Date(pausedData.pauseTime) : null
+      );
+    }
+  }, [pausedData]);
 
   // State for exceeded threshold session dialog
   const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
     useState(false);
 
   // Fetch workspace threshold setting
-  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+  const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
 
   // Check if current session exceeds the threshold
   const { exceeds: sessionExceedsThreshold } = useSessionExceedsThreshold(
-    currentSession,
-    thresholdDays,
+    currentSession || pausedSession,
+    thresholdData?.threshold,
     isLoadingThreshold
   );
 
@@ -152,7 +174,7 @@ export function SimpleTimerControls({
     if (!sessionToStop) return;
 
     // Check if session exceeds threshold - show dialog instead of stopping directly
-    if (sessionExceedsThreshold && currentSession) {
+    if (sessionExceedsThreshold) {
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -170,6 +192,7 @@ export function SimpleTimerControls({
       setJustCompleted(response.session || null);
       setPausedSession(null);
       setPausedElapsedTime(0);
+      setPauseStartTime(null);
 
       // Clear form for next session
       setSessionTitle('');
@@ -256,6 +279,12 @@ export function SimpleTimerControls({
   const pauseTimer = useCallback(async () => {
     if (!currentSession) return;
 
+    // Check if session exceeds threshold - show dialog instead of pausing directly
+    if (sessionExceedsThreshold) {
+      setShowExceededThresholdDialog(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
       await apiCall(
@@ -267,25 +296,35 @@ export function SimpleTimerControls({
       );
 
       // Store paused session state locally (paused sessions are not "running")
+      const pauseTime = new Date();
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
+      setPauseStartTime(pauseTime);
 
-      // Invalidate queries to refetch running session and stats - single source of truth
+      // Invalidate queries to refetch running session, paused session, and stats
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['paused-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
         queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
       toast.success(t('timerPaused'));
-    } catch (error) {
-      console.error('Error pausing timer:', error);
-      toast.error(t('pauseTimerFailed'));
+    } catch (error: any) {
+      // Check if error is THRESHOLD_EXCEEDED
+      if (error?.message?.includes('threshold') || error?.code === 'THRESHOLD_EXCEEDED') {
+        setShowExceededThresholdDialog(true);
+      } else {
+        console.error('Error pausing timer:', error);
+        toast.error(t('pauseTimerFailed'));
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t]);
+  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t, sessionExceedsThreshold, currentUserId]);
 
   // Resume timer
   const resumeTimer = useCallback(async () => {
@@ -304,10 +343,14 @@ export function SimpleTimerControls({
       // Clear local paused state - query will provide the running session
       setPausedSession(null);
       setPausedElapsedTime(0);
+      setPauseStartTime(null);
 
-      // Invalidate queries to refetch running session and stats - single source of truth
+      // Invalidate queries to refetch running session and paused session
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['paused-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
         queryKey: ['time-tracker-stats', wsId, currentUserId],
@@ -567,15 +610,15 @@ export function SimpleTimerControls({
       )}
 
       {/* Exceeded Threshold Session Dialog */}
-      {currentSession && (
+      {(currentSession || pausedSession) && (
         <MissedEntryDialog
           mode="exceeded-session"
           open={showExceededThresholdDialog}
           onOpenChange={setShowExceededThresholdDialog}
-          session={currentSession}
+          session={(currentSession || pausedSession)!}
           categories={categories}
           wsId={wsId}
-          thresholdDays={thresholdDays ?? null}
+          thresholdDays={thresholdData?.threshold ?? null}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}
         />

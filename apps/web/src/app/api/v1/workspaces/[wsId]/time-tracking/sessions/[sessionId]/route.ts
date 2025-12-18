@@ -3,6 +3,180 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import dayjs from 'dayjs';
+
+// Helper function to get session chain root (traverse up to find original session)
+async function getSessionChainRoot(
+  sessionId: string
+): Promise<{ rootSessionId: string; chainLength: number }> {
+  const sbAdmin = await createAdminClient();
+  
+  let currentSessionId = sessionId;
+  let chainLength = 1;
+  const maxIterations = 100; // Prevent infinite loops
+  
+  for (let i = 0; i < maxIterations; i++) {
+    const { data: session } = await sbAdmin
+      .from('time_tracking_sessions')
+      .select('id, parent_session_id')
+      .eq('id', currentSessionId)
+      .single();
+    
+    if (!session || !session.parent_session_id) {
+      return { rootSessionId: currentSessionId, chainLength };
+    }
+    
+    currentSessionId = session.parent_session_id;
+    chainLength++;
+  }
+  
+  throw new Error('Session chain depth exceeds maximum (possible circular reference)');
+}
+
+// Helper function to check if session exceeds workspace threshold
+// Now accepts optional chainValidation to check root session instead
+async function checkSessionThreshold(
+  wsId: string,
+  sessionStartTime: string,
+  options?: { 
+    sessionId?: string; // If provided, validates root of chain instead
+    returnChainDetails?: boolean; // If true, returns full chain summary
+  }
+): Promise<{ 
+  exceeds: boolean; 
+  thresholdDays: number | null; 
+  message?: string;
+  chainSummary?: any;
+}> {
+  const sbAdmin = await createAdminClient();
+  
+  // Fetch workspace threshold setting
+  const { data: workspaceSettings } = await sbAdmin
+    .from('workspace_settings')
+    .select('missed_entry_date_threshold, pause_threshold_exempt')
+    .eq('ws_id', wsId)
+    .single();
+
+  const thresholdDays = workspaceSettings?.missed_entry_date_threshold;
+
+  // If no threshold set (null), no restrictions apply
+  if (thresholdDays === null || thresholdDays === undefined) {
+    return { exceeds: false, thresholdDays: null };
+  }
+
+  // If sessionId provided, check root session instead
+  let startTimeToCheck = sessionStartTime;
+  let chainSummary: any = null;
+  
+  if (options?.sessionId) {
+    const { rootSessionId } = await getSessionChainRoot(options.sessionId);
+    
+    // Get root session start time
+    const { data: rootSession } = await sbAdmin
+      .from('time_tracking_sessions')
+      .select('start_time')
+      .eq('id', rootSessionId)
+      .single();
+    
+    if (rootSession) {
+      startTimeToCheck = rootSession.start_time;
+    }
+    
+    // Get full chain summary if requested
+    if (options.returnChainDetails) {
+      const { data: summary } = await sbAdmin
+        .rpc('get_session_chain_summary', { session_id_input: options.sessionId });
+      chainSummary = summary;
+    }
+  }
+
+  // If threshold is 0, all missed entries must be submitted as requests
+  if (thresholdDays === 0) {
+    return {
+      exceeds: true,
+      thresholdDays: 0,
+      message: 'All missed entries must be submitted as requests',
+      chainSummary,
+    };
+  }
+
+  // Check if session start time exceeds the threshold
+  const now = dayjs();
+  const startTime = dayjs(startTimeToCheck);
+  const thresholdAgo = now.subtract(thresholdDays, 'day');
+
+  if (startTime.isBefore(thresholdAgo)) {
+    return {
+      exceeds: true,
+      thresholdDays,
+      message: `Cannot complete sessions older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}. Please submit a missed entry request instead.`,
+      chainSummary,
+    };
+  }
+
+  return { exceeds: false, thresholdDays, chainSummary };
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; sessionId: string }> }
+) {
+  try {
+    const { wsId, sessionId } = await params;
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify workspace access
+    const { data: memberCheck } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch the session with relations
+    const { data, error } = await supabase
+      .from('time_tracking_sessions')
+      .select(
+        `
+        *,
+        category:time_tracking_categories(*),
+        task:tasks(*)
+      `
+      )
+      .eq('id', sessionId)
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !data) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ session: data });
+  } catch (error) {
+    console.error('Error fetching time tracking session:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -55,11 +229,83 @@ export async function PATCH(
     const sbAdmin = await createAdminClient();
 
     if (action === 'stop') {
-      // Stop the running session
+      // Validate threshold before stopping - checks ENTIRE CHAIN from root
+      // This ensures pause exemption doesn't bypass approval requirements
+      const thresholdCheck = await checkSessionThreshold(
+        wsId,
+        session.start_time,
+        { 
+          sessionId: sessionId, 
+          returnChainDetails: true 
+        }
+      );
+
+      if (thresholdCheck.exceeds) {
+        // Return enhanced error with chain details for approval UI
+        return NextResponse.json(
+          { 
+            error: thresholdCheck.message || 'Session exceeds workspace threshold',
+            code: 'THRESHOLD_EXCEEDED',
+            thresholdDays: thresholdCheck.thresholdDays,
+            chainSummary: thresholdCheck.chainSummary,
+            sessionId: sessionId,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Verify if session is already paused (not running)
+      const isPaused = !session.is_running;
       const endTime = new Date().toISOString();
+
+      // Find and close any active break for this session
+      const { data: activeBreak } = await sbAdmin
+        .from('time_tracking_breaks')
+        .select('*')
+        .eq('session_id', sessionId)
+        .is('break_end', null)
+        .order('break_start', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeBreak) {
+        // We set break_end and let the DB trigger calculate break_duration_seconds
+        // to avoid potential rounding mismatches with the duration_match constraint
+        const { error: updateError } = await sbAdmin
+          .from('time_tracking_breaks')
+          .update({
+            break_end: endTime,
+          })
+          .eq('id', activeBreak.id);
+
+        if (updateError) {
+          console.error('Failed to close active break on stop:', updateError);
+        }
+      }
+
+      // If it's already paused, its duration_seconds is already correctly set for the work segment.
+      // We just need to return it as a completed session.
+      if (isPaused) {
+        const { data, error } = await supabase
+          .from('time_tracking_sessions')
+          .select(
+            `
+            *,
+            category:time_tracking_categories(*),
+            task:tasks(*)
+          `
+          )
+          .eq('id', sessionId)
+          .single();
+
+        if (error) throw error;
+        return NextResponse.json({ session: data });
+      }
+
+      // Normal stop for a running session - calculate duration from start to end
       const startTime = new Date(session.start_time);
       const durationSeconds = Math.floor(
-        (Date.now() - startTime.getTime()) / 1000
+        (new Date(endTime).getTime() - startTime.getTime()) / 1000
       );
 
       const { data, error } = await sbAdmin
@@ -85,6 +331,33 @@ export async function PATCH(
     }
 
     if (action === 'pause') {
+      // Validate threshold before pausing - checks ENTIRE CHAIN from root
+      // This ensures pause doesn't bypass approval requirements when they are strict
+      const thresholdCheck = await checkSessionThreshold(
+        wsId,
+        session.start_time,
+        { 
+          sessionId: sessionId, 
+          returnChainDetails: true 
+        }
+      );
+
+      if (thresholdCheck.exceeds) {
+        // Return enhanced error with chain details for approval UI
+        return NextResponse.json(
+          { 
+            error: thresholdCheck.message || 'Session exceeds workspace threshold',
+            code: 'THRESHOLD_EXCEEDED',
+            thresholdDays: thresholdCheck.thresholdDays,
+            chainSummary: thresholdCheck.chainSummary,
+            sessionId: sessionId,
+          },
+          { status: 400 }
+        );
+      }
+
+      const { breakTypeId, breakTypeName } = body;
+      
       // Pause the session by stopping it
       const endTime = new Date().toISOString();
       const startTime = new Date(session.start_time);
@@ -111,11 +384,55 @@ export async function PATCH(
         .single();
 
       if (error) throw error;
+      
+      // Create break record (completed when resumed)
+      const { error: breakError } = await sbAdmin
+        .from('time_tracking_breaks')
+        .insert({
+          session_id: sessionId, // Link to the paused session
+          break_type_id: breakTypeId || null,
+          break_type_name: breakTypeName || 'Break',
+          break_start: endTime,
+          break_end: null, // Set when resumed
+          created_by: user.id,
+        });
+      
+      if (breakError) {
+        console.error('Failed to create break record:', breakError);
+        // Don't fail the pause if break record fails - session pause is primary
+      }
+      
       return NextResponse.json({ session: data });
     }
 
     if (action === 'resume') {
-      // Create a new session with the same details, marking it as resumed
+      const resumeTime = new Date().toISOString();
+      
+      // Find active break for this session to complete it
+      const { data: activeBreak } = await sbAdmin
+        .from('time_tracking_breaks')
+        .select('*')
+        .eq('session_id', sessionId)
+        .is('break_end', null)
+        .order('break_start', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      // Complete the break record if found
+      if (activeBreak) {
+        const { error: updateError } = await sbAdmin
+          .from('time_tracking_breaks')
+          .update({
+            break_end: resumeTime,
+          })
+          .eq('id', activeBreak.id);
+
+        if (updateError) {
+          console.error('Failed to close break on resume:', updateError);
+        }
+      }
+      
+      // Create a new session with the same details, linking to parent
       const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .insert({
@@ -125,11 +442,12 @@ export async function PATCH(
           description: session.description,
           category_id: session.category_id,
           task_id: session.task_id,
-          start_time: new Date().toISOString(),
+          start_time: resumeTime,
           is_running: true,
-          was_resumed: true, // Mark this session as resumed
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          was_resumed: true, // Mark this session as resumed (backwards compat)
+          parent_session_id: sessionId, // Link to parent in session chain
+          created_at: resumeTime,
+          updated_at: resumeTime,
         })
         .select(
           `
@@ -141,7 +459,14 @@ export async function PATCH(
         .single();
 
       if (error) throw error;
-      return NextResponse.json({ session: data });
+      
+      // Return both new session and break duration info
+      return NextResponse.json({ 
+        session: data,
+        breakDuration: activeBreak ? Math.floor(
+          (new Date(resumeTime).getTime() - new Date(activeBreak.break_start).getTime()) / 1000
+        ) : null,
+      });
     }
 
     if (action === 'edit') {

@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -22,6 +23,7 @@ import { z } from 'zod';
 interface ThresholdSettingsDialogProps {
   wsId: string;
   currentThreshold?: number | null;
+  currentPauseExempt?: boolean;
   onUpdate: () => void;
 }
 
@@ -33,6 +35,7 @@ const thresholdSchema = z.coerce
 export function ThresholdSettingsDialog({
   wsId,
   currentThreshold = null,
+  currentPauseExempt = false,
   onUpdate,
 }: ThresholdSettingsDialogProps) {
   const t = useTranslations('time-tracker.requests.settings');
@@ -44,6 +47,7 @@ export function ThresholdSettingsDialog({
   const [inputValue, setInputValue] = useState(
     currentThreshold === null ? '1' : String(currentThreshold)
   );
+  const [pauseExempt, setPauseExempt] = useState(currentPauseExempt);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,7 +57,8 @@ export function ThresholdSettingsDialog({
   // Check if values have changed from initial state
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
-    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
+    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold) ||
+    pauseExempt !== currentPauseExempt;
 
   const isSubmitDisabled =
     isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
@@ -74,7 +79,10 @@ export function ThresholdSettingsDialog({
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ threshold: null }),
+            body: JSON.stringify({
+              threshold: null,
+              pauseThresholdExempt: pauseExempt,
+            }),
           }
         );
 
@@ -113,7 +121,10 @@ export function ThresholdSettingsDialog({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ threshold: result.data }),
+          body: JSON.stringify({
+            threshold: result.data,
+            pauseThresholdExempt: pauseExempt,
+          }),
         }
       );
 
@@ -145,6 +156,7 @@ export function ThresholdSettingsDialog({
             setInputValue(
               currentThreshold === null ? '1' : String(currentThreshold)
             );
+            setPauseExempt(currentPauseExempt);
             setValidationError(null);
             setOpen(true);
           }}
@@ -222,6 +234,30 @@ export function ThresholdSettingsDialog({
                 </div>
               </div>
             )}
+
+            <Separator />
+
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="pause-exempt"
+                  checked={pauseExempt}
+                  onCheckedChange={(checked) => setPauseExempt(checked === true)}
+                  className="mt-1"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label
+                    htmlFor="pause-exempt"
+                    className="cursor-pointer font-medium text-sm"
+                  >
+                    {t('pauseExemptLabel')}
+                  </Label>
+                  <p className="text-muted-foreground text-xs">
+                    {t('pauseExemptHelp')}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button

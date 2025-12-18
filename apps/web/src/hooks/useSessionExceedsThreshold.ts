@@ -29,8 +29,8 @@ export function useSessionExceedsThreshold(
   isLoading: boolean = false
 ): SessionThresholdResult {
   return useMemo(() => {
-    // If no session or session is not running, it doesn't exceed
-    if (!session || !session.is_running || !session.start_time) {
+    // If no session or session already has an end time, it doesn't "exceed" in the sense of being an open session
+    if (!session || session.end_time || !session.start_time) {
       return {
         exceeds: false,
         thresholdDays: thresholdDays ?? null,

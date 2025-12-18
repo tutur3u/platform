@@ -20,6 +20,7 @@ const UpdateThresholdSchema = z.object({
       message: 'Threshold must be a non-negative integer or null',
     }
   ),
+  pauseThresholdExempt: z.boolean().optional(),
 });
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -96,6 +97,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     const threshold = validationResult.data.threshold;
+    const pauseThresholdExempt = validationResult.data.pauseThresholdExempt;
 
     // Update workspace settings
     const { error: updateError } = await supabase
@@ -104,6 +106,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         {
           ws_id: wsId,
           missed_entry_date_threshold: threshold,
+          pause_threshold_exempt: pauseThresholdExempt,
           updated_at: new Date().toISOString(),
         },
         {

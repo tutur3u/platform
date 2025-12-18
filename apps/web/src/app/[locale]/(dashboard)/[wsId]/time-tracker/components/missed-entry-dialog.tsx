@@ -3,6 +3,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Clock,
+  Coffee,
   Plus,
   RefreshCw,
   Trash2,
@@ -66,6 +67,7 @@ interface NormalModeProps extends BaseMissedEntryDialogProps {
   // Not used in normal mode
   session?: never;
   thresholdDays?: never;
+  chainSummary?: never;
   onSessionDiscarded?: never;
   onMissedEntryCreated?: never;
 }
@@ -80,9 +82,48 @@ interface ExceededSessionModeProps extends BaseMissedEntryDialogProps {
   // Not used in exceeded mode
   prefillStartTime?: never;
   prefillEndTime?: never;
+  chainSummary?: never;
 }
 
-type MissedEntryDialogProps = NormalModeProps | ExceededSessionModeProps;
+// Props for exceeded session chain mode
+interface ExceededSessionChainModeProps extends BaseMissedEntryDialogProps {
+  mode: 'exceeded-session-chain';
+  session: SessionWithRelations;
+  thresholdDays: number | null;
+  chainSummary: {
+    root_session_id: string;
+    sessions: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      start_time: string;
+      end_time: string;
+      duration_seconds: number;
+      chain_position: number;
+    }>;
+    breaks: Array<{
+      id: string;
+      session_id: string;
+      break_type_name: string;
+      break_start: string;
+      break_end: string;
+      break_duration_seconds: number;
+      break_type_icon?: string;
+      break_type_color?: string;
+    }>;
+    total_work_seconds: number;
+    total_break_seconds: number;
+    original_start_time: string;
+    chain_length: number;
+  };
+  onSessionDiscarded: () => void;
+  onMissedEntryCreated: () => void;
+  // Not used in chain mode
+  prefillStartTime?: never;
+  prefillEndTime?: never;
+}
+
+type MissedEntryDialogProps = NormalModeProps | ExceededSessionModeProps | ExceededSessionChainModeProps;
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
 const MAX_IMAGES = 5;
@@ -98,18 +139,20 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
-  const session = isExceededMode ? props.session : undefined;
-  const providedThresholdDays = isExceededMode
+  const isChainMode = mode === 'exceeded-session-chain';
+  const session = (isExceededMode || isChainMode) ? props.session : undefined;
+  const chainSummary = isChainMode ? props.chainSummary : undefined;
+  const providedThresholdDays = (isExceededMode || isChainMode)
     ? props.thresholdDays
     : undefined;
-  const onSessionDiscarded = isExceededMode
+  const onSessionDiscarded = (isExceededMode || isChainMode)
     ? props.onSessionDiscarded
     : undefined;
-  const onMissedEntryCreated = isExceededMode
+  const onMissedEntryCreated = (isExceededMode || isChainMode)
     ? props.onMissedEntryCreated
     : undefined;
-  const prefillStartTime = !isExceededMode ? props.prefillStartTime : undefined;
-  const prefillEndTime = !isExceededMode ? props.prefillEndTime : undefined;
+  const prefillStartTime = (!isExceededMode && !isChainMode) ? props.prefillStartTime : undefined;
+  const prefillEndTime = (!isExceededMode && !isChainMode) ? props.prefillEndTime : undefined;
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -122,7 +165,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   // Only fetch threshold in normal mode (exceeded mode provides it)
   const {
-    data: fetchedThresholdDays,
+    data: fetchedThresholdData,
     isLoading: isLoadingThreshold,
     isError: isErrorThreshold,
   } = useWorkspaceTimeThreshold(isExceededMode ? null : wsId);
@@ -130,7 +173,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   // Use provided threshold in exceeded mode, fetched in normal mode
   const thresholdDays = isExceededMode
     ? providedThresholdDays
-    : fetchedThresholdDays;
+    : fetchedThresholdData?.threshold;
 
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
@@ -160,6 +203,9 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     Record<string, string>
   >({});
 
+  // State to trigger updates for live duration
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+
   // Calculate session info for exceeded mode
   const sessionStartTime = useMemo(
     () => (session?.start_time ? dayjs(session.start_time) : null),
@@ -167,8 +213,9 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   );
   const currentDuration = useMemo(() => {
     if (!sessionStartTime) return 0;
-    return dayjs().diff(sessionStartTime, 'second');
-  }, [sessionStartTime]);
+    // Use currentTime to ensure this recalculates every second
+    return dayjs(currentTime).diff(sessionStartTime, 'second');
+  }, [sessionStartTime, currentTime]);
 
   const closeMissedEntryDialog = () => {
     // Revoke all object URLs to free memory
@@ -224,6 +271,17 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       });
     };
   }, []);
+
+  // Update current duration every second in exceeded mode
+  useEffect(() => {
+    if (!isExceededMode || !sessionStartTime) return;
+
+    const intervalId = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isExceededMode, sessionStartTime]);
 
   const compressImage = async (file: File): Promise<File> => {
     try {
@@ -733,21 +791,118 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     >
       <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
         <DialogHeader className="border-b pb-4">
-          {isExceededMode ? (
+          {(isExceededMode || isChainMode) ? (
             <>
               <DialogTitle className="flex items-center gap-2 text-dynamic-orange">
                 <AlertTriangle className="h-5 w-5" />
-                {t('exceeded.title')}
+                {isChainMode ? t('exceeded.chainTitle') : t('exceeded.title')}
               </DialogTitle>
-              <DialogDescription>{t('exceeded.description')}</DialogDescription>
+              <DialogDescription>
+                {isChainMode ? t('exceeded.chainDescription') : t('exceeded.description')}
+              </DialogDescription>
             </>
           ) : (
             <DialogTitle>{t('title')}</DialogTitle>
           )}
         </DialogHeader>
         <div className="flex-1 space-y-4 overflow-y-auto py-4">
-          {/* Session info banner - exceeded mode only */}
-          {isExceededMode && session && (
+          {/* Session chain timeline - chain mode only */}
+          {isChainMode && chainSummary && (
+            <div className="space-y-4">
+              {/* Chain Summary Header */}
+              <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-dynamic-orange text-lg">
+                      {t('exceeded.chainSummaryTitle')}
+                    </h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {t('exceeded.chainStarted', {
+                        time: dayjs(chainSummary.original_start_time).format('MMM D, YYYY [at] h:mm A'),
+                      })}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-dynamic-orange text-2xl">
+                      {chainSummary.chain_length}
+                    </div>
+                    <div className="text-muted-foreground text-xs">
+                      {t('exceeded.sessionsInChain')}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Totals */}
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3">
+                    <div className="text-green-700 dark:text-green-300 text-xs font-medium">
+                      {t('exceeded.totalWorkTime')}
+                    </div>
+                    <div className="font-bold text-green-600 dark:text-green-400 text-xl mt-1">
+                      {formatDuration(chainSummary.total_work_seconds)}
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 p-3">
+                    <div className="text-amber-700 dark:text-amber-300 text-xs font-medium">
+                      {t('exceeded.totalBreakTime')}
+                    </div>
+                    <div className="font-bold text-amber-600 dark:text-amber-400 text-xl mt-1">
+                      {formatDuration(chainSummary.total_break_seconds)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">{t('exceeded.timeline')}</h4>
+                {chainSummary.sessions?.map((sess: any, idx: number) => {
+                  const sessionBreaks = chainSummary.breaks?.filter(
+                    (b: any) => b.session_id === sess.id
+                  ) || [];
+                  
+                  return (
+                    <div key={sess.id} className="space-y-2">
+                      {/* Work Session */}
+                      <div className="flex items-start gap-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/10 p-3">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{sess.title}</div>
+                          <div className="text-muted-foreground text-xs mt-1">
+                            {dayjs(sess.start_time).format('h:mm A')} → {dayjs(sess.end_time).format('h:mm A')}
+                            <span className="ml-2 font-medium text-green-600 dark:text-green-400">
+                              {formatDuration(sess.duration_seconds)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Breaks after this session */}
+                      {sessionBreaks.map((brk: any) => (
+                        <div key={brk.id} className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-2">
+                          <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm">
+                              {brk.break_type_icon && <span className="mr-1">{brk.break_type_icon}</span>}
+                              {brk.break_type_name}
+                            </div>
+                            <div className="text-amber-600 dark:text-amber-400 text-xs font-medium">
+                              {formatDuration(brk.break_duration_seconds)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Session info banner - exceeded mode only (single session) */}
+          {isExceededMode && !isChainMode && session && (
             <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-orange" />

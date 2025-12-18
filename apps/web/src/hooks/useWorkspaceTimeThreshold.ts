@@ -4,9 +4,11 @@ import { useQuery } from '@tanstack/react-query';
  * Hook to fetch workspace time tracking threshold setting.
  *
  * Returns:
- * - null: No approval needed (any entry can be added directly)
- * - 0: All entries require approval
- * - number > 0: Entries older than this many days require approval
+ * - threshold:
+ *   - null: No approval needed (any entry can be added directly)
+ *   - 0: All entries require approval
+ *   - number > 0: Entries older than this many days require approval
+ * - pauseExempt: Whether pauses are exempt from the threshold
  */
 export function useWorkspaceTimeThreshold(wsId: string | null) {
   return useQuery({
@@ -17,8 +19,12 @@ export function useWorkspaceTimeThreshold(wsId: string | null) {
       if (!res.ok) throw new Error('Failed to fetch workspace threshold');
       const data = await res.json();
       const threshold = data?.missed_entry_date_threshold;
-      // Return null if not set (means no approval needed), otherwise return the number
-      return typeof threshold === 'number' ? threshold : null;
+      const pauseExempt = data?.pause_threshold_exempt;
+
+      return {
+        threshold: typeof threshold === 'number' ? threshold : null,
+        pauseExempt: Boolean(pauseExempt),
+      };
     },
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes

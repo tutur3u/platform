@@ -343,7 +343,8 @@ export function RequestsClient({
                 ) : (
                   <ThresholdSettingsDialog
                     wsId={wsId}
-                    currentThreshold={thresholdData}
+                    currentThreshold={thresholdData?.threshold}
+                    currentPauseExempt={thresholdData?.pauseExempt}
                     onUpdate={handleThresholdUpdate}
                   />
                 )}

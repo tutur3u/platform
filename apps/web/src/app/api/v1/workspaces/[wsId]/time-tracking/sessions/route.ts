@@ -86,6 +86,52 @@ export async function GET(
       return NextResponse.json({ session: data });
     }
 
+    if (type === 'paused') {
+      // Find the latest session that has an active break (break_end is null)
+      // We must filter by ws_id to ensure we only get breaks for the current workspace
+      const { data: activeBreak } = await supabase
+        .from('time_tracking_breaks')
+        .select(`
+          session_id, 
+          break_start, 
+          break_type:workspace_break_types(*),
+          session:time_tracking_sessions!inner(ws_id)
+        `)
+        .is('break_end', null)
+        .eq('created_by', queryUserId)
+        .eq('session.ws_id', wsId)
+        .order('break_start', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!activeBreak) {
+        return NextResponse.json({ session: null });
+      }
+
+      // Fetch the session with relations
+      const { data: session, error } = await supabase
+        .from('time_tracking_sessions')
+        .select(
+          `
+          *,
+          category:time_tracking_categories(*),
+          task:tasks(*)
+        `
+        )
+        .eq('id', activeBreak.session_id)
+        .eq('ws_id', wsId)
+        .eq('user_id', queryUserId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        session: session || null,
+        pauseTime: activeBreak.break_start,
+        breakType: activeBreak.break_type,
+      });
+    }
+
     if (type === 'recent' || type === 'history') {
       // Build query for sessions
       let query = supabase
