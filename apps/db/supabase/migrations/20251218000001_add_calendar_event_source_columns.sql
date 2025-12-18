@@ -102,6 +102,10 @@ BEGIN
     INSERT INTO public.workspace_calendars (ws_id, name, color, calendar_type, is_system, position)
     VALUES (p_ws_id, p_calendar_name, COALESCE(p_color, 'BLUE'), 'custom', false, 100)
     RETURNING id INTO v_calendar_id;
+    
+    -- Also create the calendar_connections entry so lookups via calendar_id work
+    INSERT INTO public.calendar_connections (ws_id, workspace_calendar_id, calendar_id, provider, is_enabled, created_at)
+    VALUES (p_ws_id, v_calendar_id, p_calendar_id, p_provider::TEXT, true, NOW());
   END IF;
   
   RETURN v_calendar_id;

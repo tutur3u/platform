@@ -1,18 +1,21 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
-  CalendarProvider,
-  CalendarSchedulingSource,
   WorkspaceCalendar,
   WorkspaceCalendarType,
 } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
 }
+
+// UUID validation regex
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Validation schemas
 const createCalendarSchema = z.object({
@@ -41,10 +44,28 @@ export async function GET(_request: Request, { params }: Params) {
   const { wsId } = await params;
 
   try {
+    // Auth check
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Normalize workspace ID
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(wsId);
+    } catch (error) {
+      console.error('Workspace ID normalization failed:', error);
+      return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
+    }
+
     const { data: calendars, error } = await supabase
       .from('workspace_calendars')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .order('position', { ascending: true })
       .order('created_at', { ascending: true });
 
@@ -79,6 +100,24 @@ export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
 
   try {
+    // Auth check
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Normalize workspace ID
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(wsId);
+    } catch (error) {
+      console.error('Workspace ID normalization failed:', error);
+      return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
+    }
+
     const body = await request.json();
     const validated = createCalendarSchema.parse(body);
 
@@ -86,7 +125,7 @@ export async function POST(request: Request, { params }: Params) {
     const { data: existing } = await supabase
       .from('workspace_calendars')
       .select('position')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .order('position', { ascending: false })
       .limit(1);
 
@@ -96,7 +135,7 @@ export async function POST(request: Request, { params }: Params) {
     const { data: calendar, error } = await supabase
       .from('workspace_calendars')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         name: validated.name,
         description: validated.description,
         color: validated.color,
@@ -136,6 +175,24 @@ export async function PATCH(request: Request, { params }: Params) {
   const { wsId } = await params;
 
   try {
+    // Auth check
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Normalize workspace ID
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(wsId);
+    } catch (error) {
+      console.error('Workspace ID normalization failed:', error);
+      return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
+    }
+
     const body = await request.json();
     const validated = updateCalendarSchema.parse(body);
 
@@ -144,7 +201,7 @@ export async function PATCH(request: Request, { params }: Params) {
       .from('workspace_calendars')
       .select('*')
       .eq('id', validated.id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (fetchError || !existing) {
@@ -212,6 +269,24 @@ export async function DELETE(request: Request, { params }: Params) {
   const { wsId } = await params;
 
   try {
+    // Auth check
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Normalize workspace ID
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(wsId);
+    } catch (error) {
+      console.error('Workspace ID normalization failed:', error);
+      return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
+    }
+
     const url = new URL(request.url);
     const calendarId = url.searchParams.get('id');
 
@@ -222,12 +297,20 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
+    // Validate calendarId as UUID
+    if (!UUID_REGEX.test(calendarId)) {
+      return NextResponse.json(
+        { error: 'Invalid calendar ID format' },
+        { status: 400 }
+      );
+    }
+
     // Check if the calendar exists and is not a system calendar
     const { data: existing, error: fetchError } = await supabase
       .from('workspace_calendars')
       .select('*')
       .eq('id', calendarId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (fetchError || !existing) {
@@ -248,7 +331,7 @@ export async function DELETE(request: Request, { params }: Params) {
     const { data: primaryCalendar } = await supabase
       .from('workspace_calendars')
       .select('id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('calendar_type', 'primary')
       .single();
 
@@ -276,11 +359,3 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 }
-
-// Export types for use in other modules
-export type {
-  WorkspaceCalendar,
-  WorkspaceCalendarType,
-  CalendarProvider,
-  CalendarSchedulingSource,
-};

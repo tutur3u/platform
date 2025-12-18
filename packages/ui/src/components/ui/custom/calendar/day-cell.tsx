@@ -66,9 +66,9 @@ export const DayCell: React.FC<{
           className={cn(
             'flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg',
             isAttended
-              ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
+              ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green dark:border-dynamic-green/20 dark:bg-dynamic-green/20'
               : isAbsent
-                ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
+                ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red dark:border-dynamic-red/20 dark:bg-dynamic-red/20'
                 : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10',
             !isInCurrentMonth && 'opacity-60'
           )}

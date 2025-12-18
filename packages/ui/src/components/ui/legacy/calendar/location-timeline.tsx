@@ -28,6 +28,10 @@ dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
+// Module-level utility for timezone-aware dayjs conversion
+const createDayjsDate = (d: Date | string, tz?: string) =>
+  tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
+
 // Types
 interface EventSpan {
   event: CalendarEvent;
@@ -162,9 +166,9 @@ const LocationPill = ({
       isHome ? 'home' : isOffice ? 'office' : isSchool ? 'school' : 'custom'
     ];
 
-  // Helper to get dayjs date with proper timezone
+  // Helper to get dayjs date with proper timezone - uses module-level utility
   const getDayjsDate = useCallback(
-    (d: Date | string) => (tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz)),
+    (d: Date | string) => createDayjsDate(d, tz),
     [tz]
   );
 
@@ -172,14 +176,7 @@ const LocationPill = ({
   const optimisticDelete = useCallback(
     async (eventId: string) => {
       if (!deleteEvent) return;
-
-      try {
-        await deleteEvent(eventId);
-      } catch (error) {
-        // On error, delete still fails - no optimistic rollback needed
-        // because the delete hasn't actually happened yet
-        throw error;
-      }
+      await deleteEvent(eventId);
     },
     [deleteEvent]
   );
@@ -434,7 +431,7 @@ const LocationPill = ({
     }
   };
 
-  // Direct switch for single-day events with optimistic update
+  // Direct switch for single-day events with atomic update
   const executeSwitchDirect = async (
     type: 'home' | 'office' | 'school' | 'custom',
     customName?: string
@@ -461,17 +458,21 @@ const LocationPill = ({
               ? 'ORANGE'
               : 'PURPLE';
 
-      await optimisticDelete(event.id);
-      await optimisticAdd({
-        title: newTitle,
-        start_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
-          .startOf('day')
-          .toISOString(),
-        end_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
-          .add(1, 'day')
-          .startOf('day')
-          .toISOString(),
-        color: newColor,
+      await atomicDeleteAndCreate({
+        eventsToDelete: [event.id],
+        eventsToCreate: [
+          {
+            title: newTitle,
+            start_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
+              .startOf('day')
+              .toISOString(),
+            end_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
+              .add(1, 'day')
+              .startOf('day')
+              .toISOString(),
+            color: newColor,
+          },
+        ],
       });
 
       setIsOpen(false);
@@ -1150,8 +1151,8 @@ const LocationPicker = ({
   const [customLocationInput, setCustomLocationInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const getDayjsDate = (d: Date | string) =>
-    tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
+  // Use module-level utility for timezone-aware date creation
+  const getDayjsDate = (d: Date | string) => createDayjsDate(d, tz);
 
   const handleAddLocation = async (
     type: 'home' | 'office' | 'school' | 'custom',
@@ -1372,6 +1373,7 @@ export const LocationTimeline = ({
 
   return (
     <div
+      data-location-timeline
       className="absolute top-0 right-0 left-0 flex h-5 items-center"
       style={{ zIndex: 15 }}
     >

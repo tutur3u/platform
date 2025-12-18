@@ -1034,7 +1034,7 @@ export function EventModal() {
                           className={cn(
                             'mb-1 flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-medium text-xs transition-colors',
                             event.locked
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                              ? 'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber'
                               : 'border-border bg-background text-muted-foreground hover:bg-muted'
                           )}
                           title={

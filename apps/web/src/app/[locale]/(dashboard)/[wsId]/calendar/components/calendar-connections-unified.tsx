@@ -39,11 +39,13 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -106,6 +108,9 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   >(
     new Set(['tuturuuu']) // Tuturuuu expanded by default
   );
+  const [showCreateCalendarDialog, setShowCreateCalendarDialog] =
+    useState(false);
+  const [newCalendarName, setNewCalendarName] = useState('');
 
   const {
     calendarConnections,
@@ -352,13 +357,15 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   // Disconnect account mutation
   const disconnectMutation = useMutation({
     mutationFn: async (accountId: string) => {
-      setDisconnectingId(accountId);
       const response = await fetch(
         `/api/v1/calendar/auth/accounts?accountId=${accountId}&wsId=${wsId}`,
         { method: 'DELETE' }
       );
       if (!response.ok) throw new Error('Failed to disconnect');
       return response.json();
+    },
+    onMutate: (accountId) => {
+      setDisconnectingId(accountId);
     },
     onSuccess: () => {
       toast.success(t('account_disconnected'));
@@ -619,16 +626,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                           variant="ghost"
                           size="sm"
                           className="h-7 gap-1 text-xs"
-                          onClick={() => {
-                            const name = prompt(
-                              t('enter_calendar_name') || 'Enter calendar name:'
-                            );
-                            if (name?.trim()) {
-                              createCalendarMutation.mutate({
-                                name: name.trim(),
-                              });
-                            }
-                          }}
+                          onClick={() => setShowCreateCalendarDialog(true)}
                           disabled={createCalendarMutation.isPending}
                         >
                           {createCalendarMutation.isPending ? (
@@ -638,6 +636,68 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                           )}
                           {t('new') || 'New'}
                         </Button>
+                        <Dialog
+                          open={showCreateCalendarDialog}
+                          onOpenChange={(open) => {
+                            setShowCreateCalendarDialog(open);
+                            if (!open) setNewCalendarName('');
+                          }}
+                        >
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Create Calendar</DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4">
+                              <Input
+                                value={newCalendarName}
+                                onChange={(
+                                  e: React.ChangeEvent<HTMLInputElement>
+                                ) => setNewCalendarName(e.target.value)}
+                                placeholder={
+                                  t('enter_calendar_name') ||
+                                  'Enter calendar name'
+                                }
+                                autoFocus
+                                onKeyDown={(
+                                  e: React.KeyboardEvent<HTMLInputElement>
+                                ) => {
+                                  if (
+                                    e.key === 'Enter' &&
+                                    newCalendarName.trim()
+                                  ) {
+                                    createCalendarMutation.mutate({
+                                      name: newCalendarName.trim(),
+                                    });
+                                    setShowCreateCalendarDialog(false);
+                                    setNewCalendarName('');
+                                  }
+                                }}
+                              />
+                            </div>
+                            <DialogFooter>
+                              <Button
+                                onClick={() => {
+                                  if (newCalendarName.trim()) {
+                                    createCalendarMutation.mutate({
+                                      name: newCalendarName.trim(),
+                                    });
+                                    setShowCreateCalendarDialog(false);
+                                    setNewCalendarName('');
+                                  }
+                                }}
+                                disabled={
+                                  !newCalendarName.trim() ||
+                                  createCalendarMutation.isPending
+                                }
+                              >
+                                {createCalendarMutation.isPending && (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                {t('add') || 'Create'}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
 
                       {/* System Calendars */}
