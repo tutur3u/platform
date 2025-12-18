@@ -200,5 +200,5 @@
     "./legacy/calendar/settings/*": "./src/components/ui/legacy/calendar/settings/*.tsx",
     "./*": "./src/components/ui/*.tsx"
   },
-  "packageManager": "bun@1.3.4"
+  "packageManager": "bun@1.3.5"
 }
