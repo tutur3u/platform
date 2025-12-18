@@ -645,7 +645,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                         >
                           <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                              <DialogTitle>Create Calendar</DialogTitle>
+                              <DialogTitle>{t('create_calendar')}</DialogTitle>
                             </DialogHeader>
                             <div className="py-4">
                               <Input
@@ -693,7 +693,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                                 {createCalendarMutation.isPending && (
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 )}
-                                {t('add') || 'Create'}
+                                {t('create')}
                               </Button>
                             </DialogFooter>
                           </DialogContent>

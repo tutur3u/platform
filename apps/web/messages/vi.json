@@ -4373,7 +4373,9 @@
     "reset_all_data": "Đặt lại tất cả",
     "calendar_data_reset": "Đã đặt lại dữ liệu lịch thành công",
     "calendar_reset_failed": "Không thể đặt lại dữ liệu lịch",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "create_calendar": "Tạo lịch mới",
+    "create": "Tạo"
   },
   "documents": {
     "documents": "Tài liệu",

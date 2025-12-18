@@ -118,7 +118,19 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
     }
 
-    const body = await request.json();
+    // Parse JSON body with error handling
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return NextResponse.json(
+          { error: 'Invalid JSON body' },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
     const validated = createCalendarSchema.parse(body);
 
     // Get the next position
@@ -193,7 +205,19 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
     }
 
-    const body = await request.json();
+    // Parse JSON body with error handling
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return NextResponse.json(
+          { error: 'Invalid JSON body' },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
     const validated = updateCalendarSchema.parse(body);
 
     // Check if the calendar exists and belongs to this workspace

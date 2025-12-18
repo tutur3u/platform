@@ -4260,7 +4260,9 @@
     "reset_all_data": "Reset All Data",
     "calendar_data_reset": "Calendar data reset successfully",
     "calendar_reset_failed": "Failed to reset calendar data",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "create_calendar": "Create Calendar",
+    "create": "Create"
   },
   "documents": {
     "documents": "Documents",

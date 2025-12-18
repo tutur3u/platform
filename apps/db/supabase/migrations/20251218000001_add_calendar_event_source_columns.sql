@@ -77,6 +77,8 @@ SET scheduling_source = 'task'
 WHERE task_id IS NOT NULL AND scheduling_source IS NULL;
 
 -- Create function to get or create workspace calendar for external provider
+-- SECURITY: Uses SECURITY DEFINER to bypass RLS for internal operations,
+-- but validates caller using auth.uid() and is_org_member before proceeding
 CREATE OR REPLACE FUNCTION public.get_or_create_external_calendar(
   p_ws_id UUID,
   p_calendar_id TEXT,
@@ -87,7 +89,24 @@ CREATE OR REPLACE FUNCTION public.get_or_create_external_calendar(
 RETURNS UUID AS $$
 DECLARE
   v_calendar_id UUID;
+  v_caller_id UUID;
 BEGIN
+  -- Set explicit search_path for security
+  SET search_path = public, pg_temp;
+  
+  -- Get the authenticated user
+  v_caller_id := auth.uid();
+  
+  -- Validate caller is authenticated
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Unauthorized: No authenticated user';
+  END IF;
+  
+  -- Validate caller is a member of the workspace
+  IF NOT public.is_org_member(v_caller_id, p_ws_id) THEN
+    RAISE EXCEPTION 'Forbidden: User is not a member of this workspace';
+  END IF;
+  
   -- Try to find existing calendar
   SELECT wc.id INTO v_calendar_id
   FROM public.workspace_calendars wc
@@ -110,7 +129,12 @@ BEGIN
   
   RETURN v_calendar_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+-- Revoke EXECUTE from public and only allow authenticated users
+REVOKE EXECUTE ON FUNCTION public.get_or_create_external_calendar(UUID, TEXT, TEXT, TEXT, public.calendar_provider) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_or_create_external_calendar(UUID, TEXT, TEXT, TEXT, public.calendar_provider) TO authenticated;
 
 -- Function to get default calendar for events (primary or by scheduling source)
 CREATE OR REPLACE FUNCTION public.get_default_calendar_for_event(

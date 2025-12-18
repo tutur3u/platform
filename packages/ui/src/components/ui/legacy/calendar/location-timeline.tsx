@@ -181,17 +181,9 @@ const LocationPill = ({
     [deleteEvent]
   );
 
-  // Optimistic add wrapper - update UI immediately, rollback on error
+  // Optimistic add wrapper
   const optimisticAdd = useCallback(
-    async (eventData: Omit<CalendarEvent, 'id'>) => {
-      try {
-        const result = await addEvent(eventData);
-        return result;
-      } catch (error) {
-        // On error, the add fails at the server level
-        throw error;
-      }
-    },
+    async (eventData: Omit<CalendarEvent, 'id'>) => addEvent(eventData),
     [addEvent]
   );
 
@@ -322,33 +314,29 @@ const LocationPill = ({
 
       if (isMergedDailyEvents) {
         // Handle merged single-day events
-        // Delete events within the affected range and create new single-day events
+        // Atomically delete events within the affected range and create new single-day events
         const eventsToDelete: string[] = [];
-        const datesToCreate: dayjs.Dayjs[] = [];
+        const eventsToCreate: Omit<CalendarEvent, 'id'>[] = [];
 
         coveredEvents.forEach((e) => {
           if (
             e.date.isBetween(affectedStartDate, affectedEndDate, 'day', '[]')
           ) {
             eventsToDelete.push(e.id);
-            datesToCreate.push(e.date);
+            eventsToCreate.push({
+              title: newTitle,
+              start_at: e.date.startOf('day').toISOString(),
+              end_at: e.date.add(1, 'day').startOf('day').toISOString(),
+              color: newColor,
+            });
           }
         });
 
-        // Delete affected events with optimistic updates
-        await Promise.all(eventsToDelete.map((id) => optimisticDelete(id)));
-
-        // Create new single-day events for consistency with the original pattern
-        await Promise.all(
-          datesToCreate.map((date) =>
-            optimisticAdd({
-              title: newTitle,
-              start_at: date.startOf('day').toISOString(),
-              end_at: date.add(1, 'day').startOf('day').toISOString(),
-              color: newColor,
-            })
-          )
-        );
+        // Use atomic operation: creates first, deletes only on success, rollback on failure
+        await atomicDeleteAndCreate({
+          eventsToDelete,
+          eventsToCreate,
+        });
       } else if (isMultiDayEvent) {
         // Handle single multi-day event
         // We need to be more careful here - we might need to split the event
