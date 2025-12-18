@@ -14,9 +14,9 @@ describe('sortSessionGroups', () => {
 
     const sorted = sortSessionGroups(entries);
 
-    expect(sorted[0][0]).toBe('Wednesday, January 3, 2024');
-    expect(sorted[1][0]).toBe('Tuesday, January 2, 2024');
-    expect(sorted[2][0]).toBe('Monday, January 1, 2024');
+    expect(sorted[0]![0]).toBe('Wednesday, January 3, 2024');
+    expect(sorted[1]![0]).toBe('Tuesday, January 2, 2024');
+    expect(sorted[2]![0]).toBe('Monday, January 1, 2024');
   });
 
   it('sorts date keys before non-date keys', () => {
@@ -28,10 +28,10 @@ describe('sortSessionGroups', () => {
 
     const sorted = sortSessionGroups(entries);
 
-    expect(sorted[0][0]).toBe('Monday, January 1, 2024');
+    expect(sorted[0]![0]).toBe('Monday, January 1, 2024');
     // The rest should be sorted alphabetically
-    expect(sorted[1][0]).toBe('Another Invalid Date');
-    expect(sorted[2][0]).toBe('Invalid Date');
+    expect(sorted[1]![0]).toBe('Another Invalid Date');
+    expect(sorted[2]![0]).toBe('Invalid Date');
   });
 
   it('sorts non-date keys alphabetically', () => {
@@ -43,9 +43,9 @@ describe('sortSessionGroups', () => {
 
     const sorted = sortSessionGroups(entries);
 
-    expect(sorted[0][0]).toBe('A');
-    expect(sorted[1][0]).toBe('M');
-    expect(sorted[2][0]).toBe('Z');
+    expect(sorted[0]![0]).toBe('A');
+    expect(sorted[1]![0]).toBe('M');
+    expect(sorted[2]![0]).toBe('Z');
   });
 
   it('handles empty entries', () => {
@@ -62,7 +62,7 @@ describe('sortSessionGroups', () => {
 
     const sorted = sortSessionGroups(entries);
     expect(sorted.length).toBe(2);
-    expect(sorted[0][0]).toBe('Monday, January 1, 2024');
-    expect(sorted[1][0]).toBe('Monday, January 1, 2024');
+    expect(sorted[0]![0]).toBe('Monday, January 1, 2024');
+    expect(sorted[1]![0]).toBe('Monday, January 1, 2024');
   });
 });
