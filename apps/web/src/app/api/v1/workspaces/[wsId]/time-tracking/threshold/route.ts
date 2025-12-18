@@ -21,7 +21,9 @@ const UpdateThresholdSchema = z.object({
     }
   ),
   pauseThresholdExempt: z.boolean().optional(),
-  resumeThresholdMinutes: z.union([z.number().int().nonnegative(), z.null()]).optional(),
+  resumeThresholdMinutes: z
+    .union([z.number().int().nonnegative(), z.null()])
+    .optional(),
 });
 
 export async function PUT(req: NextRequest, { params }: Params) {

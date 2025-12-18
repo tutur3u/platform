@@ -66,11 +66,13 @@ export function ThresholdSettingsDialog({
     (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold) ||
     pauseExempt !== currentPauseExempt ||
     (resumeThreshold === '' && currentResumeThreshold !== null) ||
-    (resumeThreshold !== '' && parsedResume.success && parsedResume.data !== currentResumeThreshold);
+    (resumeThreshold !== '' &&
+      parsedResume.success &&
+      parsedResume.data !== currentResumeThreshold);
 
   const isSubmitDisabled =
-    isLoading || 
-    (!noApprovalNeeded && !parsed.success) || 
+    isLoading ||
+    (!noApprovalNeeded && !parsed.success) ||
     (resumeThreshold !== '' && !parsedResume.success) ||
     !hasChanged;
 
@@ -81,7 +83,8 @@ export function ThresholdSettingsDialog({
     setValidationError(null);
 
     try {
-      const resThreshold = resumeThreshold === '' ? null : parseInt(resumeThreshold);
+      const resThreshold =
+        resumeThreshold === '' ? null : parseInt(resumeThreshold);
 
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/threshold`,
@@ -91,7 +94,11 @@ export function ThresholdSettingsDialog({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            threshold: noApprovalNeeded ? null : parsed.success ? parsed.data : null,
+            threshold: noApprovalNeeded
+              ? null
+              : parsed.success
+                ? parsed.data
+                : null,
             pauseThresholdExempt: pauseExempt,
             resumeThresholdMinutes: resThreshold,
           }),
@@ -128,7 +135,9 @@ export function ThresholdSettingsDialog({
             );
             setPauseExempt(currentPauseExempt);
             setResumeThreshold(
-              currentResumeThreshold === null ? '' : String(currentResumeThreshold)
+              currentResumeThreshold === null
+                ? ''
+                : String(currentResumeThreshold)
             );
             setValidationError(null);
             setOpen(true);
@@ -196,7 +205,9 @@ export function ThresholdSettingsDialog({
                 <Checkbox
                   id="pause-exempt"
                   checked={pauseExempt}
-                  onCheckedChange={(checked) => setPauseExempt(checked === true)}
+                  onCheckedChange={(checked) =>
+                    setPauseExempt(checked === true)
+                  }
                   className="mt-1"
                 />
                 <div className="grid gap-1.5 leading-none">
@@ -213,7 +224,9 @@ export function ThresholdSettingsDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="resume-threshold">{t('resumeThresholdLabel')}</Label>
+                <Label htmlFor="resume-threshold">
+                  {t('resumeThresholdLabel')}
+                </Label>
                 <Input
                   id="resume-threshold"
                   type="number"

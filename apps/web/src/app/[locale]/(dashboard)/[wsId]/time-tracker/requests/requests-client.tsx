@@ -345,7 +345,9 @@ export function RequestsClient({
                     wsId={wsId}
                     currentThreshold={thresholdData?.threshold}
                     currentPauseExempt={thresholdData?.pauseExempt}
-                    currentResumeThreshold={thresholdData?.resumeThresholdMinutes}
+                    currentResumeThreshold={
+                      thresholdData?.resumeThresholdMinutes
+                    }
                     onUpdate={handleThresholdUpdate}
                   />
                 )}
