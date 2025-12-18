@@ -49,7 +49,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(isBetween);
 
 interface ActivityHeatmapProps {
-  dailyActivity: Array<{
+  dailyActivity?: Array<{
     date: string;
     duration: number;
     sessions: number;
@@ -77,7 +77,7 @@ const getColorClass = (intensity: number): string => {
   return colors[Math.max(0, Math.min(4, intensity))]!;
 };
 
-export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
+export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
   const t = useTranslations('time-tracker.heatmap');
   const locale = useLocale();
   dayjs.locale(locale);

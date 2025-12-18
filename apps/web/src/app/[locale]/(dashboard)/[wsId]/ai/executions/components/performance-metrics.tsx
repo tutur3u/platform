@@ -531,9 +531,14 @@ export function PerformanceMetrics({
                             border: `1px solid ${colors.tooltip.border}`,
                             color: colors.tooltip.text,
                           }}
-                          formatter={(value: number, name: string) => [
-                            name === 'Cost' ? formatCost(value) : value,
-                            name,
+                          formatter={(
+                            value: number | undefined,
+                            name: string | undefined
+                          ) => [
+                            (name ?? '') === 'Cost'
+                              ? formatCost(value ?? 0)
+                              : (value ?? 0),
+                            name ?? '',
                           ]}
                           labelFormatter={(value) =>
                             new Date(value).toLocaleDateString()
@@ -670,11 +675,14 @@ export function PerformanceMetrics({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(value: number, name: string) => [
-                          name === 'Avg Cost per Execution'
-                            ? formatCost(value)
-                            : value,
-                          name,
+                        formatter={(
+                          value: number | undefined,
+                          name: string | undefined
+                        ) => [
+                          (name ?? '') === 'Avg Cost per Execution'
+                            ? formatCost(value ?? 0)
+                            : (value ?? 0),
+                          name ?? '',
                         ]}
                         labelFormatter={(value) =>
                           new Date(value).toLocaleDateString()
@@ -755,9 +763,14 @@ export function PerformanceMetrics({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(value: number, name: string) => [
-                          name === 'Total Cost' ? formatCost(value) : value,
-                          name,
+                        formatter={(
+                          value: number | undefined,
+                          name: string | undefined
+                        ) => [
+                          (name ?? '') === 'Total Cost'
+                            ? formatCost(value ?? 0)
+                            : (value ?? 0),
+                          name ?? '',
                         ]}
                       />
                       <Legend />

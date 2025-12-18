@@ -314,21 +314,14 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                           borderRadius: '6px',
                           padding: '8px 12px',
                         }}
-                        formatter={(value: number) => [formatCurrency(value)]}
+                        formatter={(value: number | undefined) => [
+                          formatCurrency(value ?? 0),
+                        ]}
                         labelStyle={{ color: colors.tooltip.text }}
                       />
                       <Legend
-                        wrapperStyle={{
-                          paddingTop: '20px',
-                        }}
-                        formatter={(value) => <span>{value}</span>}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey={`${selectedModel}_hi_90`}
                         stroke={colors.high}
                         strokeDasharray="3 3"
-                        dot={false}
                         name={t('aurora.90_confidence_high')}
                       />
                       <Line
@@ -390,7 +383,9 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                           borderRadius: '6px',
                           padding: '8px 12px',
                         }}
-                        formatter={(value: number) => [formatCurrency(value)]}
+                        formatter={(value: number | undefined) => [
+                          formatCurrency(value ?? 0),
+                        ]}
                         labelStyle={{ color: colors.tooltip.text }}
                       />
                       <Legend

@@ -141,6 +141,24 @@
           "pages": ["learn/examples/overview"]
         },
         {
+          "group": "Workshops",
+          "pages": [
+            {
+              "group": "Next.js Workshop",
+              "pages": [
+                "learn/workshops/nextjs-workshop/overview",
+                "learn/workshops/nextjs-workshop/01-web-fundamentals",
+                "learn/workshops/nextjs-workshop/02-tailwind-css",
+                "learn/workshops/nextjs-workshop/03-typescript",
+                "learn/workshops/nextjs-workshop/04-react",
+                "learn/workshops/nextjs-workshop/05-nextjs",
+                "learn/workshops/nextjs-workshop/06-ai-sdk",
+                "learn/workshops/nextjs-workshop/07-next-steps"
+              ]
+            }
+          ]
+        },
+        {
           "group": "Experiments",
           "pages": [
             "learn/experiments/form-builder",

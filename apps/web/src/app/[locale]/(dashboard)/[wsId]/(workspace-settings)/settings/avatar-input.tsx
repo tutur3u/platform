@@ -1,13 +1,14 @@
 'use client';
 
-import { Loader2, UserIcon } from '@tuturuuu/icons';
+import { Loader2, UserIcon, AlertTriangle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceUser } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { cn } from '@tuturuuu/utils/format';
@@ -15,14 +16,16 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
+import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 
 interface Props {
   workspace: Workspace;
   defaultValue?: string | null;
   disabled?: boolean;
+  onPermissionCheckComplete?: (hasPermission: boolean) => void;
 }
 
 const FormSchema = z.object({
@@ -37,11 +40,60 @@ const FormSchema = z.object({
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const AVATAR_SIZE = 500;
 
-export default function AvatarInput({ workspace, disabled }: Props) {
+const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      reject(new Error('Canvas context is null'));
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      // Set canvas size to the desired avatar size
+      canvas.width = AVATAR_SIZE;
+      canvas.height = AVATAR_SIZE;
+
+      // Draw the cropped image (already square from cropper) to the canvas
+      ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+
+      URL.revokeObjectURL(img.src);
+
+      canvas.toBlob(
+        (compressedBlob) => {
+          if (compressedBlob) {
+            resolve(compressedBlob);
+          } else {
+            reject(new Error('Blob creation failed'));
+          }
+        },
+        'image/jpeg',
+        0.8 // 80% quality for good balance of quality and file size
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image'));
+    };
+    img.src = URL.createObjectURL(blob);
+  });
+};
+
+export default function AvatarInput({
+  workspace,
+  disabled,
+  onPermissionCheckComplete,
+}: Props) {
   const bucket = 'avatars';
   const t = useTranslations();
   const router = useRouter();
   const supabase = createClient();
+
+  // Fetch current workspace user
+  const { data: user, isLoading: isUserLoading } = useWorkspaceUser();
 
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
@@ -53,46 +105,30 @@ export default function AvatarInput({ workspace, disabled }: Props) {
     workspace?.avatar_url || null
   );
 
+  // Check if user has manage_workspace_settings permission
+  // Only check permission once user data is loaded
+  const { hasPermission, isLoading: isCheckingPermission } =
+    useWorkspacePermission({
+      wsId: workspace.id,
+      permission: 'manage_workspace_settings',
+      user: user ?? ({} as WorkspaceUser),
+      enabled: !!user, // Only run query when user is loaded
+    });
+
+  // Notify parent component when permission check completes
+  useEffect(() => {
+    if (!isCheckingPermission && onPermissionCheckComplete) {
+      onPermissionCheckComplete(hasPermission ?? false);
+    }
+  }, [hasPermission, isCheckingPermission, onPermissionCheckComplete]);
+
   const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
-  const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        reject(new Error('Canvas context is null'));
-        return;
-      }
-
-      const img = new Image();
-      img.onload = () => {
-        // Set canvas size to the desired avatar size
-        canvas.width = AVATAR_SIZE;
-        canvas.height = AVATAR_SIZE;
-
-        // Draw the cropped image (already square from cropper) to the canvas
-        ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-
-        canvas.toBlob(
-          (compressedBlob) => {
-            if (compressedBlob) {
-              resolve(compressedBlob);
-            } else {
-              reject(new Error('Blob creation failed'));
-            }
-          },
-          'image/jpeg',
-          0.8 // 80% quality for good balance of quality and file size
-        );
-      };
-
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(blob);
-    });
-  };
+  // Determine if upload should be disabled (including user loading state)
+  const isUploadDisabled =
+    disabled || !hasPermission || isCheckingPermission || isUserLoading;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
@@ -126,18 +162,11 @@ export default function AvatarInput({ workspace, disabled }: Props) {
 
       if (updateError) throw updateError;
 
-      toast({
-        title: t('settings-account.avatar_updated'),
-        description: t('settings-account.avatar_updated_description'),
-      });
+      toast.success(t('settings-account.avatar_updated_description'));
       router.refresh();
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: t('settings-account.update_failed'),
-        description: t('settings-account.avatar_update_error'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.avatar_update_error'));
     } finally {
       form.reset();
       setSaving(false);
@@ -159,16 +188,9 @@ export default function AvatarInput({ workspace, disabled }: Props) {
       .eq('id', workspace.id);
 
     if (updateError) {
-      toast({
-        title: t('settings-account.remove_failed'),
-        description: t('settings-account.avatar_remove_error'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.avatar_remove_error'));
     } else {
-      toast({
-        title: t('settings-account.avatar_removed'),
-        description: t('settings-account.avatar_removed_description'),
-      });
+      toast.success(t('settings-account.avatar_removed_description'));
       router.refresh();
     }
 
@@ -186,14 +208,7 @@ export default function AvatarInput({ workspace, disabled }: Props) {
       setCropperOpen(true);
     } catch (error) {
       console.error('Error processing file:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
-        description:
-          error instanceof Error
-            ? error.message
-            : t('settings-account.crop_failed_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.crop_failed_description'));
     } finally {
       setIsConverting(false);
     }
@@ -224,11 +239,7 @@ export default function AvatarInput({ workspace, disabled }: Props) {
       setSelectedFile(null);
     } catch (error) {
       console.error('Error processing cropped image:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
-        description: t('settings-account.crop_failed_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.crop_failed_description'));
     }
   };
 
@@ -277,7 +288,19 @@ export default function AvatarInput({ workspace, disabled }: Props) {
               </AvatarFallback>
             </Avatar>
           </div>
-          {!disabled && (
+
+          {/* Permission denied message */}
+          {!isCheckingPermission && !hasPermission && !disabled && (
+            <div className="flex items-center gap-2 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-3">
+              <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
+              <p className="text-sm text-dynamic-amber">
+                {t('settings-account.insufficient_permissions_avatar')}
+              </p>
+            </div>
+          )}
+
+          {/* Upload controls - only show if user has permission */}
+          {!isUploadDisabled && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div>
                 <Label
@@ -299,7 +322,7 @@ export default function AvatarInput({ workspace, disabled }: Props) {
                   id="file-upload"
                   type="file"
                   accept="image/png,image/jpeg,image/jpg,image/webp"
-                  disabled={isConverting || disabled}
+                  disabled={isConverting}
                   onChange={(e) => {
                     if (e.target.files?.[0] && !isConverting) {
                       handleFileSelect(e.target.files[0]);

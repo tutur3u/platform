@@ -29,6 +29,7 @@ export type TaskWithDetails = {
 } & Partial<WorkspaceTask> & {
     board_name?: string;
     list_name?: string;
+    ticket_prefix?: string | null;
   };
 
 export interface FilterState {

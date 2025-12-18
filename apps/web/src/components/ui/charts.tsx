@@ -149,7 +149,9 @@ export const PieChart = ({
             <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number) => [`${value} races`, 'Count']} />
+        <Tooltip
+          formatter={(value: number | undefined) => [`${value} races`, 'Count']}
+        />
         <Legend />
       </RechartsPieChart>
     </ResponsiveContainer>
