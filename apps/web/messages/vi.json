@@ -4347,7 +4347,10 @@
     "connect_google_desc": "Kết nối tài khoản Google của bạn",
     "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
     "add_account": "Thêm tài khoản",
-    "disconnect": "Ngắt kết nối"
+    "disconnect": "Ngắt kết nối",
+    "coming_soon": "Sắp ra mắt",
+    "microsoft_coming_soon": "Microsoft Outlook sắp ra mắt!",
+    "microsoft_coming_soon_desc": "Chúng tôi đang hoàn thiện tích hợp lịch Microsoft. Tính năng này sẽ có sớm thôi!"
   },
   "documents": {
     "documents": "Tài liệu",

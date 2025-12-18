@@ -4233,7 +4233,10 @@
     "connect_calendar": "Connect Calendar",
     "no_calendars_synced": "No calendars synced yet.",
     "no_calendars_found": "No calendars found for this account.",
-    "synced": "Synced"
+    "synced": "Synced",
+    "coming_soon": "Coming Soon",
+    "microsoft_coming_soon": "Microsoft Outlook Coming Soon!",
+    "microsoft_coming_soon_desc": "We're working on Microsoft calendar integration. It will be available very soon!"
   },
   "documents": {
     "documents": "Documents",

@@ -32,6 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -370,29 +371,49 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                 </div>
               </div>
             </Button>
-            <Button
-              variant="outline"
-              className="h-14 justify-start gap-3"
-              onClick={() => microsoftAuthMutation.mutate()}
-              disabled={microsoftAuthMutation.isPending}
-            >
-              {microsoftAuthMutation.isPending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
+            {DEV_MODE ? (
+              <Button
+                variant="outline"
+                className="h-14 justify-start gap-3"
+                onClick={() => microsoftAuthMutation.mutate()}
+                disabled={microsoftAuthMutation.isPending}
+              >
+                {microsoftAuthMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Image
+                    src="/media/logos/microsoft.svg"
+                    alt="Microsoft"
+                    width={20}
+                    height={20}
+                  />
+                )}
+                <div className="text-left">
+                  <div className="font-medium">{t('microsoft_outlook')}</div>
+                  <div className="text-muted-foreground text-xs">
+                    {t('connect_microsoft_desc')}
+                  </div>
+                </div>
+              </Button>
+            ) : (
+              <div className="flex h-14 items-center gap-3 rounded-md border border-dashed px-4 opacity-60">
                 <Image
                   src="/media/logos/microsoft.svg"
                   alt="Microsoft"
                   width={20}
                   height={20}
+                  className="opacity-50"
                 />
-              )}
-              <div className="text-left">
-                <div className="font-medium">{t('microsoft_outlook')}</div>
-                <div className="text-muted-foreground text-xs">
-                  {t('connect_microsoft_desc')}
+                <div className="text-left">
+                  <div className="font-medium text-muted-foreground">
+                    {t('microsoft_outlook')}
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {t('coming_soon')}
+                  </div>
                 </div>
               </div>
-            </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -570,7 +591,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="gap-2"
+                          className="gap-2 text-center"
                           onClick={() => googleAuthMutation.mutate()}
                           disabled={googleAuthMutation.isPending}
                         >
@@ -586,25 +607,38 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                           )}
                           {t('google')}
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => microsoftAuthMutation.mutate()}
-                          disabled={microsoftAuthMutation.isPending}
-                        >
-                          {microsoftAuthMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
+                        {DEV_MODE ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-center"
+                            onClick={() => microsoftAuthMutation.mutate()}
+                            disabled={microsoftAuthMutation.isPending}
+                          >
+                            {microsoftAuthMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Image
+                                src="/media/logos/microsoft.svg"
+                                alt="Microsoft"
+                                width={16}
+                                height={16}
+                              />
+                            )}
+                            {t('outlook')}
+                          </Button>
+                        ) : (
+                          <div className="flex h-8 items-center justify-center gap-2 rounded-md border border-dashed px-2 text-center text-muted-foreground text-xs opacity-60">
                             <Image
                               src="/media/logos/microsoft.svg"
                               alt="Microsoft"
                               width={16}
                               height={16}
+                              className="opacity-50"
                             />
-                          )}
-                          {t('outlook')}
-                        </Button>
+                            {t('coming_soon')}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
