@@ -172,21 +172,6 @@ const LocationPill = ({
     [tz]
   );
 
-  // Optimistic delete wrapper - update UI immediately, rollback on error
-  const optimisticDelete = useCallback(
-    async (eventId: string) => {
-      if (!deleteEvent) return;
-      await deleteEvent(eventId);
-    },
-    [deleteEvent]
-  );
-
-  // Optimistic add wrapper
-  const optimisticAdd = useCallback(
-    async (eventData: Omit<CalendarEvent, 'id'>) => addEvent(eventData),
-    [addEvent]
-  );
-
   /**
    * Atomic delete-and-create utility: Creates new events first, only deletes
    * old events if all creations succeed. On failure, rolls back by deleting
@@ -348,22 +333,25 @@ const LocationPill = ({
           affectedEndDate.isSameOrAfter(eventEnd, 'day');
 
         if (isFullCoverage || timeframeMode === 'all') {
-          // Replace the entire event
-          await optimisticDelete(event.id);
-          await optimisticAdd({
-            title: newTitle,
-            start_at: eventStart.startOf('day').toISOString(),
-            end_at: eventEnd.add(1, 'day').startOf('day').toISOString(),
-            color: newColor,
+          // Replace the entire event atomically
+          await atomicDeleteAndCreate({
+            eventsToDelete: [event.id],
+            eventsToCreate: [
+              {
+                title: newTitle,
+                start_at: eventStart.startOf('day').toISOString(),
+                end_at: eventEnd.add(1, 'day').startOf('day').toISOString(),
+                color: newColor,
+              },
+            ],
           });
         } else {
-          // Partial coverage - this is complex, so we create individual day events
-          // Delete the original event
-          await optimisticDelete(event.id);
+          // Partial coverage - create up to 3 events: before, affected, after
+          const eventsToCreate: Omit<CalendarEvent, 'id'>[] = [];
 
           // Create events for the unchanged portion (before affected range)
           if (affectedStartDate.isAfter(eventStart, 'day')) {
-            await optimisticAdd({
+            eventsToCreate.push({
               title: event.title ?? '',
               start_at: eventStart.startOf('day').toISOString(),
               end_at: affectedStartDate.startOf('day').toISOString(),
@@ -372,7 +360,7 @@ const LocationPill = ({
           }
 
           // Create events for the affected range (new location)
-          await optimisticAdd({
+          eventsToCreate.push({
             title: newTitle,
             start_at: affectedStartDate.startOf('day').toISOString(),
             end_at: affectedEndDate.add(1, 'day').startOf('day').toISOString(),
@@ -381,7 +369,7 @@ const LocationPill = ({
 
           // Create events for the unchanged portion (after affected range)
           if (affectedEndDate.isBefore(eventEnd, 'day')) {
-            await optimisticAdd({
+            eventsToCreate.push({
               title: event.title ?? '',
               start_at: affectedEndDate
                 .add(1, 'day')
@@ -391,20 +379,30 @@ const LocationPill = ({
               color: event.color ?? 'BLUE',
             });
           }
+
+          // Atomically delete original and create split events
+          await atomicDeleteAndCreate({
+            eventsToDelete: [event.id],
+            eventsToCreate,
+          });
         }
       } else {
-        // Single day event - simple replace
-        await optimisticDelete(event.id);
-        await optimisticAdd({
-          title: newTitle,
-          start_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
-            .startOf('day')
-            .toISOString(),
-          end_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
-            .add(1, 'day')
-            .startOf('day')
-            .toISOString(),
-          color: newColor,
+        // Single day event - simple atomic replace
+        await atomicDeleteAndCreate({
+          eventsToDelete: [event.id],
+          eventsToCreate: [
+            {
+              title: newTitle,
+              start_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
+                .startOf('day')
+                .toISOString(),
+              end_at: getDayjsDate(visibleDates[startIndex] ?? new Date())
+                .add(1, 'day')
+                .startOf('day')
+                .toISOString(),
+              color: newColor,
+            },
+          ],
         });
       }
 
@@ -491,13 +489,13 @@ const LocationPill = ({
 
     try {
       if (isMergedDailyEvents && eventSpan.mergedEventIds) {
-        // Delete all merged events with optimistic updates
+        // Delete all merged events
         await Promise.all(
-          eventSpan.mergedEventIds.map((id) => optimisticDelete(id))
+          eventSpan.mergedEventIds.map((id) => deleteEvent(id))
         );
       } else {
         // Delete single event
-        await optimisticDelete(event.id);
+        await deleteEvent(event.id);
       }
       setIsOpen(false);
     } catch (error) {
