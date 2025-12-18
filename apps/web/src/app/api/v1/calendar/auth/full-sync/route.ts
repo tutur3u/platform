@@ -1,14 +1,39 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const fullSyncSchema = z.object({
+  wsId: z.string(),
+});
 
 export async function POST(request: Request) {
   try {
-    const { wsId } = await request.json();
+    const body = await request.json();
+    const result = fullSyncSchema.safeParse(body);
 
-    if (!wsId) {
-      return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'wsId is required and must be a string' },
+        { status: 400 }
+      );
     }
+
+    const { wsId: id } = result.data;
+
+    // Fetch workspace using the standardized utility
+    // This resolves special IDs like 'personal' and ensures existence
+    const workspace = await getWorkspace(id);
+
+    if (!workspace) {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    const wsId = workspace.id;
 
     // Initialize Supabase client
     const supabase = await createClient();

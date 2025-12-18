@@ -300,7 +300,8 @@ describe('performFullSyncForWorkspace', () => {
       expect(storeSyncToken).toHaveBeenCalledWith(
         'test-workspace',
         'test-sync-token-123',
-        expect.any(Date)
+        expect.any(Date),
+        'primary'
       );
     });
 
