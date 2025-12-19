@@ -85,7 +85,6 @@ export function useSessionActions({
   const t = useTranslations('time-tracker.session_history');
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: thresholdData } = useWorkspaceTimeThreshold(wsId);
 
   // Action states
   const [actionStates, setActionStates] = useState<ActionStates>({});
