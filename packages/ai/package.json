@@ -6,7 +6,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^3.0.70",
+    "@ai-sdk/amazon-bedrock": "^3.0.71",
     "@ai-sdk/anthropic": "^2.0.56",
     "@ai-sdk/azure": "^2.0.90",
     "@ai-sdk/cerebras": "^1.0.33",
@@ -38,7 +38,7 @@
     "@tuturuuu/utils": "workspace:*",
     "ai": "^5.0.115",
     "dayjs": "^1.11.19",
-    "next": "^16.0.10",
+    "next": "^16.1.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "streamdown": "^1.6.10",

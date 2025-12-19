@@ -18,7 +18,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.954.0",
+    "@aws-sdk/client-ses": "^3.955.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
