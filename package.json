@@ -58,6 +58,7 @@
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
+    "tc": "tsgo --build",
     "type-check": "tsgo --build",
     "type-check:web": "tsgo --build apps/web/tsconfig.json",
     "type-check:calendar": "tsgo --build apps/calendar/tsconfig.json",

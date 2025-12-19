@@ -127,15 +127,69 @@ export abstract class BaseEmailProvider implements EmailProvider {
   }
 
   /**
+   * Remove script and style blocks from HTML safely.
+   * Uses a loop-based state machine to avoid ReDoS vulnerabilities
+   * and properly handle malformed/nested tags.
+   * @param html Raw HTML content
+   * @returns HTML with script and style blocks removed
+   */
+  private removeScriptAndStyleBlocks(html: string): string {
+    const result: string[] = [];
+    let i = 0;
+    const len = html.length;
+
+    while (i < len) {
+      // Check for opening <script or <style tags (case-insensitive)
+      if (html[i] === '<' && i + 1 < len) {
+        const remaining = html.slice(i, i + 8).toLowerCase();
+
+        if (remaining.startsWith('<script') || remaining.startsWith('<style')) {
+          const tagName = remaining.startsWith('<script') ? 'script' : 'style';
+          const closeTag = `</${tagName}`;
+
+          // Skip to end of opening tag
+          while (i < len && html[i] !== '>') {
+            i++;
+          }
+          i++; // Skip the '>'
+
+          // Find and skip the closing tag (case-insensitive)
+          while (i < len) {
+            if (html[i] === '<') {
+              const closeCheck = html
+                .slice(i, i + closeTag.length + 1)
+                .toLowerCase();
+              if (closeCheck.startsWith(closeTag)) {
+                // Skip past the closing tag
+                while (i < len && html[i] !== '>') {
+                  i++;
+                }
+                i++; // Skip the '>'
+                break;
+              }
+            }
+            i++;
+          }
+          continue;
+        }
+      }
+
+      result.push(html[i]!);
+      i++;
+    }
+
+    return result.join('');
+  }
+
+  /**
    * Generate plain text from HTML for multipart emails.
    * @param html HTML content
    * @returns Plain text version
    */
   protected htmlToPlainText(html: string): string {
-    // Remove script and style blocks first (these patterns are safe - non-greedy with specific delimiters)
-    let text = html
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove script and style blocks using safe loop-based approach
+    // This avoids ReDoS vulnerabilities and properly handles malformed tags
+    let text = this.removeScriptAndStyleBlocks(html);
 
     // Convert block elements to line breaks
     text = text
