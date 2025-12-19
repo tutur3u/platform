@@ -78,7 +78,10 @@ interface ExceededSessionModeProps extends BaseMissedEntryDialogProps {
   session: SessionWithRelations;
   thresholdDays: number | null;
   onSessionDiscarded: () => void;
-  onMissedEntryCreated: () => void;
+  // wasBreakPause indicates if the session was paused for a break (so paused state should be maintained)
+  onMissedEntryCreated: (wasBreakPause?: boolean) => void;
+  breakTypeId?: string; // Break type to create when submitting approval
+  breakTypeName?: string; // Custom break type name
   // Not used in exceeded mode
   prefillStartTime?: never;
   prefillEndTime?: never;
@@ -117,7 +120,10 @@ interface ExceededSessionChainModeProps extends BaseMissedEntryDialogProps {
     chain_length: number;
   };
   onSessionDiscarded: () => void;
-  onMissedEntryCreated: () => void;
+  // wasBreakPause indicates if the session was paused for a break (so paused state should be maintained)
+  onMissedEntryCreated: (wasBreakPause?: boolean) => void;
+  breakTypeId?: string; // Break type to create when submitting approval
+  breakTypeName?: string; // Custom break type name
   // Not used in chain mode
   prefillStartTime?: never;
   prefillEndTime?: never;
@@ -153,6 +159,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     : undefined;
   const prefillStartTime = (!isExceededMode && !isChainMode) ? props.prefillStartTime : undefined;
   const prefillEndTime = (!isExceededMode && !isChainMode) ? props.prefillEndTime : undefined;
+  
+  // Break info from exceeded mode
+  const breakTypeId = (isExceededMode || isChainMode) ? (props as ExceededSessionModeProps | ExceededSessionChainModeProps).breakTypeId : undefined;
+  const breakTypeName = (isExceededMode || isChainMode) ? (props as ExceededSessionModeProps | ExceededSessionChainModeProps).breakTypeName : undefined;
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -606,8 +616,38 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
       // If older than threshold (or threshold is 0), create a time tracking request instead
       if (isStartTimeOlderThanThreshold) {
-        // In exceeded mode, first delete the running session
-        if (isExceededMode && session) {
+        // In exceeded mode, handle two cases:
+        // 1. If there's a break, pause the session with pendingApproval=true so it doesn't show in history
+        // 2. If no break, delete the session as it's a pure missed entry
+        const isBreakPause = !!(breakTypeId || breakTypeName);
+        let linkedSessionId: string | null = null;
+        
+        if (isExceededMode && session && isBreakPause) {
+          // Break case: pause the session with pending_approval=true
+          // The session will only appear in history after the request is approved
+          const pauseRes = await fetch(
+            `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
+            {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                action: 'pause',
+                breakTypeId: breakTypeId || undefined,
+                breakTypeName: breakTypeName || undefined,
+                pendingApproval: true, // Mark session as pending approval
+              }),
+            }
+          );
+          if (!pauseRes.ok) {
+            const err = await pauseRes.json().catch(() => null);
+            throw new Error(
+              err?.error ?? 'Failed to pause session before creating request'
+            );
+          }
+          // Link the request to this session so approval/rejection updates the session
+          linkedSessionId = session.id;
+        } else if (isExceededMode && session) {
+          // Non-break case: delete the session (pure missed entry)
           const deleteRes = await fetch(
             `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
             { method: 'DELETE' }
@@ -619,6 +659,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             );
           }
         }
+        
         const formData = new FormData();
         formData.append('title', missedEntryTitle);
         formData.append('description', missedEntryDescription || '');
@@ -644,6 +685,25 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           formData.append(`image_${index}`, image);
         });
 
+        // Link request to session for break pauses (so approval/rejection updates session)
+        if (linkedSessionId) {
+          formData.append('linkedSessionId', linkedSessionId);
+        }
+
+        // Only append break info if it's a break scenario where we haven't already paused
+        // (i.e., if session doesn't exist or if we deleted it instead of pausing)
+        // In break scenario, break is already created via pause, so don't send to request
+        // In non-break scenario, send break info so it's created on approval
+        if (isExceededMode && isBreakPause && !session) {
+          // Session doesn't exist - this shouldn't happen, but safeguard
+          if (breakTypeId) {
+            formData.append('breakTypeId', breakTypeId);
+          }
+          if (breakTypeName) {
+            formData.append('breakTypeName', breakTypeName);
+          }
+        }
+
         const response = await fetch(
           `/api/v1/workspaces/${wsId}/time-tracking/requests`,
           {
@@ -666,13 +726,23 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
         queryClient.invalidateQueries({
           queryKey: ['time-tracking-sessions', wsId],
         });
+        // Invalidate paused session queries to refetch after break pause
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'paused-time-session' &&
+            query.queryKey[1] === wsId,
+        });
+        
         router.refresh();
         closeMissedEntryDialog();
         toast.success(t('success.requestSubmitted'));
 
         // Call callback for exceeded mode
-        if (isExceededMode) {
-          onMissedEntryCreated?.();
+        // Pass wasBreakPause=true if this was a break pause, so parent can keep paused state
+        if (isExceededMode || isChainMode) {
+          const wasBreakPause = !!(breakTypeId || breakTypeName);
+          onMissedEntryCreated?.(wasBreakPause);
         }
       } else {
         // Regular entry creation for entries within threshold days

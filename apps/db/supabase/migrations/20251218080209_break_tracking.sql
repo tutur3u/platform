@@ -36,7 +36,6 @@ create table if not exists "public"."workspace_break_types" (
   "color" text default 'AMBER' check ("color" in ('RED', 'ORANGE', 'AMBER', 'YELLOW', 'LIME', 'GREEN', 'EMERALD', 'TEAL', 'CYAN', 'SKY', 'BLUE', 'INDIGO', 'VIOLET', 'PURPLE', 'FUCHSIA', 'PINK', 'ROSE', 'SLATE', 'GRAY', 'ZINC', 'NEUTRAL', 'STONE')),
   "icon" text, -- lucide-react icon name (e.g., 'Coffee', 'Utensils', 'User', 'Users')
   "is_default" boolean default false, -- workspace-level default break type
-  "is_system" boolean default false, -- system-provided types (coffee, lunch, personal, meeting)
   "created_at" timestamp with time zone default now(),
   "updated_at" timestamp with time zone default now()
 );
@@ -53,9 +52,6 @@ create unique index if not exists "idx_workspace_break_types_single_default"
 -- Create indexes for efficient queries
 create index if not exists "idx_workspace_break_types_ws_id" 
   on "public"."workspace_break_types"("ws_id");
-
-create index if not exists "idx_workspace_break_types_is_system" 
-  on "public"."workspace_break_types"("ws_id", "is_system");
 
 -- Enable RLS
 alter table "public"."workspace_break_types" enable row level security;
@@ -97,9 +93,7 @@ create policy "Users can update break types for workspaces they belong to"
 create policy "Users can delete break types for workspaces they belong to"
   on "public"."workspace_break_types"
   for delete
-  using (
-    "is_system" = false
-    and exists (
+  using (exists (
       select 1 from "public"."workspace_members"
       where "workspace_members"."ws_id" = "workspace_break_types"."ws_id"
         and "workspace_members"."user_id" = auth.uid()

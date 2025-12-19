@@ -43,7 +43,6 @@ export async function GET(
       .from('workspace_break_types')
       .select('*')
       .eq('ws_id', wsId)
-      .order('is_system', { ascending: false }) // System types first
       .order('name');
 
     if (error) throw error;

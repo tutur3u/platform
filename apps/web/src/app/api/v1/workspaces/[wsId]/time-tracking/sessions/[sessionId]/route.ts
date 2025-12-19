@@ -229,29 +229,36 @@ export async function PATCH(
     const sbAdmin = await createAdminClient();
 
     if (action === 'stop') {
+      // Check if session has pending approval (means it was paused with a break and has a request pending)
+      // If so, skip threshold validation since approval was already handled during pause
+      const hasPendingApproval = (session as any).pending_approval === true;
+      
       // Validate threshold before stopping - checks ENTIRE CHAIN from root
       // This ensures pause exemption doesn't bypass approval requirements
-      const thresholdCheck = await checkSessionThreshold(
-        wsId,
-        session.start_time,
-        { 
-          sessionId: sessionId, 
-          returnChainDetails: true 
-        }
-      );
-
-      if (thresholdCheck.exceeds) {
-        // Return enhanced error with chain details for approval UI
-        return NextResponse.json(
+      // BUT skip if session already has pending approval (request already submitted)
+      if (!hasPendingApproval) {
+        const thresholdCheck = await checkSessionThreshold(
+          wsId,
+          session.start_time,
           { 
-            error: thresholdCheck.message || 'Session exceeds workspace threshold',
-            code: 'THRESHOLD_EXCEEDED',
-            thresholdDays: thresholdCheck.thresholdDays,
-            chainSummary: thresholdCheck.chainSummary,
-            sessionId: sessionId,
-          },
-          { status: 400 }
+            sessionId: sessionId, 
+            returnChainDetails: true 
+          }
         );
+
+        if (thresholdCheck.exceeds) {
+          // Return enhanced error with chain details for approval UI
+          return NextResponse.json(
+            { 
+              error: thresholdCheck.message || 'Session exceeds workspace threshold',
+              code: 'THRESHOLD_EXCEEDED',
+              thresholdDays: thresholdCheck.thresholdDays,
+              chainSummary: thresholdCheck.chainSummary,
+              sessionId: sessionId,
+            },
+            { status: 400 }
+          );
+        }
       }
 
       // Verify if session is already paused (not running)
@@ -331,32 +338,41 @@ export async function PATCH(
     }
 
     if (action === 'pause') {
-      // Validate threshold before pausing - checks ENTIRE CHAIN from root
-      // This ensures pause doesn't bypass approval requirements when they are strict
-      const thresholdCheck = await checkSessionThreshold(
-        wsId,
-        session.start_time,
-        { 
-          sessionId: sessionId, 
-          returnChainDetails: true
-        }
-      );
+      const { breakTypeId, breakTypeName, pendingApproval } = body;
 
-      if (thresholdCheck.exceeds) {
-        // Return enhanced error with chain details for approval UI
-        return NextResponse.json(
+      // IMPORTANT: Skip threshold validation when pausing to take a break
+      // In this case, we're creating an approval request immediately after the pause,
+      // so the threshold check will be enforced at the request creation level, not here.
+      // This allows the break to be created and displayed to the user immediately.
+      const isBreakPause = breakTypeId || breakTypeName;
+
+      if (!isBreakPause) {
+        // Only validate threshold if NOT pausing for a break
+        // Validate threshold before pausing - checks ENTIRE CHAIN from root
+        // This ensures pause doesn't bypass approval requirements when they are strict
+        const thresholdCheck = await checkSessionThreshold(
+          wsId,
+          session.start_time,
           { 
-            error: thresholdCheck.message || 'Session exceeds workspace threshold',
-            code: 'THRESHOLD_EXCEEDED',
-            thresholdDays: thresholdCheck.thresholdDays,
-            chainSummary: thresholdCheck.chainSummary,
-            sessionId: sessionId,
-          },
-          { status: 400 }
+            sessionId: sessionId, 
+            returnChainDetails: true
+          }
         );
-      }
 
-      const { breakTypeId, breakTypeName } = body;
+        if (thresholdCheck.exceeds) {
+          // Return enhanced error with chain details for approval UI
+          return NextResponse.json(
+            { 
+              error: thresholdCheck.message || 'Session exceeds workspace threshold',
+              code: 'THRESHOLD_EXCEEDED',
+              thresholdDays: thresholdCheck.thresholdDays,
+              chainSummary: thresholdCheck.chainSummary,
+              sessionId: sessionId,
+            },
+            { status: 400 }
+          );
+        }
+      }
       
       // Pause the session by stopping it
       const endTime = new Date().toISOString();
@@ -364,6 +380,79 @@ export async function PATCH(
       const durationSeconds = Math.floor(
         (Date.now() - startTime.getTime()) / 1000
       );
+
+      // If pausing for a break, create the break record FIRST before pausing
+      // This way if pause fails due to threshold, at least the break intent is recorded
+      if (isBreakPause) {
+        // Get Workspace Default Break Type (if none specified)
+        let finalBreakTypeId = breakTypeId;
+        let finalBreakTypeName = breakTypeName;
+
+        if (!finalBreakTypeId) {
+          const { data: defaultBreakType } = await sbAdmin
+            .from('workspace_break_types')
+            .select('*')
+            .eq('ws_id', wsId)
+            .eq('is_default', true)
+            .maybeSingle();
+
+          if (defaultBreakType) {
+            finalBreakTypeId = defaultBreakType.id;
+            finalBreakTypeName = defaultBreakType.name;
+          }
+        }
+        
+        // Create break record first (with null break_end since we haven't paused yet)
+        const { error: breakError } = await sbAdmin
+          .from('time_tracking_breaks')
+          .insert({
+            session_id: sessionId,
+            break_type_id: finalBreakTypeId || null,
+            break_type_name: finalBreakTypeName || 'Break',
+            break_start: endTime,
+            break_end: null,
+            created_by: user.id,
+          });
+        
+        if (breakError) {
+          console.error('Failed to create break record:', breakError);
+          // Don't fail - continue with pause attempt anyway
+        }
+        
+        // Use the RPC function to pause the session with the bypass flag set
+        // This bypasses the trigger's threshold check for break pauses
+        // pendingApproval=true marks session as awaiting approval (won't show in history)
+        // Type assertion needed because the function is created by migration and not yet in types
+        const { error: rpcError } = await sbAdmin.rpc(
+          'pause_session_for_break' as 'archive_old_notifications',
+          {
+            p_session_id: sessionId,
+            p_end_time: endTime,
+            p_duration_seconds: durationSeconds,
+            p_pending_approval: pendingApproval || false,
+          } as any
+        );
+        
+        if (rpcError) {
+          console.error('RPC pause_session_for_break failed:', rpcError);
+          throw rpcError;
+        }
+        
+        // Fetch the full session with relations
+        const { data: fullSession, error: fetchError } = await sbAdmin
+          .from('time_tracking_sessions')
+          .select(`
+            *,
+            category:time_tracking_categories(*),
+            task:tasks(*)
+          `)
+          .eq('id', sessionId)
+          .single();
+        
+        if (fetchError) throw fetchError;
+        
+        return NextResponse.json({ session: fullSession });
+      }
 
       const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
@@ -384,23 +473,6 @@ export async function PATCH(
         .single();
 
       if (error) throw error;
-      
-      // Create break record (completed when resumed)
-      const { error: breakError } = await sbAdmin
-        .from('time_tracking_breaks')
-        .insert({
-          session_id: sessionId, // Link to the paused session
-          break_type_id: breakTypeId || null,
-          break_type_name: breakTypeName || 'Break',
-          break_start: endTime,
-          break_end: null, // Set when resumed
-          created_by: user.id,
-        });
-      
-      if (breakError) {
-        console.error('Failed to create break record:', breakError);
-        // Don't fail the pause if break record fails - session pause is primary
-      }
       
       return NextResponse.json({ session: data });
     }

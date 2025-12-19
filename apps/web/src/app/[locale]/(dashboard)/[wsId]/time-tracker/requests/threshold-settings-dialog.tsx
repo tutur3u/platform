@@ -23,8 +23,6 @@ import { z } from 'zod';
 interface ThresholdSettingsDialogProps {
   wsId: string;
   currentThreshold?: number | null;
-  currentPauseExempt?: boolean;
-  currentResumeThreshold?: number | null;
   onUpdate: () => void;
 }
 
@@ -36,8 +34,6 @@ const thresholdSchema = z.coerce
 export function ThresholdSettingsDialog({
   wsId,
   currentThreshold = null,
-  currentPauseExempt = false,
-  currentResumeThreshold = 120,
   onUpdate,
 }: ThresholdSettingsDialogProps) {
   const t = useTranslations('time-tracker.requests.settings');
@@ -49,29 +45,20 @@ export function ThresholdSettingsDialog({
   const [inputValue, setInputValue] = useState(
     currentThreshold === null ? '1' : String(currentThreshold)
   );
-  const [pauseExempt, setPauseExempt] = useState(currentPauseExempt);
-  const [resumeThreshold, setResumeThreshold] = useState(
-    currentResumeThreshold === null ? '' : String(currentResumeThreshold)
-  );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Always parse the input value to maintain clear typing
   const parsed = thresholdSchema.safeParse(inputValue);
-  const parsedResume = thresholdSchema.safeParse(resumeThreshold || 0);
 
   // Check if values have changed from initial state
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
-    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold) ||
-    pauseExempt !== currentPauseExempt ||
-    (resumeThreshold === '' && currentResumeThreshold !== null) ||
-    (resumeThreshold !== '' && parsedResume.success && parsedResume.data !== currentResumeThreshold);
+    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
 
   const isSubmitDisabled =
     isLoading || 
     (!noApprovalNeeded && !parsed.success) || 
-    (resumeThreshold !== '' && !parsedResume.success) ||
     !hasChanged;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,8 +68,6 @@ export function ThresholdSettingsDialog({
     setValidationError(null);
 
     try {
-      const resThreshold = resumeThreshold === '' ? null : parseInt(resumeThreshold);
-
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/threshold`,
         {
@@ -92,8 +77,6 @@ export function ThresholdSettingsDialog({
           },
           body: JSON.stringify({
             threshold: noApprovalNeeded ? null : parsed.success ? parsed.data : null,
-            pauseThresholdExempt: pauseExempt,
-            resumeThresholdMinutes: resThreshold,
           }),
         }
       );
@@ -125,10 +108,6 @@ export function ThresholdSettingsDialog({
             setNoApprovalNeeded(currentThreshold === null);
             setInputValue(
               currentThreshold === null ? '1' : String(currentThreshold)
-            );
-            setPauseExempt(currentPauseExempt);
-            setResumeThreshold(
-              currentResumeThreshold === null ? '' : String(currentResumeThreshold)
             );
             setValidationError(null);
             setOpen(true);
@@ -188,46 +167,6 @@ export function ThresholdSettingsDialog({
                 <p className="text-muted-foreground text-sm">{t('help')}</p>
               </div>
             )}
-
-            <Separator />
-
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="pause-exempt"
-                  checked={pauseExempt}
-                  onCheckedChange={(checked) => setPauseExempt(checked === true)}
-                  className="mt-1"
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="pause-exempt"
-                    className="cursor-pointer font-medium text-sm"
-                  >
-                    {t('pauseExemptLabel')}
-                  </Label>
-                  <p className="text-muted-foreground text-xs">
-                    {t('pauseExemptHelp')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="resume-threshold">{t('resumeThresholdLabel')}</Label>
-                <Input
-                  id="resume-threshold"
-                  type="number"
-                  min={0}
-                  placeholder="120"
-                  value={resumeThreshold}
-                  onChange={(e) => setResumeThreshold(e.target.value)}
-                  className="w-full"
-                />
-                <p className="text-muted-foreground text-xs">
-                  {t('resumeThresholdHelp')}
-                </p>
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button

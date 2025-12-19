@@ -40,6 +40,7 @@ import type {
   TaskWithDetails,
 } from './session-types';
 import { getCategoryColor } from './session-utils';
+import { BreakDisplay, BreakSummary } from './break-display';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -147,6 +148,9 @@ export function StackedSessionItem({
                     {t('manual')}
                   </Badge>
                 )}
+              {stackedSession?.sessions.map((s) => (
+                <BreakSummary key={s.id} sessionId={s.id} compact />
+              ))}
             </div>
 
             {/* Description */}
@@ -318,6 +322,15 @@ export function StackedSessionItem({
             </div>
           </div>
         </div>
+
+        {/* Break Display for single sessions */}
+        {!isExpanded &&
+          stackedSession?.sessions.length === 1 &&
+          latestSession.end_time && (
+            <div className="mt-3">
+              <BreakDisplay sessionId={latestSession.id} />
+            </div>
+          )}
 
         {/* Mobile action bar */}
         <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 md:hidden">
@@ -524,28 +537,6 @@ function IndividualSessionRow({
       )
     : null;
 
-  // Format gap duration based on length
-  const formatGap = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
-  // Determine gap type for styling
-  const getGapType = (seconds: number) => {
-    if (seconds < 60) return 'minimal'; // Less than 1 minute
-    if (seconds < 900) return 'short'; // Less than 15 minutes
-    return 'long'; // 15+ minutes
-  };
-
-  // Handle edge cases for gap display
-  const shouldShowGap =
-    gapInSeconds !== null && gapInSeconds > 30 && gapInSeconds < 86400; // Only show gaps between 30 seconds and 24 hours
-  const gapType =
-    gapInSeconds && shouldShowGap ? getGapType(gapInSeconds) : null;
-
   // Detect overlapping sessions
   const isOverlapping = gapInSeconds !== null && gapInSeconds < 0;
 
@@ -562,37 +553,8 @@ function IndividualSessionRow({
         </div>
       )}
 
-      {/* Show gap indicator based on duration */}
-      {shouldShowGap && gapInSeconds && (
-        <div className="-mt-1 mb-2 flex items-center justify-center">
-          {gapType === 'minimal' ? (
-            // Minimal gap - just small dots
-            <div className="flex items-center gap-1">
-              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-            </div>
-          ) : gapType === 'short' ? (
-            // Short break - simple line with time
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <div className="h-px w-6 bg-border" />
-              <span className="rounded bg-muted px-2 py-0.5 text-xs">
-                {formatGap(gapInSeconds)}
-              </span>
-              <div className="h-px w-6 bg-border" />
-            </div>
-          ) : (
-            // Long break - prominent break indicator
-            <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-muted-foreground text-xs shadow-sm">
-              <div className="h-1 w-8 bg-foreground/10" />
-              <span className="font-medium">
-                {formatGap(gapInSeconds)} {t('break')}
-              </span>
-              <div className="h-1 w-8 bg-foreground/10" />
-            </div>
-          )}
-        </div>
-      )}
+      {/* Break Display Component - Shows actual breaks from database */}
+      {session.end_time && <BreakDisplay sessionId={session.id} />}
 
       <div className="flex items-center justify-between rounded-md border bg-background p-3 text-sm transition-all hover:bg-muted/50 hover:shadow-sm">
         <div className="flex items-center gap-3">

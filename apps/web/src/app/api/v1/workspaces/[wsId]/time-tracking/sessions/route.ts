@@ -134,6 +134,7 @@ export async function GET(
 
     if (type === 'recent' || type === 'history') {
       // Build query for sessions
+      // Filter out sessions with pending_approval=true (they haven't been approved yet)
       let query = supabase
         .from('time_tracking_sessions')
         .select(
@@ -144,7 +145,8 @@ export async function GET(
         `
         )
         .eq('ws_id', wsId)
-        .eq('user_id', queryUserId);
+        .eq('user_id', queryUserId)
+        .eq('pending_approval', false);
 
       if (type === 'recent') {
         query = query.eq('is_running', false);
@@ -193,6 +195,7 @@ export async function GET(
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Get all sessions with category information for breakdown
+      // Filter out sessions with pending_approval=true (they haven't been approved yet)
       const [todayData, weekData, monthData, allSessionsData] =
         await Promise.all([
           supabase
@@ -200,6 +203,7 @@ export async function GET(
             .select('duration_seconds, category_id')
             .eq('ws_id', wsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .gte('start_time', startOfToday.toISOString())
             .not('duration_seconds', 'is', null),
           supabase
@@ -207,6 +211,7 @@ export async function GET(
             .select('duration_seconds, category_id')
             .eq('ws_id', wsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .gte('start_time', startOfWeek.toISOString())
             .not('duration_seconds', 'is', null),
           supabase
@@ -214,6 +219,7 @@ export async function GET(
             .select('duration_seconds, category_id')
             .eq('ws_id', wsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .gte('start_time', startOfMonth.toISOString())
             .not('duration_seconds', 'is', null),
           // Get all sessions for streak calculation
@@ -222,6 +228,7 @@ export async function GET(
             .select('start_time, duration_seconds')
             .eq('ws_id', wsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .not('duration_seconds', 'is', null)
             .order('start_time', { ascending: false }),
         ]);
@@ -304,6 +311,7 @@ export async function GET(
         .select('start_time, duration_seconds')
         .eq('ws_id', wsId)
         .eq('user_id', queryUserId)
+        .eq('pending_approval', false)
         .gte('start_time', oneYearAgo.toISOString())
         .not('duration_seconds', 'is', null);
 

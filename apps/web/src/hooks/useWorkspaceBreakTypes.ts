@@ -8,7 +8,6 @@ interface WorkspaceBreakType {
   color: string;
   icon: string | null;
   is_default: boolean;
-  is_system: boolean;
   created_at: string;
   updated_at: string;
 }

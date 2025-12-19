@@ -348,6 +348,10 @@ export function TimerControls({
     useState(false);
   const [chainSummary, setChainSummary] = useState<any>(null);
 
+  // Store pending break info when take break triggers threshold exceeded
+  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(null);
+  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<string | null>(null);
+
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
@@ -372,29 +376,29 @@ export function TimerControls({
     }
   }, [elapsedTime, isRunning]);
 
-  // Fetch active break when session is paused
+  // Fetch active break when session is paused using React Query
+  const { data: activeBreakData } = useQuery({
+    queryKey: ['active-break', wsId, pausedSession?.id],
+    queryFn: async () => {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession?.id}/breaks/active`
+      );
+      return response.break || null;
+    },
+    enabled: !!pausedSession?.id,
+    staleTime: 5000, // Keep fresh for 5 seconds
+    retry: 1,
+  });
+
+  // Sync active break data to local state
   useEffect(() => {
-    if (!pausedSession?.id) {
+    if (activeBreakData) {
+      setCurrentBreak(activeBreakData);
+    } else if (!pausedSession?.id) {
       setCurrentBreak(null);
       setBreakDurationSeconds(0);
-      return;
     }
-
-    const fetchActiveBreak = async () => {
-      try {
-        const response = await apiCall(
-          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}/breaks/active`
-        );
-        if (response.break) {
-          setCurrentBreak(response.break);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch active break:', error);
-      }
-    };
-
-    fetchActiveBreak();
-  }, [pausedSession?.id, wsId, apiCall]);
+  }, [activeBreakData, pausedSession?.id]);
 
   // Live break duration counter
   useEffect(() => {
@@ -1728,7 +1732,9 @@ export function TimerControls({
     if (!sessionToStop) return;
 
     // Check if session exceeds threshold - show dialog instead of stopping directly
-    if (sessionExceedsThreshold) {
+    // BUT skip if session already has pending_approval=true (request already submitted)
+    const hasPendingApproval = (sessionToStop as any).pending_approval === true;
+    if (sessionExceedsThreshold && !hasPendingApproval) {
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -1745,6 +1751,31 @@ export function TimerControls({
       );
 
       const completedSession = response.session;
+      
+      // If session has pending approval, just clear the UI state without showing celebration
+      // The session will appear in history only after the request is approved
+      if (hasPendingApproval) {
+        // Clear all session states
+        setCurrentSession(null);
+        setPausedSession(null);
+        setIsRunning(false);
+        setElapsedTime(0);
+        setPausedElapsedTime(0);
+        setPauseStartTime(null);
+        updateSessionProtection(false, timerMode);
+        
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['paused-time-session', wsId, currentUserId],
+        });
+        
+        onSessionUpdate();
+        toast.info(t('session_pending_approval') || 'Session is pending approval. It will appear in your history once approved.');
+        return;
+      }
+      
       setJustCompleted(completedSession);
 
       // Clear all session states
@@ -1825,6 +1856,9 @@ export function TimerControls({
 
     // Check if session exceeds threshold - show dialog instead of pausing directly
     if (sessionExceedsThreshold) {
+      // Store break info before showing dialog
+      setPendingBreakTypeId(breakTypeId || null);
+      setPendingBreakTypeName(breakTypeName || null);
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -1947,20 +1981,43 @@ export function TimerControls({
     setElapsedTime(0);
     setPausedElapsedTime(0);
     setPauseStartTime(null);
+    setPendingBreakTypeId(null);
+    setPendingBreakTypeName(null);
     updateSessionProtection(false, timerMode);
     onSessionUpdate();
   };
 
   // Handle missed entry created from exceeded threshold dialog
-  const handleMissedEntryCreated = () => {
+  // If wasBreakPause is true, keep paused session state since the session is now on a break
+  const handleMissedEntryCreated = (wasBreakPause?: boolean) => {
+    // Always clear running state
     setCurrentSession(null);
-    setPausedSession(null);
     setIsRunning(false);
     setElapsedTime(0);
-    setPausedElapsedTime(0);
-    setPauseStartTime(null);
+    
+    // Only clear paused state if this wasn't a break pause
+    // For break pauses, the session is now paused with a break, so let the query refetch handle it
+    if (!wasBreakPause) {
+      setPausedSession(null);
+      setPausedElapsedTime(0);
+      setPauseStartTime(null);
+    }
+    
+    // Always clear pending break info
+    setPendingBreakTypeId(null);
+    setPendingBreakTypeName(null);
     updateSessionProtection(false, timerMode);
     onSessionUpdate();
+    
+    // For break pauses, invalidate the paused session query to refetch the updated state
+    if (wasBreakPause) {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'paused-time-session' &&
+          query.queryKey[1] === wsId,
+      });
+    }
   };
 
   // Resume paused timer
@@ -4931,6 +4988,8 @@ export function TimerControls({
           chainSummary={chainSummary}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}
+          breakTypeId={pendingBreakTypeId || undefined}
+          breakTypeName={pendingBreakTypeName || undefined}
         />
       )}
 
@@ -4948,41 +5007,12 @@ export function TimerControls({
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* System Break Types - Quick Select */}
-            {(breakTypes || []).filter(bt => bt.is_system).length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">{t('break_type.quick_select')}</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(breakTypes || [])
-                    .filter(bt => bt.is_system)
-                    .map((breakType) => (
-                      <Button
-                        key={breakType.id}
-                        variant={selectedBreakTypeId === breakType.id ? 'default' : 'outline'}
-                        className={cn(
-                          'justify-start',
-                          selectedBreakTypeId === breakType.id && 'bg-amber-600 hover:bg-amber-700'
-                        )}
-                        onClick={() => {
-                          setSelectedBreakTypeId(breakType.id);
-                          setCustomBreakTypeName('');
-                        }}
-                      >
-                        {renderBreakTypeIcon(breakType.icon)}
-                        {breakType.name}
-                      </Button>
-                    ))}
-                </div>
-              </div>
-            )}
-
             {/* Custom Break Types */}
-            {(breakTypes || []).filter(bt => !bt.is_system).length > 0 && (
+            {(breakTypes || []).length > 0 && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">{t('break_type.custom_types')}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {(breakTypes || [])
-                    .filter(bt => !bt.is_system)
                     .map((breakType) => (
                       <Button
                         key={breakType.id}

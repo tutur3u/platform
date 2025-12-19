@@ -103,7 +103,10 @@ export function SimpleTimerControls({
   // State for exceeded threshold session dialog
   const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
     useState(false);
-  const [showResumeConfirmation, setShowResumeConfirmation] = useState(false);
+
+  // Store pending break info when take break triggers threshold exceeded
+  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(null);
+  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<string | null>(null);
 
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -187,7 +190,9 @@ export function SimpleTimerControls({
     if (!sessionToStop) return;
 
     // Check if session exceeds threshold - show dialog instead of stopping directly
-    if (sessionExceedsThreshold) {
+    // BUT skip if session already has pending_approval=true (request already submitted)
+    const hasPendingApproval = (sessionToStop as any).pending_approval === true;
+    if (sessionExceedsThreshold && !hasPendingApproval) {
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -201,6 +206,35 @@ export function SimpleTimerControls({
           body: JSON.stringify({ action: 'stop' }),
         }
       );
+
+      // If session has pending approval, just clear the UI state without showing celebration
+      // The session will appear in history only after the request is approved
+      if (hasPendingApproval) {
+        setPausedSession(null);
+        setPausedElapsedTime(0);
+        setPauseStartTime(null);
+        setSessionTitle('');
+        setSessionDescription('');
+        setSelectedTaskId('none');
+        setSelectedCategoryId(workCategory?.id || 'none');
+        
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId, currentUserId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', wsId, currentUserId],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'paused-time-session' &&
+            query.queryKey[1] === wsId,
+        });
+        
+        router.refresh();
+        toast.info(t('sessionPendingApproval') || 'Session is pending approval. It will appear in your history once approved.');
+        return;
+      }
 
       setJustCompleted(response.session || null);
       setPausedSession(null);
@@ -247,6 +281,8 @@ export function SimpleTimerControls({
     workCategory,
     formatDuration,
     t,
+    currentUserId,
+    router,
   ]);
 
   const resetFormState = useCallback(() => {
@@ -274,7 +310,8 @@ export function SimpleTimerControls({
   }, [resetFormState, queryClient, wsId, router, currentUserId]);
 
   // Handle missed entry created from exceeded threshold dialog
-  const handleMissedEntryCreated = useCallback(() => {
+  // If wasBreakPause is true, the session is now paused with a break
+  const handleMissedEntryCreated = useCallback((wasBreakPause?: boolean) => {
     resetFormState();
     // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
@@ -283,6 +320,16 @@ export function SimpleTimerControls({
     queryClient.invalidateQueries({
       queryKey: ['time-tracker-stats', wsId, currentUserId],
     });
+    
+    // For break pauses, also invalidate paused session query
+    if (wasBreakPause) {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'paused-time-session' &&
+          query.queryKey[1] === wsId,
+      });
+    }
 
     // Refresh server-side data to update overview page stats
     router.refresh();
@@ -294,7 +341,7 @@ export function SimpleTimerControls({
 
     // Check if session exceeds threshold - show dialog instead of pausing directly
     // Only if pause is NOT exempt
-    if (sessionExceedsThreshold && !thresholdData?.pauseExempt) {
+    if (sessionExceedsThreshold) {
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -357,19 +404,6 @@ export function SimpleTimerControls({
     async (confirmed = false) => {
       if (!pausedSession) return;
 
-      // Check if break duration exceeds threshold
-      if (
-        !confirmed &&
-        thresholdData?.resumeThresholdMinutes &&
-        pauseStartTime
-      ) {
-        const breakMinutes = dayjs().diff(dayjs(pauseStartTime), 'minute');
-        if (breakMinutes > thresholdData.resumeThresholdMinutes) {
-          setShowResumeConfirmation(true);
-          return;
-        }
-      }
-
       setIsLoading(true);
       try {
         await apiCall(
@@ -397,7 +431,6 @@ export function SimpleTimerControls({
         });
 
         toast.success(t('timerResumed'));
-        setShowResumeConfirmation(false);
       } catch (error) {
         console.error('Error resuming timer:', error);
         toast.error(t('resumeTimerFailed'));
@@ -411,7 +444,6 @@ export function SimpleTimerControls({
       wsId,
       queryClient,
       t,
-      thresholdData?.resumeThresholdMinutes,
       pauseStartTime,
       currentUserId,
     ]
@@ -673,41 +705,10 @@ export function SimpleTimerControls({
           thresholdDays={thresholdData?.threshold ?? null}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}
+          breakTypeId={pendingBreakTypeId || undefined}
+          breakTypeName={pendingBreakTypeName || undefined}
         />
       )}
-
-      {/* Resume Confirmation Dialog */}
-      <AlertDialog
-        open={showResumeConfirmation}
-        onOpenChange={setShowResumeConfirmation}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {tHistory('resume_long_break_title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {pauseStartTime &&
-                tHistory('resume_long_break_description', {
-                  duration: formatDuration(
-                    dayjs().diff(dayjs(pauseStartTime), 'second')
-                  ),
-                })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowResumeConfirmation(false)}>
-              {tHistory('cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => resumeTimer(true)}
-              className="bg-dynamic-orange text-white hover:bg-dynamic-orange/90"
-            >
-              {tHistory('resume_continue')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   );
 }
