@@ -10,27 +10,29 @@ async function getSessionChainRoot(
   sessionId: string
 ): Promise<{ rootSessionId: string; chainLength: number }> {
   const sbAdmin = await createAdminClient();
-  
+
   let currentSessionId = sessionId;
   let chainLength = 1;
   const maxIterations = 100; // Prevent infinite loops
-  
+
   for (let i = 0; i < maxIterations; i++) {
     const { data: session } = await sbAdmin
       .from('time_tracking_sessions')
       .select('id, parent_session_id')
       .eq('id', currentSessionId)
       .single();
-    
+
     if (!session || !session.parent_session_id) {
       return { rootSessionId: currentSessionId, chainLength };
     }
-    
+
     currentSessionId = session.parent_session_id;
     chainLength++;
   }
-  
-  throw new Error('Session chain depth exceeds maximum (possible circular reference)');
+
+  throw new Error(
+    'Session chain depth exceeds maximum (possible circular reference)'
+  );
 }
 
 // Helper function to check if session exceeds workspace threshold
@@ -38,18 +40,18 @@ async function getSessionChainRoot(
 async function checkSessionThreshold(
   wsId: string,
   sessionStartTime: string,
-  options?: { 
+  options?: {
     sessionId?: string; // If provided, validates root of chain instead
     returnChainDetails?: boolean; // If true, returns full chain summary
   }
-): Promise<{ 
-  exceeds: boolean; 
-  thresholdDays: number | null; 
+): Promise<{
+  exceeds: boolean;
+  thresholdDays: number | null;
   message?: string;
   chainSummary?: any;
 }> {
   const sbAdmin = await createAdminClient();
-  
+
   // Fetch workspace threshold setting
   const { data: workspaceSettings } = await sbAdmin
     .from('workspace_settings')
@@ -67,25 +69,26 @@ async function checkSessionThreshold(
   // If sessionId provided, check root session instead
   let startTimeToCheck = sessionStartTime;
   let chainSummary: any = null;
-  
+
   if (options?.sessionId) {
     const { rootSessionId } = await getSessionChainRoot(options.sessionId);
-    
+
     // Get root session start time
     const { data: rootSession } = await sbAdmin
       .from('time_tracking_sessions')
       .select('start_time')
       .eq('id', rootSessionId)
       .single();
-    
+
     if (rootSession) {
       startTimeToCheck = rootSession.start_time;
     }
-    
+
     // Get full chain summary if requested
     if (options.returnChainDetails) {
-      const { data: summary } = await sbAdmin
-        .rpc('get_session_chain_summary', { session_id_input: options.sessionId });
+      const { data: summary } = await sbAdmin.rpc('get_session_chain_summary', {
+        session_id_input: options.sessionId,
+      });
       chainSummary = summary;
     }
   }
@@ -232,7 +235,7 @@ export async function PATCH(
       // Check if session has pending approval (means it was paused with a break and has a request pending)
       // If so, skip threshold validation since approval was already handled during pause
       const hasPendingApproval = (session as any).pending_approval === true;
-      
+
       // Validate threshold before stopping - checks ENTIRE CHAIN from root
       // This ensures pause exemption doesn't bypass approval requirements
       // BUT skip if session already has pending approval (request already submitted)
@@ -240,17 +243,18 @@ export async function PATCH(
         const thresholdCheck = await checkSessionThreshold(
           wsId,
           session.start_time,
-          { 
-            sessionId: sessionId, 
-            returnChainDetails: true 
+          {
+            sessionId: sessionId,
+            returnChainDetails: true,
           }
         );
 
         if (thresholdCheck.exceeds) {
           // Return enhanced error with chain details for approval UI
           return NextResponse.json(
-            { 
-              error: thresholdCheck.message || 'Session exceeds workspace threshold',
+            {
+              error:
+                thresholdCheck.message || 'Session exceeds workspace threshold',
               code: 'THRESHOLD_EXCEEDED',
               thresholdDays: thresholdCheck.thresholdDays,
               chainSummary: thresholdCheck.chainSummary,
@@ -353,17 +357,18 @@ export async function PATCH(
         const thresholdCheck = await checkSessionThreshold(
           wsId,
           session.start_time,
-          { 
-            sessionId: sessionId, 
-            returnChainDetails: true
+          {
+            sessionId: sessionId,
+            returnChainDetails: true,
           }
         );
 
         if (thresholdCheck.exceeds) {
           // Return enhanced error with chain details for approval UI
           return NextResponse.json(
-            { 
-              error: thresholdCheck.message || 'Session exceeds workspace threshold',
+            {
+              error:
+                thresholdCheck.message || 'Session exceeds workspace threshold',
               code: 'THRESHOLD_EXCEEDED',
               thresholdDays: thresholdCheck.thresholdDays,
               chainSummary: thresholdCheck.chainSummary,
@@ -373,7 +378,7 @@ export async function PATCH(
           );
         }
       }
-      
+
       // Pause the session by stopping it
       const endTime = new Date().toISOString();
       const startTime = new Date(session.start_time);
@@ -401,7 +406,7 @@ export async function PATCH(
             finalBreakTypeName = defaultBreakType.name;
           }
         }
-        
+
         // Create break record first (with null break_end since we haven't paused yet)
         const { error: breakError } = await sbAdmin
           .from('time_tracking_breaks')
@@ -413,12 +418,12 @@ export async function PATCH(
             break_end: null,
             created_by: user.id,
           });
-        
+
         if (breakError) {
           console.error('Failed to create break record:', breakError);
           // Don't fail - continue with pause attempt anyway
         }
-        
+
         // Use the RPC function to pause the session with the bypass flag set
         // This bypasses the trigger's threshold check for break pauses
         // pendingApproval=true marks session as awaiting approval (won't show in history)
@@ -432,12 +437,12 @@ export async function PATCH(
             p_pending_approval: pendingApproval || false,
           } as any
         );
-        
+
         if (rpcError) {
           console.error('RPC pause_session_for_break failed:', rpcError);
           throw rpcError;
         }
-        
+
         // Fetch the full session with relations
         const { data: fullSession, error: fetchError } = await sbAdmin
           .from('time_tracking_sessions')
@@ -448,9 +453,9 @@ export async function PATCH(
           `)
           .eq('id', sessionId)
           .single();
-        
+
         if (fetchError) throw fetchError;
-        
+
         return NextResponse.json({ session: fullSession });
       }
 
@@ -473,13 +478,13 @@ export async function PATCH(
         .single();
 
       if (error) throw error;
-      
+
       return NextResponse.json({ session: data });
     }
 
     if (action === 'resume') {
       const resumeTime = new Date().toISOString();
-      
+
       // Find active break for this session to complete it
       const { data: activeBreak } = await sbAdmin
         .from('time_tracking_breaks')
@@ -489,7 +494,7 @@ export async function PATCH(
         .order('break_start', { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       // Complete the break record if found
       if (activeBreak) {
         const { error: updateError } = await sbAdmin
@@ -503,7 +508,7 @@ export async function PATCH(
           console.error('Failed to close break on resume:', updateError);
         }
       }
-      
+
       // Create a new session with the same details, linking to parent
       const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
@@ -531,13 +536,17 @@ export async function PATCH(
         .single();
 
       if (error) throw error;
-      
+
       // Return both new session and break duration info
-      return NextResponse.json({ 
+      return NextResponse.json({
         session: data,
-        breakDuration: activeBreak ? Math.floor(
-          (new Date(resumeTime).getTime() - new Date(activeBreak.break_start).getTime()) / 1000
-        ) : null,
+        breakDuration: activeBreak
+          ? Math.floor(
+              (new Date(resumeTime).getTime() -
+                new Date(activeBreak.break_start).getTime()) /
+                1000
+            )
+          : null,
       });
     }
 

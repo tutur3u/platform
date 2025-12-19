@@ -51,7 +51,10 @@ interface UseSessionActionsReturn {
   prefillEndTime: string;
 
   // Actions
-  resumeSession: (session: SessionWithRelations | undefined, confirmed?: boolean) => Promise<void>;
+  resumeSession: (
+    session: SessionWithRelations | undefined,
+    confirmed?: boolean
+  ) => Promise<void>;
   openEditDialog: (session: SessionWithRelations | undefined) => void;
   closeEditDialog: () => void;
   saveEdit: () => Promise<void>;
@@ -92,7 +95,8 @@ export function useSessionActions({
 
   // Confirmation states
   const [showResumeConfirmation, setShowResumeConfirmation] = useState(false);
-  const [pendingResumeSession, setPendingResumeSession] = useState<SessionWithRelations | null>(null);
+  const [pendingResumeSession, setPendingResumeSession] =
+    useState<SessionWithRelations | null>(null);
 
   // Dialog states
   const [sessionToDelete, setSessionToDelete] =
@@ -157,7 +161,11 @@ export function useSessionActions({
       if (!session) return;
 
       // Check if break duration exceeds threshold
-      if (!confirmed && thresholdData?.resumeThresholdMinutes && session.end_time) {
+      if (
+        !confirmed &&
+        thresholdData?.resumeThresholdMinutes &&
+        session.end_time
+      ) {
         const endTime = dayjs(session.end_time);
         const now = dayjs();
         const breakMinutes = now.diff(endTime, 'minute');

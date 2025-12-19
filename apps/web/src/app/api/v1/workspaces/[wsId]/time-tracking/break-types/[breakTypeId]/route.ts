@@ -23,7 +23,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-
     // Verify break type exists and belongs to workspace
     const { data: existingBreakType } = await supabase
       .from('workspace_break_types')
@@ -132,7 +131,6 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
 
     // Verify break type exists, belongs to workspace, and is not a system type
     const { data: breakType } = await supabase

@@ -57,9 +57,7 @@ export function ThresholdSettingsDialog({
     (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
 
   const isSubmitDisabled =
-    isLoading || 
-    (!noApprovalNeeded && !parsed.success) || 
-    !hasChanged;
+    isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +74,11 @@ export function ThresholdSettingsDialog({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            threshold: noApprovalNeeded ? null : parsed.success ? parsed.data : null,
+            threshold: noApprovalNeeded
+              ? null
+              : parsed.success
+                ? parsed.data
+                : null,
           }),
         }
       );

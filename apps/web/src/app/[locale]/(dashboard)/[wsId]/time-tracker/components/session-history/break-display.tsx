@@ -12,11 +12,9 @@ interface BreakDisplayProps {
 /**
  * Map break type color to dynamic color token
  */
-const getBreakTypeColor = (
-  colorName: string | null | undefined
-): string => {
+const getBreakTypeColor = (colorName: string | null | undefined): string => {
   if (!colorName) return 'dynamic-blue';
-  
+
   const colorMap: Record<string, string> = {
     RED: 'dynamic-red',
     BLUE: 'dynamic-blue',
@@ -38,10 +36,10 @@ const getBreakTypeColor = (
  */
 const getIconComponent = (iconName: string | null | undefined) => {
   if (!iconName) return Icons.Coffee;
-  
+
   const iconKey = iconName.charAt(0).toUpperCase() + iconName.slice(1);
   const IconComponent = (Icons as Record<string, any>)[iconKey];
-  
+
   return IconComponent || Icons.Coffee;
 };
 
@@ -96,7 +94,7 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
         return [];
       }
 
-      return (data || []);
+      return data || [];
     },
   });
 
@@ -118,7 +116,7 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
       </div>
       <div className="space-y-1.5">
         {breaks.map((breakRecord) => {
-          const breakType = (breakRecord.break_type_id as any);
+          const breakType = breakRecord.break_type_id as any;
           const breakTypeColor = getBreakTypeColor(breakType?.color);
           const BreakIcon = getIconComponent(breakType?.icon);
           const borderClass = `border-${breakTypeColor}/20`;
@@ -135,11 +133,17 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                 <BreakIcon className={`h-3.5 w-3.5 shrink-0 ${textClass}`} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className={`truncate font-semibold ${textClass} text-xs`}>
-                      {breakType?.name || breakRecord.break_type_name || t('unnamed_break')}
+                    <span
+                      className={`truncate font-semibold ${textClass} text-xs`}
+                    >
+                      {breakType?.name ||
+                        breakRecord.break_type_name ||
+                        t('unnamed_break')}
                     </span>
                     {!breakRecord.break_end && (
-                      <span className={`inline-block shrink-0 rounded-full ${badgeBgClass} px-1.5 py-0.5 ${textClass} text-xs font-medium`}>
+                      <span
+                        className={`inline-block shrink-0 rounded-full ${badgeBgClass} px-1.5 py-0.5 ${textClass} text-xs font-medium`}
+                      >
                         {t('active')}
                       </span>
                     )}
@@ -155,7 +159,9 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                   </div>
                 </div>
               </div>
-              <div className={`shrink-0 font-mono font-semibold ${textClass} text-xs`}>
+              <div
+                className={`shrink-0 font-mono font-semibold ${textClass} text-xs`}
+              >
                 {breakRecord.break_duration_seconds
                   ? formatBreakDuration(breakRecord.break_duration_seconds)
                   : t('ongoing')}
@@ -165,19 +171,22 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
         })}
       </div>
       {breaks.some((b) => {
-        const breakType = (b.break_type_id as any);
+        const breakType = b.break_type_id as any;
         return breakType?.notes;
       }) && (
         <div className="space-y-1 border-t border-border/20 pt-2">
           {breaks.map((breakRecord) => {
-            const breakType = (breakRecord.break_type_id as any);
+            const breakType = breakRecord.break_type_id as any;
             return breakType?.notes ? (
               <p
                 key={`${breakRecord.id}-notes`}
                 className="px-1 text-xs italic text-muted-foreground"
               >
                 <span className="font-medium">
-                  {breakType?.name || breakRecord.break_type_name || t('unnamed_break')}:
+                  {breakType?.name ||
+                    breakRecord.break_type_name ||
+                    t('unnamed_break')}
+                  :
                 </span>{' '}
                 {breakType.notes}
               </p>
@@ -198,7 +207,10 @@ interface BreakSummaryProps {
   compact?: boolean;
 }
 
-export function BreakSummary({ sessionId, compact = false }: BreakSummaryProps) {
+export function BreakSummary({
+  sessionId,
+  compact = false,
+}: BreakSummaryProps) {
   const t = useTranslations('time-tracker.breaks');
   const supabase = createClient();
 

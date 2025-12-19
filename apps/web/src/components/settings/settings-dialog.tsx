@@ -315,7 +315,8 @@ export function SettingsDialog({
                 name: 'break_types',
                 label: 'Break Types',
                 icon: Coffee,
-                description: 'Manage and customize break types for your workspace',
+                description:
+                  'Manage and customize break types for your workspace',
               },
             ],
           },
