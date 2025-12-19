@@ -105,8 +105,12 @@ export function SimpleTimerControls({
     useState(false);
 
   // Store pending break info when take break triggers threshold exceeded
-  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(null);
-  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<string | null>(null);
+  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(
+    null
+  );
+  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<
+    string | null
+  >(null);
 
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -217,7 +221,7 @@ export function SimpleTimerControls({
         setSessionDescription('');
         setSelectedTaskId('none');
         setSelectedCategoryId(workCategory?.id || 'none');
-        
+
         queryClient.invalidateQueries({
           queryKey: ['running-time-session', wsId, currentUserId],
         });
@@ -230,9 +234,12 @@ export function SimpleTimerControls({
             query.queryKey[0] === 'paused-time-session' &&
             query.queryKey[1] === wsId,
         });
-        
+
         router.refresh();
-        toast.info(t('sessionPendingApproval') || 'Session is pending approval. It will appear in your history once approved.');
+        toast.info(
+          t('sessionPendingApproval') ||
+            'Session is pending approval. It will appear in your history once approved.'
+        );
         return;
       }
 
@@ -311,29 +318,32 @@ export function SimpleTimerControls({
 
   // Handle missed entry created from exceeded threshold dialog
   // If wasBreakPause is true, the session is now paused with a break
-  const handleMissedEntryCreated = useCallback((wasBreakPause?: boolean) => {
-    resetFormState();
-    // Invalidate queries to refetch running session and stats - single source of truth
-    queryClient.invalidateQueries({
-      queryKey: ['running-time-session', wsId, currentUserId],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ['time-tracker-stats', wsId, currentUserId],
-    });
-    
-    // For break pauses, also invalidate paused session query
-    if (wasBreakPause) {
+  const handleMissedEntryCreated = useCallback(
+    (wasBreakPause?: boolean) => {
+      resetFormState();
+      // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'paused-time-session' &&
-          query.queryKey[1] === wsId,
+        queryKey: ['running-time-session', wsId, currentUserId],
       });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
+      });
 
-    // Refresh server-side data to update overview page stats
-    router.refresh();
-  }, [resetFormState, queryClient, wsId, router, currentUserId]);
+      // For break pauses, also invalidate paused session query
+      if (wasBreakPause) {
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'paused-time-session' &&
+            query.queryKey[1] === wsId,
+        });
+      }
+
+      // Refresh server-side data to update overview page stats
+      router.refresh();
+    },
+    [resetFormState, queryClient, wsId, router, currentUserId]
+  );
 
   // Pause timer
   const pauseTimer = useCallback(async () => {

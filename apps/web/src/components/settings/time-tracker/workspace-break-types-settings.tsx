@@ -2,12 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
-import {
-  Coffee,
-  Edit2,
-  Plus,
-  Trash2
-} from '@tuturuuu/icons';
+import { Coffee, Edit2, Plus, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -45,7 +40,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import {Switch} from "@tuturuuu/ui/switch";
+import { Switch } from '@tuturuuu/ui/switch';
 
 type WorkspaceBreakType =
   Database['public']['Tables']['workspace_break_types']['Row'];
@@ -113,9 +108,8 @@ export function WorkspaceBreakTypesSettings({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [formState, setFormState] = useState<BreakTypeFormState>(
-    initialFormState
-  );
+  const [formState, setFormState] =
+    useState<BreakTypeFormState>(initialFormState);
 
   // Helper function to render icon from icon name
   const renderIcon = (iconName: string | null) => {
@@ -310,7 +304,9 @@ export function WorkspaceBreakTypesSettings({
                     {editingId ? t('edit') : t('create')}
                   </DialogTitle>
                   <DialogDescription>
-                    {editingId ? t('edit_description') : t('create_description')}
+                    {editingId
+                      ? t('edit_description')
+                      : t('create_description')}
                   </DialogDescription>
                 </DialogHeader>
 
