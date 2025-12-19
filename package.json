@@ -1,9 +1,9 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.9",
+    "@biomejs/biome": "^2.3.10",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20251216.1",
+    "@typescript/native-preview": "^7.0.0-dev.20251218.3",
     "@vitest/coverage-v8": "^4.0.16",
     "turbo": "^2.6.3",
     "typescript": "^5.9.3",
@@ -13,7 +13,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "bun@1.3.4",
+  "packageManager": "bun@1.3.5",
   "private": true,
   "scripts": {
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
@@ -58,6 +58,7 @@
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
+    "tc": "tsgo --build",
     "type-check": "tsgo --build",
     "type-check:web": "tsgo --build apps/web/tsconfig.json",
     "type-check:calendar": "tsgo --build apps/calendar/tsconfig.json",

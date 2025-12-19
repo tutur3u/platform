@@ -7,7 +7,7 @@ import type {
 import { CreateEventButton } from '@tuturuuu/ui/legacy/calendar/create-event-button';
 import { useTranslations } from 'next-intl';
 import type { E2EEStatus, FixProgress } from '../hooks/use-e2ee';
-import CalendarConnections from './calendar-connections';
+import CalendarConnectionsUnified from './calendar-connections-unified';
 import { E2EEStatusBadge } from './e2ee-status-badge';
 import { SmartScheduleButton } from './smart-schedule-button';
 
@@ -45,8 +45,6 @@ export function CalendarHeaderActions({
   onMigrate,
   onEnable,
   enableSmartScheduling,
-  experimentalGoogleToken,
-  calendarConnections,
 }: CalendarHeaderActionsProps) {
   const t = useTranslations('calendar');
 
@@ -70,11 +68,7 @@ export function CalendarHeaderActions({
 
       {enableSmartScheduling && <SmartScheduleButton wsId={workspaceId} />}
 
-      <CalendarConnections
-        wsId={workspaceId}
-        initialConnections={calendarConnections}
-        hasGoogleAuth={!!experimentalGoogleToken}
-      />
+      <CalendarConnectionsUnified wsId={workspaceId} />
     </div>
   );
 }

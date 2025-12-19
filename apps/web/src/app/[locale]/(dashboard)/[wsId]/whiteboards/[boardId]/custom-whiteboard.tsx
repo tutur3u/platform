@@ -5,17 +5,28 @@ import '@excalidraw/excalidraw/index.css';
 import type {
   AppState,
   BinaryFiles,
+  Collaborator,
   ExcalidrawImperativeAPI,
+  SocketId,
 } from '@excalidraw/excalidraw/types';
-import { ArrowLeftIcon } from '@tuturuuu/icons';
+import { ArrowLeftIcon, WifiIcon, WifiOffIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTheme } from 'next-themes';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTheme } from 'next-themes';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useWhiteboardCollaboration } from '@/hooks/useWhiteboardCollaboration';
+import { mergeElements } from '@/utils/excalidraw-helper';
 
 const Excalidraw = dynamic(
   async () => (await import('@excalidraw/excalidraw')).Excalidraw,
@@ -34,6 +45,9 @@ interface CustomWhiteboardProps {
   };
 }
 
+// Auto-save debounce interval (5 seconds)
+const AUTO_SAVE_DEBOUNCE_MS = 5000;
+
 export function CustomWhiteboard({
   wsId,
   boardId,
@@ -48,21 +62,153 @@ export function CustomWhiteboard({
   const [isSaving, setIsSaving] = useState(false);
 
   const lastSavedRef = useRef<string | null>(null);
+  const previousElementsRef = useRef<readonly ExcalidrawElement[]>([]);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize last saved state on mount (intentionally run once)
+  // Helper to deep clone elements array
+  const cloneElements = useCallback(
+    (elements: readonly ExcalidrawElement[]): ExcalidrawElement[] => {
+      return elements.map((el) => ({ ...el }));
+    },
+    []
+  );
+
+  // Set up collaboration
+  const {
+    collaborators,
+    isConnected,
+    currentUserId,
+    broadcastElementChanges,
+    broadcastCursorPosition,
+  } = useWhiteboardCollaboration({
+    boardId,
+    wsId,
+    enabled: true,
+    onRemoteElementsChange: useCallback(
+      (remoteElements: ExcalidrawElement[]) => {
+        if (!excalidrawAPI) return;
+
+        const currentElements = excalidrawAPI.getSceneElements();
+        const mergedElements = mergeElements(
+          [...currentElements],
+          remoteElements
+        );
+
+        previousElementsRef.current = cloneElements(mergedElements);
+
+        // Update the scene with merged elements
+        excalidrawAPI.updateScene({ elements: mergedElements });
+      },
+      [excalidrawAPI, cloneElements]
+    ),
+    onError: useCallback((error: Error) => {
+      console.error('Collaboration error:', error);
+      toast.error('Collaboration connection issue. Changes may not sync.');
+    }, []),
+  });
+
+  // Convert collaborators to Excalidraw format
+  const excalidrawCollaborators = useMemo(() => {
+    const collabMap = new Map<SocketId, Collaborator>();
+
+    collaborators.forEach((collab, id) => {
+      if (id !== currentUserId) {
+        collabMap.set(id as SocketId, {
+          username: collab.displayName,
+          avatarUrl: collab.avatarUrl,
+          color: {
+            background: collab.color,
+            stroke: collab.color,
+          },
+          // Add pointer if cursor is available and not off-screen
+          ...(collab.cursor &&
+            collab.cursor.x > -100 && {
+              pointer: {
+                x: collab.cursor.x,
+                y: collab.cursor.y,
+                tool: collab.cursor.tool === 'laser' ? 'laser' : 'pointer',
+              },
+            }),
+        });
+      }
+    });
+
+    return collabMap;
+  }, [collaborators, currentUserId]);
+
+  // Update Excalidraw collaborators when they change
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+    excalidrawAPI.updateScene({ collaborators: excalidrawCollaborators });
+  }, [excalidrawAPI, excalidrawCollaborators]);
+
+  // Initialize last saved state and previous elements on mount
   useEffect(() => {
     if (initialData) {
       lastSavedRef.current = JSON.stringify({
         elements: initialData.elements ?? [],
         files: initialData.files ?? {},
       });
+      previousElementsRef.current = cloneElements(initialData.elements ?? []);
     } else {
       lastSavedRef.current = JSON.stringify({ elements: [], files: {} });
+      previousElementsRef.current = [];
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData]);
+  }, [initialData, cloneElements]);
 
-  // Change detection via onChange callback
+  // Auto-save function
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      // Will trigger save via the save function
+      if (hasUnsavedChanges && excalidrawAPI) {
+        // Trigger save silently
+        const elements = excalidrawAPI.getSceneElements();
+        const appState = excalidrawAPI.getAppState();
+        const files = excalidrawAPI.getFiles();
+
+        const essentialAppState: Partial<AppState> = {
+          viewBackgroundColor: appState.viewBackgroundColor,
+          gridSize: appState.gridSize,
+        };
+
+        const snapshot = {
+          elements,
+          appState: essentialAppState,
+          files,
+        };
+
+        supabase
+          .from('workspace_whiteboards')
+          .update({
+            snapshot: JSON.stringify(snapshot),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', boardId)
+          .then(({ error }) => {
+            if (!error) {
+              lastSavedRef.current = JSON.stringify({ elements, files });
+              setHasUnsavedChanges(false);
+            }
+          });
+      }
+    }, AUTO_SAVE_DEBOUNCE_MS);
+  }, [hasUnsavedChanges, excalidrawAPI, supabase, boardId]);
+
+  // Clean up auto-save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Change detection and collaboration broadcast via onChange callback
   const handleChange = useCallback(
     (
       elements: readonly ExcalidrawElement[],
@@ -74,9 +220,35 @@ export function CustomWhiteboard({
         elements: elements.filter((el) => !el.isDeleted),
         files,
       });
-      setHasUnsavedChanges(currentState !== lastSavedRef.current);
+      const hasChanges = currentState !== lastSavedRef.current;
+      setHasUnsavedChanges(hasChanges);
+
+      // Broadcast element changes to collaborators
+      if (previousElementsRef.current.length > 0 || elements.length > 0) {
+        broadcastElementChanges(previousElementsRef.current, elements);
+      }
+
+      // Update previous elements reference with deep clone
+      previousElementsRef.current = cloneElements(elements);
+
+      // Trigger auto-save if there are changes
+      if (hasChanges) {
+        triggerAutoSave();
+      }
     },
-    []
+    [broadcastElementChanges, triggerAutoSave, cloneElements]
+  );
+
+  // Handle pointer/cursor updates
+  const handlePointerUpdate = useCallback(
+    (payload: { pointer: { x: number; y: number; tool: string } }) => {
+      broadcastCursorPosition(
+        payload.pointer.x,
+        payload.pointer.y,
+        payload.pointer.tool
+      );
+    },
+    [broadcastCursorPosition]
   );
 
   // Save function
@@ -198,40 +370,110 @@ export function CustomWhiteboard({
     }
   }, [excalidrawAPI, isSaving, boardId, supabase]);
 
-  return (
-    <div className="relative h-full w-full">
-      {/* Toolbar */}
-      <div className="pointer-events-auto absolute top-0 left-0 z-1000 flex gap-4 px-16 py-4">
-        <Link href={`/${wsId}/whiteboards`}>
-          <Button variant="ghost">
-            <ArrowLeftIcon className="h-4 w-4" />
-            Back
-          </Button>
-        </Link>
-        <Button
-          variant="default"
-          onClick={save}
-          disabled={!hasUnsavedChanges || isSaving}
-        >
-          {isSaving ? 'Saving...' : 'Save'}
-        </Button>
-      </div>
+  // Get collaborator count (excluding self)
+  const collaboratorCount = collaborators.size;
 
-      {/* Excalidraw Editor */}
-      {resolvedTheme ? (
-        <div className="-inset-4 absolute h-screen w-full bg-red-300">
-          <Excalidraw
-            excalidrawAPI={(api) => setExcalidrawAPI(api)}
-            initialData={initialData}
-            onChange={handleChange}
-            theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
-          />
+  return (
+    <TooltipProvider>
+      <div className="relative h-full w-full">
+        {/* Toolbar */}
+        <div className="pointer-events-auto absolute top-0 left-0 z-1000 flex items-center gap-4 px-16 py-4">
+          <Link href={`/${wsId}/whiteboards`}>
+            <Button variant="ghost">
+              <ArrowLeftIcon className="h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <Button
+            variant="default"
+            onClick={save}
+            disabled={!hasUnsavedChanges || isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+
+          {/* Collaboration Status */}
+          <div className="flex items-center gap-2">
+            {/* Connection Status */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs ${
+                    isConnected
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  }`}
+                >
+                  {isConnected ? (
+                    <WifiIcon className="h-3.5 w-3.5" />
+                  ) : (
+                    <WifiOffIcon className="h-3.5 w-3.5" />
+                  )}
+                  <span>{isConnected ? 'Live' : 'Offline'}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isConnected
+                  ? 'Connected - Changes sync in real-time'
+                  : 'Disconnected - Changes will sync when reconnected'}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Collaborator Avatars */}
+            {collaboratorCount > 0 && (
+              <div className="-space-x-2 flex">
+                {Array.from(collaborators.values())
+                  .slice(0, 5)
+                  .map((collab) => (
+                    <Tooltip key={collab.id}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="h-7 w-7 rounded-full border-2 border-white dark:border-gray-800"
+                          style={{ backgroundColor: collab.color }}
+                        >
+                          {collab.avatarUrl ? (
+                            <Image
+                              src={collab.avatarUrl}
+                              alt={collab.displayName}
+                              className="h-full w-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center font-medium text-white text-xs">
+                              {collab.displayName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{collab.displayName}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                {collaboratorCount > 5 && (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-muted text-xs dark:border-gray-800">
+                    +{collaboratorCount - 5}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <LoadingIndicator className="h-10 w-10" />
-        </div>
-      )}
-    </div>
+
+        {/* Excalidraw Editor */}
+        {resolvedTheme ? (
+          <div className="-inset-4 absolute h-screen w-full">
+            <Excalidraw
+              excalidrawAPI={(api) => setExcalidrawAPI(api)}
+              initialData={initialData}
+              onChange={handleChange}
+              onPointerUpdate={handlePointerUpdate}
+              theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+            />
+          </div>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <LoadingIndicator className="h-10 w-10" />
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

@@ -33,6 +33,20 @@ const logWorkspaceError = (
   console.error(`[WorkspaceHelper] ${context}:`, logData);
 };
 
+/**
+ * Fetches a workspace by ID or the 'PERSONAL' keyword.
+ *
+ * @param id - Workspace ID (UUID) or 'PERSONAL' to fetch the current user's personal workspace.
+ * @param options - Optional configuration object.
+ * @param options.requireUserRole - If true, also verifies the current user is a member of the workspace.
+ *                                   Defaults to false.
+ *
+ * @returns The workspace object with a `joined` boolean indicating membership status.
+ *
+ * @throws Redirects to `/login` if the user is not authenticated.
+ * @throws Calls `notFound()` (throws) if the workspace does not exist or access is denied.
+ *         Callers should handle this in a try/catch or expect navigation to 404.
+ */
 export async function getWorkspace(
   id: string,
   {
