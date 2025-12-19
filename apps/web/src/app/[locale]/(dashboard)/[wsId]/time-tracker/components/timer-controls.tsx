@@ -24,7 +24,6 @@ import {
   TableOfContents,
   Tag,
   Timer,
-  TriangleAlert,
 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -208,13 +207,6 @@ interface SessionProtection {
   currentMode: TimerMode;
   canSwitchModes: boolean;
   canModifySettings: boolean;
-}
-
-interface PausedSessionData {
-  sessionId: string;
-  elapsed: number;
-  pauseTime: string; // ISO string
-  timerMode: TimerMode;
 }
 
 // Tab metadata for timer mode selector

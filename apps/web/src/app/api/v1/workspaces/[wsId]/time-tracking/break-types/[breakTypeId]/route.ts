@@ -26,7 +26,7 @@ export async function PATCH(
     // Verify break type exists and belongs to workspace
     const { data: existingBreakType } = await supabase
       .from('workspace_break_types')
-      .select('is_system')
+      .select('id')
       .eq('id', breakTypeId)
       .eq('ws_id', wsId)
       .single();
@@ -35,14 +35,6 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'Break type not found' },
         { status: 404 }
-      );
-    }
-
-    // Cannot edit system break types
-    if (existingBreakType.is_system) {
-      return NextResponse.json(
-        { error: 'Cannot edit system break types' },
-        { status: 403 }
       );
     }
 
@@ -132,10 +124,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify break type exists, belongs to workspace, and is not a system type
+    // Verify break type exists and belongs to workspace
     const { data: breakType } = await supabase
       .from('workspace_break_types')
-      .select('is_system')
+      .select('id')
       .eq('id', breakTypeId)
       .eq('ws_id', wsId)
       .single();
@@ -144,14 +136,6 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Break type not found' },
         { status: 404 }
-      );
-    }
-
-    // Cannot delete system break types
-    if (breakType.is_system) {
-      return NextResponse.json(
-        { error: 'Cannot delete system break types' },
-        { status: 403 }
       );
     }
 

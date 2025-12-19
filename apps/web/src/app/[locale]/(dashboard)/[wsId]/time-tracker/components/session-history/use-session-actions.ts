@@ -160,23 +160,6 @@ export function useSessionActions({
     async (session: SessionWithRelations | undefined, confirmed = false) => {
       if (!session) return;
 
-      // Check if break duration exceeds threshold
-      if (
-        !confirmed &&
-        thresholdData?.resumeThresholdMinutes &&
-        session.end_time
-      ) {
-        const endTime = dayjs(session.end_time);
-        const now = dayjs();
-        const breakMinutes = now.diff(endTime, 'minute');
-
-        if (breakMinutes > thresholdData.resumeThresholdMinutes) {
-          setPendingResumeSession(session);
-          setShowResumeConfirmation(true);
-          return;
-        }
-      }
-
       setActionStates((prev) => ({ ...prev, [`resume-${session.id}`]: true }));
       try {
         const response = await fetch(
@@ -208,7 +191,7 @@ export function useSessionActions({
         }));
       }
     },
-    [wsId, router, queryClient, t, thresholdData?.resumeThresholdMinutes]
+    [wsId, router, queryClient, t]
   );
 
   const openEditDialog = useCallback(

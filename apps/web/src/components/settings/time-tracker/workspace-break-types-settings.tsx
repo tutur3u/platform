@@ -462,11 +462,6 @@ export function WorkspaceBreakTypesSettings({
                               {t('default')}
                             </span>
                           )}
-                          {breakType.is_system && (
-                            <span className="rounded-full bg-dynamic-gray/10 px-2 py-0.5 font-medium text-dynamic-gray text-xs">
-                              {t('system')}
-                            </span>
-                          )}
                         </div>
                         {breakType.description && (
                           <p className="mt-1 text-muted-foreground text-sm">
@@ -488,20 +483,18 @@ export function WorkspaceBreakTypesSettings({
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      {!breakType.is_system && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setDeleteId(breakType.id)}
-                          disabled={
-                            deleteMutation.isPending ||
-                            createMutation.isPending ||
-                            updateMutation.isPending
-                          }
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeleteId(breakType.id)}
+                        disabled={
+                          deleteMutation.isPending ||
+                          createMutation.isPending ||
+                          updateMutation.isPending
+                        }
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 ))}

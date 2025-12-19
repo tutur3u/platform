@@ -14,7 +14,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

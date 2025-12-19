@@ -3,16 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
+
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -27,7 +18,6 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
-import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -64,7 +54,6 @@ export function SimpleTimerControls({
   const queryClient = useQueryClient();
   const router = useRouter();
   const t = useTranslations('time-tracker.simple');
-  const tHistory = useTranslations('time-tracker.session_history');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
@@ -105,12 +94,8 @@ export function SimpleTimerControls({
     useState(false);
 
   // Store pending break info when take break triggers threshold exceeded
-  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(
-    null
-  );
-  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<
-    string | null
-  >(null);
+  const [pendingBreakTypeId] = useState<string | null>(null);
+  const [pendingBreakTypeName] = useState<string | null>(null);
 
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
