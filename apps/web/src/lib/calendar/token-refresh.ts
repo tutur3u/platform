@@ -136,7 +136,6 @@ async function refreshMicrosoftToken(
       refreshToken: authToken.refresh_token,
       scopes: [
         'https://graph.microsoft.com/Calendars.Read',
-        'https://graph.microsoft.com/Calendars.ReadWrite',
         'https://graph.microsoft.com/User.Read',
       ],
     });

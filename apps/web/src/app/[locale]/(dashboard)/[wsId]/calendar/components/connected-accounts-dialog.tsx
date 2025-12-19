@@ -14,7 +14,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
@@ -251,11 +250,7 @@ export function ConnectedAccountsDialog({
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger
-              value="microsoft"
-              className="gap-2"
-              disabled={!DEV_MODE}
-            >
+            <TabsTrigger value="microsoft" className="gap-2">
               <Image
                 src="/media/logos/microsoft.svg"
                 alt="Microsoft"
@@ -263,19 +258,10 @@ export function ConnectedAccountsDialog({
                 height={16}
               />
               Outlook
-              {!DEV_MODE ? (
-                <Badge
-                  variant="outline"
-                  className="ml-1 text-dynamic-orange text-xs"
-                >
-                  {t('coming_soon')}
+              {microsoftAccounts.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {microsoftAccounts.length}
                 </Badge>
-              ) : (
-                microsoftAccounts.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {microsoftAccounts.length}
-                  </Badge>
-                )
               )}
             </TabsTrigger>
           </TabsList>
@@ -321,25 +307,7 @@ export function ConnectedAccountsDialog({
           </TabsContent>
 
           <TabsContent value="microsoft" className="mt-4 space-y-4">
-            {!DEV_MODE ? (
-              <div className="space-y-3 py-8 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Image
-                    src="/media/logos/microsoft.svg"
-                    alt="Microsoft"
-                    width={32}
-                    height={32}
-                    className="opacity-50"
-                  />
-                </div>
-                <p className="font-medium text-muted-foreground text-sm">
-                  {t('microsoft_coming_soon')}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {t('microsoft_coming_soon_desc')}
-                </p>
-              </div>
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -363,21 +331,19 @@ export function ConnectedAccountsDialog({
               </div>
             )}
 
-            {DEV_MODE && (
-              <Button
-                onClick={() => microsoftAuthMutation.mutate()}
-                disabled={microsoftAuthMutation.isPending}
-                className="w-full gap-2"
-                variant="outline"
-              >
-                {microsoftAuthMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                {t('add_microsoft_account')}
-              </Button>
-            )}
+            <Button
+              onClick={() => microsoftAuthMutation.mutate()}
+              disabled={microsoftAuthMutation.isPending}
+              className="w-full gap-2"
+              variant="outline"
+            >
+              {microsoftAuthMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              {t('add_microsoft_account')}
+            </Button>
           </TabsContent>
         </Tabs>
       </DialogContent>

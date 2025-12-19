@@ -15,10 +15,10 @@ import {
 } from '@/lib/calendar/microsoft-config';
 
 const microsoftCallbackQuerySchema = z.object({
-  code: z.string().nullable(),
-  state: z.string().nullable(),
-  error: z.string().nullable(),
-  error_description: z.string().nullable(),
+  code: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  error: z.string().optional().nullable(),
+  error_description: z.string().optional().nullable(),
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
