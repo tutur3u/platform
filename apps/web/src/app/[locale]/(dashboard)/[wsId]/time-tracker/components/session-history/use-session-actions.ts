@@ -8,7 +8,6 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { SessionWithRelations } from '../../types';
 import type { ActionStates, EditFormState } from './session-types';
 import {
