@@ -502,7 +502,7 @@ export function SessionHistory({
             <AlertDialogAction
               onClick={() => {
                 if (pendingResumeSession) {
-                  resumeSession(pendingResumeSession, true);
+                  resumeSession(pendingResumeSession);
                 }
               }}
               className="bg-dynamic-orange text-white hover:bg-dynamic-orange/90"

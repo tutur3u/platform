@@ -379,7 +379,7 @@ export function WorkspaceBreakTypesSettings({
                               <SelectItem key={color} value={color}>
                                 <div className="flex items-center gap-2">
                                   <div
-                                    className={`h-3 w-3 rounded-full ${colorClasses.bgOpaque}`}
+                                    className={`h-3 w-3 rounded-full ${colorClasses.badgeBg}`}
                                   />
                                   {color}
                                 </div>
@@ -473,7 +473,7 @@ export function WorkspaceBreakTypesSettings({
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].bgOpaque} ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].text}`}
+                        className={`flex h-10 w-10 items-center justify-center rounded-full ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].badgeBg} ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].text}`}
                       >
                         {getIconComponent(breakType.icon) && (
                           (() => {

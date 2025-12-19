@@ -124,21 +124,6 @@ export async function POST(
 
     const { name, description, color, icon, isDefault } = validatedData.data;
 
-    // Validate required fields
-    if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Break type name is required' },
-        { status: 400 }
-      );
-    }
-
-    if (name.length > 50) {
-      return NextResponse.json(
-        { error: 'Break type name must be 50 characters or less' },
-        { status: 400 }
-      );
-    }
-
     const sbAdmin = await createAdminClient();
 
     // Create the break type

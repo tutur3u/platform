@@ -7753,7 +7753,11 @@
       "timerPaused": "Đã tạm dừng hẹn giờ",
       "pauseTimerFailed": "Không thể tạm dừng hẹn giờ",
       "timerResumed": "Đã tiếp tục hẹn giờ!",
-      "resumeTimerFailed": "Không thể tiếp tục hẹn giờ"
+      "resumeTimerFailed": "Không thể tiếp tục hẹn giờ",
+      "onBreak": "Nghỉ giải lao",
+      "workDuration": "Thời gian làm việc",
+      "breakDuration": "Thời gian nghỉ",
+      "pausedAt": "Nghỉ tại {time}"
     },
     "heatmap": {
       "title": "Bản đồ nhiệt hoạt động",

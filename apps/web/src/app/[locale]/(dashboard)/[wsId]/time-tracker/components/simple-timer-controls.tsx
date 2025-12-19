@@ -1,9 +1,11 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
+import * as Icons from '@tuturuuu/icons';
+import { CheckCircle, Coffee, Icon, Pause, Play, Square, Timer } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -67,6 +69,16 @@ export function SimpleTimerControls({
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
 
+  // Current break data for paused session
+  const [currentBreak, setCurrentBreak] = useState<{
+    id: string;
+    break_type_id?: string;
+    break_type_name?: string;
+    break_type?: { id: string; name: string; icon?: string; color?: string };
+    break_start: string;
+  } | null>(null);
+  const [breakDurationSeconds, setBreakDurationSeconds] = useState(0);
+
   const { data: pausedData } = useQuery({
     queryKey: ['paused-time-session', wsId, currentUserId],
     queryFn: async () => {
@@ -89,13 +101,56 @@ export function SimpleTimerControls({
     }
   }, [pausedData]);
 
+  // Fetch active break when session is paused using React Query
+  const { data: activeBreakData } = useQuery({
+    queryKey: ['active-break', wsId, pausedSession?.id],
+    queryFn: async () => {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession?.id}/breaks/active`
+      );
+      return response.break || null;
+    },
+    enabled: !!pausedSession?.id,
+    staleTime: 5000, // Keep fresh for 5 seconds
+    retry: 1,
+  });
+
+  // Sync active break data to local state
+  useEffect(() => {
+    if (activeBreakData) {
+      setCurrentBreak(activeBreakData);
+    } else {
+      setCurrentBreak(null);
+      setBreakDurationSeconds(0);
+    }
+  }, [activeBreakData]);
+
+  // Live break duration counter
+  useEffect(() => {
+    if (!currentBreak?.break_start) {
+      setBreakDurationSeconds(0);
+      return;
+    }
+
+    const updateBreakDuration = () => {
+      const breakStart = new Date(currentBreak.break_start).getTime();
+      const now = Date.now();
+      setBreakDurationSeconds(Math.floor((now - breakStart) / 1000));
+    };
+
+    updateBreakDuration();
+    const interval = setInterval(updateBreakDuration, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentBreak?.break_start]);
+
   // State for exceeded threshold session dialog
   const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
     useState(false);
 
   // Store pending break info when take break triggers threshold exceeded
-  const [pendingBreakTypeId] = useState<string | null>(null);
-  const [pendingBreakTypeName] = useState<string | null>(null);
+  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(null);
+  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<string | null>(null);
 
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -201,7 +256,6 @@ export function SimpleTimerControls({
       if (hasPendingApproval) {
         setPausedSession(null);
         setPausedElapsedTime(0);
-        setPauseStartTime(null);
         setSessionTitle('');
         setSessionDescription('');
         setSelectedTaskId('none');
@@ -231,7 +285,6 @@ export function SimpleTimerControls({
       setJustCompleted(response.session || null);
       setPausedSession(null);
       setPausedElapsedTime(0);
-      setPauseStartTime(null);
 
       // Clear form for next session
       setSessionTitle('');
@@ -289,6 +342,9 @@ export function SimpleTimerControls({
   // Handle session discarded from exceeded threshold dialog
   const handleSessionDiscarded = useCallback(() => {
     resetFormState();
+    // Clear pending break info
+    setPendingBreakTypeId(null);
+    setPendingBreakTypeName(null);
     // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
       queryKey: ['running-time-session', wsId, currentUserId],
@@ -306,6 +362,9 @@ export function SimpleTimerControls({
   const handleMissedEntryCreated = useCallback(
     (wasBreakPause?: boolean) => {
       resetFormState();
+      // Clear pending break info
+      setPendingBreakTypeId(null);
+      setPendingBreakTypeName(null);
       // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId, currentUserId],
@@ -335,8 +394,9 @@ export function SimpleTimerControls({
     if (!currentSession) return;
 
     // Check if session exceeds threshold - show dialog instead of pausing directly
-    // Only if pause is NOT exempt
     if (sessionExceedsThreshold) {
+      // Set pending break info so MissedEntryDialog knows this is a break pause
+      setPendingBreakTypeName('Break');
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -347,7 +407,10 @@ export function SimpleTimerControls({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ action: 'pause' }),
+          body: JSON.stringify({ 
+            action: 'pause',
+            breakTypeName: 'Break' // Always log a break when pausing
+          }),
         }
       );
 
@@ -355,7 +418,6 @@ export function SimpleTimerControls({
       const pauseTime = new Date();
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
-      setPauseStartTime(pauseTime);
 
       // Invalidate queries to refetch running session, paused session, and stats
       queryClient.invalidateQueries({
@@ -375,6 +437,8 @@ export function SimpleTimerControls({
         error instanceof Error &&
         (error.message.includes('threshold') || error.message === 'THRESHOLD_EXCEEDED')
       ) {
+        // Set pending break info so MissedEntryDialog knows this is a break pause
+        setPendingBreakTypeName('Break');
         setShowExceededThresholdDialog(true);
       } else {
         console.error('Error pausing timer:', error);
@@ -412,7 +476,6 @@ export function SimpleTimerControls({
         // Clear local paused state - query will provide the running session
         setPausedSession(null);
         setPausedElapsedTime(0);
-        setPauseStartTime(null);
 
         // Invalidate queries to refetch running session and paused session
         queryClient.invalidateQueries({
@@ -439,7 +502,6 @@ export function SimpleTimerControls({
       wsId,
       queryClient,
       t,
-      pauseStartTime,
       currentUserId,
     ]
   );
@@ -559,15 +621,65 @@ export function SimpleTimerControls({
         ) : pausedSession ? (
           // Paused timer display
           <div className="space-y-6 text-center">
-            <div className="rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
-              <div className="mb-3 flex items-center justify-center gap-2">
-                <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
-                  {t('paused')}
-                </span>
-              </div>
-              <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
-                {formatTime(pausedElapsedTime)}
+            <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
+              <div className="absolute inset-0 bg-linear-to-r from-amber-500/5 to-transparent"></div>
+              <div className="relative">
+                {/* Break Type Badge - Prominent Display */}
+                {currentBreak && (
+                  <div className="mb-4 flex items-center justify-center gap-2">
+                    <Badge className="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1.5 text-base">
+                      {currentBreak.break_type?.icon ? (
+                        (() => {
+                          const IconComponent = (Icons as any)[currentBreak.break_type.icon];
+                          if (!IconComponent) return <Coffee className="mr-1.5 h-4 w-4" />;
+                          if (Array.isArray(IconComponent)) {
+                            return <Icon iconNode={IconComponent} className="mr-1.5 h-4 w-4" />;
+                          }
+                          return <IconComponent className="mr-1.5 h-4 w-4" />;
+                        })()
+                      ) : (
+                        <Coffee className="mr-1.5 h-4 w-4" />
+                      )}
+                      {currentBreak.break_type?.name ||
+                        currentBreak.break_type_name ||
+                        t('onBreak')}
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="mb-3 flex items-center justify-center gap-2">
+                  <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
+                    {t('paused')}
+                  </span>
+                </div>
+
+                {/* Work Duration */}
+                <div className="mb-2">
+                  <div className="text-muted-foreground text-xs mb-1">
+                    {t('workDuration')}
+                  </div>
+                  <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
+                    {formatTime(pausedElapsedTime)}
+                  </div>
+                </div>
+
+                {/* Break Duration - Live Counter */}
+                <div className="mt-4 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 p-3">
+                  <div className="text-amber-700 dark:text-amber-300 text-xs mb-1">
+                    {t('breakDuration')}
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-amber-600 dark:text-amber-400">
+                    {formatDuration(breakDurationSeconds)}
+                  </div>
+                  {pauseStartTime && (
+                    <div className="text-amber-600/70 dark:text-amber-400/70 text-xs mt-1">
+                      {t('pausedAt', {
+                        time: pauseStartTime.toLocaleTimeString(),
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

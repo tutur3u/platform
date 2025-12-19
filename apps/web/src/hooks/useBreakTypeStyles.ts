@@ -7,6 +7,8 @@ import * as Icons from '@tuturuuu/icons';
  */
 export type BreakColor = keyof typeof BREAK_COLOR_CLASSES;
 
+type IconComponent = React.ComponentType<{ className?: string }>;
+
 /**
  * Map break type color to dynamic color token
  */
@@ -118,11 +120,11 @@ export const BREAK_COLOR_CLASSES = {
 /**
  * Get icon component by name
  */
-export const getIconComponent = (iconName: string | null | undefined) => {
+export const getIconComponent = (iconName: string | null | undefined): IconComponent => {
   if (!iconName) return Icons.Coffee;
 
   const iconKey = iconName.charAt(0).toUpperCase() + iconName.slice(1);
-  const IconComponent = (Icons as Record<string, any>)[iconKey];
+  const IconComponent = (Icons as unknown as Record<string, IconComponent>)[iconKey];
 
   return IconComponent || Icons.Coffee;
 };

@@ -7958,7 +7958,11 @@
       "timerPaused": "Timer paused",
       "pauseTimerFailed": "Failed to pause timer",
       "timerResumed": "Timer resumed!",
-      "resumeTimerFailed": "Failed to resume timer"
+      "resumeTimerFailed": "Failed to resume timer",
+      "onBreak": "Break",
+      "workDuration": "Work Duration",
+      "breakDuration": "Break Duration",
+      "pausedAt": "Paused at {time}"
     },
     "heatmap": {
       "title": "Activity Heatmap",

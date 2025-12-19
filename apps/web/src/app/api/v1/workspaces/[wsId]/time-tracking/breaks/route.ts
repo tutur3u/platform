@@ -7,11 +7,11 @@ import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { z } from 'zod';
 
 const createBreakSchema = z.object({
-  session_id: z.string(),
-  break_type_id: z.string().optional(),
+  session_id: z.uuid('Invalid session ID format'),
+  break_type_id: z.uuid('Invalid break type ID format').optional(),
   break_type_name: z.string().optional(),
-  break_start: z.string(),
-  break_end: z.string().optional(),
+  break_start: z.iso.datetime({ message: 'Invalid break_start timestamp' }),
+  break_end: z.iso.datetime({ message: 'Invalid break_end timestamp' }).optional(),
 });
 
 export async function POST(
