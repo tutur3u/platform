@@ -50,9 +50,7 @@ interface UseSessionActionsReturn {
   prefillEndTime: string;
 
   // Actions
-  resumeSession: (
-    session: SessionWithRelations | undefined
-  ) => Promise<void>;
+  resumeSession: (session: SessionWithRelations | undefined) => Promise<void>;
   openEditDialog: (session: SessionWithRelations | undefined) => void;
   closeEditDialog: () => void;
   saveEdit: () => Promise<void>;

@@ -2,7 +2,15 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
-import { CheckCircle, Coffee, Icon, Pause, Play, Square, Timer } from '@tuturuuu/icons';
+import {
+  CheckCircle,
+  Coffee,
+  Icon,
+  Pause,
+  Play,
+  Square,
+  Timer,
+} from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 
 import { Badge } from '@tuturuuu/ui/badge';
@@ -108,13 +116,20 @@ export function SimpleTimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession?.id}/breaks/active`
       );
-      return response.break as {
-        id: string;
-        break_type_id?: string;
-        break_type_name?: string;
-        break_type?: { id: string; name: string; icon?: string; color?: string };
-        break_start: string;
-      } || null;
+      return (
+        (response.break as {
+          id: string;
+          break_type_id?: string;
+          break_type_name?: string;
+          break_type?: {
+            id: string;
+            name: string;
+            icon?: string;
+            color?: string;
+          };
+          break_start: string;
+        }) || null
+      );
     },
     enabled: !!pausedSession?.id,
     staleTime: 5000, // Keep fresh for 5 seconds
@@ -155,8 +170,12 @@ export function SimpleTimerControls({
     useState(false);
 
   // Store pending break info when take break triggers threshold exceeded
-  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(null);
-  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<string | null>(null);
+  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(
+    null
+  );
+  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<
+    string | null
+  >(null);
 
   // Fetch workspace threshold setting
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -413,9 +432,9 @@ export function SimpleTimerControls({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             action: 'pause',
-            breakTypeName: 'Break' // Always log a break when pausing
+            breakTypeName: 'Break', // Always log a break when pausing
           }),
         }
       );
@@ -440,7 +459,8 @@ export function SimpleTimerControls({
       // Check if error is THRESHOLD_EXCEEDED
       if (
         error instanceof Error &&
-        (error.message.includes('threshold') || error.message === 'THRESHOLD_EXCEEDED')
+        (error.message.includes('threshold') ||
+          error.message === 'THRESHOLD_EXCEEDED')
       ) {
         // Set pending break info so MissedEntryDialog knows this is a break pause
         setPendingBreakTypeName('Break');
@@ -464,52 +484,42 @@ export function SimpleTimerControls({
   ]);
 
   // Resume timer
-  const resumeTimer = useCallback(
-    async () => {
-      if (!pausedSession) return;
+  const resumeTimer = useCallback(async () => {
+    if (!pausedSession) return;
 
-      setIsLoading(true);
-      try {
-        await apiCall(
-          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
-          {
-            method: 'PATCH',
-            body: JSON.stringify({ action: 'resume' }),
-          }
-        );
+    setIsLoading(true);
+    try {
+      await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ action: 'resume' }),
+        }
+      );
 
-        // Clear local paused state - query will provide the running session
-        setPausedSession(null);
-        setPausedElapsedTime(0);
+      // Clear local paused state - query will provide the running session
+      setPausedSession(null);
+      setPausedElapsedTime(0);
 
-        // Invalidate queries to refetch running session and paused session
-        queryClient.invalidateQueries({
-          queryKey: ['running-time-session', wsId, currentUserId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['paused-time-session', wsId, currentUserId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracker-stats', wsId, currentUserId],
-        });
+      // Invalidate queries to refetch running session and paused session
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['paused-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
+      });
 
-        toast.success(t('timerResumed'));
-      } catch (error) {
-        console.error('Error resuming timer:', error);
-        toast.error(t('resumeTimerFailed'));
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [
-      pausedSession,
-      apiCall,
-      wsId,
-      queryClient,
-      t,
-      currentUserId,
-    ]
-  );
+      toast.success(t('timerResumed'));
+    } catch (error) {
+      console.error('Error resuming timer:', error);
+      toast.error(t('resumeTimerFailed'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pausedSession, apiCall, wsId, queryClient, t, currentUserId]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -635,10 +645,18 @@ export function SimpleTimerControls({
                     <Badge className="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1.5 text-base">
                       {currentBreak.break_type?.icon ? (
                         (() => {
-                          const IconComponent = (Icons as any)[currentBreak.break_type.icon];
-                          if (!IconComponent) return <Coffee className="mr-1.5 h-4 w-4" />;
+                          const IconComponent = (Icons as any)[
+                            currentBreak.break_type.icon
+                          ];
+                          if (!IconComponent)
+                            return <Coffee className="mr-1.5 h-4 w-4" />;
                           if (Array.isArray(IconComponent)) {
-                            return <Icon iconNode={IconComponent} className="mr-1.5 h-4 w-4" />;
+                            return (
+                              <Icon
+                                iconNode={IconComponent}
+                                className="mr-1.5 h-4 w-4"
+                              />
+                            );
                           }
                           return <IconComponent className="mr-1.5 h-4 w-4" />;
                         })()

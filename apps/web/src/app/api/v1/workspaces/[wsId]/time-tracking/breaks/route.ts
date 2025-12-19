@@ -11,7 +11,9 @@ const createBreakSchema = z.object({
   break_type_id: z.uuid('Invalid break type ID format').optional(),
   break_type_name: z.string().optional(),
   break_start: z.iso.datetime({ message: 'Invalid break_start timestamp' }),
-  break_end: z.iso.datetime({ message: 'Invalid break_end timestamp' }).optional(),
+  break_end: z.iso
+    .datetime({ message: 'Invalid break_end timestamp' })
+    .optional(),
 });
 
 export async function POST(
@@ -55,7 +57,13 @@ export async function POST(
         { status: 400 }
       );
     }
-    const { session_id, break_type_id, break_type_name, break_start, break_end } = validatedData.data;
+    const {
+      session_id,
+      break_type_id,
+      break_type_name,
+      break_start,
+      break_end,
+    } = validatedData.data;
 
     const sbAdmin = await createAdminClient();
 

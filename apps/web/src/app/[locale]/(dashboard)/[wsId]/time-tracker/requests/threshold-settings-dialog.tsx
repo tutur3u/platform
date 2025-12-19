@@ -62,7 +62,7 @@ export function ThresholdSettingsDialog({
     e.preventDefault();
 
     if (!noApprovalNeeded && !parsed.success) {
-      toast.error(parsed.error.message)
+      toast.error(parsed.error.message);
       return;
     }
 
@@ -78,9 +78,7 @@ export function ThresholdSettingsDialog({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            threshold: noApprovalNeeded
-              ? null
-              : parsed.data
+            threshold: noApprovalNeeded ? null : parsed.data,
           }),
         }
       );
