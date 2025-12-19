@@ -24,6 +24,10 @@ import {
   TableOfContents,
   Tag,
   Timer,
+  Footprints,
+  CupSoda,
+  Brain,
+  Apple,
 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -70,7 +74,8 @@ import {
   getFilteredAndSortedTasks,
   useTaskCounts,
 } from '../utils';
-import MissedEntryDialog from './missed-entry-dialog';
+import MissedEntryDialog, { type ChainSummary } from './missed-entry-dialog';
+
 
 interface SessionTemplate {
   title: string;
@@ -335,7 +340,7 @@ export function TimerControls({
   // State for exceeded threshold session dialog
   const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
     useState(false);
-  const [chainSummary, setChainSummary] = useState<any>(null);
+  const [chainSummary, setChainSummary] = useState<ChainSummary | null>(null);
 
   // Store pending break info when take break triggers threshold exceeded
   const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(
@@ -387,11 +392,11 @@ export function TimerControls({
   useEffect(() => {
     if (activeBreakData) {
       setCurrentBreak(activeBreakData);
-    } else if (!pausedSession?.id) {
+    } else {
       setCurrentBreak(null);
       setBreakDurationSeconds(0);
     }
-  }, [activeBreakData, pausedSession?.id]);
+  }, [activeBreakData]);
 
   // Live break duration counter
   useEffect(() => {
@@ -551,6 +556,10 @@ export function TimerControls({
       setPauseStartTime(
         pausedData.pauseTime ? new Date(pausedData.pauseTime) : null
       );
+    } else {
+      setPausedSession(null);
+      setPausedElapsedTime(0);
+      setPauseStartTime(null);
     }
   }, [pausedData]);
 
@@ -1726,7 +1735,7 @@ export function TimerControls({
 
     // Check if session exceeds threshold - show dialog instead of stopping directly
     // BUT skip if session already has pending_approval=true (request already submitted)
-    const hasPendingApproval = (sessionToStop as any).pending_approval === true;
+    const hasPendingApproval = sessionToStop.pending_approval === true;
     if (sessionExceedsThreshold && !hasPendingApproval) {
       setShowExceededThresholdDialog(true);
       return;
@@ -3867,11 +3876,11 @@ export function TimerControls({
                 </p>
                 <div className="flex flex-wrap gap-2 text-amber-700 text-xs dark:text-amber-300">
                   <span className="flex items-center gap-1">
-                    <Activity className="h-3 w-3" />
+                    <Footprints className="h-3 w-3" />
                     {t('short_walk')}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
+                    <CupSoda className="h-3 w-3" />
                     {t('hydrate')}
                   </span>
                   <span className="flex items-center gap-1">
@@ -3879,11 +3888,11 @@ export function TimerControls({
                     {t('rest_eyes')}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
+                    <Brain className="h-3 w-3" />
                     {t('meditation')}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
+                    <Apple className="h-3 w-3" />
                     {t('healthy_snack')}
                   </span>
                 </div>
@@ -3894,7 +3903,7 @@ export function TimerControls({
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
-                onValueChange={(v) => handleSessionModeChange(v as any)}
+                onValueChange={(v) => handleSessionModeChange(v as 'task' | 'manual')}
               >
                 <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
                   <TabsTrigger
@@ -4988,9 +4997,9 @@ export function TimerControls({
       </Dialog>
 
       {/* Exceeded Threshold Session Dialog */}
-      {(currentSession || pausedSession) && (
+      {(currentSession || pausedSession) && chainSummary && (
         <MissedEntryDialog
-          mode={chainSummary ? 'exceeded-session-chain' : 'exceeded-session'}
+          mode="exceeded-session-chain"
           open={showExceededThresholdDialog}
           onOpenChange={setShowExceededThresholdDialog}
           session={(currentSession || pausedSession)!}
@@ -4998,6 +5007,22 @@ export function TimerControls({
           wsId={wsId}
           thresholdDays={thresholdData?.threshold ?? null}
           chainSummary={chainSummary}
+          onSessionDiscarded={handleSessionDiscarded}
+          onMissedEntryCreated={handleMissedEntryCreated}
+          breakTypeId={pendingBreakTypeId || undefined}
+          breakTypeName={pendingBreakTypeName || undefined}
+        />
+      )}
+
+      {(currentSession || pausedSession) && !chainSummary && (
+        <MissedEntryDialog
+          mode="exceeded-session"
+          open={showExceededThresholdDialog}
+          onOpenChange={setShowExceededThresholdDialog}
+          session={(currentSession || pausedSession)!}
+          categories={categories}
+          wsId={wsId}
+          thresholdDays={thresholdData?.threshold ?? null}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}
           breakTypeId={pendingBreakTypeId || undefined}

@@ -31,7 +31,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../types';
 import type {
@@ -40,7 +40,11 @@ import type {
   TaskWithDetails,
 } from './session-types';
 import { getCategoryColor } from './session-utils';
-import { BreakDisplay, BreakSummary } from './break-display';
+import {
+  BreakDisplay,
+  BreakSummary,
+  useSessionBreaksSummary,
+} from './break-display';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -77,6 +81,13 @@ export function StackedSessionItem({
 
   const latestSession =
     stackedSession?.sessions[stackedSession?.sessions.length - 1];
+
+  // Batch fetch breaks for all sessions to prevent N+1 queries
+  const sessionIds = useMemo(
+    () => stackedSession?.sessions.map((s) => s.id) ?? [],
+    [stackedSession?.sessions]
+  );
+  const { data: breaksBySession } = useSessionBreaksSummary(sessionIds);
 
   if (!latestSession) {
     return null;
@@ -149,7 +160,12 @@ export function StackedSessionItem({
                   </Badge>
                 )}
               {stackedSession?.sessions.map((s) => (
-                <BreakSummary key={s.id} sessionId={s.id} compact />
+                <BreakSummary
+                  key={s.id}
+                  sessionId={s.id}
+                  compact
+                  breaks={breaksBySession?.[s.id]}
+                />
               ))}
             </div>
 

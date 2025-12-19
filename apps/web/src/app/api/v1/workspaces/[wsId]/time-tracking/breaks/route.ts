@@ -3,6 +3,16 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { z } from 'zod';
+
+const createBreakSchema = z.object({
+  session_id: z.string(),
+  break_type_id: z.string().optional(),
+  break_type_name: z.string().optional(),
+  break_start: z.string(),
+  break_end: z.string().optional(),
+});
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +20,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get authenticated user
@@ -25,7 +36,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -37,20 +48,14 @@ export async function POST(
     }
 
     const body = await request.json();
-    const {
-      session_id,
-      break_type_id,
-      break_type_name,
-      break_start,
-      break_end,
-    } = body;
-
-    if (!session_id || !break_start) {
+    const validatedData = createBreakSchema.safeParse(body);
+    if (!validatedData.success) {
       return NextResponse.json(
-        { error: 'session_id and break_start are required' },
+        { error: validatedData.error.message },
         { status: 400 }
       );
     }
+    const { session_id, break_type_id, break_type_name, break_start, break_end } = validatedData.data;
 
     const sbAdmin = await createAdminClient();
 
@@ -59,7 +64,7 @@ export async function POST(
       .from('time_tracking_sessions')
       .select('id')
       .eq('id', session_id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 

@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 // PATCH /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
 // Update a custom break type (workspace admins only)
@@ -12,6 +13,7 @@ export async function PATCH(
 ) {
   try {
     const { wsId, breakTypeId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get authenticated user
@@ -28,7 +30,7 @@ export async function PATCH(
       .from('workspace_break_types')
       .select('id')
       .eq('id', breakTypeId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (!existingBreakType) {
@@ -113,6 +115,7 @@ export async function DELETE(
 ) {
   try {
     const { wsId, breakTypeId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get authenticated user
@@ -129,7 +132,7 @@ export async function DELETE(
       .from('workspace_break_types')
       .select('id')
       .eq('id', breakTypeId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (!breakType) {

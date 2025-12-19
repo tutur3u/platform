@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
   req: Request,
   context: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   const { wsId, sessionId } = await context.params;
-
+  const normalizedWsId = await normalizeWorkspaceId(wsId);
   const supabase = await createClient();
 
   // Get current user
@@ -25,7 +26,7 @@ export async function GET(
       .from('time_tracking_sessions')
       .select('id, ws_id, user_id')
       .eq('id', sessionId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -69,13 +70,15 @@ export async function GET(
 
     // Transform response to flatten break_type
     const transformedBreak = activeBreak
-      ? {
-          ...activeBreak,
-          break_type: Array.isArray(activeBreak.workspace_break_types)
-            ? activeBreak.workspace_break_types[0]
-            : activeBreak.workspace_break_types,
-          workspace_break_types: undefined,
-        }
+      ? (() => {
+          const { workspace_break_types, ...rest } = activeBreak;
+          return {
+            ...rest,
+            break_type: Array.isArray(workspace_break_types)
+              ? workspace_break_types[0]
+              : workspace_break_types,
+          };
+        })()
       : null;
 
     return NextResponse.json({ break: transformedBreak });

@@ -227,6 +227,14 @@ with recursive "session_chains" as (
     "sc"."chain_path" || ' -> ' || "s"."id"::text
   from "public"."time_tracking_sessions" as "s"
   inner join "session_chains" as "sc" on "s"."parent_session_id" = "sc"."id"
+),
+"break_aggregates" as (
+  select 
+    "session_id",
+    count(*) as "break_count",
+    sum("break_duration_seconds") as "total_break_seconds"
+  from "public"."time_tracking_breaks"
+  group by "session_id"
 )
 select 
   "sc"."root_id",
@@ -238,17 +246,10 @@ select
   "sc"."was_resumed",
   "sc"."depth",
   "sc"."chain_path",
-  (
-    select count(*)
-    from "public"."time_tracking_breaks" as "b"
-    where "b"."session_id" = "sc"."id"
-  ) as "break_count",
-  (
-    select coalesce(sum("b"."break_duration_seconds"), 0)
-    from "public"."time_tracking_breaks" as "b"
-    where "b"."session_id" = "sc"."id"
-  ) as "total_break_seconds"
+  coalesce("ba"."break_count", 0) as "break_count",
+  coalesce("ba"."total_break_seconds", 0) as "total_break_seconds"
 from "session_chains" as "sc"
+left join "break_aggregates" as "ba" on "ba"."session_id" = "sc"."id"
 order by "sc"."root_id", "sc"."depth";
 
 comment on view "public"."v_session_chains_debug" is 

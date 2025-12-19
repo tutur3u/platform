@@ -61,6 +61,11 @@ export function ThresholdSettingsDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!noApprovalNeeded && !parsed.success) {
+      toast.error(parsed.error.message)
+      return;
+    }
+
     setIsLoading(true);
     setValidationError(null);
 
@@ -75,9 +80,7 @@ export function ThresholdSettingsDialog({
           body: JSON.stringify({
             threshold: noApprovalNeeded
               ? null
-              : parsed.success
-                ? parsed.data
-                : null,
+              : parsed.data
           }),
         }
       );

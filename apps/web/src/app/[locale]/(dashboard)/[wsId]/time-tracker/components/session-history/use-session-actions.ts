@@ -51,8 +51,7 @@ interface UseSessionActionsReturn {
 
   // Actions
   resumeSession: (
-    session: SessionWithRelations | undefined,
-    confirmed?: boolean
+    session: SessionWithRelations | undefined
   ) => Promise<void>;
   openEditDialog: (session: SessionWithRelations | undefined) => void;
   closeEditDialog: () => void;
@@ -155,7 +154,7 @@ export function useSessionActions({
   );
 
   const resumeSession = useCallback(
-    async (session: SessionWithRelations | undefined, confirmed = false) => {
+    async (session: SessionWithRelations | undefined) => {
       if (!session) return;
 
       setActionStates((prev) => ({ ...prev, [`resume-${session.id}`]: true }));

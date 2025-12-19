@@ -180,7 +180,7 @@ export function SimpleTimerControls({
 
     // Check if session exceeds threshold - show dialog instead of stopping directly
     // BUT skip if session already has pending_approval=true (request already submitted)
-    const hasPendingApproval = (sessionToStop as any).pending_approval === true;
+    const hasPendingApproval = sessionToStop.pending_approval === true;
     if (sessionExceedsThreshold && !hasPendingApproval) {
       setShowExceededThresholdDialog(true);
       return;
@@ -369,11 +369,11 @@ export function SimpleTimerControls({
       });
 
       toast.success(t('timerPaused'));
-    } catch (error: any) {
+    } catch (error) {
       // Check if error is THRESHOLD_EXCEEDED
       if (
-        error?.message?.includes('threshold') ||
-        error?.code === 'THRESHOLD_EXCEEDED'
+        error instanceof Error &&
+        (error.message.includes('threshold') || error.message === 'THRESHOLD_EXCEEDED')
       ) {
         setShowExceededThresholdDialog(true);
       } else {
@@ -396,7 +396,7 @@ export function SimpleTimerControls({
 
   // Resume timer
   const resumeTimer = useCallback(
-    async (confirmed = false) => {
+    async () => {
       if (!pausedSession) return;
 
       setIsLoading(true);

@@ -16793,6 +16793,19 @@ export type Database = {
           relevance: number;
         }[];
       };
+      set_default_break_type: {
+        Args: { p_target_id: string; p_ws_id: string };
+        Returns: {
+          color: string;
+          created_at: string;
+          description: string;
+          icon: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          ws_id: string;
+        }[];
+      };
       should_send_notification: {
         Args: {
           p_channel: string;

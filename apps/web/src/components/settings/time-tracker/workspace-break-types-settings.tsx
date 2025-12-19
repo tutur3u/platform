@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Icons from '@tuturuuu/icons';
 import { Coffee, Edit2, Plus, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
@@ -41,6 +40,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Switch } from '@tuturuuu/ui/switch';
+import {
+  getBreakTypeColor,
+  BREAK_COLOR_CLASSES,
+  getIconComponent,
+} from '@/hooks/useBreakTypeStyles';
 
 type WorkspaceBreakType =
   Database['public']['Tables']['workspace_break_types']['Row'];
@@ -111,14 +115,6 @@ export function WorkspaceBreakTypesSettings({
   const [formState, setFormState] =
     useState<BreakTypeFormState>(initialFormState);
 
-  // Helper function to render icon from icon name
-  const renderIcon = (iconName: string | null) => {
-    if (!iconName) return null;
-    const IconComponent = (Icons as any)[iconName];
-    if (!IconComponent) return null;
-    return <IconComponent className="h-4 w-4" />;
-  };
-
   // Fetch break types
   const { data: breakTypes, isLoading } = useQuery({
     queryKey: ['workspace-break-types', wsId],
@@ -133,6 +129,7 @@ export function WorkspaceBreakTypesSettings({
       if (error) throw error;
       return data as WorkspaceBreakType[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Create break type
@@ -172,15 +169,32 @@ export function WorkspaceBreakTypesSettings({
     mutationFn: async (updatedType: BreakTypeFormState) => {
       if (!editingId) throw new Error('No break type selected for update');
 
-      // If setting as default, unset others first
+      // If setting as default, use atomic RPC to prevent race conditions
       if (updatedType.is_default) {
-        await supabase
+        // First update the break type details
+        const { error: updateError } = await supabase
           .from('workspace_break_types')
-          .update({ is_default: false })
-          .eq('ws_id', wsId)
-          .neq('id', editingId);
+          .update({
+            name: updatedType.name,
+            description: updatedType.description || null,
+            color: updatedType.color,
+            icon: updatedType.icon,
+          })
+          .eq('id', editingId);
+
+        if (updateError) throw updateError;
+
+        // Then atomically set as default
+        const { data, error } = await supabase.rpc('set_default_break_type', {
+          p_ws_id: wsId,
+          p_target_id: editingId,
+        });
+
+        if (error) throw error;
+        return data?.[0];
       }
 
+      // If not setting as default, just update normally
       const { data, error } = await supabase
         .from('workspace_break_types')
         .update({
@@ -206,6 +220,10 @@ export function WorkspaceBreakTypesSettings({
       toast.success(t('updated'));
     },
     onError: (error: Error) => {
+      // Invalidate and refetch to revert UI state in case of failure
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-break-types', wsId],
+      });
       toast.error(error.message || t('error_updating'));
     },
   });
@@ -242,7 +260,7 @@ export function WorkspaceBreakTypesSettings({
     setFormState({
       name: breakType.name,
       description: breakType.description || '',
-      color: breakType.color || 'AMBER',
+      color: breakType.color || 'RED',
       icon: breakType.icon || 'Coffee',
       is_default: breakType.is_default || false,
     });
@@ -354,16 +372,20 @@ export function WorkspaceBreakTypesSettings({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {COLOR_OPTIONS.map((color) => (
-                            <SelectItem key={color} value={color}>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={`h-3 w-3 rounded-full bg-dynamic-${color.toLowerCase()}`}
-                                />
-                                {color}
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {COLOR_OPTIONS.map((color) => {
+                            const colorToken = getBreakTypeColor(color);
+                            const colorClasses = BREAK_COLOR_CLASSES[colorToken];
+                            return (
+                              <SelectItem key={color} value={color}>
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className={`h-3 w-3 rounded-full ${colorClasses.bgOpaque}`}
+                                  />
+                                  {color}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
@@ -382,14 +404,17 @@ export function WorkspaceBreakTypesSettings({
                           </div>
                         </SelectTrigger>
                         <SelectContent>
-                          {ICON_OPTIONS.map((icon) => (
-                            <SelectItem key={icon} value={icon}>
-                              <div className="flex items-center gap-2">
-                                {renderIcon(icon)}
-                                {icon}
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {ICON_OPTIONS.map((icon) => {
+                            const IconComponent = getIconComponent(icon);
+                            return (
+                              <SelectItem key={icon} value={icon}>
+                                <div className="flex items-center gap-2">
+                                  <IconComponent className="h-4 w-4" />
+                                  {icon}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
@@ -448,10 +473,13 @@ export function WorkspaceBreakTypesSettings({
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-${breakType.color?.toLowerCase()}/10 text-dynamic-${breakType.color?.toLowerCase()}`}
+                        className={`flex h-10 w-10 items-center justify-center rounded-full ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].bgOpaque} ${BREAK_COLOR_CLASSES[getBreakTypeColor(breakType.color)].text}`}
                       >
-                        {renderIcon(breakType.icon) || (
-                          <Coffee className="h-5 w-5" />
+                        {getIconComponent(breakType.icon) && (
+                          (() => {
+                            const IconComponent = getIconComponent(breakType.icon);
+                            return <IconComponent className="h-5 w-5" />;
+                          })()
                         )}
                       </div>
                       <div>

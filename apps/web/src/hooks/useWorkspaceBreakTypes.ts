@@ -1,16 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { Tables } from '@tuturuuu/types';
 
-interface WorkspaceBreakType {
-  id: string;
-  ws_id: string;
-  name: string;
-  description: string | null;
-  color: string;
-  icon: string | null;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type WorkspaceBreakType = Tables<'workspace_break_types'>;
 
 export function useWorkspaceBreakTypes(wsId: string | null) {
   return useQuery({

@@ -4,44 +4,17 @@ import { useQuery } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useTranslations } from 'next-intl';
+import dayjs from 'dayjs';
+import { WorkspaceBreakType } from '@/hooks/useWorkspaceBreakTypes';
+import {
+  getBreakTypeColor,
+  BREAK_COLOR_CLASSES,
+  getIconComponent,
+} from '@/hooks/useBreakTypeStyles';
 
 interface BreakDisplayProps {
   sessionId: string;
 }
-
-/**
- * Map break type color to dynamic color token
- */
-const getBreakTypeColor = (colorName: string | null | undefined): string => {
-  if (!colorName) return 'dynamic-blue';
-
-  const colorMap: Record<string, string> = {
-    RED: 'dynamic-red',
-    BLUE: 'dynamic-blue',
-    GREEN: 'dynamic-green',
-    YELLOW: 'dynamic-yellow',
-    ORANGE: 'dynamic-orange',
-    PURPLE: 'dynamic-purple',
-    PINK: 'dynamic-pink',
-    INDIGO: 'dynamic-indigo',
-    CYAN: 'dynamic-cyan',
-    GRAY: 'dynamic-surface',
-  };
-
-  return colorMap[colorName.toUpperCase()] || 'dynamic-blue';
-};
-
-/**
- * Get icon component by name
- */
-const getIconComponent = (iconName: string | null | undefined) => {
-  if (!iconName) return Icons.Coffee;
-
-  const iconKey = iconName.charAt(0).toUpperCase() + iconName.slice(1);
-  const IconComponent = (Icons as Record<string, any>)[iconKey];
-
-  return IconComponent || Icons.Coffee;
-};
 
 /**
  * Format duration in seconds to human-readable string
@@ -61,15 +34,10 @@ export const formatBreakDuration = (seconds: number): string => {
 };
 
 /**
- * Format time to HH:MM format
+ * Format time to HH:MM format in user's local timezone
  */
 export const formatTime = (isoString: string): string => {
-  const date = new Date(isoString);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
+  return dayjs(isoString).format('h:mm A');
 };
 
 /**
@@ -93,9 +61,9 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
         console.error('Error fetching breaks:', error);
         return [];
       }
-
       return data || [];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   if (isLoading) {
@@ -116,25 +84,24 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
       </div>
       <div className="space-y-1.5">
         {breaks.map((breakRecord) => {
-          const breakType = breakRecord.break_type_id as any;
+          const breakType = breakRecord.break_type_id as WorkspaceBreakType | null;
           const breakTypeColor = getBreakTypeColor(breakType?.color);
+          const breakClasses = BREAK_COLOR_CLASSES[breakTypeColor];
           const BreakIcon = getIconComponent(breakType?.icon);
-          const borderClass = `border-${breakTypeColor}/20`;
-          const bgClass = `bg-${breakTypeColor}/5`;
-          const textClass = `text-${breakTypeColor}`;
-          const badgeBgClass = `bg-${breakTypeColor}/30`;
 
           return (
             <div
               key={breakRecord.id}
-              className={`flex items-center justify-between gap-2 rounded-md border ${borderClass} ${bgClass} px-2.5 py-2`}
+              className={`flex items-center justify-between gap-2 rounded-md border ${breakClasses.border} ${breakClasses.bg} px-2.5 py-2`}
             >
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <BreakIcon className={`h-3.5 w-3.5 shrink-0 ${textClass}`} />
+                <BreakIcon
+                  className={`h-3.5 w-3.5 shrink-0 ${breakClasses.text}`}
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`truncate font-semibold ${textClass} text-xs`}
+                      className={`truncate font-semibold ${breakClasses.text} text-xs`}
                     >
                       {breakType?.name ||
                         breakRecord.break_type_name ||
@@ -142,13 +109,13 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                     </span>
                     {!breakRecord.break_end && (
                       <span
-                        className={`inline-block shrink-0 rounded-full ${badgeBgClass} px-1.5 py-0.5 ${textClass} text-xs font-medium`}
+                        className={`inline-block shrink-0 rounded-full ${breakClasses.badgeBg} px-1.5 py-0.5 ${breakClasses.text} text-xs font-medium`}
                       >
                         {t('active')}
                       </span>
                     )}
                   </div>
-                  <div className={`text-xs ${textClass}/75`}>
+                  <div className={`text-xs ${breakClasses.textMuted}`}>
                     {formatTime(breakRecord.break_start)}
                     {breakRecord.break_end && (
                       <>
@@ -160,7 +127,7 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                 </div>
               </div>
               <div
-                className={`shrink-0 font-mono font-semibold ${textClass} text-xs`}
+                className={`shrink-0 font-mono font-semibold ${breakClasses.text} text-xs`}
               >
                 {breakRecord.break_duration_seconds
                   ? formatBreakDuration(breakRecord.break_duration_seconds)
@@ -199,22 +166,74 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
 }
 
 /**
+ * Type for break summary data
+ */
+export interface BreakSummaryData {
+  break_duration_seconds: number;
+}
+
+/**
+ * Hook to fetch breaks summary for multiple sessions at once
+ * Prevents N+1 query issues by batching all session IDs
+ */
+export function useSessionBreaksSummary(sessionIds: string[]) {
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ['session-breaks-batch', sessionIds.sort().join(',')],
+    queryFn: async () => {
+      if (sessionIds.length === 0) return {};
+
+      const { data, error } = await supabase
+        .from('time_tracking_breaks')
+        .select('session_id, break_duration_seconds')
+        .in('session_id', sessionIds)
+        .not('break_duration_seconds', 'is', null);
+
+      if (error) {
+        console.error('Error fetching break summaries:', error);
+        return {};
+      }
+
+      // Group breaks by session_id
+      const breaksBySession: Record<string, BreakSummaryData[]> = {};
+      for (const breakRecord of data || []) {
+        if (!breaksBySession[breakRecord.session_id]) {
+          breaksBySession[breakRecord.session_id] = [];
+        }
+        breaksBySession[breakRecord.session_id]?.push({
+          break_duration_seconds: breakRecord.break_duration_seconds ?? 0,
+        });
+      }
+
+      return breaksBySession;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes - same as other break queries
+    enabled: sessionIds.length > 0,
+  });
+}
+
+/**
  * Inline break duration display for session lists
  * Shows total break time as a compact badge
  */
 interface BreakSummaryProps {
   sessionId: string;
   compact?: boolean;
+  /** Optional: Pre-fetched break data. When provided, component becomes presentational */
+  breaks?: BreakSummaryData[];
 }
 
 export function BreakSummary({
   sessionId,
   compact = false,
+  breaks: prefetchedBreaks,
 }: BreakSummaryProps) {
   const t = useTranslations('time-tracker.breaks');
   const supabase = createClient();
 
-  const { data: breaks } = useQuery({
+  // Only fetch if breaks weren't provided
+  const { data: fetchedBreaks } = useQuery({
     queryKey: ['session-breaks-summary', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -224,9 +243,14 @@ export function BreakSummary({
         .not('break_duration_seconds', 'is', null);
 
       if (error) return [];
-      return (data || []) as Array<{ break_duration_seconds: number }>;
+      return (data || []) as BreakSummaryData[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !prefetchedBreaks, // Skip query if data already provided
   });
+
+  // Use prefetched data if available, otherwise use fetched data
+  const breaks = prefetchedBreaks ?? fetchedBreaks;
 
   if (!breaks || breaks.length === 0) {
     return null;

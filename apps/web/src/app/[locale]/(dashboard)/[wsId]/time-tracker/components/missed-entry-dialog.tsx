@@ -88,37 +88,41 @@ interface ExceededSessionModeProps extends BaseMissedEntryDialogProps {
   chainSummary?: never;
 }
 
+interface ChainSession {
+  id: string;
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  duration_seconds: number;
+  chain_position: number;
+}
+interface ChainBreak {
+  id: string;
+  session_id: string;
+  break_type_name: string;
+  break_start: string;
+  break_end: string;
+  break_duration_seconds: number;
+  break_type_icon?: string;
+  break_type_color?: string;
+}
+export interface ChainSummary {
+  root_session_id: string;
+  sessions: ChainSession[];
+  breaks: ChainBreak[];
+  total_work_seconds: number;
+  total_break_seconds: number;
+  original_start_time: string;
+  chain_length: number;
+}
+
 // Props for exceeded session chain mode
 interface ExceededSessionChainModeProps extends BaseMissedEntryDialogProps {
   mode: 'exceeded-session-chain';
   session: SessionWithRelations;
   thresholdDays: number | null;
-  chainSummary: {
-    root_session_id: string;
-    sessions: Array<{
-      id: string;
-      title: string;
-      description?: string;
-      start_time: string;
-      end_time: string;
-      duration_seconds: number;
-      chain_position: number;
-    }>;
-    breaks: Array<{
-      id: string;
-      session_id: string;
-      break_type_name: string;
-      break_start: string;
-      break_end: string;
-      break_duration_seconds: number;
-      break_type_icon?: string;
-      break_type_color?: string;
-    }>;
-    total_work_seconds: number;
-    total_break_seconds: number;
-    original_start_time: string;
-    chain_length: number;
-  };
+  chainSummary: ChainSummary | null;
   onSessionDiscarded: () => void;
   // wasBreakPause indicates if the session was paused for a break (so paused state should be maintained)
   onMissedEntryCreated: (wasBreakPause?: boolean) => void;
@@ -188,10 +192,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     data: fetchedThresholdData,
     isLoading: isLoadingThreshold,
     isError: isErrorThreshold,
-  } = useWorkspaceTimeThreshold(isExceededMode ? null : wsId);
+  } = useWorkspaceTimeThreshold(isExceededMode || isChainMode ? null : wsId);
 
   // Use provided threshold in exceeded mode, fetched in normal mode
-  const thresholdDays = isExceededMode
+  const thresholdDays = isExceededMode || isChainMode
     ? providedThresholdDays
     : fetchedThresholdData?.threshold;
 
@@ -294,14 +298,14 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   // Update current duration every second in exceeded mode
   useEffect(() => {
-    if (!isExceededMode || !sessionStartTime) return;
+    if ((!isExceededMode && !isChainMode) || !sessionStartTime) return;
 
     const intervalId = setInterval(() => {
       setCurrentTime(Date.now());
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [isExceededMode, sessionStartTime]);
+  }, [isExceededMode, isChainMode, sessionStartTime]);
 
   const compressImage = async (file: File): Promise<File> => {
     try {
@@ -700,19 +704,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           formData.append('linkedSessionId', linkedSessionId);
         }
 
-        // Only append break info if it's a break scenario where we haven't already paused
-        // (i.e., if session doesn't exist or if we deleted it instead of pausing)
-        // In break scenario, break is already created via pause, so don't send to request
-        // In non-break scenario, send break info so it's created on approval
-        if (isExceededMode && isBreakPause && !session) {
-          // Session doesn't exist - this shouldn't happen, but safeguard
-          if (breakTypeId) {
-            formData.append('breakTypeId', breakTypeId);
-          }
-          if (breakTypeName) {
-            formData.append('breakTypeName', breakTypeName);
-          }
-        }
 
         const response = await fetch(
           `/api/v1/workspaces/${wsId}/time-tracking/requests`,
@@ -942,10 +933,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 <h4 className="font-medium text-sm">
                   {t('exceeded.timeline')}
                 </h4>
-                {chainSummary.sessions?.map((sess: any, idx: number) => {
+                {chainSummary.sessions?.map((sess: ChainSession, idx: number) => {
                   const sessionBreaks =
                     chainSummary.breaks?.filter(
-                      (b: any) => b.session_id === sess.id
+                      (b: ChainBreak) => b.session_id === sess.id
                     ) || [];
 
                   return (
@@ -970,7 +961,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                       </div>
 
                       {/* Breaks after this session */}
-                      {sessionBreaks.map((brk: any) => (
+                      {sessionBreaks.map((brk: ChainBreak) => (
                         <div
                           key={brk.id}
                           className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-2"
