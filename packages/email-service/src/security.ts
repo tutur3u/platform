@@ -220,22 +220,28 @@ export function containsSuspiciousContent(html: string): {
   }
 
   // Check for data: URLs with script content
-  if (/data:[^;]*;base64.*script/i.test(html)) {
+  // Bounded regex to prevent ReDoS: limit attribute content length
+  if (/data:[^;]{0,100};base64[^<]{0,10000}script/i.test(html)) {
     reasons.push('Contains suspicious data: URL');
   }
 
   // Check for event handlers
-  if (/on\w+\s*=/i.test(html)) {
+  // Bounded regex to prevent ReDoS: limit identifier and whitespace length
+  if (/on\w{1,50}\s{0,10}=/i.test(html)) {
     reasons.push('Contains inline event handlers');
   }
 
   // Check for external form actions
-  if (/<form[^>]*action\s*=\s*["']?https?:\/\//i.test(html)) {
+  // Bounded regex to prevent ReDoS: limit attribute content length
+  if (/<form[^>]{0,500}action\s{0,10}=\s{0,10}["']?https?:\/\//i.test(html)) {
     reasons.push('Contains external form action');
   }
 
   // Check for hidden iframes
-  if (/<iframe[^>]*style[^>]*display\s*:\s*none/i.test(html)) {
+  // Bounded regex to prevent ReDoS: limit attribute content length
+  if (
+    /<iframe[^>]{0,500}style[^>]{0,500}display\s{0,10}:\s{0,10}none/i.test(html)
+  ) {
     reasons.push('Contains hidden iframe');
   }
 
@@ -259,7 +265,21 @@ export function spamScore(subject: string, html: string): number {
   if (/!{2,}|\${2,}/g.test(subject)) score += 10;
 
   // Content checks
-  const textContent = html.replace(/<[^>]+>/g, ' ');
+  // Strip HTML tags using safe non-regex approach to prevent ReDoS
+  const parts: string[] = [];
+  let inTag = false;
+  for (let i = 0; i < html.length; i++) {
+    const char = html[i]!;
+    if (char === '<') {
+      inTag = true;
+      parts.push(' ');
+    } else if (char === '>') {
+      inTag = false;
+    } else if (!inTag) {
+      parts.push(char);
+    }
+  }
+  const textContent = parts.join('');
   if (/click here|unsubscribe/i.test(textContent)) score += 5;
   if (/viagra|cialis|pharmacy/i.test(textContent)) score += 30;
   if (/nigerian prince|inheritance|lottery/i.test(textContent)) score += 40;
