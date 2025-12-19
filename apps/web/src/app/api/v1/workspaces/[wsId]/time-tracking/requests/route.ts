@@ -47,6 +47,9 @@ export async function POST(
     const taskId = formData.get('taskId') as string;
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
+    const breakTypeId = formData.get('breakTypeId') as string | null;
+    const breakTypeName = formData.get('breakTypeName') as string | null;
+    const linkedSessionId = formData.get('linkedSessionId') as string | null;
 
     // Validate required fields
     if (!title || !startTime || !endTime) {
@@ -110,6 +113,8 @@ export async function POST(
     }
 
     // Create time tracking request
+    // linked_session_id links this request to an existing session (e.g., for break pauses)
+    // When approved, the session becomes visible; when rejected, the session is deleted
     const { data, error } = await supabase
       .from('time_tracking_requests')
       .insert({
@@ -122,6 +127,9 @@ export async function POST(
         description: description || null,
         start_time: startTime,
         end_time: endTime,
+        break_type_id: breakTypeId || null,
+        break_type_name: breakTypeName || null,
+        linked_session_id: linkedSessionId || null,
         images: uploadedImagePaths.length > 0 ? uploadedImagePaths : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

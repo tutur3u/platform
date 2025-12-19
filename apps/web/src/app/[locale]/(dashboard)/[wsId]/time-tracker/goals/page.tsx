@@ -37,11 +37,13 @@ export default async function TimeTrackerGoalsPage({
     .eq('ws_id', wsId);
 
   // Stats are more complex and require processing, which we'll do after fetching
+  // Filter out sessions with pending_approval=true (they haven't been approved yet)
   const { data: sessions } = await supabase
     .from('time_tracking_sessions')
     .select('start_time, duration_seconds')
     .eq('ws_id', wsId)
     .eq('user_id', user.id)
+    .eq('pending_approval', false)
     .not('duration_seconds', 'is', null);
 
   // Calculate stats

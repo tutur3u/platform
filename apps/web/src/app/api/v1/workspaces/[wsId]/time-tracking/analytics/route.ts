@@ -51,6 +51,7 @@ export async function GET(
     }
 
     // Get basic session analytics
+    // Filter out sessions with pending_approval=true (they haven't been approved yet)
     const { data: sessions, error } = await supabase
       .from('time_tracking_sessions')
       .select(
@@ -61,6 +62,7 @@ export async function GET(
       )
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
+      .eq('pending_approval', false)
       .gte('start_time', startDate.toISOString())
       .not('duration_seconds', 'is', null)
       .order('start_time', { ascending: true });

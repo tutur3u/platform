@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import dayjs from 'dayjs';
+import { useMemo } from 'react';
 import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 
 /**
@@ -29,8 +29,7 @@ export function useSessionExceedsThreshold(
   isLoading: boolean = false
 ): SessionThresholdResult {
   return useMemo(() => {
-    // If no session or session is not running, it doesn't exceed
-    if (!session || !session.is_running || !session.start_time) {
+    if (!session || !session.start_time) {
       return {
         exceeds: false,
         thresholdDays: thresholdDays ?? null,
@@ -67,21 +66,10 @@ export function useSessionExceedsThreshold(
       };
     }
 
-    // If threshold is 0, all entries require approval
-    // Any running session should be marked as exceeded so it goes through the approval flow
-    if (thresholdDays === 0) {
-      return {
-        exceeds: true,
-        thresholdDays: 0,
-        isLoading: false,
-        sessionStartTime,
-        sessionDuration,
-      };
-    }
-
     // Check if session started more than threshold days ago
     const thresholdAgo = now.subtract(thresholdDays, 'day');
-    const exceeds = sessionStartTime.isBefore(thresholdAgo);
+    const exceeds =
+      thresholdDays === 0 || sessionStartTime.isBefore(thresholdAgo);
 
     return {
       exceeds,

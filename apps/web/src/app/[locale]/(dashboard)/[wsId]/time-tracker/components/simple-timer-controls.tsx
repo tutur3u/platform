@@ -1,9 +1,19 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
-import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Icons from '@tuturuuu/icons';
+import {
+  CheckCircle,
+  Coffee,
+  Icon,
+  Pause,
+  Play,
+  Square,
+  Timer,
+} from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
+
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -18,13 +28,14 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
+import { formatDuration, formatTime } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
-import { formatDuration, formatTime } from '@/lib/time-format';
 
 interface SimpleTimerControlsProps {
   wsId: string;
@@ -61,23 +72,119 @@ export function SimpleTimerControls({
   const [justCompleted, setJustCompleted] =
     useState<SessionWithRelations | null>(null);
 
-  // Paused session state
   const [pausedSession, setPausedSession] =
     useState<SessionWithRelations | null>(null);
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
+  const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
+
+  // Current break data for paused session
+  const [currentBreak, setCurrentBreak] = useState<{
+    id: string;
+    break_type_id?: string;
+    break_type_name?: string;
+    break_type?: { id: string; name: string; icon?: string; color?: string };
+    break_start: string;
+  } | null>(null);
+  const [breakDurationSeconds, setBreakDurationSeconds] = useState(0);
+
+  const { data: pausedData } = useQuery({
+    queryKey: ['paused-time-session', wsId, currentUserId],
+    queryFn: async () => {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=paused`
+      );
+      return response;
+    },
+    staleTime: 30000,
+  });
+
+  // Sync paused session from query data
+  useEffect(() => {
+    if (pausedData?.session) {
+      setPausedSession(pausedData.session);
+      setPausedElapsedTime(pausedData.session.duration_seconds || 0);
+      setPauseStartTime(
+        pausedData.pauseTime ? new Date(pausedData.pauseTime as string) : null
+      );
+    }
+  }, [pausedData]);
+
+  // Fetch active break when session is paused using React Query
+  const { data: activeBreakData } = useQuery({
+    queryKey: ['active-break', wsId, pausedSession?.id],
+    queryFn: async () => {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession?.id}/breaks/active`
+      );
+      return (
+        (response.break as {
+          id: string;
+          break_type_id?: string;
+          break_type_name?: string;
+          break_type?: {
+            id: string;
+            name: string;
+            icon?: string;
+            color?: string;
+          };
+          break_start: string;
+        }) || null
+      );
+    },
+    enabled: !!pausedSession?.id,
+    staleTime: 5000, // Keep fresh for 5 seconds
+    retry: 1,
+  });
+
+  // Sync active break data to local state
+  useEffect(() => {
+    if (activeBreakData) {
+      setCurrentBreak(activeBreakData);
+    } else {
+      setCurrentBreak(null);
+      setBreakDurationSeconds(0);
+    }
+  }, [activeBreakData]);
+
+  // Live break duration counter
+  useEffect(() => {
+    if (!currentBreak?.break_start) {
+      setBreakDurationSeconds(0);
+      return;
+    }
+
+    const updateBreakDuration = () => {
+      const breakStart = new Date(currentBreak.break_start).getTime();
+      const now = Date.now();
+      setBreakDurationSeconds(Math.floor((now - breakStart) / 1000));
+    };
+
+    updateBreakDuration();
+    const interval = setInterval(updateBreakDuration, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentBreak?.break_start]);
 
   // State for exceeded threshold session dialog
   const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
     useState(false);
 
+  // Store pending break info when take break triggers threshold exceeded
+  const [pendingBreakTypeId, setPendingBreakTypeId] = useState<string | null>(
+    null
+  );
+  const [pendingBreakTypeName, setPendingBreakTypeName] = useState<
+    string | null
+  >(null);
+
   // Fetch workspace threshold setting
-  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+  const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
 
   // Check if current session exceeds the threshold
   const { exceeds: sessionExceedsThreshold } = useSessionExceedsThreshold(
-    currentSession,
-    thresholdDays,
+    currentSession || pausedSession,
+    thresholdData?.threshold,
     isLoadingThreshold
   );
 
@@ -152,7 +259,9 @@ export function SimpleTimerControls({
     if (!sessionToStop) return;
 
     // Check if session exceeds threshold - show dialog instead of stopping directly
-    if (sessionExceedsThreshold && currentSession) {
+    // BUT skip if session already has pending_approval=true (request already submitted)
+    const hasPendingApproval = sessionToStop.pending_approval === true;
+    if (sessionExceedsThreshold && !hasPendingApproval) {
       setShowExceededThresholdDialog(true);
       return;
     }
@@ -166,6 +275,37 @@ export function SimpleTimerControls({
           body: JSON.stringify({ action: 'stop' }),
         }
       );
+
+      // If session has pending approval, just clear the UI state without showing celebration
+      // The session will appear in history only after the request is approved
+      if (hasPendingApproval) {
+        setPausedSession(null);
+        setPausedElapsedTime(0);
+        setSessionTitle('');
+        setSessionDescription('');
+        setSelectedTaskId('none');
+        setSelectedCategoryId(workCategory?.id || 'none');
+
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId, currentUserId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', wsId, currentUserId],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'paused-time-session' &&
+            query.queryKey[1] === wsId,
+        });
+
+        router.refresh();
+        toast.info(
+          t('sessionPendingApproval') ||
+            'Session is pending approval. It will appear in your history once approved.'
+        );
+        return;
+      }
 
       setJustCompleted(response.session || null);
       setPausedSession(null);
@@ -211,6 +351,8 @@ export function SimpleTimerControls({
     workCategory,
     formatDuration,
     t,
+    currentUserId,
+    router,
   ]);
 
   const resetFormState = useCallback(() => {
@@ -225,6 +367,9 @@ export function SimpleTimerControls({
   // Handle session discarded from exceeded threshold dialog
   const handleSessionDiscarded = useCallback(() => {
     resetFormState();
+    // Clear pending break info
+    setPendingBreakTypeId(null);
+    setPendingBreakTypeName(null);
     // Invalidate queries to refetch running session and stats - single source of truth
     queryClient.invalidateQueries({
       queryKey: ['running-time-session', wsId, currentUserId],
@@ -238,38 +383,13 @@ export function SimpleTimerControls({
   }, [resetFormState, queryClient, wsId, router, currentUserId]);
 
   // Handle missed entry created from exceeded threshold dialog
-  const handleMissedEntryCreated = useCallback(() => {
-    resetFormState();
-    // Invalidate queries to refetch running session and stats - single source of truth
-    queryClient.invalidateQueries({
-      queryKey: ['running-time-session', wsId, currentUserId],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ['time-tracker-stats', wsId, currentUserId],
-    });
-
-    // Refresh server-side data to update overview page stats
-    router.refresh();
-  }, [resetFormState, queryClient, wsId, router, currentUserId]);
-
-  // Pause timer
-  const pauseTimer = useCallback(async () => {
-    if (!currentSession) return;
-
-    setIsLoading(true);
-    try {
-      await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify({ action: 'pause' }),
-        }
-      );
-
-      // Store paused session state locally (paused sessions are not "running")
-      setPausedSession(currentSession);
-      setPausedElapsedTime(elapsedTime);
-
+  // If wasBreakPause is true, the session is now paused with a break
+  const handleMissedEntryCreated = useCallback(
+    (wasBreakPause?: boolean) => {
+      resetFormState();
+      // Clear pending break info
+      setPendingBreakTypeId(null);
+      setPendingBreakTypeName(null);
       // Invalidate queries to refetch running session and stats - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId, currentUserId],
@@ -278,14 +398,90 @@ export function SimpleTimerControls({
         queryKey: ['time-tracker-stats', wsId, currentUserId],
       });
 
+      // For break pauses, also invalidate paused session query
+      if (wasBreakPause) {
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'paused-time-session' &&
+            query.queryKey[1] === wsId,
+        });
+      }
+
+      // Refresh server-side data to update overview page stats
+      router.refresh();
+    },
+    [resetFormState, queryClient, wsId, router, currentUserId]
+  );
+
+  // Pause timer
+  const pauseTimer = useCallback(async () => {
+    if (!currentSession) return;
+
+    // Check if session exceeds threshold - show dialog instead of pausing directly
+    if (sessionExceedsThreshold) {
+      // Set pending break info so MissedEntryDialog knows this is a break pause
+      setPendingBreakTypeName('Break');
+      setShowExceededThresholdDialog(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            action: 'pause',
+            breakTypeName: 'Break', // Always log a break when pausing
+          }),
+        }
+      );
+
+      // Store paused session state locally (paused sessions are not "running")
+      setPausedSession(currentSession);
+      setPausedElapsedTime(elapsedTime);
+
+      // Invalidate queries to refetch running session, paused session, and stats
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['paused-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId, currentUserId],
+      });
+
       toast.success(t('timerPaused'));
     } catch (error) {
-      console.error('Error pausing timer:', error);
-      toast.error(t('pauseTimerFailed'));
+      // Check if error is THRESHOLD_EXCEEDED
+      if (
+        error instanceof Error &&
+        (error.message.includes('threshold') ||
+          error.message === 'THRESHOLD_EXCEEDED')
+      ) {
+        // Set pending break info so MissedEntryDialog knows this is a break pause
+        setPendingBreakTypeName('Break');
+        setShowExceededThresholdDialog(true);
+      } else {
+        console.error('Error pausing timer:', error);
+        toast.error(t('pauseTimerFailed'));
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t]);
+  }, [
+    currentSession,
+    apiCall,
+    wsId,
+    elapsedTime,
+    queryClient,
+    t,
+    sessionExceedsThreshold,
+    currentUserId,
+  ]);
 
   // Resume timer
   const resumeTimer = useCallback(async () => {
@@ -305,9 +501,12 @@ export function SimpleTimerControls({
       setPausedSession(null);
       setPausedElapsedTime(0);
 
-      // Invalidate queries to refetch running session and stats - single source of truth
+      // Invalidate queries to refetch running session and paused session
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId, currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['paused-time-session', wsId, currentUserId],
       });
       queryClient.invalidateQueries({
         queryKey: ['time-tracker-stats', wsId, currentUserId],
@@ -320,7 +519,7 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [pausedSession, apiCall, wsId, queryClient, t]);
+  }, [pausedSession, apiCall, wsId, queryClient, t, currentUserId]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -437,15 +636,73 @@ export function SimpleTimerControls({
         ) : pausedSession ? (
           // Paused timer display
           <div className="space-y-6 text-center">
-            <div className="rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
-              <div className="mb-3 flex items-center justify-center gap-2">
-                <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
-                  {t('paused')}
-                </span>
-              </div>
-              <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
-                {formatTime(pausedElapsedTime)}
+            <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
+              <div className="absolute inset-0 bg-linear-to-r from-amber-500/5 to-transparent"></div>
+              <div className="relative">
+                {/* Break Type Badge - Prominent Display */}
+                {currentBreak && (
+                  <div className="mb-4 flex items-center justify-center gap-2">
+                    <Badge className="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1.5 text-base">
+                      {currentBreak.break_type?.icon ? (
+                        (() => {
+                          const IconComponent = (Icons as any)[
+                            currentBreak.break_type.icon
+                          ];
+                          if (!IconComponent)
+                            return <Coffee className="mr-1.5 h-4 w-4" />;
+                          if (Array.isArray(IconComponent)) {
+                            return (
+                              <Icon
+                                iconNode={IconComponent}
+                                className="mr-1.5 h-4 w-4"
+                              />
+                            );
+                          }
+                          return <IconComponent className="mr-1.5 h-4 w-4" />;
+                        })()
+                      ) : (
+                        <Coffee className="mr-1.5 h-4 w-4" />
+                      )}
+                      {currentBreak.break_type?.name ||
+                        currentBreak.break_type_name ||
+                        t('onBreak')}
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="mb-3 flex items-center justify-center gap-2">
+                  <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
+                    {t('paused')}
+                  </span>
+                </div>
+
+                {/* Work Duration */}
+                <div className="mb-2">
+                  <div className="text-muted-foreground text-xs mb-1">
+                    {t('workDuration')}
+                  </div>
+                  <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
+                    {formatTime(pausedElapsedTime)}
+                  </div>
+                </div>
+
+                {/* Break Duration - Live Counter */}
+                <div className="mt-4 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 p-3">
+                  <div className="text-amber-700 dark:text-amber-300 text-xs mb-1">
+                    {t('breakDuration')}
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-amber-600 dark:text-amber-400">
+                    {formatDuration(breakDurationSeconds)}
+                  </div>
+                  {pauseStartTime && (
+                    <div className="text-amber-600/70 dark:text-amber-400/70 text-xs mt-1">
+                      {t('pausedAt', {
+                        time: pauseStartTime.toLocaleTimeString(),
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -460,7 +717,7 @@ export function SimpleTimerControls({
 
             <div className="flex gap-3">
               <Button
-                onClick={resumeTimer}
+                onClick={() => resumeTimer()}
                 disabled={isLoading}
                 className="flex-1 bg-green-600 text-white hover:bg-green-700"
               >
@@ -567,17 +824,19 @@ export function SimpleTimerControls({
       )}
 
       {/* Exceeded Threshold Session Dialog */}
-      {currentSession && (
+      {(currentSession || pausedSession) && (
         <MissedEntryDialog
           mode="exceeded-session"
           open={showExceededThresholdDialog}
           onOpenChange={setShowExceededThresholdDialog}
-          session={currentSession}
+          session={(currentSession || pausedSession)!}
           categories={categories}
           wsId={wsId}
-          thresholdDays={thresholdDays ?? null}
+          thresholdDays={thresholdData?.threshold ?? null}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}
+          breakTypeId={pendingBreakTypeId || undefined}
+          breakTypeName={pendingBreakTypeName || undefined}
         />
       )}
     </Card>

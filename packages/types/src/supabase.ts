@@ -8027,6 +8027,70 @@ export type Database = {
           },
         ];
       };
+      time_tracking_breaks: {
+        Row: {
+          break_duration_seconds: number | null;
+          break_end: string | null;
+          break_start: string;
+          break_type_id: string | null;
+          break_type_name: string | null;
+          created_at: string | null;
+          created_by: string;
+          id: string;
+          notes: string | null;
+          session_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          break_duration_seconds?: number | null;
+          break_end?: string | null;
+          break_start: string;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
+          created_at?: string | null;
+          created_by: string;
+          id?: string;
+          notes?: string | null;
+          session_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          break_duration_seconds?: number | null;
+          break_end?: string | null;
+          break_start?: string;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
+          created_at?: string | null;
+          created_by?: string;
+          id?: string;
+          notes?: string | null;
+          session_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_breaks_break_type_id_fkey';
+            columns: ['break_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_break_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_breaks_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_session_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_breaks_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       time_tracking_categories: {
         Row: {
           color: string | null;
@@ -8170,12 +8234,15 @@ export type Database = {
           approval_status: Database['public']['Enums']['time_tracking_request_status'];
           approved_at: string | null;
           approved_by: string | null;
+          break_type_id: string | null;
+          break_type_name: string | null;
           category_id: string | null;
           created_at: string;
           description: string | null;
           end_time: string;
           id: string;
           images: string[] | null;
+          linked_session_id: string | null;
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
@@ -8190,12 +8257,15 @@ export type Database = {
           approval_status?: Database['public']['Enums']['time_tracking_request_status'];
           approved_at?: string | null;
           approved_by?: string | null;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
           category_id?: string | null;
           created_at?: string;
           description?: string | null;
           end_time: string;
           id: string;
           images?: string[] | null;
+          linked_session_id?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
@@ -8210,12 +8280,15 @@ export type Database = {
           approval_status?: Database['public']['Enums']['time_tracking_request_status'];
           approved_at?: string | null;
           approved_by?: string | null;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
           category_id?: string | null;
           created_at?: string;
           description?: string | null;
           end_time?: string;
           id?: string;
           images?: string[] | null;
+          linked_session_id?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
@@ -8256,10 +8329,31 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'time_tracking_requests_break_type_id_fkey';
+            columns: ['break_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_break_types';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'time_tracking_requests_category_id_fkey';
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_linked_session_id_fkey';
+            columns: ['linked_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_session_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_linked_session_id_fkey';
+            columns: ['linked_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -8351,6 +8445,8 @@ export type Database = {
           end_time: string | null;
           id: string;
           is_running: boolean | null;
+          parent_session_id: string | null;
+          pending_approval: boolean;
           productivity_score: number | null;
           start_time: string;
           tags: string[] | null;
@@ -8370,6 +8466,8 @@ export type Database = {
           end_time?: string | null;
           id?: string;
           is_running?: boolean | null;
+          parent_session_id?: string | null;
+          pending_approval?: boolean;
           productivity_score?: number | null;
           start_time: string;
           tags?: string[] | null;
@@ -8389,6 +8487,8 @@ export type Database = {
           end_time?: string | null;
           id?: string;
           is_running?: boolean | null;
+          parent_session_id?: string | null;
+          pending_approval?: boolean;
           productivity_score?: number | null;
           start_time?: string;
           tags?: string[] | null;
@@ -8405,6 +8505,20 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_parent_session_id_fkey';
+            columns: ['parent_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_session_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_parent_session_id_fkey';
+            columns: ['parent_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -9965,6 +10079,57 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_boards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_break_types: {
+        Row: {
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          icon: string | null;
+          id: string;
+          is_default: boolean | null;
+          name: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_default?: boolean | null;
+          name: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_default?: boolean | null;
+          name?: string;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_break_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_break_types_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -14568,6 +14733,22 @@ export type Database = {
           },
         ];
       };
+      v_session_chains_debug: {
+        Row: {
+          break_count: number | null;
+          chain_path: string | null;
+          depth: number | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          root_id: string | null;
+          session_id: string | null;
+          start_time: string | null;
+          title: string | null;
+          total_break_seconds: number | null;
+          was_resumed: boolean | null;
+        };
+        Relationships: [];
+      };
       v_user_referral_discounts: {
         Row: {
           calculated_discount_value: number | null;
@@ -15811,6 +15992,14 @@ export type Database = {
           retention_rate: number;
         }[];
       };
+      get_session_chain_root: {
+        Args: { session_id_input: string };
+        Returns: string;
+      };
+      get_session_chain_summary: {
+        Args: { session_id_input: string };
+        Returns: Json;
+      };
       get_session_statistics: {
         Args: never;
         Returns: {
@@ -16394,6 +16583,8 @@ export type Database = {
           end_time: string | null;
           id: string;
           is_running: boolean | null;
+          parent_session_id: string | null;
+          pending_approval: boolean;
           productivity_score: number | null;
           start_time: string;
           tags: string[] | null;
@@ -16503,6 +16694,24 @@ export type Database = {
           os: string;
         }[];
       };
+      pause_session_for_break:
+        | {
+            Args: {
+              p_duration_seconds: number;
+              p_end_time: string;
+              p_session_id: string;
+            };
+            Returns: Json;
+          }
+        | {
+            Args: {
+              p_duration_seconds: number;
+              p_end_time: string;
+              p_pending_approval?: boolean;
+              p_session_id: string;
+            };
+            Returns: Json;
+          };
       process_notification_batches: { Args: never; Returns: undefined };
       process_recurring_transactions: {
         Args: never;
@@ -16584,6 +16793,19 @@ export type Database = {
           relevance: number;
         }[];
       };
+      set_default_break_type: {
+        Args: { p_target_id: string; p_ws_id: string };
+        Returns: {
+          color: string;
+          created_at: string;
+          description: string;
+          icon: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          ws_id: string;
+        }[];
+      };
       should_send_notification: {
         Args: {
           p_channel: string;
@@ -16648,6 +16870,8 @@ export type Database = {
           end_time: string | null;
           id: string;
           is_running: boolean | null;
+          parent_session_id: string | null;
+          pending_approval: boolean;
           productivity_score: number | null;
           start_time: string;
           tags: string[] | null;
