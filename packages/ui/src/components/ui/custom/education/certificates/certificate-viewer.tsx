@@ -3,9 +3,8 @@
 import { ImageIcon } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { DownloadButtonPDF } from '@tuturuuu/ui/custom/education/certificates/download-button-pdf';
-import html2canvas from 'html2canvas-pro';
-import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect } from 'react';
 
 const PDFViewer = dynamic(
@@ -46,6 +45,7 @@ export function CertificateViewer({
     }
 
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
