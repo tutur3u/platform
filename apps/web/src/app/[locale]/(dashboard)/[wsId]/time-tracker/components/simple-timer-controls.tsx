@@ -108,7 +108,13 @@ export function SimpleTimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession?.id}/breaks/active`
       );
-      return response.break || null;
+      return response.break as {
+        id: string;
+        break_type_id?: string;
+        break_type_name?: string;
+        break_type?: { id: string; name: string; icon?: string; color?: string };
+        break_start: string;
+      } || null;
     },
     enabled: !!pausedSession?.id,
     staleTime: 5000, // Keep fresh for 5 seconds
@@ -415,7 +421,6 @@ export function SimpleTimerControls({
       );
 
       // Store paused session state locally (paused sessions are not "running")
-      const pauseTime = new Date();
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
 
