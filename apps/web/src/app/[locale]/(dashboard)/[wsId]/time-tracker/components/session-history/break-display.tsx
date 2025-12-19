@@ -84,7 +84,8 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
       </div>
       <div className="space-y-1.5">
         {breaks.map((breakRecord) => {
-          const breakType = breakRecord.break_type_id as WorkspaceBreakType | null;
+          const breakType =
+            breakRecord.break_type_id as WorkspaceBreakType | null;
           const breakTypeColor = getBreakTypeColor(breakType?.color);
           const breakClasses = BREAK_COLOR_CLASSES[breakTypeColor];
           const BreakIcon = getIconComponent(breakType?.icon);

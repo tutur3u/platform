@@ -31,8 +31,6 @@ interface ChainSummary {
   last_end_time: string | null;
 }
 
-
-
 // Helper function to get session chain root (traverse up to find original session)
 async function getSessionChainRoot(
   sessionId: string
@@ -64,9 +62,9 @@ async function checkSessionThreshold(
     sessionId?: string; // If provided, validates root of chain instead
     returnChainDetails?: boolean; // If true, returns full chain summary
   }
-): Promise<{ 
-  exceeds: boolean; 
-  thresholdDays: number | null; 
+): Promise<{
+  exceeds: boolean;
+  thresholdDays: number | null;
   message?: string;
   chainSummary?: ChainSummary;
 }> {
@@ -254,7 +252,7 @@ export async function PATCH(
     if (action === 'stop') {
       // Check if session has pending approval (means it was paused with a break and has a request pending)
       // If so, skip threshold validation since approval was already handled during pause
-      const hasPendingApproval = session .pending_approval === true;
+      const hasPendingApproval = session.pending_approval === true;
 
       // Validate threshold before stopping - checks ENTIRE CHAIN from root
       // This ensures pause exemption doesn't bypass approval requirements
@@ -427,35 +425,35 @@ export async function PATCH(
           }
         }
 
-      // Create break record (completed when resumed)
-      const { error: breakError } = await sbAdmin
-        .from('time_tracking_breaks')
-        .insert({
-          session_id: sessionId, // Link to the paused session
-          break_type_id: finalBreakTypeId || null,
-          break_type_name: finalBreakTypeName || 'Break',
-          break_start: endTime,
-          break_end: null, // Set when resumed
-          created_by: user.id,
-        });
-      
-      if (breakError) {
-        console.error('Failed to create break record:', breakError);
-        // Rollback: restore session to running state
-        await sbAdmin
-          .from('time_tracking_sessions')
-          .update({
-            end_time: null,
-            duration_seconds: null,
-            is_running: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', sessionId);
-        return NextResponse.json(
-          { error: 'Failed to create break record' },
-          { status: 500 }
-        );
-      }
+        // Create break record (completed when resumed)
+        const { error: breakError } = await sbAdmin
+          .from('time_tracking_breaks')
+          .insert({
+            session_id: sessionId, // Link to the paused session
+            break_type_id: finalBreakTypeId || null,
+            break_type_name: finalBreakTypeName || 'Break',
+            break_start: endTime,
+            break_end: null, // Set when resumed
+            created_by: user.id,
+          });
+
+        if (breakError) {
+          console.error('Failed to create break record:', breakError);
+          // Rollback: restore session to running state
+          await sbAdmin
+            .from('time_tracking_sessions')
+            .update({
+              end_time: null,
+              duration_seconds: null,
+              is_running: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', sessionId);
+          return NextResponse.json(
+            { error: 'Failed to create break record' },
+            { status: 500 }
+          );
+        }
 
         // Use the RPC function to pause the session with the bypass flag set
         // This bypasses the trigger's threshold check for break pauses

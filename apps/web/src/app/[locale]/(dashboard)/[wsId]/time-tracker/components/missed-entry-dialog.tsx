@@ -195,9 +195,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   } = useWorkspaceTimeThreshold(isExceededMode || isChainMode ? null : wsId);
 
   // Use provided threshold in exceeded mode, fetched in normal mode
-  const thresholdDays = isExceededMode || isChainMode
-    ? providedThresholdDays
-    : fetchedThresholdData?.threshold;
+  const thresholdDays =
+    isExceededMode || isChainMode
+      ? providedThresholdDays
+      : fetchedThresholdData?.threshold;
 
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
@@ -704,7 +705,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           formData.append('linkedSessionId', linkedSessionId);
         }
 
-
         const response = await fetch(
           `/api/v1/workspaces/${wsId}/time-tracking/requests`,
           {
@@ -933,58 +933,60 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 <h4 className="font-medium text-sm">
                   {t('exceeded.timeline')}
                 </h4>
-                {chainSummary.sessions?.map((sess: ChainSession, idx: number) => {
-                  const sessionBreaks =
-                    chainSummary.breaks?.filter(
-                      (b: ChainBreak) => b.session_id === sess.id
-                    ) || [];
+                {chainSummary.sessions?.map(
+                  (sess: ChainSession, idx: number) => {
+                    const sessionBreaks =
+                      chainSummary.breaks?.filter(
+                        (b: ChainBreak) => b.session_id === sess.id
+                      ) || [];
 
-                  return (
-                    <div key={sess.id} className="space-y-2">
-                      {/* Work Session */}
-                      <div className="flex items-start gap-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/10 p-3">
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {sess.title}
+                    return (
+                      <div key={sess.id} className="space-y-2">
+                        {/* Work Session */}
+                        <div className="flex items-start gap-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/10 p-3">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white text-xs font-bold">
+                            {idx + 1}
                           </div>
-                          <div className="text-muted-foreground text-xs mt-1">
-                            {dayjs(sess.start_time).format('h:mm A')} →{' '}
-                            {dayjs(sess.end_time).format('h:mm A')}
-                            <span className="ml-2 font-medium text-green-600 dark:text-green-400">
-                              {formatDuration(sess.duration_seconds)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Breaks after this session */}
-                      {sessionBreaks.map((brk: ChainBreak) => (
-                        <div
-                          key={brk.id}
-                          className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-2"
-                        >
-                          <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm">
-                              {brk.break_type_icon && (
-                                <span className="mr-1">
-                                  {brk.break_type_icon}
-                                </span>
-                              )}
-                              {brk.break_type_name}
+                            <div className="font-medium truncate">
+                              {sess.title}
                             </div>
-                            <div className="text-amber-600 dark:text-amber-400 text-xs font-medium">
-                              {formatDuration(brk.break_duration_seconds)}
+                            <div className="text-muted-foreground text-xs mt-1">
+                              {dayjs(sess.start_time).format('h:mm A')} →{' '}
+                              {dayjs(sess.end_time).format('h:mm A')}
+                              <span className="ml-2 font-medium text-green-600 dark:text-green-400">
+                                {formatDuration(sess.duration_seconds)}
+                              </span>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  );
-                })}
+
+                        {/* Breaks after this session */}
+                        {sessionBreaks.map((brk: ChainBreak) => (
+                          <div
+                            key={brk.id}
+                            className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-2"
+                          >
+                            <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm">
+                                {brk.break_type_icon && (
+                                  <span className="mr-1">
+                                    {brk.break_type_icon}
+                                  </span>
+                                )}
+                                {brk.break_type_name}
+                              </div>
+                              <div className="text-amber-600 dark:text-amber-400 text-xs font-medium">
+                                {formatDuration(brk.break_duration_seconds)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                )}
               </div>
             </div>
           )}

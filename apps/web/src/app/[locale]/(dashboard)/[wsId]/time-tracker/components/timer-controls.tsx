@@ -75,7 +75,6 @@ import {
 } from '../utils';
 import MissedEntryDialog, { type ChainSummary } from './missed-entry-dialog';
 
-
 interface SessionTemplate {
   title: string;
   description?: string;
@@ -3902,7 +3901,9 @@ export function TimerControls({
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
-                onValueChange={(v) => handleSessionModeChange(v as 'task' | 'manual')}
+                onValueChange={(v) =>
+                  handleSessionModeChange(v as 'task' | 'manual')
+                }
               >
                 <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
                   <TabsTrigger

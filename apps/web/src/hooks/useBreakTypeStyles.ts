@@ -12,7 +12,9 @@ type IconComponent = React.ComponentType<{ className?: string }>;
 /**
  * Map break type color to dynamic color token
  */
-export const getBreakTypeColor = (colorName: string | null | undefined): BreakColor => {
+export const getBreakTypeColor = (
+  colorName: string | null | undefined
+): BreakColor => {
   if (!colorName) return 'dynamic-blue';
 
   const colorMap: Record<string, BreakColor> = {
@@ -120,12 +122,15 @@ export const BREAK_COLOR_CLASSES = {
 /**
  * Get icon component by name
  */
-export const getIconComponent = (iconName: string | null | undefined): IconComponent => {
+export const getIconComponent = (
+  iconName: string | null | undefined
+): IconComponent => {
   if (!iconName) return Icons.Coffee;
 
   const iconKey = iconName.charAt(0).toUpperCase() + iconName.slice(1);
-  const IconComponent = (Icons as unknown as Record<string, IconComponent>)[iconKey];
+  const IconComponent = (Icons as unknown as Record<string, IconComponent>)[
+    iconKey
+  ];
 
   return IconComponent || Icons.Coffee;
 };
-

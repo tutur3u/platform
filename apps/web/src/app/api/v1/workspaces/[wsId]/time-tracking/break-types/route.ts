@@ -6,11 +6,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { z } from 'zod';
 
-
 const createBreakTypeSchema = z.object({
-  name: z.string().min(1, 'Break type name is required').max(50, 'Break type name must be 50 characters or less'),
+  name: z
+    .string()
+    .min(1, 'Break type name is required')
+    .max(50, 'Break type name must be 50 characters or less'),
   description: z.string().optional(),
-  color: z.enum([  'RED',
+  color: z.enum([
+    'RED',
     'ORANGE',
     'YELLOW',
     'GREEN',
@@ -19,8 +22,10 @@ const createBreakTypeSchema = z.object({
     'INDIGO',
     'PURPLE',
     'PINK',
-    'GRAY']),
-  icon: z.enum([  'Coffee',
+    'GRAY',
+  ]),
+  icon: z.enum([
+    'Coffee',
     'Utensils',
     'User',
     'Users',
@@ -35,7 +40,8 @@ const createBreakTypeSchema = z.object({
     'Music',
     'Gamepad2',
     'Pause',
-    'Wind']),
+    'Wind',
+  ]),
   isDefault: z.boolean().optional(),
 });
 
