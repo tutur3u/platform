@@ -8,7 +8,6 @@ import { useQuery } from '@tanstack/react-query';
  *   - null: No approval needed (any entry can be added directly)
  *   - 0: All entries require approval
  *   - number > 0: Entries older than this many days require approval
- * - pauseExempt: Whether pauses are exempt from the threshold
  */
 export function useWorkspaceTimeThreshold(wsId: string | null) {
   return useQuery({
@@ -19,16 +18,9 @@ export function useWorkspaceTimeThreshold(wsId: string | null) {
       if (!res.ok) throw new Error('Failed to fetch workspace threshold');
       const data = await res.json();
       const threshold = data?.missed_entry_date_threshold;
-      const pauseExempt = data?.pause_threshold_exempt;
-      const resumeThresholdMinutes = data?.break_resume_threshold_minutes;
 
       return {
         threshold: typeof threshold === 'number' ? threshold : null,
-        pauseExempt: Boolean(pauseExempt),
-        resumeThresholdMinutes:
-          typeof resumeThresholdMinutes === 'number'
-            ? resumeThresholdMinutes
-            : null,
       };
     },
     enabled: !!wsId,

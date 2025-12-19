@@ -4,7 +4,6 @@ CREATE OR REPLACE FUNCTION public.check_time_tracking_session_update()
 AS $function$
 DECLARE
     threshold_days INTEGER;
-    is_pause_exempt BOOLEAN;
 BEGIN
     -- Allow start times up to 5 minutes in the future for clock sync and manual entries
     -- Only check when start_time or end_time are being changed
@@ -22,8 +21,8 @@ BEGIN
     END IF;
 
     -- Fetch threshold and pause exemption from workspace_settings
-    SELECT missed_entry_date_threshold, pause_threshold_exempt 
-    INTO threshold_days, is_pause_exempt
+    SELECT missed_entry_date_threshold 
+    INTO threshold_days
     FROM workspace_settings
     WHERE ws_id = NEW.ws_id;
 
@@ -35,8 +34,7 @@ BEGIN
 
     -- CRITICAL: Check if session is being completed (is_running changing from true to false)
     -- This prevents pausing/stopping sessions that exceed the workspace threshold
-    -- If pause_threshold_exempt is true, we allow this transition (pausing is exempt)
-    IF OLD.is_running = true AND NEW.is_running = false AND NOT COALESCE(is_pause_exempt, false) THEN
+    IF OLD.is_running = true AND NEW.is_running = false THEN
         -- If threshold is 0, all completed sessions that aren't same-day must go through request flow
         IF threshold_days = 0 THEN
             RAISE EXCEPTION 'All missed entries must be submitted as requests for approval.';

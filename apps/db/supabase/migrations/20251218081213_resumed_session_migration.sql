@@ -1,7 +1,7 @@
 -- Migration: Retroactive Data Migration - Convert Legacy was_resumed Sessions to Session Chains
 -- Description: Idempotent migration to convert existing was_resumed=true sessions into proper
 --              session chains with parent_session_id linkage and time_tracking_breaks records
--- Date: 2024-12-18
+-- Date: 2025-12-18
 -- CRITICAL: Run this AFTER 20251218080209_new_migration.sql
 
 -- =====================================================

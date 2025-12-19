@@ -41,7 +41,6 @@ async function checkSessionThreshold(
   options?: { 
     sessionId?: string; // If provided, validates root of chain instead
     returnChainDetails?: boolean; // If true, returns full chain summary
-    isPauseAction?: boolean; // If true, respects pause_threshold_exempt
   }
 ): Promise<{ 
   exceeds: boolean; 
@@ -54,17 +53,11 @@ async function checkSessionThreshold(
   // Fetch workspace threshold setting
   const { data: workspaceSettings } = await sbAdmin
     .from('workspace_settings')
-    .select('missed_entry_date_threshold, pause_threshold_exempt')
+    .select('missed_entry_date_threshold')
     .eq('ws_id', wsId)
     .single();
 
   const thresholdDays = workspaceSettings?.missed_entry_date_threshold;
-  const pauseThresholdExempt = workspaceSettings?.pause_threshold_exempt;
-
-  // If it's a pause action and pause is exempt, we don't need to check the threshold
-  if (options?.isPauseAction && pauseThresholdExempt) {
-    return { exceeds: false, thresholdDays: thresholdDays ?? null };
-  }
 
   // If no threshold set (null), no restrictions apply
   if (thresholdDays === null || thresholdDays === undefined) {
@@ -345,8 +338,7 @@ export async function PATCH(
         session.start_time,
         { 
           sessionId: sessionId, 
-          returnChainDetails: true,
-          isPauseAction: true
+          returnChainDetails: true
         }
       );
 

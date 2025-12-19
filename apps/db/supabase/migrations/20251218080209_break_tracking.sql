@@ -61,7 +61,7 @@ create index if not exists "idx_workspace_break_types_is_system"
 alter table "public"."workspace_break_types" enable row level security;
 
 -- RLS Policies: Users can view break types for workspaces they belong to
-create policy "workspace_break_types_select_policy"
+create policy "Users can view break types for workspaces they belong to"
   on "public"."workspace_break_types"
   for select
   using (
@@ -72,8 +72,7 @@ create policy "workspace_break_types_select_policy"
     )
   );
 
--- Only workspace admins can manage break types
-create policy "workspace_break_types_insert_policy"
+create policy "Users can insert break types for workspaces they belong to"
   on "public"."workspace_break_types"
   for insert
   with check (
@@ -84,7 +83,7 @@ create policy "workspace_break_types_insert_policy"
     )
   );
 
-create policy "workspace_break_types_update_policy"
+create policy "Users can update break types for workspaces they belong to"
   on "public"."workspace_break_types"
   for update
   using (
@@ -95,8 +94,7 @@ create policy "workspace_break_types_update_policy"
     )
   );
 
--- Cannot delete system break types
-create policy "workspace_break_types_delete_policy"
+create policy "Users can delete break types for workspaces they belong to"
   on "public"."workspace_break_types"
   for delete
   using (
@@ -168,7 +166,7 @@ create index if not exists "idx_time_tracking_breaks_active"
 alter table "public"."time_tracking_breaks" enable row level security;
 
 -- RLS Policies: Users can view breaks for sessions in their workspaces
-create policy "time_tracking_breaks_select_policy"
+create policy "Users can view breaks for sessions in their workspaces"
   on "public"."time_tracking_breaks"
   for select
   using (
@@ -182,7 +180,7 @@ create policy "time_tracking_breaks_select_policy"
   );
 
 -- Users can only create breaks for their own sessions
-create policy "time_tracking_breaks_insert_policy"
+create policy "Users can only create breaks for their own sessions"
   on "public"."time_tracking_breaks"
   for insert
   with check (
@@ -195,13 +193,13 @@ create policy "time_tracking_breaks_insert_policy"
   );
 
 -- Users can only update their own breaks
-create policy "time_tracking_breaks_update_policy"
+create policy "Users can only update their own breaks"
   on "public"."time_tracking_breaks"
   for update
   using ("created_by" = auth.uid());
 
 -- Users can only delete their own breaks
-create policy "time_tracking_breaks_delete_policy"
+create policy "Users can only delete their own breaks"
   on "public"."time_tracking_breaks"
   for delete
   using ("created_by" = auth.uid());
@@ -237,49 +235,7 @@ create trigger "time_tracking_breaks_duration_trigger"
   execute function "public"."calculate_time_tracking_break_duration"();
 
 -- =====================================================
--- 4. ALTER workspace_settings - Add Break Configuration
--- =====================================================
-
--- Add break-related workspace settings
-alter table "public"."workspace_settings"
-  add column if not exists "break_resume_threshold_minutes" integer default 120 check ("break_resume_threshold_minutes" is null or "break_resume_threshold_minutes" >= 0);
-
-alter table "public"."workspace_settings"
-  add column if not exists "pause_threshold_exempt" boolean default true;
-
--- Add comments explaining the new settings
-comment on column "public"."workspace_settings"."break_resume_threshold_minutes" is 
-  'Show confirmation dialog when resuming after break longer than this (minutes). NULL = no confirmation. Default: 120 (2 hours).';
-
-comment on column "public"."workspace_settings"."pause_threshold_exempt" is 
-  'Allow users to pause sessions without threshold validation. Final stop validates entire chain. Default: true.';
-
--- =====================================================
--- 5. Seed Default Break Types for Existing Workspaces
--- =====================================================
-
--- Insert system default break types for all existing workspaces
-insert into "public"."workspace_break_types" ("ws_id", "name", "description", "color", "icon", "is_system", "is_default")
-select 
-  "w"."id" as "ws_id",
-  "bt"."name",
-  "bt"."description",
-  "bt"."color",
-  "bt"."icon",
-  true as "is_system",
-  "bt"."is_default"
-from "public"."workspaces" as "w"
-cross join (
-  values 
-    ('Coffee Break', 'Quick coffee or tea break', 'AMBER', 'Coffee', true),
-    ('Lunch', 'Lunch break', 'ORANGE', 'Utensils', false),
-    ('Personal', 'Personal break or restroom', 'BLUE', 'User', false),
-    ('Meeting', 'Attending a meeting', 'PURPLE', 'Users', false)
-) as "bt"("name", "description", "color", "icon", "is_default")
-on conflict ("ws_id", lower("name")) do nothing;
-
--- =====================================================
--- 6. FUNCTION - Get Session Chain Root (for threshold validation)
+-- 5. FUNCTION - Get Session Chain Root (for threshold validation)
 -- =====================================================
 
 create or replace function "public"."get_session_chain_root"(
@@ -445,7 +401,7 @@ comment on function "public"."get_session_chain_summary"(uuid) is
   'Returns comprehensive summary of session chain including all sessions, breaks, and totals. Used for approval UI.';
 
 -- =====================================================
--- 8. Comments for Documentation
+-- 6. Comments for Documentation
 -- =====================================================
 
 comment on table "public"."workspace_break_types" is 

@@ -95,7 +95,7 @@ export function SimpleTimerControls({
       setPausedSession(pausedData.session);
       setPausedElapsedTime(pausedData.session.duration_seconds || 0);
       setPauseStartTime(
-        pausedData.pauseTime ? new Date(pausedData.pauseTime) : null
+        pausedData.pauseTime ? new Date(pausedData.pauseTime as string) : null
       );
     }
   }, [pausedData]);
@@ -555,7 +555,7 @@ export function SimpleTimerControls({
 
             <div className="flex gap-3">
               <Button
-                onClick={resumeTimer}
+                onClick={() => resumeTimer()}
                 disabled={isLoading}
                 className="flex-1 bg-green-600 text-white hover:bg-green-700"
               >

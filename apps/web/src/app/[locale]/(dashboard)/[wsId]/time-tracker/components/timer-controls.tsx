@@ -338,10 +338,6 @@ export function TimerControls({
     break_start: string;
   } | null>(null);
   
-  // Long break resume confirmation
-  const [showLongBreakConfirmDialog, setShowLongBreakConfirmDialog] = useState(false);
-  const [longBreakDuration, setLongBreakDuration] = useState<number>(0);
-  const BREAK_RESUME_THRESHOLD_MINUTES = 120; // 2 hours
   const [breakDurationSeconds, setBreakDurationSeconds] = useState(0);
 
   // Pomodoro and timer mode state
@@ -1968,7 +1964,7 @@ export function TimerControls({
   };
 
   // Resume paused timer
-  const resumeTimer = useCallback(async (skipConfirmation = false) => {
+  const resumeTimer = useCallback(async () => {
     if (!pausedSession) return;
 
     setIsLoading(true);
@@ -1981,17 +1977,6 @@ export function TimerControls({
           body: JSON.stringify({ action: 'resume' }),
         }
       );
-
-      // Check if break duration exceeds threshold (only if not already confirmed)
-      if (!skipConfirmation && response.breakDuration) {
-        const breakMinutes = Math.floor(response.breakDuration / 60);
-        if (breakMinutes >= BREAK_RESUME_THRESHOLD_MINUTES) {
-          setLongBreakDuration(response.breakDuration);
-          setShowLongBreakConfirmDialog(true);
-          setIsLoading(false);
-          return; // Don't proceed with resume yet
-        }
-      }
 
       // Restore session from paused state
       setCurrentSession(response.session || pausedSession);
@@ -2044,14 +2029,7 @@ export function TimerControls({
     onSessionUpdate,
     formatDuration,
     t,
-    BREAK_RESUME_THRESHOLD_MINUTES,
   ]);
-
-  // Handle long break resume confirmation
-  const handleLongBreakResume = useCallback(async () => {
-    setShowLongBreakConfirmDialog(false);
-    await resumeTimer(true); // Skip confirmation on retry
-  }, [resumeTimer]);
 
   // Start from template
   const startFromTemplate = async (template: SessionTemplate) => {
@@ -5058,48 +5036,6 @@ export function TimerControls({
               >
                 <Pause className="mr-2 h-4 w-4" />
                 {t('break_type.start_break')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Long Break Confirmation Dialog */}
-      <Dialog open={showLongBreakConfirmDialog} onOpenChange={setShowLongBreakConfirmDialog}>
-        <DialogContent className="max-w-md">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="rounded-full bg-amber-100 dark:bg-amber-950 p-2">
-                <TriangleAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg">{t('long_break.title')}</h3>
-                <p className="text-muted-foreground text-sm mt-1">
-                  {t('long_break.description', { 
-                    duration: formatDuration(longBreakDuration)
-                  })}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-sm">{t('long_break.warning')}</p>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowLongBreakConfirmDialog(false)}
-                className="flex-1"
-              >
-                {t('long_break.cancel')}
-              </Button>
-              <Button
-                onClick={handleLongBreakResume}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                {t('long_break.resume')}
               </Button>
             </div>
           </div>

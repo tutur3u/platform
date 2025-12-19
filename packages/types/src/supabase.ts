@@ -12491,11 +12491,9 @@ export type Database = {
           break_duration_minutes: number | null;
           break_enabled: boolean | null;
           break_interval_minutes: number | null;
-          break_resume_threshold_minutes: number | null;
           created_at: string;
           guest_user_checkup_threshold: number | null;
           missed_entry_date_threshold: number | null;
-          pause_threshold_exempt: boolean | null;
           referral_count_cap: number;
           referral_increment_percent: number;
           referral_promotion_id: string | null;
@@ -12506,11 +12504,9 @@ export type Database = {
           break_duration_minutes?: number | null;
           break_enabled?: boolean | null;
           break_interval_minutes?: number | null;
-          break_resume_threshold_minutes?: number | null;
           created_at?: string;
           guest_user_checkup_threshold?: number | null;
           missed_entry_date_threshold?: number | null;
-          pause_threshold_exempt?: boolean | null;
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: string | null;
@@ -12521,11 +12517,9 @@ export type Database = {
           break_duration_minutes?: number | null;
           break_enabled?: boolean | null;
           break_interval_minutes?: number | null;
-          break_resume_threshold_minutes?: number | null;
           created_at?: string;
           guest_user_checkup_threshold?: number | null;
           missed_entry_date_threshold?: number | null;
-          pause_threshold_exempt?: boolean | null;
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: string | null;
