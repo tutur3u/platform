@@ -1,10 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, UserCircle, UserMinus, UserPlus, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -65,40 +66,26 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
     // Fetch workspace members with React Query
     const {
-      data: members = [],
+      data: fetchedMembers = [],
       isLoading: isFetchingMembers,
       error: membersError,
-    } = useQuery<Member[]>({
-      queryKey: ['workspace-members', wsId],
-      queryFn: async (): Promise<Member[]> => {
-        const response = await fetch(`/api/workspaces/${wsId}/members`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch members');
-        }
+    } = useWorkspaceMembers(wsId);
 
-        const { members: fetchedMembers } = (await response.json()) as {
-          members: Member[];
-        };
-
-        // Deduplicate members by ID using O(n) Map approach
-        // Also ensure user_id is set for consistency with task creation flow
-        const uniqueMembers: Member[] = Array.from(
-          fetchedMembers
-            .reduce((map, member) => {
-              if (member.id) {
-                map.set(member.id, {
-                  ...member,
-                  user_id: member.user_id || member.id, // Ensure user_id is set
-                });
-              }
-              return map;
-            }, new Map<string, Member>())
-            .values()
-        );
-
-        return uniqueMembers;
-      },
-    });
+    // Deduplicate members by ID using O(n) Map approach
+    // Also ensure user_id is set for consistency with task creation flow
+    const members: Member[] = Array.from(
+      fetchedMembers
+        .reduce((map, member) => {
+          if (member.id) {
+            map.set(member.id, {
+              ...member,
+              user_id: member.user_id || member.id, // Ensure user_id is set
+            });
+          }
+          return map;
+        }, new Map<string, Member>())
+        .values()
+    );
 
     // Handle fetch errors
     if (membersError) {
@@ -291,7 +278,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           >
             {uniqueAssignees.length > 0 ? (
               <div className="flex min-w-0 items-center gap-1">
-                <div className="-space-x-3 flex items-center gap-1">
+                <div className="flex items-center gap-1 -space-x-3">
                   {uniqueAssignees.slice(0, 4).map((assignee) => (
                     <div
                       key={assignee.id}
@@ -326,7 +313,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         >
           <div className="space-y-3">
             <div className="relative">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search members..."
                 value={searchQuery}

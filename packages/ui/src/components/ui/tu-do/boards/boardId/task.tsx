@@ -39,6 +39,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import {
   HoverCard,
   HoverCardContent,
@@ -114,6 +115,7 @@ interface TaskCardProps {
   onClearSelection?: () => void;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
 }
 
 // Memoized full TaskCard
@@ -131,8 +133,10 @@ function TaskCardInner({
   onClearSelection,
   optimisticUpdateInProgress,
   selectedTasks,
+  bulkUpdateCustomDueDate,
 }: TaskCardProps) {
-  const { wsId } = useParams();
+  const { wsId: rawWsId } = useParams();
+  const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
   const { timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
@@ -234,18 +238,8 @@ function TaskCardInner({
   });
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
-    queryKey: ['workspace-members', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${wsId}/members`);
-      if (!response.ok) throw new Error('Failed to fetch members');
-
-      const { members: fetchedMembers } = await response.json();
-      return fetchedMembers || [];
-    },
-    enabled: !!wsId && !isPersonalWorkspace,
-    staleTime: 5 * 60 * 1000, // 5 minutes - members rarely change
-  });
+  const { data: workspaceMembers = [], isLoading: membersLoading } =
+    useWorkspaceMembers(wsId, { enabled: !!wsId && !isPersonalWorkspace });
 
   // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
@@ -423,6 +417,7 @@ function TaskCardInner({
     selectedTasks,
     isMultiSelectMode,
     onClearSelection,
+    bulkUpdateCustomDueDate,
   });
 
   const onToggleAssignee = useCallback(
@@ -443,8 +438,11 @@ function TaskCardInner({
 
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
+      // Check if modifier keys are held (Shift for range select, Cmd/Ctrl for toggle)
+      const isModifierHeld = e.shiftKey || e.metaKey || e.ctrlKey;
+
       // Handle multi-select functionality
-      if (isMultiSelectMode) {
+      if (isMultiSelectMode || isModifierHeld) {
         onSelect?.(task.id, e);
       } else if (
         !isDragging &&
@@ -1017,6 +1015,17 @@ function TaskCardInner({
       style={style}
       onClick={handleCardClick}
       onContextMenu={(e) => {
+        // If modifier keys are held (Shift/Cmd/Ctrl), handle as selection
+        // (Command+Click on Mac triggers context menu, but we want it to select)
+        if (e.shiftKey || e.metaKey || e.ctrlKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Trigger selection (Command+Click fires contextmenu instead of click on Mac)
+          onSelect?.(task.id, e as any);
+          return;
+        }
+
+        // Normal right-click behavior - open context menu
         e.preventDefault();
         e.stopPropagation();
         // Open the context menu (actions dropdown) and guard first click briefly
@@ -1055,7 +1064,7 @@ function TaskCardInner({
       {/* Overdue indicator */}
       {isOverdue && !(!!task.closed_at || !!task.completed_at) && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
-          <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
+          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
         </div>
       )}
       {/* Selection indicator */}
@@ -1747,6 +1756,7 @@ interface MeasuredTaskCardProps {
   onHeight: (height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>;
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 export function MeasuredTaskCard({
@@ -1762,6 +1772,7 @@ export function MeasuredTaskCard({
   onHeight,
   optimisticUpdateInProgress,
   selectedTasks,
+  bulkUpdateCustomDueDate,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const onHeightRef = useRef(onHeight);
@@ -1807,6 +1818,7 @@ export function MeasuredTaskCard({
         onClearSelection={onClearSelection}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
         selectedTasks={selectedTasks}
+        bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
       />
     </div>
   );

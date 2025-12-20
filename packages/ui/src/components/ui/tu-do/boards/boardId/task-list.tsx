@@ -40,6 +40,7 @@ interface VirtualizedTaskListProps {
   } | null;
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 interface TaskListContentProps {
@@ -61,6 +62,7 @@ interface TaskListContentProps {
   } | null;
   updateSize: (id: string, height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 function TaskListContent({
@@ -76,6 +78,7 @@ function TaskListContent({
   dragPreviewPosition,
   updateSize,
   optimisticUpdateInProgress,
+  bulkUpdateCustomDueDate,
 }: TaskListContentProps) {
   return (
     <>
@@ -127,6 +130,7 @@ function TaskListContent({
             onHeight={(h) => updateSize(task.id, h)}
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             selectedTasks={selectedTasks}
+            bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           />
 
           {/* Preview at end of list - when dropping on column surface */}
@@ -162,6 +166,7 @@ function VirtualizedTaskListInner({
   dragPreviewPosition,
   taskHeightsRef: externalTaskHeightsRef,
   optimisticUpdateInProgress,
+  bulkUpdateCustomDueDate,
 }: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { setNodeRef: setDroppableRef, isOver: isColumnDragOverRaw } =
@@ -398,6 +403,7 @@ function VirtualizedTaskListInner({
                 dragPreviewPosition={dragPreviewPosition}
                 updateSize={updateSize}
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
+                bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
               />
             </div>
           </div>
@@ -420,6 +426,7 @@ function VirtualizedTaskListInner({
             dragPreviewPosition={dragPreviewPosition}
             updateSize={updateSize}
             optimisticUpdateInProgress={optimisticUpdateInProgress}
+            bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           />
         </SortableContext>
       )}
