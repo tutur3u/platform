@@ -51,7 +51,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-hook-form": "^7.68.0",
+    "react-hook-form": "^7.69.0",
     "react-intersection-observer": "^10.0.0",
     "react-textarea-autosize": "^8.5.9",
     "rehype-katex": "^7.0.1",

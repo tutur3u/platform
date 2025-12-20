@@ -57,7 +57,7 @@
     "next-themes": "^0.4.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-hook-form": "^7.68.0",
+    "react-hook-form": "^7.69.0",
     "sharp": "^0.34.5",
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",

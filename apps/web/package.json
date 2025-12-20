@@ -25,7 +25,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.49",
+    "@ai-sdk/google": "^2.0.51",
     "@deepgram/sdk": "^4.11.3",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -112,7 +112,7 @@
     "react-confetti": "^6.4.0",
     "react-dom": "^19.2.3",
     "react-easy-crop": "^5.5.6",
-    "react-hook-form": "^7.68.0",
+    "react-hook-form": "^7.69.0",
     "react-intersection-observer": "^10.0.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.2.0",

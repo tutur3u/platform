@@ -5,7 +5,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@typescript/native-preview": "^7.0.0-dev.20251219.1",
     "@vitest/coverage-v8": "^4.0.16",
-    "turbo": "^2.6.3",
+    "turbo": "^2.7.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
     "vitest": "^4.0.16"
