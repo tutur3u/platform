@@ -8,14 +8,22 @@ const createConnectionSchema = z.object({
   calendarName: z.string().min(1),
   color: z.string().optional(),
   isEnabled: z.boolean().default(true),
+  authTokenId: z.string().uuid().optional(),
 });
 
-const updateConnectionSchema = z.object({
-  id: z.string().uuid(),
-  isEnabled: z.boolean().optional(),
-  calendarName: z.string().min(1).optional(),
-  color: z.string().optional(),
-});
+const updateConnectionSchema = z
+  .object({
+    // Either id OR (calendarId + wsId) to identify the connection
+    id: z.string().uuid().optional(),
+    calendarId: z.string().min(1).optional(),
+    wsId: z.string().uuid().optional(),
+    isEnabled: z.boolean().optional(),
+    calendarName: z.string().min(1).optional(),
+    color: z.string().optional(),
+  })
+  .refine((data) => data.id || (data.calendarId && data.wsId), {
+    message: 'Either id or both calendarId and wsId are required',
+  });
 
 // GET - List calendar connections for a workspace
 export async function GET(request: Request) {
@@ -94,7 +102,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { wsId, calendarId, calendarName, color, isEnabled } =
+    const { wsId, calendarId, calendarName, color, isEnabled, authTokenId } =
       validation.data;
 
     // Insert the calendar connection
@@ -106,6 +114,7 @@ export async function POST(request: Request) {
         calendar_name: calendarName,
         color: color || null,
         is_enabled: isEnabled,
+        auth_token_id: authTokenId || null,
       })
       .select()
       .single();
@@ -163,21 +172,27 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const { id, ...updates } = validation.data;
+    const { id, calendarId, wsId, ...updates } = validation.data;
 
     // Build the update object dynamically
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     if (updates.isEnabled !== undefined)
       updateData.is_enabled = updates.isEnabled;
     if (updates.calendarName !== undefined)
       updateData.calendar_name = updates.calendarName;
     if (updates.color !== undefined) updateData.color = updates.color;
 
+    // Build the query based on whether we have id or calendarId+wsId
+    let query = supabase.from('calendar_connections').update(updateData);
+
+    if (id) {
+      query = query.eq('id', id);
+    } else if (calendarId && wsId) {
+      query = query.eq('calendar_id', calendarId).eq('ws_id', wsId);
+    }
+
     // Update the calendar connection
-    const { data: connection, error: updateError } = await supabase
-      .from('calendar_connections')
-      .update(updateData)
-      .eq('id', id)
+    const { data: connection, error: updateError } = await query
       .select()
       .single();
 

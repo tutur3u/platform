@@ -282,19 +282,19 @@ export async function PUT(request: Request) {
       requestBody: googleEventUpdate,
     });
 
-    console.log(
-      `Google Calendar event ${googleCalendarEventId} updated successfully.`
-    );
+    console.log('Google Calendar event updated successfully', {
+      eventId: googleCalendarEventId,
+    });
 
     return NextResponse.json(
       { googleEventId: response.data.id },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error(
-      `Failed to update Google Calendar event ${googleCalendarEventId}:`,
-      error
-    );
+    console.error('Failed to update Google Calendar event', {
+      eventId: googleCalendarEventId,
+      error,
+    });
     if (error.response?.data?.error === 'invalid_grant') {
       return NextResponse.json(
         {
@@ -307,7 +307,8 @@ export async function PUT(request: Request) {
     if (error.response?.status === 404 || error.response?.status === 410) {
       // Event not found or gone - maybe it was deleted directly on Google Calendar
       console.warn(
-        `Google Calendar event ${googleCalendarEventId} not found for update. Might have been deleted.`
+        'Google Calendar event not found for update. Might have been deleted.',
+        { eventId: googleCalendarEventId }
       );
       // Optionally: remove the google_calendar_event_id from Supabase record
       await supabase
@@ -368,22 +369,23 @@ export async function DELETE(request: Request) {
       eventId: googleCalendarEventId,
     });
 
-    console.log(
-      `Google Calendar event ${googleCalendarEventId} deleted successfully.`
-    );
+    console.log('Google Calendar event deleted successfully', {
+      eventId: googleCalendarEventId,
+    });
     return NextResponse.json(
       { message: 'Event deleted successfully from Google Calendar' },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error(
-      `Failed to delete Google Calendar event ${googleCalendarEventId}:`,
-      error
-    );
+    console.error('Failed to delete Google Calendar event', {
+      eventId: googleCalendarEventId,
+      error,
+    });
     if (error.response?.status === 404 || error.response?.status === 410) {
       // Event already gone, consider it a success in terms of local state
       console.warn(
-        `Google Calendar event ${googleCalendarEventId} not found for deletion. Assuming already deleted.`
+        'Google Calendar event not found for deletion. Assuming already deleted.',
+        { eventId: googleCalendarEventId }
       );
       return NextResponse.json(
         {

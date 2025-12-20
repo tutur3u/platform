@@ -16,11 +16,8 @@ interface SheetInfo {
 }
 
 export class ExcelCrawler extends BaseCrawler {
-  constructor(
-    options: { useProductionProxy: boolean } = { useProductionProxy: true }
-  ) {
-    super({ useProductionProxy: options.useProductionProxy });
-    this.useProductionProxy = options.useProductionProxy;
+  constructor(options?: { useProductionProxy?: boolean }) {
+    super(options);
   }
 
   private async fetchExcelFile(url: string): Promise<ArrayBuffer> {

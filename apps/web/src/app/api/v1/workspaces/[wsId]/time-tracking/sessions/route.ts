@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +11,7 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get authenticated user
@@ -25,7 +27,7 @@ export async function GET(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -54,7 +56,7 @@ export async function GET(
       const { data: targetUserCheck } = await supabase
         .from('workspace_members')
         .select('id:user_id')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('user_id', targetUserId)
         .single();
 
@@ -77,7 +79,7 @@ export async function GET(
           task:tasks(*)
         `
         )
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('user_id', queryUserId)
         .eq('is_running', true)
         .maybeSingle();
@@ -86,8 +88,55 @@ export async function GET(
       return NextResponse.json({ session: data });
     }
 
+    if (type === 'paused') {
+      // Find the latest session that has an active break (break_end is null)
+      // We must filter by ws_id to ensure we only get breaks for the current workspace
+      const { data: activeBreak } = await supabase
+        .from('time_tracking_breaks')
+        .select(`
+          session_id, 
+          break_start, 
+          break_type:workspace_break_types(*),
+          session:time_tracking_sessions!inner(ws_id)
+        `)
+        .is('break_end', null)
+        .eq('created_by', queryUserId)
+        .eq('session.ws_id', normalizedWsId)
+        .order('break_start', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!activeBreak) {
+        return NextResponse.json({ session: null });
+      }
+
+      // Fetch the session with relations
+      const { data: session, error } = await supabase
+        .from('time_tracking_sessions')
+        .select(
+          `
+          *,
+          category:time_tracking_categories(*),
+          task:tasks(*)
+        `
+        )
+        .eq('id', activeBreak.session_id)
+        .eq('ws_id', normalizedWsId)
+        .eq('user_id', queryUserId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        session: session || null,
+        pauseTime: activeBreak.break_start,
+        breakType: activeBreak.break_type,
+      });
+    }
+
     if (type === 'recent' || type === 'history') {
       // Build query for sessions
+      // Filter out sessions with pending_approval=true (they haven't been approved yet)
       let query = supabase
         .from('time_tracking_sessions')
         .select(
@@ -97,8 +146,9 @@ export async function GET(
           task:tasks(*)
         `
         )
-        .eq('ws_id', wsId)
-        .eq('user_id', queryUserId);
+        .eq('ws_id', normalizedWsId)
+        .eq('user_id', queryUserId)
+        .eq('pending_approval', false);
 
       if (type === 'recent') {
         query = query.eq('is_running', false);
@@ -147,35 +197,40 @@ export async function GET(
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Get all sessions with category information for breakdown
+      // Filter out sessions with pending_approval=true (they haven't been approved yet)
       const [todayData, weekData, monthData, allSessionsData] =
         await Promise.all([
           supabase
             .from('time_tracking_sessions')
             .select('duration_seconds, category_id')
-            .eq('ws_id', wsId)
+            .eq('ws_id', normalizedWsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .gte('start_time', startOfToday.toISOString())
             .not('duration_seconds', 'is', null),
           supabase
             .from('time_tracking_sessions')
             .select('duration_seconds, category_id')
-            .eq('ws_id', wsId)
+            .eq('ws_id', normalizedWsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .gte('start_time', startOfWeek.toISOString())
             .not('duration_seconds', 'is', null),
           supabase
             .from('time_tracking_sessions')
             .select('duration_seconds, category_id')
-            .eq('ws_id', wsId)
+            .eq('ws_id', normalizedWsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .gte('start_time', startOfMonth.toISOString())
             .not('duration_seconds', 'is', null),
           // Get all sessions for streak calculation
           supabase
             .from('time_tracking_sessions')
             .select('start_time, duration_seconds')
-            .eq('ws_id', wsId)
+            .eq('ws_id', normalizedWsId)
             .eq('user_id', queryUserId)
+            .eq('pending_approval', false)
             .not('duration_seconds', 'is', null)
             .order('start_time', { ascending: false }),
         ]);
@@ -256,8 +311,9 @@ export async function GET(
       const yearData = await supabase
         .from('time_tracking_sessions')
         .select('start_time, duration_seconds')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('user_id', queryUserId)
+        .eq('pending_approval', false)
         .gte('start_time', oneYearAgo.toISOString())
         .not('duration_seconds', 'is', null);
 
@@ -326,6 +382,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get authenticated user
@@ -341,7 +398,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -395,7 +452,7 @@ export async function POST(
       const { data: workspaceSettings } = await sbAdmin
         .from('workspace_settings')
         .select('missed_entry_date_threshold')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .maybeSingle();
 
       // null/undefined means no approval needed - skip all threshold checks
@@ -444,7 +501,7 @@ export async function POST(
       const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .insert({
-          ws_id: wsId,
+          ws_id: normalizedWsId,
           user_id: user.id,
           title: title.trim(),
           description: description?.trim() || null,
@@ -493,7 +550,7 @@ export async function POST(
         is_running: false,
         updated_at: new Date().toISOString(),
       })
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .eq('is_running', true);
 
@@ -501,7 +558,7 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('time_tracking_sessions')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         user_id: user.id,
         title: title.trim(),
         description: description?.trim() || null,

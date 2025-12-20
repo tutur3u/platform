@@ -158,7 +158,7 @@ const CalendarContext = createContext<{
   // Hide non-preview events
   hideNonPreviewEvents: false,
   setHideNonPreviewEvents: () => undefined,
-  defaultNewEventTab: 'ai',
+  defaultNewEventTab: 'manual',
 });
 
 // Add this interface before the updateEvent function
@@ -354,7 +354,7 @@ export const CalendarProvider = ({
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
   const [defaultNewEventTab, setDefaultNewEventTab] = useState<'manual' | 'ai'>(
-    'ai'
+    'manual'
   );
 
   // Callback for when a task is scheduled (allows components to refresh)
@@ -1431,7 +1431,7 @@ export const CalendarProvider = ({
         setPendingNewEvent(null);
       } else {
         // Creating a new event
-        setDefaultNewEventTab(options?.defaultNewEventTab ?? 'ai');
+        setDefaultNewEventTab(options?.defaultNewEventTab ?? 'manual');
 
         const now = roundToNearest15Minutes(new Date());
         const oneHourLater = new Date(now);

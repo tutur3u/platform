@@ -53,16 +53,16 @@
   },
   "dependencies": {
     "@tuturuuu/types": "0.2.3",
-    "zod": "^4.2.0"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.0.2",
+    "@types/node": "^25.0.3",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "bun@1.3.4"
+  "packageManager": "bun@1.3.5"
 }

@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
             // Prepare subscription data
             const subscriptionData = {
               ws_id: ws_id,
-              status: subscription.status,
+              status: subscription.status as any,
               polar_subscription_id: subscription.id,
               product_id: subscription.product.id,
               current_period_start: subscription.currentPeriodStart
@@ -87,13 +87,21 @@ export async function GET(req: NextRequest) {
                 ? subscription.currentPeriodEnd.toISOString()
                 : null,
               cancel_at_period_end: subscription.cancelAtPeriodEnd ?? false,
-              created_at: subscription.createdAt.toISOString(),
-              updated_at: subscription.modifiedAt?.toISOString(),
+              created_at:
+                subscription.createdAt instanceof Date
+                  ? subscription.createdAt.toISOString()
+                  : new Date(subscription.createdAt).toISOString(),
+              updated_at:
+                subscription.modifiedAt instanceof Date
+                  ? subscription.modifiedAt.toISOString()
+                  : subscription.modifiedAt
+                    ? new Date(subscription.modifiedAt).toISOString()
+                    : null,
             };
 
             const { error: dbError } = await sbAdmin
               .from('workspace_subscriptions')
-              .upsert(subscriptionData, {
+              .upsert([subscriptionData], {
                 onConflict: 'polar_subscription_id',
               });
 
