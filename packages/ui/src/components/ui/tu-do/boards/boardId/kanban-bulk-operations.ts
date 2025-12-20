@@ -446,9 +446,7 @@ function useBulkMoveToList(
       }
       // If all failed, throw to trigger onError handler
       if (successCount === 0) {
-        throw new Error(
-          `Failed to move all ${taskIds.length} tasks to list`
-        );
+        throw new Error(`Failed to move all ${taskIds.length} tasks to list`);
       }
       return {
         count: successCount,
@@ -826,9 +824,7 @@ function useBulkAddProject(
       }
       // If all failed, throw to trigger onError handler
       if (successCount === 0) {
-        throw new Error(
-          `Failed to add project to all ${taskIds.length} tasks`
-        );
+        throw new Error(`Failed to add project to all ${taskIds.length} tasks`);
       }
 
       return { count: successCount, projectId, taskIds, failures };

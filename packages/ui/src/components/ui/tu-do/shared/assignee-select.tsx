@@ -5,8 +5,8 @@ import { Search, UserCircle, UserMinus, UserPlus, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
+import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -278,7 +278,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           >
             {uniqueAssignees.length > 0 ? (
               <div className="flex min-w-0 items-center gap-1">
-                <div className="-space-x-3 flex items-center gap-1">
+                <div className="flex items-center gap-1 -space-x-3">
                   {uniqueAssignees.slice(0, 4).map((assignee) => (
                     <div
                       key={assignee.id}
@@ -313,7 +313,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         >
           <div className="space-y-3">
             <div className="relative">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search members..."
                 value={searchQuery}

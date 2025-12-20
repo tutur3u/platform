@@ -18,16 +18,16 @@ interface UseWorkspaceMembersOptions {
 
 /**
  * Hook for fetching workspace members with caching and error handling.
- * 
+ *
  * Provides a centralized, consistent way to fetch workspace members across
  * the application, ensuring all components use the same endpoint, headers,
  * error behavior, and data shape.
- * 
+ *
  * @param workspaceId - The workspace ID to fetch members for
  * @param options - Configuration options
  * @param options.enabled - Whether the query should run (default: true if workspaceId provided)
  * @returns Query result with workspace members data, loading state, and error state
- * 
+ *
  * @example
  * const { data: members, isLoading } = useWorkspaceMembers(workspaceId, {
  *   enabled: !!workspaceId && isMultiSelectMode
@@ -40,8 +40,7 @@ export function useWorkspaceMembers(
   const { enabled: enabledOption } = options;
 
   // Determine if query should be enabled
-  const isEnabled =
-    enabledOption !== undefined ? enabledOption : !!workspaceId;
+  const isEnabled = enabledOption !== undefined ? enabledOption : !!workspaceId;
 
   return useQuery({
     queryKey: ['workspace-members', workspaceId],

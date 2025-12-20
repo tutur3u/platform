@@ -38,8 +38,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import {
   HoverCard,
   HoverCardContent,
@@ -238,10 +238,8 @@ function TaskCardInner({
   });
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } = useWorkspaceMembers(
-    wsId,
-    { enabled: !!wsId && !isPersonalWorkspace }
-  );
+  const { data: workspaceMembers = [], isLoading: membersLoading } =
+    useWorkspaceMembers(wsId, { enabled: !!wsId && !isPersonalWorkspace });
 
   // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
@@ -1066,7 +1064,7 @@ function TaskCardInner({
       {/* Overdue indicator */}
       {isOverdue && !(!!task.closed_at || !!task.completed_at) && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
-          <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
+          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
         </div>
       )}
       {/* Selection indicator */}

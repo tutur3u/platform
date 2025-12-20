@@ -12,12 +12,12 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { cn } from '@tuturuuu/utils/format';
 import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { useCallback, useMemo, useState } from 'react';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
@@ -182,10 +182,10 @@ export function TaskMentionChip({
   );
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } = useWorkspaceMembers(
-    boardConfig?.ws_id,
-    { enabled: !!boardConfig?.ws_id && menuOpen }
-  );
+  const { data: workspaceMembers = [], isLoading: membersLoading } =
+    useWorkspaceMembers(boardConfig?.ws_id, {
+      enabled: !!boardConfig?.ws_id && menuOpen,
+    });
 
   // Fetch available task lists
   const { data: availableLists = [] } = useQuery({
