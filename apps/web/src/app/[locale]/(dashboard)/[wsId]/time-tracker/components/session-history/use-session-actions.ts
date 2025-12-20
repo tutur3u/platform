@@ -62,6 +62,11 @@ interface UseSessionActionsReturn {
   openMissedEntryDialog: () => void;
   setShowMissedEntryDialog: (show: boolean) => void;
 
+  // Confirmation state
+  showResumeConfirmation: boolean;
+  setShowResumeConfirmation: (show: boolean) => void;
+  pendingResumeSession: SessionWithRelations | null;
+
   // Form state setters
   setEditFormState: <K extends keyof EditFormState>(
     key: K,
@@ -82,6 +87,11 @@ export function useSessionActions({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
+
+  // Confirmation states
+  const [showResumeConfirmation, setShowResumeConfirmation] = useState(false);
+  const [pendingResumeSession, setPendingResumeSession] =
+    useState<SessionWithRelations | null>(null);
 
   // Dialog states
   const [sessionToDelete, setSessionToDelete] =
@@ -144,12 +154,18 @@ export function useSessionActions({
   const resumeSession = useCallback(
     async (session: SessionWithRelations | undefined) => {
       if (!session) return;
+
       setActionStates((prev) => ({ ...prev, [`resume-${session.id}`]: true }));
       try {
-        await fetch(
+        const response = await fetch(
           `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
           { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
         );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to resume session');
+        }
 
         // Invalidate the running session query to update sidebar
         queryClient.invalidateQueries({
@@ -158,6 +174,8 @@ export function useSessionActions({
 
         router.refresh();
         toast.success(t('started_new_session', { title: session.title }));
+        setShowResumeConfirmation(false);
+        setPendingResumeSession(null);
       } catch (error) {
         console.error('Error resuming session:', error);
         toast.error(t('failed_to_start_session'));
@@ -503,6 +521,11 @@ export function useSessionActions({
     openMissedEntryDialog,
     setShowMissedEntryDialog,
     getValidationErrorMessage,
+
+    // Confirmation state
+    showResumeConfirmation,
+    setShowResumeConfirmation,
+    pendingResumeSession,
 
     // Form state setters
     setEditFormState,

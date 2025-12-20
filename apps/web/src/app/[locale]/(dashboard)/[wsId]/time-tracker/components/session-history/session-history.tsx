@@ -38,6 +38,7 @@ import {
   getDurationCategory,
   getTimeOfDayCategory,
   sessionOverlapsPeriod,
+  sortSessionGroups,
   stackSessions,
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
@@ -51,10 +52,9 @@ export function SessionHistory({
   wsId,
   sessions,
   categories,
-  tasks,
-}: SessionHistoryProps) {
+}: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
-  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+  const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
 
   // Filter state
@@ -89,6 +89,9 @@ export function SessionHistory({
     prefillStartTime,
     prefillEndTime,
     resumeSession,
+    showResumeConfirmation,
+    setShowResumeConfirmation,
+    pendingResumeSession,
     openEditDialog,
     closeEditDialog,
     saveEdit,
@@ -142,8 +145,8 @@ export function SessionHistory({
       category?: { name?: string } | null;
     }): string => {
       if (session.task_id) {
-        const task = tasks?.find((t) => t.id === session.task_id);
-        return task?.board_name || 'project-work';
+        // Return generic project-work if task exists - specific board name not needed for filtering
+        return 'project-work';
       }
       if (session.category?.name?.toLowerCase().includes('meeting'))
         return 'meetings';
@@ -153,7 +156,7 @@ export function SessionHistory({
         return 'administrative';
       return 'general';
     },
-    [tasks]
+    []
   );
 
   // Filtered sessions
@@ -356,6 +359,7 @@ export function SessionHistory({
               periodStats={periodStats}
               sessionsForPeriod={sessionsForPeriod}
               groupedStackedSessions={groupedStackedSessions}
+              startOfPeriod={startOfPeriod}
               onResume={resumeSession}
               onEdit={openEditDialog}
               onMove={openMoveDialog}
@@ -366,7 +370,7 @@ export function SessionHistory({
               <SessionStats periodStats={periodStats} />
 
               <div className="space-y-6">
-                {Object.entries(groupedStackedSessions).map(
+                {sortSessionGroups(Object.entries(groupedStackedSessions)).map(
                   ([groupTitle, groupSessions]) => {
                     const groupTotalDuration = groupSessions.reduce(
                       (sum, session) => sum + session.periodDuration,
@@ -398,7 +402,7 @@ export function SessionHistory({
                               onDelete={setSessionToDelete}
                               onMove={openMoveDialog}
                               actionStates={actionStates}
-                              tasks={tasks}
+                              tasks={null}
                             />
                           ))}
                         </div>
@@ -421,9 +425,8 @@ export function SessionHistory({
         onClose={closeEditDialog}
         isEditing={isEditing}
         isLoadingThreshold={isLoadingThreshold}
-        thresholdDays={thresholdDays}
+        thresholdDays={thresholdData?.threshold}
         categories={categories}
-        tasks={tasks}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -460,7 +463,6 @@ export function SessionHistory({
         open={showMissedEntryDialog}
         onOpenChange={setShowMissedEntryDialog}
         categories={categories}
-        tasks={tasks}
         wsId={wsId}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
@@ -475,6 +477,41 @@ export function SessionHistory({
         currentWorkspaceId={wsId}
         isMoving={isMoving}
       />
+
+      {/* Resume Confirmation Dialog */}
+      <AlertDialog
+        open={showResumeConfirmation}
+        onOpenChange={setShowResumeConfirmation}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('resume_long_break_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingResumeSession &&
+                t('resume_long_break_description', {
+                  duration: formatDuration(
+                    dayjs().diff(dayjs(pendingResumeSession.end_time), 'second')
+                  ),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowResumeConfirmation(false)}>
+              {t('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingResumeSession) {
+                  resumeSession(pendingResumeSession);
+                }
+              }}
+              className="bg-dynamic-orange text-white hover:bg-dynamic-orange/90"
+            >
+              {t('resume_continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

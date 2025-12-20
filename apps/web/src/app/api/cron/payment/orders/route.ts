@@ -74,23 +74,30 @@ export async function GET(req: NextRequest) {
             const orderData = {
               ws_id: ws_id,
               polar_order_id: order.id,
-              status: order.status,
+              status: order.status as any,
               polar_subscription_id: order.subscriptionId,
               product_id: order.productId,
               total_amount: order.totalAmount,
               currency: order.currency,
-              billing_reason: order.billingReason,
+              billing_reason: order.billingReason as any,
               user_id: order.customer.externalId,
-              created_at: order.createdAt.toISOString(),
-              updated_at: order.modifiedAt?.toISOString(),
+              created_at:
+                order.createdAt instanceof Date
+                  ? order.createdAt.toISOString()
+                  : new Date(order.createdAt).toISOString(),
+              updated_at:
+                order.modifiedAt instanceof Date
+                  ? order.modifiedAt.toISOString()
+                  : order.modifiedAt
+                    ? new Date(order.modifiedAt).toISOString()
+                    : null,
             };
 
             // Upsert order
             const { error: dbError } = await sbAdmin
               .from('workspace_orders')
-              .upsert(orderData, {
+              .upsert([orderData], {
                 onConflict: 'polar_order_id',
-                ignoreDuplicates: false,
               });
 
             if (dbError) {

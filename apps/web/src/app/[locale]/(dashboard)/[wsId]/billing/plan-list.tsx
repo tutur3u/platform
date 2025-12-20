@@ -51,7 +51,13 @@ export function PlanList({
             : 0
           : 0,
       billingCycle: product.recurringInterval,
-      features: product.benefits.map((benefit) => benefit.description),
+      features: product.benefits
+        ? product.benefits
+            .map((benefit) =>
+              'description' in benefit ? (benefit.description as string) : ''
+            )
+            .filter(Boolean)
+        : [],
       isEnterprise: product.name.toLowerCase().includes('enterprise'),
     }))
     .sort((a, b) => a.price - b.price)
@@ -100,8 +106,8 @@ export function PlanList({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-6xl">
         {/* Decorative Background */}
         <div className="absolute top-0 left-0 h-full w-full overflow-hidden opacity-30">
-          <div className="-top-24 -left-24 absolute h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-3xl" />
-          <div className="-bottom-24 -right-24 absolute h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/20 to-dynamic-orange/20 blur-3xl" />
+          <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-3xl" />
+          <div className="absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/20 to-dynamic-orange/20 blur-3xl" />
         </div>
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -117,7 +123,7 @@ export function PlanList({
             {upgradePlans.map((plan) => (
               <div
                 key={plan.id}
-                className={`group hover:-translate-y-2 relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl ${
+                className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
                   plan.popular
                     ? 'border-primary bg-linear-to-br from-primary/5 via-background to-background shadow-xl'
                     : 'border-border bg-background shadow-lg hover:border-primary/50'

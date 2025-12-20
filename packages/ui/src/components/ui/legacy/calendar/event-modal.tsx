@@ -18,7 +18,6 @@ import {
   Lock,
   MapPin,
   Mic,
-  Settings,
   Sparkles,
   StopCircle,
   Trash2,
@@ -27,12 +26,6 @@ import {
 } from '@tuturuuu/icons';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -62,6 +55,7 @@ import {
   isAllDayEvent,
 } from '@tuturuuu/utils/calendar-utils';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';
@@ -900,19 +894,19 @@ export function EventModal() {
         >
           <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
             <TabsTrigger
+              value="manual"
+              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Quick Entry
+            </TabsTrigger>
+            <TabsTrigger
               value="ai"
               className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               disabled={!!isEditing}
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              AI Assistant
-            </TabsTrigger>
-            <TabsTrigger
-              value="manual"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Manual
+              AI Generate
             </TabsTrigger>
           </TabsList>
 
@@ -925,7 +919,7 @@ export function EventModal() {
             >
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                  <div className="space-y-6 p-6">
+                  <div className="space-y-3 p-4">
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
@@ -934,20 +928,18 @@ export function EventModal() {
                     />
 
                     {/* Date and Time Selection */}
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-sm">Date & Time</h3>
-                        <div className="flex items-center gap-4">
-                          <EventToggleSwitch
-                            id="all-day"
-                            label="All Day"
-                            checked={isAllDay}
-                            onChange={handleAllDayChange}
-                          />
-                        </div>
+                        <h3 className="font-medium text-sm">When</h3>
+                        <EventToggleSwitch
+                          id="all-day"
+                          label="All Day"
+                          checked={isAllDay}
+                          onChange={handleAllDayChange}
+                        />
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid gap-3">
                         <EventDateTimePicker
                           label="Start"
                           value={new Date(event.start_at || new Date())}
@@ -1004,7 +996,7 @@ export function EventModal() {
                     <Separator />
 
                     {/* Location and Description */}
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <EventLocationInput
                         value={event.location || ''}
                         onChange={(value) =>
@@ -1017,82 +1009,49 @@ export function EventModal() {
                           setEvent({ ...event, description: value })
                         }
                       />
+
+                      {/* Color and Options Row */}
+                      <div className="flex items-end justify-between gap-4">
+                        <EventColorPicker
+                          value={event.color || 'BLUE'}
+                          onChange={(value) =>
+                            setEvent({ ...event, color: value })
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newLocked = !event.locked;
+                            if (isEditing) {
+                              handleLockToggle(newLocked);
+                            } else {
+                              setEvent((prev) => ({
+                                ...prev,
+                                locked: newLocked,
+                              }));
+                            }
+                          }}
+                          className={cn(
+                            'mb-1 flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-medium text-xs transition-colors',
+                            event.locked
+                              ? 'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber'
+                              : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                          )}
+                          title={
+                            event.locked
+                              ? 'Locked: Auto-scheduling will not move this event'
+                              : 'Unlocked: Auto-scheduling may move this event'
+                          }
+                        >
+                          {event.locked ? (
+                            <Lock className="h-3.5 w-3.5" />
+                          ) : (
+                            <Unlock className="h-3.5 w-3.5" />
+                          )}
+                          {event.locked ? 'Locked' : 'Unlocked'}
+                        </button>
+                      </div>
                     </div>
-
-                    <Separator />
-
-                    {/* Advanced Settings */}
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem
-                        value="advanced-settings"
-                        className="border-none"
-                      >
-                        <AccordionTrigger className="py-2 hover:no-underline">
-                          <div className="flex items-center gap-2 font-medium text-sm">
-                            <Settings className="h-4 w-4" />
-                            Advanced Settings
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-2 pb-0">
-                          <div className="space-y-4 rounded-lg bg-muted/30 p-4">
-                            <h3 className="font-medium text-sm">
-                              Event Properties
-                            </h3>
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                              <EventColorPicker
-                                value={event.color || 'BLUE'}
-                                onChange={(value) =>
-                                  setEvent({ ...event, color: value })
-                                }
-                              />
-                              <div className="flex flex-col space-y-3">
-                                <label
-                                  htmlFor="locked"
-                                  className="font-medium text-sm"
-                                >
-                                  Auto-Schedule Protection
-                                </label>
-                                <EventToggleSwitch
-                                  id="locked"
-                                  label="Lock Event"
-                                  description="Locked events won't be moved by auto-scheduling"
-                                  checked={event.locked || false}
-                                  onChange={(checked) => {
-                                    if (isEditing) {
-                                      handleLockToggle(checked);
-                                    } else {
-                                      setEvent((prev) => ({
-                                        ...prev,
-                                        locked: checked,
-                                      }));
-                                    }
-                                  }}
-                                />
-                                <div className="mt-1 flex items-center gap-2">
-                                  {event.locked ? (
-                                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                                  ) : (
-                                    <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
-                                  )}
-                                  <p className="text-muted-foreground text-xs">
-                                    {event.locked
-                                      ? 'Event is locked'
-                                      : 'Event is unlocked'}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-2 text-muted-foreground text-xs">
-                              <p className="flex items-center gap-1">
-                                <Info className="h-3 w-3" />
-                                Locked events can still be edited manually but
-                                won't be moved by auto-scheduling
-                              </p>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
 
                     {/* Warnings and Errors */}
                     {(showOverlapWarning || dateError) && (
@@ -1139,15 +1098,6 @@ export function EventModal() {
 
                     <div className="flex gap-2">
                       <Button
-                        variant="outline"
-                        onClick={closeModal}
-                        disabled={isSaving || isDeleting}
-                        className="flex items-center gap-2"
-                      >
-                        <X className="h-4 w-4" />
-                        <span>Cancel</span>
-                      </Button>
-                      <Button
                         onClick={handleManualSave}
                         disabled={isSaving || isDeleting}
                         className="flex items-center gap-2"
@@ -1160,7 +1110,9 @@ export function EventModal() {
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>{isEditing ? 'Update' : 'Create'}</span>
+                            <span>
+                              {isEditing ? 'Save Changes' : 'Create Event'}
+                            </span>
                           </>
                         )}
                       </Button>

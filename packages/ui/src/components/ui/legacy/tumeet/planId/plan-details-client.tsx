@@ -14,7 +14,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import html2canvas from 'html2canvas-pro';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useState } from 'react';
 import AgendaDetails from './agenda-details';
@@ -74,6 +73,7 @@ export default function PlanDetailsClient({
     const backgroundColor = resolvedTheme === 'dark' ? '#0a0a0a' : '#ffffff';
 
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
