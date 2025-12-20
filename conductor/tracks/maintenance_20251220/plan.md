@@ -25,7 +25,7 @@
     *   Subtask: Write tests for current behavior.
     *   Subtask: Replace `useEffect` fetch with `useQuery`/`useMutation`.
     *   Subtask: Verify functionality and cache invalidation.
-*   [ ] Task: Migrate Group B Components to TanStack Query
+*   [x] Task: Migrate Group B Components to TanStack Query (Workspace Settings & Infrastructure) [e1f3101]
     *   Subtask: Write tests for current behavior.
     *   Subtask: Replace `useEffect` fetch with `useQuery`/`useMutation`.
     *   Subtask: Verify functionality.
