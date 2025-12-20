@@ -104,16 +104,19 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
       'crawlers',
       wsId,
       'uncrawled',
-      { page: currentPage, pageSize: currentPageSize, domain: currentDomain, search: searchParams.get('search') },
+      {
+        page: currentPage,
+        pageSize: currentPageSize,
+        domain: currentDomain,
+        search: searchParams.get('search'),
+      },
     ],
     queryFn: async () => {
       const queryParams = new URLSearchParams(searchParams);
       if (!queryParams.has('page')) queryParams.set('page', '1');
       if (!queryParams.has('pageSize')) queryParams.set('pageSize', '20');
 
-      const res = await fetch(
-        `/api/${wsId}/crawlers/uncrawled?${queryParams}`
-      );
+      const res = await fetch(`/api/${wsId}/crawlers/uncrawled?${queryParams}`);
       if (!res.ok) throw new Error('Failed to fetch uncrawled URLs');
       return (await res.json()) as UncrawledResponse;
     },
@@ -184,7 +187,9 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         variant: failCount > 0 ? 'destructive' : 'default',
       });
 
-      queryClient.invalidateQueries({ queryKey: ['crawlers', wsId, 'uncrawled'] });
+      queryClient.invalidateQueries({
+        queryKey: ['crawlers', wsId, 'uncrawled'],
+      });
       router.refresh();
     } catch (err) {
       console.error('Error in bulk crawl:', err);
@@ -236,7 +241,9 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
       const data = JSON.parse(event.data);
       if (data.type === 'url_crawled') {
         setCrawledUrls((prev) => new Set([...prev, data.url]));
-        queryClient.invalidateQueries({ queryKey: ['crawlers', wsId, 'uncrawled'] });
+        queryClient.invalidateQueries({
+          queryKey: ['crawlers', wsId, 'uncrawled'],
+        });
         router.refresh();
       }
     };
