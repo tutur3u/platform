@@ -29,10 +29,12 @@ const formatSmartDate = (date: Date) => {
   return formatDistanceToNow(date, { addSuffix: true });
 };
 
-const calculateDaysForPreset = (preset: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
+const calculateDaysForPreset = (
+  preset: 'today' | 'tomorrow' | 'this_week' | 'next_week'
+) => {
   const today = new Date();
   const currentDay = today.getDay();
-  
+
   switch (preset) {
     case 'today':
       return 0;
@@ -53,9 +55,21 @@ const calculateDaysForPreset = (preset: 'today' | 'tomorrow' | 'this_week' | 'ne
 
 const dueDateOptions = [
   { preset: 'today' as const, label: 'Today', color: 'text-dynamic-green' },
-  { preset: 'tomorrow' as const, label: 'Tomorrow', color: 'text-dynamic-blue' },
-  { preset: 'this_week' as const, label: 'This Week', color: 'text-dynamic-purple' },
-  { preset: 'next_week' as const, label: 'Next Week', color: 'text-dynamic-orange' },
+  {
+    preset: 'tomorrow' as const,
+    label: 'Tomorrow',
+    color: 'text-dynamic-blue',
+  },
+  {
+    preset: 'this_week' as const,
+    label: 'This Week',
+    color: 'text-dynamic-purple',
+  },
+  {
+    preset: 'next_week' as const,
+    label: 'Next Week',
+    color: 'text-dynamic-orange',
+  },
 ];
 
 export function TaskDueDateMenu({
