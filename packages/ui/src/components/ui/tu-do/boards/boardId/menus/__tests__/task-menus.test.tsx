@@ -125,8 +125,8 @@ describe('TaskDueDateMenu', () => {
 
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(screen.getByText('Tomorrow')).toBeInTheDocument();
+    expect(screen.getByText('This Week')).toBeInTheDocument();
     expect(screen.getByText('Next Week')).toBeInTheDocument();
-    expect(screen.getByText('Next Month')).toBeInTheDocument();
     expect(screen.getByText('Custom Date')).toBeInTheDocument();
   });
 

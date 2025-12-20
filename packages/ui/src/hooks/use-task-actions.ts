@@ -24,6 +24,8 @@ interface UseTaskActionsProps {
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void; // Callback to clear selection after bulk operations
   taskId?: string; // Optional task ID for syncing individual task cache
+  // Bulk operation functions from useBulkOperations hook
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 export function useTaskActions({
@@ -41,6 +43,7 @@ export function useTaskActions({
   selectedTasks,
   isMultiSelectMode,
   taskId,
+  bulkUpdateCustomDueDate,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
@@ -997,23 +1000,52 @@ export function useTaskActions({
       setIsLoading(true);
       setCustomDateDialogOpen?.(false); // Close dialog immediately when date is selected
 
-      updateTaskMutation.mutate(
-        { taskId: task.id, updates: { end_date: newDate } },
-        {
-          onSuccess: () => {
-            toast.success('Due date updated', {
-              description: newDate
-                ? 'Custom due date set successfully'
-                : 'Due date removed',
-            });
-          },
-          onSettled: () => {
-            setIsLoading(false);
-          },
+      // Check if we're in multi-select mode with multiple tasks selected
+      const shouldBulkUpdate =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+
+      if (shouldBulkUpdate && bulkUpdateCustomDueDate) {
+        // Use the centralized bulk update function from useBulkOperations
+        try {
+          await bulkUpdateCustomDueDate(date || null);
+        } catch (error) {
+          console.error('Bulk custom date update failed', error);
+          toast.error('Failed to update due date for selected tasks');
+        } finally {
+          setIsLoading(false);
         }
-      );
+      } else {
+        // Single task update via mutation
+        updateTaskMutation.mutate(
+          { taskId: task.id, updates: { end_date: newDate } },
+          {
+            onSuccess: () => {
+              toast.success('Due date updated', {
+                description: newDate
+                  ? 'Custom due date set successfully'
+                  : 'Due date removed',
+              });
+            },
+            onSettled: () => {
+              setIsLoading(false);
+            },
+          }
+        );
+      }
     },
-    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
+    [
+      task?.id,
+      updateTaskMutation,
+      setIsLoading,
+      setCustomDateDialogOpen,
+      isMultiSelectMode,
+      selectedTasks,
+      boardId,
+      bulkUpdateCustomDueDate,
+    ]
   );
 
   const handleToggleAssignee = useCallback(

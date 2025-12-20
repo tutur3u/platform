@@ -29,11 +29,48 @@ const formatSmartDate = (date: Date) => {
   return formatDistanceToNow(date, { addSuffix: true });
 };
 
+const calculateDaysForPreset = (
+  preset: 'today' | 'tomorrow' | 'this_week' | 'next_week'
+) => {
+  const today = new Date();
+  const currentDay = today.getDay();
+
+  switch (preset) {
+    case 'today':
+      return 0;
+    case 'tomorrow':
+      return 1;
+    case 'this_week': {
+      // Days until end of week (Sunday)
+      // (7 - currentDay) % 7 gives 0 for Sunday, correct days for other days
+      const daysUntilSunday = (7 - currentDay) % 7;
+      return daysUntilSunday;
+    }
+    case 'next_week': {
+      // Days until next Sunday
+      const daysUntilSunday = (7 - currentDay) % 7;
+      return daysUntilSunday + 7;
+    }
+  }
+};
+
 const dueDateOptions = [
-  { days: 0, label: 'Today', color: 'text-dynamic-green' },
-  { days: 1, label: 'Tomorrow', color: 'text-dynamic-blue' },
-  { days: 7, label: 'Next Week', color: 'text-dynamic-purple' },
-  { days: 30, label: 'Next Month', color: 'text-dynamic-orange' },
+  { preset: 'today' as const, label: 'Today', color: 'text-dynamic-green' },
+  {
+    preset: 'tomorrow' as const,
+    label: 'Tomorrow',
+    color: 'text-dynamic-blue',
+  },
+  {
+    preset: 'this_week' as const,
+    label: 'This Week',
+    color: 'text-dynamic-purple',
+  },
+  {
+    preset: 'next_week' as const,
+    label: 'Next Week',
+    color: 'text-dynamic-orange',
+  },
 ];
 
 export function TaskDueDateMenu({
@@ -64,10 +101,10 @@ export function TaskDueDateMenu({
       <DropdownMenuSubContent>
         {dueDateOptions.map((option) => (
           <DropdownMenuItem
-            key={option.days}
+            key={option.preset}
             onSelect={(e) =>
               onMenuItemSelect(e as unknown as Event, () => {
-                onDueDateChange(option.days);
+                onDueDateChange(calculateDaysForPreset(option.preset));
                 onClose();
               })
             }

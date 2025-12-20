@@ -30,6 +30,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
@@ -165,36 +166,24 @@ export function TaskFilter({
   });
 
   // Fetch available assignees
-  const { data: availableAssignees = [] } = useQuery({
-    queryKey: ['workspace-members', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${wsId}/members`);
-      if (!response.ok) throw new Error('Failed to fetch members');
+  const { data: fetchedMembers = [] } = useWorkspaceMembers(wsId);
 
-      const { members: fetchedMembers } = await response.json();
-
-      // Deduplicate members by ID
-      const uniqueMembers = Array.from(
-        fetchedMembers
-          .reduce((map: Map<string, TaskAssignee>, member: any) => {
-            if (member.id) {
-              map.set(member.id, {
-                id: member.id,
-                display_name: member.display_name,
-                avatar_url: member.avatar_url,
-                email: member.email,
-              });
-            }
-            return map;
-          }, new Map<string, TaskAssignee>())
-          .values()
-      );
-
-      return uniqueMembers as TaskAssignee[];
-    },
-    enabled: !!wsId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  // Deduplicate members by ID
+  const availableAssignees: TaskAssignee[] = Array.from(
+    fetchedMembers
+      .reduce((map: Map<string, TaskAssignee>, member: any) => {
+        if (member.id) {
+          map.set(member.id, {
+            id: member.id,
+            display_name: member.display_name,
+            avatar_url: member.avatar_url,
+            email: member.email,
+          });
+        }
+        return map;
+      }, new Map<string, TaskAssignee>())
+      .values()
+  );
 
   // Fetch available projects
   const { data: availableProjects = [] } = useQuery({

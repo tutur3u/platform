@@ -54,6 +54,7 @@ interface BoardColumnProps {
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
   filters?: TaskFilters;
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 function BoardColumnInner({
@@ -73,6 +74,7 @@ function BoardColumnInner({
   taskHeightsRef,
   optimisticUpdateInProgress,
   filters,
+  bulkUpdateCustomDueDate,
 }: BoardColumnProps) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -212,6 +214,7 @@ function BoardColumnInner({
         dragPreviewPosition={dragPreviewPosition}
         taskHeightsRef={taskHeightsRef}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
+        bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
       />
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">

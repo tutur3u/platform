@@ -1,5 +1,4 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
 import { Flag, Plus, Sparkles, Users, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -13,6 +12,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -60,16 +60,10 @@ export function TaskForm({
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Fetch workspace members for quick assign
-  const { data: members = [] } = useQuery({
-    queryKey: ['workspace-members-quick-assign', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${wsId}/members`);
-      if (!response.ok) throw new Error('Failed to fetch members');
-      const { members: fetchedMembers } = await response.json();
-      return fetchedMembers.slice(0, 5); // Show first 5 members for quick assign
-    },
+  const { data: allMembers = [] } = useWorkspaceMembers(wsId, {
     enabled: !!wsId && isAdding,
   });
+  const members = allMembers.slice(0, 5); // Show first 5 members for quick assign
 
   useEffect(() => {
     const checkIsPersonal = async () => {
@@ -148,7 +142,7 @@ export function TaskForm({
       let finalAssignees = [...selectedAssignees];
 
       // Add assignees if any selected
-      if (isPersonal) {
+      if (isPersonal && members[0]?.id) {
         await supabase.from('task_assignees').insert({
           task_id: newTask.id,
           user_id: members[0].id,
