@@ -1,6 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
 import { isAfter } from 'date-fns';
-import { Fragment } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 import {
   getAttendanceGroupNames,
@@ -42,11 +41,12 @@ export const DayCell: React.FC<{
   if (!hasAttendance) {
     return (
       <button
+        type="button"
         onClick={onDateClick ? () => onDateClick(day) : undefined}
         className={cn(
           'flex flex-none justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
           isAfter(day, today) &&
-            '!cursor-not-allowed hover:!cursor-not-allowed opacity-50',
+            'cursor-not-allowed! opacity-50 hover:cursor-not-allowed!',
           !isInCurrentMonth &&
             'bg-foreground/3 text-foreground/40 dark:bg-foreground/5',
           isInCurrentMonth && 'text-foreground/40'
@@ -58,34 +58,31 @@ export const DayCell: React.FC<{
   }
 
   return (
-    <Fragment>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={onDateClick ? () => onDateClick(day) : undefined}
-            className={cn(
-              'flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg',
-              isAttended
-                ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
-                : isAbsent
-                  ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
-                  : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10',
-              !isInCurrentMonth && 'opacity-60'
-            )}
-          >
-            {day.getDate()}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {getAttendanceGroupNames(day, attendanceData).map(
-            (groupName, idx) => (
-              <div key={groupName + idx} className="flex items-center gap-1">
-                <span className="font-semibold text-xs">{groupName}</span>
-              </div>
-            )
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onDateClick ? () => onDateClick(day) : undefined}
+          className={cn(
+            'flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg',
+            isAttended
+              ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green dark:border-dynamic-green/20 dark:bg-dynamic-green/20'
+              : isAbsent
+                ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red dark:border-dynamic-red/20 dark:bg-dynamic-red/20'
+                : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10',
+            !isInCurrentMonth && 'opacity-60'
           )}
-        </TooltipContent>
-      </Tooltip>
-    </Fragment>
+        >
+          {day.getDate()}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {getAttendanceGroupNames(day, attendanceData).map((groupName, idx) => (
+          <div key={groupName + idx} className="flex items-center gap-1">
+            <span className="font-semibold text-xs">{groupName}</span>
+          </div>
+        ))}
+      </TooltipContent>
+    </Tooltip>
   );
 };

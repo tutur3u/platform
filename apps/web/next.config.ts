@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     '@tuturuuu/types',
     '@tuturuuu/utils',
     '@tuturuuu/supabase',
+    '@tuturuuu/microsoft',
+    '@tuturuuu/google',
   ],
   images: {
     remotePatterns: [

@@ -357,7 +357,7 @@ export const CalendarSyncProvider = ({
 
         setSyncStatus({
           state: 'error',
-          message: 'Failed to load calendar events',
+          message: 'failed_to_load_events', // Translation key
           lastSyncTime: new Date(),
         });
 
@@ -417,7 +417,7 @@ export const CalendarSyncProvider = ({
 
         setSyncStatus({
           state: 'error',
-          message: 'Failed to fetch from Google Calendar',
+          message: 'failed_to_fetch_google', // Translation key
           lastSyncTime: new Date(),
         });
 
@@ -554,7 +554,7 @@ export const CalendarSyncProvider = ({
       setIsSyncing(true);
       setSyncStatus({
         state: 'syncing',
-        message: 'Syncing from Google Calendar...',
+        message: 'syncing_calendars', // Translation key: calendar.syncing_calendars
         direction: 'google-to-tuturuuu',
       });
 
@@ -564,7 +564,7 @@ export const CalendarSyncProvider = ({
         if (!canProceed) {
           setSyncStatus({
             state: 'error',
-            message: 'Another sync is in progress. Please wait.',
+            message: 'sync_in_progress', // Translation key
           });
           toast.error('Sync in progress', {
             description:
@@ -626,7 +626,7 @@ export const CalendarSyncProvider = ({
         setError(null);
         setSyncStatus({
           state: 'success',
-          message: 'Sync completed successfully',
+          message: 'sync_completed', // Translation key
           lastSyncTime: new Date(),
           direction: 'google-to-tuturuuu',
         });
@@ -980,7 +980,7 @@ export const CalendarSyncProvider = ({
     setIsSyncing(true);
     setSyncStatus({
       state: 'syncing',
-      message: 'Syncing to Google Calendar...',
+      message: 'syncing_to_google', // Translation key
       direction: 'tuturuuu-to-google',
     });
 

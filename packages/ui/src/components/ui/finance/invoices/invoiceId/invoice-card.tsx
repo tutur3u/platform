@@ -16,7 +16,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas-pro';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -137,6 +136,7 @@ export default function InvoiceCard({
   const handlePngExport = useCallback(async () => {
     setIsExporting(true);
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
       const element = document.getElementById('printable-area');
       if (!element) throw new Error('Printable area not found');
 
@@ -259,6 +259,7 @@ export default function InvoiceCard({
           <div className="mb-8 flex flex-wrap items-center justify-between gap-8">
             <div className="flex-1">
               {getConfig('BRAND_LOGO_URL') && (
+                // biome-ignore lint/performance/noImgElement: <>
                 <img
                   src={getConfig('BRAND_LOGO_URL')!}
                   alt="logo"

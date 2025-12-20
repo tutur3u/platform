@@ -249,7 +249,7 @@ export function QuickCalendarToggle() {
 export default function CalendarConnections({
   wsId,
   initialConnections: _initialConnections,
-  hasGoogleAuth,
+  hasGoogleAuth: _hasGoogleAuth, // Deprecated - now using accounts query
 }: {
   wsId: string;
   initialConnections: CalendarConnection[];
@@ -270,6 +270,22 @@ export default function CalendarConnections({
   const [isQuickOpen, setIsQuickOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isAddingCalendar, setIsAddingCalendar] = useState(false);
+
+  // Fetch connected accounts to check if user has any OAuth connections
+  const { data: accountsData } = useQuery({
+    queryKey: ['calendar-accounts', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/calendar/auth/accounts?wsId=${wsId}`
+      );
+      if (!response.ok) return { total: 0 };
+      return response.json() as Promise<{ total: number }>;
+    },
+    staleTime: 60_000,
+  });
+
+  // Check if user has any connected accounts (Google or Microsoft)
+  const hasConnectedAccounts = (accountsData?.total ?? 0) > 0;
 
   // Replaced manual fetch with useMutation
   const googleAuthMutation = useMutation<AuthResponse, Error, void>({
@@ -334,7 +350,7 @@ export default function CalendarConnections({
   const { data: availableCalendars = [], isLoading: isLoadingCalendars } =
     useQuery({
       queryKey: ['google-calendar-list', wsId],
-      enabled: isManageOpen && hasGoogleAuth,
+      enabled: isManageOpen && hasConnectedAccounts,
       queryFn: async () => {
         const response = await fetch(
           `/api/v1/calendar/auth/list-calendars?wsId=${wsId}`
@@ -498,7 +514,7 @@ export default function CalendarConnections({
     }
   };
 
-  if (!hasGoogleAuth) {
+  if (!hasConnectedAccounts) {
     return (
       <Button
         variant="outline"

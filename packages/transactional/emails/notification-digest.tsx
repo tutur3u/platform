@@ -84,6 +84,16 @@ export interface NotificationItem {
   actionUrl?: string;
 }
 
+// Extended notification item for consolidated per-task display
+export interface ConsolidatedNotification extends NotificationItem {
+  /** True if this represents multiple notifications for the same entity */
+  isConsolidated?: boolean;
+  /** Number of original notifications consolidated */
+  consolidatedCount?: number;
+  /** Types of changes included (e.g., ['priority_changed', 'due_date_changed']) */
+  changeTypes?: string[];
+}
+
 interface NotificationDigestEmailProps {
   userName?: string;
   workspaceName?: string;
@@ -276,12 +286,13 @@ export const getNotificationConfig = (type: string) => {
 };
 
 // Generate smart subject line based on notification content
+// Using clean, professional format without emojis for better email client compatibility
 export const generateSubjectLine = (
   notifications: NotificationItem[],
   workspaceName: string
 ): string => {
   if (notifications.length === 0) {
-    return `Updates from ${workspaceName}`;
+    return `Your digest from ${workspaceName}`;
   }
 
   // Sort by category priority (lower = more important)
@@ -295,49 +306,48 @@ export const generateSubjectLine = (
 
   const primary = sorted[0]!;
   const primaryCategory = getCategoryForType(primary.type);
-  const config = CATEGORY_CONFIG[primaryCategory];
   const remaining = notifications.length - 1;
-  const remainingText = remaining > 0 ? ` (+${remaining} more)` : '';
+  const remainingText = remaining > 0 ? ` and ${remaining} more` : '';
 
-  // Generate contextual subject based on category and specific type
+  // Generate clean, professional subject lines (no emojis)
   switch (primaryCategory) {
     case 'workspace':
-      return `${config.emoji} You're invited to ${(primary.data?.workspace_name as string) || workspaceName}${remainingText}`;
+      return `You're invited to join ${(primary.data?.workspace_name as string) || workspaceName}`;
 
     case 'deadlines':
-      return `${config.emoji} Deadline: ${primary.title}${remainingText}`;
+      return `Reminder: ${truncate(primary.title, 40)} is due soon${remainingText}`;
 
     case 'task_assignments':
       if (primary.type === 'task_mention') {
-        return `📋 ${(primary.data?.mentioned_by as string) || 'Someone'} mentioned you${remainingText}`;
+        return `${(primary.data?.mentioned_by as string) || 'Someone'} mentioned you${remainingText}`;
       }
-      return `${config.emoji} New task: ${primary.title}${remainingText}`;
+      return `New assignment: ${truncate(primary.title, 40)}${remainingText}`;
 
     case 'comments':
-      return `${config.emoji} New comment on "${truncate(primary.title, 30)}"${remainingText}`;
+      return `New comment on "${truncate(primary.title, 30)}"${remainingText}`;
 
     case 'task_status':
       if (primary.type === 'task_completed') {
-        return `${config.emoji} Task completed: ${primary.title}${remainingText}`;
+        return `Task completed: ${truncate(primary.title, 40)}${remainingText}`;
       } else if (primary.type === 'task_reopened') {
-        return `🔄 Task reopened: ${primary.title}${remainingText}`;
+        return `Task reopened: ${truncate(primary.title, 40)}${remainingText}`;
       }
-      return `${config.emoji} Task moved: ${truncate(primary.title, 30)}${remainingText}`;
+      return `Task moved: ${truncate(primary.title, 35)}${remainingText}`;
 
     case 'task_updates':
-      return `${config.emoji} Task updated: ${primary.title}${remainingText}`;
+      return `Task updated: ${truncate(primary.title, 40)}${remainingText}`;
 
     case 'task_relationships':
-      return `${config.emoji} Task changes: ${truncate(primary.title, 30)}${remainingText}`;
+      return `Changes to ${truncate(primary.title, 40)}${remainingText}`;
 
     case 'system':
-      return `${config.emoji} ${primary.title}${remainingText}`;
+      return `${primary.title}${remainingText}`;
 
     default:
       if (notifications.length === 1) {
-        return `${config.emoji} ${primary.title}`;
+        return primary.title;
       }
-      return `${config.emoji} ${notifications.length} updates from ${workspaceName}`;
+      return `${notifications.length} updates from ${workspaceName}`;
   }
 };
 
@@ -469,14 +479,116 @@ export const getDelayInfo = (
   return { isDelayed: true, delayText };
 };
 
+// Readable change type names for consolidated notifications
+const CHANGE_TYPE_LABELS: Record<string, string> = {
+  task_updated: 'updated',
+  task_title_changed: 'title',
+  task_description_changed: 'description',
+  task_priority_changed: 'priority',
+  task_due_date_changed: 'due date',
+  task_start_date_changed: 'start date',
+  task_estimation_changed: 'estimate',
+  task_moved: 'moved',
+  task_completed: 'completed',
+  task_reopened: 'reopened',
+  task_label_added: 'label added',
+  task_label_removed: 'label removed',
+  task_project_linked: 'project linked',
+  task_project_unlinked: 'project unlinked',
+  task_assignee_removed: 'assignee removed',
+};
+
+// Consolidate multiple notifications for the same entity (task) into a single item
+// This prevents overwhelming users when a task receives many rapid updates
+const consolidateByEntity = (
+  notifications: NotificationItem[]
+): ConsolidatedNotification[] => {
+  // Categories that should be consolidated by entity_id
+  const consolidatableCategories: NotificationCategory[] = [
+    'task_updates',
+    'task_status',
+    'task_relationships',
+  ];
+
+  // Separate notifications into consolidatable and non-consolidatable
+  const toConsolidate: NotificationItem[] = [];
+  const keepSeparate: NotificationItem[] = [];
+
+  for (const notification of notifications) {
+    const category = getCategoryForType(notification.type);
+    const entityId = notification.data?.task_id as string | undefined;
+
+    if (consolidatableCategories.includes(category) && entityId) {
+      toConsolidate.push(notification);
+    } else {
+      keepSeparate.push(notification);
+    }
+  }
+
+  // Group by entity_id
+  const entityGroups = new Map<string, NotificationItem[]>();
+  for (const notification of toConsolidate) {
+    const entityId = notification.data?.task_id as string;
+    if (!entityGroups.has(entityId)) {
+      entityGroups.set(entityId, []);
+    }
+    entityGroups.get(entityId)!.push(notification);
+  }
+
+  // Create consolidated notifications
+  const consolidated: ConsolidatedNotification[] = [];
+
+  for (const [, group] of entityGroups) {
+    if (group.length === 1) {
+      // Single notification, no consolidation needed
+      consolidated.push(group[0] as ConsolidatedNotification);
+    } else {
+      // Multiple notifications for same entity - consolidate
+      // Use the most recent notification as the base
+      const sorted = [...group].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      const mostRecent = sorted[0]!;
+
+      // Collect unique change types
+      const changeTypes = [...new Set(group.map((n) => n.type))];
+      const changeLabels = changeTypes
+        .map((t) => CHANGE_TYPE_LABELS[t] || t.replace('task_', ''))
+        .slice(0, 3); // Show max 3 labels
+
+      const additionalCount = changeTypes.length - changeLabels.length;
+      const changesText =
+        additionalCount > 0
+          ? `${changeLabels.join(', ')}, +${additionalCount} more`
+          : changeLabels.join(', ');
+
+      consolidated.push({
+        ...mostRecent,
+        isConsolidated: true,
+        consolidatedCount: group.length,
+        changeTypes,
+        // Update description to reflect consolidation
+        description: `${group.length} changes: ${changesText}`,
+      });
+    }
+  }
+
+  // Return non-consolidatable items plus consolidated items
+  return [...(keepSeparate as ConsolidatedNotification[]), ...consolidated];
+};
+
 // Group notifications by category for consolidated display
 const groupNotificationsByCategory = (
   notifications: NotificationItem[]
-): Map<NotificationCategory, NotificationItem[]> => {
-  const groups = new Map<NotificationCategory, NotificationItem[]>();
+): Map<NotificationCategory, ConsolidatedNotification[]> => {
+  // First, consolidate notifications by entity
+  const consolidatedNotifications = consolidateByEntity(notifications);
+
+  const groups = new Map<NotificationCategory, ConsolidatedNotification[]>();
 
   // Group by category
-  for (const notification of notifications) {
+  for (const notification of consolidatedNotifications) {
     const category = getCategoryForType(notification.type);
     if (!groups.has(category)) {
       groups.set(category, []);
@@ -507,12 +619,16 @@ const NotificationCard = ({
   workspaceUrl,
   isCompact = false,
 }: {
-  notification: NotificationItem;
+  notification: ConsolidatedNotification;
   workspaceUrl: string;
   isCompact?: boolean;
 }) => {
   const config = getNotificationConfig(notification.type);
   const actionUrl = notification.actionUrl || workspaceUrl;
+  const isConsolidated =
+    notification.isConsolidated &&
+    notification.consolidatedCount &&
+    notification.consolidatedCount > 1;
 
   // Check if this is a task_moved notification with list names
   const isTaskMoved = notification.type === 'task_moved';
@@ -587,6 +703,21 @@ const NotificationCard = ({
                 </Link>
               </td>
               <td style={{ textAlign: 'right', verticalAlign: 'top' }}>
+                {isConsolidated && (
+                  <span
+                    style={{
+                      backgroundColor: '#e0e7ff',
+                      color: '#4338ca',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      marginRight: '6px',
+                    }}
+                  >
+                    {notification.consolidatedCount} changes
+                  </span>
+                )}
                 <span style={{ color: '#9ca3af', fontSize: '12px' }}>
                   {formatRelativeTime(notification.createdAt)}
                 </span>
@@ -662,7 +793,7 @@ const NotificationGroup = ({
   workspaceUrl,
 }: {
   category: NotificationCategory;
-  notifications: NotificationItem[];
+  notifications: ConsolidatedNotification[];
   workspaceUrl: string;
 }) => {
   const config = CATEGORY_CONFIG[category];

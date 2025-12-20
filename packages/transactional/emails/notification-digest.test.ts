@@ -1,17 +1,17 @@
 import { render } from '@react-email/render';
 import { describe, expect, it } from 'vitest';
 import NotificationDigestEmail, {
+  CATEGORY_CONFIG,
   formatTimeRange,
   generateSubjectLine,
+  getCategoryConfig,
+  getCategoryForType,
   getDelayInfo,
   getNotificationConfig,
-  getCategoryForType,
-  getCategoryConfig,
   NOTIFICATION_CONFIG,
-  CATEGORY_CONFIG,
-  TYPE_TO_CATEGORY,
-  type NotificationItem,
   type NotificationCategory,
+  type NotificationItem,
+  TYPE_TO_CATEGORY,
 } from './notification-digest';
 
 describe('notification-digest utilities', () => {
@@ -186,7 +186,7 @@ describe('notification-digest utilities', () => {
 
     it('should return generic message for empty notifications', () => {
       const subject = generateSubjectLine([], 'My Workspace');
-      expect(subject).toBe('Updates from My Workspace');
+      expect(subject).toBe('Your digest from My Workspace');
     });
 
     it('should generate subject for workspace invite', () => {
@@ -196,8 +196,9 @@ describe('notification-digest utilities', () => {
         }),
       ];
       const subject = generateSubjectLine(notifications, 'Default');
-      expect(subject).toContain("You're invited to Team Alpha");
-      expect(subject).toContain('✉️');
+      expect(subject).toContain("You're invited to join Team Alpha");
+      // No emojis in subject lines
+      expect(subject).not.toContain('✉️');
     });
 
     it('should generate subject for deadline reminder', () => {
@@ -205,7 +206,9 @@ describe('notification-digest utilities', () => {
         createNotification('deadline_reminder', 'Submit report'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('⏰ Deadline: Submit report');
+      expect(subject).toContain('Reminder:');
+      expect(subject).toContain('Submit report');
+      expect(subject).toContain('is due soon');
     });
 
     it('should generate subject for task assigned', () => {
@@ -213,7 +216,7 @@ describe('notification-digest utilities', () => {
         createNotification('task_assigned', 'Review PR #123'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('📋 New task: Review PR #123');
+      expect(subject).toBe('New assignment: Review PR #123');
     });
 
     it('should generate subject for task mention', () => {
@@ -223,7 +226,7 @@ describe('notification-digest utilities', () => {
         }),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('📋 John mentioned you');
+      expect(subject).toBe('John mentioned you');
     });
 
     it('should generate subject for comment added', () => {
@@ -231,7 +234,7 @@ describe('notification-digest utilities', () => {
         createNotification('comment_added', 'Budget planning document'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toContain('💬 New comment on');
+      expect(subject).toContain('New comment on');
       expect(subject).toContain('Budget planning document');
     });
 
@@ -240,7 +243,7 @@ describe('notification-digest utilities', () => {
         createNotification('task_completed', 'Setup CI/CD'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('✅ Task completed: Setup CI/CD');
+      expect(subject).toBe('Task completed: Setup CI/CD');
     });
 
     it('should generate subject for task updated (field changes)', () => {
@@ -248,7 +251,7 @@ describe('notification-digest utilities', () => {
         createNotification('task_updated', 'Fix bug #456'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('📝 Task updated: Fix bug #456');
+      expect(subject).toBe('Task updated: Fix bug #456');
     });
 
     it('should generate subject for granular task field changes', () => {
@@ -256,7 +259,7 @@ describe('notification-digest utilities', () => {
         createNotification('task_title_changed', 'Updated task name'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toBe('📝 Task updated: Updated task name');
+      expect(subject).toBe('Task updated: Updated task name');
     });
 
     it('should prioritize most important notification for subject', () => {
@@ -267,8 +270,8 @@ describe('notification-digest utilities', () => {
         createNotification('comment_added', 'New comment'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toContain('Deadline: Important deadline');
-      expect(subject).toContain('(+2 more)');
+      expect(subject).toContain('Important deadline');
+      expect(subject).toContain('and 2 more');
     });
 
     it('should show remaining count for multiple notifications', () => {
@@ -278,7 +281,7 @@ describe('notification-digest utilities', () => {
         createNotification('task_assigned', 'Task 3'),
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toContain('(+2 more)');
+      expect(subject).toContain('and 2 more');
     });
 
     it('should not show remaining count for single notification', () => {
@@ -441,7 +444,7 @@ describe('notification-digest utilities', () => {
       ];
       // Both are in task_status category with same priority
       const subject = generateSubjectLine(notifications, 'Workspace');
-      expect(subject).toContain('(+1 more)');
+      expect(subject).toContain('and 1 more');
     });
   });
 

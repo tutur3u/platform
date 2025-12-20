@@ -663,24 +663,39 @@ export type Database = {
       calendar_auth_tokens: {
         Row: {
           access_token: string;
+          account_email: string | null;
+          account_name: string | null;
           created_at: string;
+          expires_at: string | null;
           id: string;
+          is_active: boolean;
+          provider: string;
           refresh_token: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           access_token: string;
+          account_email?: string | null;
+          account_name?: string | null;
           created_at?: string;
+          expires_at?: string | null;
           id?: string;
+          is_active?: boolean;
+          provider?: string;
           refresh_token: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
           access_token?: string;
+          account_email?: string | null;
+          account_name?: string | null;
           created_at?: string;
+          expires_at?: string | null;
           id?: string;
+          is_active?: boolean;
+          provider?: string;
           refresh_token?: string;
           user_id?: string;
           ws_id?: string;
@@ -732,36 +747,59 @@ export type Database = {
       };
       calendar_connections: {
         Row: {
+          auth_token_id: string | null;
           calendar_id: string;
           calendar_name: string;
           color: string | null;
           created_at: string;
           id: string;
           is_enabled: boolean;
+          provider: string;
           updated_at: string;
+          workspace_calendar_id: string | null;
           ws_id: string;
         };
         Insert: {
+          auth_token_id?: string | null;
           calendar_id: string;
           calendar_name: string;
           color?: string | null;
           created_at?: string;
           id?: string;
           is_enabled?: boolean;
+          provider?: string;
           updated_at?: string;
+          workspace_calendar_id?: string | null;
           ws_id: string;
         };
         Update: {
+          auth_token_id?: string | null;
           calendar_id?: string;
           calendar_name?: string;
           color?: string | null;
           created_at?: string;
           id?: string;
           is_enabled?: boolean;
+          provider?: string;
           updated_at?: string;
+          workspace_calendar_id?: string | null;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'calendar_connections_auth_token_id_fkey';
+            columns: ['auth_token_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_auth_tokens';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_connections_workspace_calendar_id_fkey';
+            columns: ['workspace_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'calendar_connections_ws_id_fkey';
             columns: ['ws_id'];
@@ -7989,6 +8027,70 @@ export type Database = {
           },
         ];
       };
+      time_tracking_breaks: {
+        Row: {
+          break_duration_seconds: number | null;
+          break_end: string | null;
+          break_start: string;
+          break_type_id: string | null;
+          break_type_name: string | null;
+          created_at: string | null;
+          created_by: string;
+          id: string;
+          notes: string | null;
+          session_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          break_duration_seconds?: number | null;
+          break_end?: string | null;
+          break_start: string;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
+          created_at?: string | null;
+          created_by: string;
+          id?: string;
+          notes?: string | null;
+          session_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          break_duration_seconds?: number | null;
+          break_end?: string | null;
+          break_start?: string;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
+          created_at?: string | null;
+          created_by?: string;
+          id?: string;
+          notes?: string | null;
+          session_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_breaks_break_type_id_fkey';
+            columns: ['break_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_break_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_breaks_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_session_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_breaks_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       time_tracking_categories: {
         Row: {
           color: string | null;
@@ -8132,12 +8234,15 @@ export type Database = {
           approval_status: Database['public']['Enums']['time_tracking_request_status'];
           approved_at: string | null;
           approved_by: string | null;
+          break_type_id: string | null;
+          break_type_name: string | null;
           category_id: string | null;
           created_at: string;
           description: string | null;
           end_time: string;
           id: string;
           images: string[] | null;
+          linked_session_id: string | null;
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
@@ -8152,12 +8257,15 @@ export type Database = {
           approval_status?: Database['public']['Enums']['time_tracking_request_status'];
           approved_at?: string | null;
           approved_by?: string | null;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
           category_id?: string | null;
           created_at?: string;
           description?: string | null;
           end_time: string;
           id: string;
           images?: string[] | null;
+          linked_session_id?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
@@ -8172,12 +8280,15 @@ export type Database = {
           approval_status?: Database['public']['Enums']['time_tracking_request_status'];
           approved_at?: string | null;
           approved_by?: string | null;
+          break_type_id?: string | null;
+          break_type_name?: string | null;
           category_id?: string | null;
           created_at?: string;
           description?: string | null;
           end_time?: string;
           id?: string;
           images?: string[] | null;
+          linked_session_id?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
@@ -8218,10 +8329,31 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'time_tracking_requests_break_type_id_fkey';
+            columns: ['break_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_break_types';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'time_tracking_requests_category_id_fkey';
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_linked_session_id_fkey';
+            columns: ['linked_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_session_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_linked_session_id_fkey';
+            columns: ['linked_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -8313,6 +8445,8 @@ export type Database = {
           end_time: string | null;
           id: string;
           is_running: boolean | null;
+          parent_session_id: string | null;
+          pending_approval: boolean;
           productivity_score: number | null;
           start_time: string;
           tags: string[] | null;
@@ -8332,6 +8466,8 @@ export type Database = {
           end_time?: string | null;
           id?: string;
           is_running?: boolean | null;
+          parent_session_id?: string | null;
+          pending_approval?: boolean;
           productivity_score?: number | null;
           start_time: string;
           tags?: string[] | null;
@@ -8351,6 +8487,8 @@ export type Database = {
           end_time?: string | null;
           id?: string;
           is_running?: boolean | null;
+          parent_session_id?: string | null;
+          pending_approval?: boolean;
           productivity_score?: number | null;
           start_time?: string;
           tags?: string[] | null;
@@ -8367,6 +8505,20 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_parent_session_id_fkey';
+            columns: ['parent_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_session_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_parent_session_id_fkey';
+            columns: ['parent_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -9934,6 +10086,57 @@ export type Database = {
           },
         ];
       };
+      workspace_break_types: {
+        Row: {
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          icon: string | null;
+          id: string;
+          is_default: boolean | null;
+          name: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_default?: boolean | null;
+          name: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_default?: boolean | null;
+          name?: string;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_break_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_break_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_calendar_categories: {
         Row: {
           color: string;
@@ -9992,12 +10195,20 @@ export type Database = {
           created_at: string | null;
           description: string;
           end_at: string;
+          external_calendar_id: string | null;
+          external_event_id: string | null;
           google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
           is_encrypted: boolean;
           location: string | null;
           locked: boolean;
+          provider: Database['public']['Enums']['calendar_provider'] | null;
+          scheduling_metadata: Json | null;
+          scheduling_source:
+            | Database['public']['Enums']['calendar_scheduling_source']
+            | null;
+          source_calendar_id: string | null;
           start_at: string;
           task_id: string | null;
           title: string;
@@ -10008,12 +10219,20 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at: string;
+          external_calendar_id?: string | null;
+          external_event_id?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
           location?: string | null;
           locked?: boolean;
+          provider?: Database['public']['Enums']['calendar_provider'] | null;
+          scheduling_metadata?: Json | null;
+          scheduling_source?:
+            | Database['public']['Enums']['calendar_scheduling_source']
+            | null;
+          source_calendar_id?: string | null;
           start_at: string;
           task_id?: string | null;
           title?: string;
@@ -10024,12 +10243,20 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at?: string;
+          external_calendar_id?: string | null;
+          external_event_id?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
           location?: string | null;
           locked?: boolean;
+          provider?: Database['public']['Enums']['calendar_provider'] | null;
+          scheduling_metadata?: Json | null;
+          scheduling_source?:
+            | Database['public']['Enums']['calendar_scheduling_source']
+            | null;
+          source_calendar_id?: string | null;
           start_at?: string;
           task_id?: string | null;
           title?: string;
@@ -10042,6 +10269,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'calendar_event_colors';
             referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_events_source_calendar_id_fkey';
+            columns: ['source_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_calendar_events_ws_id_fkey';
@@ -10184,6 +10418,70 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_calendars: {
+        Row: {
+          calendar_type: Database['public']['Enums']['workspace_calendar_type'];
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          is_enabled: boolean;
+          is_system: boolean;
+          name: string;
+          position: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          is_system?: boolean;
+          name: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          is_system?: boolean;
+          name?: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_calendars_color_fkey';
+            columns: ['color'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_colors';
+            referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'workspace_calendars_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendars_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -14435,6 +14733,22 @@ export type Database = {
           },
         ];
       };
+      v_session_chains_debug: {
+        Row: {
+          break_count: number | null;
+          chain_path: string | null;
+          depth: number | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          root_id: string | null;
+          session_id: string | null;
+          start_time: string | null;
+          title: string | null;
+          total_break_seconds: number | null;
+          was_resumed: boolean | null;
+        };
+        Relationships: [];
+      };
       v_user_referral_discounts: {
         Row: {
           calculated_discount_value: number | null;
@@ -15315,6 +15629,13 @@ export type Database = {
       };
       get_dau_count: { Args: never; Returns: number };
       get_default_ai_pricing: { Args: never; Returns: Json };
+      get_default_calendar_for_event: {
+        Args: {
+          p_scheduling_source?: Database['public']['Enums']['calendar_scheduling_source'];
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       get_device_types: {
         Args: { p_limit?: number; p_link_id: string };
         Returns: {
@@ -15530,6 +15851,16 @@ export type Database = {
           os: string;
         }[];
       };
+      get_or_create_external_calendar: {
+        Args: {
+          p_calendar_id: string;
+          p_calendar_name: string;
+          p_color: string;
+          p_provider: Database['public']['Enums']['calendar_provider'];
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       get_or_create_notification_batch:
         | {
             Args: {
@@ -15661,6 +15992,14 @@ export type Database = {
           retention_rate: number;
         }[];
       };
+      get_session_chain_root: {
+        Args: { session_id_input: string };
+        Returns: string;
+      };
+      get_session_chain_summary: {
+        Args: { session_id_input: string };
+        Returns: Json;
+      };
       get_session_statistics: {
         Args: never;
         Returns: {
@@ -15778,7 +16117,12 @@ export type Database = {
       };
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracker_stats: {
-        Args: { p_is_personal?: boolean; p_user_id: string; p_ws_id: string };
+        Args: {
+          p_is_personal?: boolean;
+          p_timezone?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
         Returns: {
           daily_activity: Json;
           month_time: number;
@@ -16239,6 +16583,8 @@ export type Database = {
           end_time: string | null;
           id: string;
           is_running: boolean | null;
+          parent_session_id: string | null;
+          pending_approval: boolean;
           productivity_score: number | null;
           start_time: string;
           tags: string[] | null;
@@ -16348,6 +16694,24 @@ export type Database = {
           os: string;
         }[];
       };
+      pause_session_for_break:
+        | {
+            Args: {
+              p_duration_seconds: number;
+              p_end_time: string;
+              p_session_id: string;
+            };
+            Returns: Json;
+          }
+        | {
+            Args: {
+              p_duration_seconds: number;
+              p_end_time: string;
+              p_pending_approval?: boolean;
+              p_session_id: string;
+            };
+            Returns: Json;
+          };
       process_notification_batches: { Args: never; Returns: undefined };
       process_recurring_transactions: {
         Args: never;
@@ -16429,6 +16793,19 @@ export type Database = {
           relevance: number;
         }[];
       };
+      set_default_break_type: {
+        Args: { p_target_id: string; p_ws_id: string };
+        Returns: {
+          color: string;
+          created_at: string;
+          description: string;
+          icon: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          ws_id: string;
+        }[];
+      };
       should_send_notification: {
         Args: {
           p_channel: string;
@@ -16493,6 +16870,8 @@ export type Database = {
           end_time: string | null;
           id: string;
           is_running: boolean | null;
+          parent_session_id: string | null;
+          pending_approval: boolean;
           productivity_score: number | null;
           start_time: string;
           tags: string[] | null;
@@ -16592,6 +16971,8 @@ export type Database = {
       blacklist_entry_type: 'email' | 'domain';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
       calendar_hours: 'work_hours' | 'personal_hours' | 'meeting_hours';
+      calendar_provider: 'tuturuuu' | 'google' | 'microsoft';
+      calendar_scheduling_source: 'manual' | 'task' | 'habit';
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
@@ -16937,6 +17318,7 @@ export type Database = {
         | 'CircleAlert'
         | 'BellRing'
         | 'BellOff';
+      workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -17168,6 +17550,8 @@ export const Constants = {
       blacklist_entry_type: ['email', 'domain'],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
       calendar_hours: ['work_hours', 'personal_hours', 'meeting_hours'],
+      calendar_provider: ['tuturuuu', 'google', 'microsoft'],
+      calendar_scheduling_source: ['manual', 'task', 'habit'],
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
@@ -17520,6 +17904,7 @@ export const Constants = {
         'BellRing',
         'BellOff',
       ],
+      workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',

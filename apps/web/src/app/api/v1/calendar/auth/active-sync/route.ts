@@ -5,8 +5,30 @@ import {
 import { updateLastUpsert } from '@tuturuuu/trigger/calendar-sync-coordination';
 import { NextResponse } from 'next/server';
 import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
-export async function POST(request: Request) {
+interface IncrementalSyncMetrics {
+  tokenOperationsMs: number;
+  googleApiFetchMs: number;
+  eventProcessingMs: number;
+  databaseWritesMs: number;
+  apiCallsCount: number;
+  pagesFetched: number;
+  retryCount: number;
+  eventsFetchedTotal: number;
+  eventsFilteredOut: number;
+  batchCount: number;
+  syncTokenUsed: boolean;
+}
+
+interface IncrementalSyncResult {
+  eventsInserted: number;
+  eventsUpdated: number;
+  eventsDeleted: number;
+  metrics: IncrementalSyncMetrics;
+}
+
+export async function POST(request: Request): Promise<NextResponse> {
   const routeStartTime = Date.now();
   console.log('🔍 [DEBUG] POST /api/v1/calendar/auth/active-sync called');
 
@@ -18,23 +40,41 @@ export async function POST(request: Request) {
     dashboardUpdate: 0,
   };
 
+  // Initial Supabase client and user check
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    console.log(
+      '❌ [DEBUG] User not authenticated or error fetching user:',
+      userError
+    );
+    return NextResponse.json(
+      { error: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+  timings.authComplete = Date.now() - routeStartTime;
+
   try {
     // 1. Get the wsId and start/end dates from the request
-    const { wsId, startDate, endDate } = await request.json();
+    const { wsId: wsIdParam, startDate, endDate } = await request.json();
+
+    if (!wsIdParam) {
+      console.log('❌ [DEBUG] Missing wsId in request');
+      return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+    }
+
+    const wsId = await normalizeWorkspaceId(wsIdParam);
 
     console.log('🔍 [DEBUG] Request body parsed:', {
       wsId,
       startDate,
       endDate,
-      hasWsId: !!wsId,
-      hasStartDate: !!startDate,
-      hasEndDate: !!endDate,
     });
-
-    if (!wsId) {
-      console.log('❌ [DEBUG] Missing wsId in request');
-      return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
-    }
 
     if (!startDate || !endDate) {
       console.log('❌ [DEBUG] Missing startDate or endDate in request');
@@ -43,16 +83,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // 2. Create an admin client and get the user
-    console.log('🔍 [DEBUG] Creating Supabase client...');
-    const supabase = await createClient();
-    console.log('✅ [DEBUG] Supabase client created');
-
-    console.log('🔍 [DEBUG] Getting user from auth...');
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
     console.log('🔍 [DEBUG] Auth result:', {
       hasUser: !!user,
@@ -113,7 +143,7 @@ export async function POST(request: Request) {
     console.log('🔍 [DEBUG] Fetching calendar connections...');
     const { data: calendarConnections, error: connectionsError } = await sbAdmin
       .from('calendar_connections')
-      .select('calendar_id, is_enabled')
+      .select('calendar_id, is_enabled, auth_token_id')
       .eq('ws_id', wsId)
       .eq('is_enabled', true);
 
@@ -131,11 +161,17 @@ export async function POST(request: Request) {
       timings.authComplete -
       timings.dashboardInsert;
 
-    // Determine which calendar IDs to sync from
-    const calendarIds =
+    // Build calendar data with auth tokens
+    type CalendarWithToken = { calendarId: string; authTokenId: string | null };
+    const calendarsToSync: CalendarWithToken[] =
       calendarConnections && calendarConnections.length > 0
-        ? calendarConnections.map((conn) => conn.calendar_id)
-        : ['primary']; // Default to primary if no connections
+        ? calendarConnections.map((conn) => ({
+            calendarId: conn.calendar_id,
+            authTokenId: conn.auth_token_id,
+          }))
+        : [{ calendarId: 'primary', authTokenId: null }]; // Default to primary if no connections
+
+    const calendarIds = calendarsToSync.map((c) => c.calendarId);
 
     console.log('🔍 [DEBUG] Syncing from calendars:', calendarIds);
 
@@ -186,134 +222,122 @@ export async function POST(request: Request) {
     // 6. Fetch eventsToUpsert and eventsToDelete from incremental active sync for each calendar
     // Process all calendars IN PARALLEL for much better performance
     console.log(
-      `🔍 [DEBUG] Starting parallel sync for ${calendarIds.length} calendars...`
+      `🔍 [DEBUG] Starting parallel sync for ${calendarsToSync.length} calendars...`
     );
 
-    const syncPromises = calendarIds.map(async (calendarId) => {
-      console.log(
-        `🔍 [DEBUG] Calling performIncrementalActiveSync for calendar: ${calendarId}...`
-      );
-
-      try {
-        const incrementalActiveSyncResult = await performIncrementalActiveSync(
-          wsId,
-          user.id,
-          calendarId,
-          startDate,
-          endDate,
-          globalEncryptedIds
-        );
-
-        // Check if the result is a NextResponse (error case) or a success object
-        if (incrementalActiveSyncResult instanceof NextResponse) {
-          console.log(
-            `❌ [DEBUG] performIncrementalActiveSync returned error response for calendar ${calendarId}`
-          );
-          return {
-            eventsInserted: 0,
-            eventsUpdated: 0,
-            eventsDeleted: 0,
-            metrics: {
-              tokenOperationsMs: 0,
-              googleApiFetchMs: 0,
-              eventProcessingMs: 0,
-              databaseWritesMs: 0,
-              apiCallsCount: 0,
-              pagesFetched: 0,
-              retryCount: 0,
-              eventsFetchedTotal: 0,
-              eventsFilteredOut: 0,
-              batchCount: 0,
-              syncTokenUsed: false,
-            },
-          };
-        }
-
-        // Check if the result has an error property (another error case)
-        if (
-          incrementalActiveSyncResult &&
-          typeof incrementalActiveSyncResult === 'object' &&
-          'error' in incrementalActiveSyncResult
-        ) {
-          console.log(
-            `❌ [DEBUG] performIncrementalActiveSync error for calendar ${calendarId}:`,
-            incrementalActiveSyncResult.error
-          );
-          return {
-            eventsInserted: 0,
-            eventsUpdated: 0,
-            eventsDeleted: 0,
-            metrics: {
-              tokenOperationsMs: 0,
-              googleApiFetchMs: 0,
-              eventProcessingMs: 0,
-              databaseWritesMs: 0,
-              apiCallsCount: 0,
-              pagesFetched: 0,
-              retryCount: 0,
-              eventsFetchedTotal: 0,
-              eventsFilteredOut: 0,
-              batchCount: 0,
-              syncTokenUsed: false,
-            },
-          };
-        }
-
-        // Type assertion for the success case
-        const syncResult = incrementalActiveSyncResult as {
-          eventsInserted: number;
-          eventsUpdated: number;
-          eventsDeleted: number;
-          metrics: {
-            tokenOperationsMs: number;
-            googleApiFetchMs: number;
-            eventProcessingMs: number;
-            databaseWritesMs: number;
-            apiCallsCount: number;
-            pagesFetched: number;
-            retryCount: number;
-            eventsFetchedTotal: number;
-            eventsFilteredOut: number;
-            batchCount: number;
-            syncTokenUsed: boolean;
-          };
-        };
-
+    const syncPromises = calendarsToSync.map(
+      async ({ calendarId, authTokenId }) => {
         console.log(
-          `✅ [DEBUG] performIncrementalActiveSync completed for calendar ${calendarId}:`,
-          {
-            eventsInserted: syncResult.eventsInserted,
-            eventsUpdated: syncResult.eventsUpdated,
-            eventsDeleted: syncResult.eventsDeleted,
-          }
+          `🔍 [DEBUG] Calling performIncrementalActiveSync for calendar: ${calendarId} (authTokenId: ${authTokenId})...`
         );
 
-        return syncResult;
-      } catch (error) {
-        console.error(
-          `❌ [DEBUG] Error syncing calendar ${calendarId}:`,
-          error
-        );
-        return {
-          eventsInserted: 0,
-          eventsUpdated: 0,
-          eventsDeleted: 0,
-          metrics: {
-            tokenOperationsMs: 0,
-            googleApiFetchMs: 0,
-            eventProcessingMs: 0,
-            databaseWritesMs: 0,
-            apiCallsCount: 0,
-            pagesFetched: 0,
-            retryCount: 0,
-            eventsFetchedTotal: 0,
-            eventsFilteredOut: 0,
-            batchCount: 0,
-            syncTokenUsed: false,
-          },
-        };
+        try {
+          const incrementalActiveSyncResult =
+            await performIncrementalActiveSync(
+              wsId,
+              user.id,
+              calendarId,
+              startDate,
+              endDate,
+              globalEncryptedIds,
+              authTokenId // Pass the specific auth token for this calendar
+            );
+
+          // Check if the result is a NextResponse (error case) or a success object
+          if (incrementalActiveSyncResult instanceof NextResponse) {
+            console.log(
+              `❌ [DEBUG] performIncrementalActiveSync returned error response for calendar ${calendarId}`
+            );
+            return {
+              eventsInserted: 0,
+              eventsUpdated: 0,
+              eventsDeleted: 0,
+              metrics: {
+                tokenOperationsMs: 0,
+                googleApiFetchMs: 0,
+                eventProcessingMs: 0,
+                databaseWritesMs: 0,
+                apiCallsCount: 0,
+                pagesFetched: 0,
+                retryCount: 0,
+                eventsFetchedTotal: 0,
+                eventsFilteredOut: 0,
+                batchCount: 0,
+                syncTokenUsed: false,
+              },
+            };
+          }
+
+          // Check if the result has an error property (another error case)
+          if (
+            incrementalActiveSyncResult &&
+            typeof incrementalActiveSyncResult === 'object' &&
+            'error' in incrementalActiveSyncResult
+          ) {
+            console.log(
+              `❌ [DEBUG] performIncrementalActiveSync error for calendar ${calendarId}:`,
+              incrementalActiveSyncResult.error
+            );
+            return {
+              eventsInserted: 0,
+              eventsUpdated: 0,
+              eventsDeleted: 0,
+              metrics: {
+                tokenOperationsMs: 0,
+                googleApiFetchMs: 0,
+                eventProcessingMs: 0,
+                databaseWritesMs: 0,
+                apiCallsCount: 0,
+                pagesFetched: 0,
+                retryCount: 0,
+                eventsFetchedTotal: 0,
+                eventsFilteredOut: 0,
+                batchCount: 0,
+                syncTokenUsed: false,
+              },
+            };
+          }
+
+          // Type assertion for the success case
+          const syncResult =
+            incrementalActiveSyncResult as IncrementalSyncResult;
+
+          console.log(
+            `✅ [DEBUG] performIncrementalActiveSync completed for calendar ${calendarId}:`,
+            {
+              eventsInserted: syncResult.eventsInserted,
+              eventsUpdated: syncResult.eventsUpdated,
+              eventsDeleted: syncResult.eventsDeleted,
+            }
+          );
+
+          return syncResult;
+        } catch (error) {
+          console.error(
+            `❌ [DEBUG] Error syncing calendar ${calendarId}:`,
+            error
+          );
+          return {
+            eventsInserted: 0,
+            eventsUpdated: 0,
+            eventsDeleted: 0,
+            metrics: {
+              tokenOperationsMs: 0,
+              googleApiFetchMs: 0,
+              eventProcessingMs: 0,
+              databaseWritesMs: 0,
+              apiCallsCount: 0,
+              pagesFetched: 0,
+              retryCount: 0,
+              eventsFetchedTotal: 0,
+              eventsFilteredOut: 0,
+              batchCount: 0,
+              syncTokenUsed: false,
+            },
+          };
+        }
       }
-    });
+    );
 
     // Wait for all calendar syncs to complete in parallel
     const syncResults = await Promise.all(syncPromises);

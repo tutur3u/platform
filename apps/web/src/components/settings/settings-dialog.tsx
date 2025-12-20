@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckSquare,
   Clock,
+  Coffee,
   CreditCard,
   Laptop,
   Paintbrush,
@@ -54,6 +55,7 @@ import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import { TaskSettings } from './tasks/task-settings';
+import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import MembersSettings from './workspace/members-settings';
 
 interface SettingsDialogProps {
@@ -306,6 +308,18 @@ export function SettingsDialog({
               },
             ],
           },
+          {
+            label: 'Time Tracker',
+            items: [
+              {
+                name: 'break_types',
+                label: 'Break Types',
+                icon: Coffee,
+                description:
+                  'Manage and customize break types for your workspace',
+              },
+            ],
+          },
         ]
       : []),
   ];
@@ -320,7 +334,7 @@ export function SettingsDialog({
       <DialogDescription className="sr-only">
         {t('common.settings')}
       </DialogDescription>
-      <SidebarProvider className="flex items-start">
+      <SidebarProvider className="flex h-full w-full flex-1 items-start min-h-0">
         <Sidebar
           collapsible="none"
           className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
@@ -539,6 +553,10 @@ export function SettingsDialog({
                     calendarToken={calendarToken}
                     calendarConnections={calendarConnections || []}
                   />
+                )}
+
+                {activeTab === 'break_types' && wsId && (
+                  <WorkspaceBreakTypesSettings wsId={wsId} />
                 )}
               </CalendarSettingsWrapper>
             </div>

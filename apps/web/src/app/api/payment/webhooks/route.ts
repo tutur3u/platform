@@ -48,26 +48,39 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
 
   const subscriptionData = {
     ws_id: ws_id,
-    status: subscription.status,
+    status: subscription.status as any,
     polar_subscription_id: subscription.id,
     product_id: subscription.product.id,
-    current_period_start: subscription.currentPeriodStart.toISOString(),
-    current_period_end: subscription.currentPeriodEnd
-      ? subscription.currentPeriodEnd.toISOString()
-      : null,
-    cancel_at_period_end: subscription.cancelAtPeriodEnd,
-    created_at: subscription.createdAt.toISOString(),
-    updated_at: subscription.modifiedAt?.toISOString(),
+    current_period_start:
+      subscription.currentPeriodStart instanceof Date
+        ? subscription.currentPeriodStart.toISOString()
+        : new Date(subscription.currentPeriodStart).toISOString(),
+    current_period_end:
+      subscription.currentPeriodEnd instanceof Date
+        ? subscription.currentPeriodEnd.toISOString()
+        : subscription.currentPeriodEnd
+          ? new Date(subscription.currentPeriodEnd).toISOString()
+          : null,
+    cancel_at_period_end: subscription.cancelAtPeriodEnd ?? false,
+    created_at:
+      subscription.createdAt instanceof Date
+        ? subscription.createdAt.toISOString()
+        : new Date(subscription.createdAt).toISOString(),
+    updated_at:
+      subscription.modifiedAt instanceof Date
+        ? subscription.modifiedAt.toISOString()
+        : subscription.modifiedAt
+          ? new Date(subscription.modifiedAt).toISOString()
+          : null,
   };
 
   // Update existing subscription
   const { error: dbError } = await sbAdmin
     .from('workspace_subscriptions')
-    .upsert(subscriptionData, {
+    .upsert([subscriptionData], {
       onConflict: 'polar_subscription_id',
       ignoreDuplicates: false,
-    })
-    .eq('polar_subscription_id', subscription.id);
+    });
 
   if (dbError) {
     console.error('Webhook: Supabase error:', dbError.message);
@@ -94,25 +107,32 @@ async function syncOrderToDatabase(order: Order) {
   const orderData = {
     ws_id: ws_id,
     polar_order_id: order.id,
-    status: order.status,
+    status: order.status as any,
     polar_subscription_id: order.subscriptionId,
     product_id: order.productId,
     total_amount: order.totalAmount,
     currency: order.currency,
-    billing_reason: order.billingReason,
+    billing_reason: order.billingReason as any,
     user_id: order.customer.externalId,
-    created_at: order.createdAt.toISOString(),
-    updated_at: order.modifiedAt?.toISOString(),
+    created_at:
+      order.createdAt instanceof Date
+        ? order.createdAt.toISOString()
+        : new Date(order.createdAt).toISOString(),
+    updated_at:
+      order.modifiedAt instanceof Date
+        ? order.modifiedAt.toISOString()
+        : order.modifiedAt
+          ? new Date(order.modifiedAt).toISOString()
+          : null,
   };
 
   // Upsert order data
   const { error: dbError } = await sbAdmin
     .from('workspace_orders')
-    .upsert(orderData, {
+    .upsert([orderData], {
       onConflict: 'polar_order_id',
       ignoreDuplicates: false,
-    })
-    .eq('polar_order_id', order.id);
+    });
 
   if (dbError) {
     console.error('Webhook: Supabase order error:', dbError.message);

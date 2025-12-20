@@ -8,7 +8,6 @@ import QRImageUpload from '@tuturuuu/ui/custom/qr/image-upload';
 import QRStyles from '@tuturuuu/ui/custom/qr/styles';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import html2canvas from 'html2canvas-pro';
 import { useTranslations } from 'next-intl';
 import { useCallback, useId, useRef, useState } from 'react';
 
@@ -48,6 +47,7 @@ export default function QR() {
     if (!qrDisplayElement) return;
 
     try {
+      const html2canvas = (await import('html2canvas-pro')).default;
       const canvas = await html2canvas(qrDisplayElement, {
         backgroundColor: null,
         scale: 4, // Higher quality
