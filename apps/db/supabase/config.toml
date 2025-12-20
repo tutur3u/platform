@@ -24,6 +24,13 @@ shadow_port = 8000
 # server_version;` on the remote database to check.
 major_version = 17
 
+[db.migrations]
+schema_paths = [
+  "./schemas/users.sql",
+  "./schemas/workspaces.sql",
+  "./schemas/*.sql",
+]
+
 [db.pooler]
 enabled = false
 # Port to use for the local connection pooler.
@@ -112,11 +119,6 @@ max_frequency = "1s"
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
-
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
 
 # Auth templates
 [auth.email.template.confirmation]
@@ -217,7 +219,7 @@ policy = "oneshot"
 inspector_port = 8083
 
 [analytics]
-enabled = false
+enabled = true
 port = 8007
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"

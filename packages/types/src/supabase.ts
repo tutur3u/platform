@@ -14733,22 +14733,6 @@ export type Database = {
           },
         ];
       };
-      v_session_chains_debug: {
-        Row: {
-          break_count: number | null;
-          chain_path: string | null;
-          depth: number | null;
-          duration_seconds: number | null;
-          end_time: string | null;
-          root_id: string | null;
-          session_id: string | null;
-          start_time: string | null;
-          title: string | null;
-          total_break_seconds: number | null;
-          was_resumed: boolean | null;
-        };
-        Relationships: [];
-      };
       v_user_referral_discounts: {
         Row: {
           calculated_discount_value: number | null;
