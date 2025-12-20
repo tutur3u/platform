@@ -23,6 +23,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -155,17 +156,10 @@ export function AddTaskForm({
   );
 
   // Fetch workspace members (only after board and list are selected)
-  const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
-    queryKey: ['workspace_members', workspaceId],
-    queryFn: async () => {
-      if (!workspaceId) return [];
-      const response = await fetch(`/api/workspaces/${workspaceId}/members`);
-      if (!response.ok) throw new Error('Failed to fetch members');
-      const data = await response.json();
-      return data.members || [];
-    },
-    enabled: !!workspaceId && !!selectedBoardId && !!selectedListId,
-  });
+  const { data: workspaceMembers = [], isLoading: membersLoading } = useWorkspaceMembers(
+    workspaceId,
+    { enabled: !!workspaceId && !!selectedBoardId && !!selectedListId }
+  );
 
   // Focus task input when board and list are selected
   useEffect(() => {

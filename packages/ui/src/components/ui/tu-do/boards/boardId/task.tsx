@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import {
   HoverCard,
@@ -114,6 +115,7 @@ interface TaskCardProps {
   onClearSelection?: () => void;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
 }
 
 // Memoized full TaskCard
@@ -131,8 +133,10 @@ function TaskCardInner({
   onClearSelection,
   optimisticUpdateInProgress,
   selectedTasks,
+  bulkUpdateCustomDueDate,
 }: TaskCardProps) {
-  const { wsId } = useParams();
+  const { wsId: rawWsId } = useParams();
+  const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
   const { timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
@@ -234,18 +238,10 @@ function TaskCardInner({
   });
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
-    queryKey: ['workspace-members', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${wsId}/members`);
-      if (!response.ok) throw new Error('Failed to fetch members');
-
-      const { members: fetchedMembers } = await response.json();
-      return fetchedMembers || [];
-    },
-    enabled: !!wsId && !isPersonalWorkspace,
-    staleTime: 5 * 60 * 1000, // 5 minutes - members rarely change
-  });
+  const { data: workspaceMembers = [], isLoading: membersLoading } = useWorkspaceMembers(
+    wsId,
+    { enabled: !!wsId && !isPersonalWorkspace }
+  );
 
   // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
@@ -423,6 +419,7 @@ function TaskCardInner({
     selectedTasks,
     isMultiSelectMode,
     onClearSelection,
+    bulkUpdateCustomDueDate,
   });
 
   const onToggleAssignee = useCallback(
@@ -1761,6 +1758,7 @@ interface MeasuredTaskCardProps {
   onHeight: (height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>;
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 export function MeasuredTaskCard({
@@ -1776,6 +1774,7 @@ export function MeasuredTaskCard({
   onHeight,
   optimisticUpdateInProgress,
   selectedTasks,
+  bulkUpdateCustomDueDate,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const onHeightRef = useRef(onHeight);
@@ -1821,6 +1820,7 @@ export function MeasuredTaskCard({
         onClearSelection={onClearSelection}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
         selectedTasks={selectedTasks}
+        bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
       />
     </div>
   );

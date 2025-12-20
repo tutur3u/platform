@@ -17,6 +17,7 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { useCallback, useMemo, useState } from 'react';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
@@ -181,21 +182,10 @@ export function TaskMentionChip({
   );
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
-    queryKey: ['workspace-members', boardConfig?.ws_id],
-    queryFn: async () => {
-      if (!boardConfig?.ws_id) return [];
-      const response = await fetch(
-        `/api/workspaces/${boardConfig.ws_id}/members`
-      );
-      if (!response.ok) throw new Error('Failed to fetch members');
-
-      const { members: fetchedMembers } = await response.json();
-      return fetchedMembers || [];
-    },
-    enabled: !!boardConfig?.ws_id && menuOpen,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: workspaceMembers = [], isLoading: membersLoading } = useWorkspaceMembers(
+    boardConfig?.ws_id,
+    { enabled: !!boardConfig?.ws_id && menuOpen }
+  );
 
   // Fetch available task lists
   const { data: availableLists = [] } = useQuery({

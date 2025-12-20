@@ -29,13 +29,10 @@ import {
   CircleDashed,
   CircleFadingArrowUpIcon,
   CircleSlash,
-  Copy,
   Flag,
   horseHead,
   Icon,
   List,
-  ListTree,
-  Loader2,
   MoreHorizontal,
   Move,
   Plus,
@@ -77,8 +74,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import {
@@ -744,21 +741,12 @@ export function KanbanBoard({
   });
 
   // Workspace members for bulk operations
-  const { data: workspaceMembers = [] } = useQuery({
-    queryKey: ['workspace-members', workspace.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${workspace.id}/members`);
-      if (!response.ok) throw new Error('Failed to fetch members');
-
-      const { members: fetchedMembers } = await response.json();
-      return fetchedMembers || [];
-    },
+  const { data: workspaceMembers = [] } = useWorkspaceMembers(workspace.id, {
     enabled:
       !!workspace.id &&
       !workspace.personal &&
       isMultiSelectMode &&
       selectedTasks.size > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes - members rarely change
   });
 
   // Calculate which labels/projects/assignees are applied to ALL selected tasks
@@ -2748,6 +2736,7 @@ export function KanbanBoard({
                             optimisticUpdateInProgress
                           }
                           filters={filters}
+                          bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
                         />
                       );
                     })}

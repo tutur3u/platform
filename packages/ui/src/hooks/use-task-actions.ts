@@ -24,6 +24,8 @@ interface UseTaskActionsProps {
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void; // Callback to clear selection after bulk operations
   taskId?: string; // Optional task ID for syncing individual task cache
+  // Bulk operation functions from useBulkOperations hook
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
 }
 
 export function useTaskActions({
@@ -41,6 +43,7 @@ export function useTaskActions({
   selectedTasks,
   isMultiSelectMode,
   taskId,
+  bulkUpdateCustomDueDate,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
@@ -1004,62 +1007,18 @@ export function useTaskActions({
         selectedTasks.size > 1 &&
         selectedTasks.has(task.id);
 
-      if (shouldBulkUpdate) {
-        // Bulk update for multiple selected tasks
-        const supabase = createClient();
-        const tasksToUpdate = Array.from(selectedTasks);
-
-        // Cancel any outgoing refetches
-        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-        // Snapshot the previous value BEFORE optimistic update
-        const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
-          | Task[]
-          | undefined;
-
-        // Optimistic update
-        const taskIdSet = new Set(tasksToUpdate);
-        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
-          );
-        });
-
-        // Perform the actual bulk update
+      if (shouldBulkUpdate && bulkUpdateCustomDueDate) {
+        // Use the centralized bulk update function from useBulkOperations
         try {
-          let successCount = 0;
-          for (const taskId of tasksToUpdate) {
-            const { error } = await supabase
-              .from('tasks')
-              .update({ end_date: newDate })
-              .eq('id', taskId);
-            if (!error) {
-              successCount++;
-            } else {
-              console.error(
-                `Failed to update custom date for task ${taskId}:`,
-                error
-              );
-            }
-          }
-
-          toast.success('Due date updated', {
-            description:
-              `${successCount} task${successCount === 1 ? '' : 's'} updated with custom date`,
-          });
+          await bulkUpdateCustomDueDate(date || null);
         } catch (error) {
           console.error('Bulk custom date update failed', error);
-          // Rollback on error
-          if (previousTasks) {
-            queryClient.setQueryData(['tasks', boardId], previousTasks);
-          }
           toast.error('Failed to update due date for selected tasks');
         } finally {
           setIsLoading(false);
         }
       } else {
-        // Single task update
+        // Single task update via mutation
         updateTaskMutation.mutate(
           { taskId: task.id, updates: { end_date: newDate } },
           {
@@ -1077,7 +1036,16 @@ export function useTaskActions({
         );
       }
     },
-    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen, isMultiSelectMode, selectedTasks, boardId, queryClient]
+    [
+      task?.id,
+      updateTaskMutation,
+      setIsLoading,
+      setCustomDateDialogOpen,
+      isMultiSelectMode,
+      selectedTasks,
+      boardId,
+      bulkUpdateCustomDueDate,
+    ]
   );
 
   const handleToggleAssignee = useCallback(
