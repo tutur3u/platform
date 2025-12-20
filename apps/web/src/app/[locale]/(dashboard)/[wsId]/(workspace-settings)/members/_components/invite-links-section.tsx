@@ -153,9 +153,12 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (linkId: string) => {
-      const res = await fetch(`/api/workspaces/${wsId}/invite-links/${linkId}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `/api/workspaces/${wsId}/invite-links/${linkId}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -639,7 +642,9 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
               onClick={handleDeleteLink}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
+              {deleteMutation.isPending
+                ? t('common.deleting')
+                : t('common.delete')}
             </Button>
           </div>
         </DialogContent>
