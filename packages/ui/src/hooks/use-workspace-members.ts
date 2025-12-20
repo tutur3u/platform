@@ -9,7 +9,7 @@ export interface WorkspaceMember {
   display_name?: string;
   email?: string;
   avatar_url?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseWorkspaceMembersOptions {

@@ -23,6 +23,13 @@ interface WorkspaceProject {
   status: string | null;
 }
 
+interface WorkspaceMember {
+  id: string;
+  display_name: string;
+  email: string;
+  avatar_url: string | null;
+}
+
 interface BulkOperationsConfig {
   queryClient: QueryClient;
   supabase: SupabaseClient;
@@ -31,6 +38,7 @@ interface BulkOperationsConfig {
   columns: TaskList[];
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
+  workspaceMembers?: WorkspaceMember[];
   setBulkWorking: (working: boolean) => void;
   clearSelection: () => void;
   setBulkDeleteOpen: (open: boolean) => void;
@@ -988,7 +996,8 @@ function useBulkRemoveProject(
 function useBulkAddAssignee(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  workspaceMembers: WorkspaceMember[] = []
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1043,25 +1052,26 @@ function useBulkAddAssignee(
         return !t?.assignees?.some((a) => a.id === assigneeId);
       });
 
+      // Look up assignee data from workspace members if available
+      const member = workspaceMembers.find((m) => m.id === assigneeId);
+      const assigneeData = member || {
+        id: assigneeId,
+        display_name: 'Loading...',
+        email: '',
+        avatar_url: null,
+      };
+
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) => {
             if (!missingTaskIds.includes(t.id)) return t;
-            // We don't have full assignee data here, so we'll just add a placeholder
-            // The realtime subscription will update it properly
+            // Use real assignee data if available, otherwise use placeholder
+            // The realtime subscription will reconcile the final data
             return {
               ...t,
-              assignees: [
-                ...(t.assignees || []),
-                {
-                  id: assigneeId,
-                  display_name: 'Loading...',
-                  email: '',
-                  avatar_url: null,
-                },
-              ],
+              assignees: [...(t.assignees || []), assigneeData],
             } as Task;
           });
         }
@@ -1261,6 +1271,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     columns,
     workspaceLabels = [],
     workspaceProjects = [],
+    workspaceMembers = [],
     setBulkWorking,
     clearSelection,
     setBulkDeleteOpen,
@@ -1317,7 +1328,8 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   const addAssigneeMutation = useBulkAddAssignee(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    workspaceMembers
   );
   const removeAssigneeMutation = useBulkRemoveAssignee(
     queryClient,
