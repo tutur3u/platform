@@ -3,7 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { transformTaskRecord } from '../task-helper';
+import { transformTaskRecord } from './transformers';
 
 // Reorder task within the same list or move to a different list with specific position
 export async function reorderTask(
