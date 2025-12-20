@@ -4,7 +4,7 @@
 *   [x] Task: Analyze Codebase for Refactoring Targets [cd519d0]
     *   Identify files exceeding 400 LOC and components exceeding 200 LOC.
     *   Prioritize targets based on complexity and churn.
-*   [ ] Task: Audit Data Fetching Patterns
+*   [x] Task: Audit Data Fetching Patterns [73fc254]
     *   Scan for usage of `useEffect` for data fetching.
     *   List locations requiring migration to TanStack Query.
 *   [ ] Task: Conductor - User Manual Verification 'Assessment and Strategy' (Protocol in workflow.md)
