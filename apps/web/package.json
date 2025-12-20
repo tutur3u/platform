@@ -78,7 +78,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.35.8",
-    "ai": "^5.0.115",
+    "ai": "^5.0.116",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
     "client-only": "^0.0.1",
