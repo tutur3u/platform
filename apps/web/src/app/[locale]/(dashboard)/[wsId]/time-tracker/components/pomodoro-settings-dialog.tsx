@@ -28,7 +28,7 @@ export function PomodoroSettingsDialog({
   onSettingsChange,
   defaultSettings,
 }: PomodoroSettingsDialogProps) {
-  const t = useTranslations('time_tracker');
+  const t = useTranslations('time-tracker.controls');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

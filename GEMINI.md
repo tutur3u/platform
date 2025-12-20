@@ -59,6 +59,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - `bun dev`: Start all applications in development mode.
 - `bun build`: Build all applications.
 - `bun test`: Run tests.
+- `bun type-check`: Run type checking for the entire monorepo.
 - `npx tsgo`: Type check with tsgo (~10x faster than tsc) - **RECOMMENDED for agents**.
 - `bun sb:start`: Start the local Supabase development environment.
 - `bun sb:stop`: Stop the local Supabase development environment.
@@ -88,6 +89,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Determinism:** Generated artifacts (like types) must come from scripts, not manual edits.
 - **Security:** Never output or commit secrets. Reference environment variables by name only.
 - **User Intent:** Do not run long-running commands (`bun dev`) or build commands (`bun build`, `bun run build`, `bun run buildx`) unless the user **explicitly asks**. The user is responsible for running commands like `bun sb:push`, `bun lint`, and `bun format`.
+- **Type Safety:** The exact command `bun type-check` MUST pass at the end of your work. This is a mandatory requirement.
 - **Testing After Features:** Always add test cases after implementing new features and run them to verify functionality. Tests CAN and SHOULD be run by agents.
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 

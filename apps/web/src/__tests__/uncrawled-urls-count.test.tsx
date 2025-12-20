@@ -33,7 +33,7 @@ describe('UncrawledUrlsCount', () => {
 
   it('renders loading skeleton initially', () => {
     // Mock fetch to never resolve immediately to test loading state
-    global.fetch = vi.fn(() => new Promise(() => {}));
+    (global as any).fetch = vi.fn(() => new Promise(() => {}));
     
     const { container } = render(<UncrawledUrlsCount wsId={wsId} />, { wrapper: createWrapper() });
     // Look for the skeleton class or structure
@@ -76,7 +76,7 @@ describe('UncrawledUrlsCount', () => {
   });
 
   it('renders "All caught up!" when count is 0', async () => {
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    (global as any).fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/uncrawled')) {
         return Promise.resolve({
           ok: true,
@@ -95,6 +95,6 @@ describe('UncrawledUrlsCount', () => {
     render(<UncrawledUrlsCount wsId={wsId} />, { wrapper: createWrapper() });
 
     expect(await screen.findByText('0')).toBeTruthy();
-    expect(await screen.findByText('All caught up!')).toBeTruthy();
+    expect(await screen.findByText(/All caught up/i)).toBeTruthy();
   });
 });

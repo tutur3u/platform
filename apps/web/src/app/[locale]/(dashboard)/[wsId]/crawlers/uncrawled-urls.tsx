@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, BugPlay, Check, Loader2 } from '@tuturuuu/icons';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -26,7 +27,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import CrawlButton from './[crawlerId]/crawl-button';
 
@@ -46,25 +47,23 @@ interface PaginationData {
   totalItems: number;
 }
 
+interface UncrawledResponse {
+  urls: UncrawledUrl[];
+  pagination: PaginationData;
+}
+
+interface DomainsResponse {
+  domains: string[];
+}
+
 export default function UncrawledUrls({ wsId }: { wsId: string }) {
   const t = useTranslations('ws-crawlers');
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [groupedUrls, setGroupedUrls] = useState<
-    Record<string, UncrawledUrl[]>
-  >({});
-  const [pagination, setPagination] = useState<PaginationData>({
-    page: 1,
-    pageSize: 20,
-    totalPages: 1,
-    totalItems: 0,
-  });
-  const [domains, setDomains] = useState<string[]>([]);
   const [urlSearch, setUrlSearch] = useState(searchParams.get('search') || '');
   const [isCrawlingAll, setIsCrawlingAll] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -83,7 +82,52 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
     );
   }, 300);
 
-  const groupUrlsByOrigin = useCallback((urls: UncrawledUrl[]) => {
+  // Query for domains
+  const { data: domainsData, isLoading: loadingDomains } = useQuery({
+    queryKey: ['crawlers', wsId, 'domains'],
+    queryFn: async () => {
+      const res = await fetch(`/api/${wsId}/crawlers/domains`);
+      if (!res.ok) throw new Error('Failed to fetch domains');
+      return (await res.json()) as DomainsResponse;
+    },
+  });
+
+  const domains = domainsData?.domains || [];
+
+  // Query for uncrawled URLs
+  const {
+    data: uncrawledData,
+    isLoading: loadingUncrawled,
+    error: errorUncrawled,
+  } = useQuery({
+    queryKey: [
+      'crawlers',
+      wsId,
+      'uncrawled',
+      { page: currentPage, pageSize: currentPageSize, domain: currentDomain, search: searchParams.get('search') },
+    ],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams(searchParams);
+      if (!queryParams.has('page')) queryParams.set('page', '1');
+      if (!queryParams.has('pageSize')) queryParams.set('pageSize', '20');
+
+      const res = await fetch(
+        `/api/${wsId}/crawlers/uncrawled?${queryParams}`
+      );
+      if (!res.ok) throw new Error('Failed to fetch uncrawled URLs');
+      return (await res.json()) as UncrawledResponse;
+    },
+  });
+
+  const pagination = uncrawledData?.pagination || {
+    page: 1,
+    pageSize: 20,
+    totalPages: 1,
+    totalItems: 0,
+  };
+
+  const groupedUrls = useMemo(() => {
+    const urls = uncrawledData?.urls || [];
     return urls.reduce(
       (acc, url) => {
         const key = url.origin_url || 'unknown';
@@ -93,37 +137,10 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
       },
       {} as Record<string, UncrawledUrl[]>
     );
-  }, []);
+  }, [uncrawledData?.urls]);
 
-  useEffect(() => {
-    const fetchUncrawledUrls = async () => {
-      try {
-        const domainsRes = await fetch(`/api/${wsId}/crawlers/domains`);
-        if (!domainsRes.ok) throw new Error('Failed to fetch domains');
-        const domainsData = await domainsRes.json();
-        setDomains(domainsData.domains || []);
-
-        const queryParams = new URLSearchParams(searchParams);
-        if (!queryParams.has('page')) queryParams.set('page', '1');
-        if (!queryParams.has('pageSize')) queryParams.set('pageSize', '20');
-
-        const res = await fetch(
-          `/api/${wsId}/crawlers/uncrawled?${queryParams}`
-        );
-        if (!res.ok) throw new Error('Failed to fetch uncrawled URLs');
-
-        const data = await res.json();
-        setGroupedUrls(groupUrlsByOrigin(data.urls));
-        setPagination(data.pagination);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUncrawledUrls();
-  }, [wsId, searchParams, groupUrlsByOrigin]);
+  const loading = loadingDomains || loadingUncrawled;
+  const error = errorUncrawled;
 
   const createQueryString = (params: Record<string, string | null>) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -167,6 +184,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         variant: failCount > 0 ? 'destructive' : 'default',
       });
 
+      queryClient.invalidateQueries({ queryKey: ['crawlers', wsId, 'uncrawled'] });
       router.refresh();
     } catch (err) {
       console.error('Error in bulk crawl:', err);
@@ -218,12 +236,13 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
       const data = JSON.parse(event.data);
       if (data.type === 'url_crawled') {
         setCrawledUrls((prev) => new Set([...prev, data.url]));
+        queryClient.invalidateQueries({ queryKey: ['crawlers', wsId, 'uncrawled'] });
         router.refresh();
       }
     };
 
     return () => eventSource.close();
-  }, [wsId, router]);
+  }, [wsId, router, queryClient]);
 
   const renderUrlItem = (url: UncrawledUrl) => {
     const urlObj = new URL(url.url);
@@ -375,7 +394,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>{error.message}</AlertDescription>
       </Alert>
     );
   }

@@ -80,11 +80,11 @@ All tasks follow a strict lifecycle:
         -   For each remaining code file, verify a corresponding test file exists.
         -   If a test file is missing, you **must** create one. Before writing the test, **first, analyze other test files in the repository to determine the correct naming convention and testing style.** The new tests **must** validate the functionality described in this phase's tasks (`plan.md`).
 
-3.  **Execute Automated Tests with Proactive Debugging:**
-    -   Before execution, you **must** announce the exact shell command you will use to run the tests.
-    -   **Example Announcement:** "I will now run the automated test suite to verify the phase. **Command:** `CI=true npm test`"
+3.  **Execute Automated Tests and Type Checks with Proactive Debugging:**
+    -   Before execution, you **must** announce the exact shell command you will use to run the tests and type checks.
+    -   **Example Announcement:** "I will now run the automated test suite and type checks to verify the phase. **Command:** `bun type-check && CI=true npm test`"
     -   Execute the announced command.
-    -   If tests fail, you **must** inform the user and begin debugging. You may attempt to propose a fix a **maximum of two times**. If the tests still fail after your second proposed fix, you **must stop**, report the persistent failure, and ask the user for guidance.
+    -   If tests or type checks fail, you **must** inform the user and begin debugging. You may attempt to propose a fix a **maximum of two times**. If the tests still fail after your second proposed fix, you **must stop**, report the persistent failure, and ask the user for guidance.
 
 4.  **Propose a Detailed, Actionable Manual Verification Plan:**
     -   **CRITICAL:** To generate the plan, first analyze `product.md`, `product-guidelines.md`, and `plan.md` to determine the user-facing goals of the completed phase.
@@ -139,6 +139,7 @@ All tasks follow a strict lifecycle:
 Before marking any task complete, verify:
 
 - [ ] All tests pass
+- [ ] Type check passes (`bun type-check`)
 - [ ] Code coverage meets requirements (>80%)
 - [ ] Code follows project's code style guidelines (as defined in `code_styleguides/`)
 - [ ] All public functions/methods are documented (e.g., docstrings, JSDoc, GoDoc)
@@ -170,7 +171,7 @@ Before marking any task complete, verify:
 ```bash
 # Example: Commands to run all pre-commit checks (e.g., format, lint, type check, run tests)
 # e.g., for a Node.js project: npm run check
-# e.g., for a Go project: make check (if a Makefile exists)
+bun type-check
 ```
 
 ## Testing Requirements

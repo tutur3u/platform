@@ -79,7 +79,7 @@ describe('PomodoroSettingsDialog', () => {
 
     // Find the focus time input (first input of type number)
     const inputs = screen.getAllByRole('spinbutton'); // spinbutton is role for input type=number
-    fireEvent.change(inputs[0], { target: { value: '30' } });
+    fireEvent.change(inputs[0]!, { target: { value: '30' } });
 
     expect(onSettingsChange).toHaveBeenCalledWith(
       expect.objectContaining({
