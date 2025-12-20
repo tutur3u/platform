@@ -90,7 +90,6 @@ export function useSuggestionMenus({
   boardConfig,
   taskProjects,
   workspaceTasks,
-  workspaceTasksLoading,
   wsId,
   currentTaskId,
   isPersonalWorkspace,
@@ -294,7 +293,13 @@ export function useSuggestionMenus({
         if (!coords) return null;
         const viewportWidth =
           typeof window !== 'undefined' ? window.innerWidth : undefined;
+        const viewportHeight =
+          typeof window !== 'undefined' ? window.innerHeight : undefined;
         const horizontalPadding = 16;
+        const mentionMenuHeight = 360; // header ~40px + max-h-80 (320px)
+        const verticalGap = 8;
+        const verticalPadding = 8;
+
         let left = coords.left;
         if (viewportWidth) {
           left = Math.min(
@@ -303,7 +308,40 @@ export function useSuggestionMenus({
           );
           left = Math.max(left, horizontalPadding);
         }
-        return { left, top: coords.bottom + 8 } as SuggestionState['position'];
+
+        // Calculate vertical position with automatic flip when near bottom
+        let top = coords.bottom + verticalGap;
+        let flipped = false;
+
+        if (viewportHeight) {
+          const spaceBelow = viewportHeight - coords.bottom;
+          const spaceAbove = coords.top;
+
+          // Determine menu height based on context (slash vs mention)
+          // Both need similar space, so use mention menu height as it's larger
+          const menuHeight = mentionMenuHeight;
+
+          // If not enough space below and more space above, position above the text
+          if (
+            spaceBelow < menuHeight + verticalGap &&
+            spaceAbove > menuHeight + verticalGap
+          ) {
+            top = coords.top - menuHeight - verticalGap;
+            flipped = true;
+          }
+
+          // Clamp top to ensure menu stays within viewport bounds
+          // Apply conditional clamping based on flip direction
+          if (flipped) {
+            // When flipped above, ensure menu doesn't go above viewport
+            top = Math.max(verticalPadding, top);
+          } else {
+            // When placed below, ensure menu doesn't overflow bottom edge
+            top = Math.min(top, viewportHeight - menuHeight - verticalPadding);
+          }
+        }
+
+        return { left, top } as SuggestionState['position'];
       } catch {
         return null;
       }
