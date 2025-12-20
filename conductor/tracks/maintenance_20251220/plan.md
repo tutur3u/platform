@@ -14,7 +14,7 @@
     *   Subtask: Create tests for existing functionality to ensure regression safety.
     *   Subtask: Extract logic/components to reduce file size.
     *   Subtask: Verify functionality.
-*   [ ] Task: Refactor Priority 2 Large Files
+*   [x] Task: Refactor Priority 2 Large Files [43bc9a4]
     *   Subtask: Create tests for existing functionality.
     *   Subtask: Extract logic/components.
     *   Subtask: Verify functionality.
