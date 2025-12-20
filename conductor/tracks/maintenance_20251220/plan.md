@@ -18,7 +18,7 @@
     *   Subtask: Create tests for existing functionality.
     *   Subtask: Extract logic/components.
     *   Subtask: Verify functionality.
-*   [ ] Task: Conductor - User Manual Verification 'Refactoring Core Components' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Refactoring Core Components' (Protocol in workflow.md) [checkpoint: fe3cb31]
 
 ## Phase 3: Data Fetching Migration
 *   [ ] Task: Migrate Group A Components to TanStack Query
