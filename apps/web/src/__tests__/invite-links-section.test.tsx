@@ -38,7 +38,9 @@ describe('InviteLinksSection', () => {
 
   it('renders loading initially', () => {
     (global as any).fetch = vi.fn(() => new Promise(() => {}));
-    render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, { wrapper: createWrapper() });
+    render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
+      wrapper: createWrapper(),
+    });
     expect(screen.getByText('common.loading')).toBeTruthy();
   });
 
@@ -68,21 +70,25 @@ describe('InviteLinksSection', () => {
       return Promise.reject(new Error('Unknown URL'));
     });
 
-    render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, { wrapper: createWrapper() });
+    render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
+      wrapper: createWrapper(),
+    });
 
     expect(await screen.findByText(/CODE1/)).toBeTruthy();
     expect(await screen.findByText('2/10')).toBeTruthy(); // Uses count
   });
 
   it('renders empty state when no links', async () => {
-    (global as any).fetch = vi.fn().mockImplementation(() => 
+    (global as any).fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: async () => [],
       })
     );
 
-    render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, { wrapper: createWrapper() });
+    render(<InviteLinksSection wsId={wsId} canManageMembers={true} />, {
+      wrapper: createWrapper(),
+    });
 
     expect(await screen.findByText('ws-invite-links.no-links')).toBeTruthy();
   });
