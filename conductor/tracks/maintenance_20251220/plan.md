@@ -21,7 +21,7 @@
 *   [x] Task: Conductor - User Manual Verification 'Refactoring Core Components' (Protocol in workflow.md) [checkpoint: fe3cb31]
 
 ## Phase 3: Data Fetching Migration
-*   [ ] Task: Migrate Group A Components to TanStack Query
+*   [x] Task: Migrate Group A Components to TanStack Query (Crawler Components) [e1f3101]
     *   Subtask: Write tests for current behavior.
     *   Subtask: Replace `useEffect` fetch with `useQuery`/`useMutation`.
     *   Subtask: Verify functionality and cache invalidation.
