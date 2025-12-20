@@ -98,3 +98,15 @@ export interface TimeTrackerData {
   tasks: ExtendedWorkspaceTask[];
   stats: TimerStats;
 }
+
+export interface PomodoroSettings {
+  focusTime: number; // in minutes
+  shortBreakTime: number; // in minutes
+  longBreakTime: number; // in minutes
+  sessionsUntilLongBreak: number;
+  autoStartBreaks: boolean;
+  autoStartFocus: boolean;
+  enableNotifications: boolean;
+  enable2020Rule: boolean; // 20-20-20 eye rest rule
+  enableMovementReminder: boolean;
+}

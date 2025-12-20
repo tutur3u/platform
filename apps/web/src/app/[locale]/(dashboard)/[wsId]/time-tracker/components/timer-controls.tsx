@@ -74,6 +74,7 @@ import {
   useTaskCounts,
 } from '../utils';
 import MissedEntryDialog, { type ChainSummary } from './missed-entry-dialog';
+import { PomodoroSettingsDialog } from './pomodoro-settings-dialog';
 
 interface SessionTemplate {
   title: string;
@@ -2747,191 +2748,13 @@ export function TimerControls({
       </Dialog>
 
       {/* Pomodoro Settings Dialog */}
-      <Dialog
+      <PomodoroSettingsDialog
         open={showPomodoroSettings}
         onOpenChange={setShowPomodoroSettings}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Icon iconNode={fruit} className="h-5 w-5" />{' '}
-              {t('pomodoro_settings_title')}
-            </DialogTitle>
-            <DialogDescription>{t('pomodoro_settings_desc')}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label>{t('focus_time')}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="120"
-                  value={pomodoroSettings.focusTime}
-                  onChange={(e) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      focusTime: parseInt(e.target.value, 10) || 25,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label>{t('short_break_label')}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="30"
-                  value={pomodoroSettings.shortBreakTime}
-                  onChange={(e) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      shortBreakTime: parseInt(e.target.value, 10) || 5,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label>{t('long_break_label')}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={pomodoroSettings.longBreakTime}
-                  onChange={(e) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      longBreakTime: parseInt(e.target.value, 10) || 15,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>{t('sessions_until_long_break')}</Label>
-              <Input
-                type="number"
-                min="2"
-                max="8"
-                value={pomodoroSettings.sessionsUntilLongBreak}
-                onChange={(e) =>
-                  setPomodoroSettings((prev) => ({
-                    ...prev,
-                    sessionsUntilLongBreak: parseInt(e.target.value, 10) || 4,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="auto-start-breaks">
-                  {t('auto_start_breaks')}
-                </Label>
-                <Switch
-                  id="auto-start-breaks"
-                  checked={pomodoroSettings.autoStartBreaks}
-                  onCheckedChange={(checked) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      autoStartBreaks: checked,
-                    }))
-                  }
-                  role="switch"
-                  aria-checked={pomodoroSettings.autoStartBreaks}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="auto-start-focus">
-                  {t('auto_start_focus')}
-                </Label>
-                <Switch
-                  id="auto-start-focus"
-                  checked={pomodoroSettings.autoStartFocus}
-                  onCheckedChange={(checked) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      autoStartFocus: checked,
-                    }))
-                  }
-                  role="switch"
-                  aria-checked={pomodoroSettings.autoStartFocus}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="enable-notifications">
-                  {t('enable_notifications')}
-                </Label>
-                <Switch
-                  id="enable-notifications"
-                  checked={pomodoroSettings.enableNotifications}
-                  onCheckedChange={(checked) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      enableNotifications: checked,
-                    }))
-                  }
-                  role="switch"
-                  aria-checked={pomodoroSettings.enableNotifications}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="enable-2020-rule">{t('eye_breaks_2020')}</Label>
-                <Switch
-                  id="enable-2020-rule"
-                  checked={pomodoroSettings.enable2020Rule}
-                  onCheckedChange={(checked) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      enable2020Rule: checked,
-                    }))
-                  }
-                  role="switch"
-                  aria-checked={pomodoroSettings.enable2020Rule}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="enable-movement-reminder">
-                  {t('movement_reminders')}
-                </Label>
-                <Switch
-                  id="enable-movement-reminder"
-                  checked={pomodoroSettings.enableMovementReminder}
-                  onCheckedChange={(checked) =>
-                    setPomodoroSettings((prev) => ({
-                      ...prev,
-                      enableMovementReminder: checked,
-                    }))
-                  }
-                  role="switch"
-                  aria-checked={pomodoroSettings.enableMovementReminder}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setPomodoroSettings(DEFAULT_POMODORO_SETTINGS)}
-                className="flex-1"
-              >
-                {t('reset_defaults')}
-              </Button>
-              <Button
-                onClick={() => setShowPomodoroSettings(false)}
-                className="flex-1"
-              >
-                {t('save_settings')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        settings={pomodoroSettings}
+        onSettingsChange={setPomodoroSettings}
+        defaultSettings={DEFAULT_POMODORO_SETTINGS}
+      />
 
       {/* Stopwatch Settings Dialog */}
       <Dialog
