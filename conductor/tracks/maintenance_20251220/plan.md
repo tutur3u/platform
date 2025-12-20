@@ -7,7 +7,7 @@
 *   [x] Task: Audit Data Fetching Patterns [73fc254]
     *   Scan for usage of `useEffect` for data fetching.
     *   List locations requiring migration to TanStack Query.
-*   [ ] Task: Conductor - User Manual Verification 'Assessment and Strategy' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Assessment and Strategy' (Protocol in workflow.md) [checkpoint: 794eca7]
 
 ## Phase 2: Refactoring Core Components
 *   [ ] Task: Refactor Priority 1 Large Files
