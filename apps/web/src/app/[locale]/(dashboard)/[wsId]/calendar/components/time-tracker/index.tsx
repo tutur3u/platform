@@ -38,7 +38,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -78,7 +79,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   const [showTaskSuggestion, setShowTaskSuggestion] = useState(false);
 
   // Task creation state
-  const [boards, setBoards] = useState<TaskBoard[]>([]);
   const [showTaskCreation, setShowTaskCreation] = useState(false);
   const [selectedBoardId, setSelectedBoardId] = useState('');
   const [selectedListId, setSelectedListId] = useState('');
@@ -86,26 +86,20 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
-  // Fetch boards
-  const fetchBoards = useCallback(async () => {
-    try {
+  // Fetch boards with useQuery
+  const { data: boardsData } = useQuery({
+    queryKey: ['workspace', wsId, 'boards-with-lists'],
+    queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
       );
-      if (response.ok) {
-        const data = await response.json();
-        setBoards(data.boards || []);
-      }
-    } catch (error) {
-      console.error('Error fetching boards:', error);
-    }
-  }, [wsId]);
+      if (!response.ok) throw new Error('Failed to fetch boards');
+      return response.json();
+    },
+    enabled: tracker.isOpen,
+  });
 
-  useEffect(() => {
-    if (tracker.isOpen) {
-      fetchBoards();
-    }
-  }, [tracker.isOpen, fetchBoards]);
+  const boards: TaskBoard[] = boardsData?.boards || [];
 
   // Handle task selection change
   const handleTaskSelectionChange = (taskId: string) => {

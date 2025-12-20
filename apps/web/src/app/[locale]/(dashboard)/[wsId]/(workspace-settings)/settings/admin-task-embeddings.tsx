@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Activity, AlertCircle, CheckCircle2, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -12,7 +13,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface EmbeddingStats {
   total: number;
@@ -29,38 +30,27 @@ interface ProgressData {
 }
 
 export default function AdminTaskEmbeddings() {
-  const [stats, setStats] = useState<EmbeddingStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [batchSize, setBatchSize] = useState(50);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      setIsLoading(true);
+  const {
+    data: stats,
+    isLoading,
+    isError,
+    error: fetchError,
+    refetch: fetchStats,
+  } = useQuery<EmbeddingStats>({
+    queryKey: ['admin', 'task-embeddings', 'stats'],
+    queryFn: async () => {
       const response = await fetch('/api/admin/tasks/embeddings/stats');
-
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to fetch statistics');
       }
-
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-      toast.error('Failed to fetch statistics', {
-        description:
-          error instanceof Error ? error.message : 'An unknown error occurred',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+      return response.json();
+    },
+  });
 
   const handleGenerate = async () => {
     if (!stats || stats.withoutEmbeddings === 0) {
@@ -172,6 +162,15 @@ export default function AdminTaskEmbeddings() {
           <div className="flex items-center justify-center py-8">
             <Activity className="h-8 w-8 animate-spin text-dynamic-purple/50" />
           </div>
+        ) : isError ? (
+          <div className="text-center">
+            <div className="mb-2 text-destructive">
+              {fetchError?.message || 'Failed to load statistics'}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => fetchStats()}>
+              Retry
+            </Button>
+          </div>
         ) : stats ? (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
@@ -218,7 +217,7 @@ export default function AdminTaskEmbeddings() {
           </div>
         ) : (
           <div className="text-center text-muted-foreground text-sm">
-            Failed to load statistics
+            No statistics available
           </div>
         )}
 

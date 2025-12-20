@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, Link2, Plus, Trash2, Users2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,7 +29,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import * as z from 'zod';
 
 interface User {
@@ -75,17 +76,13 @@ const CreateLinkSchema = z.object({
 export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   const router = useRouter();
   const t = useTranslations();
-  const [links, setLinks] = useState<InviteLink[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
   const [open, setOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [viewingLink, setViewingLink] = useState<InviteLinkDetails | null>(
-    null
-  );
+  const [viewingLinkId, setViewingLinkId] = useState<string | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(CreateLinkSchema),
@@ -95,26 +92,33 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     },
   });
 
-  const fetchLinks = useCallback(async () => {
-    try {
+  // Fetch links with useQuery
+  const { data: links = [], isLoading: loading } = useQuery<InviteLink[]>({
+    queryKey: ['workspace', wsId, 'invite-links'],
+    queryFn: async () => {
       const res = await fetch(`/api/workspaces/${wsId}/invite-links`);
-      if (res.ok) {
-        const data = await res.json();
-        setLinks(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch invite links:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [wsId]);
+      if (!res.ok) throw new Error('Failed to fetch invite links');
+      return res.json();
+    },
+  });
 
-  useEffect(() => {
-    fetchLinks();
-  }, [fetchLinks]);
+  // Fetch link details with useQuery
+  const { data: viewingLink, isLoading: loadingDetails } =
+    useQuery<InviteLinkDetails>({
+      queryKey: ['workspace', wsId, 'invite-links', viewingLinkId],
+      queryFn: async () => {
+        const res = await fetch(
+          `/api/workspaces/${wsId}/invite-links/${viewingLinkId}`
+        );
+        if (!res.ok) throw new Error('Failed to fetch invite link details');
+        return res.json();
+      },
+      enabled: !!viewingLinkId && viewDialogOpen,
+    });
 
-  const createInviteLink = async (values: z.infer<typeof CreateLinkSchema>) => {
-    try {
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof CreateLinkSchema>) => {
       const res = await fetch(`/api/workspaces/${wsId}/invite-links`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,48 +130,58 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         }),
       });
 
-      if (res.ok) {
-        toast.success(t('ws-invite-links.create-success'));
-        form.reset();
-        setOpen(false);
-        fetchLinks();
-        router.refresh();
-      } else {
+      if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || t('ws-invite-links.create-error'));
+        throw new Error(data.error || t('ws-invite-links.create-error'));
       }
-    } catch (error) {
-      console.error('Failed to create invite link:', error);
-      toast.error(t('ws-invite-links.create-error'));
-    }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success(t('ws-invite-links.create-success'));
+      form.reset();
+      setOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: ['workspace', wsId, 'invite-links'],
+      });
+      router.refresh();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (linkId: string) => {
+      const res = await fetch(`/api/workspaces/${wsId}/invite-links/${linkId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || t('ws-invite-links.delete-error'));
+      }
+    },
+    onSuccess: () => {
+      toast.success(t('ws-invite-links.delete-success'));
+      setConfirmDeleteId(null);
+      queryClient.invalidateQueries({
+        queryKey: ['workspace', wsId, 'invite-links'],
+      });
+      router.refresh();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleCreateLink = (values: z.infer<typeof CreateLinkSchema>) => {
+    createMutation.mutate(values);
   };
 
-  const deleteInviteLink = async () => {
-    if (!confirmDeleteId) return;
-
-    setIsDeleting(true);
-    try {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/invite-links/${confirmDeleteId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (res.ok) {
-        toast.success(t('ws-invite-links.delete-success'));
-        setConfirmDeleteId(null);
-        fetchLinks();
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || t('ws-invite-links.delete-error'));
-      }
-    } catch (error) {
-      console.error('Failed to delete invite link:', error);
-      toast.error(t('ws-invite-links.delete-error'));
-    } finally {
-      setIsDeleting(false);
+  const handleDeleteLink = () => {
+    if (confirmDeleteId) {
+      deleteMutation.mutate(confirmDeleteId);
     }
   };
 
@@ -184,27 +198,9 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     }
   };
 
-  const viewLinkDetails = async (linkId: string) => {
-    setLoadingDetails(true);
+  const openLinkDetails = (linkId: string) => {
+    setViewingLinkId(linkId);
     setViewDialogOpen(true);
-
-    try {
-      const res = await fetch(`/api/workspaces/${wsId}/invite-links/${linkId}`);
-
-      if (res.ok) {
-        const data = await res.json();
-        setViewingLink(data);
-      } else {
-        toast.error(t('ws-invite-links.fetch-error'));
-        setViewDialogOpen(false);
-      }
-    } catch (error) {
-      console.error('Failed to fetch invite link details:', error);
-      toast.error(t('ws-invite-links.fetch-error'));
-      setViewDialogOpen(false);
-    } finally {
-      setLoadingDetails(false);
-    }
   };
 
   const getStatusBadge = (link: InviteLink) => {
@@ -268,7 +264,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                 </DialogHeader>
                 <Form {...form}>
                   <form
-                    onSubmit={form.handleSubmit(createInviteLink)}
+                    onSubmit={form.handleSubmit(handleCreateLink)}
                     className="space-y-4"
                   >
                     <FormField
@@ -319,8 +315,14 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                       )}
                     />
 
-                    <Button type="submit" className="w-full">
-                      {t('ws-invite-links.create-link')}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={createMutation.isPending}
+                    >
+                      {createMutation.isPending
+                        ? t('common.loading')
+                        : t('ws-invite-links.create-link')}
                     </Button>
                   </form>
                 </Form>
@@ -375,7 +377,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => viewLinkDetails(link.id)}
+                        onClick={() => openLinkDetails(link.id)}
                         title={t('ws-invite-links.view-users')}
                         className="h-8 w-8 p-0 hover:bg-dynamic-blue/10"
                       >
@@ -628,16 +630,16 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
             <Button
               variant="outline"
               onClick={() => setConfirmDeleteId(null)}
-              disabled={isDeleting}
+              disabled={deleteMutation.isPending}
             >
               {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
-              onClick={deleteInviteLink}
-              disabled={isDeleting}
+              onClick={handleDeleteLink}
+              disabled={deleteMutation.isPending}
             >
-              {isDeleting ? t('common.deleting') : t('common.delete')}
+              {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
             </Button>
           </div>
         </DialogContent>
