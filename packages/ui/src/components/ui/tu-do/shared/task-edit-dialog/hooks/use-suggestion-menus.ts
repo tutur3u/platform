@@ -90,7 +90,6 @@ export function useSuggestionMenus({
   boardConfig,
   taskProjects,
   workspaceTasks,
-  workspaceTasksLoading,
   wsId,
   currentTaskId,
   isPersonalWorkspace,
@@ -327,6 +326,11 @@ export function useSuggestionMenus({
           ) {
             top = coords.top - menuHeight - verticalGap;
           }
+
+          // Clamp top to ensure menu stays within viewport bounds
+          top = Math.max(horizontalPadding, top);
+          // Also ensure menu doesn't overflow bottom edge
+          top = Math.min(top, viewportHeight - menuHeight - horizontalPadding);
         }
 
         return { left, top } as SuggestionState['position'];
