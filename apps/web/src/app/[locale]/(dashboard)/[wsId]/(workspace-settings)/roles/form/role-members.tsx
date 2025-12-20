@@ -174,7 +174,7 @@ export default function RoleFormMembersSection({
         {showAddMembers && (
           <div className="space-y-3 rounded-lg border bg-background/50 p-3 sm:p-4">
             <div className="relative">
-              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t('ws-roles.search_members_to_add_placeholder')}
                 value={addMemberQuery}
@@ -256,7 +256,7 @@ export default function RoleFormMembersSection({
         {/* Search Current Members */}
         {roleMembers.length > 0 && (
           <div className="relative">
-            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t('ws-roles.search_current_members_placeholder')}
               value={searchQuery}

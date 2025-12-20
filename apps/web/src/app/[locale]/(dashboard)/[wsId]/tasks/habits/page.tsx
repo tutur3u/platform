@@ -1,5 +1,5 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import HabitsClientPage from './client';
 
 export const metadata: Metadata = {

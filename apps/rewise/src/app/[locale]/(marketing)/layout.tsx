@@ -1,11 +1,11 @@
-import type { NavLink } from '@/components/navigation';
 import { MessageSquare } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies as c } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 import { Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
 import NavbarActions from '../navbar-actions';
 import { UserNav } from '../user-nav';
 import { getChats } from './helper';

@@ -327,7 +327,7 @@ export default function TaskListWithCompletion({
                               <span className="text-muted-foreground/30">
                                 •
                               </span>
-                              <div className="-space-x-2 flex">
+                              <div className="flex -space-x-2">
                                 {task.assignees.slice(0, 2).map((assignee) => (
                                   <Avatar
                                     key={assignee.user?.id}
@@ -458,7 +458,7 @@ export default function TaskListWithCompletion({
                       {task.assignees && task.assignees.length > 0 && (
                         <>
                           <span className="text-muted-foreground/30">•</span>
-                          <div className="-space-x-2 flex">
+                          <div className="flex -space-x-2">
                             {task.assignees.slice(0, 2).map((assignee) => (
                               <Avatar
                                 key={assignee.user?.id}
@@ -509,7 +509,7 @@ export default function TaskListWithCompletion({
           >
             {showAll ? (
               <>
-                <ChevronUp className="group-hover:-translate-y-0.5 h-4 w-4 transition-transform" />
+                <ChevronUp className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
                 <span>Show Less</span>
               </>
             ) : (

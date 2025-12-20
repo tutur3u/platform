@@ -37,7 +37,7 @@ export default function TimeColumn({
               }`}
             >
               {i % 4 === 0 && (
-                <div className="-top-2 absolute right-0 text-xs">
+                <div className="absolute -top-2 right-0 text-xs">
                   <div className="flex-none text-xs">
                     {hr / 4 === 12
                       ? '12:00 PM'

@@ -1,7 +1,5 @@
 'use client';
 
-import type { NavLink } from '@/components/navigation';
-import { TTR_URL } from '@/constants/common';
 import {
   ChevronDown,
   Crown,
@@ -22,10 +20,12 @@ import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { TTR_URL } from '@/constants/common';
 import { Nav } from './nav';
 
 interface MailProps {

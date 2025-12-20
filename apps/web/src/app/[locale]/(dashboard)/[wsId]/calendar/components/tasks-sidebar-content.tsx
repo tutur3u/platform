@@ -62,7 +62,7 @@ export default function TasksSidebarContent({
           className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
         >
           <PanelLeftClose className="h-5 w-5 text-foreground transition-transform duration-200" />
-          <div className="-z-10 absolute inset-0 bg-linear-to-r from-dynamic-blue/20 to-dynamic-purple/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+          <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-blue/20 to-dynamic-purple/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
         </Button>
       </div>
     );
@@ -85,7 +85,7 @@ export default function TasksSidebarContent({
               className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
             >
               <PanelRightClose className="h-5 w-5 text-foreground transition-transform duration-200" />
-              <div className="-z-10 absolute inset-0 bg-linear-to-r from-dynamic-red/20 to-dynamic-orange/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-red/20 to-dynamic-orange/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
             </Button>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function TasksSidebarContent({
                 value="tasks"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="-z-10 absolute inset-0 bg-linear-to-r from-dynamic-blue/10 to-dynamic-cyan/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-blue/10 to-dynamic-cyan/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <LayoutDashboard className="h-4 w-4 transition-colors duration-200" />
                 <span className="@[80px]:inline hidden transition-all duration-200">
                   Tasks
@@ -115,7 +115,7 @@ export default function TasksSidebarContent({
                 value="habits"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="-z-10 absolute inset-0 bg-linear-to-r from-dynamic-orange/10 to-dynamic-yellow/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-orange/10 to-dynamic-yellow/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <Repeat className="h-4 w-4 transition-colors duration-200" />
                 <span className="@[80px]:inline hidden transition-all duration-200">
                   Habits
@@ -128,7 +128,7 @@ export default function TasksSidebarContent({
                 value="schedule"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="-z-10 absolute inset-0 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <CalendarClock className="h-4 w-4 transition-colors duration-200" />
                 <span className="@[80px]:inline hidden transition-all duration-200">
                   Schedule
@@ -141,7 +141,7 @@ export default function TasksSidebarContent({
                 value="ai-chat"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="-z-10 absolute inset-0 bg-linear-to-r from-dynamic-purple/10 to-dynamic-pink/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-purple/10 to-dynamic-pink/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <Bot className="h-4 w-4 transition-colors duration-200" />
                 <span className="@[80px]:inline hidden transition-all duration-200">
                   AI Chat

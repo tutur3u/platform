@@ -13,9 +13,9 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 export const metadata: Metadata = {
   title: 'Changelog | Tuturuuu',
@@ -118,9 +118,9 @@ export default async function ChangelogPage() {
   return (
     <main className="relative mx-auto w-full overflow-x-hidden">
       {/* Background effects */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:h-160 sm:w-160" />
-        <div className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:h-140 sm:w-140" />
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160" />
+        <div className="absolute top-[30%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140" />
       </div>
 
       {/* Hero Section */}

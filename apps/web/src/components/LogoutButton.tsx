@@ -1,8 +1,8 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 export default function LogoutButton() {
   const t = useTranslations('common');

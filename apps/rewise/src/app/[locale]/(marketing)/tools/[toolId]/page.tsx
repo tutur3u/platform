@@ -1,5 +1,5 @@
-import { supportedLocales } from '@/i18n/routing';
 import { Suspense } from 'react';
+import { supportedLocales } from '@/i18n/routing';
 import { tools } from '../data';
 import ClientPage from './client-page';
 

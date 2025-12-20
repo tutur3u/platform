@@ -1,11 +1,11 @@
 'use client';
 
-import { CustomDataTable } from '@/components/custom-data-table';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { productColumns } from './columns';
 import { ProductQuickDialog } from './quick-dialog';
 

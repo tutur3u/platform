@@ -5,16 +5,16 @@
  * Creates a new folder in the workspace drive
  */
 
+import { posix } from 'node:path';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   createErrorResponse,
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
-import { NextResponse } from 'next/server';
-import { posix } from 'node:path';
-import { z } from 'zod';
 
 // Request body schema
 const createFolderSchema = z.object({

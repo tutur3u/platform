@@ -7,10 +7,10 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  encryptSession,
   decryptSession,
-  validateEncryption,
+  encryptSession,
   isCryptoAvailable,
+  validateEncryption,
 } from './session-crypto';
 
 // Setup Web Crypto API mock for Node.js environment

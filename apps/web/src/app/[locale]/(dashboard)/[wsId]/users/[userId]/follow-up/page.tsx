@@ -1,13 +1,13 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { AlertTriangleIcon } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import FollowUpClient from './client';
 
 export const metadata: Metadata = {

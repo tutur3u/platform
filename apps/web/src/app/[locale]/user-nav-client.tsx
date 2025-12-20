@@ -1,10 +1,5 @@
 'use client';
 
-import { AccountSwitcherModal } from '@/components/account-switcher';
-import { CommandPalette } from '@/components/command';
-import { SettingsDialog } from '@/components/settings/settings-dialog';
-import { useAccountSwitcher } from '@/context/account-switcher-context';
-import { SidebarContext } from '@/context/sidebar-context';
 import {
   Check,
   Globe,
@@ -40,10 +35,15 @@ import {
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound, redirect, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useContext, useEffect, useState } from 'react';
+import { AccountSwitcherModal } from '@/components/account-switcher';
+import { CommandPalette } from '@/components/command';
+import { SettingsDialog } from '@/components/settings/settings-dialog';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
+import { SidebarContext } from '@/context/sidebar-context';
 import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';

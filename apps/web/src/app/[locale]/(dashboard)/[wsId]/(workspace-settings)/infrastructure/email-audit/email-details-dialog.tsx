@@ -366,7 +366,7 @@ export function EmailDetailsDialog({
                       <div className="p-4">
                         <div className="relative border-l pl-4 dark:border-muted">
                           <div className="mb-6 last:mb-0">
-                            <div className="-left-1.5 absolute mt-1.5 h-3 w-3 rounded-full border border-background bg-primary" />
+                            <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-background bg-primary" />
                             <div className="font-medium text-sm">
                               {t('created_at')}
                             </div>
@@ -378,7 +378,7 @@ export function EmailDetailsDialog({
                           </div>
                           {entry.sent_at && (
                             <div className="mb-6 last:mb-0">
-                              <div className="-left-1.5 absolute mt-1.5 h-3 w-3 rounded-full border border-background bg-green-500" />
+                              <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-background bg-green-500" />
                               <div className="font-medium text-sm">
                                 {t('sent_at')}
                               </div>

@@ -29,8 +29,8 @@
  * ```
  */
 
-import type { EmailMetadata, EmailSource, SendEmailResult } from './types';
 import { email } from './builder';
+import type { EmailMetadata, EmailSource, SendEmailResult } from './types';
 
 // =============================================================================
 // Types

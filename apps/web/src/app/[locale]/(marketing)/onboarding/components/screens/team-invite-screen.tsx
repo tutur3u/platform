@@ -96,7 +96,7 @@ export function TeamInviteScreen({
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Mail className="-translate-y-1/2 absolute top-1/2 left-3 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="email"
                   value={inputValue}

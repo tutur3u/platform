@@ -130,7 +130,7 @@ export function NotificationGroupCard({
           {/* Stacked avatars with type icon badge */}
           <div className="relative flex-none">
             {/* Stacked avatars for unique actors */}
-            <div className="-space-x-2 flex">
+            <div className="flex -space-x-2">
               {(() => {
                 // Deduplicate actors by ID and sort: avatars first, then alphabetically
                 const uniqueActors = notifications

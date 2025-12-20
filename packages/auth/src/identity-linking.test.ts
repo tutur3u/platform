@@ -6,13 +6,13 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
+  canUnlinkIdentity,
   getProviderDisplayName,
   getProviderIcon,
+  getUserIdentities,
+  type Identity,
   linkIdentity,
   unlinkIdentity,
-  getUserIdentities,
-  canUnlinkIdentity,
-  type Identity,
 } from './identity-linking';
 
 describe('getProviderDisplayName', () => {

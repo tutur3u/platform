@@ -1,8 +1,3 @@
-import { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
-import {
-  getSessionDays,
-  getSessionDurationInPeriod,
-} from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/components/session-history/session-utils';
 import {
   createAdminClient,
   createClient,
@@ -12,6 +7,11 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import {
+  getSessionDays,
+  getSessionDurationInPeriod,
+} from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/components/session-history/session-utils';
+import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import 'server-only';
 
 dayjs.extend(utc);

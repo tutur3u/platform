@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
   ExternalLink,
@@ -28,7 +29,6 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

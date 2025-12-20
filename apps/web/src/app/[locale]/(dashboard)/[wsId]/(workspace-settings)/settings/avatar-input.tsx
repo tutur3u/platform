@@ -1,16 +1,17 @@
 'use client';
 
-import { Loader2, UserIcon, AlertTriangle } from '@tuturuuu/icons';
+import { AlertTriangle, Loader2, UserIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace, WorkspaceUser } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/sonner';
 import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
+import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
@@ -19,7 +20,6 @@ import { useTranslations } from 'next-intl';
 import React, { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
-import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 
 interface Props {
   workspace: Workspace;
@@ -293,7 +293,7 @@ export default function AvatarInput({
           {!isCheckingPermission && !hasPermission && !disabled && (
             <div className="flex items-center gap-2 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-3">
               <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
-              <p className="text-sm text-dynamic-amber">
+              <p className="text-dynamic-amber text-sm">
                 {t('settings-account.insufficient_permissions_avatar')}
               </p>
             </div>

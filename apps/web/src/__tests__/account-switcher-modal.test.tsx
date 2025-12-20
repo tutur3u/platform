@@ -1,6 +1,6 @@
-import { AccountSwitcherModal } from '@/components/account-switcher/account-switcher-modal';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AccountSwitcherModal } from '@/components/account-switcher/account-switcher-modal';
 
 const mockAccounts = [
   {

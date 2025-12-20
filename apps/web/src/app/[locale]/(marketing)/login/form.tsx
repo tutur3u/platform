@@ -936,7 +936,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       </FormLabel>
                       <FormControl>
                         <div className="group relative">
-                          <Mail className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
                             className={`h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50 ${
                               showDomainPreview.otp &&
@@ -1188,7 +1188,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       </FormLabel>
                       <FormControl>
                         <div className="group relative">
-                          <Mail className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
                             className={`h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50 ${
                               showDomainPreview.password &&
@@ -1251,7 +1251,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       </FormLabel>
                       <FormControl>
                         <div className="group relative">
-                          <Lock className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                          <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
                             className="h-12 bg-white/50 pr-12 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                             type={showPassword ? 'text' : 'password'}
@@ -1261,7 +1261,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           />
                           <button
                             type="button"
-                            className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground transition-colors duration-200 hover:text-primary"
+                            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-200 hover:text-primary"
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? (

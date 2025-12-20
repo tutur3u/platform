@@ -13,8 +13,8 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../types';
 import type { StackedSession } from './session-types';

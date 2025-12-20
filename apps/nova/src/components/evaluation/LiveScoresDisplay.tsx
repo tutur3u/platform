@@ -88,9 +88,9 @@ export function LiveScoresDisplay({
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-dynamic-purple/20 shadow-lg">
                   <Brain className="h-8 w-8 text-dynamic-purple" />
                 </div>
-                <div className="-inset-2 absolute">
+                <div className="absolute -inset-2">
                   <svg
-                    className="-rotate-90 h-20 w-20 transform"
+                    className="h-20 w-20 -rotate-90 transform"
                     viewBox="0 0 100 100"
                   >
                     <title>
@@ -122,7 +122,7 @@ export function LiveScoresDisplay({
                     />
                   </svg>
                 </div>
-                <div className="-inset-1 absolute">
+                <div className="absolute -inset-1">
                   <div className="h-18 w-18 animate-pulse rounded-full border-2 border-dynamic-purple/20 opacity-60" />
                 </div>
               </div>

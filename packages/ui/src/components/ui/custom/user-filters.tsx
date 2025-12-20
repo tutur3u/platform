@@ -210,7 +210,7 @@ export function Filter({
                                 {getInitials(displayName)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="-top-0.5 -right-0.5 absolute h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                            <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
                           </div>
                           <div className="flex min-w-0 flex-col">
                             <span className="max-w-[120px] truncate font-semibold text-secondary-foreground leading-none">

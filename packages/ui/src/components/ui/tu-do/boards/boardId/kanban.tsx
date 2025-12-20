@@ -788,17 +788,17 @@ export function KanbanBoard({
           <>
             {/* Stacked card effect - show up to 2 additional card shadows */}
             <div
-              className="-z-10 pointer-events-none absolute top-1 left-1 h-full w-full rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 shadow-lg"
+              className="pointer-events-none absolute top-1 left-1 -z-10 h-full w-full rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 shadow-lg"
               style={{ transform: 'translateZ(-10px)' }}
             />
             {selectedTasks.size > 2 && (
               <div
-                className="-z-20 pointer-events-none absolute top-2 left-2 h-full w-full rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/3 shadow-md"
+                className="pointer-events-none absolute top-2 left-2 -z-20 h-full w-full rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/3 shadow-md"
                 style={{ transform: 'translateZ(-20px)' }}
               />
             )}
             {/* Badge showing count */}
-            <div className="-right-2 -top-2 absolute flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-lg ring-2 ring-background">
+            <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-lg ring-2 ring-background">
               <span className="font-bold text-xs">{selectedTasks.size}</span>
             </div>
           </>

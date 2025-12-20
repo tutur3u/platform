@@ -4,8 +4,8 @@ import { Calendar, Play, Target, TrendingUp } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { TimeTrackingStats } from '@/lib/time-tracking-helper';
 import { useTranslations } from 'next-intl';
+import type { TimeTrackingStats } from '@/lib/time-tracking-helper';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);

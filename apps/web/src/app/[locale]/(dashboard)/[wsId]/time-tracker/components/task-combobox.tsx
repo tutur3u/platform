@@ -13,9 +13,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { TaskWithDetails } from './session-history/session-types';
-import { useTranslations } from 'next-intl';
 
 interface TaskComboboxProps {
   /**
@@ -126,7 +126,7 @@ export function TaskCombobox({
                         )}
                       />
                       <div className="flex flex-col">
-                        <span className="font-medium text-xs text-muted-foreground">
+                        <span className="font-medium text-muted-foreground text-xs">
                           {getTicketIdentifier(
                             task.ticket_prefix,
                             task.display_number ?? 0

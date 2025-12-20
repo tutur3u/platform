@@ -27,8 +27,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';

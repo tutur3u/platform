@@ -1,11 +1,11 @@
 'use client';
 
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ChevronRight } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { NavLink as NavLinkType } from '@/components/navigation';
 
 interface NavLinkProps {
   wsId: string;

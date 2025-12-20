@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
 import {
-  EMAIL_BLACKLIST_REGEX,
   DOMAIN_BLACKLIST_REGEX,
+  EMAIL_BLACKLIST_REGEX,
 } from '@tuturuuu/utils/email/validation';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const CreateEmailBlacklistSchema = z.object({

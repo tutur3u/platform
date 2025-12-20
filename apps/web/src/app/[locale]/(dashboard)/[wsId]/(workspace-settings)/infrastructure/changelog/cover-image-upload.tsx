@@ -8,11 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import {
+  type ChangeEvent,
+  type DragEvent,
   useCallback,
   useRef,
   useState,
-  type ChangeEvent,
-  type DragEvent,
 } from 'react';
 
 interface CoverImageUploadProps {

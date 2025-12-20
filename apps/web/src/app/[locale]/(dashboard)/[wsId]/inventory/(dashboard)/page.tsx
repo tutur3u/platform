@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {

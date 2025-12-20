@@ -1,10 +1,10 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getProblemColumns } from './columns';
 import CreateProblemDialog from './createProblemDialog';
 import ChallengeFilter from './filter';

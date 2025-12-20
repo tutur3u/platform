@@ -1,11 +1,11 @@
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceDataset } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 

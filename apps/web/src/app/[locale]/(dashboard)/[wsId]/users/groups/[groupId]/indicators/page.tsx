@@ -12,13 +12,13 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import GroupIndicatorsManager from './group-indicators-manager';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import GroupIndicatorsManager from './group-indicators-manager';
 
 export const metadata: Metadata = {
   title: 'Indicators',

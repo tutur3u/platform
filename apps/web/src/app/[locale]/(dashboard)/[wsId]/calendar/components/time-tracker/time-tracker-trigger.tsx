@@ -30,17 +30,17 @@ export function TimeTrackerTrigger({
         {isRunning ? (
           <>
             <Square className="h-3 w-3 animate-pulse" />
-            <span className="hidden font-mono @[100px]:inline">
+            <span className="@[100px]:inline hidden font-mono">
               {formatTime(elapsedTime)}
             </span>
-            <span className="font-mono @[100px]:hidden">
+            <span className="@[100px]:hidden font-mono">
               {Math.floor(elapsedTime / 60)}m
             </span>
           </>
         ) : (
           <>
             <Timer className="h-3 w-3" />
-            <span className="hidden @[100px]:inline">Time Tracker</span>
+            <span className="@[100px]:inline hidden">Time Tracker</span>
             <span className="@[100px]:hidden">Timer</span>
           </>
         )}

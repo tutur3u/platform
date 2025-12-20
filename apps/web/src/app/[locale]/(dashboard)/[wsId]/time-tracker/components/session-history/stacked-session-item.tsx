@@ -34,17 +34,17 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../types';
+import {
+  BreakDisplay,
+  BreakSummary,
+  useSessionBreaksSummary,
+} from './break-display';
 import type {
   ActionStates,
   StackedSession,
   TaskWithDetails,
 } from './session-types';
 import { getCategoryColor } from './session-utils';
-import {
-  BreakDisplay,
-  BreakSummary,
-  useSessionBreaksSummary,
-} from './break-display';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

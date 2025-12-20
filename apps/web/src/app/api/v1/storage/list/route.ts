@@ -5,15 +5,15 @@
  * Lists files and folders in the workspace drive
  */
 
+import { posix } from 'node:path';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   createErrorResponse,
   validateQueryParams,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { posix } from 'node:path';
-import { z } from 'zod';
 
 // Query parameters schema
 const listQuerySchema = z.object({

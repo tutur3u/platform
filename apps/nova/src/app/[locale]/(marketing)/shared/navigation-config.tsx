@@ -1,8 +1,8 @@
 'use client';
 
-import { CENTRAL_PORT, DEV_MODE } from '@/constants/common';
 import { BookOpen, Info, Shield } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
+import { CENTRAL_PORT, DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;

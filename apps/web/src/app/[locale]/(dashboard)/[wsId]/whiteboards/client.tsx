@@ -124,7 +124,7 @@ export default function WhiteboardsList({
         <div className="flex items-center gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder="Search whiteboards..."
               value={searchQuery}

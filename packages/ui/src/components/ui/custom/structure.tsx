@@ -158,7 +158,7 @@ export function Structure({
               <Button
                 size="icon"
                 variant="outline"
-                className="-right-4 -translate-y-1/2 absolute top-1/2 z-10 hidden h-auto w-auto rounded-full border-2 bg-background p-1.5 pl-1.5 opacity-0 transition duration-500 hover:bg-accent group-hover:opacity-100 md:block"
+                className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 pl-1.5 opacity-0 transition duration-500 hover:bg-accent group-hover:opacity-100 md:block"
                 onClick={() => setIsCollapsed(!isCollapsed)}
               >
                 {isCollapsed ? (

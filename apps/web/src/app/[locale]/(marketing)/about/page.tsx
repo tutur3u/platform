@@ -40,8 +40,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function AboutPage() {
   const t = useTranslations('about');
@@ -49,7 +49,7 @@ export default function AboutPage() {
   return (
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Dynamic Floating Orbs with Theme Colors */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
+      <div className="pointer-events-none fixed inset-0 -z-10">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -60,7 +60,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/30 via-dynamic-pink/20 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/30 via-dynamic-pink/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -72,7 +72,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/30 via-dynamic-cyan/20 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[30%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/30 via-dynamic-cyan/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -84,12 +84,12 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/20 via-dynamic-emerald/15 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="absolute -bottom-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-green/20 via-dynamic-emerald/15 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
       {/* Enhanced Grid Pattern */}
-      <div className="-z-10 pointer-events-none fixed inset-0 opacity-40">
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-40">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-[size:24px_24px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.03)_1px,transparent_1px)] bg-[size:120px] opacity-50" />
         <motion.div
@@ -844,7 +844,7 @@ export default function AboutPage() {
 
           <div className="relative">
             {/* Timeline line - hidden on mobile, visible on md+ */}
-            <div className="-translate-x-1/2 absolute top-0 bottom-0 left-1/2 hidden w-0.5 bg-linear-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
+            <div className="absolute top-0 bottom-0 left-1/2 hidden w-0.5 -translate-x-1/2 bg-linear-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
 
             <div className="space-y-8 md:space-y-12">
               {[
@@ -964,7 +964,7 @@ export default function AboutPage() {
                     </div>
 
                     {/* Timeline node - hidden on mobile, shown on desktop */}
-                    <div className="-translate-x-1/2 absolute top-6 left-1/2 hidden md:block">
+                    <div className="absolute top-6 left-1/2 hidden -translate-x-1/2 md:block">
                       <div className="relative flex h-14 w-14 items-center justify-center rounded-full border-4 border-background bg-background shadow-lg lg:h-16 lg:w-16">
                         <div
                           className={cn(

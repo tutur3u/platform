@@ -69,7 +69,7 @@ const setupBrowserMocks = () => {
 // Import after mocks are set up
 setupBrowserMocks();
 
-import { SessionStore, createSessionStore } from './session-store';
+import { createSessionStore, SessionStore } from './session-store';
 
 describe('SessionStore', () => {
   beforeEach(() => {

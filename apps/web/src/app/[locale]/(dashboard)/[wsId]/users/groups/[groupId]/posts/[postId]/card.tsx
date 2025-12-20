@@ -1,6 +1,5 @@
 'use client';
 
-import useEmail from '@/hooks/useEmail';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -24,6 +23,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import useEmail from '@/hooks/useEmail';
 
 interface Props {
   user: WorkspaceUser;

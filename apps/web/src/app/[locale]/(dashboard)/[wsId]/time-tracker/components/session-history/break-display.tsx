@@ -3,14 +3,14 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { useTranslations } from 'next-intl';
 import dayjs from 'dayjs';
-import { WorkspaceBreakType } from '@/hooks/useWorkspaceBreakTypes';
+import { useTranslations } from 'next-intl';
 import {
-  getBreakTypeColor,
   BREAK_COLOR_CLASSES,
+  getBreakTypeColor,
   getIconComponent,
 } from '@/hooks/useBreakTypeStyles';
+import type { WorkspaceBreakType } from '@/hooks/useWorkspaceBreakTypes';
 
 interface BreakDisplayProps {
   sessionId: string;
@@ -110,7 +110,7 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                     </span>
                     {!breakRecord.break_end && (
                       <span
-                        className={`inline-block shrink-0 rounded-full ${breakClasses.badgeBg} px-1.5 py-0.5 ${breakClasses.text} text-xs font-medium`}
+                        className={`inline-block shrink-0 rounded-full ${breakClasses.badgeBg} px-1.5 py-0.5 ${breakClasses.text} font-medium text-xs`}
                       >
                         {t('active')}
                       </span>
@@ -142,13 +142,13 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
         const breakType = b.break_type_id as any;
         return breakType?.notes;
       }) && (
-        <div className="space-y-1 border-t border-border/20 pt-2">
+        <div className="space-y-1 border-border/20 border-t pt-2">
           {breaks.map((breakRecord) => {
             const breakType = breakRecord.break_type_id as any;
             return breakType?.notes ? (
               <p
                 key={`${breakRecord.id}-notes`}
-                className="px-1 text-xs italic text-muted-foreground"
+                className="px-1 text-muted-foreground text-xs italic"
               >
                 <span className="font-medium">
                   {breakType?.name ||
@@ -271,7 +271,7 @@ export function BreakSummary({
     : `${t('total')}: ${formatBreakDuration(totalBreakDuration)}`;
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-0.5 font-medium text-muted-foreground text-xs">
       <Icons.Pause className="h-3 w-3" />
       {displayText}
     </span>

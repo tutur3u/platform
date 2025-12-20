@@ -1,10 +1,10 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { PlusIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import WhiteboardsList, { type Whiteboard } from './client';
 import CreateWhiteboardDialog from './createWhiteboardDialog';
 

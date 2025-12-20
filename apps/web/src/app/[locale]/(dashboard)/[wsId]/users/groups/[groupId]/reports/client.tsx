@@ -1,6 +1,5 @@
 'use client';
 
-import { availableConfigs } from '@/constants/configs/reports';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
@@ -15,9 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { availableConfigs } from '@/constants/configs/reports';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 
 // Feature flag for experimental factor functionality

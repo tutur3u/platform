@@ -1,5 +1,5 @@
-import { sendSystemEmail } from '@tuturuuu/email-service';
 import { render } from '@react-email/render';
+import { sendSystemEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail, {
   generateSubjectLine,

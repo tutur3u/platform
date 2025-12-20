@@ -143,7 +143,7 @@ export default async function TimeTrackerPage({
         return (
           <div className="grid gap-4 pb-4">
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Stats Card - Client Component with timezone detection */}
               <Suspense fallback={<StatsCardSkeleton />}>
                 <StatsCardClient

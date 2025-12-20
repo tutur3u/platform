@@ -5,9 +5,9 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function MeetTogetherMenuItem() {
   const t = useTranslations('common');

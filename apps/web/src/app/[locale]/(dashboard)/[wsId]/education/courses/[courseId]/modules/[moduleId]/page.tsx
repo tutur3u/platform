@@ -1,4 +1,3 @@
-import { extractYoutubeId } from '@/utils/url-helper';
 import {
   BookText,
   Goal,
@@ -21,6 +20,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { extractYoutubeId } from '@/utils/url-helper';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 

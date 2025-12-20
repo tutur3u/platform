@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { useTranslations } from 'next-intl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,9 +33,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import type { GroupedSession } from '@/lib/time-tracking-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { useTranslations } from 'next-intl';
+import type { GroupedSession } from '@/lib/time-tracking-helper';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);

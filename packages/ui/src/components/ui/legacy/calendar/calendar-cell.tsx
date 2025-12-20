@@ -75,7 +75,7 @@ const DragPreview = ({
           'pointer-events-none absolute whitespace-nowrap rounded-md font-semibold text-xs',
           // More compact styling for short durations
           height < 60
-            ? '-translate-y-1/2 top-1/2 right-1 px-1 py-0.5 text-[10px]'
+            ? 'top-1/2 right-1 -translate-y-1/2 px-1 py-0.5 text-[10px]'
             : 'top-2 right-2 px-1.5 py-0.5',
           text,
           bg
@@ -847,7 +847,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         // Only show cell highlight if no task preview (preview has its own visual)
         isDropTarget &&
           !taskDropPreview &&
-          'ring-2 ring-primary ring-inset bg-primary/10'
+          'bg-primary/10 ring-2 ring-primary ring-inset'
       )}
       style={{
         height: `${HOUR_HEIGHT}px`,
@@ -901,7 +901,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {/* Task drop preview - shows exactly where the task will land */}
       {taskDropPreview && (
         <div
-          className="pointer-events-none absolute right-1 left-1 z-50 overflow-hidden rounded-md border-2 border-dashed border-primary bg-primary/20 px-2 py-1"
+          className="pointer-events-none absolute right-1 left-1 z-50 overflow-hidden rounded-md border-2 border-primary border-dashed bg-primary/20 px-2 py-1"
           style={{
             top: taskDropPreview.top,
             height: Math.max(taskDropPreview.height, 20),

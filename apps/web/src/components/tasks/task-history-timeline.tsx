@@ -1,6 +1,5 @@
 'use client';
 
-import { type TaskHistoryEntry, useTaskHistory } from '@/hooks/useTaskHistory';
 import {
   ArrowRight,
   Calendar,
@@ -20,6 +19,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { format, type Locale } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
+import { type TaskHistoryEntry, useTaskHistory } from '@/hooks/useTaskHistory';
 
 interface TaskHistoryTimelineProps {
   wsId: string;

@@ -72,7 +72,7 @@ export default function ResetPasswordForm({
               <FormLabel>{t('login.password')}</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Lock className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+                  <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     className="pr-10 pl-10"
                     type={showPassword ? 'text' : 'password'}
@@ -83,7 +83,7 @@ export default function ResetPasswordForm({
                   <button
                     tabIndex={-1}
                     type="button"
-                    className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -107,7 +107,7 @@ export default function ResetPasswordForm({
               <FormLabel>Confirm Password</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Lock className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+                  <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     className="pr-10 pl-10"
                     type={showConfirmPassword ? 'text' : 'password'}
@@ -118,7 +118,7 @@ export default function ResetPasswordForm({
                   <button
                     tabIndex={-1}
                     type="button"
-                    className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (

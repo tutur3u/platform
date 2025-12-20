@@ -956,7 +956,7 @@ function GameApp({ wsId }: { wsId: string }) {
   }, [client]);
 
   return (
-    <div className="-m-4 relative flex h-screen min-h-screen flex-col overflow-hidden">
+    <div className="relative -m-4 flex h-screen min-h-screen flex-col overflow-hidden">
       {/* Beautiful gradient mesh background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Base gradient */}
@@ -1170,7 +1170,7 @@ function GameApp({ wsId }: { wsId: string }) {
 // Loading animation component
 function LoadingOrb() {
   return (
-    <div className="-m-4 relative flex h-screen min-h-screen flex-col items-center justify-center overflow-hidden">
+    <div className="relative -m-4 flex h-screen min-h-screen flex-col items-center justify-center overflow-hidden">
       {/* Background gradient */}
       <div className="pointer-events-none absolute inset-0">
         <div
@@ -1183,7 +1183,7 @@ function LoadingOrb() {
           }}
         />
         <motion.div
-          className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 h-[500px] w-[500px] rounded-full"
+          className="absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             background: `radial-gradient(circle, ${AURORA_COLORS.purple}50 0%, ${AURORA_COLORS.blue}30 40%, transparent 70%)`,
             filter: 'blur(80px)',
@@ -1256,7 +1256,7 @@ export default function App() {
 
   if (error || !token) {
     return (
-      <div className="-m-4 relative flex h-screen min-h-screen flex-col items-center justify-center gap-6 overflow-hidden">
+      <div className="relative -m-4 flex h-screen min-h-screen flex-col items-center justify-center gap-6 overflow-hidden">
         {/* Background */}
         <div className="pointer-events-none absolute inset-0">
           <div
@@ -1269,7 +1269,7 @@ export default function App() {
             }}
           />
           <motion.div
-            className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 h-[400px] w-[400px] rounded-full"
+            className="absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full"
             style={{
               background: `radial-gradient(circle, ${AURORA_COLORS.rose}40 0%, ${AURORA_COLORS.pink}20 40%, transparent 70%)`,
               filter: 'blur(80px)',

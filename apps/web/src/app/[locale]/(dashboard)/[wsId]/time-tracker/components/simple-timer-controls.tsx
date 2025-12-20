@@ -642,7 +642,7 @@ export function SimpleTimerControls({
                 {/* Break Type Badge - Prominent Display */}
                 {currentBreak && (
                   <div className="mb-4 flex items-center justify-center gap-2">
-                    <Badge className="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1.5 text-base">
+                    <Badge className="bg-amber-600 px-3 py-1.5 text-base text-white hover:bg-amber-700">
                       {currentBreak.break_type?.icon ? (
                         (() => {
                           const IconComponent = (Icons as any)[
@@ -679,7 +679,7 @@ export function SimpleTimerControls({
 
                 {/* Work Duration */}
                 <div className="mb-2">
-                  <div className="text-muted-foreground text-xs mb-1">
+                  <div className="mb-1 text-muted-foreground text-xs">
                     {t('workDuration')}
                   </div>
                   <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
@@ -688,15 +688,15 @@ export function SimpleTimerControls({
                 </div>
 
                 {/* Break Duration - Live Counter */}
-                <div className="mt-4 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 p-3">
-                  <div className="text-amber-700 dark:text-amber-300 text-xs mb-1">
+                <div className="mt-4 rounded-lg bg-amber-100/50 p-3 dark:bg-amber-950/30">
+                  <div className="mb-1 text-amber-700 text-xs dark:text-amber-300">
                     {t('breakDuration')}
                   </div>
                   <div className="font-bold font-mono text-2xl text-amber-600 dark:text-amber-400">
                     {formatDuration(breakDurationSeconds)}
                   </div>
                   {pauseStartTime && (
-                    <div className="text-amber-600/70 dark:text-amber-400/70 text-xs mt-1">
+                    <div className="mt-1 text-amber-600/70 text-xs dark:text-amber-400/70">
                       {t('pausedAt', {
                         time: pauseStartTime.toLocaleTimeString(),
                       })}

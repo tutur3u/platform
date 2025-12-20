@@ -167,7 +167,7 @@ const CountdownTet2026 = () => {
           style={{ animationDelay: '0.5s' }}
         ></div>
         <div
-          className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 h-20 w-20 transform animate-pulse rounded-full bg-dynamic-orange/10 blur-2xl sm:h-24 sm:w-24"
+          className="absolute top-1/2 left-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 transform animate-pulse rounded-full bg-dynamic-orange/10 blur-2xl sm:h-24 sm:w-24"
           style={{ animationDelay: '1s' }}
         ></div>
       </div>

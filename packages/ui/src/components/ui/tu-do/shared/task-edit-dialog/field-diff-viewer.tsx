@@ -35,9 +35,9 @@ import {
 import { computeLineDiff } from '@tuturuuu/utils/text-diff';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useMemo } from 'react';
-import { DescriptionDiffViewer } from './description-diff-viewer';
 import type { EstimationType } from '../estimation-mapping';
 import { mapEstimationPoints } from '../estimation-mapping';
+import { DescriptionDiffViewer } from './description-diff-viewer';
 
 interface FieldDiffViewerProps {
   fieldName: ComparableField;

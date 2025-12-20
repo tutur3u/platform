@@ -1,7 +1,7 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CustomWhiteboard } from './custom-whiteboard';
 
 export const metadata: Metadata = {

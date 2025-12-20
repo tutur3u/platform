@@ -1,6 +1,5 @@
 'use client';
 
-import { formatBytes } from '@/utils/file-helper';
 import {
   Download,
   ExternalLink,
@@ -24,10 +23,11 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { joinPath } from '@tuturuuu/utils/path-helper';
-import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { formatBytes } from '@/utils/file-helper';
 
 // Dynamic imports for heavy components
 const PDFViewer = dynamic(

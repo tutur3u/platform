@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   Activity,
   AlertTriangle,
@@ -11,6 +10,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import ErrorTrackingSection from './_components/error-tracking';
 import MetricCards from './_components/metric-cards';
 import PerformanceCharts from './_components/performance-charts';

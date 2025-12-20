@@ -1,7 +1,5 @@
 'use client';
 
-import { AddAccountButton } from '@/components/account-switcher';
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { ArrowRightLeft, Loader2, Trash2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -17,9 +15,11 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { type JSX, useEffect, useState } from 'react';
+import { AddAccountButton } from '@/components/account-switcher';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { RemoveAccountDialog } from './remove-account-dialog';
 
 export function AccountManagementCard(): JSX.Element {

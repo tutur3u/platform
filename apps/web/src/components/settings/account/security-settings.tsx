@@ -1,9 +1,9 @@
 'use client';
 
-import LinkedIdentitiesCard from '@/app/[locale]/(dashboard)/settings/account/security/linked-identities-card';
-import SecuritySettingsCard from '@/app/[locale]/(dashboard)/settings/account/security/security-settings-card';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Separator } from '@tuturuuu/ui/separator';
+import LinkedIdentitiesCard from '@/app/[locale]/(dashboard)/settings/account/security/linked-identities-card';
+import SecuritySettingsCard from '@/app/[locale]/(dashboard)/settings/account/security/security-settings-card';
 
 interface SecuritySettingsProps {
   user: WorkspaceUser;

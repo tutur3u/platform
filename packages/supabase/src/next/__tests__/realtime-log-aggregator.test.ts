@@ -4,8 +4,8 @@ import {
   describe,
   expect,
   it,
-  vi,
   type Mock,
+  vi,
 } from 'vitest';
 
 // Mock createAdminClient before importing the module
@@ -13,9 +13,9 @@ vi.mock('../server', () => ({
   createAdminClient: vi.fn(),
 }));
 
+import { getLogAggregator } from '../realtime-log-aggregator';
 // Import after mocking
 import { createAdminClient } from '../server';
-import { getLogAggregator } from '../realtime-log-aggregator';
 
 describe('RealtimeLogAggregator', () => {
   let mockRpc: Mock;

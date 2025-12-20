@@ -1,6 +1,5 @@
 'use client';
 
-import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   ArrowDown,
   ArrowDownUp,
@@ -37,9 +36,10 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import ScoreBadge from '@/components/common/ScoreBadge';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {

@@ -2,9 +2,9 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 export async function POST(
   request: NextRequest,

@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowUpCircle, Loader2, Search, X } from '@tuturuuu/icons';
-import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
@@ -16,6 +15,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';

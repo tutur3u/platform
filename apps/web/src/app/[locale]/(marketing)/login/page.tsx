@@ -1,13 +1,13 @@
 'use client';
 
-import { DEV_MODE, PORT } from '@/constants/common';
 import { XIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Suspense, use } from 'react';
+import { DEV_MODE, PORT } from '@/constants/common';
 import LoginForm from './form';
 import './login.css';
 
@@ -92,7 +92,7 @@ export default function Login({ searchParams }: LoginProps) {
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
-        className="-left-32 fixed top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
+        className="fixed top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
       />
       <motion.div
         animate={{
@@ -105,7 +105,7 @@ export default function Login({ searchParams }: LoginProps) {
           ease: 'easeInOut',
           delay: 1,
         }}
-        className="-right-32 fixed top-1/4 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
+        className="fixed top-1/4 -right-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
       />
       <motion.div
         animate={{
@@ -118,7 +118,7 @@ export default function Login({ searchParams }: LoginProps) {
           ease: 'easeInOut',
           delay: 2,
         }}
-        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
+        className="fixed bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
       />
 
       {/* Main Content */}

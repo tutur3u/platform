@@ -13,7 +13,6 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';

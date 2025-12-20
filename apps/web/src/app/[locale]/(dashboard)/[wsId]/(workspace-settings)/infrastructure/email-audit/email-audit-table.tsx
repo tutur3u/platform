@@ -1,7 +1,7 @@
 'use client';
 
-import { CustomDataTable } from '@/components/custom-data-table';
 import { useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { type EmailAuditRecord, getEmailAuditColumns } from './columns';
 import { EmailDetailsDialog } from './email-details-dialog';
 

@@ -202,8 +202,8 @@ export default function MembersSettings({
       {/* Header Section */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/2 p-6 shadow-sm">
         {/* Decorative elements */}
-        <div className="-right-4 -top-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
-        <div className="-bottom-4 -left-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
+        <div className="pointer-events-none absolute -top-4 -right-4 h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
 
         <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div className="space-y-2">

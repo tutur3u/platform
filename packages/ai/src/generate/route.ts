@@ -3,10 +3,10 @@ import {
   type GoogleGenerativeAIProviderOptions,
 } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type FinishReason, streamText } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
 

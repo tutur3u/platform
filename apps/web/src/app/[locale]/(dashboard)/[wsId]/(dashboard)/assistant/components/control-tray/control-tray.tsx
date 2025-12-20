@@ -388,7 +388,7 @@ function ControlTray({
               >
                 <motion.span
                   aria-hidden
-                  className="-inset-10 -z-10 pointer-events-none absolute"
+                  className="pointer-events-none absolute -inset-10 -z-10"
                   style={{
                     scale: outputBlobScale,
                     opacity: outputBlobOpacity,
@@ -482,7 +482,7 @@ function ControlTray({
             {connectHovered && (
               <motion.span
                 key="connect-blob"
-                className="-inset-6 -z-10 pointer-events-none absolute"
+                className="pointer-events-none absolute -inset-6 -z-10"
                 initial={{ opacity: 0, scale: 0.45, rotate: -12 }}
                 animate={{ opacity: 1, scale: 1.12, rotate: 0 }}
                 exit={{ opacity: 0, scale: 0.3, rotate: 8 }}

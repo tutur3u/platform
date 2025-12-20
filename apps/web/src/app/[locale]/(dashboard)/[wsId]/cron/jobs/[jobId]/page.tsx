@@ -1,4 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import {
   ArrowLeft,
   CheckCircle,
@@ -19,6 +18,7 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../../executions/columns';
 
 export const metadata: Metadata = {

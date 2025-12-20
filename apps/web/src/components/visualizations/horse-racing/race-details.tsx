@@ -78,12 +78,12 @@ export function RaceDetails({
                         }}
                       >
                         {id}
-                        <div className="-top-6 -translate-x-1/2 absolute left-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 font-semibold text-sm shadow-sm dark:bg-slate-800/90">
+                        <div className="absolute -top-6 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-white/90 font-semibold text-sm shadow-sm dark:bg-slate-800/90">
                           {index + 1}
                         </div>
 
                         {showSpeeds && (
-                          <div className="-bottom-8 -translate-x-1/2 absolute left-1/2 z-20 whitespace-nowrap rounded border bg-background px-1.5 py-0.5 text-xs opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                          <div className="absolute -bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded border bg-background px-1.5 py-0.5 text-xs opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                             Speed:{' '}
                             {horses.find((h) => h.id === id)?.speed.toFixed(1)}
                           </div>

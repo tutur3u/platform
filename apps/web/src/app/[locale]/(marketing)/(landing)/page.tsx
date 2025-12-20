@@ -35,15 +35,15 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function MarketingPage() {
   const t = useTranslations('landing');
   return (
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Dynamic Floating Orbs */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
+      <div className="pointer-events-none fixed inset-0 -z-10">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -54,7 +54,7 @@ export default function MarketingPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-160 sm:w-160"
+          className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160"
         />
         <motion.div
           animate={{
@@ -66,7 +66,7 @@ export default function MarketingPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-140 sm:w-140"
+          className="absolute top-[40%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140"
         />
         <motion.div
           animate={{
@@ -78,12 +78,12 @@ export default function MarketingPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-180 sm:w-180"
+          className="absolute -bottom-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:-bottom-64 sm:h-180 sm:w-180"
         />
       </div>
 
       {/* Grid Pattern Overlay */}
-      <div className="-z-10 pointer-events-none fixed inset-0 opacity-30">
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-size-[32px_32px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-size-[120px]" />
       </div>
@@ -922,7 +922,7 @@ export default function MarketingPage() {
                         {t('demo.analytics.metrics.tasks.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
-                        <ArrowRight className="-rotate-45 h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        <ArrowRight className="h-2.5 w-2.5 -rotate-45 sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.tasks.change')}
                       </div>
                     </div>
@@ -938,7 +938,7 @@ export default function MarketingPage() {
                         {t('demo.analytics.metrics.focus.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
-                        <ArrowRight className="-rotate-45 h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        <ArrowRight className="h-2.5 w-2.5 -rotate-45 sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.focus.change')}
                       </div>
                     </div>

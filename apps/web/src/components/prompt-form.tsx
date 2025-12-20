@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import {
   Bolt,
   File,
@@ -24,11 +23,12 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
+import { DEV_MODE } from '@/constants/common';
 
 export interface PromptProps {
   id?: string;

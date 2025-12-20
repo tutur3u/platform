@@ -1,5 +1,5 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import WorkspaceNotificationSettings from '@/components/notifications/workspace-notification-settings';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 interface NotificationSettingsPageProps {
   params: Promise<{

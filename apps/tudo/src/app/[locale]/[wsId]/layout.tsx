@@ -1,6 +1,6 @@
-import { supportedLocales } from '@/i18n/routing';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type React from 'react';
+import { supportedLocales } from '@/i18n/routing';
 
 interface LayoutProps {
   params: Promise<{

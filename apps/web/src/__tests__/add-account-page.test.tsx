@@ -1,7 +1,7 @@
-import AddAccountPage from '@/app/[locale]/(auth)/add-account/page';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import AddAccountPage from '@/app/[locale]/(auth)/add-account/page';
 
 const mockSession: SupabaseSession = {
   user: {

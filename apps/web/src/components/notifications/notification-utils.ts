@@ -1,13 +1,11 @@
-import type { Notification, NotificationType } from '@/hooks/useNotifications';
-import type { Json } from '@tuturuuu/types';
 import {
   AlertCircle,
   AtSign,
   Bell,
   Calendar,
   CheckCircle2,
-  Clock,
   ClipboardList,
+  Clock,
   Edit3,
   FileText,
   Link2,
@@ -19,10 +17,12 @@ import {
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
+import type { Json } from '@tuturuuu/types';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
+import type { Notification, NotificationType } from '@/hooks/useNotifications';
 
 // Translation function type that accepts any string key
 export type TranslationFn = (

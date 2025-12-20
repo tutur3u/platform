@@ -1,7 +1,7 @@
-import { authorize } from '@/lib/api-auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorize } from '@/lib/api-auth';
 
 const paramsSchema = z.object({
   wsId: z.string().uuid(),

@@ -1,6 +1,5 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Loader2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,9 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { type JSX, useEffect, useRef, useState } from 'react';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 export function AddAccountContent(): JSX.Element {
   const t = useTranslations();

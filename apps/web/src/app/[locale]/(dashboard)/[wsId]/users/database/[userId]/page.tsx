@@ -1,4 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import { Users } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
@@ -10,10 +9,11 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import moment from 'moment';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
 import ReferralSectionClient from './referral-section-client';

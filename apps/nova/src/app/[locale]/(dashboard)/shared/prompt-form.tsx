@@ -553,7 +553,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               <PlayCircle className="mr-2 h-4 w-4" />
               Prompt
               {isSubmitting && (
-                <div className="-top-1 -right-1 absolute h-3 w-3 animate-pulse rounded-full bg-dynamic-blue shadow-dynamic-blue/50 shadow-lg" />
+                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-dynamic-blue shadow-dynamic-blue/50 shadow-lg" />
               )}
             </TabsTrigger>
             <TabsTrigger

@@ -32,7 +32,7 @@ export default function HeroAnimation() {
   return (
     <div className="pointer-events-none fixed inset-0">
       <motion.div
-        className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 will-change-transform"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 will-change-transform"
         animate={{
           rotate: [0, 360],
         }}
@@ -44,7 +44,7 @@ export default function HeroAnimation() {
       >
         {/* Main rainbow gradient blob with original colors but more dramatic motion */}
         <motion.div
-          className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute h-[600px] w-[600px] rounded-full bg-[conic-gradient(from_0deg,#93C5FD,#C084FC,#F472B6,#FB923C,#4ADE80,#22D3EE,#60A5FA,#93C5FD)] opacity-20 blur-[60px] will-change-transform md:h-[800px] md:w-[800px] md:opacity-25 md:blur-[80px] dark:bg-[conic-gradient(from_0deg,#FF80AB,#FFB74D,#FFE57F,#AED581,#4DD0E1,#82B1FF,#B388FF,#FF80AB)] dark:opacity-30"
+          className="pointer-events-none absolute h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[conic-gradient(from_0deg,#93C5FD,#C084FC,#F472B6,#FB923C,#4ADE80,#22D3EE,#60A5FA,#93C5FD)] opacity-20 blur-[60px] will-change-transform md:h-[800px] md:w-[800px] md:opacity-25 md:blur-[80px] dark:bg-[conic-gradient(from_0deg,#FF80AB,#FFB74D,#FFE57F,#AED581,#4DD0E1,#82B1FF,#B388FF,#FF80AB)] dark:opacity-30"
           animate={{
             scale: isMobile ? [1, 1.2, 0.8, 1] : [1, 1.3, 0.7, 1],
             rotate: [0, -360],
@@ -58,7 +58,7 @@ export default function HeroAnimation() {
 
         {/* Secondary blobs with original colors and more dramatic motion */}
         <motion.div
-          className="-translate-x-1/3 -translate-y-1/3 pointer-events-none absolute h-[400px] w-[400px] rounded-full bg-linear-to-r from-violet-400/20 via-purple-400/20 to-fuchsia-400/20 blur-xl will-change-transform md:h-[600px] md:w-[600px] md:blur-2xl dark:from-fuchsia-400/30 dark:via-rose-400/30 dark:to-purple-400/30"
+          className="pointer-events-none absolute h-[400px] w-[400px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-linear-to-r from-violet-400/20 via-purple-400/20 to-fuchsia-400/20 blur-xl will-change-transform md:h-[600px] md:w-[600px] md:blur-2xl dark:from-fuchsia-400/30 dark:via-rose-400/30 dark:to-purple-400/30"
           animate={{
             x: [0, 250, -250, 0], // More extreme x movement
             y: [0, -250, 250, 0], // More extreme y movement
@@ -88,7 +88,7 @@ export default function HeroAnimation() {
         />
 
         <motion.div
-          className="-translate-x-1/4 -translate-y-1/4 pointer-events-none absolute h-[250px] w-[250px] rounded-full bg-linear-to-r from-blue-400/20 via-indigo-400/20 to-violet-400/20 blur-xl will-change-transform md:h-[400px] md:w-[400px] md:blur-2xl dark:from-violet-400/30 dark:via-indigo-400/30 dark:to-blue-400/30"
+          className="pointer-events-none absolute h-[250px] w-[250px] -translate-x-1/4 -translate-y-1/4 rounded-full bg-linear-to-r from-blue-400/20 via-indigo-400/20 to-violet-400/20 blur-xl will-change-transform md:h-[400px] md:w-[400px] md:blur-2xl dark:from-violet-400/30 dark:via-indigo-400/30 dark:to-blue-400/30"
           animate={{
             x: [0, 200, -200, 0],
             y: [0, -200, 200, 0],

@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceApiKey } from '@tuturuuu/types';
 import {
@@ -12,6 +11,7 @@ import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import EnvironmentSetup from './environment-setup';
 
 export const metadata: Metadata = {

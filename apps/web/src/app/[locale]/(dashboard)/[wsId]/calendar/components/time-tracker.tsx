@@ -1580,7 +1580,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                         <div className="relative mx-auto mb-3 h-16 w-16">
                           <Zap className="h-16 w-16 text-muted-foreground/50" />
                           {recentSessions.length === 0 && (
-                            <Sparkles className="-top-1 -right-1 absolute h-6 w-6 animate-pulse text-primary" />
+                            <Sparkles className="absolute -top-1 -right-1 h-6 w-6 animate-pulse text-primary" />
                           )}
                         </div>
                         <p className="@lg:text-base text-muted-foreground text-sm">

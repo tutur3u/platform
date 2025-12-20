@@ -553,7 +553,7 @@ export default function GroupAttendanceClient({
                     )}
                   >
                     {day.getDate()}
-                    <span className="-translate-x-1/2 absolute bottom-0.5 left-1/2 h-1 w-1 rounded-full bg-dynamic-blue" />
+                    <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-dynamic-blue" />
                   </button>
                 );
               })}
@@ -685,7 +685,7 @@ export default function GroupAttendanceClient({
                         )}
                       >
                         {hasPendingChanges && (
-                          <div className="-right-1 -top-1 absolute flex h-5 w-5 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-sm">
+                          <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-sm">
                             <span className="font-bold text-xs">•</span>
                           </div>
                         )}

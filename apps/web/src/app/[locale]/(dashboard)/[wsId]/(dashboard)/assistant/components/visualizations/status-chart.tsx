@@ -69,7 +69,7 @@ export function StatusChart({ data, isFullscreen = false }: StatusChartProps) {
       {total > 0 && (
         <div className="flex items-center justify-center gap-4 border-border/20 border-b bg-muted/10 px-4 py-4">
           <div className="relative h-16 w-16">
-            <svg className="-rotate-90 h-16 w-16 transform">
+            <svg className="h-16 w-16 -rotate-90 transform">
               <title>Overall Completion Percentage</title>
               <circle
                 className="text-muted/30"

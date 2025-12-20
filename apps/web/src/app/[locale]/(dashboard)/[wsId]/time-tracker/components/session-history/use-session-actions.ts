@@ -8,13 +8,13 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-import type { SessionWithRelations } from '../../types';
-import type { ActionStates, EditFormState } from './session-types';
 import {
+  type TimeValidationResult,
   validateNotFuture,
   validateTimeRange,
-  type TimeValidationResult,
 } from '@/lib/time-validation';
+import type { SessionWithRelations } from '../../types';
+import type { ActionStates, EditFormState } from './session-types';
 
 /**
  * Converts a TimeValidationErrorCode to a localized error message

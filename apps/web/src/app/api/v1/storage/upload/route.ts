@@ -5,11 +5,11 @@
  * Uploads a file to the workspace drive
  */
 
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import { posix } from 'node:path';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
-import { posix } from 'node:path';
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 // Route segment config for large file uploads
 export const maxDuration = 60; // 60 seconds timeout for uploads // Use Node.js runtime for better FormData handling

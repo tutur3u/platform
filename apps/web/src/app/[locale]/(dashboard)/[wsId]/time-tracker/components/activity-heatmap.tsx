@@ -1062,7 +1062,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
               onClick={scrollLeft}
               disabled={!canScrollLeft}
               className={cn(
-                '-translate-y-1/2 absolute top-1/2 left-0 z-10 h-8 w-8 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
+                'absolute top-1/2 left-0 z-10 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
                 canScrollLeft
                   ? 'border-border text-foreground hover:border-accent-foreground/20 hover:bg-accent'
                   : 'cursor-not-allowed border-muted text-muted-foreground opacity-50'
@@ -1077,7 +1077,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
               onClick={scrollRight}
               disabled={!canScrollRight}
               className={cn(
-                '-translate-y-1/2 absolute top-1/2 right-0 z-10 h-8 w-8 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
+                'absolute top-1/2 right-0 z-10 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
                 canScrollRight
                   ? 'border-border text-foreground hover:border-accent-foreground/20 hover:bg-accent'
                   : 'cursor-not-allowed border-muted text-muted-foreground opacity-50'

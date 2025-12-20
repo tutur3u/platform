@@ -25,8 +25,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { TeamActionDialog } from './dialog-content';
 
@@ -198,7 +198,7 @@ export default function TeamClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="-inset-0.5 absolute rounded-full bg-linear-to-br from-primary/30 to-primary/10 blur-md"
+                className="absolute -inset-0.5 rounded-full bg-linear-to-br from-primary/30 to-primary/10 blur-md"
               />
               <Avatar className="h-24 w-24 border-2 border-background shadow-md">
                 <AvatarImage src={undefined} />
@@ -208,7 +208,7 @@ export default function TeamClient({
               </Avatar>
 
               {/* Dynamic rank badge */}
-              <div className="-top-2 -right-2 absolute flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-amber-500 to-yellow-400 font-bold text-white text-xs shadow-lg">
+              <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-amber-500 to-yellow-400 font-bold text-white text-xs shadow-lg">
                 #{teamData.rank || '?'}
               </div>
             </div>

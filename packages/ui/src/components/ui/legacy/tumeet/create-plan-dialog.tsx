@@ -35,8 +35,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -188,7 +188,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              '-inset-px absolute animate-tilt rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
+              'absolute -inset-px animate-tilt rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'

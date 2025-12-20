@@ -1,14 +1,5 @@
 'use client';
 
-import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
-import type { Notification } from '@/hooks/useNotifications';
-import {
-  useMarkAllAsRead,
-  useNotificationSubscription,
-  useNotifications,
-  useUnreadCount,
-  useUpdateNotification,
-} from '@/hooks/useNotifications';
 import { Bell, Check, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -18,6 +9,15 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
+import type { Notification } from '@/hooks/useNotifications';
+import {
+  useMarkAllAsRead,
+  useNotificationSubscription,
+  useNotifications,
+  useUnreadCount,
+  useUpdateNotification,
+} from '@/hooks/useNotifications';
 
 dayjs.extend(relativeTime);
 
@@ -108,7 +108,7 @@ export default function EnhancedNotificationPopover({
         >
           <Bell className="h-6 w-6" />
           {unreadCount > 0 && (
-            <div className="group-hover:-top-2 group-hover:-right-1 absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-foreground p-1 text-center font-semibold text-foreground text-xs transition-all group-hover:h-4 group-hover:w-auto group-hover:text-background">
+            <div className="absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-foreground p-1 text-center font-semibold text-foreground text-xs transition-all group-hover:-top-2 group-hover:-right-1 group-hover:h-4 group-hover:w-auto group-hover:text-background">
               <div className="relative opacity-0 group-hover:opacity-100">
                 {unreadCount}
               </div>

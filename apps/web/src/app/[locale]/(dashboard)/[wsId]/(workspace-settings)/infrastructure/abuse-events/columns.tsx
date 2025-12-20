@@ -1,9 +1,9 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { CheckCircle, XCircle, Shield } from '@tuturuuu/icons';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { CheckCircle, Shield, XCircle } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export type AbuseEventType =
@@ -147,14 +147,14 @@ export const getAbuseEventsColumns = (
           {success ? (
             <>
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-green-600 dark:text-green-400">
+              <span className="text-green-600 text-sm dark:text-green-400">
                 Success
               </span>
             </>
           ) : (
             <>
               <XCircle className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-red-600 dark:text-red-400">
+              <span className="text-red-600 text-sm dark:text-red-400">
                 Failed
               </span>
             </>
@@ -175,7 +175,7 @@ export const getAbuseEventsColumns = (
     cell: ({ row }) => {
       const hash = row.getValue<string | null>('email_hash');
       return (
-        <div className="max-w-24 truncate font-mono text-xs text-muted-foreground">
+        <div className="max-w-24 truncate font-mono text-muted-foreground text-xs">
           {hash || '-'}
         </div>
       );
@@ -211,7 +211,7 @@ export const getAbuseEventsColumns = (
     cell: ({ row }) => {
       const userAgent = row.getValue<string | null>('user_agent');
       return (
-        <div className="max-w-64 truncate text-xs text-muted-foreground">
+        <div className="max-w-64 truncate text-muted-foreground text-xs">
           {userAgent || '-'}
         </div>
       );
@@ -232,7 +232,7 @@ export const getAbuseEventsColumns = (
         unknown
       > | null;
       return (
-        <div className="max-w-32 truncate font-mono text-xs text-muted-foreground">
+        <div className="max-w-32 truncate font-mono text-muted-foreground text-xs">
           {metadata && Object.keys(metadata).length > 0
             ? JSON.stringify(metadata)
             : '-'}

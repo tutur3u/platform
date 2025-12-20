@@ -109,7 +109,7 @@ export default function BasicInformationComponent({
               )}
             </div>
             <div className="relative">
-              <div className="-z-10 absolute inset-0 rounded-full bg-blue-100 blur-sm dark:bg-blue-500/10" />
+              <div className="absolute inset-0 -z-10 rounded-full bg-blue-100 blur-sm dark:bg-blue-500/10" />
               <div className="rounded-full bg-gray-100 p-3 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
                 <Trophy className="h-6 w-6" />
               </div>
@@ -134,7 +134,7 @@ export default function BasicInformationComponent({
               </p>
             </div>
             <div className="relative">
-              <div className="-z-10 absolute inset-0 rounded-full bg-yellow-100 blur-sm dark:bg-yellow-500/10" />
+              <div className="absolute inset-0 -z-10 rounded-full bg-yellow-100 blur-sm dark:bg-yellow-500/10" />
               <div className="rounded-full bg-gray-100 p-3 text-yellow-600 dark:bg-slate-800 dark:text-yellow-400">
                 <Star className="h-6 w-6" />
               </div>
@@ -161,7 +161,7 @@ export default function BasicInformationComponent({
               </p>
             </div>
             <div className="relative">
-              <div className="-z-10 absolute inset-0 rounded-full bg-indigo-100 blur-sm dark:bg-indigo-500/10" />
+              <div className="absolute inset-0 -z-10 rounded-full bg-indigo-100 blur-sm dark:bg-indigo-500/10" />
               <div className="rounded-full bg-gray-100 p-3 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400">
                 <Users className="h-6 w-6" />
               </div>

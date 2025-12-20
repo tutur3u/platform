@@ -259,7 +259,7 @@ export default function LogsClient({
 
           {/* Search */}
           <div className="relative min-w-[200px] flex-1 md:max-w-xs">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t('search_placeholder', {
                 defaultValue: 'Search tasks...',
@@ -276,7 +276,7 @@ export default function LogsClient({
                   setDebouncedSearch('');
                   setPage(1);
                 }}
-                className="-translate-y-1/2 absolute top-1/2 right-2.5 text-muted-foreground hover:text-foreground"
+                className="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -689,7 +689,7 @@ function EmptyState({
               <Clock className="h-7 w-7 text-muted-foreground" />
             )}
           </div>
-          <div className="-top-1 -right-1 absolute flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-purple/20">
+          <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-purple/20">
             <Sparkles className="h-3.5 w-3.5 text-dynamic-purple" />
           </div>
         </div>

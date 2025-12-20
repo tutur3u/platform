@@ -1,7 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Calendar,
   CalendarPlus,
@@ -9,19 +5,23 @@ import {
   FileUser,
   UserCheck,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Group Details',

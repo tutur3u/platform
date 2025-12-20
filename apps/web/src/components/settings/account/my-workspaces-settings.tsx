@@ -1,9 +1,9 @@
 'use client';
 
-import WorkspaceSettingsCard from '@/app/[locale]/(dashboard)/settings/account/workspaces/workspace-settings-card';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Separator } from '@tuturuuu/ui/separator';
+import WorkspaceSettingsCard from '@/app/[locale]/(dashboard)/settings/account/workspaces/workspace-settings-card';
 
 interface Props {
   user: WorkspaceUser;

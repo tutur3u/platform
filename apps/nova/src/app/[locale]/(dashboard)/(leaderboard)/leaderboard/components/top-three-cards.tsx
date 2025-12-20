@@ -6,8 +6,8 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { LeaderboardEntry } from './leaderboard';
 
@@ -168,11 +168,11 @@ export function TopThreeCards({
               }}
             >
               {/* Light/dark mode backgrounds */}
-              <div className="-z-10 absolute inset-0 bg-linear-to-b from-gray-50 to-white opacity-100 dark:opacity-0"></div>
-              <div className="-z-10 absolute inset-0 bg-linear-to-b from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
+              <div className="absolute inset-0 -z-10 bg-linear-to-b from-gray-50 to-white opacity-100 dark:opacity-0"></div>
+              <div className="absolute inset-0 -z-10 bg-linear-to-b from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
 
               {/* Animated background gradient */}
-              <div className="-z-10 absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+              <div className="absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                 <motion.div
                   className={cn(
                     'absolute inset-0 bg-linear-to-br opacity-20 dark:opacity-30',
@@ -220,7 +220,7 @@ export function TopThreeCards({
 
               {/* Glowing border */}
               <motion.div
-                className="-z-10 absolute inset-0 rounded-xl opacity-0 dark:opacity-50"
+                className="absolute inset-0 -z-10 rounded-xl opacity-0 dark:opacity-50"
                 style={{
                   backgroundImage: `linear-gradient(45deg, ${styles.glow}, transparent, ${styles.glow})`,
                   backgroundSize: '200% 200%',
@@ -241,7 +241,7 @@ export function TopThreeCards({
               />
 
               {/* Rank number in hexagon */}
-              <div className="-translate-x-1/2 absolute top-8 left-1/2 scale-75 sm:scale-100 dark:top-8">
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 scale-75 sm:scale-100 dark:top-8">
                 <div className="relative">
                   <div
                     className="hex-shape flex h-14 w-14 items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 shadow dark:shadow-none"
@@ -262,7 +262,7 @@ export function TopThreeCards({
                   {!prefersReducedMotion && (
                     <motion.div
                       className={cn(
-                        'hex-shape-outline -inset-1 -z-10 absolute border-2',
+                        'hex-shape-outline absolute -inset-1 -z-10 border-2',
                         styles.hexBorderClass
                       )}
                       style={{
@@ -307,7 +307,7 @@ export function TopThreeCards({
               >
                 {!prefersReducedMotion && (
                   <motion.div
-                    className="-z-10 absolute inset-0 blur-md"
+                    className="absolute inset-0 -z-10 blur-md"
                     style={{
                       background: styles.glow,
                       opacity: 0.15,
@@ -342,7 +342,7 @@ export function TopThreeCards({
                 {/* Animated glow behind avatar */}
                 {!prefersReducedMotion && (
                   <motion.div
-                    className="hex-shape -inset-3 absolute blur-lg"
+                    className="hex-shape absolute -inset-3 blur-lg"
                     style={{
                       background: styles.glow,
                       opacity: 0.1,
@@ -375,7 +375,7 @@ export function TopThreeCards({
                 {index === 0 && !prefersReducedMotion && (
                   <>
                     <motion.div
-                      className="-top-2 -right-2 absolute z-20"
+                      className="absolute -top-2 -right-2 z-20"
                       animate={{
                         rotate: [-10, 10, -10],
                         scale: [1, 1.2, 1],
@@ -389,7 +389,7 @@ export function TopThreeCards({
                       <Sparkles className="h-5 w-5 text-yellow-500 dark:text-yellow-300" />
                     </motion.div>
                     <motion.div
-                      className="-left-2 absolute bottom-0 z-20"
+                      className="absolute bottom-0 -left-2 z-20"
                       animate={{
                         rotate: [10, -10, 10],
                         scale: [1, 1.1, 1],

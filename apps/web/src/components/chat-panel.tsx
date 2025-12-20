@@ -1,4 +1,3 @@
-import { BASE_URL } from '@/constants/common';
 import type { Model } from '@tuturuuu/ai/models';
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import {
@@ -29,11 +28,12 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { BASE_URL } from '@/constants/common';
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
@@ -147,7 +147,7 @@ export function ChatPanel({
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
-            chats ? 'md:-right-2 lg:-right-6 right-2' : 'right-2 md:right-4'
+            chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
@@ -186,7 +186,7 @@ export function ChatPanel({
             <div className="relative flex items-center justify-center gap-2">
               <div
                 id="chat-sidebar"
-                className={`-bottom-1 absolute z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
+                className={`absolute -bottom-1 z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
                   collapsed
                     ? 'pointer-events-none border-transparent bg-transparent'
                     : 'border-border bg-background shadow-lg'

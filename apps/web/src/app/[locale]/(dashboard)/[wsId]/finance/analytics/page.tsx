@@ -1,8 +1,8 @@
 import AnalyticsPage from '@tuturuuu/ui/finance/analytics/analytics-page';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import type { Metadata } from 'next';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Analytics',

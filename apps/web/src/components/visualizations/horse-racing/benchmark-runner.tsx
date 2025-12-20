@@ -1,14 +1,6 @@
 'use client';
 
 import {
-  benchmarks,
-  exportBenchmarksAsCSV,
-  exportBenchmarksAsJSON,
-  type HorseRacingBenchmark,
-  runBenchmark,
-  runStandardBenchmarks,
-} from '@/utils/horseRacingBenchmarks';
-import {
   AlertCircle,
   ArrowDown,
   ArrowUp,
@@ -66,6 +58,14 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useEffect, useState } from 'react';
+import {
+  benchmarks,
+  exportBenchmarksAsCSV,
+  exportBenchmarksAsJSON,
+  type HorseRacingBenchmark,
+  runBenchmark,
+  runStandardBenchmarks,
+} from '@/utils/horseRacingBenchmarks';
 
 interface BenchmarkRunnerProps {
   onBenchmarksUpdated?: (benchmarks: HorseRacingBenchmark[]) => void;

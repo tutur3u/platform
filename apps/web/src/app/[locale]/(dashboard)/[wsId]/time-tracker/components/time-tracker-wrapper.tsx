@@ -1,17 +1,17 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Settings, Timer, Zap } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import type { TimeTrackerData } from '../types';
 import SimpleTimeTrackerContent from './simple-time-tracker-content';
 import TimeTrackerContent from './time-tracker-content';
-import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 
 interface TimeTrackerWrapperProps {
   wsId: string;

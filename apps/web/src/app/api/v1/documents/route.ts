@@ -4,16 +4,16 @@
  * POST /api/v1/documents - Create document
  */
 
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { createDocumentDataSchema } from '@tuturuuu/types';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   createErrorResponse,
   validateQueryParams,
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { createDocumentDataSchema } from '@tuturuuu/types';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
 
 // Query parameters schema for listing (query string transformations)
 const listQuerySchema = z.object({

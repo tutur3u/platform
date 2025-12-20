@@ -1,5 +1,5 @@
-import type { NavLink } from '@/components/navigation';
 import * as React from 'react';
+import type { NavLink } from '@/components/navigation';
 
 export interface FlatNavItem {
   title: string;

@@ -1,5 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Plus, PlusCircle, User } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
@@ -9,8 +7,10 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Filter } from '../filters';
 import { getUserReportColumns } from './columns';
 

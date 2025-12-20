@@ -234,7 +234,7 @@ export function RaceControls({
                   className="absolute top-0 z-10 h-full border-primary border-r-2 transition-all duration-75"
                   style={{ left: `${(hoverPosition / races.length) * 100}%` }}
                 >
-                  <div className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 whitespace-nowrap rounded-md border bg-background px-1.5 py-0.5 text-xs shadow-sm">
+                  <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border bg-background px-1.5 py-0.5 text-xs shadow-sm">
                     Race {hoverPosition + 1}
                   </div>
                 </div>
@@ -274,7 +274,7 @@ export function RaceControls({
               >
                 <div className="h-full w-full bg-primary/30" />
                 <div className="absolute top-0 right-0 h-full w-1 bg-primary" />
-                <div className="-right-2 -translate-y-1/2 absolute top-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-primary shadow-sm">
+                <div className="absolute top-1/2 -right-2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full bg-primary shadow-sm">
                   {races[currentRaceIndex]?.raceType === 'preliminary' ? (
                     <span className="font-bold text-[10px] text-white">
                       {currentRaceIndex + 1}

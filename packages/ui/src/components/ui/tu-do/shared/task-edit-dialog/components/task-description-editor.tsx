@@ -6,8 +6,8 @@ import { Loader2 } from '@tuturuuu/icons';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { cn } from '@tuturuuu/utils/format';
 import type * as Y from 'yjs';
-import CursorOverlayWrapper from '../../cursor-overlay-wrapper';
 import { RichTextEditor } from '../../../../text-editor/editor';
+import CursorOverlayWrapper from '../../cursor-overlay-wrapper';
 
 // Provider type from Yjs collaboration
 type HocuspocusProvider = Parameters<typeof RichTextEditor>[0]['yjsProvider'];

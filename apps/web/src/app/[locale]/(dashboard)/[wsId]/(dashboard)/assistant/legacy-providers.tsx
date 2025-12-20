@@ -1,7 +1,7 @@
 'use client';
 
-import { LiveAPIProvider } from '@/hooks/use-live-api';
 import { useParams } from 'next/navigation';
+import { LiveAPIProvider } from '@/hooks/use-live-api';
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const host = 'generativelanguage.googleapis.com';

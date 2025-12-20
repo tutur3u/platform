@@ -3,14 +3,14 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getEmailBlacklistColumns } from './columns';
-import EmailBlacklistForm from './form';
-import Filters from './filters';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getEmailBlacklistColumns } from './columns';
+import Filters from './filters';
+import EmailBlacklistForm from './form';
 
 export const metadata: Metadata = {
   title: 'Email Blacklist',

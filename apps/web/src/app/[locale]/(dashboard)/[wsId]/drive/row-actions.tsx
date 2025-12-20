@@ -1,6 +1,5 @@
 'use client';
 
-import { joinPath } from '@/utils/path-helper';
 import type { Row } from '@tanstack/react-table';
 import {
   Copy,
@@ -27,8 +26,9 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { joinPath } from '@/utils/path-helper';
 
 interface Props {
   wsId: string;

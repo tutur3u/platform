@@ -1,9 +1,9 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectsClient } from './task-projects-client';
 
 export const metadata: Metadata = {

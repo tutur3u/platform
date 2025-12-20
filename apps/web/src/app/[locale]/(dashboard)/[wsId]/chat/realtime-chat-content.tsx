@@ -804,7 +804,7 @@ export default function RealtimeChatContent({
                                         0 && (
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className="-space-x-1 flex cursor-help">
+                                            <div className="flex cursor-help -space-x-1">
                                               {messageReaders
                                                 .get(message.id)!
                                                 .slice(0, 3)

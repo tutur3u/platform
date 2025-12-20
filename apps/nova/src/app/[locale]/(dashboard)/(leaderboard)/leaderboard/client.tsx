@@ -13,9 +13,9 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import BasicInformationComponent, {
   type BasicInformation,
@@ -141,7 +141,7 @@ export default function LeaderboardClient({
               <div className="relative">
                 <Medal className="h-5 w-5 text-yellow-400" />
                 <motion.div
-                  className="-inset-1 -z-10 absolute rounded-full opacity-0 blur-sm"
+                  className="absolute -inset-1 -z-10 rounded-full opacity-0 blur-sm"
                   style={{
                     background: 'linear-gradient(to right, #F59E0B, #EF4444)',
                   }}

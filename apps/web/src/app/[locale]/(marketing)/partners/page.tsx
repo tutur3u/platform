@@ -161,7 +161,7 @@ export default function PartnersPage() {
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
-        className="-left-32 sm:-left-64 fixed top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
+        className="fixed top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:-left-64"
       />
       <motion.div
         animate={{
@@ -174,7 +174,7 @@ export default function PartnersPage() {
           ease: 'easeInOut',
           delay: 1,
         }}
-        className="-right-32 sm:-right-64 fixed top-1/4 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
+        className="fixed top-1/4 -right-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:-right-64"
       />
       <motion.div
         animate={{
@@ -187,7 +187,7 @@ export default function PartnersPage() {
           ease: 'easeInOut',
           delay: 2,
         }}
-        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
+        className="fixed bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
       />
 
       {/* Grid Pattern Overlay */}
@@ -419,7 +419,7 @@ export default function PartnersPage() {
                     <div className="relative h-full">
                       {/* Animated Ring Effect */}
                       <motion.div
-                        className={`-inset-1 pointer-events-none absolute rounded-2xl opacity-0 transition-opacity duration-700 group-hover:opacity-100 ${colors.ringGlow}`}
+                        className={`pointer-events-none absolute -inset-1 rounded-2xl opacity-0 transition-opacity duration-700 group-hover:opacity-100 ${colors.ringGlow}`}
                         animate={{
                           boxShadow: [
                             '0 0 0 0px currentColor',
@@ -530,7 +530,7 @@ export default function PartnersPage() {
                             {/* Visit Website Indicator */}
                             <div className="mt-6 flex items-center gap-2 font-medium text-dynamic-purple text-sm opacity-0 transition-all duration-300 group-hover:opacity-100">
                               <span>Visit Website</span>
-                              <ExternalLink className="group-hover:-translate-y-1 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                              <ExternalLink className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
                             </div>
                           </div>
                         </Link>
@@ -555,7 +555,7 @@ export default function PartnersPage() {
                   repeat: Number.POSITIVE_INFINITY,
                   ease: 'linear',
                 }}
-                className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
               >
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-dynamic-cyan/20 via-dynamic-blue/20 to-dynamic-purple/20 shadow-2xl shadow-dynamic-blue/30 ring-2 ring-dynamic-blue/40 backdrop-blur-xl">
                   <Zap className="h-10 w-10 text-dynamic-blue" />
@@ -573,7 +573,7 @@ export default function PartnersPage() {
                   repeat: Number.POSITIVE_INFINITY,
                   ease: 'easeInOut',
                 }}
-                className="-translate-y-1/2 absolute top-1/2 left-[30%]"
+                className="absolute top-1/2 left-[30%] -translate-y-1/2"
               >
                 <div className="h-3 w-3 rounded-full bg-linear-to-r from-dynamic-cyan to-dynamic-blue shadow-dynamic-cyan/50 shadow-lg" />
               </motion.div>
@@ -588,7 +588,7 @@ export default function PartnersPage() {
                   ease: 'easeInOut',
                   delay: 0.5,
                 }}
-                className="-translate-y-1/2 absolute top-1/2 right-[30%]"
+                className="absolute top-1/2 right-[30%] -translate-y-1/2"
               >
                 <div className="h-3 w-3 rounded-full bg-linear-to-r from-dynamic-purple to-dynamic-pink shadow-dynamic-purple/50 shadow-lg" />
               </motion.div>
@@ -712,7 +712,7 @@ export default function PartnersPage() {
                   <div className="relative h-full">
                     {/* Animated Glow Ring */}
                     <motion.div
-                      className={`-inset-0.5 pointer-events-none absolute rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${colors.ringGlow}`}
+                      className={`pointer-events-none absolute -inset-0.5 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${colors.ringGlow}`}
                       animate={{
                         boxShadow: [
                           '0 0 0 0px currentColor',
@@ -818,7 +818,7 @@ export default function PartnersPage() {
                           {/* Visit Link */}
                           <div className="mt-4 flex items-center gap-2 font-medium text-dynamic-purple text-sm opacity-0 transition-all duration-300 group-hover:opacity-100">
                             <span>Explore</span>
-                            <ExternalLink className="group-hover:-translate-y-1 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                            <ExternalLink className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
                           </div>
                         </div>
                       </Link>
@@ -851,7 +851,7 @@ export default function PartnersPage() {
                     repeat: Number.POSITIVE_INFINITY,
                     ease: 'easeInOut',
                   }}
-                  className="-left-32 absolute top-0 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-purple/40 to-transparent blur-3xl"
+                  className="absolute top-0 -left-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-purple/40 to-transparent blur-3xl"
                 />
                 <motion.div
                   animate={{
@@ -864,7 +864,7 @@ export default function PartnersPage() {
                     ease: 'easeInOut',
                     delay: 1,
                   }}
-                  className="-right-32 absolute bottom-0 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-pink/40 to-transparent blur-3xl"
+                  className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-pink/40 to-transparent blur-3xl"
                 />
                 <motion.div
                   animate={{
@@ -877,7 +877,7 @@ export default function PartnersPage() {
                     ease: 'easeInOut',
                     delay: 2,
                   }}
-                  className="-translate-x-1/2 absolute bottom-1/4 left-1/2 h-64 w-64 rounded-full bg-linear-to-br from-dynamic-orange/30 to-transparent blur-3xl"
+                  className="absolute bottom-1/4 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-orange/30 to-transparent blur-3xl"
                 />
               </div>
 

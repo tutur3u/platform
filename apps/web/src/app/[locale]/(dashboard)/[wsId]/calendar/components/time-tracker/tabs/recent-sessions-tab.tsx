@@ -59,8 +59,8 @@ export function RecentSessionsTab({
     <Card className="transition-all hover:shadow-md">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base @lg:text-lg">
-            <Zap className="h-4 w-4 @lg:h-5 @lg:w-5" />
+          <CardTitle className="flex items-center gap-2 @lg:text-lg text-base">
+            <Zap className="@lg:h-5 h-4 @lg:w-5 w-4" />
             Recent Sessions
           </CardTitle>
           <Popover>
@@ -126,15 +126,15 @@ export function RecentSessionsTab({
             <div className="relative mx-auto mb-3 h-16 w-16">
               <Zap className="h-16 w-16 text-muted-foreground/50" />
               {sessions.length === 0 && (
-                <Sparkles className="-top-1 -right-1 absolute h-6 w-6 animate-pulse text-primary" />
+                <Sparkles className="absolute -top-1 -right-1 h-6 w-6 animate-pulse text-primary" />
               )}
             </div>
-            <p className="text-muted-foreground text-sm @lg:text-base">
+            <p className="@lg:text-base text-muted-foreground text-sm">
               {sessions.length === 0
                 ? 'Ready to start tracking time?'
                 : 'No sessions match your filters'}
             </p>
-            <p className="mt-1 text-muted-foreground text-xs @lg:text-sm">
+            <p className="mt-1 @lg:text-sm text-muted-foreground text-xs">
               {sessions.length === 0
                 ? 'Start your first timer to see your productivity journey!'
                 : 'Try adjusting your filters above'}
@@ -152,7 +152,7 @@ export function RecentSessionsTab({
             )}
           </div>
         ) : (
-          <div className="max-h-96 space-y-3 overflow-y-auto @lg:max-h-[500px]">
+          <div className="@lg:max-h-[500px] max-h-96 space-y-3 overflow-y-auto">
             {filteredSessions.map((session) => (
               <SessionCard
                 key={session.id}

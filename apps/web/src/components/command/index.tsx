@@ -1,10 +1,10 @@
 'use client';
 
-import type { NavLink } from '@/components/navigation';
 import { CommandDialog } from '@tuturuuu/ui/command';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { useParams } from 'next/navigation';
 import * as React from 'react';
+import type { NavLink } from '@/components/navigation';
 import './command-palette.css';
 import { CommandMode } from './modes/command-mode';
 

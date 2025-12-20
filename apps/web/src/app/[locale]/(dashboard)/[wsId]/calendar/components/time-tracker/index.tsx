@@ -334,13 +334,13 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
               </TabsTrigger>
             </TabsList>
 
-            <div className="grid grid-cols-1 gap-6 @5xl:grid-cols-2">
+            <div className="grid @5xl:grid-cols-2 grid-cols-1 gap-6">
               {/* Current Session Tab */}
               <TabsContent value="current" className="@container space-y-4">
                 <Card className="transition-all hover:shadow-md">
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base @lg:text-lg">
-                      <Clock className="h-4 w-4 @lg:h-5 @lg:w-5" />
+                    <CardTitle className="flex items-center gap-2 @lg:text-lg text-base">
+                      <Clock className="@lg:h-5 h-4 @lg:w-5 w-4" />
                       Current Session
                     </CardTitle>
                   </CardHeader>
@@ -503,9 +503,9 @@ function NewSessionForm({
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center @lg:p-6">
-        <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground @lg:h-12 @lg:w-12" />
-        <p className="text-muted-foreground text-sm @lg:text-base">
+      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed @lg:p-6 p-4 text-center">
+        <Clock className="mx-auto mb-2 @lg:h-12 h-8 @lg:w-12 w-8 text-muted-foreground" />
+        <p className="@lg:text-base text-muted-foreground text-sm">
           Ready to start tracking time
         </p>
       </div>
@@ -554,7 +554,7 @@ function NewSessionForm({
               value={selectedTaskId}
               onValueChange={onTaskSelectionChange}
             >
-              <SelectTrigger className="text-sm transition-all duration-200 @lg:text-base">
+              <SelectTrigger className="@lg:text-base text-sm transition-all duration-200">
                 <SelectValue placeholder="Choose a task or create new..." />
               </SelectTrigger>
               <SelectContent className="w-[400px]">
@@ -604,7 +604,7 @@ function NewSessionForm({
             value={newSessionDescription}
             onChange={(e) => setNewSessionDescription(e.target.value)}
             rows={2}
-            className="text-sm @lg:text-base"
+            className="@lg:text-base text-sm"
           />
 
           <CategorySelect
@@ -633,7 +633,7 @@ function NewSessionForm({
               placeholder="What are you working on?"
               value={newSessionTitle}
               onChange={(e) => onManualTitleChange(e.target.value)}
-              className="text-sm @lg:text-base"
+              className="@lg:text-base text-sm"
               autoFocus={sessionMode === 'manual'}
             />
 
@@ -657,7 +657,7 @@ function NewSessionForm({
             value={newSessionDescription}
             onChange={(e) => setNewSessionDescription(e.target.value)}
             rows={3}
-            className="text-sm @lg:text-base"
+            className="@lg:text-base text-sm"
           />
 
           <CategorySelect
@@ -702,7 +702,7 @@ function CategorySelect({
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="text-sm @lg:text-base">
+      <SelectTrigger className="@lg:text-base text-sm">
         <SelectValue placeholder="Category (optional)" />
       </SelectTrigger>
       <SelectContent>

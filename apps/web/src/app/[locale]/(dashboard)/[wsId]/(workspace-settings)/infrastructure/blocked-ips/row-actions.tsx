@@ -1,7 +1,7 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import { Ellipsis, ShieldOff, Eye } from '@tuturuuu/icons';
+import { Ellipsis, Eye, ShieldOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -20,8 +20,8 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { BlockedIPEntry } from './columns';
 

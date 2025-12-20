@@ -284,7 +284,7 @@ export function CommandBar({
   return (
     <div className="relative">
       {/* Subtle glow effect */}
-      <div className="-z-10 absolute inset-0 rounded-2xl bg-linear-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
+      <div className="absolute inset-0 -z-10 rounded-2xl bg-linear-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
       {/* Main Input Area */}
       <div className="group relative rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 transition-all duration-300 focus-within:border-border/40 focus-within:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] hover:shadow-xl md:rounded-3xl">
         {/* Scrollable Textarea Container */}
@@ -1012,7 +1012,7 @@ export function CommandBar({
 
                           {/* Search Input */}
                           <div className="relative mb-3">
-                            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               placeholder="Search members..."
                               value={assigneeSearchQuery}

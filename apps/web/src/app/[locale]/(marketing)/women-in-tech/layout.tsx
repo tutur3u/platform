@@ -1,6 +1,6 @@
-import { type Locale, supportedLocales } from '@/i18n/routing';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
+import { type Locale, supportedLocales } from '@/i18n/routing';
 
 interface Props {
   children: React.ReactNode;

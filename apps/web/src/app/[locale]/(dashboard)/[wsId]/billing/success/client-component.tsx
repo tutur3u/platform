@@ -113,7 +113,7 @@ export default function ClientComponent({
           {t('success.what-next')}
         </h2>
         <div className="space-y-4">
-          <div className="-m-3 slide-in-from-left-4 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1200 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
+          <div className="slide-in-from-left-4 -m-3 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1200 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
             <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:rotate-12 hover:scale-125 dark:text-green-400" />
             <div>
               <p className="font-medium text-card-foreground">
@@ -124,7 +124,7 @@ export default function ClientComponent({
               </p>
             </div>
           </div>
-          <div className="-m-3 slide-in-from-left-4 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1400 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
+          <div className="slide-in-from-left-4 -m-3 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1400 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
             <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:rotate-12 hover:scale-125 dark:text-green-400" />
             <div>
               <p className="font-medium text-card-foreground">
@@ -135,7 +135,7 @@ export default function ClientComponent({
               </p>
             </div>
           </div>
-          <div className="-m-3 slide-in-from-left-4 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1600 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
+          <div className="slide-in-from-left-4 -m-3 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1600 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
             <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:rotate-12 hover:scale-125 dark:text-green-400" />
             <div>
               <p className="font-medium text-card-foreground">
@@ -153,17 +153,17 @@ export default function ClientComponent({
       <div className="slide-in-from-bottom-4 flex animate-in flex-col gap-4 delay-1800 duration-600 sm:flex-row sm:justify-center">
         <Button
           asChild
-          className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
+          className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
         >
           <Link href={`/${wsId}/billing`}>
-            <ArrowLeft className="group-hover:-translate-x-2 h-4 w-4 transition-transform duration-300" />
+            <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
             {t('success.back-to-billing')}
           </Link>
         </Button>
         <Button
           variant="outline"
           asChild
-          className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
+          className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
         >
           <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
             <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
@@ -173,7 +173,7 @@ export default function ClientComponent({
         <Button
           variant="outline"
           asChild
-          className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
+          className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
         >
           <Link href={`/${wsId}`}>
             <CreditCard className="h-4 w-4 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-125" />

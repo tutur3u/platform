@@ -1,15 +1,15 @@
 import {
+  Body,
+  Column,
+  Container,
   Head,
+  Hr,
   Html,
   Img,
-  Tailwind,
-  Body,
-  Container,
-  Section,
   Row,
-  Column,
+  Section,
+  Tailwind,
   Text,
-  Hr,
 } from '@tuturuuu/transactional/react/email';
 
 interface Props {

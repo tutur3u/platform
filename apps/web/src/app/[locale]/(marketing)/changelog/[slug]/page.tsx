@@ -168,9 +168,9 @@ export default async function ChangelogEntryPage({ params }: Props) {
   return (
     <main className="relative mx-auto w-full overflow-x-hidden">
       {/* Background effects */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:h-160 sm:w-160" />
-        <div className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:h-140 sm:w-140" />
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160" />
+        <div className="absolute top-[30%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140" />
       </div>
 
       <article className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 lg:px-8">
@@ -238,7 +238,7 @@ export default async function ChangelogEntryPage({ params }: Props) {
                 <Link href={`/changelog/${previous.slug}`} className="group">
                   <Card className="p-4 transition-all hover:border-dynamic-purple/30 hover:shadow-md">
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <ArrowLeft className="group-hover:-translate-x-1 h-4 w-4 transition-transform" />
+                      <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                       Previous
                     </div>
                     <div className="mt-1 font-medium group-hover:text-dynamic-purple">

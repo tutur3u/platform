@@ -1,7 +1,7 @@
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 interface WorkspaceParams {
   wsId: string;

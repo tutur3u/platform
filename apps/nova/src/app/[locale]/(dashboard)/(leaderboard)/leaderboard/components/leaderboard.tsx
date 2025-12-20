@@ -22,8 +22,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
 export interface UserInterface {
@@ -131,7 +131,7 @@ export function Leaderboard({
       className="relative overflow-hidden rounded-xl border bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
     >
       {/* Enhanced gradient border effect */}
-      <div className="-inset-px -z-10 absolute rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
+      <div className="absolute -inset-px -z-10 rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
         <motion.div
           className="absolute inset-0 rounded-xl opacity-0 dark:opacity-30"
           style={{
@@ -286,7 +286,7 @@ export function Leaderboard({
                           !prefersReducedMotion && (
                             <motion.div
                               className={cn(
-                                '-inset-1 absolute rounded-full blur-md',
+                                'absolute -inset-1 rounded-full blur-md',
                                 entry.rank === 1
                                   ? 'bg-yellow-400/30 dark:bg-yellow-400/40'
                                   : entry.rank === 2

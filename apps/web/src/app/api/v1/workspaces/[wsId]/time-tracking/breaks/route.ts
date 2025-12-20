@@ -3,8 +3,8 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const createBreakSchema = z.object({
   session_id: z.uuid('Invalid session ID format'),

@@ -2,11 +2,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 
 const userUpdateSchema = z.object({
   id: z.string().optional(),

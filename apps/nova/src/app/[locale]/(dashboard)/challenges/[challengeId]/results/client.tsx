@@ -513,7 +513,7 @@ export default function ResultClient({
                         >
                           <AccordionTrigger className="relative px-4 py-3 hover:bg-muted/50">
                             {loadingSessions[session.id] && (
-                              <div className="-translate-y-1/2 absolute top-1/2 right-12">
+                              <div className="absolute top-1/2 right-12 -translate-y-1/2">
                                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                               </div>
                             )}

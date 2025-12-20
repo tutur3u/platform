@@ -10,8 +10,8 @@ import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-love
 import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
 import { WalletFilterWrapper } from '@tuturuuu/ui/finance/transactions/wallet-filter-wrapper';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 interface TransactionsInfinitePageProps {

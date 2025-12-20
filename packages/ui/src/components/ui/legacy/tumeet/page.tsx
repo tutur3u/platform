@@ -11,8 +11,8 @@ import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Separator } from '@tuturuuu/ui/separator';
 import 'dayjs/locale/vi';
 import 'dayjs/plugin/relativeTime';
-import { getLocale, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { MeetTogetherClient } from './client-wrapper';
 import Form from './form';
 
@@ -61,9 +61,9 @@ export async function MeetTogetherPage({
   return (
     <div className="relative flex w-full flex-col items-center overflow-hidden">
       {/* Background decorative elements */}
-      <div className="-z-10 pointer-events-none absolute inset-0">
-        <div className="-left-32 absolute top-20 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl"></div>
-        <div className="-right-32 absolute top-32 h-64 w-64 rounded-full bg-dynamic-purple/10 blur-3xl"></div>
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute top-20 -left-32 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl"></div>
+        <div className="absolute top-32 -right-32 h-64 w-64 rounded-full bg-dynamic-purple/10 blur-3xl"></div>
         <div className="absolute bottom-1/3 left-1/4 h-40 w-40 rounded-full bg-dynamic-green/5 blur-2xl"></div>
       </div>
 

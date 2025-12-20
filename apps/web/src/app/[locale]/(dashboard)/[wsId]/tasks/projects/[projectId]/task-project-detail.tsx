@@ -139,7 +139,7 @@ function UpdateCard({
 
   return (
     <motion.div {...fadeInVariant}>
-      <Card className="group hover:-translate-y-1 relative border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:border-dynamic-blue/30 hover:shadow-lg">
+      <Card className="group relative border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:-translate-y-1 hover:border-dynamic-blue/30 hover:shadow-lg">
         <div className="mb-3 flex items-start gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={update.creator?.avatar_url || undefined} />
@@ -960,9 +960,9 @@ export function TaskProjectDetail({
   return (
     <div className="relative flex h-full flex-col overflow-x-hidden">
       {/* Simplified Background */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-1/4 absolute top-0 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-transparent blur-3xl" />
-        <div className="-right-1/4 absolute top-1/3 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/5 to-transparent blur-3xl" />
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute top-0 -left-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-transparent blur-3xl" />
+        <div className="absolute top-1/3 -right-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/5 to-transparent blur-3xl" />
       </div>
 
       {/* Header with gradient and animations */}
@@ -1104,7 +1104,7 @@ export function TaskProjectDetail({
               <div className="space-y-6 lg:col-span-2">
                 {/* Description Card */}
                 <motion.div {...fadeInViewVariant(0)}>
-                  <Card className="group hover:-translate-y-1 relative border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6 transition-all hover:border-dynamic-purple/30 hover:shadow-xl">
+                  <Card className="group relative border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6 transition-all hover:-translate-y-1 hover:border-dynamic-purple/30 hover:shadow-xl">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-lg text-transparent">
                         Description
@@ -1167,7 +1167,7 @@ export function TaskProjectDetail({
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card className="hover:-translate-y-1 border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:border-dynamic-blue/30 hover:shadow-xl">
+                    <Card className="border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:-translate-y-1 hover:border-dynamic-blue/30 hover:shadow-xl">
                       <h2 className="mb-6 bg-linear-to-r from-dynamic-blue to-dynamic-cyan bg-clip-text font-bold text-lg text-transparent">
                         Project Configuration
                       </h2>
@@ -1356,7 +1356,7 @@ export function TaskProjectDetail({
                         {recentUpdates.map((update) => (
                           <div
                             key={update.id}
-                            className="hover:-translate-y-0.5 cursor-pointer rounded-lg border border-dynamic-pink/20 bg-background/50 p-3 transition-all hover:border-dynamic-pink/30 hover:bg-dynamic-pink/5"
+                            className="cursor-pointer rounded-lg border border-dynamic-pink/20 bg-background/50 p-3 transition-all hover:-translate-y-0.5 hover:border-dynamic-pink/30 hover:bg-dynamic-pink/5"
                             onClick={() => setActiveTab('updates')}
                           >
                             <div className="mb-2 flex items-center gap-2">
@@ -1426,7 +1426,7 @@ export function TaskProjectDetail({
                         {recentTasks.map((task) => (
                           <div
                             key={task.id}
-                            className="hover:-translate-y-0.5 flex items-center justify-between rounded-lg border border-dynamic-blue/20 bg-background/50 p-3 transition-all hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
+                            className="flex items-center justify-between rounded-lg border border-dynamic-blue/20 bg-background/50 p-3 transition-all hover:-translate-y-0.5 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
                           >
                             <div className="flex-1">
                               <h4 className="font-medium text-sm">
@@ -1488,7 +1488,7 @@ export function TaskProjectDetail({
               <div className="space-y-4">
                 {/* Project Lead */}
                 <motion.div {...fadeInViewVariant(0.2)}>
-                  <Card className="group hover:-translate-y-1 border-2 border-dynamic-pink/20 bg-dynamic-pink/5 p-4 transition-all hover:border-dynamic-pink/30 hover:shadow-lg">
+                  <Card className="group border-2 border-dynamic-pink/20 bg-dynamic-pink/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-pink/30 hover:shadow-lg">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-pink to-dynamic-red">
@@ -1564,7 +1564,7 @@ export function TaskProjectDetail({
 
                 {/* Timeline */}
                 <motion.div {...fadeInViewVariant(0.3)}>
-                  <Card className="group hover:-translate-y-1 border-2 border-dynamic-green/20 bg-dynamic-green/5 p-4 transition-all hover:border-dynamic-green/30 hover:shadow-lg">
+                  <Card className="group border-2 border-dynamic-green/20 bg-dynamic-green/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-green/30 hover:shadow-lg">
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-green to-dynamic-cyan">
                         <Calendar className="h-4 w-4 text-white" />
@@ -1599,7 +1599,7 @@ export function TaskProjectDetail({
 
                 {/* Stats */}
                 <motion.div {...fadeInViewVariant(0.4)}>
-                  <Card className="group hover:-translate-y-1 border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-4 transition-all hover:border-dynamic-blue/30 hover:shadow-lg">
+                  <Card className="group border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-blue/30 hover:shadow-lg">
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
                         <Target className="h-4 w-4 text-white" />
@@ -1830,7 +1830,7 @@ export function TaskProjectDetail({
                   filteredAvailableTasks.map((task) => (
                     <Card
                       key={task.id}
-                      className="group hover:-translate-y-1 cursor-pointer border-2 border-muted/20 p-4 transition-all hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5 hover:shadow-md"
+                      className="group cursor-pointer border-2 border-muted/20 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5 hover:shadow-md"
                       onClick={() => linkTaskToProject(task.id)}
                     >
                       <div className="flex items-start justify-between gap-3">

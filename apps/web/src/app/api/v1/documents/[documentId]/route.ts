@@ -5,14 +5,14 @@
  * DELETE /api/v1/documents/[documentId] - Delete document
  */
 
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { updateDocumentDataSchema } from '@tuturuuu/types';
+import { NextResponse } from 'next/server';
 import {
   createErrorResponse,
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { updateDocumentDataSchema } from '@tuturuuu/types';
-import { NextResponse } from 'next/server';
 
 export const GET = withApiAuth<{ documentId: string }>(
   async (_, { params, context }) => {

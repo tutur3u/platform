@@ -1,7 +1,7 @@
 'use client';
 
 import { Ban, Loader2, Plus, Search, X } from '@tuturuuu/icons';
-import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
+import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
   CommandEmpty,
@@ -15,11 +15,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
-import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 
 interface TaskBlockingMenuProps {
   /** Current workspace ID */
@@ -112,7 +112,7 @@ export function TaskBlockingMenu({
             className={cn(
               'flex-1 px-3 py-2 font-medium text-sm transition-colors',
               activeTab === 'blocks'
-                ? 'border-b-2 border-dynamic-red text-dynamic-red'
+                ? 'border-dynamic-red border-b-2 text-dynamic-red'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
@@ -124,7 +124,7 @@ export function TaskBlockingMenu({
             className={cn(
               'flex-1 px-3 py-2 font-medium text-sm transition-colors',
               activeTab === 'blocked-by'
-                ? 'border-b-2 border-dynamic-orange text-dynamic-orange'
+                ? 'border-dynamic-orange border-b-2 text-dynamic-orange'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >

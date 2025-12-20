@@ -1,9 +1,9 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Shield, ShieldAlert, ShieldCheck, Clock } from '@tuturuuu/icons';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Clock, Shield, ShieldAlert, ShieldCheck } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { BlockedIPRowActions } from './row-actions';
 
@@ -247,7 +247,7 @@ export const getBlockedIPsColumns = (
         unknown
       > | null;
       return (
-        <div className="max-w-32 truncate font-mono text-xs text-muted-foreground">
+        <div className="max-w-32 truncate font-mono text-muted-foreground text-xs">
           {metadata && Object.keys(metadata).length > 0
             ? JSON.stringify(metadata)
             : '-'}

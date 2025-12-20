@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { z } from 'zod';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getAuditLogColumns } from './audit-log-columns';
-import { z } from 'zod';
 
 interface AuditLogEntry {
   id: string;

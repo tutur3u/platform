@@ -4,11 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   Clock,
-  TrendingUp,
-  Zap,
-  TreePalm,
-  Trophy,
   Star,
+  TreePalm,
+  TrendingUp,
+  Trophy,
+  Zap,
 } from '@tuturuuu/icons';
 import {
   Card,
@@ -113,7 +113,7 @@ export function StatsCardClient({
                 <p className="font-medium text-muted-foreground text-xs">
                   {t('stats.today.title')}
                 </p>
-                {isWeekend && <TreePalm className="h-4 w-4 " />}
+                {isWeekend && <TreePalm className="h-4 w-4" />}
               </div>
               <p className="text-muted-foreground/80 text-xs">{weekdayName}</p>
               <p className="font-bold text-lg">

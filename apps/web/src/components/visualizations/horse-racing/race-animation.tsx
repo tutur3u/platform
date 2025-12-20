@@ -96,13 +96,13 @@ export function RaceAnimation({
               }}
             >
               {/* Lane number */}
-              <div className="-translate-y-1/2 absolute top-[50%] left-[2%] flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-white text-xs">
+              <div className="absolute top-[50%] left-[2%] flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white text-xs">
                 {index + 1}
               </div>
 
               {/* Horse */}
               <motion.div
-                className="-translate-y-1/2 absolute top-[50%] flex items-center gap-1"
+                className="absolute top-[50%] flex -translate-y-1/2 items-center gap-1"
                 initial={{ left: '10%' }}
                 animate={{
                   left: raceCompleted ? '95%' : ['10%', '95%'],

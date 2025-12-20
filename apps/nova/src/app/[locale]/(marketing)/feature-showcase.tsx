@@ -107,7 +107,7 @@ export default function FeatureShowcase() {
 
             {/* Animated gradient background */}
             <motion.div
-              className={`-z-10 absolute inset-0 bg-linear-to-br ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
+              className={`absolute inset-0 -z-10 bg-linear-to-br ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
               animate={{
                 scale: [1, 1.2, 1],
                 rotate: [0, 5, 0],

@@ -177,7 +177,7 @@ export function TranscriptViewer({
             {/* Search Bar */}
             {validSegments.length > 0 && (
               <div className="relative">
-                <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                 <Input
                   placeholder="Search transcript..."
                   value={searchQuery}
@@ -188,7 +188,7 @@ export function TranscriptViewer({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7 transform p-0"
+                    className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 transform p-0"
                     onClick={() => setSearchQuery('')}
                   >
                     <X className="h-3 w-3" />
@@ -267,7 +267,7 @@ export function TranscriptViewer({
                     {/* Search Bar for Full Text */}
                     <div className="ml-4 max-w-sm flex-1">
                       <div className="relative">
-                        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                         <Input
                           placeholder="Search transcript..."
                           value={searchQuery}
@@ -278,7 +278,7 @@ export function TranscriptViewer({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="-translate-y-1/2 absolute top-1/2 right-1 h-6 w-6 transform p-0"
+                            className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 transform p-0"
                             onClick={() => setSearchQuery('')}
                           >
                             <X className="h-3 w-3" />

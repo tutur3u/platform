@@ -1,7 +1,7 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { redirect } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import RealtimeChatContent from './realtime-chat-content';
 
 export default async function RealtimeChatPage({

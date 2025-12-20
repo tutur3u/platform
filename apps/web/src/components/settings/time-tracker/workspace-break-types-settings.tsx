@@ -4,16 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Coffee, Edit2, Plus, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +14,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -33,16 +34,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Switch } from '@tuturuuu/ui/switch';
 import {
-  getBreakTypeColor,
   BREAK_COLOR_CLASSES,
+  getBreakTypeColor,
   getIconComponent,
 } from '@/hooks/useBreakTypeStyles';
 

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { cn } from '@tuturuuu/utils/format';
+import type { ReactNode } from 'react';
 
 interface StickyBottomBarProps {
   show: boolean;
@@ -23,7 +23,7 @@ export function StickyBottomBar({
   return (
     <div
       className={cn(
-        'md:-translate-x-1/2 fixed right-0 bottom-2 left-0 z-50 rounded-2xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:right-auto md:left-1/2',
+        'fixed right-0 bottom-2 left-0 z-50 rounded-2xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:right-auto md:left-1/2 md:-translate-x-1/2',
         className
       )}
     >

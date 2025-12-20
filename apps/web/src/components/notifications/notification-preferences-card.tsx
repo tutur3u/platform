@@ -1,12 +1,5 @@
 'use client';
 
-import {
-  getPreferenceValue,
-  type NotificationChannel,
-  type NotificationEventType,
-  useNotificationPreferences,
-  useUpdateNotificationPreferences,
-} from '@/hooks/useNotificationPreferences';
 import { Bell } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,6 +13,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import {
+  getPreferenceValue,
+  type NotificationChannel,
+  type NotificationEventType,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/hooks/useNotificationPreferences';
 
 interface NotificationPreferencesCardProps {
   wsId: string;

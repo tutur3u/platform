@@ -18,7 +18,7 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
   return (
     <div className="relative mt-12">
       {/* Timeline line */}
-      <div className="-translate-x-1/2 absolute left-1/2 hidden h-full w-0.5 bg-primary/20 md:block" />
+      <div className="absolute left-1/2 hidden h-full w-0.5 -translate-x-1/2 bg-primary/20 md:block" />
 
       <div className="space-y-12">
         {events.map((event, index) => (

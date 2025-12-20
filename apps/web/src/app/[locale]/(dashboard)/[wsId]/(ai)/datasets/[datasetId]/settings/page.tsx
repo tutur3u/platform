@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { AlertCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
@@ -12,6 +11,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { ClearDataDialog } from './clear-data-dialog';
 import { DeleteDatasetDialog } from './delete-dataset-dialog';
 import { ManageColumns } from './manage-columns';

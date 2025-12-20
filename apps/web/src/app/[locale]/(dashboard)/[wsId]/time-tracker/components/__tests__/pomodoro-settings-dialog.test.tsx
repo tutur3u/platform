@@ -1,8 +1,7 @@
-
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { PomodoroSettings } from '../../types';
 import { PomodoroSettingsDialog } from '../pomodoro-settings-dialog';
-import { PomodoroSettings } from '../../types';
 
 // Mock UI components
 vi.mock('@tuturuuu/ui/button', () => ({
@@ -10,7 +9,7 @@ vi.mock('@tuturuuu/ui/button', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
-  Dialog: ({ open, children }: any) => open ? <div>{children}</div> : null,
+  Dialog: ({ open, children }: any) => (open ? <div>{children}</div> : null),
   DialogContent: (props: any) => <div {...props} />,
   DialogHeader: (props: any) => <div {...props} />,
   DialogTitle: (props: any) => <div {...props} />,
@@ -82,8 +81,10 @@ describe('PomodoroSettingsDialog', () => {
     const inputs = screen.getAllByRole('spinbutton'); // spinbutton is role for input type=number
     fireEvent.change(inputs[0], { target: { value: '30' } });
 
-    expect(onSettingsChange).toHaveBeenCalledWith(expect.objectContaining({
-      focusTime: 30
-    }));
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        focusTime: 30,
+      })
+    );
   });
 });

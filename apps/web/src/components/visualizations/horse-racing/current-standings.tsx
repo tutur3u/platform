@@ -114,7 +114,7 @@ export function CurrentStandings({
                           }}
                         >
                           {horse.id}
-                          <div className="-bottom-6 -translate-x-1/2 absolute left-1/2 z-20 whitespace-nowrap rounded border bg-background px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                          <div className="absolute -bottom-6 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded border bg-background px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                             Speed: {horse.speed.toFixed(1)}
                           </div>
                         </div>
@@ -175,7 +175,7 @@ export function CurrentStandings({
                         </div>
 
                         {/* Relationship tooltip */}
-                        <div className="-bottom-2 -translate-x-1/2 absolute left-1/2 z-20 w-48 translate-y-full rounded border bg-background px-2 py-1.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                        <div className="absolute -bottom-2 left-1/2 z-20 w-48 -translate-x-1/2 translate-y-full rounded border bg-background px-2 py-1.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                           <div className="grid grid-cols-2 gap-1">
                             <div>
                               <span className="text-green-500">

@@ -3,8 +3,8 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const createBreakTypeSchema = z.object({
   name: z

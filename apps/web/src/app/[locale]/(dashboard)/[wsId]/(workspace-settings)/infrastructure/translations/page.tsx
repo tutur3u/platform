@@ -1,7 +1,7 @@
-import enMessages from '@/../messages/en.json';
-import viMessages from '@/../messages/vi.json';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import enMessages from '@/../messages/en.json';
+import viMessages from '@/../messages/vi.json';
 import TranslationsComparison from './translations-comparison';
 
 export default async function TranslationsPage() {

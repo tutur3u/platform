@@ -4,19 +4,14 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Cake,
   ChevronDown,
+  Ellipsis,
   Filter,
   Mail,
   Phone,
   User,
   UserCheck,
   VenusAndMars,
-  Ellipsis,
 } from '@tuturuuu/icons';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@tuturuuu/ui/hover-card';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -38,12 +33,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import GroupMemberActions from './group-member-actions';
-import { useFormatter } from 'next-intl';
 
 interface GroupMember extends WorkspaceUser {
   role?: string | null;
@@ -393,7 +392,7 @@ export default function GroupMembers({
                         </div>
                       </CardContent>
                       {/* Ellipsis button pinned to the right side of the card */}
-                      <div className="-translate-y-1/2 absolute top-1/2 right-2 z-10">
+                      <div className="absolute top-1/2 right-2 z-10 -translate-y-1/2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button

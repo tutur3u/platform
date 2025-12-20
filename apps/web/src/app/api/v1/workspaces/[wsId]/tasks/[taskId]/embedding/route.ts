@@ -1,6 +1,6 @@
 import { google } from '@ai-sdk/google';
-import { embed } from 'ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
 interface Params {

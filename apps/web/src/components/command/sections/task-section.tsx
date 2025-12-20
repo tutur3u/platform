@@ -252,7 +252,7 @@ export function TaskSection({
 
                 {/* Assignees */}
                 {task.assignees && task.assignees.length > 0 && (
-                  <div className="-space-x-1 flex">
+                  <div className="flex -space-x-1">
                     {task.assignees.slice(0, 3).map((assignee) => (
                       <div
                         key={assignee.id}

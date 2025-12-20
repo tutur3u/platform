@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 
-import { ChatPermissions } from '@/components/chat-permissions';
 import type { Model } from '@tuturuuu/ai/models';
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import {
@@ -21,11 +20,12 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useState } from 'react';
 import sanitize from 'sanitize-filename';
+import { ChatPermissions } from '@/components/chat-permissions';
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm } from './prompt-form';
 

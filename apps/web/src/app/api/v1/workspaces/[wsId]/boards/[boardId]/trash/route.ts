@@ -1,7 +1,7 @@
-import { authorize } from '@/lib/api-auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { authorize } from '@/lib/api-auth';
 
 interface BoardParams {
   wsId: string;

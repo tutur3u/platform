@@ -1,11 +1,11 @@
 'use client';
 
-import { useRecordingLoader } from '@/hooks/useRecordingLoader';
-import { useTranscription } from '@/hooks/useTranscription';
 import { EyeIcon, FileText, Headphones } from '@tuturuuu/icons';
 import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { useState } from 'react';
+import { useRecordingLoader } from '@/hooks/useRecordingLoader';
+import { useTranscription } from '@/hooks/useTranscription';
 import { AudioPlayer } from './components/AudioPlayer';
 import { DeleteConfirmation } from './components/DeleteConfirmation';
 import { TranscriptViewer } from './components/TranscriptViewer';

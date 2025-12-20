@@ -24,9 +24,9 @@ import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform, type Variants } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   type Contributor,
@@ -1232,7 +1232,7 @@ export function AboutUsClient() {
                   variants={floatingVariants}
                   initial="initial"
                   animate="float"
-                  className="-right-6 -bottom-6 absolute rounded-lg border border-primary/20 bg-background/80 p-4 backdrop-blur-sm"
+                  className="absolute -right-6 -bottom-6 rounded-lg border border-primary/20 bg-background/80 p-4 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
@@ -1582,7 +1582,7 @@ export function AboutUsClient() {
                   />
                 </div>
                 <motion.div
-                  className="-right-3 -bottom-3 absolute rounded-full border border-primary/20 bg-primary/10 p-2 backdrop-blur-sm"
+                  className="absolute -right-3 -bottom-3 rounded-full border border-primary/20 bg-primary/10 p-2 backdrop-blur-sm"
                   animate={{ rotate: [0, 10, 0, -10, 0] }}
                   transition={{ duration: 5, repeat: Infinity }}
                 >

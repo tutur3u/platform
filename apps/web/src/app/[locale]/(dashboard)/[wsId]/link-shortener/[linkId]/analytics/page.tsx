@@ -6,8 +6,8 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { AnalyticsCards } from './analytics-cards';
 import { AnalyticsHeader } from './analytics-header';
 import { AnalyticsSummary } from './analytics-summary';

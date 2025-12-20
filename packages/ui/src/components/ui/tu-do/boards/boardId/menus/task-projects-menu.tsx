@@ -53,7 +53,7 @@ export function TaskProjectsMenu({
         {/* Search Input */}
         <div className="border-b p-2">
           <div className="relative">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search projects..."
               value={searchQuery}

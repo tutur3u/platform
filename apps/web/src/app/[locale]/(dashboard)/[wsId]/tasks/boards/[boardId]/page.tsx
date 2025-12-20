@@ -1,6 +1,6 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TaskBoardPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-page';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Board Details',

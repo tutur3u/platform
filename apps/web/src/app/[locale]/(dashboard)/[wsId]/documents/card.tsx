@@ -23,8 +23,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useCallback, useState } from 'react';
 
 interface Props {

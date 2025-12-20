@@ -684,7 +684,7 @@ export function TaskProjectsClient({
               <Button
                 variant="ghost"
                 size="icon"
-                className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7"
+                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
                 onClick={() => setSearchQuery('')}
               >
                 <X className="h-3 w-3" />

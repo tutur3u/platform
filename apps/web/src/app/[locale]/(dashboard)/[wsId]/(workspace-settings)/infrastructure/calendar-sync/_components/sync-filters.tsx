@@ -90,7 +90,7 @@ export default function SyncFilters({ wsId, totalCount }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative min-w-[200px] flex-1">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search sync logs..."
             value={searchQuery}
@@ -101,7 +101,7 @@ export default function SyncFilters({ wsId, totalCount }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7 p-0"
+              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0"
               onClick={() => setSearchQuery('')}
             >
               <X className="h-3 w-3" />

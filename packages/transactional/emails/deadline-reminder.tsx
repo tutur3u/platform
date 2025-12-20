@@ -90,7 +90,7 @@ export const DeadlineReminderEmail = ({
 
             {/* Task Details Box */}
             <Section
-              className={`mt-4 mb-6 rounded-lg p-4 ${isUrgent ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}
+              className={`mt-4 mb-6 rounded-lg p-4 ${isUrgent ? 'border border-red-200 bg-red-50' : 'border border-orange-200 bg-orange-50'}`}
             >
               <Text className="m-0 font-semibold text-[16px] text-gray-900">
                 {taskName}

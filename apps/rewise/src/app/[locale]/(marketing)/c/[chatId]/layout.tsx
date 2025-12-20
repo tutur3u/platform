@@ -1,9 +1,9 @@
-import { siteConfig } from '@/constants/configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AIChat } from '@tuturuuu/types';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { siteConfig } from '@/constants/configs';
 
 interface Props {
   params: Promise<{

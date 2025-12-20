@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Mail, Globe } from '@tuturuuu/icons';
+import { Globe, Mail } from '@tuturuuu/icons';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { EmailBlacklistRowActions } from './row-actions';

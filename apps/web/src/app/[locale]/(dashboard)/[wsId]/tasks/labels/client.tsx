@@ -235,7 +235,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
           </div>
           {labels.length > 0 && (
             <div className="relative flex-1 sm:w-64">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search labels..."
                 value={searchQuery}

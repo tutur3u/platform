@@ -44,11 +44,11 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import { ConfirmDialog } from './confirmDialog';
 import { Countdown } from './Countdown';
+import { ConfirmDialog } from './confirmDialog';
 import EditChallengeDialog from './editChallengeDialog';
 import { TimeProgress } from './TimeProgress';
 

@@ -11,9 +11,9 @@ import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { notFound, redirect } from 'next/navigation';
 import {
+  PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
-  PERSONAL_WORKSPACE_SLUG,
 } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';

@@ -1,13 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
 import { Separator } from '@tuturuuu/ui/separator';
-import type { Metadata } from 'next';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getGuestLeadColumns } from './columns';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { GuestLeadHeader } from './header';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getGuestLeadColumns } from './columns';
+import { GuestLeadHeader } from './header';
 
 export const metadata: Metadata = {
   title: 'Guest User Leads',

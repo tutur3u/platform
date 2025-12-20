@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import {
   ArrowRight,
   CalendarDays,
@@ -30,9 +29,10 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { motion, type Variants } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
 import AiFeatures from './ai-features';
 import AnimatedTimeline from './animated-timeline';
 import FeatureShowcase from './feature-showcase';

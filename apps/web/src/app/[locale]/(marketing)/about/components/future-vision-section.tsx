@@ -45,7 +45,7 @@ export function FutureVisionSection() {
       viewport={{ once: true }}
       className="relative text-center"
     >
-      <div className="-z-10 absolute inset-0">
+      <div className="absolute inset-0 -z-10">
         <motion.div
           animate={{
             opacity: [0.1, 0.15, 0.1],
@@ -169,7 +169,7 @@ export function FutureVisionSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div

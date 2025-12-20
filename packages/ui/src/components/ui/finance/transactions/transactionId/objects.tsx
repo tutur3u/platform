@@ -6,9 +6,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { TransactionObjectRowActions } from '@tuturuuu/ui/finance/transactions/transactionId/row-actions';
 import { Separator } from '@tuturuuu/ui/separator';
 import { joinPath } from '@tuturuuu/utils/path-helper';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function DetailObjects({

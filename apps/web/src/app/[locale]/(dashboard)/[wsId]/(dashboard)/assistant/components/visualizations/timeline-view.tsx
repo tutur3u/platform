@@ -377,7 +377,7 @@ export function TimelineView({
                 {dateMarkers.map((marker, i) => (
                   <div
                     key={i}
-                    className="-translate-x-1/2 absolute flex flex-col items-center"
+                    className="absolute flex -translate-x-1/2 flex-col items-center"
                     style={{ left: `${marker.position}%` }}
                   >
                     <span
@@ -404,7 +404,7 @@ export function TimelineView({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
-                        className="-translate-x-1/2 absolute top-6 z-10 flex cursor-default flex-col items-center"
+                        className="absolute top-6 z-10 flex -translate-x-1/2 cursor-default flex-col items-center"
                         style={{ left: `${todayPosition}%` }}
                       >
                         <div className="h-full w-0.5 rounded-full bg-dynamic-orange shadow-dynamic-orange/50 shadow-sm" />

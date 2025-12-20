@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import {
   BookText,
   Building,
@@ -23,6 +22,7 @@ import {
   Wallet,
 } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
+import { DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;

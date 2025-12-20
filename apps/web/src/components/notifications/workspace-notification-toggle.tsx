@@ -1,13 +1,5 @@
 'use client';
 
-import type {
-  NotificationChannel,
-  NotificationEventType,
-} from '@/hooks/useNotificationPreferences';
-import {
-  useNotificationPreferences,
-  useUpdateNotificationPreferences,
-} from '@/hooks/useNotificationPreferences';
 import { Bell, BellOff, Loader2 } from '@tuturuuu/icons';
 import {
   Card,
@@ -21,6 +13,14 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type {
+  NotificationChannel,
+  NotificationEventType,
+} from '@/hooks/useNotificationPreferences';
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/hooks/useNotificationPreferences';
 
 interface WorkspaceNotificationToggleProps {
   wsId: string;

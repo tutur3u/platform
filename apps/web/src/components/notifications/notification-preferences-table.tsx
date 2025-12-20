@@ -1,6 +1,20 @@
 'use client';
 
 import {
+  Bell,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Search,
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
+import {
   ACCOUNT_EVENT_GROUPS,
   WORKSPACE_EVENT_GROUPS,
 } from '@/constants/notification-event-groups';
@@ -15,20 +29,6 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/hooks/useNotificationPreferences';
-import {
-  Bell,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-  Search,
-} from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { toast } from '@tuturuuu/ui/sonner';
-import { Switch } from '@tuturuuu/ui/switch';
-import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
 
 type EventType = NotificationEventType | AccountNotificationEventType;
 type PreferenceData = Record<string, Record<string, boolean>>;
@@ -408,7 +408,7 @@ export default function NotificationPreferencesTable({
       <div className="space-y-6">
         {/* Search bar */}
         <div className="relative">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t('search-events')}
             value={searchQuery}
@@ -421,7 +421,7 @@ export default function NotificationPreferencesTable({
         {/* Table */}
         <div className="space-y-4">
           {/* Sticky header */}
-          <div className="-top-6 sticky z-10 grid grid-cols-4 gap-4 border-b bg-background p-2">
+          <div className="sticky -top-6 z-10 grid grid-cols-4 gap-4 border-b bg-background p-2">
             <div className="font-medium text-sm">{t('event')}</div>
             {CHANNELS.map((channel) => (
               <div key={channel} className="text-center font-medium text-sm">
@@ -536,7 +536,7 @@ export default function NotificationPreferencesTable({
                                   aria-label={`${tChannels(channel)} notifications for ${tEvents(eventType as any)}`}
                                 />
                                 {isSaving && (
-                                  <div className="-right-5 -translate-y-1/2 absolute top-1/2">
+                                  <div className="absolute top-1/2 -right-5 -translate-y-1/2">
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                                   </div>
                                 )}

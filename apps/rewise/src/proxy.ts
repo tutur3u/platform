@@ -1,8 +1,8 @@
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthProxy } from '@tuturuuu/auth/proxy';
 import Negotiator from 'negotiator';
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 import {
   CENTRAL_PORT,
   LOCALE_COOKIE_NAME,

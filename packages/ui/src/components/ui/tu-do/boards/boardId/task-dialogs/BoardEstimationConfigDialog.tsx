@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import {
   BarChart3,
   Calculator,
@@ -25,6 +24,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import React from 'react';
 
 interface BoardEstimationConfigDialogProps {
   open: boolean;

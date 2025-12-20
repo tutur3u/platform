@@ -25,18 +25,18 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import type { TimeValidationResult } from '@/lib/time-validation';
+import { validateEndTime, validateStartTime } from '@/lib/time-validation';
 import type { SessionWithRelations } from '../../types';
+import { TaskCombobox } from '../task-combobox';
+import { useWorkspaceTasks } from '../use-workspace-tasks';
 import type { EditFormState } from './session-types';
 import {
   getCategoryColor,
   isDatetimeMoreThanThresholdAgo,
   isSessionOlderThanThreshold,
 } from './session-utils';
-import { validateStartTime, validateEndTime } from '@/lib/time-validation';
 import { useSessionActions } from './use-session-actions';
-import type { TimeValidationResult } from '@/lib/time-validation';
-import { useWorkspaceTasks } from '../use-workspace-tasks';
-import { TaskCombobox } from '../task-combobox';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -284,7 +284,7 @@ export function EditSessionDialog({
                         key={index}
                         className="flex items-start gap-2 text-dynamic-red text-sm"
                       >
-                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                        <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                         <span>{error}</span>
                       </div>
                     ))}

@@ -724,7 +724,7 @@ export default function DiscordIntegrationDashboard({
             <div className="space-y-2">
               <Label htmlFor="member-search">Search Members</Label>
               <div className="relative">
-                <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-dynamic-muted-foreground" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-dynamic-muted-foreground" />
                 <Input
                   id="member-search"
                   placeholder="Search by name or handle..."
@@ -733,7 +733,7 @@ export default function DiscordIntegrationDashboard({
                   className="pl-10"
                 />
                 {isSearchingMembers && (
-                  <Loader2 className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 animate-spin text-dynamic-muted-foreground" />
+                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-dynamic-muted-foreground" />
                 )}
               </div>
             </div>

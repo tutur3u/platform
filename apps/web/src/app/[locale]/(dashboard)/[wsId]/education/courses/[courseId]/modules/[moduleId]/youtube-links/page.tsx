@@ -1,4 +1,3 @@
-import { extractYoutubeId } from '@/utils/url-helper';
 import { Youtube } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import DeleteLinkButton from '@tuturuuu/ui/custom/education/modules/youtube/delete-link-button';
@@ -7,8 +6,9 @@ import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form'
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { extractYoutubeId } from '@/utils/url-helper';
 
 export const metadata: Metadata = {
   title: 'Youtube Links',

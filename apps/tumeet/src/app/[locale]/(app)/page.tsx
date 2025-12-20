@@ -1,7 +1,7 @@
-import type { Locale } from '@/i18n/routing';
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/tumeet/page';
 import { setRequestLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import type { Locale } from '@/i18n/routing';
 
 interface TumeetPageProps {
   params: Promise<{

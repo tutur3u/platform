@@ -63,7 +63,7 @@ export function SessionFilters({
   return (
     <div className="flex items-center gap-2">
       <div className="relative flex-1 sm:flex-none">
-        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder={t('search_placeholder')}
           value={filters.searchQuery}
@@ -74,7 +74,7 @@ export function SessionFilters({
           <Button
             variant="ghost"
             size="sm"
-            className="-translate-y-1/2 absolute top-1/2 right-1 h-6 w-6 p-0 hover:bg-transparent"
+            className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 p-0 hover:bg-transparent"
             onClick={() => onFilterChange('searchQuery', '')}
           >
             ×
@@ -86,7 +86,7 @@ export function SessionFilters({
           <Button variant="outline" size="sm" className="relative h-9 md:h-10">
             <Filter className="h-4 w-4 md:mr-2" />
             {hasActiveFilters && (
-              <div className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-dynamic-orange ring-2 ring-background" />
+              <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-dynamic-orange ring-2 ring-background" />
             )}
             <span className="hidden md:inline">{t('filters')}</span>
           </Button>

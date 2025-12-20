@@ -42,7 +42,7 @@ export function LeaderboardFilters({
       className="relative mb-6 space-y-4"
     >
       {/* Animated background glow */}
-      <div className="-inset-4 -z-10 absolute rounded-xl opacity-5 blur-xl dark:opacity-10">
+      <div className="absolute -inset-4 -z-10 rounded-xl opacity-5 blur-xl dark:opacity-10">
         <motion.div
           className="absolute inset-0 rounded-xl"
           style={{
@@ -62,7 +62,7 @@ export function LeaderboardFilters({
 
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full md:w-96">
-          <div className="-z-10 absolute top-0 left-0 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
+          <div className="absolute top-0 left-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
           <div className="group relative">
             <Search className="absolute top-2.5 left-3 h-4 w-4 text-blue-600/70 dark:text-blue-400/70" />
             <Input
@@ -84,7 +84,7 @@ export function LeaderboardFilters({
 
             {/* Animated glow effect on focus */}
             <motion.div
-              className="-inset-px -z-10 absolute rounded-md opacity-0 blur-sm transition-opacity duration-300 group-focus-within:opacity-100"
+              className="absolute -inset-px -z-10 rounded-md opacity-0 blur-sm transition-opacity duration-300 group-focus-within:opacity-100"
               style={{
                 background: 'linear-gradient(to right, #3B82F6, #8B5CF6)',
               }}
@@ -121,9 +121,9 @@ export function LeaderboardFilters({
           >
             <Card className="relative overflow-hidden border-dashed bg-white/80 dark:border-slate-700 dark:bg-slate-900/60">
               {/* Animated background glow */}
-              <div className="-z-10 absolute inset-0">
+              <div className="absolute inset-0 -z-10">
                 <motion.div
-                  className="-inset-[100px] absolute opacity-30 blur-3xl"
+                  className="absolute -inset-[100px] opacity-30 blur-3xl"
                   style={{
                     background:
                       'radial-gradient(circle, rgba(59,130,246,0.3) 0%, transparent 70%)',

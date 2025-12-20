@@ -15,8 +15,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import InvoiceCard from './invoice-card';
 import InvoiceEditForm from './invoice-edit-form';
 

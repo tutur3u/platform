@@ -1,6 +1,5 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Check, Loader2, Plus, Trash2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -20,6 +19,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 interface AccountSwitcherModalProps {
   open: boolean;

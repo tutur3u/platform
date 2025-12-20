@@ -1,6 +1,5 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Loader2 } from '@tuturuuu/icons';
 import {
   AlertDialog,
@@ -15,6 +14,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type JSX, useState } from 'react';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 interface RemoveAccountDialogProps {
   accountId: string | null;

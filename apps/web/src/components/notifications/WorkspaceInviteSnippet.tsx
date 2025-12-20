@@ -4,9 +4,9 @@ import type { Workspace } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface Props {
   ws: Pick<Workspace, 'id' | 'name' | 'created_at'>;

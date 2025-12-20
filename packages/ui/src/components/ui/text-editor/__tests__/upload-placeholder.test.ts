@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PluginKey } from 'prosemirror-state';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  imageUploadPlaceholderPluginKey,
-  videoUploadPlaceholderPluginKey,
-  generateUploadId,
   createLoadingPlaceholder,
   findUploadPlaceholder,
+  generateUploadId,
+  imageUploadPlaceholderPluginKey,
+  videoUploadPlaceholderPluginKey,
 } from '../upload-placeholder';
 
 describe('upload-placeholder', () => {

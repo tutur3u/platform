@@ -1,9 +1,9 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { LogOut } from '@tuturuuu/icons';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 export function LogoutDropdownItem() {
   const t = useTranslations('common');

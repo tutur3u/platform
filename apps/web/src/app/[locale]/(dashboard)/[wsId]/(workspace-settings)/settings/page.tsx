@@ -11,8 +11,8 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';

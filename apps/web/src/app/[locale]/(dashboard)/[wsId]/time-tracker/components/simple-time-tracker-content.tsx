@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Timer, TrendingUp } from '@tuturuuu/icons';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -10,7 +11,6 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { SessionWithRelations, TimeTrackerData } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
-import type { User } from '@tuturuuu/types/primitives/User';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -207,7 +207,7 @@ export default function SimpleTimeTrackerContent({
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="gap-2 flex flex-col">
+          <CardContent className="flex flex-col gap-2">
             <div className="font-bold text-2xl">
               {formatDuration(todayStats.todayTime)}
             </div>
@@ -226,7 +226,7 @@ export default function SimpleTimeTrackerContent({
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="gap-2 flex flex-col">
+          <CardContent className="flex flex-col gap-2">
             <div className="font-bold text-2xl">
               {formatDuration(todayStats.weekTime)}
             </div>
@@ -245,7 +245,7 @@ export default function SimpleTimeTrackerContent({
             </CardTitle>
             <Timer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="gap-2 flex flex-col">
+          <CardContent className="flex flex-col gap-2">
             <div className="font-bold text-2xl">
               {t('stats.streak.count', { count: todayStats.streak })}
             </div>

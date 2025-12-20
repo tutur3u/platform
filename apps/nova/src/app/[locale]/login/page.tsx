@@ -1,7 +1,7 @@
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import LoginForm from './form';
 
@@ -24,7 +24,7 @@ export default async function Login() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="group-hover:-translate-x-1 mr-2 h-4 w-4 transition-transform"
+          className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1"
         >
           <title>Back</title>
           <polyline points="15 18 9 12 15 6" />

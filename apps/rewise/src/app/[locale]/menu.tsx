@@ -1,6 +1,5 @@
 'use client';
 
-import { PUBLIC_PATHS } from '@/constants/common';
 import { MenuIcon } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -8,10 +7,11 @@ import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { PUBLIC_PATHS } from '@/constants/common';
 import { AuthButton } from './auth-button';
 
 interface MenuProps {

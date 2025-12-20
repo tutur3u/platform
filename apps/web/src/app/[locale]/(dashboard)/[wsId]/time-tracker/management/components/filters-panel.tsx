@@ -94,7 +94,7 @@ export default function FiltersPanel({
         {/* Search and View Controls */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="relative max-w-sm flex-1">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 transform text-dynamic-muted" />
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 transform text-dynamic-muted" />
             <Input
               placeholder={t('searchPlaceholder')}
               value={searchQuery}

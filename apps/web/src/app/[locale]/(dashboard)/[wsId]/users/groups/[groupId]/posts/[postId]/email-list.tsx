@@ -2,8 +2,8 @@
 
 import { Mail } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function EmailList({
   wsId,

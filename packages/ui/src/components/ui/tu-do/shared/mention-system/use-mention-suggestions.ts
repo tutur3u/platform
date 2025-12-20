@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import dayjs from 'dayjs';
+import { useMemo } from 'react';
 import type { MentionOption } from './types';
 import { normalizeForSearch } from './types';
 

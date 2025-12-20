@@ -1,19 +1,19 @@
-import { CustomMonthPicker } from '@/components/custom-month-picker';
-import GeneralSearchBar from '@/components/general-search-bar';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { MinusCircle, PlusCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { CustomMonthPicker } from '@/components/custom-month-picker';
+import GeneralSearchBar from '@/components/general-search-bar';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Filter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Attendance',

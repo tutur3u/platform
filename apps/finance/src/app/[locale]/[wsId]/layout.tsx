@@ -1,9 +1,9 @@
-import { supportedLocales } from '@/i18n/routing';
 import FinanceLayout from '@tuturuuu/ui/finance/finance-layout';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextIntlClientProvider } from 'next-intl';
 import type React from 'react';
 import { Suspense } from 'react';
+import { supportedLocales } from '@/i18n/routing';
 
 interface LayoutProps {
   params: Promise<{

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FEATURE_FLAGS } from '../data';
 import { FEATURE_GROUPS } from '../core';
+import { FEATURE_FLAGS } from '../data';
 import type { FeatureFlag, FeatureFlagMap } from '../types';
 
 describe('FEATURE_FLAGS', () => {

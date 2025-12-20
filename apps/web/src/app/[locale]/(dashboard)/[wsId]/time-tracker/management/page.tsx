@@ -1,13 +1,13 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  getGroupedSessionsPaginated,
-  getTimeTrackingStats,
-} from '@/lib/time-tracking-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  getGroupedSessionsPaginated,
+  getTimeTrackingStats,
+} from '@/lib/time-tracking-helper';
 import TimeTrackerManagementClient from './client';
 
 interface Props {

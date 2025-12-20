@@ -5,15 +5,15 @@
  * GET  - Get scheduling status and upcoming events
  */
 
-import {
-  deleteFutureHabitEvents,
-  scheduleHabit,
-} from '@/lib/calendar/habit-scheduler';
 import { getOccurrencesInRange } from '@tuturuuu/ai/scheduling';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import {
+  deleteFutureHabitEvents,
+  scheduleHabit,
+} from '@/lib/calendar/habit-scheduler';
 
 interface RouteParams {
   wsId: string;

@@ -3,8 +3,8 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import 'dayjs/locale/vi';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { TransactionDetailsClientPage } from './transaction-details-client-page';
 
 interface Props {

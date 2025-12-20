@@ -1,6 +1,5 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Loader2, Settings, Users } from '@tuturuuu/icons';
 import {
   DropdownMenu,
@@ -11,8 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { AccountItem } from './account-item';
 import { AddAccountButton } from './add-account-button';
 

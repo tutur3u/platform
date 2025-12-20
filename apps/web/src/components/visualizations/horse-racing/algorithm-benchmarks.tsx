@@ -1,10 +1,5 @@
 'use client';
 
-import {
-  benchmarks as defaultBenchmarks,
-  findClosestBenchmark,
-  type HorseRacingBenchmark,
-} from '@/utils/horseRacingBenchmarks';
 import { ChevronRight, HelpCircle, Lightbulb } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -24,6 +19,11 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useEffect, useState } from 'react';
+import {
+  benchmarks as defaultBenchmarks,
+  findClosestBenchmark,
+  type HorseRacingBenchmark,
+} from '@/utils/horseRacingBenchmarks';
 
 interface AlgorithmBenchmarksProps {
   currentHorses: number;

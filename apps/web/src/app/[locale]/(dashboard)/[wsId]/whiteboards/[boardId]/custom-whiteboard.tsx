@@ -421,7 +421,7 @@ export function CustomWhiteboard({
 
             {/* Collaborator Avatars */}
             {collaboratorCount > 0 && (
-              <div className="-space-x-2 flex">
+              <div className="flex -space-x-2">
                 {Array.from(collaborators.values())
                   .slice(0, 5)
                   .map((collab) => (
@@ -459,7 +459,7 @@ export function CustomWhiteboard({
 
         {/* Excalidraw Editor */}
         {resolvedTheme ? (
-          <div className="-inset-4 absolute h-screen w-full">
+          <div className="absolute -inset-4 h-screen w-full">
             <Excalidraw
               excalidrawAPI={(api) => setExcalidrawAPI(api)}
               initialData={initialData}

@@ -17,10 +17,10 @@ import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/tra
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
-import { Suspense } from 'react';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 interface Props {
   wsId: string;

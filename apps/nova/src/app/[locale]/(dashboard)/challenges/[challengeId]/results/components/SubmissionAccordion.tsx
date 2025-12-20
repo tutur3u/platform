@@ -1,4 +1,3 @@
-import ScoreBadge from '@/components/common/ScoreBadge';
 import { CheckCircle2, Clock, Code, Crown, XCircle } from '@tuturuuu/icons';
 import {
   Accordion,
@@ -10,6 +9,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import type { ExtendedNovaSubmission } from '../types';
 import CriteriaEvaluation from './CriteriaEvaluation';
 import SubmissionDetails from './SubmissionDetails';

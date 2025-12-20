@@ -22,11 +22,11 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import {
-  EMAIL_BLACKLIST_REGEX,
   DOMAIN_BLACKLIST_REGEX,
+  EMAIL_BLACKLIST_REGEX,
 } from '@tuturuuu/utils/email/validation';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -265,7 +265,7 @@ export default function EmailBlacklistForm({
         />
 
         <div className="space-y-3">
-          <div className="text-sm font-medium">
+          <div className="font-medium text-sm">
             {t('email-blacklist.quick-reasons')}
           </div>
           <div className="flex flex-wrap gap-2">

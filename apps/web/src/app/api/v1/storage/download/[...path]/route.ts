@@ -5,10 +5,10 @@
  * Downloads a file from the workspace drive
  */
 
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import { posix } from 'node:path';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { posix } from 'node:path';
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 export const GET = withApiAuth(
   async (_, { params, context }) => {

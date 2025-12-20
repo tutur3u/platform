@@ -1,7 +1,9 @@
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import MigrationDashboard from './migration-dashboard';
 
 export const metadata: Metadata = {

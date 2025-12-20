@@ -170,10 +170,10 @@ export function PromptInput({
                 <div className="absolute inset-0 animate-ping">
                   <div className="mx-auto h-20 w-20 rounded-full border-2 border-dynamic-blue/30 bg-dynamic-blue/10" />
                 </div>
-                <div className="-top-3 -right-3 absolute">
+                <div className="absolute -top-3 -right-3">
                   <div className="h-8 w-8 animate-bounce text-2xl">✨</div>
                 </div>
-                <div className="-bottom-2 -left-2 absolute">
+                <div className="absolute -bottom-2 -left-2">
                   <Zap className="h-6 w-6 animate-pulse text-dynamic-purple" />
                 </div>
               </div>

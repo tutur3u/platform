@@ -5,8 +5,8 @@ import {
   ArrowRight,
   Settings,
   User,
-  UserPlus,
   UserMinus,
+  UserPlus,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -17,8 +17,8 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 interface ReferralSectionClientProps {

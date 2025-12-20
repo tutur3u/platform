@@ -1,7 +1,6 @@
 'use client';
 
-import type { SessionWithRelations } from '../../types';
-import type { GroupedSession } from '@/lib/time-tracking-helper';
+import { Activity, BarChart3, Clock, Zap } from '@tuturuuu/icons';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +9,11 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
-import { Clock, Zap, BarChart3, Activity } from '@tuturuuu/icons';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { useTranslations } from 'next-intl';
+import type { GroupedSession } from '@/lib/time-tracking-helper';
+import type { SessionWithRelations } from '../../types';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);
@@ -39,7 +39,7 @@ export default function SessionDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="flex h-[90vh] w-[95vw] max-w-2xl flex-col overflow-hidden border-dynamic-border/30 bg-linear-to-b from-dynamic-background to-dynamic-muted/20 sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
-        <DialogHeader className="shrink-0 border-dynamic-border/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 pb-6 pt-6">
+        <DialogHeader className="shrink-0 border-dynamic-border/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 pt-6 pb-6">
           <div className="flex items-center gap-4">
             <div className="relative flex size-12 items-center justify-center rounded-full border-2 border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 sm:size-14">
               <span className="font-bold text-dynamic-blue text-lg sm:text-xl">
@@ -52,7 +52,7 @@ export default function SessionDetailsModal({
                 {session.user.displayName || 'Unknown User'}
               </DialogTitle>
               <p className="mt-1 text-dynamic-muted text-sm">
-                <span className="inline-block rounded-full bg-dynamic-blue/10 px-3 py-1 text-dynamic-blue font-medium">
+                <span className="inline-block rounded-full bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue">
                   {t('sessionsCount', { count: session.sessions.length })}
                 </span>
                 <span className="mx-2 text-dynamic-muted/50">•</span>
@@ -201,7 +201,7 @@ function StatCard({ icon, value, label, colorClass }: StatCardProps) {
           <div className={`font-bold text-2xl ${colorsOrDefault.text}`}>
             {value}
           </div>
-          <div className="text-dynamic-muted text-xs font-medium">{label}</div>
+          <div className="font-medium text-dynamic-muted text-xs">{label}</div>
         </div>
       </div>
     </div>
@@ -221,7 +221,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
     <div
       className={`group relative overflow-hidden rounded-lg border-2 transition-all duration-300 ${
         isActive
-          ? 'border-dynamic-green/40 bg-linear-to-r from-dynamic-green/5 to-dynamic-blue/5 shadow-sm shadow-dynamic-green/10'
+          ? 'border-dynamic-green/40 bg-linear-to-r from-dynamic-green/5 to-dynamic-blue/5 shadow-dynamic-green/10 shadow-sm'
           : 'border-dynamic-border/20 bg-dynamic-muted/5 hover:border-dynamic-border/40'
       }`}
       style={{
@@ -242,7 +242,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
               </h5>
               {session.category && (
                 <span
-                  className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white/95 shadow-sm"
+                  className="inline-flex items-center rounded-full px-2.5 py-1 font-semibold text-white/95 text-xs shadow-sm"
                   style={{
                     backgroundColor: session.category.color || '#3b82f6',
                   }}
@@ -251,7 +251,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
                 </span>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-dynamic-muted">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-dynamic-muted text-xs">
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
                 {dayjs(session.start_time).format('MMM D, YYYY')} -{' '}
@@ -277,13 +277,13 @@ function SessionListItem({ session, index }: SessionListItemProps) {
               )}
             </div>
             {session.description && (
-              <div className="mt-3 rounded-md border border-dynamic-border/10 bg-dynamic-muted/20 p-3 text-xs text-dynamic-muted">
+              <div className="mt-3 rounded-md border border-dynamic-border/10 bg-dynamic-muted/20 p-3 text-dynamic-muted text-xs">
                 {getDescriptionText(session.description)}
               </div>
             )}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
-            <div className="font-mono font-bold text-dynamic-foreground text-lg">
+            <div className="font-bold font-mono text-dynamic-foreground text-lg">
               {session.duration_seconds
                 ? dayjs
                     .duration(session.duration_seconds, 'seconds')
@@ -291,7 +291,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
                 : '0:00:00'}
             </div>
             {isActive && (
-              <div className="flex items-center gap-1.5 rounded-full bg-dynamic-green/20 px-2.5 py-1 text-dynamic-green text-xs font-semibold">
+              <div className="flex items-center gap-1.5 rounded-full bg-dynamic-green/20 px-2.5 py-1 font-semibold text-dynamic-green text-xs">
                 <div className="size-2 animate-pulse rounded-full bg-dynamic-green" />
                 {t('activeBadge')}
               </div>

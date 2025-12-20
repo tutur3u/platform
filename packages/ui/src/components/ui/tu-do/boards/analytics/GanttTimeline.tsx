@@ -74,7 +74,7 @@ export function GanttTimeline({
                   'flex items-center justify-center whitespace-nowrap text-muted-foreground text-xs',
                   filters.timeView === 'year'
                     ? 'flex-1 px-2 text-center'
-                    : '-translate-x-1/2 absolute transform'
+                    : 'absolute -translate-x-1/2 transform'
                 )}
                 style={
                   filters.timeView === 'year'

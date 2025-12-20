@@ -1,11 +1,11 @@
 'use client';
 
-import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { prepareAddAccountAndNavigate } from './utils';
 
 export function AddAccountButton() {

@@ -1,8 +1,8 @@
 'use client';
 
-import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import { useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../columns';
 import { ExecutionDetailDialog } from './execution-detail-dialog';
 

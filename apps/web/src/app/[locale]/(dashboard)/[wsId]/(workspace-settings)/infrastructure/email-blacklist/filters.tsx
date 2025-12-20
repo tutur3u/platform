@@ -1,6 +1,6 @@
+import { Funnel } from '@tuturuuu/icons';
 import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import { getTranslations } from 'next-intl/server';
-import { Funnel } from '@tuturuuu/icons';
 
 export default async function Filters() {
   const t = await getTranslations('email-blacklist-data-table');

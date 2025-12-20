@@ -1,6 +1,6 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Transactions',

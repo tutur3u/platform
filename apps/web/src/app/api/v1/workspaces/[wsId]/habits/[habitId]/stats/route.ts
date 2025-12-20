@@ -4,12 +4,12 @@
  * GET - Get habit statistics and streak info
  */
 
-import { fetchHabitStreak } from '@/lib/calendar/habit-scheduler';
 import { getOccurrencesInRange } from '@tuturuuu/ai/scheduling';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { fetchHabitStreak } from '@/lib/calendar/habit-scheduler';
 
 interface RouteParams {
   wsId: string;

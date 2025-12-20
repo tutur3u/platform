@@ -2,6 +2,10 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import type {
+  GroupedSession,
+  TimeTrackingStats,
+} from '@/lib/time-tracking-helper';
 import ExportProgressDialog from './components/export-progress-dialog';
 import FiltersPanel from './components/filters-panel';
 import ManagementCardSkeleton from './components/management-card-skeleton';
@@ -11,10 +15,6 @@ import SessionsTable from './components/sessions-table';
 import StatsOverview from './components/stats-overview';
 import { ErrorDisplay, LoadingOverlay } from './components/status-displays';
 import { useExportData } from './hooks/use-export-data';
-import type {
-  TimeTrackingStats,
-  GroupedSession,
-} from '@/lib/time-tracking-helper';
 
 interface PaginationInfo {
   page: number;

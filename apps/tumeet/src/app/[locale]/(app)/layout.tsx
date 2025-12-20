@@ -1,6 +1,6 @@
-import type { Locale } from '@/i18n/routing';
 import { setRequestLocale } from 'next-intl/server';
 import type React from 'react';
+import type { Locale } from '@/i18n/routing';
 import ServerLayout from './server-layout';
 
 interface LayoutProps {

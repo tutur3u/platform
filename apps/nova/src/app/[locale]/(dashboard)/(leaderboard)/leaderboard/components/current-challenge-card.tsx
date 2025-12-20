@@ -2,8 +2,8 @@ import { ArrowUpRight, Check, Info, Sparkles, Trophy } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const CURRENT_CHALLENGE_ID = '1d81a081-5f5f-4a86-95c5-a72eb4d0e787';
 
@@ -42,10 +42,10 @@ export function CurrentChallengeCard() {
     >
       {isCurrentChallengeSelected ? (
         <>
-          <div className="-top-16 -right-16 absolute h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
-          <div className="-bottom-12 -left-12 absolute h-36 w-36 rounded-full bg-indigo-300/15 blur-3xl" />
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
+          <div className="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-indigo-300/15 blur-3xl" />
           <motion.div
-            className="-translate-y-1/2 absolute top-0 right-0 h-16 w-16 translate-x-1/2 rounded-full bg-indigo-400/20 blur-xl"
+            className="absolute top-0 right-0 h-16 w-16 translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-400/20 blur-xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -78,8 +78,8 @@ export function CurrentChallengeCard() {
         </>
       ) : (
         <>
-          <div className="-top-12 -right-12 absolute h-32 w-32 rounded-full bg-linear-to-br from-slate-500/5 to-blue-500/5 blur-2xl" />
-          <div className="-bottom-12 -left-12 absolute h-32 w-32 rounded-full bg-linear-to-tr from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-linear-to-tr from-slate-500/5 to-blue-500/5 blur-2xl" />
         </>
       )}
 

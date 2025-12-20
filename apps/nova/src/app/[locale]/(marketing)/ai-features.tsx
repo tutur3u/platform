@@ -115,7 +115,7 @@ export default function AiFeatures() {
 
             {/* Decorative elements */}
             <motion.div
-              className="-top-12 -right-12 absolute h-24 w-24"
+              className="absolute -top-12 -right-12 h-24 w-24"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [0, 90, 0],
@@ -126,7 +126,7 @@ export default function AiFeatures() {
             </motion.div>
 
             <motion.div
-              className="-bottom-8 -left-8 absolute h-32 w-32"
+              className="absolute -bottom-8 -left-8 h-32 w-32"
               animate={{
                 scale: [1, 1.2, 1],
                 rotate: [0, -90, 0],

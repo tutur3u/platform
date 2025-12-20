@@ -46,7 +46,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
 
   return (
     <div
-      className="-left-[70px] pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
+      className="pointer-events-none absolute top-[-0.075rem] -left-[70px] z-100 flex items-center"
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
         transition: 'transform 0.3s ease-out',

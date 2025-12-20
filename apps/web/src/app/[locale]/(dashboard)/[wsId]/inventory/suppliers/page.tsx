@@ -1,5 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -7,6 +5,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { productSupplierColumns } from './columns';
 import { ProductSupplierForm } from './form';
 

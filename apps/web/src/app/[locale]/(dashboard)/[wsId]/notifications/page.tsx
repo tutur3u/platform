@@ -1,6 +1,6 @@
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import NotificationList from '@/components/notifications/notification-list';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 
 interface NotificationsPageProps {
   params: Promise<{

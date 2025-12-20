@@ -19,8 +19,8 @@ import {
   permissionGroups,
   totalPermissions,
 } from '@tuturuuu/utils/permissions';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import RoleFormDisplaySection from './role-display';

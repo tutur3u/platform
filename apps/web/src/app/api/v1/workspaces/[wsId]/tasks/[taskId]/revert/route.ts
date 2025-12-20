@@ -1,5 +1,5 @@
-import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';

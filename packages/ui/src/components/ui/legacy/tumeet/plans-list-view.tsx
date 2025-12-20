@@ -49,7 +49,7 @@ export function PlansListView({
       {plans.map((plan: MeetTogetherPlanWithParticipants) => (
         <div
           key={plan.id}
-          className="group hover:-translate-y-0.5 flex items-center gap-6 rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:border-foreground/20 hover:shadow-lg"
+          className="group flex items-center gap-6 rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg"
         >
           {/* Plan icon/avatar */}
           <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-dynamic-blue/10">

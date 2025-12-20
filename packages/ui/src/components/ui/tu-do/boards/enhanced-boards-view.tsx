@@ -297,7 +297,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                   return (
                     <div
                       key={board.id}
-                      className="group hover:-translate-y-0.5 rounded-xl border bg-card p-4 text-left shadow-sm transition hover:shadow-md"
+                      className="group rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <button

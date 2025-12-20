@@ -1,17 +1,17 @@
-import type { NotificationEventType } from '@/hooks/useNotificationPreferences';
-import type { AccountNotificationEventType } from '@/hooks/useAccountNotificationPreferences';
 import type { LucideIcon } from '@tuturuuu/icons';
 import {
-  Clipboard,
+  Bell,
   CheckCircle2,
+  Clipboard,
+  Clock,
   FileText,
+  Lock,
+  Megaphone,
   Tag,
   Users,
-  Bell,
-  Megaphone,
-  Lock,
-  Clock,
 } from '@tuturuuu/icons';
+import type { AccountNotificationEventType } from '@/hooks/useAccountNotificationPreferences';
+import type { NotificationEventType } from '@/hooks/useNotificationPreferences';
 
 export interface EventGroup<T extends string> {
   id: string;

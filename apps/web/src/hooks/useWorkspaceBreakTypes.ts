@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Tables } from '@tuturuuu/types';
+import type { Tables } from '@tuturuuu/types';
 
 export type WorkspaceBreakType = Tables<'workspace_break_types'>;
 

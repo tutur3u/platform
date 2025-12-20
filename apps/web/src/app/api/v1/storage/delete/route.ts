@@ -5,15 +5,15 @@
  * Deletes files or folders from the workspace drive
  */
 
+import { posix } from 'node:path';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   createErrorResponse,
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { posix } from 'node:path';
-import { z } from 'zod';
 
 // Request body schema
 const deleteBodySchema = z.object({

@@ -1,7 +1,6 @@
 'use client';
 
 import { Link2, Loader2, Plus, Search, X } from '@tuturuuu/icons';
-import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
@@ -16,6 +15,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';

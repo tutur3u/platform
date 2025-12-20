@@ -1,5 +1,3 @@
-import ScoreBadge from '@/components/common/ScoreBadge';
-import SideBySideDiff from '@/components/common/SideBySideDiff';
 import {
   CheckCircle2,
   Clock,
@@ -23,6 +21,8 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import SideBySideDiff from '@/components/common/SideBySideDiff';
 
 interface TestCaseEvaluationProps {
   submission: Partial<NovaSubmissionData>;

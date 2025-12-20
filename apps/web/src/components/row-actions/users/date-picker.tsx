@@ -55,7 +55,7 @@ export function DatePicker({
           <button
             type="button"
             onClick={handleClear}
-            className="-translate-y-1/2 absolute top-1/2 right-2 rounded-sm opacity-50 hover:opacity-100 focus:outline-none"
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-sm opacity-50 hover:opacity-100 focus:outline-none"
           >
             <X className="h-4 w-4" />
           </button>

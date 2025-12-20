@@ -1,10 +1,10 @@
 'use client';
 
-import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import { Clock } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 
 interface ActiveTimerIndicatorProps {
   wsId: string;

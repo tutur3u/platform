@@ -1,11 +1,10 @@
+import { describe, expect, it } from 'vitest';
 import {
   DOMAIN_BLACKLIST_REGEX,
   EMAIL_BLACKLIST_REGEX,
   isValidBlacklistDomain,
   isValidBlacklistEmail,
 } from '../validation';
-
-import { describe, expect, it } from 'vitest';
 
 describe('email blacklist validation utils', () => {
   describe('isValidBlacklistEmail', () => {

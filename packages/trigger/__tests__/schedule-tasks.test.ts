@@ -8,8 +8,8 @@ import {
   describe,
   expect,
   it,
-  vi,
   type Mock,
+  vi,
 } from 'vitest';
 
 // Use vi.hoisted to properly hoist the storage variables
@@ -48,15 +48,14 @@ vi.mock('../src/schedule-tasks-helper', () => ({
 
 // Import after mock setup - some imports are only used to trigger side effects
 // @ts-expect-error - imported for mock setup
-import { task, schedules } from '@trigger.dev/sdk/v3';
+import { schedules, task } from '@trigger.dev/sdk/v3';
 import { getWorkspacesForSync } from '../src/google-calendar-sync';
-import { schedulableTasksHelper } from '../src/schedule-tasks-helper';
-
 // Import module to trigger task registration (variables may appear unused)
 import {
-  scheduleTask,
   scheduleTasksTrigger as _scheduleTasksTrigger,
+  scheduleTask,
 } from '../src/schedule-tasks';
+import { schedulableTasksHelper } from '../src/schedule-tasks-helper';
 
 describe('Schedule Tasks', () => {
   let consoleSpy: { log: Mock; error: Mock };

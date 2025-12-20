@@ -25,10 +25,10 @@ import { Card } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 // Language Switcher Component
@@ -239,9 +239,9 @@ export default function VietnameseWomensDayPage() {
   return (
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Simplified Background */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-1/4 absolute top-0 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-pink/20 via-dynamic-purple/10 to-transparent blur-3xl" />
-        <div className="-right-1/4 absolute top-1/3 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl" />
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute top-0 -left-1/4 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-pink/20 via-dynamic-purple/10 to-transparent blur-3xl" />
+        <div className="absolute top-1/3 -right-1/4 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,182,193,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
       </div>
 
@@ -584,7 +584,7 @@ export default function VietnameseWomensDayPage() {
               >
                 <Card
                   className={cn(
-                    'group hover:-translate-y-2 h-full p-8 text-center transition-all hover:shadow-lg',
+                    'group h-full p-8 text-center transition-all hover:-translate-y-2 hover:shadow-lg',
                     stat.color
                   )}
                 >
@@ -698,7 +698,7 @@ export default function VietnameseWomensDayPage() {
               >
                 <Card
                   className={cn(
-                    'hover:-translate-y-1 flex h-full flex-col items-center justify-center p-6 transition-all hover:shadow-md',
+                    'flex h-full flex-col items-center justify-center p-6 transition-all hover:-translate-y-1 hover:shadow-md',
                     value.color
                   )}
                 >
@@ -829,7 +829,7 @@ export default function VietnameseWomensDayPage() {
 
           <div className="relative">
             {/* Timeline Line */}
-            <div className="-translate-x-1/2 absolute top-0 left-1/2 hidden h-full w-px bg-linear-to-b from-dynamic-pink via-dynamic-purple to-dynamic-blue lg:block" />
+            <div className="absolute top-0 left-1/2 hidden h-full w-px -translate-x-1/2 bg-linear-to-b from-dynamic-pink via-dynamic-purple to-dynamic-blue lg:block" />
 
             <div className="space-y-12">
               {[
@@ -886,7 +886,7 @@ export default function VietnameseWomensDayPage() {
                   >
                     <Card
                       className={cn(
-                        'hover:-translate-y-1 p-6 transition-all hover:shadow-lg',
+                        'p-6 transition-all hover:-translate-y-1 hover:shadow-lg',
                         achievement.color
                       )}
                     >
@@ -933,7 +933,7 @@ export default function VietnameseWomensDayPage() {
                   </div>
 
                   {/* Timeline Dot */}
-                  <div className="-translate-x-1/2 absolute top-6 left-1/2 hidden h-4 w-4 lg:block">
+                  <div className="absolute top-6 left-1/2 hidden h-4 w-4 -translate-x-1/2 lg:block">
                     <div
                       className={cn(
                         'h-full w-full rounded-full',
@@ -1001,7 +1001,7 @@ export default function VietnameseWomensDayPage() {
               >
                 <Card
                   className={cn(
-                    'group hover:-translate-y-2 h-full p-8 text-center transition-all hover:shadow-xl',
+                    'group h-full p-8 text-center transition-all hover:-translate-y-2 hover:shadow-xl',
                     item.color
                   )}
                 >
@@ -1153,7 +1153,7 @@ export default function VietnameseWomensDayPage() {
               >
                 <Card
                   className={cn(
-                    'group hover:-translate-y-2 h-full p-8 transition-all hover:shadow-xl',
+                    'group h-full p-8 transition-all hover:-translate-y-2 hover:shadow-xl',
                     item.color
                   )}
                 >
@@ -1300,7 +1300,7 @@ export default function VietnameseWomensDayPage() {
               >
                 <Card
                   className={cn(
-                    'group hover:-translate-y-2 h-full overflow-hidden transition-all hover:shadow-xl',
+                    'group h-full overflow-hidden transition-all hover:-translate-y-2 hover:shadow-xl',
                     colleague.borderColor
                   )}
                 >
@@ -1358,7 +1358,7 @@ export default function VietnameseWomensDayPage() {
 
                     {/* Wish Message */}
                     <div className="relative">
-                      <div className="-top-2 -left-2 absolute text-4xl opacity-20">
+                      <div className="absolute -top-2 -left-2 text-4xl opacity-20">
                         <Heart className={cn('h-6 w-6')} />
                       </div>
                       <p className="relative text-center text-foreground/80 text-sm italic leading-relaxed">

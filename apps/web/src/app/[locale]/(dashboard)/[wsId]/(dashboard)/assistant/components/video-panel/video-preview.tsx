@@ -32,7 +32,7 @@ function VideoPreview({ stream, type, onClose }: VideoPreviewProps) {
         >
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-xl">
             {/* Header */}
-            <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-black/20 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 border-white/10 border-b bg-black/20 px-3 py-2">
               <div className="flex items-center gap-2">
                 {type === 'webcam' ? (
                   <Camera className="h-4 w-4 text-emerald-400" />
@@ -69,14 +69,14 @@ function VideoPreview({ stream, type, onClose }: VideoPreviewProps) {
               {/* Live indicator */}
               <div className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-                <span className="font-medium text-white/90 text-[10px] uppercase tracking-wide">
+                <span className="font-medium text-[10px] text-white/90 uppercase tracking-wide">
                   Live
                 </span>
               </div>
             </div>
 
             {/* Footer with stream info */}
-            <div className="border-t border-white/10 bg-black/20 px-3 py-1.5">
+            <div className="border-white/10 border-t bg-black/20 px-3 py-1.5">
               <StreamInfo stream={stream} />
             </div>
           </div>
@@ -93,7 +93,7 @@ function StreamInfo({ stream }: { stream: MediaStream }) {
   if (!settings) return null;
 
   return (
-    <div className="flex items-center gap-3 text-white/50 text-[10px]">
+    <div className="flex items-center gap-3 text-[10px] text-white/50">
       {settings.width && settings.height && (
         <span>
           {settings.width}x{settings.height}

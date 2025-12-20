@@ -1,15 +1,19 @@
 'use client';
 
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
 import {
+  Apple,
+  Brain,
   CheckCircle,
   Clock,
   ClockFading,
   Coffee,
   Copy,
+  CupSoda,
   ExternalLink,
   Eye,
+  Footprints,
   fruit,
   Icon,
   MapPin,
@@ -23,10 +27,6 @@ import {
   TableOfContents,
   Tag,
   Timer,
-  Footprints,
-  CupSoda,
-  Brain,
-  Apple,
 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -3588,7 +3588,7 @@ export function TimerControls({
                   {/* Break Type Badge - Prominent Display */}
                   {currentBreak && (
                     <div className="mb-4 flex items-center justify-center gap-2">
-                      <Badge className="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1.5 text-base">
+                      <Badge className="bg-amber-600 px-3 py-1.5 text-base text-white hover:bg-amber-700">
                         {currentBreak.break_type?.icon &&
                           renderBreakTypeIcon(currentBreak.break_type.icon)}
                         {currentBreak.break_type?.name ||
@@ -3607,7 +3607,7 @@ export function TimerControls({
 
                   {/* Work Duration */}
                   <div className="mb-2">
-                    <div className="text-muted-foreground text-xs mb-1">
+                    <div className="mb-1 text-muted-foreground text-xs">
                       {t('work_duration')}
                     </div>
                     <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
@@ -3616,15 +3616,15 @@ export function TimerControls({
                   </div>
 
                   {/* Break Duration - Live Counter */}
-                  <div className="mt-4 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 p-3">
-                    <div className="text-amber-700 dark:text-amber-300 text-xs mb-1">
+                  <div className="mt-4 rounded-lg bg-amber-100/50 p-3 dark:bg-amber-950/30">
+                    <div className="mb-1 text-amber-700 text-xs dark:text-amber-300">
                       {t('break_duration')}
                     </div>
                     <div className="font-bold font-mono text-2xl text-amber-600 dark:text-amber-400">
                       {formatDuration(breakDurationSeconds)}
                     </div>
                     {pauseStartTime && (
-                      <div className="text-amber-600/70 dark:text-amber-400/70 text-xs mt-1">
+                      <div className="mt-1 text-amber-600/70 text-xs dark:text-amber-400/70">
                         {t('paused_at', {
                           time: pauseStartTime.toLocaleTimeString(),
                         })}
@@ -3635,12 +3635,12 @@ export function TimerControls({
               </div>
 
               {/* Session Info - Read-only during pause */}
-              <div className="text-left rounded-lg border border-amber-200/50 dark:border-amber-800/50 bg-white/50 dark:bg-gray-900/50 p-4">
-                <h3 className="font-medium text-lg mb-2">
+              <div className="rounded-lg border border-amber-200/50 bg-white/50 p-4 text-left dark:border-amber-800/50 dark:bg-gray-900/50">
+                <h3 className="mb-2 font-medium text-lg">
                   {pausedSession.title}
                 </h3>
                 {pausedSession.description && (
-                  <p className="mt-1 text-muted-foreground text-sm whitespace-pre-wrap">
+                  <p className="mt-1 whitespace-pre-wrap text-muted-foreground text-sm">
                     {getDescriptionText(pausedSession.description)}
                   </p>
                 )}
@@ -3957,7 +3957,7 @@ export function TimerControls({
                                     openDropdown();
                                   }
                                 }}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-muted"
+                                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 hover:bg-muted"
                               >
                                 <svg
                                   aria-hidden="true"
@@ -4301,7 +4301,7 @@ export function TimerControls({
                                           {task.assignees &&
                                             task.assignees.length > 0 && (
                                               <div className="mt-2 flex items-center gap-2">
-                                                <div className="-space-x-1 flex">
+                                                <div className="flex -space-x-1">
                                                   {task.assignees
                                                     .slice(0, 3)
                                                     .map((assignee) => (
@@ -4868,7 +4868,7 @@ export function TimerControls({
             {/* Custom Break Types */}
             {(breakTypes || []).length > 0 && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
+                <Label className="text-muted-foreground text-xs">
                   {t('break_type.custom_types')}
                 </Label>
                 <div className="grid grid-cols-2 gap-2">

@@ -1,13 +1,13 @@
 'use client';
 
-import type { FlatNavItem } from '../utils/use-navigation-data';
-import { searchItems } from '../utils/search-scoring';
-import { addRecentPage, getRecencyBoost } from '../utils/recent-items';
-import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { ChevronRight } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
+import { addRecentPage, getRecencyBoost } from '../utils/recent-items';
+import { searchItems } from '../utils/search-scoring';
+import type { FlatNavItem } from '../utils/use-navigation-data';
 
 interface NavigationSectionProps {
   navItems: FlatNavItem[];

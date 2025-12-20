@@ -4,13 +4,13 @@ import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { ProductForm } from './form';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { ProductForm } from './form';
 
 export const metadata: Metadata = {
   title: 'Product Details',

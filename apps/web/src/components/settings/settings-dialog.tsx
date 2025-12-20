@@ -334,7 +334,7 @@ export function SettingsDialog({
       <DialogDescription className="sr-only">
         {t('common.settings')}
       </DialogDescription>
-      <SidebarProvider className="flex h-full w-full flex-1 items-start min-h-0">
+      <SidebarProvider className="flex h-full min-h-0 w-full flex-1 items-start">
         <Sidebar
           collapsible="none"
           className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"

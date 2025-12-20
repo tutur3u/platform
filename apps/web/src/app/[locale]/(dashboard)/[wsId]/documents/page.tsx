@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { FilePlus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
@@ -7,8 +6,9 @@ import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
 

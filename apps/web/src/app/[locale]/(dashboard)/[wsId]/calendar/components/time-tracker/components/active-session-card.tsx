@@ -31,13 +31,13 @@ export function ActiveSessionCard({
 
   return (
     <div className="space-y-4 text-center">
-      <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-dynamic-red/10 to-dynamic-red/20 p-4 @lg:p-6">
+      <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-dynamic-red/10 to-dynamic-red/20 @lg:p-6 p-4">
         <div className="absolute inset-0 animate-pulse bg-linear-to-r from-dynamic-red/10 to-transparent opacity-30" />
         <div className="relative">
-          <div className="font-bold font-mono text-3xl text-dynamic-red transition-all duration-300 @lg:text-4xl">
+          <div className="font-bold font-mono @lg:text-4xl text-3xl text-dynamic-red transition-all duration-300">
             {formatTime(elapsedTime)}
           </div>
-          <div className="mt-2 flex items-center gap-2 text-xs text-dynamic-red/70 @lg:text-sm">
+          <div className="mt-2 flex items-center gap-2 @lg:text-sm text-dynamic-red/70 text-xs">
             <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-red" />
             Started at {new Date(session.start_time).toLocaleTimeString()}
           </div>
@@ -45,17 +45,17 @@ export function ActiveSessionCard({
       </div>
 
       <div className="text-left">
-        <h3 className="font-medium text-sm @lg:text-base">{session.title}</h3>
+        <h3 className="font-medium @lg:text-base text-sm">{session.title}</h3>
         {session.description && (
-          <p className="mt-1 text-muted-foreground text-xs @lg:text-sm">
+          <p className="mt-1 @lg:text-sm text-muted-foreground text-xs">
             {session.description}
           </p>
         )}
-        <div className="mt-2 flex flex-wrap gap-1 @lg:gap-2">
+        <div className="mt-2 flex flex-wrap @lg:gap-2 gap-1">
           {session.category && (
             <Badge
               className={cn(
-                'text-xs @lg:text-sm',
+                '@lg:text-sm text-xs',
                 getCategoryColor(session.category.color || 'BLUE')
               )}
             >
@@ -66,7 +66,7 @@ export function ActiveSessionCard({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                 <CheckCircle className="h-3 w-3 text-dynamic-blue" />
-                <span className="font-medium text-dynamic-blue text-xs @lg:text-sm">
+                <span className="font-medium @lg:text-sm text-dynamic-blue text-xs">
                   {session.task.name}
                 </span>
               </div>

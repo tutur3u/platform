@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import { NextResponse } from 'next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{

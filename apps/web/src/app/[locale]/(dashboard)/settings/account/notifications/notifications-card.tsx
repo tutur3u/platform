@@ -1,7 +1,7 @@
 'use client';
 
-import NotificationPreferencesTable from '@/components/notifications/notification-preferences-table';
 import BrowserNotificationPermission from '@/components/notifications/browser-notification-permission';
+import NotificationPreferencesTable from '@/components/notifications/notification-preferences-table';
 
 export default function NotificationsCard() {
   return (

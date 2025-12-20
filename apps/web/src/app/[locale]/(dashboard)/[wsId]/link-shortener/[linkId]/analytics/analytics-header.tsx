@@ -4,8 +4,8 @@ import { Copy, ExternalLink, Eye, LinkIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface AnalyticsHeaderProps {
   link: {

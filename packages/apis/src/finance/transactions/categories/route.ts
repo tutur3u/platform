@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{

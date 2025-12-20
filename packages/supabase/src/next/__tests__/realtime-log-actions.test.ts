@@ -4,8 +4,8 @@ import {
   describe,
   expect,
   it,
-  vi,
   type Mock,
+  vi,
 } from 'vitest';
 
 // Mock the aggregator module
@@ -13,8 +13,8 @@ vi.mock('../realtime-log-aggregator', () => ({
   getLogAggregator: vi.fn(),
 }));
 
-import { getLogAggregator } from '../realtime-log-aggregator';
 import { addRealtimeLog, flushRealtimeLogs } from '../realtime-log-actions';
+import { getLogAggregator } from '../realtime-log-aggregator';
 
 describe('Realtime Log Actions', () => {
   let mockAggregator: {

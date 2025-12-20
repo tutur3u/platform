@@ -44,7 +44,7 @@ export function PlansGrid({
       {plans.map((plan: MeetTogetherPlanWithParticipants) => (
         <div
           key={plan.id}
-          className="group hover:-translate-y-1 relative rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:border-foreground/20 hover:shadow-lg"
+          className="group relative rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20 hover:shadow-lg"
         >
           {/* Header with title and timezone */}
           <div className="mb-5 flex w-full items-center justify-between gap-3">

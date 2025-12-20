@@ -1,4 +1,3 @@
-import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   ChevronDown,
   ChevronLeft,
@@ -19,6 +18,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -267,7 +267,7 @@ export default function ChallengeHeader({
         </Badge>
       </div>
 
-      <div className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 flex flex-col items-center justify-center gap-2">
+      <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <Clock className={cn('h-4 w-4', getTimeColor())} />

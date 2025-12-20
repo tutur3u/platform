@@ -2,8 +2,8 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { SessionHistory } from '../components/session-history';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { SessionHistory } from '../components/session-history';
 
 export const metadata: Metadata = {
   title: 'History',

@@ -14,6 +14,7 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -37,9 +38,9 @@ import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -52,7 +53,6 @@ import {
   useTaskCounts,
 } from '../utils';
 import { TimerControls } from './timer-controls';
-import type { User } from '@tuturuuu/types/primitives/User';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -993,7 +993,7 @@ export default function TimeTrackerContent({
                                   {task.assignees &&
                                     task.assignees.length > 0 && (
                                       <div className="mb-2 flex items-center gap-2">
-                                        <div className="-space-x-1 flex">
+                                        <div className="flex -space-x-1">
                                           {task.assignees
                                             .slice(0, 3)
                                             .map((assignee) => (

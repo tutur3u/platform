@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ROOT_WORKSPACE_ID,
-  INTERNAL_WORKSPACE_SLUG,
-  PERSONAL_WORKSPACE_SLUG,
-  MAX_WORKSPACES_FOR_FREE_USERS,
-  resolveWorkspaceId,
-  toWorkspaceSlug,
-  isInternalWorkspaceSlug,
   GITHUB_OWNER,
   GITHUB_REPO,
+  INTERNAL_WORKSPACE_SLUG,
+  isInternalWorkspaceSlug,
+  MAX_WORKSPACES_FOR_FREE_USERS,
+  PERSONAL_WORKSPACE_SLUG,
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+  toWorkspaceSlug,
 } from '../constants';
 
 describe('Constants', () => {

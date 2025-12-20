@@ -6,8 +6,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
 

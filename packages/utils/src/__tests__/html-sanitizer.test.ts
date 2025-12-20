@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, expect, it } from 'vitest';
-import { sanitizeHtml, textToHtml, containsHtml } from '../html-sanitizer';
+import { containsHtml, sanitizeHtml, textToHtml } from '../html-sanitizer';
 
 describe('sanitizeHtml', () => {
   describe('basic functionality', () => {

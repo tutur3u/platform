@@ -1,6 +1,5 @@
 'use client';
 
-import { SubmissionCard } from '@/components/common/SubmissionCard';
 import {
   ArrowLeft,
   BookOpen,
@@ -17,6 +16,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { SubmissionCard } from '@/components/common/SubmissionCard';
 
 interface SubmissionClientProps {
   submission: NovaSubmissionData;

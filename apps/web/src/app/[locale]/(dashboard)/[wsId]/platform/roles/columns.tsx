@@ -218,7 +218,7 @@ export const getPlatformRoleColumns = (
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`-right-0.5 -bottom-0.5 absolute h-3 w-3 rounded-full border-2 border-background ${
+                className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-background ${
                   isActive ? 'bg-dynamic-green' : 'bg-dynamic-muted'
                 }`}
               />

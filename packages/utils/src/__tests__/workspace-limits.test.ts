@@ -1,9 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MAX_WORKSPACES_FOR_FREE_USERS } from '../constants';
 import {
   checkWorkspaceCreationLimit,
   WORKSPACE_LIMIT_ERROR_CODE,
 } from '../workspace-limits';
-import { MAX_WORKSPACES_FOR_FREE_USERS } from '../constants';
 
 describe('checkWorkspaceCreationLimit', () => {
   const mockUserId = 'user-123';

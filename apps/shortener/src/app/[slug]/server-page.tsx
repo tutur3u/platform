@@ -1,7 +1,7 @@
-import { isValidUrl } from '@/lib/utils';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { isValidUrl } from '@/lib/utils';
 
 export default async function ServerPage({
   params,

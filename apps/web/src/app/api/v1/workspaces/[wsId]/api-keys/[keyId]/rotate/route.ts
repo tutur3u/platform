@@ -1,8 +1,8 @@
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { generateApiKey, hashApiKey } from '@tuturuuu/auth/api-keys';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 // Schema for validating route params
 const paramsSchema = z.object({

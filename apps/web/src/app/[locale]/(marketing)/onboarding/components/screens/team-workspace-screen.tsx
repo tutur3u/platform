@@ -122,7 +122,7 @@ export function TeamWorkspaceScreen({
             />
 
             {/* Submit button integrated into navigation */}
-            <div className="flex justify-end -mt-6">
+            <div className="-mt-6 flex justify-end">
               <motion.button
                 type="submit"
                 disabled={loading || !form.formState.isValid}

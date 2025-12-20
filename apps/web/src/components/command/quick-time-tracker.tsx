@@ -724,7 +724,7 @@ export function QuickTimeTracker({
                 <div className="relative" data-task-dropdown>
                   <div className="flex">
                     <div className="relative flex-1">
-                      <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="task-search"
                         placeholder="Search tasks..."
@@ -742,7 +742,7 @@ export function QuickTimeTracker({
                             setSelectedTask(null);
                             setTaskSearchQuery('');
                           }}
-                          className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </button>

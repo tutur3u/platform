@@ -172,7 +172,7 @@ export function BoardUserPresenceAvatars({
   if (uniqueUsers.length === 0) return null;
 
   return (
-    <div className="-space-x-2 flex items-center">
+    <div className="flex items-center -space-x-2">
       {/* Avatar stack with overlap */}
       {displayUsers.map((presence) => {
         const user = presence?.user;
@@ -221,7 +221,7 @@ export function BoardUserPresenceAvatars({
                   </AvatarFallback>
                 </Avatar>
                 {presenceCount > 1 && (
-                  <div className="-right-1 -top-1 absolute flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-dynamic-blue font-bold text-[9px] text-white sm:h-4 sm:w-4 sm:text-[10px]">
+                  <div className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-dynamic-blue font-bold text-[9px] text-white sm:h-4 sm:w-4 sm:text-[10px]">
                     {presenceCount}
                   </div>
                 )}

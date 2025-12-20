@@ -1,6 +1,5 @@
 'use client';
 
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   AlertTriangle,
   ArrowRight,
@@ -27,6 +26,7 @@ import { motion, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 // Dynamically import Confetti to avoid hydration issues
 const Confetti = dynamic(() => import('react-confetti'), { ssr: false });
@@ -121,7 +121,7 @@ export default function BugBountyPage() {
       )}
 
       {/* Dynamic Floating Orbs */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
+      <div className="pointer-events-none fixed inset-0 -z-10">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -132,7 +132,7 @@ export default function BugBountyPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -144,7 +144,7 @@ export default function BugBountyPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[40%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -156,12 +156,12 @@ export default function BugBountyPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="absolute -bottom-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
       {/* Grid Pattern Overlay */}
-      <div className="-z-10 pointer-events-none fixed inset-0 opacity-30">
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-[size:120px]" />
       </div>

@@ -388,9 +388,9 @@ export function BoardHeader({
         {/* Search Bar */}
         <div className="relative max-w-md flex-1">
           {isSearching ? (
-            <Loader2 className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 h-4 w-4 animate-spin text-muted-foreground" />
+            <Loader2 className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
           ) : (
-            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 h-4 w-4 text-muted-foreground" />
+            <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           )}
           <Input
             type="text"
@@ -403,7 +403,7 @@ export function BoardHeader({
             <button
               type="button"
               onClick={() => setLocalSearchQuery('')}
-              className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground transition-colors hover:text-foreground"
+              className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />

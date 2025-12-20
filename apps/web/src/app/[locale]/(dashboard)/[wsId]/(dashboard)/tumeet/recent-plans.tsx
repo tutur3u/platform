@@ -16,8 +16,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { formatDistanceToNow } from 'date-fns';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 export default async function RecentTumeetPlans({
   className,
@@ -209,7 +209,7 @@ export default async function RecentTumeetPlans({
                         {/* Participants */}
                         <div className="flex items-center gap-2">
                           {displayed.length > 0 && (
-                            <div className="-space-x-1.5 flex">
+                            <div className="flex -space-x-1.5">
                               {displayed.map((p) => (
                                 <Avatar
                                   key={`${plan.id}-${p.user_id}`}

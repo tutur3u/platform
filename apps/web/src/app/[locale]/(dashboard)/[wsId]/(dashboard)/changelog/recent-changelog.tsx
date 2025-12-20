@@ -3,8 +3,8 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import ExpandableChangelogList from './expandable-changelog-list';
 
 export default async function RecentChangelog({

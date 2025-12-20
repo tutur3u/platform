@@ -110,18 +110,17 @@ export {
 // Batch Processing
 // =============================================================================
 
-export {
-  createBatch,
-  EmailBatch,
-  sendToMany,
-} from './batch';
-
 export type {
   BatchEmailItem,
   BatchItemResult,
   BatchOptions,
   BatchProgress,
   BatchResult,
+} from './batch';
+export {
+  createBatch,
+  EmailBatch,
+  sendToMany,
 } from './batch';
 
 // =============================================================================
@@ -140,6 +139,13 @@ export { BlacklistChecker, EmailRateLimiter } from './protection/index';
 // Validation
 // =============================================================================
 
+export type {
+  ValidatedEmailContent,
+  ValidatedEmailMetadata,
+  ValidatedEmailRecipients,
+  ValidatedEmailSource,
+  ValidatedSendEmailParams,
+} from './validation';
 export {
   emailAddressSchema,
   emailArraySchema,
@@ -153,14 +159,6 @@ export {
   safeValidateEmailParams,
   sendEmailParamsSchema,
   validateEmailParams,
-} from './validation';
-
-export type {
-  ValidatedEmailContent,
-  ValidatedEmailMetadata,
-  ValidatedEmailRecipients,
-  ValidatedEmailSource,
-  ValidatedSendEmailParams,
 } from './validation';
 
 // =============================================================================
@@ -251,16 +249,18 @@ export type {
   RateLimitConfig,
   RateLimitInfo,
   RateLimitType,
+  SESCredentials,
   SendEmailParams,
   SendEmailResult,
   SendGridCredentials,
-  SESCredentials,
 } from './types';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
+// Re-export DEV_MODE for convenience
+export { DEV_MODE } from '@tuturuuu/utils/constants';
 export {
   AUDIT_RETENTION_DAYS,
   EMAIL_RATE_LIMITS,
@@ -274,9 +274,6 @@ export {
   STORE_EMAIL_CONTENT_DEFAULT,
   WORKSPACE_SECRET_KEYS,
 } from './constants';
-
-// Re-export DEV_MODE for convenience
-export { DEV_MODE } from '@tuturuuu/utils/constants';
 
 // =============================================================================
 // Convenience Functions

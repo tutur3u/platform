@@ -10,8 +10,8 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { motion, type Variants } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function LearnPage() {
   const t = useTranslations('nova');

@@ -108,7 +108,9 @@ export function PomodoroSettingsDialog({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="auto-start-breaks">{t('auto_start_breaks')}</Label>
+              <Label htmlFor="auto-start-breaks">
+                {t('auto_start_breaks')}
+              </Label>
               <Switch
                 id="auto-start-breaks"
                 checked={settings.autoStartBreaks}

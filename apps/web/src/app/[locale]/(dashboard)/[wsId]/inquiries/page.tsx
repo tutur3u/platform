@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   createAdminClient,
   createClient,
@@ -6,6 +5,7 @@ import {
 import type { Product, SupportInquiry, SupportType } from '@tuturuuu/types';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { InquiriesClient } from './inquiries-client';
 
 export const metadata: Metadata = {

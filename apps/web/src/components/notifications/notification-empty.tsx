@@ -82,13 +82,13 @@ export function NotificationEmpty({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="-right-1 -top-1 absolute h-2 w-2 rounded-full bg-dynamic-blue/30"
+          className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-dynamic-blue/30"
         />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="-bottom-1 -left-1 absolute h-1.5 w-1.5 rounded-full bg-foreground/20"
+          className="absolute -bottom-1 -left-1 h-1.5 w-1.5 rounded-full bg-foreground/20"
         />
       </motion.div>
 

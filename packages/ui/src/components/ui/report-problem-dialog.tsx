@@ -31,8 +31,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
 import imageCompression from 'browser-image-compression';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -831,7 +831,7 @@ export function ReportProblemDialog({
                           type="button"
                           variant="destructive"
                           size="icon"
-                          className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
                           onClick={() => removeMedia(index)}
                         >
                           <X className="h-3 w-3" />

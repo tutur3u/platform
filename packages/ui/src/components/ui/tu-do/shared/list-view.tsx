@@ -45,8 +45,8 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
-import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
@@ -660,7 +660,7 @@ export function ListView({
                     {columnVisibility.assignees && (
                       <TableCell className="px-2 py-0">
                         {task.assignees && task.assignees.length > 0 && (
-                          <div className="-space-x-1 flex">
+                          <div className="flex -space-x-1">
                             {task.assignees.slice(0, 2).map((assignee) => (
                               <div
                                 key={assignee.id}
@@ -735,7 +735,7 @@ export function ListView({
 
       {/* Bulk Actions for Selected Tasks */}
       {selectedTasks.size > 0 && (
-        <div className="-translate-x-1/2 slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-50 flex transform animate-in items-center gap-3 rounded-lg border bg-background p-4 shadow-xl backdrop-blur-sm">
+        <div className="slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 transform animate-in items-center gap-3 rounded-lg border bg-background p-4 shadow-xl backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
               <CheckCircle2 className="h-4 w-4 text-primary" />

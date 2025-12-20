@@ -1,9 +1,9 @@
 'use client';
 
-import WorkspaceAvatarSettings from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
-import BasicInfo from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import type { Workspace } from '@tuturuuu/types';
 import { Separator } from '@tuturuuu/ui/separator';
+import WorkspaceAvatarSettings from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
+import BasicInfo from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 
 interface GeneralSettingsProps {
   workspace: Workspace;

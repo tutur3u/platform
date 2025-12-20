@@ -1,6 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { formatBytes } from '@/utils/file-helper';
-import { joinPath } from '@/utils/path-helper';
 import {
   createClient,
   createDynamicClient,
@@ -13,8 +10,11 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { formatBytes } from '@/utils/file-helper';
+import { joinPath } from '@/utils/path-helper';
 import DriveBreadcrumbs from './breadcrumbs';
 import NewActions from './new-actions';
 import StorageObjectsTable from './table';
@@ -132,7 +132,7 @@ export default async function WorkspaceStorageObjectsPage({
             {/* Enhanced Statistics Dashboard */}
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
               <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-linear-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-6 transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg">
-                <div className="-top-4 -right-4 absolute h-16 w-16 rounded-full bg-dynamic-blue/10 opacity-60 transition-transform group-hover:scale-110" />
+                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-blue/10 opacity-60 transition-transform group-hover:scale-110" />
                 <div className="relative">
                   <h3 className="font-medium text-dynamic-blue text-sm">
                     {t('ws-storage-objects.total_files')}
@@ -147,7 +147,7 @@ export default async function WorkspaceStorageObjectsPage({
               </div>
 
               <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-linear-to-br from-dynamic-green/5 to-dynamic-green/10 p-6 transition-all hover:shadow-dynamic-green/10 hover:shadow-lg">
-                <div className="-top-4 -right-4 absolute h-16 w-16 rounded-full bg-dynamic-green/10 opacity-60 transition-transform group-hover:scale-110" />
+                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-green/10 opacity-60 transition-transform group-hover:scale-110" />
                 <div className="relative">
                   <h3 className="font-medium text-dynamic-green text-sm">
                     {t('ws-storage-objects.total_size')}
@@ -162,7 +162,7 @@ export default async function WorkspaceStorageObjectsPage({
               </div>
 
               <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-linear-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-6 transition-all hover:shadow-dynamic-purple/10 hover:shadow-lg">
-                <div className="-top-4 -right-4 absolute h-16 w-16 rounded-full bg-dynamic-purple/10 opacity-60 transition-transform group-hover:scale-110" />
+                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-purple/10 opacity-60 transition-transform group-hover:scale-110" />
                 <div className="relative">
                   <h3 className="font-medium text-dynamic-purple text-sm">
                     {t('ws-storage-objects.largest_file')}
@@ -177,7 +177,7 @@ export default async function WorkspaceStorageObjectsPage({
               </div>
 
               <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-linear-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-6 transition-all hover:shadow-dynamic-orange/10 hover:shadow-lg">
-                <div className="-top-4 -right-4 absolute h-16 w-16 rounded-full bg-dynamic-orange/10 opacity-60 transition-transform group-hover:scale-110" />
+                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-orange/10 opacity-60 transition-transform group-hover:scale-110" />
                 <div className="relative">
                   <h3 className="font-medium text-dynamic-orange text-sm">
                     {t('ws-storage-objects.smallest_file')}

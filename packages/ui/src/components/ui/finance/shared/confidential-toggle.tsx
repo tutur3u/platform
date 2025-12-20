@@ -1,9 +1,9 @@
 'use client';
 
 import { Lock } from '@tuturuuu/icons';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -47,7 +47,7 @@ export default function ConfidentialToggle({
         <TooltipTrigger asChild>
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-dynamic-orange" />
-            <span className="font-medium text-sm text-foreground">
+            <span className="font-medium text-foreground text-sm">
               {t('confidential-mode')}
             </span>
           </div>
@@ -67,7 +67,7 @@ export default function ConfidentialToggle({
 
       <label
         htmlFor="includeConfidential"
-        className="font-medium text-sm leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        className="font-medium text-muted-foreground text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {includeConfidential
           ? t('include-confidential')

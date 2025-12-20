@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import {
   createAdminClient,
@@ -10,9 +9,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
 import { UsersList } from './users-list';

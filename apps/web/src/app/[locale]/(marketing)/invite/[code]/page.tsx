@@ -1,6 +1,6 @@
-import { validateInvite } from '@/lib/invite/validate-invite';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { validateInvite } from '@/lib/invite/validate-invite';
 import JoinWorkspaceClient from './join-workspace-client';
 
 interface Props {

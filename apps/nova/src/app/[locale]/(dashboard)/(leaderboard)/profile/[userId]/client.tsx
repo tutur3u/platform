@@ -41,9 +41,9 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface RecentActivity {
@@ -288,7 +288,7 @@ export default function UserProfileClient({
                       .join('')}
                   </AvatarFallback>
                 </Avatar>
-                <div className="-top-1 -right-1 absolute rounded-full border border-background bg-background p-1 shadow-md dark:bg-card">
+                <div className="absolute -top-1 -right-1 rounded-full border border-background bg-background p-1 shadow-md dark:bg-card">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 font-bold text-primary text-xs">
                     {level}
                   </div>

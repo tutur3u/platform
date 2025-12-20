@@ -48,8 +48,8 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { ConfidentialToggle } from './confidential-field';
 
@@ -529,7 +529,7 @@ export function TransactionEditDialog({
                       {isAmountConfidential && (
                         <Badge
                           variant="secondary"
-                          className="flex items-center gap-1 bg-dynamic-orange/5 text-dynamic-orange text-[10px]"
+                          className="flex items-center gap-1 bg-dynamic-orange/5 text-[10px] text-dynamic-orange"
                         >
                           <Coins className="h-2.5 w-2.5" />
                           {t('workspace-finance-transactions.amount')}
@@ -538,7 +538,7 @@ export function TransactionEditDialog({
                       {isDescriptionConfidential && (
                         <Badge
                           variant="secondary"
-                          className="flex items-center gap-1 bg-dynamic-orange/5 text-dynamic-orange text-[10px]"
+                          className="flex items-center gap-1 bg-dynamic-orange/5 text-[10px] text-dynamic-orange"
                         >
                           <FileText className="h-2.5 w-2.5" />
                           {t('workspace-finance-transactions.description')}
@@ -547,7 +547,7 @@ export function TransactionEditDialog({
                       {isCategoryConfidential && (
                         <Badge
                           variant="secondary"
-                          className="flex items-center gap-1 bg-dynamic-orange/5 text-dynamic-orange text-[10px]"
+                          className="flex items-center gap-1 bg-dynamic-orange/5 text-[10px] text-dynamic-orange"
                         >
                           <FolderOpen className="h-2.5 w-2.5" />
                           {t('workspace-finance-transactions.category')}
@@ -641,7 +641,7 @@ export function TransactionEditDialog({
                           'cursor-not-allowed opacity-60'
                       )}
                     />
-                    <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
+                    <div className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
                       <span className="font-medium">VND</span>
                     </div>
                   </div>

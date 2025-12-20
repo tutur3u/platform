@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useMentionSuggestions } from '../use-mention-suggestions';
+import { describe, expect, it } from 'vitest';
 import {
-  normalizeForSearch,
-  isSameSuggestionState,
   createInitialSuggestionState,
+  isSameSuggestionState,
+  normalizeForSearch,
 } from '../types';
+import { useMentionSuggestions } from '../use-mention-suggestions';
 
 describe('useMentionSuggestions', () => {
   const mockMembers = [

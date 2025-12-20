@@ -332,7 +332,7 @@ export default function ExpandableTaskList({
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   {/* Assignees */}
                   {task.assignees && task.assignees.length > 0 && (
-                    <div className="-space-x-1.5 flex">
+                    <div className="flex -space-x-1.5">
                       {task.assignees.slice(0, 3).map((assignee) => (
                         <Avatar
                           key={assignee.user?.id}

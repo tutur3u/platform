@@ -50,27 +50,27 @@ export function SessionCard({
   return (
     <div
       className={cn(
-        'group relative rounded-lg border p-3 transition-all hover:bg-accent/50 hover:shadow-sm @lg:p-4',
+        'group relative rounded-lg border @lg:p-4 p-3 transition-all hover:bg-accent/50 hover:shadow-sm',
         isHighlighted &&
           'slide-in-from-top animate-in bg-dynamic-green/10 ring-2 ring-dynamic-green duration-500'
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h4 className="truncate font-medium text-sm @lg:text-base">
+          <h4 className="truncate font-medium @lg:text-base text-sm">
             {session.title}
           </h4>
           {session.description && (
-            <p className="mt-1 line-clamp-2 text-muted-foreground text-xs @lg:text-sm">
+            <p className="mt-1 line-clamp-2 @lg:text-sm text-muted-foreground text-xs">
               {session.description}
             </p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-1 @lg:gap-2">
+          <div className="mt-2 flex flex-wrap items-center @lg:gap-2 gap-1">
             {session.category && (
               <Badge
                 variant="secondary"
                 className={cn(
-                  'text-xs @lg:text-sm',
+                  '@lg:text-sm text-xs',
                   getCategoryColor(session.category.color || 'BLUE')
                 )}
               >
@@ -80,7 +80,7 @@ export function SessionCard({
             {session.task && (
               <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                 <CheckCircle className="h-3 w-3 text-dynamic-blue" />
-                <span className="font-medium text-dynamic-blue text-xs @lg:text-sm">
+                <span className="font-medium @lg:text-sm text-dynamic-blue text-xs">
                   {session.task.name}
                 </span>
               </div>
@@ -103,12 +103,12 @@ export function SessionCard({
 
         <div className="flex items-start gap-2">
           <div className="text-right">
-            <p className="font-medium text-sm @lg:text-base">
+            <p className="font-medium @lg:text-base text-sm">
               {session.duration_seconds
                 ? formatDuration(session.duration_seconds)
                 : '-'}
             </p>
-            <p className="text-muted-foreground text-xs @lg:text-sm">
+            <p className="@lg:text-sm text-muted-foreground text-xs">
               {new Date(session.start_time).toLocaleDateString()}
             </p>
           </div>

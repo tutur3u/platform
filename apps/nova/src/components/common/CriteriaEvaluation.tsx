@@ -1,4 +1,3 @@
-import ScoreBadge from '@/components/common/ScoreBadge';
 import { CheckCircle2, Clock, EyeIcon, XCircle } from '@tuturuuu/icons';
 import type { NovaSubmissionData } from '@tuturuuu/types';
 import {
@@ -7,6 +6,7 @@ import {
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import ScoreBadge from '@/components/common/ScoreBadge';
 
 interface CriteriaEvaluationProps {
   submission: Partial<NovaSubmissionData>;

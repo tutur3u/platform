@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, Loader2, Search } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -19,8 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
-import { ChevronLeft, ChevronRight, Loader2, Search } from '@tuturuuu/icons';
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 interface AuditRecord {
@@ -179,7 +179,7 @@ export function EmailAuditTable() {
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : error ? (
-          <div className="text-destructive py-8 text-center">
+          <div className="py-8 text-center text-destructive">
             Failed to load audit records
           </div>
         ) : (
@@ -221,7 +221,7 @@ export function EmailAuditTable() {
                           {record.subject}
                         </div>
                         {record.error_message && (
-                          <div className="text-destructive max-w-[250px] truncate text-xs">
+                          <div className="max-w-[250px] truncate text-destructive text-xs">
                             {record.error_message}
                           </div>
                         )}
@@ -247,7 +247,7 @@ export function EmailAuditTable() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="text-muted-foreground py-8 text-center"
+                        className="py-8 text-center text-muted-foreground"
                       >
                         No records found
                       </TableCell>

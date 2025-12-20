@@ -1,5 +1,5 @@
-import { Button } from '@tuturuuu/ui/button';
 import type { LucideIcon } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 
 interface EmptyStateCardProps {
   title: string;
@@ -35,7 +35,7 @@ export function EmptyStateCard({
     <div className="flex flex-col items-center justify-center gap-3 p-4">
       <div className="space-y-2 text-center">
         <p className="font-medium text-muted-foreground text-sm">{title}</p>
-        <p className="text-xs text-muted-foreground/60">{description}</p>
+        <p className="text-muted-foreground/60 text-xs">{description}</p>
       </div>
       <Button size="sm" onClick={onAction} className="mt-2 w-full">
         <ActionIcon className="mr-1.5 h-3.5 w-3.5" />

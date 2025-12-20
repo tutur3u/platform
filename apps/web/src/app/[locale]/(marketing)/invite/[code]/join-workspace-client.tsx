@@ -183,7 +183,7 @@ export default function JoinWorkspaceClient({
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/4 right-1/4 h-96 w-96 animate-pulse rounded-full bg-dynamic-blue/5 blur-3xl" />
         <div className="animation-delay-2000 absolute bottom-1/4 left-1/4 h-96 w-96 animate-pulse rounded-full bg-dynamic-purple/5 blur-3xl" />
-        <div className="-translate-x-1/2 -translate-y-1/2 animation-delay-4000 absolute top-1/2 left-1/2 h-96 w-96 animate-pulse rounded-full bg-dynamic-pink/5 blur-3xl" />
+        <div className="animation-delay-4000 absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-dynamic-pink/5 blur-3xl" />
       </div>
 
       <div
@@ -221,7 +221,7 @@ export default function JoinWorkspaceClient({
                 </div>
               )}
               {joined && (
-                <div className="-right-2 -top-2 absolute animate-bounce rounded-full bg-dynamic-green p-2 shadow-lg ring-4 ring-background">
+                <div className="absolute -top-2 -right-2 animate-bounce rounded-full bg-dynamic-green p-2 shadow-lg ring-4 ring-background">
                   <Check className="h-5 w-5 text-white" strokeWidth={3} />
                 </div>
               )}

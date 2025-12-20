@@ -1,2 +1,2 @@
-export { formatTime, formatDuration } from './format-time';
 export { getCategoryColor, getCategoryColorName } from './category-colors';
+export { formatDuration, formatTime } from './format-time';

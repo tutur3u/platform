@@ -1,5 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   BarChart3,
   Clock,
@@ -23,6 +21,8 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { linkShortenerColumns } from './columns';
 import LinkShortenerFilters from './filters';
 import { InlineLinkShortenerForm } from './inline-form';

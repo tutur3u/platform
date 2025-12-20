@@ -105,7 +105,7 @@ export function TextDiffViewer({
     triggerVariant === 'inline' ? (
       <button
         type="button"
-        className="inline-flex items-center gap-1 text-xs text-dynamic-blue hover:underline"
+        className="inline-flex items-center gap-1 text-dynamic-blue text-xs hover:underline"
       >
         <Eye className="h-3 w-3" />
         {t('view_diff', { defaultValue: 'View diff' })}
@@ -138,7 +138,7 @@ export function TextDiffViewer({
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="whitespace-pre-wrap break-words text-sm">
                 {oldText || (
-                  <span className="italic text-muted-foreground">
+                  <span className="text-muted-foreground italic">
                     {t('value.empty', { defaultValue: 'Empty' })}
                   </span>
                 )}
@@ -159,7 +159,7 @@ export function TextDiffViewer({
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="whitespace-pre-wrap break-words text-sm">
                 {newText || (
-                  <span className="italic text-muted-foreground">
+                  <span className="text-muted-foreground italic">
                     {t('value.empty', { defaultValue: 'Empty' })}
                   </span>
                 )}

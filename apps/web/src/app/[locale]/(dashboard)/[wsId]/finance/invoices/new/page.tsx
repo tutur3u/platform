@@ -1,8 +1,8 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'New',

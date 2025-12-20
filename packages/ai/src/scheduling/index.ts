@@ -15,6 +15,12 @@ export {
   scheduleWithFlexibleEvents,
 } from './algorithm';
 export { defaultActiveHours, defaultTasks } from './default';
+export type {
+  HabitDurationConfig,
+  SlotCharacteristics,
+  TaskSlotConfig,
+  TimeSlotInfo,
+} from './duration-optimizer';
 export {
   calculateIdealStartTimeForHabit,
   calculateIdealStartTimeForTask,
@@ -29,12 +35,7 @@ export {
   slotMatchesPreference,
   timeMatchesSlot,
 } from './duration-optimizer';
-export type {
-  HabitDurationConfig,
-  SlotCharacteristics,
-  TaskSlotConfig,
-  TimeSlotInfo,
-} from './duration-optimizer';
+export type { PrioritizableItem } from './priority-calculator';
 export {
   calculatePriorityScore,
   canBump,
@@ -45,7 +46,6 @@ export {
   PRIORITY_WEIGHTS,
   sortByPriority,
 } from './priority-calculator';
-export type { PrioritizableItem } from './priority-calculator';
 export {
   calculateOccurrences,
   getNextOccurrence,

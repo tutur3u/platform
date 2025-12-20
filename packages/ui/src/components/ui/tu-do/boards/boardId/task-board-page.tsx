@@ -1,14 +1,14 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Workspace } from '@tuturuuu/types';
 import {
   getTaskBoard,
   getTaskLists,
   getTasks,
 } from '@tuturuuu/utils/task-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { BoardClient } from '../../shared/board-client';
-import type { Workspace } from '@tuturuuu/types';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {
   params: {
