@@ -5,7 +5,6 @@
     "rootDir": "src",
     "declarationDir": "dist",
     "emitDeclarationOnly": false,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "module": "ESNext",
     "moduleResolution": "Bundler"
   },

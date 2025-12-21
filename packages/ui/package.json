@@ -8,7 +8,8 @@
   "scripts": {
     "ui": "bunx shadcn-ui@latest",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "type-check": "tsgo --build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -11,6 +11,7 @@
     "./google-calendar-incremental-sync": "./src/google-calendar-incremental-sync.ts"
   },
   "scripts": {
+    "type-check": "tsgo --build",
     "test": "vitest run",
     "test:watch": "vitest",
     "trigger:dev": "bunx trigger.dev@latest dev",

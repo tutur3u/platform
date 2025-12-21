@@ -6,6 +6,7 @@
     "access": "public"
   },
   "scripts": {
+    "type-check": "tsgo --build",
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {

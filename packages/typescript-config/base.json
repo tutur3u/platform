@@ -23,7 +23,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "esnext",
-    "tsBuildInfoFile": ".turbo/tsconfig.tsbuildinfo"
+    "target": "esnext"
   }
 }

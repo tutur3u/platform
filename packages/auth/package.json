@@ -16,6 +16,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "type-check": "tsgo --build",
     "test": "vitest run",
     "test:watch": "vitest"
   },

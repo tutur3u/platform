@@ -12,6 +12,7 @@
     "./emails/vercel-invite-user": "./emails/vercel-invite-user.tsx"
   },
   "scripts": {
+    "type-check": "tsgo --build",
     "dev": "email dev -p 7001",
     "export": "email export",
     "test": "vitest run",

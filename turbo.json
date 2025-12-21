@@ -63,7 +63,13 @@
     },
     "type-check": {
       "dependsOn": ["^type-check"],
-      "outputs": [".turbo/tsconfig.tsbuildinfo"]
+      "outputs": [
+        "tsconfig.tsbuildinfo",
+        "tsconfig.build.tsbuildinfo",
+        "dist/tsconfig.tsbuildinfo",
+        ".turbo/tsconfig.tsbuildinfo",
+        ".next/cache/.tsbuildinfo"
+      ]
     }
   }
 }
