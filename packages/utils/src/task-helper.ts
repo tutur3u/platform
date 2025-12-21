@@ -25,9 +25,7 @@ import type {
   TaskRelationshipsResponse,
   TaskRelationshipType,
 } from '@tuturuuu/types/primitives/TaskRelationship';
-import {
-  transformTaskRecord,
-} from './task/transformers';
+import { transformTaskRecord } from './task/transformers';
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")

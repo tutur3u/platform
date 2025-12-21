@@ -43,7 +43,9 @@ export default function UncrawledUrlsCount({ wsId }: { wsId: string }) {
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          {errorUncrawled?.message || errorDomains?.message || 'Unknown error occurred'}
+          {errorUncrawled?.message ||
+            errorDomains?.message ||
+            'Unknown error occurred'}
         </AlertDescription>
       </Alert>
     );

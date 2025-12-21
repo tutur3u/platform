@@ -69,7 +69,7 @@ describe('AdminTaskEmbeddings', () => {
   });
 
   it('handles fetch error', async () => {
-    (global as any).fetch = vi.fn().mockImplementation(() => 
+    (global as any).fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: false,
         json: async () => ({ message: 'API Error' }),

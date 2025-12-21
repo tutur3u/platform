@@ -20,9 +20,13 @@ vi.mock('./[crawlerId]/crawl-button', () => ({
 
 // Mock the Link component (if used internally by Pagination or others)
 vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  ),
+  default: ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>,
 }));
 
 const createWrapper = () => {
@@ -39,26 +43,29 @@ describe('UncrawledUrls', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    const mockEventSource = vi.fn(() => ({
-      onmessage: null,
-      close: vi.fn(),
-    }));
-    (global as any).EventSource = mockEventSource;
-    (window as any).EventSource = mockEventSource;
+    class MockEventSource {
+      onmessage = null;
+      close = vi.fn();
+      constructor() {}
+    }
+    (global as any).EventSource = MockEventSource;
+    (window as any).EventSource = MockEventSource;
     (global as any).fetch = vi.fn();
   });
 
   it('renders loading skeleton initially', () => {
     // Mock fetch to pending
     (global as any).fetch = vi.fn(() => new Promise(() => {}));
-    
-    // We don't need wrapper yet as we are testing the component BEFORE refactor 
+
+    // We don't need wrapper yet as we are testing the component BEFORE refactor
     // (which uses useEffect), but adding it doesn't hurt.
     // However, for the BEFORE state, I should NOT use the wrapper if I want to match exactly,
     // but I'll use it to be ready for AFTER.
-    
-    const { container } = render(<UncrawledUrls wsId={wsId} />, { wrapper: createWrapper() });
-    
+
+    const { container } = render(<UncrawledUrls wsId={wsId} />, {
+      wrapper: createWrapper(),
+    });
+
     // Check for skeleton elements
     expect(container.querySelector('.animate-pulse')).toBeTruthy();
   });
@@ -72,18 +79,21 @@ describe('UncrawledUrls', () => {
           origin_url: 'https://example.com',
           created_at: '2023-01-01',
           skipped: false,
-          origin_id: '1'
-        }
+          origin_id: '1',
+        },
       ],
-      pagination: { totalItems: 1, totalPages: 1, page: 1, pageSize: 20 }
+      pagination: { totalItems: 1, totalPages: 1, page: 1, pageSize: 20 },
     };
     const mockStatus = { crawledUrls: [] };
 
     global.fetch = vi.fn().mockImplementation((url: string | Request) => {
       const urlStr = typeof url === 'string' ? url : url.url;
-      if (urlStr.includes('/domains')) return Promise.resolve({ ok: true, json: async () => mockDomains });
-      if (urlStr.includes('/uncrawled')) return Promise.resolve({ ok: true, json: async () => mockUrls });
-      if (urlStr.includes('/status')) return Promise.resolve({ ok: true, json: async () => mockStatus });
+      if (urlStr.includes('/domains'))
+        return Promise.resolve({ ok: true, json: async () => mockDomains });
+      if (urlStr.includes('/uncrawled'))
+        return Promise.resolve({ ok: true, json: async () => mockUrls });
+      if (urlStr.includes('/status'))
+        return Promise.resolve({ ok: true, json: async () => mockStatus });
       return Promise.reject(new Error(`Unknown URL: ${urlStr}`));
     });
 

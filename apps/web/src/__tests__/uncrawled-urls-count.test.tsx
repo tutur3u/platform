@@ -5,9 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock the Link component since it's used in the component
 vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  ),
+  default: ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>,
 }));
 
 const createWrapper = () => {
@@ -34,8 +38,10 @@ describe('UncrawledUrlsCount', () => {
   it('renders loading skeleton initially', () => {
     // Mock fetch to never resolve immediately to test loading state
     (global as any).fetch = vi.fn(() => new Promise(() => {}));
-    
-    const { container } = render(<UncrawledUrlsCount wsId={wsId} />, { wrapper: createWrapper() });
+
+    const { container } = render(<UncrawledUrlsCount wsId={wsId} />, {
+      wrapper: createWrapper(),
+    });
     // Look for the skeleton class or structure
     expect(container.querySelector('.animate-pulse')).toBeTruthy();
   });
@@ -94,7 +100,7 @@ describe('UncrawledUrlsCount', () => {
 
     render(<UncrawledUrlsCount wsId={wsId} />, { wrapper: createWrapper() });
 
-    expect(await screen.findByText('0')).toBeTruthy();
+    expect(await screen.findAllByText('0')).toHaveLength(2);
     expect(await screen.findByText(/All caught up/i)).toBeTruthy();
   });
 });
