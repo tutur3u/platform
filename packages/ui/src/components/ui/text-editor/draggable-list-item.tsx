@@ -17,7 +17,7 @@ interface DraggableListItemViewProps extends NodeViewProps {
 
 /**
  * Calculate drop zone based on mouse position relative to target element.
- * Simple 3-zone detection: before (top 25%), after (bottom 75%), nested (bottom-right corner).
+ * Simple 3-zone detection: before (top 25%), nested (middle 50%), after (bottom 75%).
  */
 function calculateDropZone(
   event: React.DragEvent,
@@ -37,7 +37,7 @@ function calculateDropZone(
     return { zone: 'nested', insertionMode: 'child-first' };
   }
 
-  // Bottom 25% = drop after
+  // Bottom 75% = drop after
   return { zone: 'after', insertionMode: 'sibling-after' };
 }
 
