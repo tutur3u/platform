@@ -33,7 +33,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useImageUpload } from '../hooks/use-image-upload';
 import { ImageUploadSection } from './components/image-upload-section';
 import { useRequestImages } from './hooks/use-request-images';
@@ -197,9 +197,55 @@ export function RequestDetailModal({
     setEditStartTime(startLocal.format('YYYY-MM-DDTHH:mm'));
     setEditEndTime(endLocal.format('YYYY-MM-DDTHH:mm'));
 
-    // Set existing images
-    imageUpload.setExistingImages(imageUrls);
-  }, [request, imageUrls, imageUpload]);
+    // Set existing images using storage paths, not signed URLs
+    // This is critical because removedImages comparison uses request.images (paths)
+    imageUpload.setExistingImages(request.images || []);
+  }, [request, imageUpload]);
+
+  // Create a mapping of storage paths to signed URLs for display
+  // imageUpload.existingImages contains storage paths (for removal tracking)
+  // but we need signed URLs for display
+  const existingImageUrlsForDisplay = imageUpload.existingImages
+    .map((path) => {
+      const index = (request.images || []).indexOf(path);
+      return index !== -1 ? imageUrls[index] : null;
+    })
+    .filter((url): url is string => url !== null);
+
+  // Track if there are unsaved changes in edit mode
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isEditMode) return false;
+
+    // Check if any field has changed
+    const titleChanged = editTitle !== request.title;
+    const descriptionChanged = editDescription !== (request.description || '');
+    
+    // Check time changes (compare in local timezone)
+    const userTz = dayjs.tz.guess();
+    const originalStartLocal = dayjs.utc(request.start_time).tz(userTz).format('YYYY-MM-DDTHH:mm');
+    const originalEndLocal = dayjs.utc(request.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm');
+    const timeChanged = editStartTime !== originalStartLocal || editEndTime !== originalEndLocal;
+
+    // Check image changes
+    const imagesChanged = imageUpload.images.length > 0 || 
+      imageUpload.existingImages.length !== (request.images?.length || 0);
+
+    return titleChanged || descriptionChanged || timeChanged || imagesChanged;
+  }, [
+    isEditMode,
+    editTitle,
+    editDescription,
+    editStartTime,
+    editEndTime,
+    request.title,
+    request.description,
+    request.start_time,
+    request.end_time,
+    request.images,
+    imageUpload.images.length,
+    imageUpload.existingImages.length,
+  ]);
+
 
   const handleCancelEdit = useCallback(() => {
     setIsEditMode(false);
@@ -252,14 +298,19 @@ export function RequestDetailModal({
     onUpdate,
   ]);
 
-  const calculateDuration = (startTime: string, endTime: string) => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const durationMs = end.getTime() - start.getTime();
-    const hours = Math.floor(durationMs / (1000 * 60 * 60));
-    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+  const calculateDuration = useCallback((startTime: string, endTime: string) => {
+    if (!startTime || !endTime) return '0h 0m';
+    const start = dayjs(startTime);
+    const end = dayjs(endTime);
+    if (!start.isValid() || !end.isValid()) return '0h 0m';
+
+    const diffSeconds = end.diff(start, 'second');
+    if (diffSeconds < 0) return '0h 0m';
+
+    const hours = Math.floor(diffSeconds / 3600);
+    const minutes = Math.floor((diffSeconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
-  };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -274,7 +325,24 @@ export function RequestDetailModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-h-[90vh] md:max-w-6xl overflow-y-auto">
+        <DialogContent
+          className="max-h-[90vh] md:max-w-6xl overflow-y-auto"
+          onPointerDownOutside={(e) => {
+            if (hasUnsavedChanges) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            if (hasUnsavedChanges) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (hasUnsavedChanges) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1.5">
@@ -286,34 +354,22 @@ export function RequestDetailModal({
                   >
                     {t(`status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`)}
                   </Badge>
-                  {request.category && (
+                  {request.category ? (
                     <Badge
                       variant="outline"
                       className="border-dynamic-purple/20"
                     >
                       {request.category.name}
                     </Badge>
-                  )}
+                  ) : null}
                 </DialogDescription>
               </div>
-              {/* Edit button for request owner */}
-              {canEdit && !isEditMode && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEnterEditMode}
-                  className="shrink-0"
-                >
-                  <EditIcon className="mr-2 h-4 w-4" />
-                  {t('detail.editButton')}
-                </Button>
-              )}
             </div>
           </DialogHeader>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_400px]">
             {/* Left Column - Main Content */}
-            <div className="space-y-6">
+            <div className="order-2 space-y-6 lg:order-1">
             {/* User Info */}
             <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
               {request.user ? (
@@ -412,13 +468,25 @@ export function RequestDetailModal({
                       disabled={updateMutation.isPending}
                     />
                   </div>
+
+                  <div className="flex items-center gap-4 md:col-span-2">
+                    <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
+                    <Badge
+                      variant="outline"
+                      className="border-dynamic-blue/30 bg-dynamic-blue/5 px-3 py-1 font-semibold text-dynamic-blue"
+                    >
+                      <ClockIcon className="mr-1.5 h-3.5 w-3.5" />
+                      {calculateDuration(editStartTime, editEndTime)}
+                    </Badge>
+                    <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
+                  </div>
                 </div>
 
                 {/* Image Upload Section */}
                 <ImageUploadSection
                   images={imageUpload.images}
                   imagePreviews={imageUpload.imagePreviews}
-                  existingImageUrls={imageUpload.existingImages}
+                  existingImageUrls={existingImageUrlsForDisplay}
                   isCompressing={imageUpload.isCompressing}
                   isDragOver={imageUpload.isDragOver}
                   imageError={imageUpload.imageError}
@@ -445,6 +513,8 @@ export function RequestDetailModal({
                     ),
                     imageFormats: tTracker('missed_entry_dialog.approval.imageFormats'),
                     proofImageAlt: tTracker('missed_entry_dialog.approval.proofImageAlt'),
+                    existing: t('detail.existingImage'),
+                    new: t('detail.newImage'),
                   }}
                 />
 
@@ -473,46 +543,49 @@ export function RequestDetailModal({
 
             {/* View Mode - Time Info */}
             {!isEditMode && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{t('detail.startTime')}</span>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold uppercase tracking-wider">
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>{t('detail.startTime')}</span>
+                  </div>
+                  <p className="font-medium">
+                    {format(new Date(request.start_time), 'MMM d, yyyy h:mm a')}
+                  </p>
                 </div>
-                <p className="font-medium">
-                  {format(new Date(request.start_time), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{t('detail.endTime')}</span>
+                <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold uppercase tracking-wider">
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>{t('detail.endTime')}</span>
+                  </div>
+                  <p className="font-medium">
+                    {format(new Date(request.end_time), 'MMM d, yyyy h:mm a')}
+                  </p>
                 </div>
-                <p className="font-medium">
-                  {format(new Date(request.end_time), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4 md:col-span-2">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <ClockIcon className="h-4 w-4" />
-                  <span>{t('detail.duration')}</span>
+
+                <div className="flex items-center gap-4 sm:grid-cols-2 sm:col-span-2">
+                  <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
+                  <Badge
+                    variant="outline"
+                    className="border-dynamic-blue/30 bg-dynamic-blue/5 px-3 py-1 font-semibold text-dynamic-blue"
+                  >
+                    <ClockIcon className="mr-1.5 h-3.5 w-3.5" />
+                    {calculateDuration(request.start_time, request.end_time)}
+                  </Badge>
+                  <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
                 </div>
-                <p className="font-medium">
-                  {calculateDuration(request.start_time, request.end_time)}
-                </p>
               </div>
-            </div>
             )}
 
             {/* Task Info */}
-            {!isEditMode && request.task && (
+            {!isEditMode && request.task ? (
               <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
                 <div className="text-muted-foreground text-sm">
                   {t('detail.linkedTask')}
                 </div>
                 <p className="font-medium">{request.task.name}</p>
               </div>
-            )}
+            ) : null}
 
             {/* Description */}
             {!isEditMode && request.description && (
@@ -544,7 +617,7 @@ export function RequestDetailModal({
                     </p>
                   </div>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-3">
                     {imageUrls.map((url, index) => (
                       <button
                         key={index}
@@ -568,10 +641,22 @@ export function RequestDetailModal({
             {/* End Left Column */}
 
             {/* Right Column - Status & Actions */}
-            <div className="space-y-4">
+            <div className="order-1 space-y-4 lg:order-2">
+              {/* Edit button for request owner */}
+              {canEdit && !isEditMode && (
+                <Button
+                  variant="outline"
+                  onClick={handleEnterEditMode}
+                  className="w-full"
+                >
+                  <EditIcon className="mr-2 h-4 w-4" />
+                  {t('detail.editButton')}
+                </Button>
+              )}
+
               {/* Approval/Rejection Info */}
               {request.approval_status === 'APPROVED' &&
-                request.approved_by_user && (
+                request.approved_by_user ? (
                   <div className="flex items-start gap-3 rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
                     <CheckCircle2Icon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
                     <div className="space-y-1">
@@ -591,11 +676,11 @@ export function RequestDetailModal({
                       </p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
               {request.approval_status === 'REJECTED' &&
                 request.rejected_by_user &&
-                request.rejection_reason && (
+                request.rejection_reason ? (
                   <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
                     <div className="flex items-start gap-3">
                       <XCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-red" />
@@ -625,12 +710,12 @@ export function RequestDetailModal({
                       </p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
               {/* NEEDS_INFO Status Display */}
               {request.approval_status === 'NEEDS_INFO' &&
                 request.needs_info_requested_by_user &&
-                request.needs_info_reason && (
+                request.needs_info_reason ? (
                   <div className="space-y-3 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
                     <div className="flex items-start gap-3">
                       <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-blue" />
@@ -660,12 +745,12 @@ export function RequestDetailModal({
                       </p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
               {/* Resubmit Button for Request Owner */}
               {request.approval_status === 'NEEDS_INFO' &&
                 currentUser &&
-                request.user_id === currentUser.id && (
+                request.user_id === currentUser.id ? (
                   <div className="space-y-2">
                     <Button
                       onClick={handleResubmit}
@@ -679,12 +764,12 @@ export function RequestDetailModal({
                       {t('detail.resubmitButton')}
                     </Button>
                   </div>
-                )}
+                ) : null}
 
               {/* Action Buttons */}
               {request.approval_status === 'PENDING' &&
                 (bypassRulesPermission ||
-                  (currentUser && request.user_id !== currentUser.id)) && (
+                  (currentUser && request.user_id !== currentUser.id)) ? (
                   <>
                     {!showRejectionForm && !showNeedsInfoForm ? (
                       <div className="space-y-2">
@@ -793,7 +878,7 @@ export function RequestDetailModal({
                       </div>
                     )}
                   </>
-                )}
+                ) : null}
             </div>
             {/* End Right Column */}
           </div>

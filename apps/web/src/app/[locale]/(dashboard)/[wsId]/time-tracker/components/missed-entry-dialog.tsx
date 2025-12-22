@@ -236,6 +236,62 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     () => (session?.start_time ? dayjs(session.start_time) : null),
     [session?.start_time]
   );
+
+  // Track if there are unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    // If we are in any exceeded mode, we compare against session/chain data
+    if ((isExceededMode || isChainMode) && session) {
+      const titleChanged = missedEntryTitle !== (session.title || '');
+      const descriptionChanged =
+        missedEntryDescription !== (session.description || '');
+      const categoryChanged =
+        missedEntryCategoryId !== (session.category_id || 'none');
+      const taskChanged = missedEntryTaskId !== (session.task_id || 'none');
+
+      // Check image changes
+      const imagesChanged = images.length > 0;
+
+      // Note: We don't strictly compare times here as they are pre-filled with dynamic 'now'
+      // but title/description/category/task/images are the primary user inputs
+      return (
+        titleChanged ||
+        descriptionChanged ||
+        categoryChanged ||
+        taskChanged ||
+        imagesChanged
+      );
+    }
+
+    // Normal mode: check if anything is modified from empty/pre-filled state
+    const isNotEmpty =
+      missedEntryTitle !== '' ||
+      missedEntryDescription !== '' ||
+      missedEntryCategoryId !== 'none' ||
+      missedEntryTaskId !== 'none' ||
+      images.length > 0;
+
+    if (prefillStartTime || prefillEndTime) {
+      const startTimeChanged = missedEntryStartTime !== (prefillStartTime || '');
+      const endTimeChanged = missedEntryEndTime !== (prefillEndTime || '');
+      return isNotEmpty || startTimeChanged || endTimeChanged;
+    }
+
+    return isNotEmpty;
+  }, [
+    isExceededMode,
+    isChainMode,
+    session,
+    missedEntryTitle,
+    missedEntryDescription,
+    missedEntryCategoryId,
+    missedEntryTaskId,
+    images.length,
+    prefillStartTime,
+    prefillEndTime,
+    missedEntryStartTime,
+    missedEntryEndTime,
+  ]);
+
   const currentDuration = useMemo(() => {
     if (!sessionStartTime) return 0;
     // Use currentTime to ensure this recalculates every second
@@ -602,7 +658,24 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
         }
       }}
     >
-      <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
+      <DialogContent 
+        className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden"
+        onPointerDownOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="border-b pb-4">
           {isExceededMode || isChainMode ? (
             <>
@@ -934,6 +1007,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                   clickToUpload: t('approval.clickToUpload'),
                   imageFormats: t('approval.imageFormats'),
                   proofImageAlt: t('approval.proofImageAlt'),
+                  existing: t('approval.existingImage'),
+                  new: t('approval.newImage'),
                 }}
               />
             </div>
@@ -968,6 +1043,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 clickToUpload: t('approval.clickToUpload'),
                 imageFormats: t('approval.imageFormats'),
                 proofImageAlt: t('approval.proofImageAlt'),
+                existing: t('approval.existingImage'),
+                new: t('approval.newImage'),
               }}
             />
           )}

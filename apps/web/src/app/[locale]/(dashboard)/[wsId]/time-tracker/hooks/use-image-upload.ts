@@ -42,10 +42,10 @@ export interface UseImageUploadReturn {
 async function compressImage(file: File): Promise<File> {
   try {
     const options = {
-      maxSizeMB: 1,
+      maxSizeMB: 0.5,
       maxWidthOrHeight: 1920,
       useWebWorker: true,
-      initialQuality: 0.8,
+      initialQuality: 0.65,
     };
     const compressedBlob = await imageCompression(file, options);
 

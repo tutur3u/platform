@@ -7871,7 +7871,9 @@
         "cancelEditButton": "Cancel",
         "titleLabel": "Title",
         "descriptionLabel": "Description",
-        "addMoreImages": "Add More Images ({current}/{max})"
+        "addMoreImages": "Add More Images ({current}/{max})",
+        "existingImage": "Existing",
+        "newImage": "New"
       },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",
@@ -8181,7 +8183,9 @@
         "dropImages": "Drop images here",
         "clickToUpload": "Click to upload or drag and drop",
         "imageFormats": "PNG, JPG, GIF, or WebP up to 1MB each",
-        "proofImageAlt": "Proof image {number}"
+        "proofImageAlt": "Proof image",
+        "existingImage": "Existing",
+        "newImage": "New"
       },
       "presets": {
         "title": "Quick Presets",

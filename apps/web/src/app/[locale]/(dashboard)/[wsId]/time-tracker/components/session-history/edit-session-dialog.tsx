@@ -24,7 +24,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { TimeValidationResult } from '@/lib/time-validation';
 import { validateEndTime, validateStartTime } from '@/lib/time-validation';
 import type { SessionWithRelations } from '../../types';
@@ -88,6 +88,39 @@ export function EditSessionDialog({
     ? isSessionOlderThanThreshold(session, thresholdDays)
     : false;
 
+  const hasUnsavedChanges = useMemo(() => {
+    if (!session) return false;
+
+    const titleChanged = formState.title !== (session.title || '');
+    const descriptionChanged =
+      formState.description !== (session.description || '');
+    const categoryChanged =
+      formState.categoryId !== (session.category_id || 'none');
+    const taskChanged = formState.taskId !== (session.task_id || 'none');
+
+    // Convert session times to local format YYYY-MM-DDTHH:mm to compare with formState
+    const userTz = dayjs.tz.guess();
+    const sessionStartLocal = dayjs
+      .utc(session.start_time)
+      .tz(userTz)
+      .format('YYYY-MM-DDTHH:mm');
+    const sessionEndLocal = session.end_time
+      ? dayjs.utc(session.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
+      : '';
+
+    const startTimeChanged = formState.startTime !== sessionStartLocal;
+    const endTimeChanged = formState.endTime !== sessionEndLocal;
+
+    return (
+      titleChanged ||
+      descriptionChanged ||
+      categoryChanged ||
+      taskChanged ||
+      startTimeChanged ||
+      endTimeChanged
+    );
+  }, [session, formState]);
+
   const isStartTimeInvalid =
     formState.startTime &&
     isDatetimeMoreThanThresholdAgo(
@@ -150,7 +183,24 @@ export function EditSessionDialog({
 
   return (
     <Dialog open={!!session} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        onPointerDownOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{t('edit_session_title')}</DialogTitle>
         </DialogHeader>

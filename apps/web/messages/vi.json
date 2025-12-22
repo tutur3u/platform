@@ -7673,7 +7673,9 @@
         "cancelEditButton": "Hủy",
         "titleLabel": "Tiêu Đề",
         "descriptionLabel": "Mô Tả",
-        "addMoreImages": "Thêm Hình Ảnh ({current}/{max})"
+        "addMoreImages": "Thêm Hình Ảnh ({current}/{max})",
+        "existingImage": "Hiện Tại",
+        "newImage": "Mới"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
@@ -7976,7 +7978,9 @@
         "dropImages": "Thả hình ảnh vào đây",
         "clickToUpload": "Nhấp để tải lên hoặc kéo thả",
         "imageFormats": "PNG, JPG, GIF hoặc WebP tối đa 1MB mỗi tệp",
-        "proofImageAlt": "Hình ảnh bằng chứng {number}"
+        "proofImageAlt": "Hình ảnh bằng chứng",
+        "existingImage": "Hiện Tại",
+        "newImage": "Mới"
       },
       "presets": {
         "title": "Cài Đặt Nhanh",

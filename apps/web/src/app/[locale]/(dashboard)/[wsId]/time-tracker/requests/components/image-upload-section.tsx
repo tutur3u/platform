@@ -1,4 +1,5 @@
 import { AlertCircle, Upload, X } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -31,6 +32,8 @@ interface ImageUploadSectionProps {
     clickToUpload: string;
     imageFormats: string;
     proofImageAlt: string;
+    existing: string;
+    new: string;
   };
 }
 
@@ -68,6 +71,7 @@ export function ImageUploadSection({
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
+          onClick={() => fileInputRef.current?.click()}
           aria-label="Upload images"
           disabled={disabled || isCompressing}
         >
@@ -122,17 +126,24 @@ export function ImageUploadSection({
         </div>
       )}
 
-      {/* Existing images */}
-      {existingImageUrls.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2">
+      {/* All images (existing + new) */}
+      {(existingImageUrls.length > 0 || imagePreviews.length > 0) && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {/* Existing images */}
           {existingImageUrls.map((url, index) => (
             <div key={`existing-${index}`} className="relative">
               <div className="relative h-32 overflow-hidden rounded-lg border bg-muted/10">
                 <img
                   src={url}
-                  alt={`${labels.proofImageAlt} ${existingImageUrls.length + index + 1}`}
+                  alt={`${labels.proofImageAlt} ${index + 1}`}
                   className="h-full w-full object-cover"
                 />
+                <Badge
+                  variant="secondary"
+                  className="absolute bottom-2 left-2 text-xs"
+                >
+                  {labels.existing}
+                </Badge>
               </div>
               {!disabled && (
                 <Button
@@ -148,12 +159,8 @@ export function ImageUploadSection({
               )}
             </div>
           ))}
-        </div>
-      )}
 
-      {/* New image previews */}
-      {imagePreviews.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2">
+          {/* New image previews */}
           {imagePreviews.map((preview, index) => (
             <div key={`new-${index}`} className="relative">
               <div className="relative h-32 overflow-hidden rounded-lg border bg-muted/10">
@@ -165,6 +172,12 @@ export function ImageUploadSection({
                   sizes="(max-width: 640px) 100vw, 50vw"
                   unoptimized
                 />
+                <Badge
+                  variant="default"
+                  className="absolute bottom-2 left-2 bg-dynamic-green text-white text-xs"
+                >
+                  {labels.new}
+                </Badge>
               </div>
               <Button
                 type="button"
