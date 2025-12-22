@@ -40,8 +40,8 @@ describe('Scheduling Algorithm - Priority & Streaks', () => {
         {
           start: baseDate.hour(9).minute(0),
           end: baseDate.hour(17).minute(0),
-        }
-      ]
+        },
+      ],
     };
 
     const result = scheduleTasks(tasks, activeHours, []);
@@ -52,10 +52,10 @@ describe('Scheduling Algorithm - Priority & Streaks', () => {
 
     expect(habitEvent).toBeDefined();
     expect(taskEvent).toBeDefined();
-    
+
     const habitStart = dayjs(habitEvent!.range.start);
     const taskStart = dayjs(taskEvent!.range.start);
-    
+
     expect(habitStart.isBefore(taskStart)).toBe(true);
   });
 });

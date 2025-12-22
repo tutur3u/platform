@@ -29,7 +29,7 @@ describe('Scheduling Algorithm - Sophisticated Features', () => {
         {
           start: baseDate.hour(8).minute(0),
           end: baseDate.hour(20).minute(0),
-        }
+        },
       ],
     };
 
@@ -79,7 +79,7 @@ describe('Scheduling Algorithm - Sophisticated Features', () => {
         {
           start: baseDate.hour(9).minute(0),
           end: baseDate.hour(17).minute(0),
-        }
+        },
       ],
     };
 
@@ -133,7 +133,7 @@ describe('Scheduling Algorithm - Sophisticated Features', () => {
         {
           start: baseDate.hour(14).minute(0),
           end: baseDate.hour(17).minute(0),
-        }
+        },
       ],
     };
 

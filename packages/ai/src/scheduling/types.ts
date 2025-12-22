@@ -14,6 +14,7 @@ export interface Event {
   partNumber?: number;
   totalParts?: number;
   locked?: boolean;
+  reason?: string;
 }
 export type TimeOfDayPreference = 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -33,7 +34,11 @@ export interface Task {
   timePreference?: TimeOfDayPreference;
 }
 
-export type EnergyProfile = 'morning_person' | 'night_owl' | 'afternoon_peak' | 'evening_peak';
+export type EnergyProfile =
+  | 'morning_person'
+  | 'night_owl'
+  | 'afternoon_peak'
+  | 'evening_peak';
 
 export interface SchedulingSettings {
   min_buffer?: number;
@@ -115,6 +120,7 @@ export interface WebScheduleResult {
     task_id: string;
     partNumber?: number;
     totalParts?: number;
+    reason?: string;
   }>;
   totalScheduledMinutes: number;
   message: string;

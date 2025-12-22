@@ -41,8 +41,8 @@ describe('Scheduling Algorithm - Locked Events', () => {
         {
           start: baseDate.hour(9).minute(0),
           end: baseDate.hour(17).minute(0),
-        }
-      ]
+        },
+      ],
     };
 
     // 3. Schedule
@@ -58,7 +58,8 @@ describe('Scheduling Algorithm - Locked Events', () => {
     const lockedEnd = dayjs(lockedEvent.range.end);
 
     // The task should not overlap with the locked event
-    const hasOverlap = taskStart.isBefore(lockedEnd) && taskEnd.isAfter(lockedStart);
+    const hasOverlap =
+      taskStart.isBefore(lockedEnd) && taskEnd.isAfter(lockedStart);
     expect(hasOverlap).toBe(false);
   });
 

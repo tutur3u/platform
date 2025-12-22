@@ -162,7 +162,9 @@ export function SmartSchedulingSettings({
             <Label htmlFor="preferred-buffer">Preferred buffer (Soft)</Label>
             <Select
               value={value.preferredBuffer.toString()}
-              onValueChange={(val) => handleBufferChange('preferredBuffer', val)}
+              onValueChange={(val) =>
+                handleBufferChange('preferredBuffer', val)
+              }
               disabled={!value.enableSmartScheduling}
             >
               <SelectTrigger id="preferred-buffer" className="w-full">

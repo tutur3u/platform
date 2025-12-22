@@ -51,10 +51,10 @@ export function TaskInstancesSection({
         className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-muted/50 md:px-8"
       >
         <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium text-sm text-foreground/80">
+        <span className="font-medium text-foreground/80 text-sm">
           Scheduled Instances
         </span>
-        <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1.5">
+        <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
           {scheduledEvents.length}
         </Badge>
         {isExpanded ? (
@@ -96,12 +96,16 @@ export function TaskInstancesSection({
                             <span className="font-medium text-foreground/70">
                               {dayjs(event.start_at).format('MMM D, YYYY')}
                             </span>
-                            <span className="hidden opacity-50 sm:inline">•</span>
+                            <span className="hidden opacity-50 sm:inline">
+                              •
+                            </span>
                             <span>
                               {dayjs(event.start_at).format('h:mm A')} -{' '}
                               {dayjs(event.end_at).format('h:mm A')}
                             </span>
-                            <span className="hidden opacity-50 sm:inline">•</span>
+                            <span className="hidden opacity-50 sm:inline">
+                              •
+                            </span>
                             <span className="rounded bg-muted px-1.5 py-0.5">
                               {event.scheduled_minutes}m
                             </span>
@@ -118,7 +122,7 @@ export function TaskInstancesSection({
                                   className={cn(
                                     'h-8 w-8 shrink-0 transition-colors',
                                     isLocked
-                                      ? 'text-primary bg-primary/5 hover:bg-primary/10'
+                                      ? 'bg-primary/5 text-primary hover:bg-primary/10'
                                       : 'text-muted-foreground hover:bg-muted'
                                   )}
                                   onClick={(e) => {

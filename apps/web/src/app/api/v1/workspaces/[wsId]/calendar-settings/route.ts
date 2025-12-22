@@ -64,7 +64,9 @@ export async function GET(_: NextRequest, { params }: Params) {
     // Fetch workspace calendar settings
     const { data: workspace, error } = await supabase
       .from('workspaces')
-      .select('timezone, first_day_of_week, energy_profile, scheduling_settings')
+      .select(
+        'timezone, first_day_of_week, energy_profile, scheduling_settings'
+      )
       .eq('id', normalizedWsId)
       .single();
 
@@ -155,7 +157,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .from('workspaces')
       .update(updatePayload)
       .eq('id', normalizedWsId)
-      .select('timezone, first_day_of_week, energy_profile, scheduling_settings')
+      .select(
+        'timezone, first_day_of_week, energy_profile, scheduling_settings'
+      )
       .single();
 
     if (error) {

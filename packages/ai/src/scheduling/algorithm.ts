@@ -213,6 +213,29 @@ function isPeakHour(time: dayjs.Dayjs, profile?: EnergyProfile): boolean {
   }
 }
 
+/**
+ * Calculate the reason for a task being scheduled at a specific time
+ */
+function calculateSchedulingReason(
+  task: any,
+  time: dayjs.Dayjs,
+  profile?: EnergyProfile
+): string {
+  if (task.energyLoad === 'high' && isPeakHour(time, profile)) {
+    return 'Peak energy alignment';
+  }
+  if (task.priority === 'critical' || task.priority === 'high') {
+    return 'Priority prioritization';
+  }
+  if (task.isHabit && task.streak && task.streak > 0) {
+    return `Streak maintenance (${task.streak} days)`;
+  }
+  if (task.timePreference && matchesTimePreference(time, task.timePreference)) {
+    return 'Time preference alignment';
+  }
+  return 'Available slot';
+}
+
 export const promoteEventToTask = (event: Event): Task | null => {
   const start = dayjs(event.range.start);
   const end = dayjs(event.range.end);
@@ -392,6 +415,11 @@ export const scheduleTasks = (
                 range: { start: partStart, end: partEnd },
                 locked: false,
                 taskId: task.id,
+                reason: calculateSchedulingReason(
+                  task,
+                  partStart,
+                  settings?.energyProfile
+                ),
               };
               if (
                 (task.deadline && partEnd.isAfter(task.deadline)) ||
@@ -527,6 +555,11 @@ export const scheduleTasks = (
             partNumber: totalParts > 1 ? task.nextPart : undefined,
             totalParts: totalParts > 1 ? totalParts : undefined,
             locked: false,
+            reason: calculateSchedulingReason(
+              task,
+              partStart,
+              settings?.energyProfile
+            ),
           };
           if (
             (task.deadline && partEnd.isAfter(task.deadline)) ||
@@ -641,9 +674,24 @@ function getAvailableSlots(
   const slots: DateRange[] = [];
   const startDay = startTime.startOf('day');
 
-  // Generate slots for the next 30 days to ensure we can find availability
-  for (let day = 0; day < 30; day++) {
+  // Optimization: Pre-filter events to a reasonable window (e.g., 14 days)
+  const windowEnd = startTime.add(14, 'day');
+  const relevantEvents = existingEvents.filter(
+    (e) => e.range.end.isAfter(startTime) && e.range.start.isBefore(windowEnd)
+  );
+
+  // Generate slots for the next 14 days (reduced from 30 for performance)
+  for (let day = 0; day < 14; day++) {
     const checkDate = startDay.add(day, 'day');
+    const checkDateStart = checkDate.startOf('day');
+    const checkDateEnd = checkDate.endOf('day');
+
+    // Optimization: Filter events relevant to THIS day
+    const dayEvents = relevantEvents.filter(
+      (e) =>
+        e.range.start.isBefore(checkDateEnd) &&
+        e.range.end.isAfter(checkDateStart)
+    );
 
     for (const hourRange of categoryHours) {
       const dayStart = hourRange.start
@@ -658,7 +706,6 @@ function getAvailableSlots(
       let slotStart: dayjs.Dayjs;
 
       if (day === 0) {
-        // For the first day, start from the later of: startTime or day start
         if (startTime.isSame(checkDate, 'day')) {
           slotStart = startTime.isAfter(dayStart)
             ? roundToQuarterHour(startTime, true)
@@ -667,15 +714,14 @@ function getAvailableSlots(
           slotStart = roundToQuarterHour(dayStart, true);
         }
       } else {
-        // For subsequent days, always start from the beginning of active hours
         slotStart = roundToQuarterHour(dayStart, true);
       }
 
       const slotEnd = roundToQuarterHour(dayEnd, false);
 
       if (slotStart.isBefore(slotEnd)) {
-        // Check for conflicts with existing events
-        const conflictingEvents = existingEvents
+        // Use dayEvents which is already much smaller than existingEvents
+        const conflictingEvents = dayEvents
           .filter(
             (event) =>
               event.range.start.isBefore(slotEnd) &&
@@ -686,7 +732,6 @@ function getAvailableSlots(
         if (conflictingEvents.length === 0) {
           slots.push({ start: slotStart, end: slotEnd });
         } else {
-          // Add slot before first conflict if there's space
           const firstConflict = conflictingEvents[0];
           if (firstConflict) {
             const preConflictEnd = roundToQuarterHour(
@@ -725,9 +770,11 @@ function getAvailableSlots(
         }
       }
     }
+
+    // Optimization: If we already found enough slots for a few days, stop early
+    if (slots.length >= 20) break;
   }
 
-  // Filter out slots that are too small (less than 15 minutes) and sort by start time
   return slots
     .filter((slot) => slot.end.diff(slot.start, 'minute') >= 15)
     .sort((a, b) => a.start.diff(b.start));
