@@ -39,8 +39,8 @@
 *   [x] Task: Conductor - User Manual Verification 'Settings UI and Instance Visibility' (Protocol in workflow.md) [checkpoint: 9822387]
 
 ## Phase 4: Integration and Final Polish
-*   [ ] Task: Performance Optimization and Final Audit
+*   [x] Task: Performance Optimization and Final Audit [8352254]
     *   Subtask: Profile the scheduling algorithm with large datasets (e.g., 500+ tasks).
     *   Subtask: Ensure rescheduling completes within < 200ms.
     *   Subtask: Run final end-to-end tests for the entire scheduling flow.
-*   [ ] Task: Conductor - User Manual Verification 'Integration and Final Polish' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Integration and Final Polish' (Protocol in workflow.md) [checkpoint: 8352254]
