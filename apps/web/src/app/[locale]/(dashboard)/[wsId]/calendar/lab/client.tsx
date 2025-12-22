@@ -19,6 +19,7 @@ import type {
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import {
   ResizableHandle,
@@ -32,10 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generatePreview } from '@/lib/calendar/unified-scheduler/preview-engine';
 import { useCalendarSettings } from '../hooks';
+import { HeatmapOverlay } from './components/heatmap-overlay';
 import { generateRealisticScenario } from './generator';
 import { PRESET_SCENARIOS } from './scenarios';
 import type { CalendarScenario } from './types';
@@ -54,6 +57,7 @@ export default function CalendarLabClientPage({
   const t = useTranslations('calendar');
   const locale = useLocale();
   const { setPreviewEvents, clearPreviewEvents } = useCalendar();
+  const { dates } = useCalendarSync();
 
   const { initialSettings } = useCalendarSettings(workspace, locale);
 
@@ -68,6 +72,10 @@ export default function CalendarLabClientPage({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [simulationResult, setSimulationResult] = useState<any>(null);
+
+  // Visualization state
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -135,6 +143,7 @@ export default function CalendarLabClientPage({
       setCurrentStep(0);
       setIsPlaying(false);
       clearPreviewEvents();
+      setSelectedItemId(null);
     }
   };
 
@@ -148,6 +157,7 @@ export default function CalendarLabClientPage({
     setCurrentStep(0);
     setIsPlaying(false);
     clearPreviewEvents();
+    setSelectedItemId(null);
   };
 
   const runSimulation = async () => {
@@ -240,10 +250,18 @@ export default function CalendarLabClientPage({
     return simulationResult.preview.steps.filter((s: any) => s.event);
   }, [simulationResult]);
 
+  const allItems = useMemo(() => {
+    if (!currentScenario) return [];
+    return [
+      ...currentScenario.habits.map((h) => ({ id: h.id, name: h.name, type: 'habit' })),
+      ...currentScenario.tasks.map((t) => ({ id: t.id, name: t.name, type: 'task' })),
+    ];
+  }, [currentScenario]);
+
   return (
     <ResizablePanelGroup direction="horizontal" className="flex-1">
       <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-        <div className="flex h-full flex-col border-r bg-card p-4">
+        <div className="flex h-full flex-col border-r bg-card p-4 scrollbar-none overflow-y-auto">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Bug className="h-5 w-5" />
@@ -307,6 +325,45 @@ export default function CalendarLabClientPage({
                   </div>
                 </div>
               )}
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Visualization
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Score Heatmap</span>
+                  <Switch 
+                    checked={showHeatmap} 
+                    onCheckedChange={setShowHeatmap} 
+                    disabled={!currentScenario || !selectedItemId}
+                  />
+                </div>
+
+                <Select
+                  onValueChange={setSelectedItemId}
+                  value={selectedItemId || ''}
+                  disabled={!currentScenario}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select item to score..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        <span className="flex items-center gap-2">
+                          <span className={item.type === 'habit' ? 'text-blue-500' : 'text-orange-500'}>
+                            {item.type === 'habit' ? 'H' : 'T'}
+                          </span>
+                          {item.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </section>
 
             <section>
@@ -395,6 +452,15 @@ export default function CalendarLabClientPage({
           experimentalGoogleToken={googleToken}
           initialSettings={initialSettings}
           disabled={true}
+          overlay={
+            showHeatmap && currentScenario && selectedItemId ? (
+              <HeatmapOverlay 
+                scenario={currentScenario}
+                selectedItemId={selectedItemId}
+                dates={dates}
+              />
+            ) : null
+          }
         />
       </ResizablePanel>
     </ResizablePanelGroup>
