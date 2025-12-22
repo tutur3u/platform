@@ -22,7 +22,7 @@ Build the core state management for handling volatile scenarios and data generat
 ## Phase 3: Enhanced Visualization & Overlays
 Refactor calendar components to support algorithm-specific visual debugging.
 
-- [ ] Task: Refactor `CalendarClientPage` and sub-components to support an "overlay" layer
+- [x] Task: Refactor `CalendarClientPage` and sub-components to support an "overlay" layer 9c4b34c
 - [ ] Task: Implement "Score Heatmap" visualization showing time slot fitness
 - [ ] Task: Create "Decision Tooltips" that explain the 'why' behind task placement
 - [ ] Task: Implement constraint violation highlighting (e.g., overlapping events, missed habits)
