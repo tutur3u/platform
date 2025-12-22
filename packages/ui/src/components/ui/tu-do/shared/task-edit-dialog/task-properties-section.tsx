@@ -64,6 +64,8 @@ export interface ScheduledCalendarEvent {
   end_at: string;
   scheduled_minutes: number;
   completed: boolean;
+  locked?: boolean;
+  scheduling_reason?: string;
 }
 
 interface TaskPropertiesSectionProps {

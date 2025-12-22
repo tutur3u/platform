@@ -62,6 +62,7 @@ import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
+import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
@@ -307,6 +308,45 @@ export function TaskEditDialog({
   const [localCalendarEvents, setLocalCalendarEvents] = useState<
     Task['calendar_events'] | undefined
   >(task?.calendar_events);
+
+  const [lockingEventId, setLockingEventId] = useState<string | null>(null);
+
+  const handleLockToggle = useCallback(
+    async (eventId: string, currentLocked: boolean) => {
+      setLockingEventId(eventId);
+      try {
+        const { error } = await supabase
+          .from('workspace_calendar_events')
+          .update({ locked: !currentLocked })
+          .eq('id', eventId);
+
+        if (error) throw error;
+
+        // Update local state
+        setLocalCalendarEvents((prev) =>
+          prev?.map((e) =>
+            e.id === eventId ? { ...e, locked: !currentLocked } : e
+          )
+        );
+
+        toast({
+          title: !currentLocked ? 'Event locked' : 'Event unlocked',
+          description: !currentLocked
+            ? 'The auto-scheduler will no longer move this instance.'
+            : 'The auto-scheduler can now move this instance.',
+        });
+      } catch (_error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to update lock status',
+          variant: 'destructive',
+        });
+      } finally {
+        setLockingEventId(null);
+      }
+    },
+    [toast]
+  );
 
   useEffect(() => {
     setLocalCalendarEvents(task?.calendar_events);
@@ -1228,6 +1268,16 @@ export function TaskEditDialog({
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
                 />
+
+                {!isCreateMode && localCalendarEvents && (
+                  <TaskInstancesSection
+                    wsId={wsId}
+                    taskId={task?.id}
+                    scheduledEvents={localCalendarEvents}
+                    onLockToggle={handleLockToggle}
+                    isLocking={lockingEventId}
+                  />
+                )}
 
                 {!isCreateMode && task && (
                   <TaskActivitySection
