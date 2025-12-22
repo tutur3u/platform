@@ -15,6 +15,8 @@ export interface Event {
   totalParts?: number;
   locked?: boolean;
 }
+export type TimeOfDayPreference = 'morning' | 'afternoon' | 'evening' | 'night';
+
 export interface Task {
   id: string;
   name: string;
@@ -25,6 +27,17 @@ export interface Task {
   priority: TaskPriority;
   deadline?: dayjs.Dayjs;
   allowSplit?: boolean;
+  streak?: number;
+  energyLoad?: 'high' | 'medium' | 'low';
+  isHabit?: boolean;
+  timePreference?: TimeOfDayPreference;
+}
+
+export type EnergyProfile = 'morning_person' | 'night_owl' | 'afternoon_peak' | 'evening_peak';
+
+export interface SchedulingSettings {
+  min_buffer?: number;
+  preferred_buffer?: number;
 }
 
 export interface ActiveHours {
@@ -75,6 +88,9 @@ export interface WebTaskInput {
   priority?: TaskPriority | null;
   start_date?: string | null;
   end_date?: string | null; // deadline
+  streak?: number | null;
+  energy_load?: 'high' | 'medium' | 'low' | null;
+  is_habit?: boolean | null;
 }
 
 /**

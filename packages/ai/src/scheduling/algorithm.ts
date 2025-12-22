@@ -6,11 +6,38 @@ import { defaultActiveHours } from './default';
 import type {
   ActiveHours,
   DateRange,
+  EnergyProfile,
   Event,
   Log,
   ScheduleResult,
+  SchedulingSettings,
   Task,
+  TimeOfDayPreference,
 } from './types';
+
+/**
+ * Check if a given time matches the user's time of day preference
+ */
+function matchesTimePreference(
+  time: dayjs.Dayjs,
+  preference?: TimeOfDayPreference
+): boolean {
+  if (!preference) return true;
+
+  const hour = time.hour();
+  switch (preference) {
+    case 'morning':
+      return hour >= 6 && hour < 12;
+    case 'afternoon':
+      return hour >= 12 && hour < 17;
+    case 'evening':
+      return hour >= 17 && hour < 21;
+    case 'night':
+      return hour >= 21 || hour < 6;
+    default:
+      return true;
+  }
+}
 
 dayjs.extend(minMax);
 
@@ -135,6 +162,11 @@ function calculatePriorityScore(task: Task): number {
   };
   score += (priorityScores as Record<string, number>)[task.priority] || 0;
 
+  // Streak bonus (for habits) - Add 10 points per streak day, capped at 200
+  if (task.isHabit && task.streak) {
+    score += Math.min(200, task.streak * 10);
+  }
+
   // Deadline urgency bonus
   if (task.deadline) {
     const deadlineAsDayjs = dayjs(task.deadline);
@@ -158,6 +190,27 @@ function calculatePriorityScore(task: Task): number {
   }
 
   return score;
+}
+
+/**
+ * Check if a given time is within the user's peak energy window
+ */
+function isPeakHour(time: dayjs.Dayjs, profile?: EnergyProfile): boolean {
+  if (!profile) return true;
+
+  const hour = time.hour();
+  switch (profile) {
+    case 'morning_person':
+      return hour >= 8 && hour < 12;
+    case 'night_owl':
+      return hour >= 20 || hour < 2;
+    case 'afternoon_peak':
+      return hour >= 13 && hour < 17;
+    case 'evening_peak':
+      return hour >= 18 && hour < 22;
+    default:
+      return true;
+  }
 }
 
 export const promoteEventToTask = (event: Event): Task | null => {
@@ -195,13 +248,18 @@ export const promoteEventToTask = (event: Event): Task | null => {
 export const scheduleTasks = (
   tasks: Task[],
   activeHours: ActiveHours = defaultActiveHours,
-  lockedEvents: Event[] = []
+  lockedEvents: Event[] = [],
+  settings?: {
+    energyProfile?: EnergyProfile;
+    schedulingSettings?: SchedulingSettings;
+  }
 ): ScheduleResult => {
   const scheduledEvents: Event[] = lockedEvents.map((e) => ({
     ...e,
     locked: true,
   }));
   const logs: Log[] = [];
+  const minBuffer = settings?.schedulingSettings?.min_buffer || 0;
   let taskPool: any[] = [];
   try {
     taskPool = tasks.map((task) => ({
@@ -283,52 +341,72 @@ export const scheduleTasks = (
             const availableSlots = getAvailableSlots(
               tryTime,
               categoryHours,
-              scheduledEvents
+              scheduledEvents,
+              minBuffer
             );
-            // Try to find a slot before the deadline first
-            let slot = availableSlots.find((slot) => {
-              const slotDuration = slot.end.diff(slot.start, 'hour', true);
-              if (task.deadline) {
+
+            const fitsTask = (s: DateRange) => {
+              const slotDuration = s.end.diff(s.start, 'hour', true);
+              const fitsTime = task.deadline
+                ? slotDuration >= task.duration &&
+                  (s.end.isBefore(task.deadline) || s.end.isSame(task.deadline))
+                : slotDuration >= task.duration;
+
+              if (!fitsTime) return false;
+
+              // Smart Adaptive Windows: ensure it matches time preference if set
+              return matchesTimePreference(s.start, task.timePreference);
+            };
+
+            // Try to find a slot that fits, preferring peak hours for high-load tasks
+            let slot = availableSlots.find(
+              (s) =>
+                fitsTask(s) &&
+                (task.energyLoad !== 'high' ||
+                  isPeakHour(s.start, settings?.energyProfile))
+            );
+
+            // If high load task couldn't find a peak slot, just find any slot that fits before deadline
+            if (!slot && task.energyLoad === 'high') {
+              slot = availableSlots.find(fitsTask);
+            }
+
+            // If still not found, allow after deadline
+            if (!slot) {
+              slot = availableSlots.find((s) => {
+                const slotDuration = s.end.diff(s.start, 'hour', true);
                 return (
                   slotDuration >= task.duration &&
-                  (slot.end.isBefore(task.deadline) ||
-                    slot.end.isSame(task.deadline))
+                  matchesTimePreference(s.start, task.timePreference)
                 );
-              }
-              return slotDuration >= task.duration;
-            });
-            // If not found, allow after deadline
-            if (!slot) {
-              slot = availableSlots.find((slot) => {
-                const slotDuration = slot.end.diff(slot.start, 'hour', true);
-                return slotDuration >= task.duration;
               });
               if (slot) scheduledAfterDeadline = true;
             }
+
             if (slot) {
               const partStart = roundToQuarterHour(slot.start, false);
               const partEnd = partStart.add(task.duration, 'hour');
-              if (!task.locked === true) {
-                const newEvent: Event = {
-                  id: `${task.id}`,
-                  name: task.name,
-                  range: { start: partStart, end: partEnd },
-                  locked: task.locked || false,
-                  taskId: task.id,
-                };
-                if (
-                  (task.deadline && partEnd.isAfter(task.deadline)) ||
-                  scheduledAfterDeadline
-                ) {
-                  logs.push({
-                    type: 'warning',
-                    message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
-                  });
-                }
-                scheduledEvents.push(newEvent);
+              const newEvent: Event = {
+                id: `${task.id}`,
+                name: task.name,
+                range: { start: partStart, end: partEnd },
+                locked: false,
+                taskId: task.id,
+              };
+              if (
+                (task.deadline && partEnd.isAfter(task.deadline)) ||
+                scheduledAfterDeadline
+              ) {
+                logs.push({
+                  type: 'warning',
+                  message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
+                });
               }
+              scheduledEvents.push(newEvent);
+
               availableTimes[task.category as keyof ActiveHours] =
-                roundToQuarterHour(partEnd, true) ?? availableTimes.work;
+                roundToQuarterHour(partEnd.add(minBuffer, 'minute'), true) ??
+                availableTimes.work;
               scheduled = true;
               task.remaining = 0;
               task.scheduledParts = 1;
@@ -363,25 +441,47 @@ export const scheduleTasks = (
           const availableSlots = getAvailableSlots(
             tryTime,
             categoryHours,
-            scheduledEvents
+            scheduledEvents,
+            minBuffer
           );
-          // Try to find a slot before the deadline first
-          let slot;
-          if (task.deadline) {
-            slot = availableSlots.find(
-              (slot) =>
-                slot.end.isSame(task.deadline) ||
-                slot.end.isBefore(task.deadline)
-            );
+
+          const fitsPart = (s: DateRange) => {
+            const slotDuration = s.end.diff(s.start, 'hour', true);
+            const fitsTime = task.deadline
+              ? s.end.isSame(task.deadline) || s.end.isBefore(task.deadline)
+              : slotDuration >= task.minDuration ||
+                slotDuration >= task.remaining;
+
+            if (!fitsTime) return false;
+
+            // Smart Adaptive Windows: ensure it matches time preference if set
+            return matchesTimePreference(s.start, task.timePreference);
+          };
+
+          // Try to find a slot that fits, preferring peak hours for high-load tasks
+          let slot = availableSlots.find(
+            (s) =>
+              fitsPart(s) &&
+              (task.energyLoad !== 'high' ||
+                isPeakHour(s.start, settings?.energyProfile))
+          );
+
+          // If high load task couldn't find a peak slot, just find any slot that fits before deadline
+          if (!slot && task.energyLoad === 'high') {
+            slot = availableSlots.find(fitsPart);
           }
+
           // If not found, allow after deadline
           let scheduledAfterDeadline = false;
           if (!slot) {
-            slot = availableSlots[0];
+            slot = availableSlots.find((s) =>
+              matchesTimePreference(s.start, task.timePreference)
+            );
             if (slot && task.deadline && slot.end.isAfter(task.deadline)) {
               scheduledAfterDeadline = true;
             }
           }
+
           if (!slot) {
             // Move to next day and try again
             const nextTime = tryTime.add(1, 'day').startOf('day');
@@ -426,6 +526,7 @@ export const scheduleTasks = (
             taskId: task.id,
             partNumber: totalParts > 1 ? task.nextPart : undefined,
             totalParts: totalParts > 1 ? totalParts : undefined,
+            locked: false,
           };
           if (
             (task.deadline && partEnd.isAfter(task.deadline)) ||
@@ -437,7 +538,7 @@ export const scheduleTasks = (
             });
           }
           scheduledEvents.push(newEvent);
-          tryTime = roundToQuarterHour(partEnd, true);
+          tryTime = roundToQuarterHour(partEnd.add(minBuffer, 'minute'), true);
           availableTimes[task.category as keyof ActiveHours] = tryTime;
           task.remaining -= partDuration;
           task.scheduledParts++;
@@ -534,7 +635,8 @@ function getNextAvailableTime(
 function getAvailableSlots(
   startTime: dayjs.Dayjs,
   categoryHours: DateRange[],
-  existingEvents: Event[]
+  existingEvents: Event[],
+  minBuffer: number = 0
 ): DateRange[] {
   const slots: DateRange[] = [];
   const startDay = startTime.startOf('day');
@@ -586,13 +688,13 @@ function getAvailableSlots(
         } else {
           // Add slot before first conflict if there's space
           const firstConflict = conflictingEvents[0];
-          if (firstConflict && slotStart.isBefore(firstConflict.range.start)) {
-            const conflictStart = roundToQuarterHour(
-              firstConflict.range.start,
+          if (firstConflict) {
+            const preConflictEnd = roundToQuarterHour(
+              firstConflict.range.start.subtract(minBuffer, 'minute'),
               false
             );
-            if (slotStart.isBefore(conflictStart)) {
-              slots.push({ start: slotStart, end: conflictStart });
+            if (slotStart.isBefore(preConflictEnd)) {
+              slots.push({ start: slotStart, end: preConflictEnd });
             }
           }
 
@@ -602,16 +704,22 @@ function getAvailableSlots(
 
             if (!currentEvent) continue;
 
-            const currentEventEnd = roundToQuarterHour(
-              currentEvent.range.end,
+            const currentEventEndWithBuffer = roundToQuarterHour(
+              currentEvent.range.end.add(minBuffer, 'minute'),
               true
             );
-            const nextEventStart = nextEvent
-              ? roundToQuarterHour(nextEvent.range.start, false)
+            const nextEventStartWithBuffer = nextEvent
+              ? roundToQuarterHour(
+                  nextEvent.range.start.subtract(minBuffer, 'minute'),
+                  false
+                )
               : slotEnd;
 
-            if (currentEventEnd.isBefore(nextEventStart)) {
-              slots.push({ start: currentEventEnd, end: nextEventStart });
+            if (currentEventEndWithBuffer.isBefore(nextEventStartWithBuffer)) {
+              slots.push({
+                start: currentEventEndWithBuffer,
+                end: nextEventStartWithBuffer,
+              });
             }
           }
         }
