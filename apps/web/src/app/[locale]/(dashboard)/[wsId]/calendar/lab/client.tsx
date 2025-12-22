@@ -251,6 +251,7 @@ export default function CalendarLabClientPage({
           useQueryClient={useQueryClient}
           experimentalGoogleToken={googleToken}
           initialSettings={initialSettings}
+          disabled={true}
         />
       </ResizablePanel>
     </ResizablePanelGroup>

@@ -54,6 +54,7 @@ export const SmartCalendar = ({
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       experimentalGoogleToken={experimentalGoogleToken}
+      readOnly={disabled}
     >
       <CalendarSettingsProvider
         initialSettings={initialSettings}
