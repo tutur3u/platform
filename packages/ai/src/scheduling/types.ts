@@ -127,3 +127,10 @@ export interface WebScheduleResult {
   warning?: string;
   logs: Log[];
 }
+
+export interface SchedulingWeights {
+  habitIdealTimeBonus?: number;
+  habitPreferenceBonus?: number;
+  taskPreferenceBonus?: number;
+  taskBaseEarlyBonus?: number;
+}

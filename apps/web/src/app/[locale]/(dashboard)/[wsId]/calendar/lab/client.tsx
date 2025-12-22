@@ -69,7 +69,8 @@ export default function CalendarLabClientPage({
   googleToken,
   calendarConnections,
 }: CalendarLabClientPageProps) {
-  const t = useTranslations('calendar');
+  const t = useTranslations('calendar_lab');
+  const tCalendar = useTranslations('calendar');
   const locale = useLocale();
   const { setPreviewEvents, clearPreviewEvents, hoveredBaseEventId } =
     useCalendar();
@@ -348,7 +349,7 @@ export default function CalendarLabClientPage({
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Bug className="h-5 w-5" />
-              Lab Controls
+              {t('controls')}
             </h2>
           </div>
 
@@ -358,25 +359,25 @@ export default function CalendarLabClientPage({
                 value="scenarios"
                 className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
-                Scenarios
+                {t('scenarios')}
               </TabsTrigger>
               <TabsTrigger
                 value="tuning"
                 className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
-                Tuning
+                {t('tuning')}
               </TabsTrigger>
               <TabsTrigger
                 value="summary"
                 className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
-                Summary
+                {t('summary')}
               </TabsTrigger>
               <TabsTrigger
                 value="log"
                 className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
-                Log
+                {t('log')}
               </TabsTrigger>
             </TabsList>
 
@@ -384,7 +385,7 @@ export default function CalendarLabClientPage({
               <div className="space-y-4">
                 <section className="space-y-3">
                   <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                    Data Source
+                    {t('data_source')}
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
@@ -399,7 +400,7 @@ export default function CalendarLabClientPage({
                       ) : (
                         <RotateCcw className="h-5 w-5 text-blue-500" />
                       )}
-                      <span className="text-[10px]">Import WS</span>
+                      <span className="text-[10px]">{t('import_workspace')}</span>
                     </Button>
 
                     <Button
@@ -409,7 +410,7 @@ export default function CalendarLabClientPage({
                       className="h-20 flex-col gap-2"
                     >
                       <Sparkles className="h-5 w-5 text-purple-500" />
-                      <span className="text-[10px]">Randomize</span>
+                      <span className="text-[10px]">{t('randomize')}</span>
                     </Button>
                   </div>
 
@@ -418,7 +419,7 @@ export default function CalendarLabClientPage({
                     value={currentScenario?.id || ''}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a preset..." />
+                      <SelectValue placeholder={t('select_preset')} />
                     </SelectTrigger>
                     <SelectContent>
                       {PRESET_SCENARIOS.map((s) => (
@@ -438,8 +439,8 @@ export default function CalendarLabClientPage({
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="p-3 pt-2 flex gap-2">
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1">{currentScenario.tasks.length} Tasks</Badge>
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1">{currentScenario.habits.length} Habits</Badge>
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1">{currentScenario.tasks.length} {t('tasks')}</Badge>
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1">{currentScenario.habits.length} {t('habits')}</Badge>
                       </CardContent>
                     </Card>
                   )}
@@ -447,14 +448,14 @@ export default function CalendarLabClientPage({
 
                 <section className="space-y-3">
                   <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                    Visualization
+                    {t('visualization')}
                   </h3>
                   
                   <div className="space-y-4 px-1">
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">Heatmap</span>
-                        <span className="text-[10px] text-muted-foreground italic">Visualizes fitness score</span>
+                        <span className="text-sm font-medium">{t('heatmap')}</span>
+                        <span className="text-[10px] text-muted-foreground italic">{t('heatmap_description')}</span>
                       </div>
                       <Switch
                         checked={showHeatmap}
@@ -469,7 +470,7 @@ export default function CalendarLabClientPage({
                       disabled={!currentScenario}
                     >
                       <SelectTrigger className="w-full text-xs">
-                        <SelectValue placeholder="Select item to score..." />
+                        <SelectValue placeholder={t('select_item_to_score')} />
                       </SelectTrigger>
                       <SelectContent>
                         {allItems.map((item) => (
@@ -504,7 +505,7 @@ export default function CalendarLabClientPage({
                     ) : (
                       <Play className="mr-2 h-5 w-5 fill-current" />
                     )}
-                    Run Algorithm
+                    {t('run_algorithm')}
                   </Button>
 
                   {simulationResult && (
@@ -567,27 +568,29 @@ export default function CalendarLabClientPage({
             <TabsContent value="tuning" className="flex-1 p-4 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                  Weight Tuning
+                  {t('tuning')}
                 </h3>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setWeights({
-                    habitIdealTimeBonus: 1000,
-                    habitPreferenceBonus: 500,
-                    taskPreferenceBonus: 500,
-                    taskBaseEarlyBonus: 300,
-                  })}
+                  onClick={() =>
+                    setWeights({
+                      habitIdealTimeBonus: 1000,
+                      habitPreferenceBonus: 500,
+                      taskPreferenceBonus: 500,
+                      taskBaseEarlyBonus: 300,
+                    })
+                  }
                   className="h-8 text-[10px] text-muted-foreground hover:text-foreground"
                 >
-                  RESET
+                  {t('reset')}
                 </Button>
               </div>
 
               <div className="space-y-8 px-1">
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-[11px] font-semibold">Habit Ideal Time</label>
+                    <label className="text-[11px] font-semibold">{t('habit_ideal_time')}</label>
                     <span className="text-[11px] font-mono text-primary">{weights.habitIdealTimeBonus}</span>
                   </div>
                   <Slider
@@ -605,7 +608,7 @@ export default function CalendarLabClientPage({
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-[11px] font-semibold">Habit Preference</label>
+                    <label className="text-[11px] font-semibold">{t('habit_preference')}</label>
                     <span className="text-[11px] font-mono text-primary">{weights.habitPreferenceBonus}</span>
                   </div>
                   <Slider
@@ -623,7 +626,7 @@ export default function CalendarLabClientPage({
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-[11px] font-semibold">Task Preference</label>
+                    <label className="text-[11px] font-semibold">{t('task_preference')}</label>
                     <span className="text-[11px] font-mono text-primary">{weights.taskPreferenceBonus}</span>
                   </div>
                   <Slider
@@ -641,7 +644,7 @@ export default function CalendarLabClientPage({
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-[11px] font-semibold">Task Base Urgency</label>
+                    <label className="text-[11px] font-semibold">{t('task_base_urgency')}</label>
                     <span className="text-[11px] font-mono text-primary">{weights.taskBaseEarlyBonus}</span>
                   </div>
                   <Slider
@@ -660,13 +663,13 @@ export default function CalendarLabClientPage({
 
               <div className="space-y-3 pt-6 border-t">
                 <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                  Scenario Diff
+                  {t('diff_mode')}
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">Diff Mode</span>
-                      <span className="text-[10px] text-muted-foreground italic">Highlight changes</span>
+                      <span className="text-sm font-medium">{t('diff_mode')}</span>
+                      <span className="text-[10px] text-muted-foreground italic">{t('highlight_changes')}</span>
                     </div>
                     <Switch
                       checked={showDiff}
@@ -682,12 +685,12 @@ export default function CalendarLabClientPage({
                     className="w-full justify-start h-10"
                   >
                     <Copy className="mr-2 h-4 w-4" />
-                    Set Baseline
+                    {t('set_baseline')}
                   </Button>
                   {baselineResult && (
                     <div className="flex items-center gap-2 p-2 bg-blue-500/5 border border-blue-500/10 rounded text-[10px] text-blue-600 dark:text-blue-400 italic leading-tight">
                       <Info className="h-3 w-3 shrink-0" />
-                      Baseline captured. Adjust weights and rerun to compare.
+                      {t('baseline_captured')}
                     </div>
                   )}
                 </div>
@@ -702,7 +705,7 @@ export default function CalendarLabClientPage({
                 <div className="space-y-6">
                   <section className="space-y-2">
                     <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                      Simulation Stats
+                      {t('stats')}
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-lg bg-accent/50 p-3 text-center border">
@@ -710,7 +713,7 @@ export default function CalendarLabClientPage({
                           {simulationResult.preview.summary.tasksScheduled}
                         </div>
                         <div className="text-[10px] uppercase text-muted-foreground font-semibold">
-                          Tasks
+                          {t('tasks')}
                         </div>
                       </div>
                       <div className="rounded-lg bg-accent/50 p-3 text-center border">
@@ -718,7 +721,7 @@ export default function CalendarLabClientPage({
                           {simulationResult.preview.summary.habitsScheduled}
                         </div>
                         <div className="text-[10px] uppercase text-muted-foreground font-semibold">
-                          Habits
+                          {t('habits')}
                         </div>
                       </div>
                     </div>
@@ -728,7 +731,7 @@ export default function CalendarLabClientPage({
                     <section className="space-y-3">
                       <h3 className="flex items-center gap-1 text-xs font-bold uppercase text-muted-foreground tracking-wider">
                         <AlertTriangle className="h-3 w-3 text-red-500" />
-                        Violations
+                        {t('violations')}
                       </h3>
                       <div className="space-y-2">
                         {simulationResult.preview.warnings.map(
@@ -749,7 +752,7 @@ export default function CalendarLabClientPage({
                 <div className="flex flex-1 flex-col items-center justify-center space-y-2 p-8 text-center opacity-50">
                   <Sparkles className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground font-medium">
-                    Run a simulation to see results.
+                    {t('no_results')}
                   </p>
                 </div>
               )}
@@ -764,7 +767,7 @@ export default function CalendarLabClientPage({
                   <Card className="bg-accent/30 border shadow-none">
                     <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-xs uppercase text-muted-foreground tracking-widest">
-                        Decision Context
+                        {t('decision_context')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 pt-0 space-y-3">
@@ -780,7 +783,7 @@ export default function CalendarLabClientPage({
                         <div className="space-y-2">
                           <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-muted-foreground">
                             <Info className="h-3 w-3" />
-                            Slots Considered
+                            {t('slots_considered')}
                           </div>
                           <div className="space-y-1">
                             {hoveredStep.debug.slotsConsidered
@@ -806,7 +809,7 @@ export default function CalendarLabClientPage({
                 <div className="flex flex-1 flex-col items-center justify-center space-y-2 p-8 text-center opacity-50">
                   <Bug className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground font-medium leading-tight">
-                    Hover over a scheduled event to see placement logic.
+                    {t('hover_to_see_logic')}
                   </p>
                 </div>
               )}
@@ -819,7 +822,7 @@ export default function CalendarLabClientPage({
 
       <ResizablePanel defaultSize={80}>
         <SmartCalendar
-          t={t}
+          t={tCalendar}
           locale={locale}
           workspace={workspace}
           useQuery={useQuery}
