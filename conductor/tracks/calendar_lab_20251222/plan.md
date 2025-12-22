@@ -28,14 +28,14 @@ Refactor calendar components to support algorithm-specific visual debugging.
 - [x] Task: Implement constraint violation highlighting (e.g., overlapping events, missed habits) c3b3541
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Enhanced Visualization & Overlays' (Protocol in workflow.md) 2bdaacf
 
-## Phase 4: Algorithm Control & Interactivity
+## Phase 4: Algorithm Control & Interactivity [checkpoint: cca95e1]
 Integrate the scheduling algorithm with playback controls and real-time parameter tuning.
 
 - [x] Task: Integrate the `TuPlan` algorithm into a step-by-step playback controller 5173907
 - [x] Task: Implement Play/Pause/Next/Prev controls for the scheduling execution 5173907
 - [x] Task: Build a "Parameter Tuning" side panel for real-time algorithm weight adjustment af86db0
 - [x] Task: Implement "Scenario Diff" to compare schedule outputs between two sets of parameters 11331d8
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Algorithm Control & Interactivity' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Algorithm Control & Interactivity' (Protocol in workflow.md) cca95e1
 
 ## Phase 5: Final Polishing & Extensive Scenarios
 Create high-value test cases and ensure a premium developer experience.
