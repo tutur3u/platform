@@ -1,4 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -20,7 +22,7 @@ interface PageProps {
 export default async function CalendarLabPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId }) => {
+      {async ({ workspace, wsId, locale }) => {
         const { withoutPermission } = await getPermissions({ wsId });
 
         const supabase = await createClient();
@@ -39,10 +41,43 @@ export default async function CalendarLabPage({ params }: PageProps) {
 
         if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
 
+        // Fetch Google auth token and calendar connections for "Real Data Import" feature
+        const [{ data: googleToken }, { data: calendarConnections }] = user?.id
+          ? await Promise.all([
+              supabase
+                .from('calendar_auth_tokens')
+                .select('*')
+                .eq('ws_id', wsId)
+                .maybeSingle(),
+              supabase
+                .from('calendar_connections')
+                .select('*')
+                .eq('ws_id', wsId)
+                .order('created_at', { ascending: true }),
+            ])
+          : [{ data: null }, { data: null }];
+
+        const isPersonalWorkspace = workspace.id === user?.id;
+
         return (
-          <div className="flex h-[calc(100vh-2rem)] w-full flex-col">
-            <CalendarLabClientPage workspace={workspace} />
-          </div>
+          <TaskDialogWrapper
+            isPersonalWorkspace={isPersonalWorkspace}
+            wsId={workspace.id}
+          >
+            <CalendarSyncProvider
+              wsId={workspace.id}
+              experimentalGoogleToken={googleToken}
+              initialCalendarConnections={calendarConnections || []}
+            >
+              <div className="flex h-[calc(100vh-2rem)] w-full flex-col">
+                <CalendarLabClientPage
+                  workspace={workspace}
+                  googleToken={googleToken}
+                  calendarConnections={calendarConnections || []}
+                />
+              </div>
+            </CalendarSyncProvider>
+          </TaskDialogWrapper>
         );
       }}
     </WorkspaceWrapper>
