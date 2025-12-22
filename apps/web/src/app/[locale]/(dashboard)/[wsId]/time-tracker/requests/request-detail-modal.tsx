@@ -157,7 +157,14 @@ export function RequestDetailModal({
         },
       }
     );
-  }, [request.id, wsId, needsInfoReason, onUpdate, onClose, requestInfoMutation]);
+  }, [
+    request.id,
+    wsId,
+    needsInfoReason,
+    onUpdate,
+    onClose,
+    requestInfoMutation,
+  ]);
 
   const handleResubmit = useCallback(async () => {
     await resubmitMutation.mutateAsync(
@@ -282,9 +289,14 @@ export function RequestDetailModal({
                 <DialogDescription className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
-                    className={cn('border font-medium text-xs', STATUS_COLORS[request.approval_status])}
+                    className={cn(
+                      'border font-medium text-xs',
+                      STATUS_COLORS[request.approval_status]
+                    )}
                   >
-                    {t(`status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`)}
+                    {t(
+                      `status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`
+                    )}
                   </Badge>
                   {request.category && (
                     <Badge
@@ -314,256 +326,273 @@ export function RequestDetailModal({
           <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
             {/* Left Column - Main Content */}
             <div className="space-y-6">
-            {/* User Info */}
-            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
-              {request.user ? (
-                <>
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarImage src={request.user.avatar_url || ''} />
-                    <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                      {request.user.display_name?.[0] ||
-                        request.user.user_private_details.email?.[0] ||
-                        'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="font-medium text-foreground">
-                      {request.user.display_name || 'Unknown User'}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {request.user.user_private_details.email}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {format(
-                        new Date(request.created_at),
-                        'MMM d, yyyy · h:mm a'
-                      )}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                      <UserIcon className="h-6 w-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="font-medium text-foreground">Unknown User</p>
-                    <p className="text-muted-foreground text-xs">
-                      {format(
-                        new Date(request.created_at),
-                        'MMM d, yyyy · h:mm a'
-                      )}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Edit Mode UI */}
-            {isEditMode && (
-              <div className="space-y-4 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 p-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-title">{t('detail.titleLabel')}</Label>
-                  <Input
-                    id="edit-title"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    placeholder={t('detail.titleLabel')}
-                    disabled={updateMutation.isPending}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description">
-                    {t('detail.descriptionLabel')}
-                  </Label>
-                  <Textarea
-                    id="edit-description"
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder={t('detail.descriptionLabel')}
-                    rows={3}
-                    disabled={updateMutation.isPending}
-                  />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-start-time">
-                      {t('detail.startTime')}
-                    </Label>
-                    <Input
-                      id="edit-start-time"
-                      type="datetime-local"
-                      value={editStartTime}
-                      onChange={(e) => setEditStartTime(e.target.value)}
-                      disabled={updateMutation.isPending}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-end-time">{t('detail.endTime')}</Label>
-                    <Input
-                      id="edit-end-time"
-                      type="datetime-local"
-                      value={editEndTime}
-                      onChange={(e) => setEditEndTime(e.target.value)}
-                      disabled={updateMutation.isPending}
-                    />
-                  </div>
-                </div>
-
-                {/* Image Upload Section */}
-                <ImageUploadSection
-                  images={imageUpload.images}
-                  imagePreviews={imageUpload.imagePreviews}
-                  existingImageUrls={imageUpload.existingImages}
-                  isCompressing={imageUpload.isCompressing}
-                  isDragOver={imageUpload.isDragOver}
-                  imageError={imageUpload.imageError}
-                  disabled={updateMutation.isPending}
-                  canAddMore={imageUpload.canAddMoreImages}
-                  maxImages={5}
-                  totalCount={imageUpload.totalImageCount}
-                  fileInputRef={imageUpload.fileInputRef}
-                  onDragOver={imageUpload.handleDragOver}
-                  onDragLeave={imageUpload.handleDragLeave}
-                  onDrop={imageUpload.handleDrop}
-                  onFileChange={imageUpload.handleImageUpload}
-                  onRemoveNew={imageUpload.removeImage}
-                  onRemoveExisting={imageUpload.removeExistingImage}
-                  labels={{
-                    proofOfWork: t('detail.addMoreImages', {
-                      current: imageUpload.totalImageCount,
-                      max: 5,
-                    }),
-                    compressing: tTracker('missed_entry_dialog.approval.compressing'),
-                    dropImages: tTracker('missed_entry_dialog.approval.dropImages'),
-                    clickToUpload: tTracker(
-                      'missed_entry_dialog.approval.clickToUpload'
-                    ),
-                    imageFormats: tTracker('missed_entry_dialog.approval.imageFormats'),
-                    proofImageAlt: tTracker('missed_entry_dialog.approval.proofImageAlt'),
-                  }}
-                />
-
-                {/* Save/Cancel Buttons */}
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleSaveChanges}
-                    disabled={updateMutation.isPending || !editTitle.trim()}
-                    className="flex-1"
-                  >
-                    {updateMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    {t('detail.saveButton')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                    disabled={updateMutation.isPending}
-                  >
-                    {t('detail.cancelEditButton')}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* View Mode - Time Info */}
-            {!isEditMode && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{t('detail.startTime')}</span>
-                </div>
-                <p className="font-medium">
-                  {format(new Date(request.start_time), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{t('detail.endTime')}</span>
-                </div>
-                <p className="font-medium">
-                  {format(new Date(request.end_time), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4 md:col-span-2">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <ClockIcon className="h-4 w-4" />
-                  <span>{t('detail.duration')}</span>
-                </div>
-                <p className="font-medium">
-                  {calculateDuration(request.start_time, request.end_time)}
-                </p>
-              </div>
-            </div>
-            )}
-
-            {/* Task Info */}
-            {!isEditMode && request.task && (
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="text-muted-foreground text-sm">
-                  {t('detail.linkedTask')}
-                </div>
-                <p className="font-medium">{request.task.name}</p>
-              </div>
-            )}
-
-            {/* Description */}
-            {!isEditMode && request.description && (
-              <div className="space-y-3">
-                <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                  {t('detail.description')}
-                </h2>
-                <div className="rounded-lg border bg-muted/10 p-4">
-                  <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
-                    {request.description}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Attachments */}
-            {!isEditMode && request.images && request.images.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                    {t('detail.attachments', { count: request.images.length })}
-                  </h2>
-                </div>
-                {isLoadingImages ? (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border bg-muted/20 py-8">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    <p className="text-muted-foreground text-sm">
-                      {t('detail.loadingMedia')}
-                    </p>
-                  </div>
+              {/* User Info */}
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
+                {request.user ? (
+                  <>
+                    <Avatar className="h-12 w-12 shrink-0">
+                      <AvatarImage src={request.user.avatar_url || ''} />
+                      <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
+                        {request.user.display_name?.[0] ||
+                          request.user.user_private_details.email?.[0] ||
+                          'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="font-medium text-foreground">
+                        {request.user.display_name || 'Unknown User'}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        {request.user.user_private_details.email}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {format(
+                          new Date(request.created_at),
+                          'MMM d, yyyy · h:mm a'
+                        )}
+                      </p>
+                    </div>
+                  </>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {imageUrls.map((url, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(index)}
-                        className="group relative h-48 overflow-hidden rounded-lg border bg-muted/10 transition-all hover:ring-2 hover:ring-dynamic-blue/50"
-                      >
-                        <img
-                          src={url}
-                          alt={`Attachment ${index + 1}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <Avatar className="h-12 w-12 shrink-0">
+                      <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
+                        <UserIcon className="h-6 w-6" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="font-medium text-foreground">
+                        Unknown User
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {format(
+                          new Date(request.created_at),
+                          'MMM d, yyyy · h:mm a'
+                        )}
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
-            )}
+
+              {/* Edit Mode UI */}
+              {isEditMode && (
+                <div className="space-y-4 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 p-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-title">{t('detail.titleLabel')}</Label>
+                    <Input
+                      id="edit-title"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder={t('detail.titleLabel')}
+                      disabled={updateMutation.isPending}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-description">
+                      {t('detail.descriptionLabel')}
+                    </Label>
+                    <Textarea
+                      id="edit-description"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      placeholder={t('detail.descriptionLabel')}
+                      rows={3}
+                      disabled={updateMutation.isPending}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-start-time">
+                        {t('detail.startTime')}
+                      </Label>
+                      <Input
+                        id="edit-start-time"
+                        type="datetime-local"
+                        value={editStartTime}
+                        onChange={(e) => setEditStartTime(e.target.value)}
+                        disabled={updateMutation.isPending}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-end-time">
+                        {t('detail.endTime')}
+                      </Label>
+                      <Input
+                        id="edit-end-time"
+                        type="datetime-local"
+                        value={editEndTime}
+                        onChange={(e) => setEditEndTime(e.target.value)}
+                        disabled={updateMutation.isPending}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Image Upload Section */}
+                  <ImageUploadSection
+                    images={imageUpload.images}
+                    imagePreviews={imageUpload.imagePreviews}
+                    existingImageUrls={imageUpload.existingImages}
+                    isCompressing={imageUpload.isCompressing}
+                    isDragOver={imageUpload.isDragOver}
+                    imageError={imageUpload.imageError}
+                    disabled={updateMutation.isPending}
+                    canAddMore={imageUpload.canAddMoreImages}
+                    maxImages={5}
+                    totalCount={imageUpload.totalImageCount}
+                    fileInputRef={imageUpload.fileInputRef}
+                    onDragOver={imageUpload.handleDragOver}
+                    onDragLeave={imageUpload.handleDragLeave}
+                    onDrop={imageUpload.handleDrop}
+                    onFileChange={imageUpload.handleImageUpload}
+                    onRemoveNew={imageUpload.removeImage}
+                    onRemoveExisting={imageUpload.removeExistingImage}
+                    labels={{
+                      proofOfWork: t('detail.addMoreImages', {
+                        current: imageUpload.totalImageCount,
+                        max: 5,
+                      }),
+                      compressing: tTracker(
+                        'missed_entry_dialog.approval.compressing'
+                      ),
+                      dropImages: tTracker(
+                        'missed_entry_dialog.approval.dropImages'
+                      ),
+                      clickToUpload: tTracker(
+                        'missed_entry_dialog.approval.clickToUpload'
+                      ),
+                      imageFormats: tTracker(
+                        'missed_entry_dialog.approval.imageFormats'
+                      ),
+                      proofImageAlt: tTracker(
+                        'missed_entry_dialog.approval.proofImageAlt'
+                      ),
+                    }}
+                  />
+
+                  {/* Save/Cancel Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSaveChanges}
+                      disabled={updateMutation.isPending || !editTitle.trim()}
+                      className="flex-1"
+                    >
+                      {updateMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      {t('detail.saveButton')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      disabled={updateMutation.isPending}
+                    >
+                      {t('detail.cancelEditButton')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* View Mode - Time Info */}
+              {!isEditMode && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>{t('detail.startTime')}</span>
+                    </div>
+                    <p className="font-medium">
+                      {format(
+                        new Date(request.start_time),
+                        'MMM d, yyyy h:mm a'
+                      )}
+                    </p>
+                  </div>
+                  <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>{t('detail.endTime')}</span>
+                    </div>
+                    <p className="font-medium">
+                      {format(new Date(request.end_time), 'MMM d, yyyy h:mm a')}
+                    </p>
+                  </div>
+                  <div className="space-y-2 rounded-lg border bg-muted/20 p-4 md:col-span-2">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <ClockIcon className="h-4 w-4" />
+                      <span>{t('detail.duration')}</span>
+                    </div>
+                    <p className="font-medium">
+                      {calculateDuration(request.start_time, request.end_time)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Task Info */}
+              {!isEditMode && request.task && (
+                <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
+                  <div className="text-muted-foreground text-sm">
+                    {t('detail.linkedTask')}
+                  </div>
+                  <p className="font-medium">{request.task.name}</p>
+                </div>
+              )}
+
+              {/* Description */}
+              {!isEditMode && request.description && (
+                <div className="space-y-3">
+                  <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
+                    {t('detail.description')}
+                  </h2>
+                  <div className="rounded-lg border bg-muted/10 p-4">
+                    <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
+                      {request.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {!isEditMode && request.images && request.images.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
+                      {t('detail.attachments', {
+                        count: request.images.length,
+                      })}
+                    </h2>
+                  </div>
+                  {isLoadingImages ? (
+                    <div className="flex items-center justify-center gap-2 rounded-lg border bg-muted/20 py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      <p className="text-muted-foreground text-sm">
+                        {t('detail.loadingMedia')}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {imageUrls.map((url, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setSelectedImageIndex(index)}
+                          className="group relative h-48 overflow-hidden rounded-lg border bg-muted/10 transition-all hover:ring-2 hover:ring-dynamic-blue/50"
+                        >
+                          <img
+                            src={url}
+                            alt={`Attachment ${index + 1}`}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             {/* End Left Column */}
 
@@ -640,7 +669,8 @@ export function RequestDetailModal({
                         </p>
                         <p className="text-muted-foreground text-xs">
                           {t('detail.needsInfoDate', {
-                            name: request.needs_info_requested_by_user.display_name,
+                            name: request.needs_info_requested_by_user
+                              .display_name,
                             date: request.needs_info_requested_at
                               ? format(
                                   new Date(request.needs_info_requested_at),
@@ -705,7 +735,9 @@ export function RequestDetailModal({
                           className="w-full border-dynamic-blue/20 hover:bg-dynamic-blue/90 bg-dynamic-blue"
                         >
                           <InfoIcon className="mr-2 h-4 w-4" />
-                          <span className="truncate">{t('detail.requestInfoButton')}</span>
+                          <span className="truncate">
+                            {t('detail.requestInfoButton')}
+                          </span>
                         </Button>
                         <Button
                           variant="destructive"
@@ -743,7 +775,8 @@ export function RequestDetailModal({
                         <Button
                           onClick={handleRequestMoreInfo}
                           disabled={
-                            requestInfoMutation.isPending || !needsInfoReason.trim()
+                            requestInfoMutation.isPending ||
+                            !needsInfoReason.trim()
                           }
                           className="w-full bg-dynamic-blue hover:bg-dynamic-blue/90"
                         >

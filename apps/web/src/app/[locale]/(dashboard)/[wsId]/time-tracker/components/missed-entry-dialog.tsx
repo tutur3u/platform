@@ -136,8 +136,6 @@ type MissedEntryDialogProps =
   | ExceededSessionModeProps
   | ExceededSessionChainModeProps;
 
-
-
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const { open, onOpenChange, categories, wsId, mode = 'normal' } = props;
 
@@ -279,8 +277,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     }
   }, [open, isExceededMode, session, prefillStartTime, prefillEndTime]);
 
-
-
   // Update current duration every second in exceeded mode
   useEffect(() => {
     if ((!isExceededMode && !isChainMode) || !sessionStartTime) return;
@@ -291,8 +287,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
     return () => clearInterval(intervalId);
   }, [isExceededMode, isChainMode, sessionStartTime]);
-
-
 
   // Validate form fields in real-time
   useEffect(() => {
@@ -335,8 +329,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
     setValidationErrors(errors);
   }, [missedEntryStartTime, missedEntryEndTime, getValidationErrorMessage]);
-
-
 
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
