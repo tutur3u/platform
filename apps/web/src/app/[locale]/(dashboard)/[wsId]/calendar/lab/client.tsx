@@ -28,6 +28,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCalendarSettings } from '../hooks';
+import type { CalendarScenario } from './types';
 
 interface CalendarLabClientPageProps {
   workspace: Workspace;
@@ -46,11 +47,17 @@ export default function CalendarLabClientPage({
 
   const { initialSettings } = useCalendarSettings(workspace, locale);
 
-  // Animation state
+  // Simulation state
+  const [currentScenario, setCurrentScenario] = useState<CalendarScenario | null>(
+    null
+  );
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [simulationData, setSimulationData] = useState<any>(null);
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationResult, setSimulationResult] = useState<any>(null);
 
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -62,8 +69,8 @@ export default function CalendarLabClientPage({
     }
   }, []);
 
-  const runSimulation = async () => {
-    setIsSimulating(true);
+  const importRealData = async () => {
+    setIsImporting(true);
     try {
       const response = await fetch(
         `/api/v1/workspaces/${workspace.id}/calendar/schedule/preview`,
@@ -77,14 +84,46 @@ export default function CalendarLabClientPage({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate simulation');
+        throw new Error(result.error || 'Failed to import data');
       }
 
-      setSimulationData(result);
-      setCurrentStep(0);
+      // Convert the result into a scenario format
+      const scenario: CalendarScenario = {
+        id: 'real-data',
+        name: 'Real Workspace Data',
+        description:
+          'Currently active tasks, habits, and events from this workspace.',
+        tasks: result.debug?.taskDetails || [],
+        habits: result.debug?.habitDetails || [],
+        events: result.lockedEvents || [],
+        settings: {
+          hours: {
+            workHours: result.debug?.hourSettings?.workHours || {},
+            personalHours: result.debug?.hourSettings?.personalHours || {},
+            meetingHours: result.debug?.hourSettings?.meetingHours || {},
+          } as any,
+          timezone: result.debug?.resolvedTimezone || clientTimezone,
+        },
+      };
+
+      setCurrentScenario(scenario);
+      setSimulationResult(result);
+      setCurrentStep(result.preview.steps.length - 1); // Default to final state
       setIsPlaying(false);
     } catch (error) {
-      console.error('Simulation failed:', error);
+      console.error('Import failed:', error);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const runSimulation = async () => {
+    if (!currentScenario) return;
+    setIsSimulating(true);
+    try {
+      // In a real lab, we would pass the modified scenario back to an API
+      // For now, we just re-fetch to simulate a re-run
+      await importRealData();
     } finally {
       setIsSimulating(false);
     }
@@ -105,12 +144,12 @@ export default function CalendarLabClientPage({
   );
 
   useEffect(() => {
-    if (!simulationData) {
+    if (!simulationResult) {
       clearPreviewEvents();
       return;
     }
 
-    const stepsWithEvents = simulationData.preview.steps.filter(
+    const stepsWithEvents = simulationResult.preview.steps.filter(
       (s: any) => s.event
     );
     const eventsUpToStep = stepsWithEvents
@@ -120,7 +159,7 @@ export default function CalendarLabClientPage({
 
     setPreviewEvents(convertToCalendarEvents(eventsUpToStep));
   }, [
-    simulationData,
+    simulationResult,
     currentStep,
     setPreviewEvents,
     clearPreviewEvents,
@@ -129,8 +168,8 @@ export default function CalendarLabClientPage({
 
   // Handle animation
   useEffect(() => {
-    if (isPlaying && simulationData) {
-      const stepsWithEvents = simulationData.preview.steps.filter(
+    if (isPlaying && simulationResult) {
+      const stepsWithEvents = simulationResult.preview.steps.filter(
         (s: any) => s.event
       );
       if (currentStep < stepsWithEvents.length - 1) {
@@ -147,12 +186,12 @@ export default function CalendarLabClientPage({
     return () => {
       if (animationRef.current) clearTimeout(animationRef.current);
     };
-  }, [isPlaying, currentStep, simulationData]);
+  }, [isPlaying, currentStep, simulationResult]);
 
   const playbackStepsWithEvents = useMemo(() => {
-    if (!simulationData) return [];
-    return simulationData.preview.steps.filter((s: any) => s.event);
-  }, [simulationData]);
+    if (!simulationResult) return [];
+    return simulationResult.preview.steps.filter((s: any) => s.event);
+  }, [simulationResult]);
 
   return (
     <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -166,13 +205,40 @@ export default function CalendarLabClientPage({
           </div>
 
           <div className="space-y-6">
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Scenarios
+              </h3>
+              <Button
+                variant="outline"
+                onClick={importRealData}
+                disabled={isImporting}
+                className="w-full"
+              >
+                {isImporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                )}
+                Import Workspace
+              </Button>
+              {currentScenario && (
+                <div className="rounded-md bg-muted p-3">
+                  <div className="text-sm font-medium">{currentScenario.name}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-2">
+                    {currentScenario.description}
+                  </div>
+                </div>
+              )}
+            </section>
+
             <section>
               <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
                 Simulation
               </h3>
               <Button
                 onClick={runSimulation}
-                disabled={isSimulating}
+                disabled={isSimulating || !currentScenario}
                 className="w-full"
               >
                 {isSimulating ? (
@@ -184,7 +250,7 @@ export default function CalendarLabClientPage({
               </Button>
             </section>
 
-            {simulationData && (
+            {simulationResult && (
               <section className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                   Playback
@@ -224,7 +290,7 @@ export default function CalendarLabClientPage({
                     size="icon"
                     onClick={() => setCurrentStep((prev) => prev + 1)}
                     disabled={
-                      !simulationData ||
+                      !simulationResult ||
                       currentStep >= playbackStepsWithEvents.length - 1
                     }
                   >
