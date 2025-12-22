@@ -56,6 +56,18 @@ describe('HeatmapOverlay', () => {
     expect(container.firstChild).toBeDefined();
   });
 
+  it('should render heatmap with custom weights', () => {
+    const { container } = render(
+      <HeatmapOverlay
+        scenario={mockScenario as any}
+        selectedItemId="h1"
+        dates={[new Date()]}
+        weights={{ habitIdealTimeBonus: 2000 }}
+      />
+    );
+    expect(container.firstChild).toBeDefined();
+  });
+
   it('should return null if item not found', () => {
     const { container } = render(
       <HeatmapOverlay
