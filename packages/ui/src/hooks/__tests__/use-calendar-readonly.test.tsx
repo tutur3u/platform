@@ -12,7 +12,9 @@ vi.mock('../use-calendar-sync', () => ({
 }));
 
 describe('CalendarProvider Read-Only Mode', () => {
-  const mockUseQuery = vi.fn().mockReturnValue({ data: null, isLoading: false });
+  const mockUseQuery = vi
+    .fn()
+    .mockReturnValue({ data: null, isLoading: false });
   const mockUseQueryClient = vi.fn().mockReturnValue({
     invalidateQueries: vi.fn(),
     setQueryData: vi.fn(),
