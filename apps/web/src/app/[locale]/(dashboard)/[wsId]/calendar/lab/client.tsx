@@ -21,7 +21,15 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
@@ -232,7 +240,8 @@ export default function CalendarLabClientPage({
         if (showDiff && baselineResult) {
           const baseline = baselineMap.get(e.source_id);
           if (baseline) {
-            const hasMoved = baseline.start_at !== e.start_at || baseline.end_at !== e.end_at;
+            const hasMoved =
+              baseline.start_at !== e.start_at || baseline.end_at !== e.end_at;
             if (hasMoved) {
               finalColor = 'ORANGE';
               finalTitle = `[MOVED] ${e.title}`;
@@ -367,186 +376,198 @@ export default function CalendarLabClientPage({
                 value="log"
                 className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
-                Decision Log
+                Log
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="scenarios" className="flex-1 p-4 space-y-6">
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Data Sourcing
-                </h3>
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    onClick={importRealData}
-                    disabled={isImporting}
-                    className="w-full justify-start"
-                  >
-                    {isImporting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                    )}
-                    Import Workspace
-                  </Button>
+              <div className="space-y-4">
+                <section className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
+                    Data Source
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={importRealData}
+                      disabled={isImporting}
+                      className="h-20 flex-col gap-2"
+                    >
+                      {isImporting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <RotateCcw className="h-5 w-5 text-blue-500" />
+                      )}
+                      <span className="text-[10px]">Import WS</span>
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    onClick={generateRandom}
-                    className="w-full justify-start"
-                  >
-                    <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
-                    Generate Random
-                  </Button>
-                </div>
-
-                <Select
-                  onValueChange={loadPresetScenario}
-                  value={currentScenario?.id || ''}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a preset..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRESET_SCENARIOS.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {currentScenario && (
-                  <div className="rounded-md bg-muted p-3">
-                    <div className="text-sm font-medium">
-                      {currentScenario.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground line-clamp-2">
-                      {currentScenario.description}
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Visualization
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Score Heatmap</span>
-                    <Switch
-                      checked={showHeatmap}
-                      onCheckedChange={setShowHeatmap}
-                      disabled={!currentScenario || !selectedItemId}
-                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateRandom}
+                      className="h-20 flex-col gap-2"
+                    >
+                      <Sparkles className="h-5 w-5 text-purple-500" />
+                      <span className="text-[10px]">Randomize</span>
+                    </Button>
                   </div>
 
                   <Select
-                    onValueChange={setSelectedItemId}
-                    value={selectedItemId || ''}
-                    disabled={!currentScenario}
+                    onValueChange={loadPresetScenario}
+                    value={currentScenario?.id || ''}
                   >
-                    <SelectTrigger className="w-full text-xs">
-                      <SelectValue placeholder="Select item to score..." />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a preset..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {allItems.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <span className="flex items-center gap-2">
-                            <span
-                              className={
-                                item.type === 'habit'
-                                  ? 'text-blue-500'
-                                  : 'text-orange-500'
-                              }
-                            >
-                              {item.type === 'habit' ? 'H' : 'T'}
-                            </span>
-                            {item.name}
-                          </span>
+                      {PRESET_SCENARIOS.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </section>
 
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Execution
-                </h3>
-                <Button
-                  onClick={runSimulation}
-                  disabled={isSimulating || !currentScenario}
-                  className="w-full"
-                >
-                  {isSimulating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Play className="mr-2 h-4 w-4" />
+                  {currentScenario && (
+                    <Card className="bg-muted/50 border-none shadow-none">
+                      <CardHeader className="p-3 pb-0">
+                        <CardTitle className="text-sm">{currentScenario.name}</CardTitle>
+                        <CardDescription className="text-[10px] leading-tight">
+                          {currentScenario.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-3 pt-2 flex gap-2">
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1">{currentScenario.tasks.length} Tasks</Badge>
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1">{currentScenario.habits.length} Habits</Badge>
+                      </CardContent>
+                    </Card>
                   )}
-                  Run Simulation
-                </Button>
+                </section>
 
-                {simulationResult && (
-                  <div className="space-y-4 pt-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setCurrentStep(0)}
-                        disabled={currentStep === 0}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          setCurrentStep((prev) => Math.max(0, prev - 1))
-                        }
-                        disabled={currentStep === 0}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setIsPlaying(!isPlaying)}
-                      >
-                        {isPlaying ? (
-                          <Pause className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setCurrentStep((prev) => prev + 1)}
-                        disabled={
-                          !simulationResult ||
-                          currentStep >= playbackStepsWithEvents.length - 1
-                        }
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                <section className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
+                    Visualization
+                  </h3>
+                  
+                  <div className="space-y-4 px-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">Heatmap</span>
+                        <span className="text-[10px] text-muted-foreground italic">Visualizes fitness score</span>
+                      </div>
+                      <Switch
+                        checked={showHeatmap}
+                        onCheckedChange={setShowHeatmap}
+                        disabled={!currentScenario || !selectedItemId}
+                      />
                     </div>
-                    <div className="text-center text-xs text-muted-foreground">
-                      Step {currentStep + 1} of {playbackStepsWithEvents.length}
-                    </div>
+
+                    <Select
+                      onValueChange={setSelectedItemId}
+                      value={selectedItemId || ''}
+                      disabled={!currentScenario}
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue placeholder="Select item to score..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allItems.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={
+                                  item.type === 'habit'
+                                    ? 'text-blue-500'
+                                    : 'text-orange-500'
+                                }
+                              >
+                                {item.type === 'habit' ? 'H' : 'T'}
+                              </span>
+                              {item.name}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
-              </section>
+                </section>
+
+                <section className="space-y-3 pt-2">
+                  <Button
+                    onClick={runSimulation}
+                    disabled={isSimulating || !currentScenario}
+                    className="w-full py-6 shadow-md"
+                  >
+                    {isSimulating ? (
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      <Play className="mr-2 h-5 w-5 fill-current" />
+                    )}
+                    Run Algorithm
+                  </Button>
+
+                  {simulationResult && (
+                    <div className="space-y-4 pt-2 bg-accent/30 rounded-lg p-3 border">
+                      <div className="flex items-center justify-between gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setCurrentStep(0)}
+                          disabled={currentStep === 0}
+                          className="h-8 w-8"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() =>
+                            setCurrentStep((prev) => Math.max(0, prev - 1))
+                          }
+                          disabled={currentStep === 0}
+                          className="h-8 w-8"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => setIsPlaying(!isPlaying)}
+                          className="h-10 w-10 shadow-sm"
+                        >
+                          {isPlaying ? (
+                            <Pause className="h-5 w-5 fill-current" />
+                          ) : (
+                            <Play className="h-5 w-5 fill-current" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setCurrentStep((prev) => prev + 1)}
+                          disabled={
+                            !simulationResult ||
+                            currentStep >= playbackStepsWithEvents.length - 1
+                          }
+                          className="h-8 w-8"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="text-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+                        Step {currentStep + 1} / {playbackStepsWithEvents.length}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </div>
             </TabsContent>
 
             <TabsContent value="tuning" className="flex-1 p-4 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Algorithm Weights
+                <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
+                  Weight Tuning
                 </h3>
                 <Button
                   variant="ghost"
@@ -557,21 +578,26 @@ export default function CalendarLabClientPage({
                     taskPreferenceBonus: 500,
                     taskBaseEarlyBonus: 300,
                   })}
-                  className="h-8 text-[10px]"
+                  className="h-8 text-[10px] text-muted-foreground hover:text-foreground"
                 >
                   RESET
                 </Button>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-8 px-1">
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-xs font-semibold">Habit Ideal Time</label>
-                    <span className="text-xs font-mono">{weights.habitIdealTimeBonus}</span>
+                    <label className="text-[11px] font-semibold">Habit Ideal Time</label>
+                    <span className="text-[11px] font-mono text-primary">{weights.habitIdealTimeBonus}</span>
                   </div>
                   <Slider
                     value={[weights.habitIdealTimeBonus || 0]}
-                    onValueChange={([val]) => setWeights(prev => ({ ...prev, habitIdealTimeBonus: val }))}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        habitIdealTimeBonus: val,
+                      }))
+                    }
                     max={2000}
                     step={50}
                   />
@@ -579,12 +605,17 @@ export default function CalendarLabClientPage({
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-xs font-semibold">Habit Preference</label>
-                    <span className="text-xs font-mono">{weights.habitPreferenceBonus}</span>
+                    <label className="text-[11px] font-semibold">Habit Preference</label>
+                    <span className="text-[11px] font-mono text-primary">{weights.habitPreferenceBonus}</span>
                   </div>
                   <Slider
                     value={[weights.habitPreferenceBonus || 0]}
-                    onValueChange={([val]) => setWeights(prev => ({ ...prev, habitPreferenceBonus: val }))}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        habitPreferenceBonus: val,
+                      }))
+                    }
                     max={1000}
                     step={50}
                   />
@@ -592,12 +623,17 @@ export default function CalendarLabClientPage({
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-xs font-semibold">Task Preference</label>
-                    <span className="text-xs font-mono">{weights.taskPreferenceBonus}</span>
+                    <label className="text-[11px] font-semibold">Task Preference</label>
+                    <span className="text-[11px] font-mono text-primary">{weights.taskPreferenceBonus}</span>
                   </div>
                   <Slider
                     value={[weights.taskPreferenceBonus || 0]}
-                    onValueChange={([val]) => setWeights(prev => ({ ...prev, taskPreferenceBonus: val }))}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        taskPreferenceBonus: val,
+                      }))
+                    }
                     max={1000}
                     step={50}
                   />
@@ -605,25 +641,33 @@ export default function CalendarLabClientPage({
 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <label className="text-xs font-semibold">Task Base Urgency</label>
-                    <span className="text-xs font-mono">{weights.taskBaseEarlyBonus}</span>
+                    <label className="text-[11px] font-semibold">Task Base Urgency</label>
+                    <span className="text-[11px] font-mono text-primary">{weights.taskBaseEarlyBonus}</span>
                   </div>
                   <Slider
                     value={[weights.taskBaseEarlyBonus || 0]}
-                    onValueChange={([val]) => setWeights(prev => ({ ...prev, taskBaseEarlyBonus: val }))}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        taskBaseEarlyBonus: val,
+                      }))
+                    }
                     max={1000}
                     step={50}
                   />
                 </div>
               </div>
 
-              <div className="space-y-3 pt-4 border-t">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="space-y-3 pt-6 border-t">
+                <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
                   Scenario Diff
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Show Diff Mode</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Diff Mode</span>
+                      <span className="text-[10px] text-muted-foreground italic">Highlight changes</span>
+                    </div>
                     <Switch
                       checked={showDiff}
                       onCheckedChange={setShowDiff}
@@ -632,16 +676,18 @@ export default function CalendarLabClientPage({
                   </div>
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={saveAsBaseline}
                     disabled={!simulationResult}
-                    className="w-full justify-start"
+                    className="w-full justify-start h-10"
                   >
                     <Copy className="mr-2 h-4 w-4" />
-                    Set Current as Baseline
+                    Set Baseline
                   </Button>
                   {baselineResult && (
-                    <div className="text-[10px] text-muted-foreground italic">
-                      Baseline set. Tweak weights and Run Simulation to compare.
+                    <div className="flex items-center gap-2 p-2 bg-blue-500/5 border border-blue-500/10 rounded text-[10px] text-blue-600 dark:text-blue-400 italic leading-tight">
+                      <Info className="h-3 w-3 shrink-0" />
+                      Baseline captured. Adjust weights and rerun to compare.
                     </div>
                   )}
                 </div>
@@ -655,23 +701,23 @@ export default function CalendarLabClientPage({
               {simulationResult ? (
                 <div className="space-y-6">
                   <section className="space-y-2">
-                    <h3 className="text-xs font-bold uppercase text-muted-foreground">
-                      Stats
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
+                      Simulation Stats
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded bg-muted p-2 text-center">
-                        <div className="text-xl font-bold">
+                      <div className="rounded-lg bg-accent/50 p-3 text-center border">
+                        <div className="text-2xl font-bold">
                           {simulationResult.preview.summary.tasksScheduled}
                         </div>
-                        <div className="text-[10px] uppercase text-muted-foreground">
+                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">
                           Tasks
                         </div>
                       </div>
-                      <div className="rounded bg-muted p-2 text-center">
-                        <div className="text-xl font-bold">
+                      <div className="rounded-lg bg-accent/50 p-3 text-center border">
+                        <div className="text-2xl font-bold">
                           {simulationResult.preview.summary.habitsScheduled}
                         </div>
-                        <div className="text-[10px] uppercase text-muted-foreground">
+                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">
                           Habits
                         </div>
                       </div>
@@ -679,17 +725,17 @@ export default function CalendarLabClientPage({
                   </section>
 
                   {simulationResult.preview.warnings.length > 0 && (
-                    <section className="space-y-2">
-                      <h3 className="flex items-center gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    <section className="space-y-3">
+                      <h3 className="flex items-center gap-1 text-xs font-bold uppercase text-muted-foreground tracking-wider">
                         <AlertTriangle className="h-3 w-3 text-red-500" />
-                        Warnings
+                        Violations
                       </h3>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {simulationResult.preview.warnings.map(
                           (w: string, i: number) => (
                             <div
                               key={i}
-                              className="rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-600 dark:text-red-400"
+                              className="rounded-md border border-red-500/20 bg-red-500/5 p-2 text-[11px] leading-tight text-red-600 dark:text-red-400"
                             >
                               {w}
                             </div>
@@ -702,8 +748,8 @@ export default function CalendarLabClientPage({
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center space-y-2 p-8 text-center opacity-50">
                   <Sparkles className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Run a simulation to see the results summary.
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Run a simulation to see results.
                   </p>
                 </div>
               )}
@@ -715,49 +761,52 @@ export default function CalendarLabClientPage({
             >
               {hoveredStep ? (
                 <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-4">
-                  <div className="rounded-md border bg-accent p-3">
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground/70">
-                      Hovered Decision
-                    </h3>
-                    <div className="mb-1 text-sm font-medium">
-                      {hoveredStep.description}
-                    </div>
-                    <div className="mb-3 text-xs italic text-muted-foreground">
-                      "{hoveredStep.debug?.reason ||
-                        'No specific reason provided.'}"
-                    </div>
-
-                    {hoveredStep.debug?.slotsConsidered && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase">
-                          <Info className="h-3 w-3" />
-                          Slots Considered
-                        </div>
-                        <div className="space-y-1">
-                          {hoveredStep.debug.slotsConsidered
-                            .slice(0, 5)
-                            .map((slot: any, i: number) => (
-                              <div
-                                key={i}
-                                className="flex items-center justify-between rounded bg-background/50 px-2 py-1 text-[10px]"
-                              >
-                                <span>{dayjs(slot.start).format('HH:mm')}</span>
-                                <span className="font-mono text-muted-foreground">
-                                  {Math.round(slot.maxAvailable)}m available
-                                </span>
-                              </div>
-                            ))}
-                        </div>
+                  <Card className="bg-accent/30 border shadow-none">
+                    <CardHeader className="p-3 pb-2">
+                      <CardTitle className="text-xs uppercase text-muted-foreground tracking-widest">
+                        Decision Context
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0 space-y-3">
+                      <div className="text-sm font-semibold leading-snug">
+                        {hoveredStep.description}
                       </div>
-                    )}
-                  </div>
+                      <div className="p-2 bg-background/50 rounded text-xs italic text-muted-foreground border leading-relaxed">
+                        "{hoveredStep.debug?.reason ||
+                          'No specific reason provided.'}"
+                      </div>
+
+                      {hoveredStep.debug?.slotsConsidered && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-muted-foreground">
+                            <Info className="h-3 w-3" />
+                            Slots Considered
+                          </div>
+                          <div className="space-y-1">
+                            {hoveredStep.debug.slotsConsidered
+                              .slice(0, 5)
+                              .map((slot: any, i: number) => (
+                                <div
+                                  key={i}
+                                  className="flex items-center justify-between rounded bg-background/50 px-2 py-1.5 text-[10px] border border-transparent hover:border-primary/20 transition-colors"
+                                >
+                                  <span className="font-medium">{dayjs(slot.start).format('HH:mm')}</span>
+                                  <span className="font-mono text-muted-foreground">
+                                    {Math.round(slot.maxAvailable)}m
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center space-y-2 p-8 text-center opacity-50">
                   <Bug className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Hover over a scheduled event to see the algorithm's
-                    placement logic.
+                  <p className="text-sm text-muted-foreground font-medium leading-tight">
+                    Hover over a scheduled event to see placement logic.
                   </p>
                 </div>
               )}
