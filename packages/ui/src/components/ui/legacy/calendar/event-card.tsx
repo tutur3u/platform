@@ -82,12 +82,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isPreview,
     _isReused,
     _previewType,
+    _warning,
   } = event as CalendarEvent & {
     _isHabit?: boolean;
     _habitCompleted?: boolean;
     _isPreview?: boolean;
     _isReused?: boolean;
     _previewType?: 'habit' | 'task';
+    _warning?: string;
   };
 
   // Default values for overlap properties if not provided
@@ -1144,6 +1146,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                     : 'text-primary opacity-70'
                 )}
               />
+            </div>
+          )}
+
+          {/* Warning indicator */}
+          {_warning && (
+            <div
+              className={cn(
+                'absolute right-1 z-10',
+                _isHabit ? 'top-5' : 'top-1'
+              )}
+              title={_warning}
+            >
+              <AlertTriangle className="h-3 w-3 text-dynamic-red" />
             </div>
           )}
 

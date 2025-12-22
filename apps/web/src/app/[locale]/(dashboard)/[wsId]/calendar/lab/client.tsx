@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   Bug,
   ChevronLeft,
   ChevronRight,
@@ -59,11 +60,8 @@ export default function CalendarLabClientPage({
 }: CalendarLabClientPageProps) {
   const t = useTranslations('calendar');
   const locale = useLocale();
-  const {
-    setPreviewEvents,
-    clearPreviewEvents,
-    hoveredBaseEventId,
-  } = useCalendar();
+  const { setPreviewEvents, clearPreviewEvents, hoveredBaseEventId } =
+    useCalendar();
   const { dates } = useCalendarSync();
 
   const { initialSettings } = useCalendarSettings(workspace, locale);
@@ -195,16 +193,26 @@ export default function CalendarLabClientPage({
 
   const convertToCalendarEvents = useCallback(
     (events: any[]): CalendarEvent[] => {
-      return events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        start_at: e.start_at,
-        end_at: e.end_at,
-        color: e.color as any,
-        _isPreview: true,
-      }));
+      return events.map((e) => {
+        const taskResult = simulationResult?.preview?.tasks?.events?.find(
+          (tr: any) => tr.task.id === e.source_id
+        );
+        const habitResult = simulationResult?.preview?.habits?.events?.find(
+          (hr: any) => hr.habit.id === e.source_id
+        );
+
+        return {
+          id: e.id,
+          title: e.title,
+          start_at: e.start_at,
+          end_at: e.end_at,
+          color: e.color as any,
+          _isPreview: true,
+          _warning: taskResult?.warning || habitResult?.warning,
+        };
+      });
     },
-    []
+    [simulationResult]
   );
 
   useEffect(() => {
@@ -293,8 +301,24 @@ export default function CalendarLabClientPage({
 
           <Tabs defaultValue="scenarios" className="flex-1 flex flex-col">
             <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-4">
-              <TabsTrigger value="scenarios" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">Scenarios</TabsTrigger>
-              <TabsTrigger value="log" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">Decision Log</TabsTrigger>
+              <TabsTrigger
+                value="scenarios"
+                className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Scenarios
+              </TabsTrigger>
+              <TabsTrigger
+                value="summary"
+                className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Summary
+              </TabsTrigger>
+              <TabsTrigger
+                value="log"
+                className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Decision Log
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="scenarios" className="flex-1 p-4 space-y-6">
@@ -359,13 +383,13 @@ export default function CalendarLabClientPage({
                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                   Visualization
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Score Heatmap</span>
-                    <Switch 
-                      checked={showHeatmap} 
-                      onCheckedChange={setShowHeatmap} 
+                    <Switch
+                      checked={showHeatmap}
+                      onCheckedChange={setShowHeatmap}
                       disabled={!currentScenario || !selectedItemId}
                     />
                   </div>
@@ -382,7 +406,13 @@ export default function CalendarLabClientPage({
                       {allItems.map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           <span className="flex items-center gap-2">
-                            <span className={item.type === 'habit' ? 'text-blue-500' : 'text-orange-500'}>
+                            <span
+                              className={
+                                item.type === 'habit'
+                                  ? 'text-blue-500'
+                                  : 'text-orange-500'
+                              }
+                            >
                               {item.type === 'habit' ? 'H' : 'T'}
                             </span>
                             {item.name}
@@ -455,7 +485,7 @@ export default function CalendarLabClientPage({
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div className="text-xs text-center text-muted-foreground">
+                    <div className="text-center text-xs text-muted-foreground">
                       Step {currentStep + 1} of {playbackStepsWithEvents.length}
                     </div>
                   </div>
@@ -463,41 +493,116 @@ export default function CalendarLabClientPage({
               </section>
             </TabsContent>
 
-            <TabsContent value="log" className="flex-1 flex flex-col p-4 space-y-4">
+            <TabsContent
+              value="summary"
+              className="flex flex-1 flex-col p-4 space-y-4"
+            >
+              {simulationResult ? (
+                <div className="space-y-6">
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase text-muted-foreground">
+                      Stats
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded bg-muted p-2 text-center">
+                        <div className="text-xl font-bold">
+                          {simulationResult.preview.summary.tasksScheduled}
+                        </div>
+                        <div className="text-[10px] uppercase text-muted-foreground">
+                          Tasks
+                        </div>
+                      </div>
+                      <div className="rounded bg-muted p-2 text-center">
+                        <div className="text-xl font-bold">
+                          {simulationResult.preview.summary.habitsScheduled}
+                        </div>
+                        <div className="text-[10px] uppercase text-muted-foreground">
+                          Habits
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {simulationResult.preview.warnings.length > 0 && (
+                    <section className="space-y-2">
+                      <h3 className="flex items-center gap-1 text-xs font-bold uppercase text-muted-foreground">
+                        <AlertTriangle className="h-3 w-3 text-red-500" />
+                        Warnings
+                      </h3>
+                      <div className="space-y-1">
+                        {simulationResult.preview.warnings.map(
+                          (w: string, i: number) => (
+                            <div
+                              key={i}
+                              className="rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-600 dark:text-red-400"
+                            >
+                              {w}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center space-y-2 p-8 text-center opacity-50">
+                  <Sparkles className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Run a simulation to see the results summary.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent
+              value="log"
+              className="flex flex-1 flex-col p-4 space-y-4"
+            >
               {hoveredStep ? (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="rounded-md bg-accent p-3 border">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-accent-foreground/70 mb-2">
+                <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-4">
+                  <div className="rounded-md border bg-accent p-3">
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground/70">
                       Hovered Decision
                     </h3>
-                    <div className="text-sm font-medium mb-1">{hoveredStep.description}</div>
-                    <div className="text-xs text-muted-foreground italic mb-3">
-                      "{hoveredStep.debug?.reason || 'No specific reason provided.'}"
+                    <div className="mb-1 text-sm font-medium">
+                      {hoveredStep.description}
                     </div>
-                    
+                    <div className="mb-3 text-xs italic text-muted-foreground">
+                      "{hoveredStep.debug?.reason ||
+                        'No specific reason provided.'}"
+                    </div>
+
                     {hoveredStep.debug?.slotsConsidered && (
                       <div className="space-y-2">
-                        <div className="text-[10px] font-bold uppercase flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase">
                           <Info className="h-3 w-3" />
                           Slots Considered
                         </div>
                         <div className="space-y-1">
-                          {hoveredStep.debug.slotsConsidered.slice(0, 5).map((slot: any, i: number) => (
-                            <div key={i} className="text-[10px] flex justify-between items-center bg-background/50 rounded px-2 py-1">
-                              <span>{dayjs(slot.start).format('HH:mm')}</span>
-                              <span className="text-muted-foreground font-mono">{Math.round(slot.maxAvailable)}m available</span>
-                            </div>
-                          ))}
+                          {hoveredStep.debug.slotsConsidered
+                            .slice(0, 5)
+                            .map((slot: any, i: number) => (
+                              <div
+                                key={i}
+                                className="flex items-center justify-between rounded bg-background/50 px-2 py-1 text-[10px]"
+                              >
+                                <span>{dayjs(slot.start).format('HH:mm')}</span>
+                                <span className="font-mono text-muted-foreground">
+                                  {Math.round(slot.maxAvailable)}m available
+                                </span>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-2 opacity-50">
+                <div className="flex flex-1 flex-col items-center justify-center space-y-2 p-8 text-center opacity-50">
                   <Bug className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Hover over a scheduled event to see the algorithm's placement logic.
+                    Hover over a scheduled event to see the algorithm's
+                    placement logic.
                   </p>
                 </div>
               )}
@@ -520,7 +625,7 @@ export default function CalendarLabClientPage({
           disabled={true}
           overlay={
             showHeatmap && currentScenario && selectedItemId ? (
-              <HeatmapOverlay 
+              <HeatmapOverlay
                 scenario={currentScenario}
                 selectedItemId={selectedItemId}
                 dates={dates}

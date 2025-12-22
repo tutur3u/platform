@@ -25,7 +25,7 @@ Refactor calendar components to support algorithm-specific visual debugging.
 - [x] Task: Refactor `CalendarClientPage` and sub-components to support an "overlay" layer 9c4b34c
 - [x] Task: Implement "Score Heatmap" visualization showing time slot fitness b80c9cb
 - [x] Task: Create "Decision Tooltips" that explain the 'why' behind task placement 8fe947b
-- [ ] Task: Implement constraint violation highlighting (e.g., overlapping events, missed habits)
+- [~] Task: Implement constraint violation highlighting (e.g., overlapping events, missed habits)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Enhanced Visualization & Overlays' (Protocol in workflow.md)
 
 ## Phase 4: Algorithm Control & Interactivity
