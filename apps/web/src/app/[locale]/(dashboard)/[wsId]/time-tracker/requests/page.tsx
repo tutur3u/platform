@@ -21,12 +21,15 @@ export interface ExtendedTimeTrackingRequest {
   start_time: string;
   end_time: string;
   images: string[] | null;
-  approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEEDS_INFO';
   approved_by: string | null;
   approved_at: string | null;
   rejected_by: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;
+  needs_info_requested_by: string | null;
+  needs_info_requested_at: string | null;
+  needs_info_reason: string | null;
   created_at: string;
   updated_at: string;
   user: {
@@ -51,6 +54,10 @@ export interface ExtendedTimeTrackingRequest {
     display_name: string;
   } | null;
   rejected_by_user?: {
+    id: string;
+    display_name: string;
+  } | null;
+  needs_info_requested_by_user?: {
     id: string;
     display_name: string;
   } | null;

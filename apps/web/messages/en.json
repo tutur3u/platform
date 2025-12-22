@@ -7809,7 +7809,8 @@
         "all": "All",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "needs_info": "Needs Info"
       },
       "list": {
         "title": "Requests",
@@ -7825,6 +7826,8 @@
         "approvedOn": "on {date}",
         "rejectedBy": "Rejected by {name}",
         "rejectedOn": "on {date}",
+        "needsInfoBy": "More info requested by {name}",
+        "needsInfoOn": "on {date}",
         "loading": "Loading requests...",
         "error": "Failed to load requests"
       },
@@ -7853,13 +7856,23 @@
         "nextImage": "Next",
         "unknownUser": "Unknown User",
         "approvedDate": "Approved by {name} on {date}",
-        "rejectedDate": "Rejected by {name} on {date}"
+        "rejectedDate": "Rejected by {name} on {date}",
+        "requestNeedsInfo": "More Information Requested",
+        "needsInfoDate": "Requested by {name} on {date}",
+        "needsInfoReason": "Requested Information:",
+        "requestInfoButton": "Request More Info",
+        "needsInfoReasonLabel": "What information do you need?",
+        "needsInfoReasonPlaceholder": "Please describe what additional information is needed...",
+        "needsInfoReasonRequired": "Please provide a reason for requesting more information",
+        "confirmRequestInfo": "Request Information"
       },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",
         "approveFailed": "Failed to approve request",
         "rejectSuccess": "Time tracking request rejected",
         "rejectFailed": "Failed to reject request",
+        "requestInfoSuccess": "More information requested successfully",
+        "requestInfoFailed": "Failed to request more information",
         "loadImagesFailed": "Failed to load images"
       },
       "settings": {

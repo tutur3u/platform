@@ -7611,7 +7611,8 @@
         "all": "Tất Cả",
         "pending": "Đang Chờ",
         "approved": "Đã Duyệt",
-        "rejected": "Đã Từ Chối"
+        "rejected": "Đã Từ Chối",
+        "needs_info": "Cần Thêm Thông Tin"
       },
       "list": {
         "title": "Yêu Cầu",
@@ -7627,6 +7628,8 @@
         "approvedOn": "vào {date}",
         "rejectedBy": "Bị từ chối bởi {name}",
         "rejectedOn": "vào {date}",
+        "needsInfoBy": "Yêu cầu thêm thông tin bởi {name}",
+        "needsInfoOn": "vào {date}",
         "loading": "Đang tải yêu cầu...",
         "error": "Không thể tải yêu cầu"
       },
@@ -7655,13 +7658,23 @@
         "nextImage": "Tiếp theo",
         "unknownUser": "Người Dùng Không Xác Định",
         "approvedDate": "Được phê duyệt bởi {name} vào {date}",
-        "rejectedDate": "Bị từ chối bởi {name} vào {date}"
+        "rejectedDate": "Bị từ chối bởi {name} vào {date}",
+        "requestNeedsInfo": "Yêu Cầu Thêm Thông Tin",
+        "needsInfoDate": "Được yêu cầu bởi {name} vào {date}",
+        "needsInfoReason": "Thông Tin Được Yêu Cầu:",
+        "requestInfoButton": "Yêu Cầu Thêm Thông Tin",
+        "needsInfoReasonLabel": "Bạn cần thông tin gì?",
+        "needsInfoReasonPlaceholder": "Vui lòng mô tả thông tin bổ sung cần thiết...",
+        "needsInfoReasonRequired": "Vui lòng cung cấp lý do yêu cầu thêm thông tin",
+        "confirmRequestInfo": "Yêu Cầu Thông Tin"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
         "approveFailed": "Không thể phê duyệt yêu cầu",
         "rejectSuccess": "Yêu cầu theo dõi thời gian đã bị từ chối",
         "rejectFailed": "Không thể từ chối yêu cầu",
+        "requestInfoSuccess": "Đã yêu cầu thêm thông tin thành công",
+        "requestInfoFailed": "Không thể yêu cầu thêm thông tin",
         "loadImagesFailed": "Không thể tải hình ảnh"
       },
       "settings": {

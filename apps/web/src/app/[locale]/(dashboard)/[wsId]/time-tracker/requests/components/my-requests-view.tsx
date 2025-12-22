@@ -9,6 +9,7 @@ import {
   ChevronsRightIcon,
   ClockIcon,
   FilterIcon,
+  InfoIcon,
   Loader2,
   Paperclip,
   UserIcon,
@@ -366,6 +367,16 @@ export function MyRequestsView({
                       <span className="text-muted-foreground">
                         {t('list.rejectedBy', { name: request.rejected_by_user.display_name })}
                         {request.rejected_at && ` ${t('list.rejectedOn', { date: format(new Date(request.rejected_at), 'MMM d, yyyy') })}`}
+                      </span>
+                    </div>
+                  )}
+
+                  {request.approval_status === 'NEEDS_INFO' && request.needs_info_requested_by_user && (
+                    <div className="flex items-center gap-2 rounded-md bg-dynamic-blue/5 px-3 py-2 text-xs">
+                      <InfoIcon className="h-4 w-4 text-dynamic-blue" />
+                      <span className="text-muted-foreground">
+                        {t('list.needsInfoBy', { name: request.needs_info_requested_by_user.display_name })}
+                        {request.needs_info_requested_at && ` ${t('list.needsInfoOn', { date: format(new Date(request.needs_info_requested_at), 'MMM d, yyyy') })}`}
                       </span>
                     </div>
                   )}

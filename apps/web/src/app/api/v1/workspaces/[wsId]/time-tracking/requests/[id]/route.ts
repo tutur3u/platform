@@ -11,6 +11,10 @@ const updateRequestSchema = z.discriminatedUnion('action', [
     action: z.literal('reject'),
     rejection_reason: z.string().min(1, 'Rejection reason is required'),
   }),
+  z.object({
+    action: z.literal('needs_info'),
+    needs_info_reason: z.string().min(1, 'Needs info reason is required'),
+  }),
 ]);
 
 export async function PATCH(
@@ -87,6 +91,10 @@ export async function PATCH(
         p_rejection_reason:
           actionData.action === 'reject'
             ? actionData.rejection_reason
+            : undefined,
+        p_needs_info_reason:
+          actionData.action === 'needs_info'
+            ? actionData.needs_info_reason
             : undefined,
       }
     );

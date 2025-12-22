@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
+  InfoIcon,
   Loader2,
   UserIcon,
   XCircleIcon,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -30,8 +32,10 @@ import { useRequestImages } from './hooks/use-request-images';
 import {
   useApproveRequest,
   useRejectRequest,
+  useRequestMoreInfo,
 } from './hooks/use-request-mutations';
 import type { ExtendedTimeTrackingRequest } from './page';
+import { STATUS_COLORS, STATUS_LABELS } from './utils';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -55,6 +59,8 @@ export function RequestDetailModal({
   const t = useTranslations('time-tracker.requests');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
+  const [needsInfoReason, setNeedsInfoReason] = useState('');
+  const [showNeedsInfoForm, setShowNeedsInfoForm] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
   );
@@ -62,6 +68,7 @@ export function RequestDetailModal({
   // React Query mutations
   const approveMutation = useApproveRequest();
   const rejectMutation = useRejectRequest();
+  const requestInfoMutation = useRequestMoreInfo();
 
   // Fetch images with React Query
   const { data: imageUrls = [], isLoading: isLoadingImages } = useRequestImages(
@@ -105,6 +112,28 @@ export function RequestDetailModal({
     );
   }, [request.id, wsId, rejectionReason, onUpdate, onClose, rejectMutation]);
 
+  const handleRequestMoreInfo = useCallback(async () => {
+    if (!needsInfoReason.trim()) {
+      return;
+    }
+
+    await requestInfoMutation.mutateAsync(
+      {
+        wsId,
+        requestId: request.id,
+        needs_info_reason: needsInfoReason.trim(),
+      },
+      {
+        onSuccess: () => {
+          setNeedsInfoReason('');
+          setShowNeedsInfoForm(false);
+          onUpdate?.();
+          onClose();
+        },
+      }
+    );
+  }, [request.id, wsId, needsInfoReason, onUpdate, onClose, requestInfoMutation]);
+
   const calculateDuration = (startTime: string, endTime: string) => {
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -118,6 +147,8 @@ export function RequestDetailModal({
     if (!isOpen) {
       setShowRejectionForm(false);
       setRejectionReason('');
+      setShowNeedsInfoForm(false);
+      setNeedsInfoReason('');
       setSelectedImageIndex(null);
     }
   }, [isOpen]);
@@ -125,7 +156,7 @@ export function RequestDetailModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogContent className="max-h-[90vh] md:max-w-6xl overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1.5">
@@ -133,15 +164,9 @@ export function RequestDetailModal({
                 <DialogDescription className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
-                    className={
-                      request.approval_status === 'PENDING'
-                        ? 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange'
-                        : request.approval_status === 'APPROVED'
-                          ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
-                          : 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
-                    }
+                    className={cn('border font-medium text-xs', STATUS_COLORS[request.approval_status])}
                   >
-                    {request.approval_status}
+                    {t(`status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`)}
                   </Badge>
                   {request.category && (
                     <Badge
@@ -156,7 +181,9 @@ export function RequestDetailModal({
             </div>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+            {/* Left Column - Main Content */}
+            <div className="space-y-6">
             {/* User Info */}
             <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
               {request.user ? (
@@ -281,7 +308,7 @@ export function RequestDetailModal({
                         key={index}
                         type="button"
                         onClick={() => setSelectedImageIndex(index)}
-                        className="group relative overflow-hidden rounded-lg border bg-muted/10 transition-all hover:ring-2 hover:ring-dynamic-blue/50"
+                        className="group relative h-48 overflow-hidden rounded-lg border bg-muted/10 transition-all hover:ring-2 hover:ring-dynamic-blue/50"
                       >
                         <img
                           src={url}
@@ -295,47 +322,26 @@ export function RequestDetailModal({
                 )}
               </div>
             )}
+            </div>
+            {/* End Left Column */}
 
-            {/* Approval/Rejection Info */}
-            {request.approval_status === 'APPROVED' &&
-              request.approved_by_user && (
-                <div className="flex items-start gap-3 rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
-                  <CheckCircle2Icon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
-                  <div className="space-y-1">
-                    <p className="font-medium text-sm">
-                      {t('detail.requestApproved')}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {t('detail.approvedDate', {
-                        name: request.approved_by_user.display_name,
-                        date: request.approved_at
-                          ? format(
-                              new Date(request.approved_at),
-                              'MMM d, yyyy · h:mm a'
-                            )
-                          : '',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-            {request.approval_status === 'REJECTED' &&
-              request.rejected_by_user &&
-              request.rejection_reason && (
-                <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
-                  <div className="flex items-start gap-3">
-                    <XCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-red" />
+            {/* Right Column - Status & Actions */}
+            <div className="space-y-4">
+              {/* Approval/Rejection Info */}
+              {request.approval_status === 'APPROVED' &&
+                request.approved_by_user && (
+                  <div className="flex items-start gap-3 rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
+                    <CheckCircle2Icon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
                     <div className="space-y-1">
                       <p className="font-medium text-sm">
-                        {t('detail.requestRejected')}
+                        {t('detail.requestApproved')}
                       </p>
                       <p className="text-muted-foreground text-xs">
-                        {t('detail.rejectedDate', {
-                          name: request.rejected_by_user.display_name,
-                          date: request.rejected_at
+                        {t('detail.approvedDate', {
+                          name: request.approved_by_user.display_name,
+                          date: request.approved_at
                             ? format(
-                                new Date(request.rejected_at),
+                                new Date(request.approved_at),
                                 'MMM d, yyyy · h:mm a'
                               )
                             : '',
@@ -343,85 +349,192 @@ export function RequestDetailModal({
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <p className="font-medium text-sm">
-                      {t('detail.rejectionReason')}
-                    </p>
-                    <p className="whitespace-pre-wrap text-muted-foreground text-sm">
-                      {request.rejection_reason}
-                    </p>
-                  </div>
-                </div>
-              )}
+                )}
 
-            {/* Action Buttons */}
-            {request.approval_status === 'PENDING' &&
-              (bypassRulesPermission ||
-                (currentUser && request.user_id !== currentUser.id)) && (
-                <>
-                  {!showRejectionForm ? (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={handleApprove}
-                        disabled={approveMutation.isPending}
-                        className="flex-1 bg-dynamic-green hover:bg-dynamic-green/90"
-                      >
-                        {approveMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        <CheckCircle2Icon className="mr-2 h-4 w-4" />
-                        {t('detail.approveButton')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => setShowRejectionForm(true)}
-                        className="flex-1"
-                      >
-                        <XCircleIcon className="mr-2 h-4 w-4" />
-                        {t('detail.rejectButton')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
-                      <div className="flex items-center justify-between">
+              {request.approval_status === 'REJECTED' &&
+                request.rejected_by_user &&
+                request.rejection_reason && (
+                  <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <XCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-red" />
+                      <div className="space-y-1">
                         <p className="font-medium text-sm">
-                          {t('detail.rejectionReasonLabel')}
+                          {t('detail.requestRejected')}
                         </p>
+                        <p className="text-muted-foreground text-xs">
+                          {t('detail.rejectedDate', {
+                            name: request.rejected_by_user.display_name,
+                            date: request.rejected_at
+                              ? format(
+                                  new Date(request.rejected_at),
+                                  'MMM d, yyyy · h:mm a'
+                                )
+                              : '',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-medium text-sm">
+                        {t('detail.rejectionReason')}
+                      </p>
+                      <p className="whitespace-pre-wrap text-muted-foreground text-sm">
+                        {request.rejection_reason}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {/* NEEDS_INFO Status Display */}
+              {request.approval_status === 'NEEDS_INFO' &&
+                request.needs_info_requested_by_user &&
+                request.needs_info_reason && (
+                  <div className="space-y-3 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-blue" />
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">
+                          {t('detail.requestNeedsInfo')}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {t('detail.needsInfoDate', {
+                            name: request.needs_info_requested_by_user.display_name,
+                            date: request.needs_info_requested_at
+                              ? format(
+                                  new Date(request.needs_info_requested_at),
+                                  'MMM d, yyyy · h:mm a'
+                                )
+                              : '',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-medium text-sm">
+                        {t('detail.needsInfoReason')}
+                      </p>
+                      <p className="whitespace-pre-wrap text-muted-foreground text-sm">
+                        {request.needs_info_reason}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {/* Action Buttons */}
+              {request.approval_status === 'PENDING' &&
+                (bypassRulesPermission ||
+                  (currentUser && request.user_id !== currentUser.id)) && (
+                  <>
+                    {!showRejectionForm && !showNeedsInfoForm ? (
+                      <div className="space-y-2">
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setShowRejectionForm(false);
-                            setRejectionReason('');
-                          }}
-                          className="h-8 w-8 p-0"
+                          onClick={handleApprove}
+                          disabled={approveMutation.isPending}
+                          className="w-full bg-dynamic-green hover:bg-dynamic-green/90"
                         >
-                          <XIcon className="h-4 w-4" />
+                          {approveMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          <CheckCircle2Icon className="mr-2 h-4 w-4" />
+                          {t('detail.approveButton')}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowNeedsInfoForm(true)}
+                          className="w-full border-dynamic-blue/20 hover:bg-dynamic-blue/5"
+                        >
+                          <InfoIcon className="mr-2 h-4 w-4" />
+                          <span className="truncate">{t('detail.requestInfoButton')}</span>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setShowRejectionForm(true)}
+                          className="w-full"
+                        >
+                          <XCircleIcon className="mr-2 h-4 w-4" />
+                          {t('detail.rejectButton')}
                         </Button>
                       </div>
-                      <Textarea
-                        placeholder={t('detail.rejectionReasonPlaceholder')}
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        className="min-h-24"
-                      />
-                      <Button
-                        variant="destructive"
-                        onClick={handleReject}
-                        disabled={
-                          rejectMutation.isPending || !rejectionReason.trim()
-                        }
-                        className="w-full"
-                      >
-                        {rejectMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {t('detail.confirmRejection')}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
+                    ) : showNeedsInfoForm ? (
+                      <div className="space-y-3 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-sm">
+                            {t('detail.needsInfoReasonLabel')}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setShowNeedsInfoForm(false);
+                              setNeedsInfoReason('');
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder={t('detail.needsInfoReasonPlaceholder')}
+                          value={needsInfoReason}
+                          onChange={(e) => setNeedsInfoReason(e.target.value)}
+                          className="min-h-24"
+                        />
+                        <Button
+                          onClick={handleRequestMoreInfo}
+                          disabled={
+                            requestInfoMutation.isPending || !needsInfoReason.trim()
+                          }
+                          className="w-full bg-dynamic-blue hover:bg-dynamic-blue/90"
+                        >
+                          {requestInfoMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {t('detail.confirmRequestInfo')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-sm">
+                            {t('detail.rejectionReasonLabel')}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setShowRejectionForm(false);
+                              setRejectionReason('');
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder={t('detail.rejectionReasonPlaceholder')}
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          className="min-h-24"
+                        />
+                        <Button
+                          variant="destructive"
+                          onClick={handleReject}
+                          disabled={
+                            rejectMutation.isPending || !rejectionReason.trim()
+                          }
+                          className="w-full"
+                        >
+                          {rejectMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {t('detail.confirmRejection')}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+            </div>
+            {/* End Right Column */}
           </div>
         </DialogContent>
       </Dialog>
