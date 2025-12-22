@@ -5,7 +5,7 @@ This plan outlines the implementation of a dedicated lab environment for visuali
 ## Phase 1: Environment & Access Control
 Establish the secure route and a baseline layout that mirrors the production calendar.
 
-- [~] Task: Create lab route and implement Tuturuuu employee-only access check
+- [x] Task: Create lab route and implement Tuturuuu employee-only access check 9be2fb2
 - [ ] Task: Scaffold `CalendarLabPage` by adapting `CalendarPage` structure
 - [ ] Task: Implement a "Read-Only" state wrapper to ensure no database writes from the lab
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Environment & Access Control' (Protocol in workflow.md)
