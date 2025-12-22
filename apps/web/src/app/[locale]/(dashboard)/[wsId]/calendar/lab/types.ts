@@ -1,7 +1,7 @@
-import { z } from 'zod';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
+import { z } from 'zod';
 
 const TimeBlockSchema = z.object({
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),

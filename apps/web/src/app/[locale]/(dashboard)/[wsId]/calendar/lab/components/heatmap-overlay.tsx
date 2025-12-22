@@ -1,10 +1,10 @@
 'use client';
 
+import type { SchedulingWeights } from '@tuturuuu/ai/scheduling';
 import {
   scoreSlotForHabit,
   scoreSlotForTask,
 } from '@tuturuuu/ai/scheduling/duration-optimizer';
-import type { SchedulingWeights } from '@tuturuuu/ai/scheduling';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 import type { CalendarScenario } from '../types';
@@ -43,7 +43,13 @@ export const HeatmapOverlay = ({
         if (isHabit) {
           score = scoreSlotForHabit(item as any, slot, timezone, weights);
         } else {
-          score = scoreSlotForTask(item as any, slot, new Date(), timezone, weights);
+          score = scoreSlotForTask(
+            item as any,
+            slot,
+            new Date(),
+            timezone,
+            weights
+          );
         }
         dayScores.push(score);
       }
@@ -65,7 +71,9 @@ export const HeatmapOverlay = ({
                 className="h-[20px] w-full"
                 style={{
                   backgroundColor:
-                    normalized > 0 ? `rgba(34, 197, 94, ${normalized * 0.5})` : 'transparent',
+                    normalized > 0
+                      ? `rgba(34, 197, 94, ${normalized * 0.5})`
+                      : 'transparent',
                 }}
               />
             );

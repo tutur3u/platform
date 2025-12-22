@@ -1,5 +1,5 @@
-import type { CalendarScenario } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import type { CalendarScenario } from './types';
 
 const TASK_NAMES = [
   'Deep Work: AI Engine',
@@ -50,7 +50,12 @@ export function generateRealisticScenario(options: {
     calendar_hours: HOURS[Math.floor(Math.random() * HOURS.length)],
     priority: PRIORITIES[Math.floor(Math.random() * PRIORITIES.length)],
     auto_schedule: true,
-    time_preference: Math.random() < 0.4 ? 'morning' : Math.random() < 0.7 ? 'afternoon' : 'evening',
+    time_preference:
+      Math.random() < 0.4
+        ? 'morning'
+        : Math.random() < 0.7
+          ? 'afternoon'
+          : 'evening',
   }));
 
   return {
@@ -63,29 +68,110 @@ export function generateRealisticScenario(options: {
     settings: {
       hours: {
         workHours: {
-          monday: { enabled: true, timeBlocks: [{ startTime: '09:00', endTime: '17:00' }] },
-          tuesday: { enabled: true, timeBlocks: [{ startTime: '09:00', endTime: '17:00' }] },
-          wednesday: { enabled: true, timeBlocks: [{ startTime: '09:00', endTime: '17:00' }] },
-          thursday: { enabled: true, timeBlocks: [{ startTime: '09:00', endTime: '17:00' }] },
-          friday: { enabled: true, timeBlocks: [{ startTime: '09:00', endTime: '17:00' }] },
+          monday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '09:00', endTime: '17:00' }],
+          },
+          tuesday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '09:00', endTime: '17:00' }],
+          },
+          wednesday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '09:00', endTime: '17:00' }],
+          },
+          thursday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '09:00', endTime: '17:00' }],
+          },
+          friday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '09:00', endTime: '17:00' }],
+          },
           saturday: { enabled: false, timeBlocks: [] },
           sunday: { enabled: false, timeBlocks: [] },
         },
         personalHours: {
-          monday: { enabled: true, timeBlocks: [{ startTime: '07:00', endTime: '09:00' }, { startTime: '17:00', endTime: '22:00' }] },
-          tuesday: { enabled: true, timeBlocks: [{ startTime: '07:00', endTime: '09:00' }, { startTime: '17:00', endTime: '22:00' }] },
-          wednesday: { enabled: true, timeBlocks: [{ startTime: '07:00', endTime: '09:00' }, { startTime: '17:00', endTime: '22:00' }] },
-          thursday: { enabled: true, timeBlocks: [{ startTime: '07:00', endTime: '09:00' }, { startTime: '17:00', endTime: '22:00' }] },
-          friday: { enabled: true, timeBlocks: [{ startTime: '07:00', endTime: '09:00' }, { startTime: '17:00', endTime: '22:00' }] },
-          saturday: { enabled: true, timeBlocks: [{ startTime: '08:00', endTime: '22:00' }] },
-          sunday: { enabled: true, timeBlocks: [{ startTime: '08:00', endTime: '22:00' }] },
+          monday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '07:00', endTime: '09:00' },
+              { startTime: '17:00', endTime: '22:00' },
+            ],
+          },
+          tuesday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '07:00', endTime: '09:00' },
+              { startTime: '17:00', endTime: '22:00' },
+            ],
+          },
+          wednesday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '07:00', endTime: '09:00' },
+              { startTime: '17:00', endTime: '22:00' },
+            ],
+          },
+          thursday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '07:00', endTime: '09:00' },
+              { startTime: '17:00', endTime: '22:00' },
+            ],
+          },
+          friday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '07:00', endTime: '09:00' },
+              { startTime: '17:00', endTime: '22:00' },
+            ],
+          },
+          saturday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '08:00', endTime: '22:00' }],
+          },
+          sunday: {
+            enabled: true,
+            timeBlocks: [{ startTime: '08:00', endTime: '22:00' }],
+          },
         },
         meetingHours: {
-          monday: { enabled: true, timeBlocks: [{ startTime: '10:00', endTime: '12:00' }, { startTime: '14:00', endTime: '16:00' }] },
-          tuesday: { enabled: true, timeBlocks: [{ startTime: '10:00', endTime: '12:00' }, { startTime: '14:00', endTime: '16:00' }] },
-          wednesday: { enabled: true, timeBlocks: [{ startTime: '10:00', endTime: '12:00' }, { startTime: '14:00', endTime: '16:00' }] },
-          thursday: { enabled: true, timeBlocks: [{ startTime: '10:00', endTime: '12:00' }, { startTime: '14:00', endTime: '16:00' }] },
-          friday: { enabled: true, timeBlocks: [{ startTime: '10:00', endTime: '12:00' }, { startTime: '14:00', endTime: '16:00' }] },
+          monday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '10:00', endTime: '12:00' },
+              { startTime: '14:00', endTime: '16:00' },
+            ],
+          },
+          tuesday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '10:00', endTime: '12:00' },
+              { startTime: '14:00', endTime: '16:00' },
+            ],
+          },
+          wednesday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '10:00', endTime: '12:00' },
+              { startTime: '14:00', endTime: '16:00' },
+            ],
+          },
+          thursday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '10:00', endTime: '12:00' },
+              { startTime: '14:00', endTime: '16:00' },
+            ],
+          },
+          friday: {
+            enabled: true,
+            timeBlocks: [
+              { startTime: '10:00', endTime: '12:00' },
+              { startTime: '14:00', endTime: '16:00' },
+            ],
+          },
           saturday: { enabled: false, timeBlocks: [] },
           sunday: { enabled: false, timeBlocks: [] },
         },
