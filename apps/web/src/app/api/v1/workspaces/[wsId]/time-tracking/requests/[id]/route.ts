@@ -1,3 +1,4 @@
+
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -14,6 +15,9 @@ const updateRequestSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('needs_info'),
     needs_info_reason: z.string().min(1, 'Needs info reason is required'),
+  }),
+  z.object({
+    action: z.literal('resubmit'),
   }),
 ]);
 
@@ -66,19 +70,24 @@ export async function PATCH(
       wsId,
     });
 
-    if (withoutPermission('manage_time_tracking_requests')) {
-      return NextResponse.json(
-        {
-          error: 'You do not have permission to manage time tracking requests.',
-        },
-        { status: 403 }
-      );
+    const actionData = validation.data;
+
+    // For resubmit action, skip permission check as request owners can resubmit their own requests
+    // The RPC function will validate that the user is the request owner
+    if (actionData.action !== 'resubmit') {
+      if (withoutPermission('manage_time_tracking_requests')) {
+        return NextResponse.json(
+          {
+            error: 'You do not have permission to manage time tracking requests.',
+          },
+          { status: 403 }
+        );
+      }
     }
+
     const canBypass = containsPermission(
       'bypass_time_tracking_request_approval'
     );
-
-    const actionData = validation.data;
 
     // Use the centralized RPC function to handle the update
     const { data, error: rpcError } = await supabase.rpc(

@@ -33,6 +33,7 @@ import {
   useApproveRequest,
   useRejectRequest,
   useRequestMoreInfo,
+  useResubmitRequest,
 } from './hooks/use-request-mutations';
 import type { ExtendedTimeTrackingRequest } from './page';
 import { STATUS_COLORS, STATUS_LABELS } from './utils';
@@ -69,6 +70,7 @@ export function RequestDetailModal({
   const approveMutation = useApproveRequest();
   const rejectMutation = useRejectRequest();
   const requestInfoMutation = useRequestMoreInfo();
+  const resubmitMutation = useResubmitRequest();
 
   // Fetch images with React Query
   const { data: imageUrls = [], isLoading: isLoadingImages } = useRequestImages(
@@ -133,6 +135,21 @@ export function RequestDetailModal({
       }
     );
   }, [request.id, wsId, needsInfoReason, onUpdate, onClose, requestInfoMutation]);
+
+  const handleResubmit = useCallback(async () => {
+    await resubmitMutation.mutateAsync(
+      {
+        wsId,
+        requestId: request.id,
+      },
+      {
+        onSuccess: () => {
+          onUpdate?.();
+          onClose();
+        },
+      }
+    );
+  }, [request.id, wsId, onUpdate, onClose, resubmitMutation]);
 
   const calculateDuration = (startTime: string, endTime: string) => {
     const start = new Date(startTime);
@@ -420,6 +437,25 @@ export function RequestDetailModal({
                   </div>
                 )}
 
+              {/* Resubmit Button for Request Owner */}
+              {request.approval_status === 'NEEDS_INFO' &&
+                currentUser &&
+                request.user_id === currentUser.id && (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleResubmit}
+                      disabled={resubmitMutation.isPending}
+                      className="w-full bg-dynamic-blue hover:bg-dynamic-blue/90"
+                    >
+                      {resubmitMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      <CheckCircle2Icon className="mr-2 h-4 w-4" />
+                      {t('detail.resubmitButton')}
+                    </Button>
+                  </div>
+                )}
+
               {/* Action Buttons */}
               {request.approval_status === 'PENDING' &&
                 (bypassRulesPermission ||
@@ -441,7 +477,7 @@ export function RequestDetailModal({
                         <Button
                           variant="outline"
                           onClick={() => setShowNeedsInfoForm(true)}
-                          className="w-full border-dynamic-blue/20 hover:bg-dynamic-blue/5"
+                          className="w-full border-dynamic-blue/20 hover:bg-dynamic-blue/90 bg-dynamic-blue"
                         >
                           <InfoIcon className="mr-2 h-4 w-4" />
                           <span className="truncate">{t('detail.requestInfoButton')}</span>

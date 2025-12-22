@@ -286,6 +286,10 @@ export async function GET(
         rejected_by_user:users!time_tracking_requests_rejected_by_fkey(
           id,
           display_name
+        ),
+        needs_info_requested_by_user:users!time_tracking_requests_needs_info_requested_by_fkey(
+          id,
+          display_name
         )
       `
       )

@@ -7864,7 +7864,8 @@
         "needsInfoReasonLabel": "What information do you need?",
         "needsInfoReasonPlaceholder": "Please describe what additional information is needed...",
         "needsInfoReasonRequired": "Please provide a reason for requesting more information",
-        "confirmRequestInfo": "Request Information"
+        "confirmRequestInfo": "Request Information",
+        "resubmitButton": "Resubmit Request"
       },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",
@@ -7873,6 +7874,8 @@
         "rejectFailed": "Failed to reject request",
         "requestInfoSuccess": "More information requested successfully",
         "requestInfoFailed": "Failed to request more information",
+        "resubmitSuccess": "Request resubmitted for approval successfully",
+        "resubmitFailed": "Failed to resubmit request",
         "loadImagesFailed": "Failed to load images"
       },
       "settings": {

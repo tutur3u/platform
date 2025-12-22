@@ -7666,7 +7666,8 @@
         "needsInfoReasonLabel": "Bạn cần thông tin gì?",
         "needsInfoReasonPlaceholder": "Vui lòng mô tả thông tin bổ sung cần thiết...",
         "needsInfoReasonRequired": "Vui lòng cung cấp lý do yêu cầu thêm thông tin",
-        "confirmRequestInfo": "Yêu Cầu Thông Tin"
+        "confirmRequestInfo": "Yêu Cầu Thông Tin",
+        "resubmitButton": "Gửi Lại Yêu Cầu"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
@@ -7675,6 +7676,8 @@
         "rejectFailed": "Không thể từ chối yêu cầu",
         "requestInfoSuccess": "Đã yêu cầu thêm thông tin thành công",
         "requestInfoFailed": "Không thể yêu cầu thêm thông tin",
+        "resubmitSuccess": "Đã gửi lại yêu cầu để phê duyệt thành công",
+        "resubmitFailed": "Không thể gửi lại yêu cầu",
         "loadImagesFailed": "Không thể tải hình ảnh"
       },
       "settings": {

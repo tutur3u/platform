@@ -158,3 +158,46 @@ export function useRequestMoreInfo() {
   });
 }
 
+interface ResubmitRequestParams {
+  wsId: string;
+  requestId: string;
+}
+
+export function useResubmitRequest() {
+  const t = useTranslations('time-tracker.requests');
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ wsId, requestId }: ResubmitRequestParams) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'resubmit' }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to resubmit request');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, { wsId, requestId }) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-requests', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-request', wsId, requestId],
+      });
+
+      toast.success(t('toast.resubmitSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('toast.resubmitFailed'));
+    },
+  });
+}
