@@ -31,11 +31,11 @@
     *   Subtask: Verify functionality.
 *   [x] Task: Conductor - User Manual Verification 'Data Fetching Migration' (Protocol in workflow.md) [checkpoint: 6d7b071]
 
-## Phase 4: Testing and Quality Assurance
+## Phase 4: Testing and Quality Assurance [checkpoint: 471fbc1]
 *   [x] Task: Increase Unit Test Coverage [59eecab]
     *   Identify areas with low coverage using `vitest --coverage`.
     *   Write unit tests for utility functions and hooks.
 *   [x] Task: Final Polish and Lint Fixes [068d7b7]
     *   Run `bun format:fix` and `bun lint:fix`.
     *   Ensure all tests pass.
-*   [ ] Task: Conductor - User Manual Verification 'Testing and Quality Assurance' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Testing and Quality Assurance' (Protocol in workflow.md) [checkpoint: 471fbc1]
