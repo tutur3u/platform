@@ -12,7 +12,9 @@ import {
   Play,
   RotateCcw,
   Sparkles,
+  Zap,
 } from '@tuturuuu/icons';
+import type { SchedulingWeights } from '@tuturuuu/ai/scheduling';
 import type {
   CalendarConnection,
   Workspace,
@@ -35,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import dayjs from 'dayjs';
@@ -81,6 +84,14 @@ export default function CalendarLabClientPage({
   // Visualization state
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
+
+  // Tuning state
+  const [weights, setWeights] = useState<SchedulingWeights>({
+    habitIdealTimeBonus: 1000,
+    habitPreferenceBonus: 500,
+    taskPreferenceBonus: 500,
+    taskBaseEarlyBonus: 300,
+  });
 
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -169,7 +180,7 @@ export default function CalendarLabClientPage({
     if (!currentScenario) return;
     setIsSimulating(true);
     try {
-      // Run the simulation entirely client-side
+      // Run the simulation entirely client-side with tunable weights
       const result = generatePreview(
         currentScenario.habits,
         currentScenario.tasks,
@@ -178,6 +189,7 @@ export default function CalendarLabClientPage({
         {
           windowDays: 30,
           timezone: currentScenario.settings.timezone,
+          weights,
         }
       );
 
@@ -306,6 +318,12 @@ export default function CalendarLabClientPage({
                 className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 Scenarios
+              </TabsTrigger>
+              <TabsTrigger
+                value="tuning"
+                className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Tuning
               </TabsTrigger>
               <TabsTrigger
                 value="summary"
@@ -491,6 +509,109 @@ export default function CalendarLabClientPage({
                   </div>
                 )}
               </section>
+            </TabsContent>
+
+            <TabsContent value="tuning" className="flex-1 p-4 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Algorithm Weights
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setWeights({
+                    habitIdealTimeBonus: 1000,
+                    habitPreferenceBonus: 500,
+                    taskPreferenceBonus: 500,
+                    taskBaseEarlyBonus: 300,
+                  })}
+                  className="h-8 text-[10px]"
+                >
+                  RESET
+                </Button>
+              </div>
+
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-semibold">Habit Ideal Time</label>
+                    <span className="text-xs font-mono">{weights.habitIdealTimeBonus}</span>
+                  </div>
+                  <Slider
+                    value={[weights.habitIdealTimeBonus || 0]}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        habitIdealTimeBonus: val,
+                      }))
+                    }
+                    max={2000}
+                    step={50}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-semibold">Habit Preference</label>
+                    <span className="text-xs font-mono">{weights.habitPreferenceBonus}</span>
+                  </div>
+                  <Slider
+                    value={[weights.habitPreferenceBonus || 0]}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        habitPreferenceBonus: val,
+                      }))
+                    }
+                    max={1000}
+                    step={50}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-semibold">Task Preference</label>
+                    <span className="text-xs font-mono">{weights.taskPreferenceBonus}</span>
+                  </div>
+                  <Slider
+                    value={[weights.taskPreferenceBonus || 0]}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        taskPreferenceBonus: val,
+                      }))
+                    }
+                    max={1000}
+                    step={50}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-semibold">Task Base Urgency</label>
+                    <span className="text-xs font-mono">{weights.taskBaseEarlyBonus}</span>
+                  </div>
+                  <Slider
+                    value={[weights.taskBaseEarlyBonus || 0]}
+                    onValueChange={([val]) =>
+                      setWeights((prev) => ({
+                        ...prev,
+                        taskBaseEarlyBonus: val,
+                      }))
+                    }
+                    max={1000}
+                    step={50}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-md bg-purple-500/10 border border-purple-500/20 p-3 flex gap-2">
+                <Zap className="h-4 w-4 text-purple-500 shrink-0" />
+                <p className="text-[10px] text-purple-700 dark:text-purple-300">
+                  Changing weights will not instantly re-run the simulation. 
+                  Click <strong>Run Simulation</strong> to see changes.
+                </p>
+              </div>
             </TabsContent>
 
             <TabsContent
