@@ -54,7 +54,12 @@ export const defaultCalendarSettings: CalendarSettings = {
   timezone: defaultTimezoneData,
   appearance: defaultAppearanceData,
   notifications: defaultNotificationData,
-  smartScheduling: defaultSmartSchedulingData,
+  smartScheduling: {
+    ...defaultSmartSchedulingData,
+    minBuffer: 5,
+    preferredBuffer: 15,
+    energyProfile: 'morning_person',
+  },
   taskSettings: defaultTaskSettings,
 };
 

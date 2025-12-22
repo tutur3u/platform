@@ -6,18 +6,19 @@
  * For server-side usage, direct fetching should work fine.
  */
 export abstract class BaseCrawler {
-  constructor(_options?: { useProductionProxy?: boolean }) {
-    // Proxy options are deprecated and ignored - kept for backward compatibility
-  }
+  /**
+   * Abstract method to be implemented by subclasses for crawling logic.
+   */
+  abstract crawl(props: any): Promise<any>;
 
   /**
    * Fetches a URL directly.
-   * Note: Previously this used a proxy, but that was removed for security reasons.
+   * Keeps the name fetchWithProxy for backward compatibility.
    */
   protected async fetchWithProxy(
     url: string,
-    init?: RequestInit
+    options?: RequestInit
   ): Promise<Response> {
-    return fetch(url, init);
+    return fetch(url, options);
   }
 }

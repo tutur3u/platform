@@ -13,7 +13,13 @@ import { Switch } from '@tuturuuu/ui/switch';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
-  minimumMeetingBuffer: number; // in minutes
+  minBuffer: number; // in minutes
+  preferredBuffer: number; // in minutes
+  energyProfile:
+    | 'morning_person'
+    | 'night_owl'
+    | 'afternoon_peak'
+    | 'evening_peak';
   preferredMeetingTimes: 'morning' | 'afternoon' | 'distributed';
   avoidBackToBackMeetings: boolean;
   maximumMeetingsPerDay: number;
@@ -28,7 +34,9 @@ export type SmartSchedulingData = {
 
 export const defaultSmartSchedulingData: SmartSchedulingData = {
   enableSmartScheduling: true,
-  minimumMeetingBuffer: 15,
+  minBuffer: 5,
+  preferredBuffer: 15,
+  energyProfile: 'morning_person',
   preferredMeetingTimes: 'afternoon',
   avoidBackToBackMeetings: true,
   maximumMeetingsPerDay: 5,
@@ -83,12 +91,15 @@ export function SmartSchedulingSettings({
     });
   };
 
-  const handleBufferChange = (buffer: string) => {
+  const handleBufferChange = (
+    field: 'minBuffer' | 'preferredBuffer',
+    buffer: string
+  ) => {
     const bufferMinutes = parseInt(buffer, 10);
     if (!isNaN(bufferMinutes) && bufferMinutes >= 0) {
       onChange({
         ...value,
-        minimumMeetingBuffer: bufferMinutes,
+        [field]: bufferMinutes,
       });
     }
   };
@@ -124,26 +135,73 @@ export function SmartSchedulingSettings({
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-medium text-lg">Meeting Preferences</h3>
+        <h3 className="font-medium text-lg">Scheduling Preferences</h3>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="min-buffer">Minimum buffer (Hard)</Label>
+            <Select
+              value={value.minBuffer.toString()}
+              onValueChange={(val) => handleBufferChange('minBuffer', val)}
+              disabled={!value.enableSmartScheduling}
+            >
+              <SelectTrigger id="min-buffer" className="w-full">
+                <SelectValue placeholder="Select buffer time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">No buffer</SelectItem>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="preferred-buffer">Preferred buffer (Soft)</Label>
+            <Select
+              value={value.preferredBuffer.toString()}
+              onValueChange={(val) =>
+                handleBufferChange('preferredBuffer', val)
+              }
+              disabled={!value.enableSmartScheduling}
+            >
+              <SelectTrigger id="preferred-buffer" className="w-full">
+                <SelectValue placeholder="Select buffer time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="45">45 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <div className="space-y-2">
-          <Label htmlFor="meeting-buffer">
-            Minimum buffer between meetings
-          </Label>
+          <Label htmlFor="energy-profile">Energy Profile</Label>
           <Select
-            value={value.minimumMeetingBuffer.toString()}
-            onValueChange={handleBufferChange}
+            value={value.energyProfile}
+            onValueChange={(val) =>
+              onChange({
+                ...value,
+                energyProfile: val as SmartSchedulingData['energyProfile'],
+              })
+            }
             disabled={!value.enableSmartScheduling}
           >
-            <SelectTrigger id="meeting-buffer" className="w-full">
-              <SelectValue placeholder="Select buffer time" />
+            <SelectTrigger id="energy-profile" className="w-full">
+              <SelectValue placeholder="Select energy profile" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="0">No buffer</SelectItem>
-              <SelectItem value="5">5 minutes</SelectItem>
-              <SelectItem value="10">10 minutes</SelectItem>
-              <SelectItem value="15">15 minutes</SelectItem>
-              <SelectItem value="30">30 minutes</SelectItem>
+              <SelectItem value="morning_person">Morning Person</SelectItem>
+              <SelectItem value="afternoon_peak">Afternoon Peak</SelectItem>
+              <SelectItem value="evening_peak">Evening Peak</SelectItem>
+              <SelectItem value="night_owl">Night Owl</SelectItem>
             </SelectContent>
           </Select>
         </div>

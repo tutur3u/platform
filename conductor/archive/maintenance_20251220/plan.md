@@ -20,7 +20,7 @@
     *   Subtask: Verify functionality.
 *   [x] Task: Conductor - User Manual Verification 'Refactoring Core Components' (Protocol in workflow.md) [checkpoint: fe3cb31]
 
-## Phase 3: Data Fetching Migration
+## Phase 3: Data Fetching Migration [checkpoint: 6d7b071]
 *   [x] Task: Migrate Group A Components to TanStack Query (Crawler Components) [e1f3101]
     *   Subtask: Write tests for current behavior.
     *   Subtask: Replace `useEffect` fetch with `useQuery`/`useMutation`.
@@ -29,13 +29,13 @@
     *   Subtask: Write tests for current behavior.
     *   Subtask: Replace `useEffect` fetch with `useQuery`/`useMutation`.
     *   Subtask: Verify functionality.
-*   [ ] Task: Conductor - User Manual Verification 'Data Fetching Migration' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Data Fetching Migration' (Protocol in workflow.md) [checkpoint: 6d7b071]
 
-## Phase 4: Testing and Quality Assurance
-*   [ ] Task: Increase Unit Test Coverage
+## Phase 4: Testing and Quality Assurance [checkpoint: 471fbc1]
+*   [x] Task: Increase Unit Test Coverage [59eecab]
     *   Identify areas with low coverage using `vitest --coverage`.
     *   Write unit tests for utility functions and hooks.
-*   [ ] Task: Final Polish and Lint Fixes
+*   [x] Task: Final Polish and Lint Fixes [068d7b7]
     *   Run `bun format:fix` and `bun lint:fix`.
     *   Ensure all tests pass.
-*   [ ] Task: Conductor - User Manual Verification 'Testing and Quality Assurance' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Testing and Quality Assurance' (Protocol in workflow.md) [checkpoint: 471fbc1]

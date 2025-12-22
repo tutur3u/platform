@@ -310,13 +310,13 @@ function extractFilename(urlOrPath: string, maxLength = 30): string {
     const filename = pathname.split('/').pop() || pathname;
     const decoded = decodeURIComponent(filename);
     return decoded.length > maxLength
-      ? decoded.slice(0, maxLength - 3) + '...'
+      ? `${decoded.slice(0, maxLength - 3)}...`
       : decoded;
   } catch {
     // Not a valid URL, treat as path
     const filename = urlOrPath.split('/').pop() || urlOrPath;
     return filename.length > maxLength
-      ? filename.slice(0, maxLength - 3) + '...'
+      ? `${filename.slice(0, maxLength - 3)}...`
       : filename;
   }
 }
@@ -497,7 +497,7 @@ export const getDescriptionTextWithIdentifiers = (
               url.searchParams.get('v') || url.pathname.split('/').pop();
             return videoId ? `[YouTube: ${videoId}]` : '[YouTube Video]';
           } catch {
-            const id = src.length > 20 ? src.slice(0, 17) + '...' : src;
+            const id = src.length > 20 ? `${src.slice(0, 17)}...` : src;
             return `[YouTube: ${id}]`;
           }
         }

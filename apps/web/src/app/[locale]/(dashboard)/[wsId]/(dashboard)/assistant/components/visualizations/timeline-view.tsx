@@ -323,8 +323,7 @@ export function TimelineView({
         {tasks.length > 0 && (
           <div className="flex items-center gap-4 border-border/20 border-b bg-muted/10 px-4 py-2">
             {Object.entries(statusCounts).map(([status, count]) => {
-              const config =
-                statusConfig[status] ?? statusConfig['not_started']!;
+              const config = statusConfig[status] ?? statusConfig.not_started!;
               const StatusIcon = config.icon;
               return (
                 <div key={status} className="flex items-center gap-1.5">
@@ -428,7 +427,7 @@ export function TimelineView({
                     task.endDate
                   );
                   const taskStatus =
-                    statusConfig[task.status] ?? statusConfig['not_started']!;
+                    statusConfig[task.status] ?? statusConfig.not_started!;
                   const priority = task.priority
                     ? priorityConfig[task.priority]
                     : null;

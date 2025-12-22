@@ -286,7 +286,7 @@ const CountdownTet2026 = () => {
                 <span>
                   {progress < 100
                     ? t('days_until_tet', { count: daysRemaining })
-                    : t('happy_new_year') + ' 🎆'}
+                    : `${t('happy_new_year')} 🎆`}
                 </span>
               </p>
             </div>
@@ -612,7 +612,7 @@ const CountdownJT26 = () => {
                 <span>
                   {progress < 100
                     ? t('days_until_japan', { count: daysRemaining })
-                    : t('time_to_go') + ' 🎌'}
+                    : `${t('time_to_go')} 🎌`}
                 </span>
               </p>
             </div>

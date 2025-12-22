@@ -61,10 +61,6 @@ interface HtmlPreviewData {
 }
 
 export class HtmlCrawler extends BaseCrawler {
-  constructor(options?: { useProductionProxy?: boolean }) {
-    super(options);
-  }
-
   private baseUrl: string = '';
   private currentCallback?: HtmlCrawlerProps;
   private urlCache: Map<string, Document> = new Map();

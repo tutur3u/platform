@@ -5,6 +5,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.71",
     "@ai-sdk/anthropic": "^2.0.56",

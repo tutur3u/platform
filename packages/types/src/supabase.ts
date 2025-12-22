@@ -13854,12 +13854,14 @@ export type Database = {
           created_at: string | null;
           creator_id: string | null;
           deleted: boolean | null;
+          energy_profile: string | null;
           first_day_of_week: string | null;
           handle: string | null;
           id: string;
           logo_url: string | null;
           name: string | null;
           personal: boolean;
+          scheduling_settings: Json | null;
           timezone: string | null;
         };
         Insert: {
@@ -13867,12 +13869,14 @@ export type Database = {
           created_at?: string | null;
           creator_id?: string | null;
           deleted?: boolean | null;
+          energy_profile?: string | null;
           first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
+          scheduling_settings?: Json | null;
           timezone?: string | null;
         };
         Update: {
@@ -13880,12 +13884,14 @@ export type Database = {
           created_at?: string | null;
           creator_id?: string | null;
           deleted?: boolean | null;
+          energy_profile?: string | null;
           first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
+          scheduling_settings?: Json | null;
           timezone?: string | null;
         };
         Relationships: [
@@ -14732,22 +14738,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      v_session_chains_debug: {
-        Row: {
-          break_count: number | null;
-          chain_path: string | null;
-          depth: number | null;
-          duration_seconds: number | null;
-          end_time: string | null;
-          root_id: string | null;
-          session_id: string | null;
-          start_time: string | null;
-          title: string | null;
-          total_break_seconds: number | null;
-          was_resumed: boolean | null;
-        };
-        Relationships: [];
       };
       v_user_referral_discounts: {
         Row: {

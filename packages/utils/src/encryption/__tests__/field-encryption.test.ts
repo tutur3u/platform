@@ -218,7 +218,7 @@ describe('encryption-service', () => {
       const ciphertext = encryptField(plaintext, workspaceKey);
 
       // Corrupt the last few characters (auth tag area)
-      const corrupted = ciphertext.slice(0, -4) + 'XXXX';
+      const corrupted = `${ciphertext.slice(0, -4)}XXXX`;
 
       const result = decryptField(corrupted, workspaceKey);
       expect(result).toBe(corrupted);
