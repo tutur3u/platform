@@ -25,9 +25,18 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { generatePreview } from '@/lib/calendar/unified-scheduler/preview-engine';
 import { useCalendarSettings } from '../hooks';
+import { PRESET_SCENARIOS } from './scenarios';
 import type { CalendarScenario } from './types';
 
 interface CalendarLabClientPageProps {
@@ -117,13 +126,38 @@ export default function CalendarLabClientPage({
     }
   };
 
+  const loadPresetScenario = (scenarioId: string) => {
+    const scenario = PRESET_SCENARIOS.find((s) => s.id === scenarioId);
+    if (scenario) {
+      setCurrentScenario(scenario);
+      setSimulationResult(null);
+      setCurrentStep(0);
+      setIsPlaying(false);
+      clearPreviewEvents();
+    }
+  };
+
   const runSimulation = async () => {
     if (!currentScenario) return;
     setIsSimulating(true);
     try {
-      // In a real lab, we would pass the modified scenario back to an API
-      // For now, we just re-fetch to simulate a re-run
-      await importRealData();
+      // Run the simulation entirely client-side
+      const result = generatePreview(
+        currentScenario.habits,
+        currentScenario.tasks,
+        currentScenario.events,
+        currentScenario.settings.hours as any,
+        {
+          windowDays: 30,
+          timezone: currentScenario.settings.timezone,
+        }
+      );
+
+      setSimulationResult({ preview: result });
+      setCurrentStep(result.steps.length - 1);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error('Simulation failed:', error);
     } finally {
       setIsSimulating(false);
     }
@@ -213,7 +247,7 @@ export default function CalendarLabClientPage({
                 variant="outline"
                 onClick={importRealData}
                 disabled={isImporting}
-                className="w-full"
+                className="w-full justify-start"
               >
                 {isImporting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -222,9 +256,28 @@ export default function CalendarLabClientPage({
                 )}
                 Import Workspace
               </Button>
+
+              <Select
+                onValueChange={loadPresetScenario}
+                value={currentScenario?.id || ''}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a preset..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRESET_SCENARIOS.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               {currentScenario && (
                 <div className="rounded-md bg-muted p-3">
-                  <div className="text-sm font-medium">{currentScenario.name}</div>
+                  <div className="text-sm font-medium">
+                    {currentScenario.name}
+                  </div>
                   <div className="text-xs text-muted-foreground line-clamp-2">
                     {currentScenario.description}
                   </div>
