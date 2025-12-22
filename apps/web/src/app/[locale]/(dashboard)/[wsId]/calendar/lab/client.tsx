@@ -5,6 +5,7 @@ import {
   Bug,
   ChevronLeft,
   ChevronRight,
+  Info,
   Loader2,
   Pause,
   Play,
@@ -34,6 +35,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generatePreview } from '@/lib/calendar/unified-scheduler/preview-engine';
@@ -56,7 +59,11 @@ export default function CalendarLabClientPage({
 }: CalendarLabClientPageProps) {
   const t = useTranslations('calendar');
   const locale = useLocale();
-  const { setPreviewEvents, clearPreviewEvents } = useCalendar();
+  const {
+    setPreviewEvents,
+    clearPreviewEvents,
+    hoveredBaseEventId,
+  } = useCalendar();
   const { dates } = useCalendarSync();
 
   const { initialSettings } = useCalendarSettings(workspace, locale);
@@ -253,190 +260,249 @@ export default function CalendarLabClientPage({
   const allItems = useMemo(() => {
     if (!currentScenario) return [];
     return [
-      ...currentScenario.habits.map((h) => ({ id: h.id, name: h.name, type: 'habit' })),
-      ...currentScenario.tasks.map((t) => ({ id: t.id, name: t.name, type: 'task' })),
+      ...currentScenario.habits.map((h) => ({
+        id: h.id,
+        name: h.name,
+        type: 'habit',
+      })),
+      ...currentScenario.tasks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        type: 'task',
+      })),
     ];
   }, [currentScenario]);
+
+  const hoveredStep = useMemo(() => {
+    if (!simulationResult || !hoveredBaseEventId) return null;
+    return simulationResult.preview.steps.find(
+      (s: any) => s.event?.id === hoveredBaseEventId
+    );
+  }, [simulationResult, hoveredBaseEventId]);
 
   return (
     <ResizablePanelGroup direction="horizontal" className="flex-1">
       <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-        <div className="flex h-full flex-col border-r bg-card p-4 scrollbar-none overflow-y-auto">
-          <div className="mb-6 flex items-center justify-between">
+        <div className="flex h-full flex-col border-r bg-card scrollbar-none overflow-y-auto">
+          <div className="p-4 border-b">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Bug className="h-5 w-5" />
               Lab Controls
             </h2>
           </div>
 
-          <div className="space-y-6">
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Scenarios
-              </h3>
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  onClick={importRealData}
-                  disabled={isImporting}
-                  className="w-full justify-start"
-                >
-                  {isImporting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                  )}
-                  Import Workspace
-                </Button>
+          <Tabs defaultValue="scenarios" className="flex-1 flex flex-col">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-4">
+              <TabsTrigger value="scenarios" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">Scenarios</TabsTrigger>
+              <TabsTrigger value="log" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">Decision Log</TabsTrigger>
+            </TabsList>
 
-                <Button
-                  variant="outline"
-                  onClick={generateRandom}
-                  className="w-full justify-start"
-                >
-                  <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
-                  Generate Random
-                </Button>
-              </div>
+            <TabsContent value="scenarios" className="flex-1 p-4 space-y-6">
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Data Sourcing
+                </h3>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    onClick={importRealData}
+                    disabled={isImporting}
+                    className="w-full justify-start"
+                  >
+                    {isImporting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                    )}
+                    Import Workspace
+                  </Button>
 
-              <Select
-                onValueChange={loadPresetScenario}
-                value={currentScenario?.id || ''}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a preset..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRESET_SCENARIOS.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {currentScenario && (
-                <div className="rounded-md bg-muted p-3">
-                  <div className="text-sm font-medium">
-                    {currentScenario.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground line-clamp-2">
-                    {currentScenario.description}
-                  </div>
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Visualization
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Score Heatmap</span>
-                  <Switch 
-                    checked={showHeatmap} 
-                    onCheckedChange={setShowHeatmap} 
-                    disabled={!currentScenario || !selectedItemId}
-                  />
+                  <Button
+                    variant="outline"
+                    onClick={generateRandom}
+                    className="w-full justify-start"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
+                    Generate Random
+                  </Button>
                 </div>
 
                 <Select
-                  onValueChange={setSelectedItemId}
-                  value={selectedItemId || ''}
-                  disabled={!currentScenario}
+                  onValueChange={loadPresetScenario}
+                  value={currentScenario?.id || ''}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select item to score..." />
+                    <SelectValue placeholder="Select a preset..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {allItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        <span className="flex items-center gap-2">
-                          <span className={item.type === 'habit' ? 'text-blue-500' : 'text-orange-500'}>
-                            {item.type === 'habit' ? 'H' : 'T'}
-                          </span>
-                          {item.name}
-                        </span>
+                    {PRESET_SCENARIOS.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </section>
 
-            <section>
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Simulation
-              </h3>
-              <Button
-                onClick={runSimulation}
-                disabled={isSimulating || !currentScenario}
-                className="w-full"
-              >
-                {isSimulating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Play className="mr-2 h-4 w-4" />
+                {currentScenario && (
+                  <div className="rounded-md bg-muted p-3">
+                    <div className="text-sm font-medium">
+                      {currentScenario.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground line-clamp-2">
+                      {currentScenario.description}
+                    </div>
+                  </div>
                 )}
-                Run Simulation
-              </Button>
-            </section>
+              </section>
 
-            {simulationResult && (
-              <section className="space-y-4">
+              <section className="space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Playback
+                  Visualization
                 </h3>
-                <div className="flex items-center justify-between gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentStep(0)}
-                    disabled={currentStep === 0}
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Score Heatmap</span>
+                    <Switch 
+                      checked={showHeatmap} 
+                      onCheckedChange={setShowHeatmap} 
+                      disabled={!currentScenario || !selectedItemId}
+                    />
+                  </div>
+
+                  <Select
+                    onValueChange={setSelectedItemId}
+                    value={selectedItemId || ''}
+                    disabled={!currentScenario}
                   >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() =>
-                      setCurrentStep((prev) => Math.max(0, prev - 1))
-                    }
-                    disabled={currentStep === 0}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsPlaying(!isPlaying)}
-                  >
-                    {isPlaying ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentStep((prev) => prev + 1)}
-                    disabled={
-                      !simulationResult ||
-                      currentStep >= playbackStepsWithEvents.length - 1
-                    }
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="text-xs text-center text-muted-foreground">
-                  Step {currentStep + 1} of {playbackStepsWithEvents.length}
+                    <SelectTrigger className="w-full text-xs">
+                      <SelectValue placeholder="Select item to score..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allItems.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          <span className="flex items-center gap-2">
+                            <span className={item.type === 'habit' ? 'text-blue-500' : 'text-orange-500'}>
+                              {item.type === 'habit' ? 'H' : 'T'}
+                            </span>
+                            {item.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </section>
-            )}
-          </div>
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Execution
+                </h3>
+                <Button
+                  onClick={runSimulation}
+                  disabled={isSimulating || !currentScenario}
+                  className="w-full"
+                >
+                  {isSimulating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="mr-2 h-4 w-4" />
+                  )}
+                  Run Simulation
+                </Button>
+
+                {simulationResult && (
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setCurrentStep(0)}
+                        disabled={currentStep === 0}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() =>
+                          setCurrentStep((prev) => Math.max(0, prev - 1))
+                        }
+                        disabled={currentStep === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsPlaying(!isPlaying)}
+                      >
+                        {isPlaying ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setCurrentStep((prev) => prev + 1)}
+                        disabled={
+                          !simulationResult ||
+                          currentStep >= playbackStepsWithEvents.length - 1
+                        }
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="text-xs text-center text-muted-foreground">
+                      Step {currentStep + 1} of {playbackStepsWithEvents.length}
+                    </div>
+                  </div>
+                )}
+              </section>
+            </TabsContent>
+
+            <TabsContent value="log" className="flex-1 flex flex-col p-4 space-y-4">
+              {hoveredStep ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="rounded-md bg-accent p-3 border">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-accent-foreground/70 mb-2">
+                      Hovered Decision
+                    </h3>
+                    <div className="text-sm font-medium mb-1">{hoveredStep.description}</div>
+                    <div className="text-xs text-muted-foreground italic mb-3">
+                      "{hoveredStep.debug?.reason || 'No specific reason provided.'}"
+                    </div>
+                    
+                    {hoveredStep.debug?.slotsConsidered && (
+                      <div className="space-y-2">
+                        <div className="text-[10px] font-bold uppercase flex items-center gap-1">
+                          <Info className="h-3 w-3" />
+                          Slots Considered
+                        </div>
+                        <div className="space-y-1">
+                          {hoveredStep.debug.slotsConsidered.slice(0, 5).map((slot: any, i: number) => (
+                            <div key={i} className="text-[10px] flex justify-between items-center bg-background/50 rounded px-2 py-1">
+                              <span>{dayjs(slot.start).format('HH:mm')}</span>
+                              <span className="text-muted-foreground font-mono">{Math.round(slot.maxAvailable)}m available</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-2 opacity-50">
+                  <Bug className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Hover over a scheduled event to see the algorithm's placement logic.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </ResizablePanel>
 
