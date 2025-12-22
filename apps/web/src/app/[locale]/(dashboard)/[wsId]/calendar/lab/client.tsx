@@ -6,13 +6,13 @@ import {
   Bug,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Info,
   Loader2,
   Pause,
   Play,
   RotateCcw,
   Sparkles,
-  Zap,
 } from '@tuturuuu/icons';
 import type { SchedulingWeights } from '@tuturuuu/ai/scheduling';
 import type {
@@ -80,10 +80,12 @@ export default function CalendarLabClientPage({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [simulationResult, setSimulationResult] = useState<any>(null);
+  const [baselineResult, setBaselineResult] = useState<any>(null);
 
   // Visualization state
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
 
   // Tuning state
   const [weights, setWeights] = useState<SchedulingWeights>({
@@ -156,6 +158,7 @@ export default function CalendarLabClientPage({
     if (scenario) {
       setCurrentScenario(scenario);
       setSimulationResult(null);
+      setBaselineResult(null);
       setCurrentStep(0);
       setIsPlaying(false);
       clearPreviewEvents();
@@ -170,10 +173,15 @@ export default function CalendarLabClientPage({
     });
     setCurrentScenario(scenario);
     setSimulationResult(null);
+    setBaselineResult(null);
     setCurrentStep(0);
     setIsPlaying(false);
     clearPreviewEvents();
     setSelectedItemId(null);
+  };
+
+  const saveAsBaseline = () => {
+    setBaselineResult(simulationResult);
   };
 
   const runSimulation = async () => {
@@ -205,6 +213,11 @@ export default function CalendarLabClientPage({
 
   const convertToCalendarEvents = useCallback(
     (events: any[]): CalendarEvent[] => {
+      const baselineEvents = baselineResult?.preview?.events || [];
+      const baselineMap = new Map<string, any>(
+        baselineEvents.map((e: any) => [e.source_id, e])
+      );
+
       return events.map((e) => {
         const taskResult = simulationResult?.preview?.tasks?.events?.find(
           (tr: any) => tr.task.id === e.source_id
@@ -213,18 +226,35 @@ export default function CalendarLabClientPage({
           (hr: any) => hr.habit.id === e.source_id
         );
 
+        let finalColor = e.color as any;
+        let finalTitle = e.title;
+
+        if (showDiff && baselineResult) {
+          const baseline = baselineMap.get(e.source_id);
+          if (baseline) {
+            const hasMoved = baseline.start_at !== e.start_at || baseline.end_at !== e.end_at;
+            if (hasMoved) {
+              finalColor = 'ORANGE';
+              finalTitle = `[MOVED] ${e.title}`;
+            }
+          } else {
+            finalColor = 'GREEN';
+            finalTitle = `[NEW] ${e.title}`;
+          }
+        }
+
         return {
           id: e.id,
-          title: e.title,
+          title: finalTitle,
           start_at: e.start_at,
           end_at: e.end_at,
-          color: e.color as any,
+          color: finalColor,
           _isPreview: true,
           _warning: taskResult?.warning || habitResult?.warning,
         };
       });
     },
-    [simulationResult]
+    [simulationResult, baselineResult, showDiff]
   );
 
   useEffect(() => {
@@ -245,6 +275,8 @@ export default function CalendarLabClientPage({
   }, [
     simulationResult,
     currentStep,
+    showDiff,
+    baselineResult,
     setPreviewEvents,
     clearPreviewEvents,
     convertToCalendarEvents,
@@ -539,12 +571,7 @@ export default function CalendarLabClientPage({
                   </div>
                   <Slider
                     value={[weights.habitIdealTimeBonus || 0]}
-                    onValueChange={([val]) =>
-                      setWeights((prev) => ({
-                        ...prev,
-                        habitIdealTimeBonus: val,
-                      }))
-                    }
+                    onValueChange={([val]) => setWeights(prev => ({ ...prev, habitIdealTimeBonus: val }))}
                     max={2000}
                     step={50}
                   />
@@ -557,12 +584,7 @@ export default function CalendarLabClientPage({
                   </div>
                   <Slider
                     value={[weights.habitPreferenceBonus || 0]}
-                    onValueChange={([val]) =>
-                      setWeights((prev) => ({
-                        ...prev,
-                        habitPreferenceBonus: val,
-                      }))
-                    }
+                    onValueChange={([val]) => setWeights(prev => ({ ...prev, habitPreferenceBonus: val }))}
                     max={1000}
                     step={50}
                   />
@@ -575,12 +597,7 @@ export default function CalendarLabClientPage({
                   </div>
                   <Slider
                     value={[weights.taskPreferenceBonus || 0]}
-                    onValueChange={([val]) =>
-                      setWeights((prev) => ({
-                        ...prev,
-                        taskPreferenceBonus: val,
-                      }))
-                    }
+                    onValueChange={([val]) => setWeights(prev => ({ ...prev, taskPreferenceBonus: val }))}
                     max={1000}
                     step={50}
                   />
@@ -593,24 +610,41 @@ export default function CalendarLabClientPage({
                   </div>
                   <Slider
                     value={[weights.taskBaseEarlyBonus || 0]}
-                    onValueChange={([val]) =>
-                      setWeights((prev) => ({
-                        ...prev,
-                        taskBaseEarlyBonus: val,
-                      }))
-                    }
+                    onValueChange={([val]) => setWeights(prev => ({ ...prev, taskBaseEarlyBonus: val }))}
                     max={1000}
                     step={50}
                   />
                 </div>
               </div>
 
-              <div className="rounded-md bg-purple-500/10 border border-purple-500/20 p-3 flex gap-2">
-                <Zap className="h-4 w-4 text-purple-500 shrink-0" />
-                <p className="text-[10px] text-purple-700 dark:text-purple-300">
-                  Changing weights will not instantly re-run the simulation. 
-                  Click <strong>Run Simulation</strong> to see changes.
-                </p>
+              <div className="space-y-3 pt-4 border-t">
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Scenario Diff
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Show Diff Mode</span>
+                    <Switch
+                      checked={showDiff}
+                      onCheckedChange={setShowDiff}
+                      disabled={!baselineResult || !simulationResult}
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={saveAsBaseline}
+                    disabled={!simulationResult}
+                    className="w-full justify-start"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Set Current as Baseline
+                  </Button>
+                  {baselineResult && (
+                    <div className="text-[10px] text-muted-foreground italic">
+                      Baseline set. Tweak weights and Run Simulation to compare.
+                    </div>
+                  )}
+                </div>
               </div>
             </TabsContent>
 
