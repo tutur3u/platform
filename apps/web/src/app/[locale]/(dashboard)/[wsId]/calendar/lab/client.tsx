@@ -833,6 +833,7 @@ export default function CalendarLabClientPage({
                 scenario={currentScenario}
                 selectedItemId={selectedItemId}
                 dates={dates}
+                weights={weights}
               />
             ) : null
           }
