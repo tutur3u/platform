@@ -19,14 +19,14 @@ Build the core state management for handling volatile scenarios and data generat
 - [x] Task: Implement a "Realistic Scenario Generator" for procedurally creating relatable test data 5983efc
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Simulation Engine & Data Management' (Protocol in workflow.md) c985839
 
-## Phase 3: Enhanced Visualization & Overlays
+## Phase 3: Enhanced Visualization & Overlays [checkpoint: 2bdaacf]
 Refactor calendar components to support algorithm-specific visual debugging.
 
 - [x] Task: Refactor `CalendarClientPage` and sub-components to support an "overlay" layer 9c4b34c
 - [x] Task: Implement "Score Heatmap" visualization showing time slot fitness b80c9cb
 - [x] Task: Create "Decision Tooltips" that explain the 'why' behind task placement 8fe947b
 - [x] Task: Implement constraint violation highlighting (e.g., overlapping events, missed habits) c3b3541
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Enhanced Visualization & Overlays' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Enhanced Visualization & Overlays' (Protocol in workflow.md) 2bdaacf
 
 ## Phase 4: Algorithm Control & Interactivity
 Integrate the scheduling algorithm with playback controls and real-time parameter tuning.
