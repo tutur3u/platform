@@ -27,16 +27,16 @@
 *   [x] Task: Conductor - User Manual Verification 'Core Algorithm Implementation' (Protocol in workflow.md) [checkpoint: 26669d9]
 
 ## Phase 3: Settings UI and Instance Visibility
-*   [ ] Task: Add Scheduling Settings to Settings Dialog
+*   [x] Task: Add Scheduling Settings to Settings Dialog [9822387]
     *   Subtask: Update `apps/web/src/components/settings/settings-dialog.tsx` to include buffer and energy settings.
     *   Subtask: Implement state management and Supabase sync for new settings.
-*   [ ] Task: Ensure Locked Status Consistency across UI
+*   [x] Task: Ensure Locked Status Consistency across UI [9822387]
     *   Subtask: Verify `locked` toggle works for all schedulable items (tasks/habits) consistent with `event-card.tsx`.
     *   Subtask: Ensure the visual padlock indicator appears correctly in all relevant views.
-*   [ ] Task: Implement "All Instances" View
+*   [x] Task: Implement "All Instances" View [9822387]
     *   Subtask: Create a new component to list all scheduled instances of a task/habit.
     *   Subtask: Add "Why was this scheduled here?" tooltip or audit info to instances.
-*   [ ] Task: Conductor - User Manual Verification 'Settings UI and Instance Visibility' (Protocol in workflow.md)
+*   [x] Task: Conductor - User Manual Verification 'Settings UI and Instance Visibility' (Protocol in workflow.md) [checkpoint: 9822387]
 
 ## Phase 4: Integration and Final Polish
 *   [ ] Task: Performance Optimization and Final Audit
