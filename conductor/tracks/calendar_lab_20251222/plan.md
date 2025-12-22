@@ -15,7 +15,7 @@ Build the core state management for handling volatile scenarios and data generat
 
 - [x] Task: Define JSON schema for calendar scenarios (tasks, habits, events, settings) 41e6185
 - [x] Task: Implement "Real Data Import" to pull current workspace state into the lab simulation b3d8e45
-- [~] Task: Create a "Scenario Loader" to switch between multiple preset JSON configurations
+- [x] Task: Create a "Scenario Loader" to switch between multiple preset JSON configurations 5173907
 - [ ] Task: Implement a "Realistic Scenario Generator" for procedurally creating relatable test data
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Simulation Engine & Data Management' (Protocol in workflow.md)
 
