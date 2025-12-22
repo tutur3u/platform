@@ -36,6 +36,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generatePreview } from '@/lib/calendar/unified-scheduler/preview-engine';
 import { useCalendarSettings } from '../hooks';
+import { generateRealisticScenario } from './generator';
 import { PRESET_SCENARIOS } from './scenarios';
 import type { CalendarScenario } from './types';
 
@@ -135,6 +136,18 @@ export default function CalendarLabClientPage({
       setIsPlaying(false);
       clearPreviewEvents();
     }
+  };
+
+  const generateRandom = () => {
+    const scenario = generateRealisticScenario({
+      taskCount: 15,
+      habitCount: 8,
+    });
+    setCurrentScenario(scenario);
+    setSimulationResult(null);
+    setCurrentStep(0);
+    setIsPlaying(false);
+    clearPreviewEvents();
   };
 
   const runSimulation = async () => {
@@ -243,19 +256,30 @@ export default function CalendarLabClientPage({
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                 Scenarios
               </h3>
-              <Button
-                variant="outline"
-                onClick={importRealData}
-                disabled={isImporting}
-                className="w-full justify-start"
-              >
-                {isImporting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                )}
-                Import Workspace
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  onClick={importRealData}
+                  disabled={isImporting}
+                  className="w-full justify-start"
+                >
+                  {isImporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                  )}
+                  Import Workspace
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={generateRandom}
+                  className="w-full justify-start"
+                >
+                  <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
+                  Generate Random
+                </Button>
+              </div>
 
               <Select
                 onValueChange={loadPresetScenario}
@@ -297,7 +321,7 @@ export default function CalendarLabClientPage({
                 {isSimulating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Play className="mr-2 h-4 w-4" />
                 )}
                 Run Simulation
               </Button>
