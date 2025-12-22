@@ -6,10 +6,7 @@ import { GripVertical } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
-interface DropZoneInfo {
-  zone: 'before' | 'nested' | 'after';
-  insertionMode: 'sibling-before' | 'child-first' | 'sibling-after';
-}
+export type DropZone = 'before' | 'nested' | 'after';
 
 interface DraggableListItemViewProps extends NodeViewProps {
   isTaskItem?: boolean;
@@ -22,23 +19,23 @@ interface DraggableListItemViewProps extends NodeViewProps {
 function calculateDropZone(
   event: React.DragEvent,
   targetElement: HTMLElement
-): DropZoneInfo {
+): DropZone {
   const rect = targetElement.getBoundingClientRect();
   const relativeY = event.clientY - rect.top;
   const height = rect.height;
 
   // Top 25% = drop before
   if (relativeY <= height * 0.25) {
-    return { zone: 'before', insertionMode: 'sibling-before' };
+    return 'before';
   }
 
   // Middle 50% = drop nested
   if (relativeY > height * 0.25 && relativeY <= height * 0.75) {
-    return { zone: 'nested', insertionMode: 'child-first' };
+    return 'nested';
   }
 
   // Bottom 75% = drop after
-  return { zone: 'after', insertionMode: 'sibling-after' };
+  return 'after';
 }
 
 /**
@@ -52,7 +49,7 @@ export function DraggableListItemView({
   isTaskItem = false,
 }: DraggableListItemViewProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [dropZone, setDropZone] = useState<DropZoneInfo | null>(null);
+  const [dropZone, setDropZone] = useState<DropZone | null>(null);
 
   const handleMouseEnter = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -136,7 +133,7 @@ export function DraggableListItemView({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       data-type={isTaskItem ? 'taskItem' : 'listItem'}
-      data-drop-zone={dropZone?.zone}
+      data-drop-zone={dropZone}
     >
       {/* Drag Handle */}
       <div
@@ -157,8 +154,8 @@ export function DraggableListItemView({
       </div>
 
       {/* Drop indicator line for before */}
-      {dropZone?.zone === 'before' && (
-        <div className="pointer-events-none absolute -top-[1px] right-0 left-0 h-0.5 bg-dynamic-blue" />
+      {dropZone === 'before' && (
+        <div className="pointer-events-none absolute -top-px right-0 left-0 h-0.5 bg-dynamic-blue" />
       )}
 
       {/* Task Item Checkbox (only for task items) */}
@@ -183,8 +180,8 @@ export function DraggableListItemView({
               });
             }}
             className={cn(
-              'h-[18px] w-[18px] cursor-pointer appearance-none',
-              'rounded-[4px] border-2 border-input bg-background',
+              'h-4.5 w-4.5 cursor-pointer appearance-none',
+              'rounded-lg border-2 border-input bg-background',
               'transition-all duration-150',
               'hover:scale-105 hover:border-dynamic-gray hover:bg-dynamic-gray/10',
               'focus:border-dynamic-gray focus:outline-none focus:ring-2 focus:ring-dynamic-gray/30 focus:ring-offset-2',
@@ -205,12 +202,12 @@ export function DraggableListItemView({
       />
 
       {/* Drop indicator line for after */}
-      {dropZone?.zone === 'after' && (
-        <div className="pointer-events-none absolute right-0 -bottom-[1px] left-0 h-0.5 bg-dynamic-blue" />
+      {dropZone === 'after' && (
+        <div className="pointer-events-none absolute right-0 -bottom-px left-0 h-0.5 bg-dynamic-blue" />
       )}
 
       {/* Drop indicator for nested */}
-      {dropZone?.zone === 'nested' && (
+      {dropZone === 'nested' && (
         <div className="pointer-events-none absolute inset-0 ml-6 rounded border-2 border-dynamic-blue border-dashed bg-dynamic-blue/20" />
       )}
     </NodeViewWrapper>

@@ -4,12 +4,11 @@ import { ListItem, TaskItem } from '@tiptap/extension-list';
 import type { Node as ProseMirrorNode, Schema } from '@tiptap/pm/model';
 import { Fragment, type ResolvedPos } from '@tiptap/pm/model';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-import { ListItemView, TaskItemView } from './draggable-list-item';
-
-interface DropZoneInfo {
-  zone: 'before' | 'nested' | 'after';
-  insertionMode: 'sibling-before' | 'child-first' | 'sibling-after';
-}
+import {
+  type DropZone,
+  ListItemView,
+  TaskItemView,
+} from './draggable-list-item';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -20,7 +19,7 @@ declare module '@tiptap/core' {
       moveListItemToPosition: (options: {
         sourcePos: number;
         targetPos: number;
-        dropZone: DropZoneInfo;
+        dropZone: DropZone;
       }) => ReturnType;
     };
   }
@@ -161,7 +160,7 @@ export const ListItemDrag = Extension.create({
         (options: {
           sourcePos: number;
           targetPos: number;
-          dropZone: DropZoneInfo;
+          dropZone: DropZone;
         }): Command =>
         ({ state, dispatch }) => {
           const { doc, schema } = state;
@@ -229,18 +228,18 @@ export const ListItemDrag = Extension.create({
           // Calculate insertion position based on drop zone
           let insertPos: number;
 
-          switch (dropZone.insertionMode) {
-            case 'sibling-before':
+          switch (dropZone) {
+            case 'before':
               // Insert right before the target item
               insertPos = targetItemStart;
               break;
 
-            case 'sibling-after':
+            case 'after':
               // Insert right after the target item
               insertPos = targetItemEnd;
               break;
 
-            case 'child-first': {
+            case 'nested': {
               // Insert as first child of target item
               // We need to find or create a nested list inside the target item
 
