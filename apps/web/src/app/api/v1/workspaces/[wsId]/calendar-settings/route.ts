@@ -20,7 +20,7 @@ const calendarSettingsSchema = z.object({
     .enum(['auto', 'sunday', 'monday', 'saturday'])
     .optional(),
   energy_profile: z.string().optional(),
-  scheduling_settings: z.record(z.any()).optional(),
+  scheduling_settings: z.record(z.string(), z.any()).optional(),
 });
 
 const normalizeWorkspaceId = (wsIdParam: string, userId: string): string => {

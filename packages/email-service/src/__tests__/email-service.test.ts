@@ -87,7 +87,7 @@ describe('EmailService', () => {
     it('create() factory should throw on unknown credential type', () => {
       expect(() => {
         EmailService.create(
-          { type: 'unknown' as any },
+          { type: 'unknown' as any, apiKey: 'key' },
           defaultConfig.defaultSource
         );
       }).toThrow('Unknown credentials type');
@@ -98,7 +98,7 @@ describe('EmailService', () => {
     it('should fail if no recipients', async () => {
       const result = await service.send({
         recipients: { to: [] },
-        content: { subject: 'Hi', text: 'Body' },
+        content: { subject: 'Hi', text: 'Body', html: '<p>Body</p>' },
         metadata: defaultMetadata,
       });
       expect(result.success).toBe(false);
@@ -119,7 +119,7 @@ describe('EmailService', () => {
 
       const result = await devService.send({
         recipients: { to: ['test@example.com'] },
-        content: { subject: 'Hi', text: 'Body' },
+        content: { subject: 'Hi', text: 'Body', html: '<p>Body</p>' },
         metadata: defaultMetadata,
       });
 
@@ -138,7 +138,7 @@ describe('EmailService', () => {
 
       const result = await service.send({
         recipients: { to: ['blocked@example.com'] },
-        content: { subject: 'Hi', text: 'Body' },
+        content: { subject: 'Hi', text: 'Body', html: '<p>Body</p>' },
         metadata: defaultMetadata,
       });
 
@@ -152,7 +152,11 @@ describe('EmailService', () => {
     it('should send internal email without rate limits', async () => {
       const result = await service.sendInternal({
         recipients: { to: ['internal@example.com'] },
-        content: { subject: 'Alert', text: 'System Down' },
+        content: {
+          subject: 'Alert',
+          text: 'System Down',
+          html: '<p>System Down</p>',
+        },
         metadata: defaultMetadata,
       });
 
@@ -164,7 +168,7 @@ describe('EmailService', () => {
     it('should fail if no recipients', async () => {
       const result = await service.sendInternal({
         recipients: { to: [] },
-        content: { subject: 'Hi', text: 'Body' },
+        content: { subject: 'Hi', text: 'Body', html: '<p>Body</p>' },
         metadata: defaultMetadata,
       });
       expect(result.success).toBe(false);
