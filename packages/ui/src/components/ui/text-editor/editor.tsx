@@ -565,7 +565,6 @@ export function RichTextEditor({
             placement: 'left',
             strategy: 'fixed',
           }}
-          className="left-2!"
         >
           <div className="flex size-5 cursor-grab items-center justify-center text-muted-foreground transition-colors hover:text-foreground">
             <GripVertical />
