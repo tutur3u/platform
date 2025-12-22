@@ -7790,6 +7790,10 @@
       "description": "Manage Time Tracker in your Tuturuuu workspace."
     },
     "requests": {
+      "tabs": {
+        "all": "All Requests",
+        "my": "My Requests"
+      },
       "title": "Time Tracking Requests",
       "description": "Review and approve time tracking requests from team members",
       "filters": {
@@ -7798,7 +7802,8 @@
         "status": "Status",
         "user": "User",
         "clearFilters": "Clear Filters",
-        "allUsers": "All Users"
+        "allUsers": "All Users",
+        "loadingUsers": "Loading users..."
       },
       "status": {
         "all": "All",

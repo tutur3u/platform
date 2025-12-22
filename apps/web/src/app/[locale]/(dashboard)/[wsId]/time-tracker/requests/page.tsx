@@ -1,4 +1,4 @@
-import { AlertTriangle, XIcon } from '@tuturuuu/icons';
+import { AlertTriangle } from '@tuturuuu/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -104,28 +104,32 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
 
         const currentUser = await getCurrentUser();
 
-        if (!containsPermission('manage_time_tracking_requests')) {
-          return (
-            <div className="container mx-auto px-4 py-6 md:px-8">
-              <div className="rounded-md bg-yellow-50 p-4">
-                <div className="flex">
-                  <div className="shrink-0">
-                    <XIcon
-                      className="h-5 w-5 text-yellow-400"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="font-medium text-sm text-yellow-800">
-                      You do not have permission to manage time tracking
-                      requests.
-                    </h3>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }
+        const canManageTimeTrackingRequests = containsPermission(
+          'manage_time_tracking_requests'
+        );
+
+        // if (!containsPermission('manage_time_tracking_requests')) {
+        //   return (
+        //     <div className="container mx-auto px-4 py-6 md:px-8">
+        //       <div className="rounded-md bg-yellow-50 p-4">
+        //         <div className="flex">
+        //           <div className="shrink-0">
+        //             <XIcon
+        //               className="h-5 w-5 text-yellow-400"
+        //               aria-hidden="true"
+        //             />
+        //           </div>
+        //           <div className="ml-3">
+        //             <h3 className="font-medium text-sm text-yellow-800">
+        //               You do not have permission to manage time tracking
+        //               requests.
+        //             </h3>
+        //           </div>
+        //         </div>
+        //       </div>
+        //     </div>
+        //   );
+        // }
 
         return (
           <div className="container mx-auto px-4 py-6 md:px-8">
@@ -133,6 +137,7 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
               wsId={wsId}
               bypassRulesPermission={bypassRulesPermission}
               currentUser={currentUser}
+              canManageTimeTrackingRequests={canManageTimeTrackingRequests}
             />
           </div>
         );

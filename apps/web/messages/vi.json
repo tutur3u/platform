@@ -7592,6 +7592,10 @@
       "description": "Quản lý trình theo dõi thời gian trong không gian làm việc của bạn."
     },
     "requests": {
+      "tabs": {
+        "all": "Tất cả yêu cầu",
+        "my": "Yêu cầu của tôi"
+      },
       "title": "Yêu Cầu Theo Dõi Thời Gian",
       "description": "Xem xét và phê duyệt yêu cầu theo dõi thời gian từ các thành viên trong nhóm",
       "filters": {
@@ -7600,7 +7604,8 @@
         "status": "Trạng Thái",
         "user": "Người Dùng",
         "clearFilters": "Xóa Bộ Lọc",
-        "allUsers": "Tất Cả Người Dùng"
+        "allUsers": "Tất Cả Người Dùng",
+        "loadingUsers": "Đang tải danh sách người dùng..."
       },
       "status": {
         "all": "Tất Cả",

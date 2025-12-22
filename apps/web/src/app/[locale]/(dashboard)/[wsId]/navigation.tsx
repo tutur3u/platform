@@ -314,17 +314,13 @@ export async function WorkspaceNavigationLinks({
           requireRootWorkspace: true,
           requireRootMember: true,
         },
-        ...(!isPersonal
-          ? [
               {
                 title: t('sidebar_tabs.time_tracker_requests'),
                 href: `/${personalOrWsId}/time-tracker/requests`,
                 icon: <MessageCircleIcon className="h-5 w-5" />,
-                disabled: withoutPermission('manage_time_tracking_requests'),
+                disabled: isPersonal,
               },
-            ]
-          : []),
-        null,
+              null,
         {
           title: t('sidebar_tabs.settings'),
           href: `/${personalOrWsId}/time-tracker/settings`,
