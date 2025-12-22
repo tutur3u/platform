@@ -15,7 +15,7 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('./[crawlerId]/crawl-button', () => ({
-  default: () => <button>Crawl</button>,
+  default: () => <button type="button">Crawl</button>,
 }));
 
 // Mock the Link component (if used internally by Pagination or others)
@@ -46,7 +46,6 @@ describe('UncrawledUrls', () => {
     class MockEventSource {
       onmessage = null;
       close = vi.fn();
-      constructor() {}
     }
     (global as any).EventSource = MockEventSource;
     (window as any).EventSource = MockEventSource;

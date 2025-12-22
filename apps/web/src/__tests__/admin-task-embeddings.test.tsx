@@ -17,7 +17,7 @@ vi.mock('@tuturuuu/icons', async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,
-    Activity: (props: any) => <div role="status" {...props} />,
+    Activity: (props: any) => <output {...props} />,
   };
 });
 
