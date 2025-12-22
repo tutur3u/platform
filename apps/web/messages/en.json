@@ -7865,7 +7865,13 @@
         "needsInfoReasonPlaceholder": "Please describe what additional information is needed...",
         "needsInfoReasonRequired": "Please provide a reason for requesting more information",
         "confirmRequestInfo": "Request Information",
-        "resubmitButton": "Resubmit Request"
+        "resubmitButton": "Resubmit Request",
+        "editButton": "Edit Request",
+        "saveButton": "Save Changes",
+        "cancelEditButton": "Cancel",
+        "titleLabel": "Title",
+        "descriptionLabel": "Description",
+        "addMoreImages": "Add More Images ({current}/{max})"
       },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",
@@ -7876,7 +7882,9 @@
         "requestInfoFailed": "Failed to request more information",
         "resubmitSuccess": "Request resubmitted for approval successfully",
         "resubmitFailed": "Failed to resubmit request",
-        "loadImagesFailed": "Failed to load images"
+        "loadImagesFailed": "Failed to load images",
+        "updateSuccess": "Request updated successfully",
+        "updateFailed": "Failed to update request"
       },
       "settings": {
         "button": "Settings",

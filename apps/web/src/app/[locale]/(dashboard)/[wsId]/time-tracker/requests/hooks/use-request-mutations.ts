@@ -201,3 +201,79 @@ export function useResubmitRequest() {
     },
   });
 }
+
+interface UpdateRequestParams {
+  wsId: string;
+  requestId: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  newImages?: File[];
+  removedImages?: string[];
+}
+
+export function useUpdateRequest() {
+  const t = useTranslations('time-tracker.requests');
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      wsId,
+      requestId,
+      title,
+      description,
+      startTime,
+      endTime,
+      newImages = [],
+      removedImages = [],
+    }: UpdateRequestParams) => {
+      const formData = new FormData();
+      formData.append('title', title);
+      if (description) {
+        formData.append('description', description);
+      }
+      formData.append('startTime', startTime);
+      formData.append('endTime', endTime);
+
+      // Append removed images as JSON
+      if (removedImages.length > 0) {
+        formData.append('removedImages', JSON.stringify(removedImages));
+      }
+
+      // Append new image files
+      newImages.forEach((image, index) => {
+        formData.append(`image_${index}`, image);
+      });
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}`,
+        {
+          method: 'PUT',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update request');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, { wsId, requestId }) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-requests', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-request', wsId, requestId],
+      });
+
+      toast.success(t('toast.updateSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('toast.updateFailed'));
+    },
+  });
+}

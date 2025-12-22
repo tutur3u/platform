@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
+  EditIcon,
   InfoIcon,
   Loader2,
   UserIcon,
@@ -23,20 +24,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { useImageUpload } from '../hooks/use-image-upload';
+import { ImageUploadSection } from './components/image-upload-section';
 import { useRequestImages } from './hooks/use-request-images';
 import {
   useApproveRequest,
   useRejectRequest,
   useRequestMoreInfo,
   useResubmitRequest,
+  useUpdateRequest,
 } from './hooks/use-request-mutations';
 import type { ExtendedTimeTrackingRequest } from './page';
 import { STATUS_COLORS, STATUS_LABELS } from './utils';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -58,6 +70,7 @@ export function RequestDetailModal({
   currentUser,
 }: RequestDetailModalProps) {
   const t = useTranslations('time-tracker.requests');
+  const tTracker = useTranslations('time-tracker');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
   const [needsInfoReason, setNeedsInfoReason] = useState('');
@@ -66,11 +79,21 @@ export function RequestDetailModal({
     null
   );
 
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState(request.title);
+  const [editDescription, setEditDescription] = useState(
+    request.description || ''
+  );
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+
   // React Query mutations
   const approveMutation = useApproveRequest();
   const rejectMutation = useRejectRequest();
   const requestInfoMutation = useRequestMoreInfo();
   const resubmitMutation = useResubmitRequest();
+  const updateMutation = useUpdateRequest();
 
   // Fetch images with React Query
   const { data: imageUrls = [], isLoading: isLoadingImages } = useRequestImages(
@@ -151,6 +174,84 @@ export function RequestDetailModal({
     );
   }, [request.id, wsId, onUpdate, onClose, resubmitMutation]);
 
+  // Image upload hook for edit mode
+  const imageUpload = useImageUpload({ maxImages: 5 });
+
+  // Determine if user can edit (owner + status is PENDING or NEEDS_INFO)
+  const canEdit =
+    currentUser &&
+    request.user_id === currentUser.id &&
+    (request.approval_status === 'PENDING' ||
+      request.approval_status === 'NEEDS_INFO');
+
+  const handleEnterEditMode = useCallback(() => {
+    setIsEditMode(true);
+    setEditTitle(request.title);
+    setEditDescription(request.description || '');
+
+    // Convert UTC times to local datetime-local format
+    const userTz = dayjs.tz.guess();
+    const startLocal = dayjs.utc(request.start_time).tz(userTz);
+    const endLocal = dayjs.utc(request.end_time).tz(userTz);
+
+    setEditStartTime(startLocal.format('YYYY-MM-DDTHH:mm'));
+    setEditEndTime(endLocal.format('YYYY-MM-DDTHH:mm'));
+
+    // Set existing images
+    imageUpload.setExistingImages(imageUrls);
+  }, [request, imageUrls, imageUpload]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditMode(false);
+    imageUpload.clearImages();
+  }, [imageUpload]);
+
+  const handleSaveChanges = useCallback(async () => {
+    if (!editTitle.trim()) {
+      return;
+    }
+
+    const userTz = dayjs.tz.guess();
+    const startTimeUtc = dayjs.tz(editStartTime, userTz).utc().toISOString();
+    const endTimeUtc = dayjs.tz(editEndTime, userTz).utc().toISOString();
+
+    // Determine which existing images were removed
+    const removedImages = (request.images || []).filter(
+      (img) => !imageUpload.existingImages.includes(img)
+    );
+
+    await updateMutation.mutateAsync(
+      {
+        wsId,
+        requestId: request.id,
+        title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        startTime: startTimeUtc,
+        endTime: endTimeUtc,
+        newImages: imageUpload.images,
+        removedImages,
+      },
+      {
+        onSuccess: () => {
+          setIsEditMode(false);
+          imageUpload.clearImages();
+          onUpdate?.();
+        },
+      }
+    );
+  }, [
+    editTitle,
+    editDescription,
+    editStartTime,
+    editEndTime,
+    request.id,
+    request.images,
+    wsId,
+    imageUpload,
+    updateMutation,
+    onUpdate,
+  ]);
+
   const calculateDuration = (startTime: string, endTime: string) => {
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -195,6 +296,18 @@ export function RequestDetailModal({
                   )}
                 </DialogDescription>
               </div>
+              {/* Edit button for request owner */}
+              {canEdit && !isEditMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEnterEditMode}
+                  className="shrink-0"
+                >
+                  <EditIcon className="mr-2 h-4 w-4" />
+                  {t('detail.editButton')}
+                </Button>
+              )}
             </div>
           </DialogHeader>
 
@@ -248,7 +361,118 @@ export function RequestDetailModal({
               )}
             </div>
 
-            {/* Time Info */}
+            {/* Edit Mode UI */}
+            {isEditMode && (
+              <div className="space-y-4 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">{t('detail.titleLabel')}</Label>
+                  <Input
+                    id="edit-title"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder={t('detail.titleLabel')}
+                    disabled={updateMutation.isPending}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">
+                    {t('detail.descriptionLabel')}
+                  </Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder={t('detail.descriptionLabel')}
+                    rows={3}
+                    disabled={updateMutation.isPending}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-start-time">
+                      {t('detail.startTime')}
+                    </Label>
+                    <Input
+                      id="edit-start-time"
+                      type="datetime-local"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                      disabled={updateMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-end-time">{t('detail.endTime')}</Label>
+                    <Input
+                      id="edit-end-time"
+                      type="datetime-local"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                      disabled={updateMutation.isPending}
+                    />
+                  </div>
+                </div>
+
+                {/* Image Upload Section */}
+                <ImageUploadSection
+                  images={imageUpload.images}
+                  imagePreviews={imageUpload.imagePreviews}
+                  existingImageUrls={imageUpload.existingImages}
+                  isCompressing={imageUpload.isCompressing}
+                  isDragOver={imageUpload.isDragOver}
+                  imageError={imageUpload.imageError}
+                  disabled={updateMutation.isPending}
+                  canAddMore={imageUpload.canAddMoreImages}
+                  maxImages={5}
+                  totalCount={imageUpload.totalImageCount}
+                  fileInputRef={imageUpload.fileInputRef}
+                  onDragOver={imageUpload.handleDragOver}
+                  onDragLeave={imageUpload.handleDragLeave}
+                  onDrop={imageUpload.handleDrop}
+                  onFileChange={imageUpload.handleImageUpload}
+                  onRemoveNew={imageUpload.removeImage}
+                  onRemoveExisting={imageUpload.removeExistingImage}
+                  labels={{
+                    proofOfWork: t('detail.addMoreImages', {
+                      current: imageUpload.totalImageCount,
+                      max: 5,
+                    }),
+                    compressing: tTracker('missed_entry_dialog.approval.compressing'),
+                    dropImages: tTracker('missed_entry_dialog.approval.dropImages'),
+                    clickToUpload: tTracker(
+                      'missed_entry_dialog.approval.clickToUpload'
+                    ),
+                    imageFormats: tTracker('missed_entry_dialog.approval.imageFormats'),
+                    proofImageAlt: tTracker('missed_entry_dialog.approval.proofImageAlt'),
+                  }}
+                />
+
+                {/* Save/Cancel Buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveChanges}
+                    disabled={updateMutation.isPending || !editTitle.trim()}
+                    className="flex-1"
+                  >
+                    {updateMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {t('detail.saveButton')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={updateMutation.isPending}
+                  >
+                    {t('detail.cancelEditButton')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* View Mode - Time Info */}
+            {!isEditMode && (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -278,9 +502,10 @@ export function RequestDetailModal({
                 </p>
               </div>
             </div>
+            )}
 
             {/* Task Info */}
-            {request.task && (
+            {!isEditMode && request.task && (
               <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
                 <div className="text-muted-foreground text-sm">
                   {t('detail.linkedTask')}
@@ -290,7 +515,7 @@ export function RequestDetailModal({
             )}
 
             {/* Description */}
-            {request.description && (
+            {!isEditMode && request.description && (
               <div className="space-y-3">
                 <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
                   {t('detail.description')}
@@ -304,7 +529,7 @@ export function RequestDetailModal({
             )}
 
             {/* Attachments */}
-            {request.images && request.images.length > 0 && (
+            {!isEditMode && request.images && request.images.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">

@@ -7667,7 +7667,13 @@
         "needsInfoReasonPlaceholder": "Vui lòng mô tả thông tin bổ sung cần thiết...",
         "needsInfoReasonRequired": "Vui lòng cung cấp lý do yêu cầu thêm thông tin",
         "confirmRequestInfo": "Yêu Cầu Thông Tin",
-        "resubmitButton": "Gửi Lại Yêu Cầu"
+        "resubmitButton": "Gửi Lại Yêu Cầu",
+        "editButton": "Chỉnh Sửa Yêu Cầu",
+        "saveButton": "Lưu Thay Đổi",
+        "cancelEditButton": "Hủy",
+        "titleLabel": "Tiêu Đề",
+        "descriptionLabel": "Mô Tả",
+        "addMoreImages": "Thêm Hình Ảnh ({current}/{max})"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
@@ -7678,7 +7684,9 @@
         "requestInfoFailed": "Không thể yêu cầu thêm thông tin",
         "resubmitSuccess": "Đã gửi lại yêu cầu để phê duyệt thành công",
         "resubmitFailed": "Không thể gửi lại yêu cầu",
-        "loadImagesFailed": "Không thể tải hình ảnh"
+        "loadImagesFailed": "Không thể tải hình ảnh",
+        "updateSuccess": "Đã cập nhật yêu cầu thành công",
+        "updateFailed": "Không thể cập nhật yêu cầu"
       },
       "settings": {
         "button": "Cài Đặt",
