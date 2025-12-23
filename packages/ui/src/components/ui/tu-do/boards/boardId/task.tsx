@@ -305,6 +305,11 @@ function TaskCardInner({
 
   // Detect mobile devices to disable drag and drop
   const [isMobile, setIsMobile] = useState(false);
+  // Long-press state for mobile drag-and-drop
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [isDragEnabledOnMobile, setIsDragEnabledOnMobile] = useState(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -319,7 +324,7 @@ function TaskCardInner({
   const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
 
   const dragDisabled =
-    isMobile ||
+    (isMobile && !isDragEnabledOnMobile) ||
     dialogState.editDialogOpen ||
     dialogState.deleteDialogOpen ||
     dialogState.customDateDialogOpen ||
@@ -1007,6 +1012,75 @@ function TaskCardInner({
     allTasksFromQuery,
   ]);
 
+  // Long-press handlers for mobile drag-and-drop
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isMobile || isMultiSelectMode) return;
+
+      const touch = e.touches[0];
+      if (!touch) return;
+
+      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+      setIsLongPressing(true);
+
+      // Start long-press timer (500ms)
+      longPressTimerRef.current = setTimeout(() => {
+        setIsDragEnabledOnMobile(true);
+        setIsLongPressing(false);
+        // Provide haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }, 500);
+    },
+    [isMobile, isMultiSelectMode]
+  );
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPosRef.current) return;
+
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    // Cancel long-press if finger moves too much (>10px)
+    const deltaX = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const deltaY = Math.abs(touch.clientY - touchStartPosRef.current.y);
+
+    if (deltaX > 10 || deltaY > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      setIsLongPressing(false);
+      touchStartPosRef.current = null;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setIsLongPressing(false);
+    touchStartPosRef.current = null;
+
+    // Reset drag enabled state after a delay to allow the drag to complete
+    if (isDragEnabledOnMobile) {
+      setTimeout(() => {
+        setIsDragEnabledOnMobile(false);
+      }, 100);
+    }
+  }, [isDragEnabledOnMobile]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <Card
       data-id={task.id}
@@ -1032,6 +1106,10 @@ function TaskCardInner({
         setMenuOpen(true);
         setMenuGuardUntil(Date.now() + 300);
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
       {...(!dragDisabled && listeners)}
@@ -1058,13 +1136,16 @@ function TaskCardInner({
         isSelected &&
           'scale-[1.01] border-l-primary bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
         // Multi-select mode cursor
-        isMultiSelectMode && 'cursor-pointer'
+        isMultiSelectMode && 'cursor-pointer',
+        // Long-press visual feedback
+        isLongPressing &&
+          'scale-[1.02] ring-2 ring-primary/40 transition-all duration-200'
       )}
     >
       {/* Overdue indicator */}
       {isOverdue && !(!!task.closed_at || !!task.completed_at) && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
-          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
+          <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
         </div>
       )}
       {/* Selection indicator */}
