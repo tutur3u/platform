@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 import type { TimeTrackerData } from '../types';
 import SimpleTimeTrackerContent from './simple-time-tracker-content';
 import TimeTrackerContent from './time-tracker-content';
-import type {Workspace} from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 
 interface TimeTrackerWrapperProps {
   wsId: string;

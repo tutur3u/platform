@@ -72,7 +72,9 @@ export function TimeEntryForm({
       </div>
 
       <div>
-        <Label htmlFor="missed-entry-description">{t('form.description')}</Label>
+        <Label htmlFor="missed-entry-description">
+          {t('form.description')}
+        </Label>
         <Textarea
           id="missed-entry-description"
           value={description}
