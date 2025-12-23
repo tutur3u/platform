@@ -1065,7 +1065,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                 <SelectTrigger className="@lg:text-base text-sm transition-all duration-200">
                                   <SelectValue placeholder="Choose a task or create new..." />
                                 </SelectTrigger>
-                                <SelectContent className="w-[400px]">
+                                <SelectContent className="w-100">
                                   {tasks.map((task) => (
                                     <SelectItem
                                       key={task.id}
@@ -1606,7 +1606,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                         )}
                       </div>
                     ) : (
-                      <div className="@lg:max-h-[500px] max-h-96 space-y-3 overflow-y-auto">
+                      <div className="@lg:max-h-125 max-h-96 space-y-3 overflow-y-auto">
                         {filteredSessions.map((session) => (
                           <div
                             key={session.id}

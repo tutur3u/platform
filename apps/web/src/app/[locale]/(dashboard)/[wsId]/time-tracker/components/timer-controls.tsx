@@ -4199,7 +4199,7 @@ export function TimerControls({
                               </div>
 
                               {/* Task List */}
-                              <div className="max-h-[300px] overflow-y-auto">
+                              <div className="max-h-75 overflow-y-auto">
                                 {filteredTasks.length === 0 ? (
                                   <div className="p-6 text-center text-muted-foreground text-sm">
                                     {taskSearchQuery ||
