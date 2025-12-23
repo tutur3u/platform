@@ -193,7 +193,7 @@ export async function generateTaskEmbedding({
     // Generate embedding using Google Gemini with RETRIEVAL_DOCUMENT task type
     // This optimizes the embedding for being searched against
     const { embedding } = await embed({
-      model: google.textEmbeddingModel('gemini-embedding-001'),
+      model: google.embeddingModel('gemini-embedding-001'),
       value: textForEmbedding,
       providerOptions: {
         google: {

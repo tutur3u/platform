@@ -10,7 +10,10 @@
  * on in-memory data structures instead of database operations.
  */
 
-import type { HabitDurationConfig } from '@tuturuuu/ai/scheduling';
+import type {
+  HabitDurationConfig,
+  SchedulingWeights,
+} from '@tuturuuu/ai/scheduling';
 import {
   calculateIdealStartTimeForHabit,
   calculatePriorityScore,
@@ -684,6 +687,8 @@ export interface GeneratePreviewOptions {
   existingHabitDays?: Set<string>;
   /** Set of event IDs that are habit events and should remain blocked (not replaced) */
   habitEventIds?: Set<string>;
+  /** Optional weights for scoring */
+  weights?: SchedulingWeights;
 }
 
 /**
@@ -702,6 +707,7 @@ export function generatePreview(
     now: nowOption,
     existingHabitDays = new Set<string>(),
     habitEventIds = new Set<string>(),
+    weights,
   } = options;
   const resolvedTimezone =
     timezone && timezone !== 'auto' && isValidTimeZone(timezone)
@@ -863,7 +869,8 @@ export function generatePreview(
           findBestSlotForHabitAI(
             habitConfig,
             preferredSlots,
-            resolvedTimezone
+            resolvedTimezone,
+            weights
           ) ?? undefined;
       }
 

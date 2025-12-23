@@ -79,7 +79,7 @@ export default function Login({ searchParams }: LoginProps) {
       <div className="fixed inset-0 bg-linear-to-br from-background via-dynamic-indigo/5 to-dynamic-purple/10" />
 
       {/* Grid Pattern Overlay */}
-      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]" />
+      <div className="mask-[radial-gradient(ellipse_at_center,black_20%,transparent_80%)] fixed inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-size-[72px_72px]" />
 
       {/* Floating Orbs with Framer Motion */}
       <motion.div

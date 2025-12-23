@@ -1,7 +1,13 @@
 import { CalendarMatrix } from './calendar-matrix';
 import { TimeIndicator } from './time-indicator';
 
-export const CalendarView = ({ dates }: { dates: Date[] }) => {
+export const CalendarView = ({
+  dates,
+  overlay,
+}: {
+  dates: Date[];
+  overlay?: React.ReactNode;
+}) => {
   const columns = dates.length;
 
   // Create a dynamic grid template based on the number of columns
@@ -15,7 +21,7 @@ export const CalendarView = ({ dates }: { dates: Date[] }) => {
         gridTemplateColumns,
       }}
     >
-      <CalendarMatrix dates={dates} />
+      <CalendarMatrix dates={dates} overlay={overlay} />
       <TimeIndicator dates={dates} />
     </div>
   );

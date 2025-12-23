@@ -15,6 +15,7 @@
 
 import type { TimeOfDayPreference } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { SchedulingWeights } from './types';
 
 // ============================================================================
 // TIMEZONE HELPERS
@@ -316,19 +317,20 @@ export function getSlotCharacteristics(
 export function scoreSlotForHabit(
   habit: HabitDurationConfig,
   slot: TimeSlotInfo,
-  timezone?: string | null
+  timezone?: string | null,
+  weights?: SchedulingWeights
 ): number {
   const characteristics = getSlotCharacteristics(habit, slot, timezone);
   let score = 0;
 
   // Ideal time match is the best
   if (characteristics.matchesIdealTime) {
-    score += 1000;
+    score += weights?.habitIdealTimeBonus ?? 1000;
   }
 
   // Time preference match is second best
   if (characteristics.matchesPreference) {
-    score += 500;
+    score += weights?.habitPreferenceBonus ?? 500;
   }
 
   // Prefer slots that can fit preferred duration
@@ -360,7 +362,8 @@ export function scoreSlotForHabit(
 export function findBestSlotForHabit(
   habit: HabitDurationConfig,
   slots: TimeSlotInfo[],
-  timezone?: string | null
+  timezone?: string | null,
+  weights?: SchedulingWeights
 ): TimeSlotInfo | null {
   const { min } = getEffectiveDurationBounds(habit);
 
@@ -373,11 +376,11 @@ export function findBestSlotForHabit(
 
   // Score each slot and return the best one
   let bestSlot = viableSlots[0]!;
-  let bestScore = scoreSlotForHabit(habit, bestSlot, timezone);
+  let bestScore = scoreSlotForHabit(habit, bestSlot, timezone, weights);
 
   for (let i = 1; i < viableSlots.length; i++) {
     const slot = viableSlots[i]!;
-    const score = scoreSlotForHabit(habit, slot, timezone);
+    const score = scoreSlotForHabit(habit, slot, timezone, weights);
     if (score > bestScore) {
       bestScore = score;
       bestSlot = slot;
@@ -592,7 +595,8 @@ export function scoreSlotForTask(
   task: TaskSlotConfig,
   slot: TimeSlotInfo,
   now: Date,
-  timezone?: string | null
+  timezone?: string | null,
+  weights?: SchedulingWeights
 ): number {
   let score = 0;
 
@@ -603,7 +607,7 @@ export function scoreSlotForTask(
   // Earlier hour = higher score (+300 at midnight, -2 per hour)
   // This ensures gaps are filled before moving to later slots
   // Reduced penalty from -10 to -2 to prevent gaps between tasks
-  score += 300 - slotHour * 2;
+  score += (weights?.taskBaseEarlyBonus ?? 300) - slotHour * 2;
 
   // 2. Small bonus for slots that fit well (max 50 points)
   // This is secondary to time preference - we want earlier slots first
@@ -612,7 +616,7 @@ export function scoreSlotForTask(
   // 3. If task has time preference, respect it (+500)
   if (task.preferredTimeOfDay) {
     if (slotMatchesPreference(task.preferredTimeOfDay, slot, timezone)) {
-      score += 500;
+      score += weights?.taskPreferenceBonus ?? 500;
     }
   }
 
@@ -658,7 +662,8 @@ export function findBestSlotForTask(
   slots: TimeSlotInfo[],
   minDuration: number,
   now: Date,
-  timezone?: string | null
+  timezone?: string | null,
+  weights?: SchedulingWeights
 ): TimeSlotInfo | null {
   // Filter to slots that can fit at least minimum duration
   const viableSlots = slots.filter((slot) => slot.maxAvailable >= minDuration);
@@ -669,11 +674,11 @@ export function findBestSlotForTask(
 
   // Score each slot and return the best one
   let bestSlot = viableSlots[0]!;
-  let bestScore = scoreSlotForTask(task, bestSlot, now, timezone);
+  let bestScore = scoreSlotForTask(task, bestSlot, now, timezone, weights);
 
   for (let i = 1; i < viableSlots.length; i++) {
     const slot = viableSlots[i]!;
-    const score = scoreSlotForTask(task, slot, now, timezone);
+    const score = scoreSlotForTask(task, slot, now, timezone, weights);
     if (score > bestScore) {
       bestScore = score;
       bestSlot = slot;

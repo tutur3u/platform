@@ -61,6 +61,7 @@ export type {
   Event,
   Log,
   ScheduleResult,
+  SchedulingWeights,
   Task,
   TemplateScenario,
   WebCalendarEvent,

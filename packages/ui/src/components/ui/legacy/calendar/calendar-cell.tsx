@@ -125,6 +125,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     isDragging,
     setIsDragging,
     scheduleTaskAsEvent,
+    readOnly,
   } = useCalendar();
   const { settings } = useCalendarSettings();
   const [isHovering, setIsHovering] = useState(false);
@@ -198,27 +199,31 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // --- HTML5 Drag-and-Drop handlers for task scheduling ---
-  const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.dataTransfer.types.includes('application/json')) {
-      setIsDropTarget(true);
-      // Try to parse task data for preview
-      try {
-        const jsonData = e.dataTransfer.getData('application/json');
-        if (jsonData) {
-          const data = JSON.parse(jsonData);
-          if (data.type === 'task') {
-            taskDragDataRef.current = {
-              taskName: data.taskName || 'Task',
-              totalDuration: data.totalDuration || 0,
-            };
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      if (readOnly) return;
+      e.preventDefault();
+      if (e.dataTransfer.types.includes('application/json')) {
+        setIsDropTarget(true);
+        // Try to parse task data for preview
+        try {
+          const jsonData = e.dataTransfer.getData('application/json');
+          if (jsonData) {
+            const data = JSON.parse(jsonData);
+            if (data.type === 'task') {
+              taskDragDataRef.current = {
+                taskName: data.taskName || 'Task',
+                totalDuration: data.totalDuration || 0,
+              };
+            }
           }
+        } catch {
+          // getData may fail during dragenter in some browsers, that's ok
         }
-      } catch {
-        // getData may fail during dragenter in some browsers, that's ok
       }
-    }
-  }, []);
+    },
+    [readOnly, setIsDropTarget]
+  );
 
   // Calculate preview height based on task duration
   const getTaskPreviewHeight = useCallback((totalDuration: number): number => {
@@ -235,6 +240,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   const handleDragOver = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
+      if (readOnly) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
 
@@ -258,23 +264,28 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         });
       }
     },
-    [isDropTarget, getTaskPreviewHeight]
+    [readOnly, isDropTarget, getTaskPreviewHeight]
   );
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    // Only reset if we're actually leaving the cell (not entering a child)
-    if (
-      !cellRef.current?.contains(e.relatedTarget as Node) ||
-      e.relatedTarget === null
-    ) {
-      setIsDropTarget(false);
-      setTaskDropPreview(null);
-      taskDragDataRef.current = null;
-    }
-  }, []);
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      if (readOnly) return;
+      // Only reset if we're actually leaving the cell (not entering a child)
+      if (
+        !cellRef.current?.contains(e.relatedTarget as Node) ||
+        e.relatedTarget === null
+      ) {
+        setIsDropTarget(false);
+        setTaskDropPreview(null);
+        taskDragDataRef.current = null;
+      }
+    },
+    [readOnly]
+  );
 
   const handleTaskDrop = useCallback(
     async (e: React.DragEvent<HTMLDivElement>) => {
+      if (readOnly) return;
       e.preventDefault();
       setIsDropTarget(false);
       setTaskDropPreview(null);
@@ -328,6 +339,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   );
 
   const handleCreateEvent = (midHour?: boolean) => {
+    if (readOnly) return;
     // Always use timezone-aware date construction
     const eventDate = getCellDate(hour, midHour ? 30 : 0);
     // Clear drag state before opening modal
@@ -392,7 +404,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   // Update drag start to use container-relative coordinates
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
-      if (e.button !== 0) return;
+      if (readOnly || e.button !== 0) return;
       e.preventDefault();
       // Clear any existing previews when starting a new drag
       setDragPreview(null);
@@ -519,7 +531,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   // Handle mouse up event - create event
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
-      if (!dragStartRef.current) return;
+      if (readOnly || !dragStartRef.current) return;
       e.preventDefault();
       document.body.style.cursor = '';
       document.body.classList.remove('select-none');
@@ -761,7 +773,12 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   // Prepare tooltip node to avoid rendering at (0,0)
   let tooltipNode: React.ReactNode = null;
-  if (showTooltip && hoveredSlot !== null && isTooltipPosValid(tooltipPos)) {
+  if (
+    !readOnly &&
+    showTooltip &&
+    hoveredSlot !== null &&
+    isTooltipPosValid(tooltipPos)
+  ) {
     tooltipNode = (
       <div
         ref={tooltipRef}
@@ -915,7 +932,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
       {/* Full cell clickable area (hour) */}
       <button
-        className="absolute inset-0 h-1/2 w-full cursor-pointer focus:outline-none"
+        className={cn(
+          'absolute inset-0 h-1/2 w-full focus:outline-none',
+          readOnly ? 'cursor-default' : 'cursor-pointer'
+        )}
         onClick={() => handleCreateEvent()}
         onMouseEnter={() => handleSlotMouseEnter('hour')}
         onMouseLeave={handleSlotMouseLeave}
@@ -925,10 +945,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         onFocus={() => handleSlotFocus('hour')}
         onBlur={handleSlotBlur}
         aria-describedby={tooltipId}
+        disabled={readOnly}
       />
       {/* 15-minute marker */}
       <button
-        className="absolute top-1/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
+        className={cn(
+          'absolute top-1/4 right-0 left-0 h-1/4 w-full focus:outline-none',
+          readOnly ? 'cursor-default' : 'cursor-pointer'
+        )}
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(15)}
         onMouseLeave={handleSlotMouseLeave}
@@ -937,11 +961,15 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         }
         aria-describedby={tooltipId}
         tabIndex={-1}
+        disabled={readOnly}
       />
       {/* Half-hour marker */}
       <div className="absolute top-1/2 right-0 left-0 border-border/30 border-t border-dashed" />
       <button
-        className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
+        className={cn(
+          'absolute inset-x-0 top-1/2 h-1/2 focus:outline-none',
+          readOnly ? 'cursor-default' : 'cursor-pointer'
+        )}
         onClick={() => handleCreateEvent(true)}
         onMouseEnter={() => handleSlotMouseEnter('half-hour')}
         onMouseLeave={handleSlotMouseLeave}
@@ -951,10 +979,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         onFocus={() => handleSlotFocus('half-hour')}
         onBlur={handleSlotBlur}
         aria-describedby={tooltipId}
+        disabled={readOnly}
       />
       {/* 45-minute marker */}
       <button
-        className="absolute top-3/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
+        className={cn(
+          'absolute top-3/4 right-0 left-0 h-1/4 w-full focus:outline-none',
+          readOnly ? 'cursor-default' : 'cursor-pointer'
+        )}
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(45)}
         onMouseLeave={handleSlotMouseLeave}
@@ -963,6 +995,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         }
         aria-describedby={tooltipId}
         tabIndex={-1}
+        disabled={readOnly}
       />
       {/* Show tooltip for hovered slot (hour, half-hour, or 15-min) */}
       {tooltipNode}

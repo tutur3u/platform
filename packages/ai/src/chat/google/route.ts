@@ -335,7 +335,7 @@ export function createPOST(
       }
 
       // Convert UIMessages to ModelMessages
-      const modelMessages = convertToModelMessages(messages);
+      const modelMessages = await convertToModelMessages(messages);
 
       // Process messages and handle file attachments
       const processedMessages =

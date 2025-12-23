@@ -12,11 +12,22 @@ import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
-export const CalendarMatrix = ({ dates }: { dates: Date[] }) => {
+export const CalendarMatrix = ({
+  dates,
+  overlay,
+}: {
+  dates: Date[];
+  overlay?: React.ReactNode;
+}) => {
   return (
     <>
       <CalendarBaseMatrix dates={dates} />
       <CalendarEventMatrix dates={dates} />
+      {overlay && (
+        <div className="pointer-events-none absolute inset-0 z-50">
+          {overlay}
+        </div>
+      )}
     </>
   );
 };
