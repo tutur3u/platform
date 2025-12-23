@@ -725,7 +725,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       }}
     >
       <DialogContent
-        className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden"
+        className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden p-0"
         onPointerDownOutside={(e) => {
           if (hasUnsavedChanges) {
             e.preventDefault();
@@ -742,7 +742,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           }
         }}
       >
-        <DialogHeader className="border-b pb-4">
+        <DialogHeader className="border-b px-6 pt-6 pb-4">
           {isExceededMode || isChainMode ? (
             <>
               <DialogTitle className="flex items-center gap-2 text-dynamic-orange">
@@ -1248,7 +1248,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
         {/* Actions - different layout for exceeded mode */}
         {isExceededMode ? (
-          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:justify-between">
+          <div className="flex flex-col gap-3 border-t px-6 pt-4 pb-6 sm:flex-row sm:justify-between">
             <Button
               variant="destructive"
               onClick={handleDiscardSession}
@@ -1299,7 +1299,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             </div>
           </div>
         ) : (
-          <div className="flex w-full flex-col-reverse gap-3 border-t px-6 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex w-full flex-col-reverse gap-3 border-t px-6 pt-4 pb-6 sm:flex-row sm:justify-end">
             <Button
               variant="outline"
               onClick={closeMissedEntryDialog}
