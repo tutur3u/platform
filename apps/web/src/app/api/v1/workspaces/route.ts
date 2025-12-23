@@ -19,7 +19,9 @@ export async function GET() {
     // Get all workspaces the user has access to
     const { data: workspaces, error } = await supabase
       .from('workspaces')
-      .select('id, name, personal, workspace_members!inner(user_id)')
+      .select(
+        'id, name, personal, avatar_url, logo_url, workspace_members!inner(user_id)'
+      )
       .eq('workspace_members.user_id', user.id)
       .order('name');
 
@@ -36,6 +38,8 @@ export async function GET() {
       id: ws.id,
       name: ws.name,
       personal: ws.personal,
+      avatar_url: ws.avatar_url,
+      logo_url: ws.logo_url,
     }));
 
     return NextResponse.json(transformedWorkspaces);
