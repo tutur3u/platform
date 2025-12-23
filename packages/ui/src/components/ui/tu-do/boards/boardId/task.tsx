@@ -138,7 +138,7 @@ function TaskCardInner({
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
-  const { timeFormat } = useCalendarPreferences();
+  const { weekStartsOn, timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -1213,6 +1213,7 @@ function TaskCardInner({
                   <TaskDueDateMenu
                     endDate={task.end_date}
                     isLoading={isLoading}
+                    weekStartsOn={weekStartsOn}
                     onDueDateChange={handleDueDateChange}
                     onCustomDateClick={() => {
                       setMenuOpen(false);
@@ -1477,7 +1478,7 @@ function TaskCardInner({
           <div className="flex items-center gap-2">
             {/* Hidden measurement container - render all badges to measure their width */}
             <div
-              className="pointer-events-none absolute top-0 left-[-9999px] flex items-center gap-1 opacity-0"
+              className="pointer-events-none absolute top-0 -left-2499.75 flex items-center gap-1 opacity-0"
               aria-hidden="true"
             >
               {taskBadges.map((badge) => badge.element)}

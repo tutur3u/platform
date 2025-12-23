@@ -533,7 +533,7 @@ export function BoardHeader({
                 <span className="hidden sm:inline">Sort</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
+            <DropdownMenuContent align="end" className="w-50">
               {/* Name */}
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
@@ -788,7 +788,7 @@ export function BoardHeader({
                   <span className="sr-only">Open board menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuContent align="end" className="w-50">
                 <DropdownMenuItem
                   onClick={() => {
                     setEditBoardOpen(true);
@@ -933,7 +933,7 @@ export function BoardHeader({
 
       {/* Board Settings Dialog */}
       <Dialog open={boardSettingsOpen} onOpenChange={setBoardSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle>Board Settings</DialogTitle>
             <DialogDescription>
