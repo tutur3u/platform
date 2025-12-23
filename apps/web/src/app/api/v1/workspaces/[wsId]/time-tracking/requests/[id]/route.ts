@@ -90,7 +90,8 @@ export async function PATCH(
       if (withoutPermission('manage_time_tracking_requests')) {
         return NextResponse.json(
           {
-            error: 'You do not have permission to manage time tracking requests.',
+            error:
+              'You do not have permission to manage time tracking requests.',
           },
           { status: 403 }
         );
@@ -188,10 +189,7 @@ export async function PUT(
       .single();
 
     if (fetchError || !existingRequest) {
-      return NextResponse.json(
-        { error: 'Request not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
     // Check if user is the request owner
@@ -209,7 +207,8 @@ export async function PUT(
     ) {
       return NextResponse.json(
         {
-          error: 'Request can only be edited when status is Pending or Needs Info',
+          error:
+            'Request can only be edited when status is Pending or Needs Info',
         },
         { status: 400 }
       );

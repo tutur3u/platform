@@ -2,7 +2,12 @@
 
 import { Loader2, MessageSquareIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@tuturuuu/ui/accordion';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { useTranslations } from 'next-intl';
 import { useRequestComments } from '../hooks/use-request-comments';
 import { CommentItem } from './comment-item';
@@ -38,7 +43,12 @@ export function CommentList({
   return (
     <div className="space-y-4">
       {/* Comments Section Header with Accordion */}
-      <Accordion type="single" collapsible defaultValue="comments-section" className="border-0">
+      <Accordion
+        type="single"
+        collapsible
+        defaultValue="comments-section"
+        className="border-0"
+      >
         <AccordionItem value="comments-section" className="border-b-0">
           <AccordionTrigger className="rounded-lg border hover:bg-muted/50 px-4 py-3">
             <div className="flex items-center justify-between w-full">
@@ -100,4 +110,3 @@ export function CommentList({
     </div>
   );
 }
-

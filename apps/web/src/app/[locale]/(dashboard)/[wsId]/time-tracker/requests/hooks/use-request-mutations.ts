@@ -379,11 +379,7 @@ export function useDeleteComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      wsId,
-      requestId,
-      commentId,
-    }: DeleteCommentParams) => {
+    mutationFn: async ({ wsId, requestId, commentId }: DeleteCommentParams) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}/comments/${commentId}`,
         {

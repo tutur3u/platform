@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  EditIcon,
-  Loader2,
-  TrashIcon,
-} from '@tuturuuu/icons';
+import { EditIcon, Loader2, TrashIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -54,7 +50,8 @@ export function CommentItem({
   const isOwnComment = currentUserId === comment.user_id;
   const fifteenMinutesAgo = dayjs().subtract(15, 'minute');
   const commentCreated = dayjs(comment.created_at);
-  const canEditDelete = isOwnComment && commentCreated.isAfter(fifteenMinutesAgo);
+  const canEditDelete =
+    isOwnComment && commentCreated.isAfter(fifteenMinutesAgo);
 
   const handleSaveEdit = useCallback(() => {
     if (!editContent.trim()) {
@@ -91,21 +88,24 @@ export function CommentItem({
     );
   }, [wsId, requestId, comment.id, deleteMutation]);
 
-  const formatRelativeTime = useCallback((dateString: string) => {
-    const date = dayjs(dateString);
-    const now = dayjs();
-    const diffInMinutes = now.diff(date, 'minute');
+  const formatRelativeTime = useCallback(
+    (dateString: string) => {
+      const date = dayjs(dateString);
+      const now = dayjs();
+      const diffInMinutes = now.diff(date, 'minute');
 
-    if (diffInMinutes < 1) {
-      return t('comments.justNow');
-    } else if (diffInMinutes < 60) {
-      return date.fromNow();
-    } else if (diffInMinutes < 24 * 60) {
-      return date.format('MMM D, h:mm A');
-    } else {
-      return date.format('MMM D, YYYY');
-    }
-  }, [t]);
+      if (diffInMinutes < 1) {
+        return t('comments.justNow');
+      } else if (diffInMinutes < 60) {
+        return date.fromNow();
+      } else if (diffInMinutes < 24 * 60) {
+        return date.format('MMM D, h:mm A');
+      } else {
+        return date.format('MMM D, YYYY');
+      }
+    },
+    [t]
+  );
 
   return (
     <div className="flex gap-3">
@@ -198,9 +198,7 @@ export function CommentItem({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('comments.deleteComment')}</DialogTitle>
-            <DialogDescription>
-              {t('comments.deleteConfirm')}
-            </DialogDescription>
+            <DialogDescription>{t('comments.deleteConfirm')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -226,4 +224,3 @@ export function CommentItem({
     </div>
   );
 }
-

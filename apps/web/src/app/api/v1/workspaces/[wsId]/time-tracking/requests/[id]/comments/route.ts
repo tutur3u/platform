@@ -8,7 +8,6 @@ const createCommentSchema = z.object({
   content: z.string().trim().min(1, { message: 'Content cannot be empty' }),
 });
 
-
 export async function POST(
   request: NextRequest,
   {
@@ -18,11 +17,9 @@ export async function POST(
   }
 ) {
   try {
-
-        // Parse and validate request body
-        const body = await request.json();
-        const { content } = createCommentSchema.parse(body);
-
+    // Parse and validate request body
+    const body = await request.json();
+    const { content } = createCommentSchema.parse(body);
 
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
@@ -48,8 +45,6 @@ export async function POST(
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-
 
     // Verify request exists and belongs to workspace
     const { data: requestExists } = await supabase
@@ -141,18 +136,17 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Verify request exists and belongs to workspace
+    const { data: requestExists } = await supabase
+      .from('time_tracking_requests')
+      .select('id')
+      .eq('id', requestId)
+      .eq('workspace_id', resolvedWorkspaceId)
+      .single();
 
-        // Verify request exists and belongs to workspace
-        const { data: requestExists } = await supabase
-        .from('time_tracking_requests')
-        .select('id')
-        .eq('id', requestId)
-        .eq('workspace_id', resolvedWorkspaceId)
-        .single();
-  
-      if (!requestExists) {
-        return NextResponse.json({ error: 'Request not found' }, { status: 404 });
-      }
+    if (!requestExists) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    }
 
     // Fetch comments
     const { data: comments, error: fetchError } = await supabase
@@ -190,5 +184,3 @@ export async function GET(
     );
   }
 }
-
-

@@ -92,7 +92,9 @@ export function CommentForm({
               <Kbd>Ctrl</Kbd>
               <span>+</span>
               <Kbd>Enter</Kbd>
-              <span>{t('comments.sendShortcut').replace('Ctrl + Enter', '').trim()}</span>
+              <span>
+                {t('comments.sendShortcut').replace('Ctrl + Enter', '').trim()}
+              </span>
             </span>
             <Button
               size="sm"
@@ -113,4 +115,3 @@ export function CommentForm({
     </div>
   );
 }
-
