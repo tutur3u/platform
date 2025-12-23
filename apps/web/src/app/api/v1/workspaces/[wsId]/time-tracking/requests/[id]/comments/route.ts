@@ -7,7 +7,6 @@ const createCommentSchema = z.object({
   content: z.string().trim().min(1, { message: 'Content cannot be empty' }),
 });
 
-
 export async function POST(
   request: NextRequest,
   {
@@ -158,5 +157,3 @@ export async function GET(
     );
   }
 }
-
-

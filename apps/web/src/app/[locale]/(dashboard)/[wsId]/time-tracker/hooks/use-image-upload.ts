@@ -72,7 +72,9 @@ export function useImageUpload(
   const [isCompressing, setIsCompressing] = useState(false);
   const [imageError, setImageError] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+  const fileInputRef = useRef<HTMLInputElement>(
+    null
+  ) as React.RefObject<HTMLInputElement>;
   const imagePreviewsRef = useRef<string[]>([]);
 
   // Total count includes both new and existing images

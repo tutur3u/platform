@@ -148,7 +148,9 @@ export function AllRequestsView({
       <Card className="border-dynamic-red/20 bg-dynamic-red/5">
         <CardContent className="flex flex-col items-center justify-center py-16">
           <XCircleIcon className="h-8 w-8 text-dynamic-red" />
-          <p className="mt-4 font-semibold text-dynamic-red">{t('list.error')}</p>
+          <p className="mt-4 font-semibold text-dynamic-red">
+            {t('list.error')}
+          </p>
           <p className="mt-2 text-center text-muted-foreground text-sm">
             {error instanceof Error ? error.message : 'Unknown error'}
           </p>
@@ -179,16 +181,25 @@ export function AllRequestsView({
         <CardContent className="space-y-4 p-4 md:p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label htmlFor="status-filter" className="font-medium text-sm leading-none">
+              <label
+                htmlFor="status-filter"
+                className="font-medium text-sm leading-none"
+              >
                 {t('filters.status')}
               </label>
               <Select
                 value={currentStatus || 'pending'}
                 onValueChange={(value) =>
-                  updateFilters('status', value === 'pending' ? undefined : value)
+                  updateFilters(
+                    'status',
+                    value === 'pending' ? undefined : value
+                  )
                 }
               >
-                <SelectTrigger id="status-filter" className="border-border/60 hover:bg-accent/50">
+                <SelectTrigger
+                  id="status-filter"
+                  className="border-border/60 hover:bg-accent/50"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,7 +213,10 @@ export function AllRequestsView({
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="user-filter" className="font-medium text-sm leading-none">
+              <label
+                htmlFor="user-filter"
+                className="font-medium text-sm leading-none"
+              >
                 {t('filters.user')}
               </label>
               <Select
@@ -211,7 +225,10 @@ export function AllRequestsView({
                   updateFilters('userId', value === 'all' ? undefined : value)
                 }
               >
-                <SelectTrigger id="user-filter" className="border-border/60 hover:bg-accent/50">
+                <SelectTrigger
+                  id="user-filter"
+                  className="border-border/60 hover:bg-accent/50"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,7 +294,9 @@ export function AllRequestsView({
               onUpdate={handleThresholdUpdate}
             />
           )}
-          <span className="text-muted-foreground text-sm">{t('list.itemsPerPage')}:</span>
+          <span className="text-muted-foreground text-sm">
+            {t('list.itemsPerPage')}:
+          </span>
           <Select
             value={currentLimit.toString()}
             onValueChange={(value) => updateLimit(Number.parseInt(value, 10))}
@@ -301,7 +320,9 @@ export function AllRequestsView({
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
-            <p className="mt-4 text-muted-foreground text-sm">{t('list.loading')}</p>
+            <p className="mt-4 text-muted-foreground text-sm">
+              {t('list.loading')}
+            </p>
           </CardContent>
         </Card>
       ) : requests.length === 0 ? (
@@ -314,7 +335,9 @@ export function AllRequestsView({
               {t('list.noRequestsTitle')}
             </h3>
             <p className="mt-2 text-center text-muted-foreground text-sm">
-              {hasActiveFilters ? t('list.noRequestsMessage') : t('list.noRequestsDefault')}
+              {hasActiveFilters
+                ? t('list.noRequestsMessage')
+                : t('list.noRequestsDefault')}
             </p>
           </CardContent>
         </Card>
@@ -332,12 +355,20 @@ export function AllRequestsView({
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
-                        className={cn('border font-medium text-xs', STATUS_COLORS[request.approval_status])}
+                        className={cn(
+                          'border font-medium text-xs',
+                          STATUS_COLORS[request.approval_status]
+                        )}
                       >
-                        {t(`status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`)}
+                        {t(
+                          `status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`
+                        )}
                       </Badge>
                       {request.category && (
-                        <Badge variant="outline" className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple">
+                        <Badge
+                          variant="outline"
+                          className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple"
+                        >
                           {request.category.name}
                         </Badge>
                       )}
@@ -365,7 +396,9 @@ export function AllRequestsView({
                           <Avatar className="h-5 w-5 ring-1 ring-border/50">
                             <AvatarImage src={request.user.avatar_url || ''} />
                             <AvatarFallback className="bg-dynamic-blue/10 font-semibold text-[10px] text-dynamic-blue">
-                              {request.user.display_name?.[0] || request.user.user_private_details.email?.[0] || 'U'}
+                              {request.user.display_name?.[0] ||
+                                request.user.user_private_details.email?.[0] ||
+                                'U'}
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium">
@@ -379,65 +412,88 @@ export function AllRequestsView({
                           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted ring-1 ring-border/50">
                             <UserIcon className="h-3 w-3" />
                           </div>
-                          <span className="font-medium">{t('detail.unknownUser')}</span>
+                          <span className="font-medium">
+                            {t('detail.unknownUser')}
+                          </span>
                         </>
                       )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <CalendarIcon className="h-3.5 w-3.5" />
-                      <span>{format(new Date(request.start_time), 'MMM d, yyyy h:mm a')}</span>
+                      <span>
+                        {format(
+                          new Date(request.start_time),
+                          'MMM d, yyyy h:mm a'
+                        )}
+                      </span>
                     </div>
 
                     {request.task && (
-                      <Badge variant="outline" className="border-border/60 bg-background/50 text-[10px]">
+                      <Badge
+                        variant="outline"
+                        className="border-border/60 bg-background/50 text-[10px]"
+                      >
                         {t('list.task', { name: request.task.name })}
                       </Badge>
                     )}
 
-                        {request.images && request.images.length > 0 && (
-                          <Badge
-                            variant="outline"
-                            className="border-border/60 bg-background/50 text-[10px]"
-                          >
-                            <Paperclip className="mr-1 h-3 w-3" />{' '}
-                            {t('list.attachments', {
-                              count: request.images.length,
-                              plural: request.images.length === 1 ? '' : 's',
-                            })}
-                          </Badge>
-                        )}
+                    {request.images && request.images.length > 0 && (
+                      <Badge
+                        variant="outline"
+                        className="border-border/60 bg-background/50 text-[10px]"
+                      >
+                        <Paperclip className="mr-1 h-3 w-3" />{' '}
+                        {t('list.attachments', {
+                          count: request.images.length,
+                          plural: request.images.length === 1 ? '' : 's',
+                        })}
+                      </Badge>
+                    )}
                   </div>
 
-                  {request.approval_status === 'APPROVED' && request.approved_by_user && (
-                    <div className="flex items-center gap-2 rounded-md bg-dynamic-green/5 px-3 py-2 text-xs">
-                      <CheckCircle2Icon className="h-4 w-4 text-dynamic-green" />
-                      <span className="text-muted-foreground">
-                        {t('list.approvedBy', { name: request.approved_by_user.display_name })}
-                        {request.approved_at && ` ${t('list.approvedOn', { date: format(new Date(request.approved_at), 'MMM d, yyyy') })}`}
-                      </span>
-                    </div>
-                  )}
+                  {request.approval_status === 'APPROVED' &&
+                    request.approved_by_user && (
+                      <div className="flex items-center gap-2 rounded-md bg-dynamic-green/5 px-3 py-2 text-xs">
+                        <CheckCircle2Icon className="h-4 w-4 text-dynamic-green" />
+                        <span className="text-muted-foreground">
+                          {t('list.approvedBy', {
+                            name: request.approved_by_user.display_name,
+                          })}
+                          {request.approved_at &&
+                            ` ${t('list.approvedOn', { date: format(new Date(request.approved_at), 'MMM d, yyyy') })}`}
+                        </span>
+                      </div>
+                    )}
 
-                  {request.approval_status === 'REJECTED' && request.rejected_by_user && (
-                    <div className="flex items-center gap-2 rounded-md bg-dynamic-red/5 px-3 py-2 text-xs">
-                      <XCircleIcon className="h-4 w-4 text-dynamic-red" />
-                      <span className="text-muted-foreground">
-                        {t('list.rejectedBy', { name: request.rejected_by_user.display_name })}
-                        {request.rejected_at && ` ${t('list.rejectedOn', { date: format(new Date(request.rejected_at), 'MMM d, yyyy') })}`}
-                      </span>
-                    </div>
-                  )}
+                  {request.approval_status === 'REJECTED' &&
+                    request.rejected_by_user && (
+                      <div className="flex items-center gap-2 rounded-md bg-dynamic-red/5 px-3 py-2 text-xs">
+                        <XCircleIcon className="h-4 w-4 text-dynamic-red" />
+                        <span className="text-muted-foreground">
+                          {t('list.rejectedBy', {
+                            name: request.rejected_by_user.display_name,
+                          })}
+                          {request.rejected_at &&
+                            ` ${t('list.rejectedOn', { date: format(new Date(request.rejected_at), 'MMM d, yyyy') })}`}
+                        </span>
+                      </div>
+                    )}
 
-                  {request.approval_status === 'NEEDS_INFO' && request.needs_info_requested_by_user && (
-                    <div className="flex items-center gap-2 rounded-md bg-dynamic-blue/5 px-3 py-2 text-xs">
-                      <InfoIcon className="h-4 w-4 text-dynamic-blue" />
-                      <span className="text-muted-foreground">
-                        {t('list.needsInfoBy', { name: request.needs_info_requested_by_user.display_name })}
-                        {request.needs_info_requested_at && ` ${t('list.needsInfoOn', { date: format(new Date(request.needs_info_requested_at), 'MMM d, yyyy') })}`}
-                      </span>
-                    </div>
-                  )}
+                  {request.approval_status === 'NEEDS_INFO' &&
+                    request.needs_info_requested_by_user && (
+                      <div className="flex items-center gap-2 rounded-md bg-dynamic-blue/5 px-3 py-2 text-xs">
+                        <InfoIcon className="h-4 w-4 text-dynamic-blue" />
+                        <span className="text-muted-foreground">
+                          {t('list.needsInfoBy', {
+                            name: request.needs_info_requested_by_user
+                              .display_name,
+                          })}
+                          {request.needs_info_requested_at &&
+                            ` ${t('list.needsInfoOn', { date: format(new Date(request.needs_info_requested_at), 'MMM d, yyyy') })}`}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -472,11 +528,18 @@ export function AllRequestsView({
 
             <div className="flex flex-1 items-center justify-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+                .filter(
+                  (page) =>
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1
+                )
                 .map((page, index, array) => (
                   <div key={page} className="flex items-center">
                     {index > 0 && page - array[index - 1]! > 1 && (
-                      <span className="px-2 text-muted-foreground text-sm">…</span>
+                      <span className="px-2 text-muted-foreground text-sm">
+                        …
+                      </span>
                     )}
                     <Button
                       variant={currentPage === page ? 'default' : 'outline'}
