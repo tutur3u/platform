@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { SessionWithRelations, TimeTrackerData } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
-import type {Workspace} from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -29,7 +29,7 @@ export default function SimpleTimeTrackerContent({
   initialData,
   currentUser,
   isUserLoading,
-  workspace
+  workspace,
 }: SimpleTimeTrackerContentProps) {
   const t = useTranslations('time-tracker');
   // Use React Query for running session to sync with command palette

@@ -7,7 +7,9 @@ interface UseUserWorkspacesOptions {
   enabled?: boolean;
 }
 
-export function useUserWorkspaces({ enabled = true }: UseUserWorkspacesOptions = {}) {
+export function useUserWorkspaces({
+  enabled = true,
+}: UseUserWorkspacesOptions = {}) {
   return useQuery<Workspace[]>({
     queryKey: ['user-workspaces'],
     queryFn: async () => {

@@ -53,7 +53,7 @@ import {
   useTaskCounts,
 } from '../utils';
 import { TimerControls } from './timer-controls';
-import type {Workspace} from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

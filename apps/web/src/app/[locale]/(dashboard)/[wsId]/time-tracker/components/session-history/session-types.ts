@@ -1,4 +1,8 @@
-import type { TimeTrackingCategory, Workspace, WorkspaceTask } from '@tuturuuu/types';
+import type {
+  TimeTrackingCategory,
+  Workspace,
+  WorkspaceTask,
+} from '@tuturuuu/types';
 import type { SessionWithRelations } from '../../types';
 
 export type ViewMode = 'day' | 'week' | 'month';

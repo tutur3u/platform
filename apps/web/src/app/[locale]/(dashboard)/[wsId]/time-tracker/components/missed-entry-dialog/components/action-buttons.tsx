@@ -36,7 +36,8 @@ export function ActionButtons({
   onDiscard,
 }: ActionButtonsProps) {
   const t = useTranslations('time-tracker.missed_entry_dialog');
-  const isExceededMode = mode === 'exceeded-session' || mode === 'exceeded-session-chain';
+  const isExceededMode =
+    mode === 'exceeded-session' || mode === 'exceeded-session-chain';
 
   if (isExceededMode) {
     return (

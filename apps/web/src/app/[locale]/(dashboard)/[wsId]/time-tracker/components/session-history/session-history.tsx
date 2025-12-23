@@ -52,7 +52,7 @@ export function SessionHistory({
   wsId,
   sessions,
   categories,
-  workspace
+  workspace,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
   const { data: thresholdData, isLoading: isLoadingThreshold } =

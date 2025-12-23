@@ -25,7 +25,9 @@ export function DurationDisplay({ startTime, endTime }: DurationDisplayProps) {
         <Clock className="h-4 w-4" />
         <span>{t('duration.label')}</span>
         <span className="font-medium text-foreground">
-          {isInvalidRange ? t('duration.invalidRange') : formatDuration(duration)}
+          {isInvalidRange
+            ? t('duration.invalidRange')
+            : formatDuration(duration)}
         </span>
       </div>
     </div>
