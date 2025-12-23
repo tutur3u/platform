@@ -52,15 +52,33 @@ export const DraggableTaskItem = TaskItem.extend({
 // ============================================================================
 
 /**
- * Check if sourcePos is an ancestor of targetPos (for circular prevention).
+ * Check if source node is an ancestor of target node (for circular prevention).
  * Returns true if moving source to target would create a circular reference.
+ *
+ * @param $source - Resolved position inside the source node
+ * @param $target - Resolved position inside the target node
  */
-function isAncestorOf(
-  sourceStart: number,
-  sourceEnd: number,
-  targetPos: number
-): boolean {
-  return targetPos >= sourceStart && targetPos <= sourceEnd;
+function isAncestorOf($source: ResolvedPos, $target: ResolvedPos): boolean {
+  // Quick check: if target is shallower or at same depth, it can't be a descendant
+  if ($target.depth <= $source.depth) {
+    return false;
+  }
+
+  // Get the position before the source node (the node's start position)
+  const sourceNodePos = $source.before($source.depth);
+
+  // Traverse up from target to check if source is an ancestor
+  // Start from target's depth and go up to source's depth
+  for (let depth = $target.depth; depth > $source.depth; depth--) {
+    const ancestorPos = $target.before(depth);
+
+    // Check if this ancestor position matches the source node position
+    if (ancestorPos === sourceNodePos) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -191,26 +209,27 @@ export const ListItemDrag = Extension.create({
           const targetItemStart = targetPos;
           const targetItemEnd = targetPos + targetItem.nodeSize;
 
-          // Resolve positions for getting parent list type
-          const $source = doc.resolve(sourcePos + 1); // +1 to be inside the node
-          const $target = doc.resolve(targetPos + 1);
           // Prevent dropping on self
           if (sourceItemStart === targetItemStart) {
             return false;
           }
-          console.log('a');
+
+          // Resolve positions for getting parent list type and checking ancestry
+          const $source = doc.resolve(sourcePos + 1); // +1 to be inside the node
+          const $target = doc.resolve(targetPos + 1);
+
           // Prevent circular reference (dropping parent into its own child)
-          if (isAncestorOf(sourceItemStart, sourceItemEnd, targetItemStart)) {
+          if (isAncestorOf($source, $target)) {
             return false;
           }
-          console.log('a');
+
           // Get target list type for potential conversion
           const targetListType = getParentListType($target);
-          console.log('a');
+
           // Convert the source item if moving between different list types
           const sourceListType = getParentListType($source);
           let itemToInsert = sourceItem;
-          console.log('a');
+
           if (sourceListType !== targetListType) {
             itemToInsert = convertNodeToListType(
               sourceItem,
@@ -218,7 +237,6 @@ export const ListItemDrag = Extension.create({
               schema
             );
           }
-          console.log('a');
           if (!dispatch) {
             return true;
           }
@@ -287,7 +305,7 @@ export const ListItemDrag = Extension.create({
                     );
                   }
 
-                  dispatch(tr.scrollIntoView());
+                  dispatch(tr);
                   return true;
                 }
                 // Fallback: insert after target
@@ -317,7 +335,7 @@ export const ListItemDrag = Extension.create({
             tr.delete(adjustedSourceStart, adjustedSourceEnd);
           }
 
-          dispatch(tr.scrollIntoView());
+          dispatch(tr);
           return true;
         },
     };

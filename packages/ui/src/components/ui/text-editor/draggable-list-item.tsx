@@ -110,7 +110,7 @@ export function DraggableListItemView({
 
     if (Number.isNaN(sourcePos) || typeof targetPos !== 'number') return;
     if (sourcePos === targetPos) return;
-    console.log('finalDropZone');
+
     editor
       .chain()
       .focus()
