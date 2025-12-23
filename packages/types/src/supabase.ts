@@ -2900,6 +2900,7 @@ export type Database = {
           habit_id: string;
           id: string;
           occurrence_date: string;
+          scheduling_reason: string | null;
           updated_at: string | null;
         };
         Insert: {
@@ -2909,6 +2910,7 @@ export type Database = {
           habit_id: string;
           id?: string;
           occurrence_date: string;
+          scheduling_reason?: string | null;
           updated_at?: string | null;
         };
         Update: {
@@ -2918,6 +2920,7 @@ export type Database = {
           habit_id?: string;
           id?: string;
           occurrence_date?: string;
+          scheduling_reason?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
@@ -6696,6 +6699,7 @@ export type Database = {
           event_id: string;
           id: string;
           scheduled_minutes: number;
+          scheduling_reason: string | null;
           task_id: string;
           updated_at: string | null;
         };
@@ -6705,6 +6709,7 @@ export type Database = {
           event_id: string;
           id?: string;
           scheduled_minutes?: number;
+          scheduling_reason?: string | null;
           task_id: string;
           updated_at?: string | null;
         };
@@ -6714,6 +6719,7 @@ export type Database = {
           event_id?: string;
           id?: string;
           scheduled_minutes?: number;
+          scheduling_reason?: string | null;
           task_id?: string;
           updated_at?: string | null;
         };

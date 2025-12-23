@@ -487,7 +487,6 @@ export function RequestDetailModal({
                   imageError={imageUpload.imageError}
                   disabled={updateMutation.isPending}
                   canAddMore={imageUpload.canAddMoreImages}
-                  maxImages={5}
                   totalCount={imageUpload.totalImageCount}
                   fileInputRef={imageUpload.fileInputRef}
                   onDragOver={imageUpload.handleDragOver}
