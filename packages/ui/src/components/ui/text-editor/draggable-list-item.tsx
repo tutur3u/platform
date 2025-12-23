@@ -110,7 +110,7 @@ export function DraggableListItemView({
 
     if (Number.isNaN(sourcePos) || typeof targetPos !== 'number') return;
     if (sourcePos === targetPos) return;
-
+    console.log('finalDropZone');
     editor
       .chain()
       .focus()
@@ -132,8 +132,6 @@ export function DraggableListItemView({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      data-type={isTaskItem ? 'taskItem' : 'listItem'}
-      data-drop-zone={dropZone}
     >
       {/* Drag Handle */}
       <div
@@ -208,7 +206,7 @@ export function DraggableListItemView({
 
       {/* Drop indicator for nested */}
       {dropZone === 'nested' && (
-        <div className="pointer-events-none absolute inset-0 ml-6 rounded border-2 border-dynamic-blue border-dashed bg-dynamic-blue/20" />
+        <div className="pointer-events-none absolute inset-0 rounded border-2 border-dynamic-blue border-dashed bg-dynamic-blue/20" />
       )}
     </NodeViewWrapper>
   );
