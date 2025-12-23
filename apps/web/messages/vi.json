@@ -1399,6 +1399,9 @@
     "entries": "mục",
     "clear_filters": "Xóa",
     "refresh": "Làm mới",
+    "total_activities": "Tổng",
+    "today": "Hôm nay",
+    "filter_description": "Lọc nhật ký hoạt động theo bảng, loại hoặc trường",
     "on": "trên",
     "date": {
       "today": "Hôm nay",
@@ -1534,12 +1537,14 @@
     "task_restored": "đã khôi phục",
     "empty": {
       "title": "Không có hoạt động nào",
+      "no_results": "Không có hoạt động phù hợp",
       "with_filters": "Không có hoạt động nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.",
       "no_filters": "Các thay đổi công việc sẽ xuất hiện ở đây khi bạn bắt đầu cập nhật công việc."
     },
     "error": {
       "title": "Không thể tải nhật ký",
-      "description": "Vui lòng thử lại sau"
+      "description": "Vui lòng thử lại sau",
+      "retry": "Thử lại"
     },
     "view_diff": "Xem so sánh",
     "name_changes": "Thay đổi tên công việc",
@@ -4376,6 +4381,41 @@
     "cancel": "Hủy",
     "create_calendar": "Tạo lịch mới",
     "create": "Tạo"
+  },
+  "calendar_lab": {
+    "title": "Phòng thí nghiệm thuật toán",
+    "controls": "Điều khiển Lab",
+    "scenarios": "Kịch bản",
+    "data_source": "Nguồn dữ liệu",
+    "import_workspace": "Nhập từ không gian làm việc",
+    "randomize": "Ngẫu nhiên",
+    "select_preset": "Chọn kịch bản có sẵn...",
+    "tasks": "Công việc",
+    "habits": "Thói quen",
+    "visualization": "Trực quan hóa",
+    "heatmap": "Bản đồ nhiệt điểm số",
+    "heatmap_description": "Trực quan hóa điểm số phù hợp",
+    "select_item_to_score": "Chọn mục để chấm điểm...",
+    "execution": "Thực thi",
+    "run_algorithm": "Chạy thuật toán",
+    "tuning": "Tinh chỉnh trọng số",
+    "reset": "ĐẶT LẠI",
+    "habit_ideal_time": "Thời gian lý tưởng thói quen",
+    "habit_preference": "Ưu tiên thói quen",
+    "task_preference": "Ưu tiên công việc",
+    "task_base_urgency": "Độ khẩn cấp cơ bản",
+    "diff_mode": "Chế độ so sánh",
+    "highlight_changes": "Làm nổi bật thay đổi",
+    "set_baseline": "Đặt làm mốc so sánh",
+    "baseline_captured": "Đã ghi nhận mốc so sánh. Điều chỉnh trọng số và chạy lại để so sánh.",
+    "summary": "Tóm tắt",
+    "stats": "Thống kê mô phỏng",
+    "violations": "Vi phạm",
+    "no_results": "Chạy mô phỏng để xem kết quả.",
+    "log": "Nhật ký quyết định",
+    "hover_to_see_logic": "Di chuột qua sự kiện để xem logic sắp xếp.",
+    "decision_context": "Bối cảnh quyết định",
+    "slots_considered": "Các khung giờ đã xem xét"
   },
   "documents": {
     "documents": "Tài liệu",

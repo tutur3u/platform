@@ -24,7 +24,7 @@ Tuturuuu is a vertically integrated, all-in-one platform built on an open-source
 
 ### Core Applications
 *   **Tudo (Flagship):** A centralized task manager with real-time collaboration (live cursors, Google Docs-style editing) and deep integration into calendar and documentation.
-*   **TuPlan (Smart Calendar):** AI-driven auto-scheduling engine that slots tasks based on priority and deadlines. Two-way sync with Google Calendar.
+*   **TuPlan (Smart Calendar):** AI-driven auto-scheduling engine that slots tasks based on priority, streaks, energy levels, and buffer preferences. Supports "Locked Events" for immutable scheduling and two-way sync with Google Calendar.
 *   **TuMeet:** comprehensive meeting management integrating scheduling, agendas, transcriptions, and follow-ups.
 *   **TuChat & TuMail:** Integrated communication channels that keep conversations contextual and alongside the work.
 *   **TuDrive:** A unified, intelligent storage system for all digital assets.

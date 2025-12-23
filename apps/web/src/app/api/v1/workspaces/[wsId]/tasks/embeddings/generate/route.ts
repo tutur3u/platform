@@ -117,7 +117,7 @@ export async function POST(_: Request, { params }: Params) {
 
         // Generate embedding
         const { embedding } = await embed({
-          model: google.textEmbeddingModel('gemini-embedding-001'),
+          model: google.embeddingModel('gemini-embedding-001'),
           value: textForEmbedding,
           providerOptions: {
             google: {

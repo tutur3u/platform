@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Project Maintenance & Optimization
-*Link: [./conductor/tracks/maintenance_20251220/](./conductor/tracks/maintenance_20251220/)*
+## [x] Track: Add visualizations for the smart scheduling calendar algorithm
+*Link: [./conductor/tracks/calendar_lab_20251222/](./conductor/tracks/calendar_lab_20251222/)*

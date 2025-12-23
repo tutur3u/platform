@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle,
   Clock,
@@ -38,7 +39,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,

@@ -15,10 +15,6 @@ interface SheetInfo {
 }
 
 export class CsvCrawler extends BaseCrawler {
-  constructor(options?: { useProductionProxy?: boolean }) {
-    super(options);
-  }
-
   private async fetchCsvFile(url: string): Promise<string> {
     const response = await this.fetchWithProxy(url);
     if (!response.ok) {

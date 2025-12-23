@@ -240,7 +240,7 @@ export function DatasetCrawler({
         let data: any[][] | XLSX.WorkBook;
 
         if (file.name.toLowerCase().endsWith('.csv')) {
-          const csvCrawler = new CsvCrawler({ useProductionProxy: false });
+          const csvCrawler = new CsvCrawler();
           const result = await csvCrawler.crawl({
             url: '', // Not used for local files
             headerRow: 1,

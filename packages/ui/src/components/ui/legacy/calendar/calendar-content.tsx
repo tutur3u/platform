@@ -96,6 +96,7 @@ export const CalendarContent = ({
   enableHeader = true,
   externalState,
   extras,
+  overlay,
 }: {
   t: any;
   locale: string;
@@ -111,6 +112,7 @@ export const CalendarContent = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  overlay?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendarSettings();
@@ -596,7 +598,7 @@ export const CalendarContent = ({
         ) : view === 'agenda' && dates?.[0] ? (
           <AgendaView startDate={dates[0]} workspace={workspace} />
         ) : (
-          <CalendarViewWithTrail dates={dates} />
+          <CalendarViewWithTrail dates={dates} overlay={overlay} />
         )}
       </div>
 

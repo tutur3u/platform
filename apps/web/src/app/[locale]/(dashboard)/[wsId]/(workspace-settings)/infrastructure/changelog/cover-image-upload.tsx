@@ -75,7 +75,7 @@ export function CoverImageUpload({
         setIsUploading(false);
       }
     },
-    [onUpload, onChange]
+    [onUpload, onChange, validateFile]
   );
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {

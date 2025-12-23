@@ -20,6 +20,7 @@ export const SmartCalendar = ({
   experimentalGoogleToken,
   externalState,
   extras,
+  overlay,
   initialSettings,
   onSaveSettings,
 }: {
@@ -39,6 +40,7 @@ export const SmartCalendar = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  overlay?: React.ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
@@ -54,6 +56,7 @@ export const SmartCalendar = ({
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       experimentalGoogleToken={experimentalGoogleToken}
+      readOnly={disabled}
     >
       <CalendarSettingsProvider
         initialSettings={initialSettings}
@@ -68,6 +71,7 @@ export const SmartCalendar = ({
           experimentalGoogleToken={experimentalGoogleToken}
           externalState={externalState}
           extras={extras}
+          overlay={overlay}
         />
       </CalendarSettingsProvider>
     </CalendarProvider>

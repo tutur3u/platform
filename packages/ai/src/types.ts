@@ -23,5 +23,5 @@ export interface NovaSubmissionTestCase {
   output: string;
   matched: boolean;
   confidence?: number;
-  reasoning?: string;
+  reasoningText?: string;
 }

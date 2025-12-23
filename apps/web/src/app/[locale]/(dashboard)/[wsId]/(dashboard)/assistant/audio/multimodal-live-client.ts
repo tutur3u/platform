@@ -509,7 +509,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         console.log('[Live Client] Sending video frame:', {
           mimeType: chunk.mimeType,
           dataLength: chunk.data.length,
-          dataPreview: chunk.data.slice(0, 50) + '...',
+          dataPreview: `${chunk.data.slice(0, 50)}...`,
         });
         this.session.sendRealtimeInput({
           video: {

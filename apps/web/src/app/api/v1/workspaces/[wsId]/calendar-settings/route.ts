@@ -19,6 +19,8 @@ const calendarSettingsSchema = z.object({
   first_day_of_week: z
     .enum(['auto', 'sunday', 'monday', 'saturday'])
     .optional(),
+  energy_profile: z.string().optional(),
+  scheduling_settings: z.record(z.string(), z.any()).optional(),
 });
 
 const normalizeWorkspaceId = (wsIdParam: string, userId: string): string => {
@@ -62,7 +64,9 @@ export async function GET(_: NextRequest, { params }: Params) {
     // Fetch workspace calendar settings
     const { data: workspace, error } = await supabase
       .from('workspaces')
-      .select('timezone, first_day_of_week')
+      .select(
+        'timezone, first_day_of_week, energy_profile, scheduling_settings'
+      )
       .eq('id', normalizedWsId)
       .single();
 
@@ -77,6 +81,11 @@ export async function GET(_: NextRequest, { params }: Params) {
     return NextResponse.json({
       timezone: workspace.timezone || 'auto',
       first_day_of_week: workspace.first_day_of_week || 'auto',
+      energy_profile: workspace.energy_profile || 'morning_person',
+      scheduling_settings: workspace.scheduling_settings || {
+        min_buffer: 5,
+        preferred_buffer: 15,
+      },
     });
   } catch (error) {
     console.error('Error in workspace calendar settings API:', error);
@@ -129,6 +138,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (validatedData.first_day_of_week !== undefined) {
       updatePayload.first_day_of_week = validatedData.first_day_of_week;
     }
+    if (validatedData.energy_profile !== undefined) {
+      updatePayload.energy_profile = validatedData.energy_profile;
+    }
+    if (validatedData.scheduling_settings !== undefined) {
+      updatePayload.scheduling_settings = validatedData.scheduling_settings;
+    }
 
     if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json(
@@ -142,7 +157,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .from('workspaces')
       .update(updatePayload)
       .eq('id', normalizedWsId)
-      .select('timezone, first_day_of_week')
+      .select(
+        'timezone, first_day_of_week, energy_profile, scheduling_settings'
+      )
       .single();
 
     if (error) {
@@ -156,6 +173,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({
       timezone: data.timezone || 'auto',
       first_day_of_week: data.first_day_of_week || 'auto',
+      energy_profile: data.energy_profile || 'morning_person',
+      scheduling_settings: data.scheduling_settings || {
+        min_buffer: 5,
+        preferred_buffer: 15,
+      },
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

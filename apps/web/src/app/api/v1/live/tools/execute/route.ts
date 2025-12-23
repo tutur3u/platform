@@ -397,7 +397,7 @@ async function searchTasks(
 
   // Generate embedding for the query
   const { embedding } = await embed({
-    model: google.textEmbeddingModel('gemini-embedding-001'),
+    model: google.embeddingModel('gemini-embedding-001'),
     value: expandedQuery,
     providerOptions: {
       google: {

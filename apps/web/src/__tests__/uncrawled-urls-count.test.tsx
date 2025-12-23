@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import UncrawledUrlsCount from '@/app/[locale]/(dashboard)/[wsId]/crawlers/uncrawled-urls-count';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import UncrawledUrlsCount from '@/app/[locale]/(dashboard)/[wsId]/crawlers/uncrawled-urls-count';
 
 // Mock the Link component since it's used in the component
 vi.mock('next/link', () => ({

@@ -493,7 +493,7 @@ export default function LogsTimeline({
   }
 
   return (
-    <div className={cn('space-y-8', className)}>
+    <div className={cn('space-y-8 overflow-hidden', className)}>
       {groupedEntries.map((group, groupIndex) => (
         <motion.div
           key={group.date}
@@ -503,12 +503,13 @@ export default function LogsTimeline({
           className="space-y-3"
         >
           {/* Date header */}
-          <div className="sticky top-0 z-10 flex items-center gap-3 py-2 backdrop-blur">
-            <div className="h-px flex-1 bg-border" />
-            <span className="rounded-full bg-muted px-3 py-1 font-medium text-muted-foreground text-xs">
-              {group.dateLabel}
-            </span>
-            <div className="h-px flex-1 bg-border" />
+          <div className="sticky top-0 z-10 flex items-center gap-3 py-2 backdrop-blur-sm">
+            <div className="h-px flex-1 bg-border/50" />
+            <div className="flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 shadow-sm">
+              <Calendar className="h-3 w-3 text-muted-foreground" />
+              <span className="font-medium text-xs">{group.dateLabel}</span>
+            </div>
+            <div className="h-px flex-1 bg-border/50" />
           </div>
 
           {/* Entries for this date */}
@@ -639,7 +640,9 @@ function RapidChangeGroupEntry({
             aggregated_items: aggregatedItems,
           });
 
-          sameTypeEntries.forEach((e) => processed.add(e.id));
+          sameTypeEntries.forEach((e) => {
+            processed.add(e.id);
+          });
           continue;
         }
       }
@@ -699,13 +702,13 @@ function RapidChangeGroupEntry({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group relative overflow-hidden rounded-lg border bg-card transition-all hover:border-foreground/20 hover:shadow-sm"
+      className="group relative overflow-hidden rounded-lg border border-l-2 border-l-dynamic-indigo bg-card transition-all hover:bg-accent/50"
     >
       {/* Header - clickable to expand */}
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full gap-3 p-4 text-left"
+        className="flex w-full gap-3 overflow-hidden p-4 text-left"
       >
         {/* Icon indicator */}
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-dynamic-indigo/10">
@@ -737,11 +740,11 @@ function RapidChangeGroupEntry({
             </Badge>
 
             {/* Task link */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Tooltip>
                 <TooltipTrigger asChild>
                   {group.task_permanently_deleted ? (
-                    <span className="max-w-[150px] truncate font-medium text-muted-foreground text-sm line-through md:max-w-[250px]">
+                    <span className="wrap-break-word line-clamp-1 max-w-37.5 font-medium text-muted-foreground text-sm line-through md:max-w-62.5">
                       {group.task_name}
                     </span>
                   ) : (
@@ -749,7 +752,7 @@ function RapidChangeGroupEntry({
                       href={`/${wsId}/tasks/${group.task_id}`}
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
-                        'max-w-[150px] truncate font-medium text-sm hover:underline md:max-w-[250px]',
+                        'wrap-break-word line-clamp-1 max-w-37.5 font-medium text-sm hover:underline md:max-w-62.5',
                         group.task_deleted_at
                           ? 'text-muted-foreground line-through'
                           : 'text-foreground'
@@ -762,7 +765,7 @@ function RapidChangeGroupEntry({
                 {group.task_name.length > 25 && (
                   <TooltipContent
                     side="bottom"
-                    className="wrap-break-word max-w-md text-sm"
+                    className="wrap-break-word line-clamp-1 max-w-md text-sm"
                   >
                     {group.task_name}
                   </TooltipContent>
@@ -798,10 +801,10 @@ function RapidChangeGroupEntry({
                       <Link
                         href={`/${wsId}/tasks/boards/${group.board_id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="group/board inline-flex max-w-[100px] items-center gap-1 text-xs hover:text-foreground md:max-w-[120px]"
+                        className="group/board inline-flex items-center gap-1 text-xs hover:text-foreground"
                       >
                         <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
-                        <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                        <span className="wrap-break-word line-clamp-1 text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
                           {group.board_name}
                         </span>
                         <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
@@ -1120,7 +1123,10 @@ function AggregatedActionEntry({
   index,
   dateLocale,
 }: AggregatedActionEntryProps) {
-  const { icon, color } = getChangeIcon(group.change_type, null);
+  const { icon, color, borderColor } = getChangeIconWithBorder(
+    group.change_type,
+    null
+  );
   const timeAgo = formatDistanceToNow(new Date(group.changed_at), {
     addSuffix: true,
     locale: dateLocale,
@@ -1176,22 +1182,18 @@ function AggregatedActionEntry({
 
     if (isAssignee) {
       return (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {items.map((item, i) => (
-            <Tooltip key={i}>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {items.slice(0, 5).map((item) => (
+            <Tooltip key={item.name}>
               <TooltipTrigger asChild>
-                <Badge
-                  variant={isRemoved ? 'outline' : 'secondary'}
+                <div
                   className={cn(
-                    'cursor-default gap-1.5 text-xs',
-                    isRemoved && 'opacity-70'
+                    'flex items-center gap-1.5 rounded-full bg-muted/50 px-2 py-0.5',
+                    isRemoved && 'line-through opacity-70'
                   )}
                 >
                   <Avatar className="h-4 w-4">
-                    <AvatarImage
-                      src={item.avatar_url || undefined}
-                      alt={item.name}
-                    />
+                    <AvatarImage src={item.avatar_url} alt={item.name} />
                     <AvatarFallback className="text-[8px]">
                       {item.name
                         .split(' ')
@@ -1201,73 +1203,66 @@ function AggregatedActionEntry({
                         .slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className={cn(isRemoved && 'line-through')}>
+                  <span className="wrap-break-word line-clamp-1 max-w-25 text-xs md:max-w-37.5">
                     {item.name}
                   </span>
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                <div className="font-medium">{item.name}</div>
-                <div className="text-muted-foreground">
-                  {isRemoved
-                    ? t('unassigned_at', { defaultValue: 'Unassigned at' })
-                    : t('assigned_at', { defaultValue: 'Assigned at' })}
-                  : {formatItemDate(item.changed_at)}
                 </div>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs">
+                {isRemoved
+                  ? t('unassigned_at', { defaultValue: 'Unassigned at' })
+                  : t('assigned_at', { defaultValue: 'Assigned at' })}
+                : {formatItemDate(item.changed_at)}
               </TooltipContent>
             </Tooltip>
           ))}
+          {items.length > 5 && (
+            <span className="text-muted-foreground text-xs">
+              +{items.length - 5}
+            </span>
+          )}
         </div>
       );
     }
 
     if (isLabel) {
       return (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {items.map((item, i) => (
-            <Tooltip key={i}>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {items.slice(0, 5).map((item) => (
+            <Tooltip key={item.name}>
               <TooltipTrigger asChild>
                 <Badge
-                  variant={isRemoved ? 'outline' : 'secondary'}
+                  variant="secondary"
                   className={cn(
-                    'cursor-default gap-1.5 text-xs',
-                    isRemoved && 'opacity-70'
+                    'gap-1 text-[11px]',
+                    isRemoved && 'line-through opacity-70'
                   )}
                   style={
                     item.color
-                      ? isRemoved
-                        ? { borderColor: `${item.color}60`, color: item.color }
-                        : {
-                            backgroundColor: `${item.color}20`,
-                            borderColor: `${item.color}40`,
-                            color: item.color,
-                          }
+                      ? {
+                          backgroundColor: `${item.color}20`,
+                          color: item.color,
+                        }
                       : undefined
                   }
                 >
-                  {item.color && (
-                    <span
-                      className={cn(
-                        'h-2 w-2 rounded-full',
-                        isRemoved && 'opacity-60'
-                      )}
-                      style={{ backgroundColor: item.color }}
-                    />
-                  )}
+                  <Tag className="h-2.5 w-2.5" />
                   {item.name}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                <div className="font-medium">{item.name}</div>
-                <div className="text-muted-foreground">
-                  {isRemoved
-                    ? t('removed_at', { defaultValue: 'Removed at' })
-                    : t('added_at', { defaultValue: 'Added at' })}
-                  : {formatItemDate(item.changed_at)}
-                </div>
+              <TooltipContent className="text-xs">
+                {isRemoved
+                  ? t('removed_at', { defaultValue: 'Removed at' })
+                  : t('added_at', { defaultValue: 'Added at' })}
+                : {formatItemDate(item.changed_at)}
               </TooltipContent>
             </Tooltip>
           ))}
+          {items.length > 5 && (
+            <span className="text-muted-foreground text-xs">
+              +{items.length - 5}
+            </span>
+          )}
         </div>
       );
     }
@@ -1280,7 +1275,10 @@ function AggregatedActionEntry({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group relative flex gap-3 rounded-lg border bg-card p-4 transition-all hover:border-foreground/20 hover:shadow-sm"
+      className={cn(
+        'group relative flex gap-3 overflow-hidden rounded-lg border border-l-2 bg-card p-4 transition-all hover:bg-accent/50',
+        borderColor
+      )}
     >
       {/* Icon indicator */}
       <div
@@ -1316,18 +1314,18 @@ function AggregatedActionEntry({
           </span>
 
           {/* Task link */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Tooltip>
               <TooltipTrigger asChild>
                 {group.task_permanently_deleted ? (
-                  <span className="max-w-[200px] truncate font-medium text-muted-foreground text-sm line-through md:max-w-[300px]">
+                  <span className="wrap-break-word line-clamp-1 max-w-50 font-medium text-muted-foreground text-sm line-through md:max-w-75">
                     {group.task_name}
                   </span>
                 ) : (
                   <Link
                     href={`/${wsId}/tasks/${group.task_id}`}
                     className={cn(
-                      'max-w-[200px] truncate font-medium text-sm hover:underline md:max-w-[300px]',
+                      'wrap-break-word line-clamp-1 max-w-50 font-medium text-sm hover:underline md:max-w-75',
                       group.task_deleted_at
                         ? 'text-muted-foreground line-through'
                         : 'text-foreground'
@@ -1340,7 +1338,7 @@ function AggregatedActionEntry({
               {group.task_name.length > 30 && (
                 <TooltipContent
                   side="bottom"
-                  className="wrap-break-word max-w-md text-sm"
+                  className="wrap-break-word line-clamp-1 max-w-md text-sm"
                 >
                   {group.task_name}
                 </TooltipContent>
@@ -1375,10 +1373,10 @@ function AggregatedActionEntry({
                   <TooltipTrigger asChild>
                     <Link
                       href={`/${wsId}/tasks/boards/${group.board_id}`}
-                      className="group/board inline-flex max-w-[120px] items-center gap-1 text-xs hover:text-foreground md:max-w-[150px]"
+                      className="group/board inline-flex items-center gap-1 text-xs hover:text-foreground"
                     >
                       <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                      <span className="text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
                         {group.board_name}
                       </span>
                       <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
@@ -1435,7 +1433,7 @@ function TimelineEntry({
   estimationType,
   isLatestDeletion,
 }: TimelineEntryProps) {
-  const { icon, color } = getChangeIcon(
+  const { icon, color, borderColor } = getChangeIconWithBorder(
     entry.change_type,
     entry.field_name,
     entry.new_value
@@ -1473,7 +1471,8 @@ function TimelineEntry({
         'group relative flex gap-3 rounded-lg transition-all',
         compact
           ? 'bg-muted/30 p-3'
-          : 'border bg-card p-4 hover:border-foreground/20 hover:shadow-sm'
+          : 'border border-l-2 bg-card p-4 hover:bg-accent/50',
+        !compact && borderColor
       )}
     >
       {/* Icon indicator */}
@@ -1519,18 +1518,18 @@ function TimelineEntry({
 
           {/* Task link - hidden in compact mode since parent shows it */}
           {!compact && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Tooltip>
                 <TooltipTrigger asChild>
                   {entry.task_permanently_deleted ? (
-                    <span className="max-w-[200px] truncate font-medium text-muted-foreground text-sm line-through md:max-w-[300px]">
+                    <span className="wrap-break-word line-clamp-1 max-w-50 font-medium text-muted-foreground text-sm line-through md:max-w-75">
                       {entry.task_name}
                     </span>
                   ) : (
                     <Link
                       href={`/${wsId}/tasks/${entry.task_id}`}
                       className={cn(
-                        'max-w-[200px] truncate font-medium text-sm hover:underline md:max-w-[300px]',
+                        'wrap-break-word line-clamp-1 max-w-50 font-medium text-sm hover:underline md:max-w-75',
                         entry.task_deleted_at
                           ? 'text-muted-foreground line-through'
                           : 'text-foreground'
@@ -1543,7 +1542,7 @@ function TimelineEntry({
                 {entry.task_name.length > 30 && (
                   <TooltipContent
                     side="bottom"
-                    className="wrap-break-word max-w-md text-sm"
+                    className="wrap-break-word line-clamp-1 max-w-md text-sm"
                   >
                     {entry.task_name}
                   </TooltipContent>
@@ -1578,10 +1577,10 @@ function TimelineEntry({
                     <TooltipTrigger asChild>
                       <Link
                         href={`/${wsId}/tasks/boards/${entry.board_id}`}
-                        className="group/board inline-flex max-w-[120px] items-center gap-1 text-xs hover:text-foreground md:max-w-[150px]"
+                        className="group/board inline-flex items-center gap-1 text-xs hover:text-foreground"
                       >
                         <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
-                        <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
+                        <span className="text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
                           {entry.board_name}
                         </span>
                         <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/board:opacity-100" />
@@ -1653,6 +1652,34 @@ function TimelineEntry({
       </div>
     </motion.div>
   );
+}
+
+/** Returns icon, background color, and left border color for a change type */
+function getChangeIconWithBorder(
+  changeType: string,
+  fieldName?: string | null,
+  newValue?: unknown
+): { icon: React.ReactNode; color: string; borderColor: string } {
+  const base = getChangeIcon(changeType, fieldName, newValue);
+
+  // Map bg colors to border colors
+  const borderColorMap: Record<string, string> = {
+    'bg-dynamic-blue/10': 'border-l-dynamic-blue',
+    'bg-dynamic-purple/10': 'border-l-dynamic-purple',
+    'bg-dynamic-orange/10': 'border-l-dynamic-orange',
+    'bg-dynamic-red/10': 'border-l-dynamic-red',
+    'bg-dynamic-cyan/10': 'border-l-dynamic-cyan',
+    'bg-dynamic-pink/10': 'border-l-dynamic-pink',
+    'bg-dynamic-indigo/10': 'border-l-dynamic-indigo',
+    'bg-dynamic-green/10': 'border-l-dynamic-green',
+    'bg-dynamic-yellow/10': 'border-l-dynamic-yellow',
+    'bg-muted': 'border-l-muted-foreground/30',
+  };
+
+  return {
+    ...base,
+    borderColor: borderColorMap[base.color] || 'border-l-border',
+  };
 }
 
 function getChangeIcon(
@@ -1928,41 +1955,41 @@ function getChangeDescription(
         : t('value.empty', { defaultValue: 'Empty' });
 
       const details = (
-        <>
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-muted-foreground line-through">
             {oldSummary}
           </span>
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
           <span className="font-medium">{newSummary}</span>
-        </>
+        </div>
       );
 
       return { action, details, showDescriptionDiff: true };
     }
 
-    // For name changes, show truncated values with diff button for long names
+    // For name changes, show line-clamp-1 wrap-break-wordd values with diff button for long names
     if (entry.field_name === 'name') {
       const oldName = String(entry.old_value || '');
       const newName = String(entry.new_value || '');
       const isLongChange = oldName.length > 40 || newName.length > 40;
 
       const oldSummary =
-        oldName.length > 40 ? oldName.slice(0, 37) + '...' : oldName;
+        oldName.length > 40 ? `${oldName.slice(0, 37)}...` : oldName;
       const newSummary =
-        newName.length > 40 ? newName.slice(0, 37) + '...' : newName;
+        newName.length > 40 ? `${newName.slice(0, 37)}...` : newName;
 
       const details = (
         <>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="max-w-[150px] truncate text-muted-foreground line-through">
+              <span className="wrap-break-word line-clamp-1 max-w-37.5 text-muted-foreground line-through">
                 {oldSummary}
               </span>
             </TooltipTrigger>
             {oldName.length > 40 && (
               <TooltipContent
                 side="bottom"
-                className="wrap-break-word max-w-md"
+                className="wrap-break-word max-w-md truncate"
               >
                 {oldName}
               </TooltipContent>
@@ -1971,14 +1998,14 @@ function getChangeDescription(
           <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="max-w-[150px] truncate font-medium">
+              <span className="wrap-break-word line-clamp-1 max-w-37.5 font-medium">
                 {newSummary}
               </span>
             </TooltipTrigger>
             {newName.length > 40 && (
               <TooltipContent
                 side="bottom"
-                className="wrap-break-word max-w-md"
+                className="wrap-break-word max-w-md truncate"
               >
                 {newName}
               </TooltipContent>
@@ -2031,11 +2058,11 @@ function getChangeDescription(
         t('value.unknown_column', { defaultValue: 'Unknown' });
 
       const details = (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="outline" className="text-xs opacity-70">
             {oldListName}
           </Badge>
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
           <Badge variant="secondary" className="text-xs">
             {newListName}
           </Badge>

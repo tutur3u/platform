@@ -54,6 +54,7 @@ import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
+import { defaultSmartSchedulingData } from './calendar/smart-scheduling-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import MembersSettings from './workspace/members-settings';
@@ -390,6 +391,18 @@ export function SettingsDialog({
                         timezone: {
                           timezone: workspace.timezone || 'auto',
                           showSecondaryTimezone: false,
+                        },
+                        smartScheduling: {
+                          ...defaultSmartSchedulingData,
+                          energyProfile:
+                            (workspace.energy_profile as any) ||
+                            'morning_person',
+                          minBuffer:
+                            (workspace.scheduling_settings as any)
+                              ?.min_buffer || 5,
+                          preferredBuffer:
+                            (workspace.scheduling_settings as any)
+                              ?.preferred_buffer || 15,
                         },
                       }
                     : undefined

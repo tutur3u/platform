@@ -227,6 +227,7 @@ export function scheduleWebTask(
       task_id: task.id,
       partNumber: e.partNumber,
       totalParts: e.totalParts,
+      reason: e.reason,
     })),
     totalScheduledMinutes: existingScheduledMinutes + totalScheduledMinutes,
     message:
@@ -290,6 +291,7 @@ export function scheduleWebTasks(
         task_id: task.id,
         partNumber: e.partNumber,
         totalParts: e.totalParts,
+        reason: e.reason,
       })),
       totalScheduledMinutes: existingScheduledMinutes + totalScheduledMinutes,
       message:

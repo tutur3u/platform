@@ -101,11 +101,11 @@ function extractFilename(urlOrPath: string): string {
     const filename = pathname.split('/').pop() || pathname;
     // Decode and truncate if too long
     const decoded = decodeURIComponent(filename);
-    return decoded.length > 40 ? decoded.slice(0, 37) + '...' : decoded;
+    return decoded.length > 40 ? `${decoded.slice(0, 37)}...` : decoded;
   } catch {
     // Not a valid URL, treat as path
     const filename = urlOrPath.split('/').pop() || urlOrPath;
-    return filename.length > 40 ? filename.slice(0, 37) + '...' : filename;
+    return filename.length > 40 ? `${filename.slice(0, 37)}...` : filename;
   }
 }
 

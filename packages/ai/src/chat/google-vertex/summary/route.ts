@@ -53,7 +53,7 @@ export async function PATCH(req: Request) {
     if (messages[messages.length - 1]?.role === 'user')
       return new Response('Cannot summarize user message', { status: 400 });
 
-    const aiMessages = convertToModelMessages(messages);
+    const aiMessages = await convertToModelMessages(messages);
 
     const result = await generateText({
       model: vertexModel,
