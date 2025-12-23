@@ -9,7 +9,17 @@ import { useQuery } from '@tanstack/react-query';
  *   - 0: All entries require approval
  *   - number > 0: Entries older than this many days require approval
  */
-export function useWorkspaceTimeThreshold(wsId: string | null) {
+interface UseWorkspaceTimeThresholdOptions {
+  /** If false, skip fetching. Default is true. */
+  enabled?: boolean;
+}
+
+export function useWorkspaceTimeThreshold(
+  wsId: string | null,
+  options: UseWorkspaceTimeThresholdOptions = {}
+) {
+  const { enabled = true } = options;
+
   return useQuery({
     queryKey: ['workspace-time-threshold', wsId],
     queryFn: async () => {
@@ -23,7 +33,7 @@ export function useWorkspaceTimeThreshold(wsId: string | null) {
         threshold: typeof threshold === 'number' ? threshold : null,
       };
     },
-    enabled: !!wsId,
+    enabled: !!wsId && enabled,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 }

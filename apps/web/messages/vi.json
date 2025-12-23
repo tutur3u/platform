@@ -7632,6 +7632,10 @@
       "description": "Quản lý trình theo dõi thời gian trong không gian làm việc của bạn."
     },
     "requests": {
+      "tabs": {
+        "all": "Tất cả yêu cầu",
+        "my": "Yêu cầu của tôi"
+      },
       "title": "Yêu Cầu Theo Dõi Thời Gian",
       "description": "Xem xét và phê duyệt yêu cầu theo dõi thời gian từ các thành viên trong nhóm",
       "filters": {
@@ -7640,13 +7644,15 @@
         "status": "Trạng Thái",
         "user": "Người Dùng",
         "clearFilters": "Xóa Bộ Lọc",
-        "allUsers": "Tất Cả Người Dùng"
+        "allUsers": "Tất Cả Người Dùng",
+        "loadingUsers": "Đang tải danh sách người dùng..."
       },
       "status": {
         "all": "Tất Cả",
         "pending": "Đang Chờ",
         "approved": "Đã Duyệt",
-        "rejected": "Đã Từ Chối"
+        "rejected": "Đã Từ Chối",
+        "needs_info": "Cần Thêm Thông Tin"
       },
       "list": {
         "title": "Yêu Cầu",
@@ -7657,11 +7663,13 @@
         "noRequestsDefault": "Chưa có yêu cầu theo dõi thời gian nào được gửi.",
         "duration": "{hours}h {minutes}m",
         "task": "Nhiệm vụ: {name}",
-        "attachments": "{count} hình ảnh{plural}",
+        "attachments": "{count} hình ảnh",
         "approvedBy": "Được phê duyệt bởi {name}",
         "approvedOn": "vào {date}",
         "rejectedBy": "Bị từ chối bởi {name}",
         "rejectedOn": "vào {date}",
+        "needsInfoBy": "Yêu cầu thêm thông tin bởi {name}",
+        "needsInfoOn": "vào {date}",
         "loading": "Đang tải yêu cầu...",
         "error": "Không thể tải yêu cầu"
       },
@@ -7690,14 +7698,58 @@
         "nextImage": "Tiếp theo",
         "unknownUser": "Người Dùng Không Xác Định",
         "approvedDate": "Được phê duyệt bởi {name} vào {date}",
-        "rejectedDate": "Bị từ chối bởi {name} vào {date}"
+        "rejectedDate": "Bị từ chối bởi {name} vào {date}",
+        "requestNeedsInfo": "Yêu Cầu Thêm Thông Tin",
+        "needsInfoDate": "Được yêu cầu bởi {name} vào {date}",
+        "needsInfoReason": "Thông Tin Được Yêu Cầu:",
+        "requestInfoButton": "Yêu Cầu Thêm Thông Tin",
+        "needsInfoReasonLabel": "Bạn cần thông tin gì?",
+        "needsInfoReasonPlaceholder": "Vui lòng mô tả thông tin bổ sung cần thiết...",
+        "needsInfoReasonRequired": "Vui lòng cung cấp lý do yêu cầu thêm thông tin",
+        "confirmRequestInfo": "Yêu Cầu Thông Tin",
+        "resubmitButton": "Gửi Lại Yêu Cầu",
+        "editButton": "Chỉnh Sửa Yêu Cầu",
+        "saveButton": "Lưu Thay Đổi",
+        "cancelEditButton": "Hủy",
+        "titleLabel": "Tiêu Đề",
+        "descriptionLabel": "Mô Tả",
+        "addMoreImages": "Thêm Hình Ảnh ({current}/{max})",
+        "existingImage": "Hiện Tại",
+        "newImage": "Mới"
+      },
+      "comments": {
+        "title": "Bình Luận",
+        "addComment": "Thêm bình luận...",
+        "postComment": "Gửi Bình Luận",
+        "sendShortcut": "Ctrl + Enter để gửi",
+        "editComment": "Chỉnh Sửa Bình Luận",
+        "saveComment": "Lưu",
+        "cancelEdit": "Hủy",
+        "deleteComment": "Xóa Bình Luận",
+        "deleteConfirm": "Bạn có chắc chắn muốn xóa bình luận này?",
+        "noComments": "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!",
+        "commentPosted": "Đã đăng bình luận",
+        "commentUpdated": "Đã cập nhật bình luận",
+        "commentDeleted": "Đã xóa bình luận",
+        "commentFailed": "Không thể đăng bình luận",
+        "editExpired": "Chỉ có thể chỉnh sửa trong vòng 15 phút",
+        "deleteExpired": "Chỉ có thể xóa trong vòng 15 phút",
+        "justNow": "vừa xong",
+        "loading": "Đang tải bình luận"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
         "approveFailed": "Không thể phê duyệt yêu cầu",
         "rejectSuccess": "Yêu cầu theo dõi thời gian đã bị từ chối",
         "rejectFailed": "Không thể từ chối yêu cầu",
-        "loadImagesFailed": "Không thể tải hình ảnh"
+        "requestInfoSuccess": "Đã yêu cầu thêm thông tin thành công",
+        "requestInfoFailed": "Không thể yêu cầu thêm thông tin",
+        "resubmitSuccess": "Đã gửi lại yêu cầu để phê duyệt thành công",
+        "resubmitFailed": "Không thể gửi lại yêu cầu",
+        "loadImagesFailed": "Không thể tải hình ảnh",
+        "updateSuccess": "Đã cập nhật yêu cầu thành công",
+        "updateFailed": "Không thể cập nhật yêu cầu",
+        "deleteFailed": "Không thể xóa bình luận"
       },
       "settings": {
         "button": "Cài Đặt",
@@ -7987,7 +8039,9 @@
         "dropImages": "Thả hình ảnh vào đây",
         "clickToUpload": "Nhấp để tải lên hoặc kéo thả",
         "imageFormats": "PNG, JPG, GIF hoặc WebP tối đa 1MB mỗi tệp",
-        "proofImageAlt": "Hình ảnh bằng chứng {number}"
+        "proofImageAlt": "Hình ảnh bằng chứng",
+        "existingImage": "Hiện Tại",
+        "newImage": "Mới"
       },
       "presets": {
         "title": "Cài Đặt Nhanh",

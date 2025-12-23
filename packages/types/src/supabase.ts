@@ -2900,6 +2900,7 @@ export type Database = {
           habit_id: string;
           id: string;
           occurrence_date: string;
+          scheduling_reason: string | null;
           updated_at: string | null;
         };
         Insert: {
@@ -2909,6 +2910,7 @@ export type Database = {
           habit_id: string;
           id?: string;
           occurrence_date: string;
+          scheduling_reason?: string | null;
           updated_at?: string | null;
         };
         Update: {
@@ -2918,6 +2920,7 @@ export type Database = {
           habit_id?: string;
           id?: string;
           occurrence_date?: string;
+          scheduling_reason?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
@@ -6696,6 +6699,7 @@ export type Database = {
           event_id: string;
           id: string;
           scheduled_minutes: number;
+          scheduling_reason: string | null;
           task_id: string;
           updated_at: string | null;
         };
@@ -6705,6 +6709,7 @@ export type Database = {
           event_id: string;
           id?: string;
           scheduled_minutes?: number;
+          scheduling_reason?: string | null;
           task_id: string;
           updated_at?: string | null;
         };
@@ -6714,6 +6719,7 @@ export type Database = {
           event_id?: string;
           id?: string;
           scheduled_minutes?: number;
+          scheduling_reason?: string | null;
           task_id?: string;
           updated_at?: string | null;
         };
@@ -8229,6 +8235,69 @@ export type Database = {
           },
         ];
       };
+      time_tracking_request_comments: {
+        Row: {
+          content: string;
+          created_at: string;
+          id: string;
+          request_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          id?: string;
+          request_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          request_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_request_comments_request_id_fkey';
+            columns: ['request_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_requests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_comments_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_comments_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_comments_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_comments_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       time_tracking_requests: {
         Row: {
           approval_status: Database['public']['Enums']['time_tracking_request_status'];
@@ -8243,6 +8312,9 @@ export type Database = {
           id: string;
           images: string[] | null;
           linked_session_id: string | null;
+          needs_info_reason: string | null;
+          needs_info_requested_at: string | null;
+          needs_info_requested_by: string | null;
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
@@ -8266,6 +8338,9 @@ export type Database = {
           id: string;
           images?: string[] | null;
           linked_session_id?: string | null;
+          needs_info_reason?: string | null;
+          needs_info_requested_at?: string | null;
+          needs_info_requested_by?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
@@ -8289,6 +8364,9 @@ export type Database = {
           id?: string;
           images?: string[] | null;
           linked_session_id?: string | null;
+          needs_info_reason?: string | null;
+          needs_info_requested_at?: string | null;
+          needs_info_requested_by?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
@@ -8354,6 +8432,34 @@ export type Database = {
             columns: ['linked_session_id'];
             isOneToOne: false;
             referencedRelation: 'time_tracking_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_needs_info_requested_by_fkey';
+            columns: ['needs_info_requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_needs_info_requested_by_fkey';
+            columns: ['needs_info_requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_needs_info_requested_by_fkey';
+            columns: ['needs_info_requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_needs_info_requested_by_fkey';
+            columns: ['needs_info_requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
@@ -15234,6 +15340,10 @@ export type Database = {
         Args: { p_indicator_id: string };
         Returns: boolean;
       };
+      can_view_request_comments: {
+        Args: { p_request_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       check_email_blocked: { Args: { p_email: string }; Returns: boolean };
       check_email_bounce_status: {
         Args: { p_email_hash: string; p_window_days?: number };
@@ -16838,6 +16948,7 @@ export type Database = {
         Args: {
           p_action: string;
           p_bypass_rules?: boolean;
+          p_needs_info_reason?: string;
           p_rejection_reason?: string;
           p_request_id: string;
           p_workspace_id: string;
@@ -17020,7 +17131,11 @@ export type Database = {
       task_priority: 'low' | 'normal' | 'high' | 'critical';
       task_relationship_type: 'parent_child' | 'blocks' | 'related';
       time_of_day_preference: 'morning' | 'afternoon' | 'evening' | 'night';
-      time_tracking_request_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      time_tracking_request_status:
+        | 'PENDING'
+        | 'APPROVED'
+        | 'REJECTED'
+        | 'NEEDS_INFO';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
         | 'gemini-2.5-flash'
@@ -17604,7 +17719,12 @@ export const Constants = {
       task_priority: ['low', 'normal', 'high', 'critical'],
       task_relationship_type: ['parent_child', 'blocks', 'related'],
       time_of_day_preference: ['morning', 'afternoon', 'evening', 'night'],
-      time_tracking_request_status: ['PENDING', 'APPROVED', 'REJECTED'],
+      time_tracking_request_status: [
+        'PENDING',
+        'APPROVED',
+        'REJECTED',
+        'NEEDS_INFO',
+      ],
       workspace_api_key_scope: [
         'gemini-2.0-flash',
         'gemini-2.5-flash',

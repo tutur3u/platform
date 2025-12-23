@@ -7830,6 +7830,10 @@
       "description": "Manage Time Tracker in your Tuturuuu workspace."
     },
     "requests": {
+      "tabs": {
+        "all": "All Requests",
+        "my": "My Requests"
+      },
       "title": "Time Tracking Requests",
       "description": "Review and approve time tracking requests from team members",
       "filters": {
@@ -7838,13 +7842,15 @@
         "status": "Status",
         "user": "User",
         "clearFilters": "Clear Filters",
-        "allUsers": "All Users"
+        "allUsers": "All Users",
+        "loadingUsers": "Loading users..."
       },
       "status": {
         "all": "All",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "needs_info": "Needs Info"
       },
       "list": {
         "title": "Requests",
@@ -7855,11 +7861,13 @@
         "noRequestsDefault": "No time tracking requests have been submitted yet.",
         "duration": "{hours}h {minutes}m",
         "task": "Task: {name}",
-        "attachments": "{count} image{plural}",
+        "attachments": "{count, plural, =1 {image} other {images}}",
         "approvedBy": "Approved by {name}",
         "approvedOn": "on {date}",
         "rejectedBy": "Rejected by {name}",
         "rejectedOn": "on {date}",
+        "needsInfoBy": "More info requested by {name}",
+        "needsInfoOn": "on {date}",
         "loading": "Loading requests...",
         "error": "Failed to load requests"
       },
@@ -7888,14 +7896,58 @@
         "nextImage": "Next",
         "unknownUser": "Unknown User",
         "approvedDate": "Approved by {name} on {date}",
-        "rejectedDate": "Rejected by {name} on {date}"
+        "rejectedDate": "Rejected by {name} on {date}",
+        "requestNeedsInfo": "More Information Requested",
+        "needsInfoDate": "Requested by {name} on {date}",
+        "needsInfoReason": "Requested Information:",
+        "requestInfoButton": "Request More Info",
+        "needsInfoReasonLabel": "What information do you need?",
+        "needsInfoReasonPlaceholder": "Please describe what additional information is needed...",
+        "needsInfoReasonRequired": "Please provide a reason for requesting more information",
+        "confirmRequestInfo": "Request Information",
+        "resubmitButton": "Resubmit Request",
+        "editButton": "Edit Request",
+        "saveButton": "Save Changes",
+        "cancelEditButton": "Cancel",
+        "titleLabel": "Title",
+        "descriptionLabel": "Description",
+        "addMoreImages": "Add More Images ({current}/{max})",
+        "existingImage": "Existing",
+        "newImage": "New"
+      },
+      "comments": {
+        "title": "Comments",
+        "addComment": "Add a comment...",
+        "postComment": "Post Comment",
+        "sendShortcut": "Ctrl + Enter to send",
+        "editComment": "Edit Comment",
+        "saveComment": "Save",
+        "cancelEdit": "Cancel",
+        "deleteComment": "Delete Comment",
+        "deleteConfirm": "Are you sure you want to delete this comment?",
+        "noComments": "No comments yet. Be the first to comment!",
+        "commentPosted": "Comment posted",
+        "commentUpdated": "Comment updated",
+        "commentDeleted": "Comment deleted",
+        "commentFailed": "Failed to post comment",
+        "editExpired": "Can only edit within 15 minutes",
+        "deleteExpired": "Can only delete within 15 minutes",
+        "justNow": "just now",
+        "loading": "Loading Comments"
       },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",
         "approveFailed": "Failed to approve request",
         "rejectSuccess": "Time tracking request rejected",
         "rejectFailed": "Failed to reject request",
-        "loadImagesFailed": "Failed to load images"
+        "requestInfoSuccess": "More information requested successfully",
+        "requestInfoFailed": "Failed to request more information",
+        "resubmitSuccess": "Request resubmitted for approval successfully",
+        "resubmitFailed": "Failed to resubmit request",
+        "loadImagesFailed": "Failed to load images",
+        "updateSuccess": "Request updated successfully",
+        "updateFailed": "Failed to update request",
+        "deleteFailed": "Failed to delete comment"
       },
       "settings": {
         "button": "Settings",
@@ -8192,7 +8244,9 @@
         "dropImages": "Drop images here",
         "clickToUpload": "Click to upload or drag and drop",
         "imageFormats": "PNG, JPG, GIF, or WebP up to 1MB each",
-        "proofImageAlt": "Proof image {number}"
+        "proofImageAlt": "Proof image",
+        "existingImage": "Existing",
+        "newImage": "New"
       },
       "presets": {
         "title": "Quick Presets",

@@ -7,8 +7,6 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  Upload,
-  X,
 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -30,18 +28,18 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
-import imageCompression from 'browser-image-compression';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
 import { validateEndTime, validateStartTime } from '@/lib/time-validation';
+import { useImageUpload } from '../hooks/use-image-upload';
+import { ImageUploadSection } from '../requests/components/image-upload-section';
 import type { SessionWithRelations } from '../types';
 import { getCategoryColor } from './session-history';
 import { useSessionActions } from './session-history/use-session-actions';
@@ -138,15 +136,6 @@ type MissedEntryDialogProps =
   | ExceededSessionModeProps
   | ExceededSessionChainModeProps;
 
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
-const MAX_IMAGES = 5;
-const ALLOWED_IMAGE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-];
-
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const { open, onOpenChange, categories, wsId, mode = 'normal' } = props;
 
@@ -214,14 +203,23 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
-  // State for image uploads (for entries older than threshold)
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [imageError, setImageError] = useState<string>('');
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imagePreviewsRef = useRef<string[]>([]);
+  // Use shared image upload hook
+  const {
+    images,
+    imagePreviews,
+    isCompressing,
+    imageError,
+    isDragOver,
+    fileInputRef,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleImageUpload,
+    removeImage,
+    clearImages,
+    totalImageCount,
+    canAddMoreImages,
+  } = useImageUpload();
 
   // Validation state
   const [validationErrors, setValidationErrors] = useState<
@@ -236,6 +234,63 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     () => (session?.start_time ? dayjs(session.start_time) : null),
     [session?.start_time]
   );
+
+  // Track if there are unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    // If we are in any exceeded mode, we compare against session/chain data
+    if ((isExceededMode || isChainMode) && session) {
+      const titleChanged = missedEntryTitle !== (session.title || '');
+      const descriptionChanged =
+        missedEntryDescription !== (session.description || '');
+      const categoryChanged =
+        missedEntryCategoryId !== (session.category_id || 'none');
+      const taskChanged = missedEntryTaskId !== (session.task_id || 'none');
+
+      // Check image changes
+      const imagesChanged = images.length > 0;
+
+      // Note: We don't strictly compare times here as they are pre-filled with dynamic 'now'
+      // but title/description/category/task/images are the primary user inputs
+      return (
+        titleChanged ||
+        descriptionChanged ||
+        categoryChanged ||
+        taskChanged ||
+        imagesChanged
+      );
+    }
+
+    // Normal mode: check if anything is modified from empty/pre-filled state
+    const isNotEmpty =
+      missedEntryTitle !== '' ||
+      missedEntryDescription !== '' ||
+      missedEntryCategoryId !== 'none' ||
+      missedEntryTaskId !== 'none' ||
+      images.length > 0;
+
+    if (prefillStartTime || prefillEndTime) {
+      const startTimeChanged =
+        missedEntryStartTime !== (prefillStartTime || '');
+      const endTimeChanged = missedEntryEndTime !== (prefillEndTime || '');
+      return isNotEmpty || startTimeChanged || endTimeChanged;
+    }
+
+    return isNotEmpty;
+  }, [
+    isExceededMode,
+    isChainMode,
+    session,
+    missedEntryTitle,
+    missedEntryDescription,
+    missedEntryCategoryId,
+    missedEntryTaskId,
+    images.length,
+    prefillStartTime,
+    prefillEndTime,
+    missedEntryStartTime,
+    missedEntryEndTime,
+  ]);
+
   const currentDuration = useMemo(() => {
     if (!sessionStartTime) return 0;
     // Use currentTime to ensure this recalculates every second
@@ -243,11 +298,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   }, [sessionStartTime, currentTime]);
 
   const closeMissedEntryDialog = () => {
-    // Revoke all object URLs to free memory
-    imagePreviews.forEach((url) => {
-      URL.revokeObjectURL(url);
-    });
-
     onOpenChange(false);
     setMissedEntryTitle('');
     setMissedEntryDescription('');
@@ -255,11 +305,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     setMissedEntryTaskId('none');
     setMissedEntryStartTime('');
     setMissedEntryEndTime('');
-    setImages([]);
-    setImagePreviews([]);
-    imagePreviewsRef.current = [];
-    setImageError('');
-    setIsDragOver(false);
+    clearImages();
     setValidationErrors({});
   };
 
@@ -288,15 +334,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     }
   }, [open, isExceededMode, session, prefillStartTime, prefillEndTime]);
 
-  // Clean up object URLs on unmount
-  useEffect(() => {
-    return () => {
-      imagePreviewsRef.current.forEach((url) => {
-        URL.revokeObjectURL(url);
-      });
-    };
-  }, []);
-
   // Update current duration every second in exceeded mode
   useEffect(() => {
     if ((!isExceededMode && !isChainMode) || !sessionStartTime) return;
@@ -307,150 +344,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
     return () => clearInterval(intervalId);
   }, [isExceededMode, isChainMode, sessionStartTime]);
-
-  const compressImage = async (file: File): Promise<File> => {
-    try {
-      const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        initialQuality: 0.8,
-      };
-      const compressedBlob = await imageCompression(file, options);
-
-      const compressedFile = new File([compressedBlob], file.name, {
-        type: compressedBlob.type || file.type,
-        lastModified: Date.now(),
-      });
-
-      return compressedFile;
-    } catch (error) {
-      console.error('Image compression failed:', error);
-      return file;
-    }
-  };
-
-  const processImageFiles = async (files: File[]) => {
-    const validTypeFiles = files.filter((file) =>
-      ALLOWED_IMAGE_TYPES.includes(file.type)
-    );
-
-    const invalidTypeCount = files.length - validTypeFiles.length;
-    if (invalidTypeCount > 0) {
-      setImageError(t('errors.invalidFileType', { count: invalidTypeCount }));
-    }
-
-    const currentImageCount = images.length;
-    const availableSlots = MAX_IMAGES - currentImageCount;
-    const filesToProcess = validTypeFiles.slice(0, availableSlots);
-    const overflow = validTypeFiles.length - filesToProcess.length;
-
-    if (overflow > 0) {
-      setImageError(
-        t('errors.maxImagesExceeded', { max: MAX_IMAGES, overflow })
-      );
-    }
-
-    if (filesToProcess.length > 0) {
-      setIsCompressing(true);
-      try {
-        const processedWithSize = await Promise.all(
-          filesToProcess.map(async (file) => {
-            const processedFile = await compressImage(file);
-            return {
-              file: processedFile,
-              isValid: processedFile.size <= MAX_IMAGE_SIZE,
-              originalName: file.name,
-            };
-          })
-        );
-
-        const validFiles = processedWithSize.filter((item) => item.isValid);
-        const rejectedBySize = processedWithSize.filter(
-          (item) => !item.isValid
-        );
-
-        if (rejectedBySize.length > 0) {
-          const rejectedNames = rejectedBySize
-            .map((item) => item.originalName)
-            .join(', ');
-          setImageError(
-            t('errors.fileTooLarge', {
-              count: rejectedBySize.length,
-              names: rejectedNames,
-            })
-          );
-        } else if (imageError && invalidTypeCount === 0) {
-          setImageError('');
-        }
-
-        if (validFiles.length > 0) {
-          const acceptedFiles = validFiles.map((item) => item.file);
-          const newImages = [...images, ...acceptedFiles];
-          setImages(newImages);
-
-          const newPreviews = acceptedFiles.map((file) =>
-            URL.createObjectURL(file)
-          );
-          setImagePreviews((prev) => {
-            const updated = [...prev, ...newPreviews];
-            imagePreviewsRef.current = updated;
-            return updated;
-          });
-        }
-      } finally {
-        setIsCompressing(false);
-      }
-    }
-  };
-
-  const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'copy';
-    }
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (event: React.DragEvent) => {
-    event.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (event: React.DragEvent) => {
-    event.preventDefault();
-    setIsDragOver(false);
-
-    const files = Array.from(event.dataTransfer.files).filter((file) =>
-      ALLOWED_IMAGE_TYPES.includes(file.type)
-    );
-
-    if (files.length > 0) {
-      processImageFiles(files);
-    }
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    processImageFiles(files);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const removeImage = (index: number) => {
-    if (imagePreviews[index]) {
-      URL.revokeObjectURL(imagePreviews[index]);
-    }
-
-    const newImages = images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-
-    setImages(newImages);
-    setImagePreviews(newPreviews);
-    imagePreviewsRef.current = newPreviews;
-  };
 
   // Validate form fields in real-time
   useEffect(() => {
@@ -493,108 +386,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
     setValidationErrors(errors);
   }, [missedEntryStartTime, missedEntryEndTime, getValidationErrorMessage]);
-
-  // Shared Image Upload Section - render function (not a component) to avoid ref issues
-  const renderImageUploadSection = (disabled: boolean) => (
-    <div className="space-y-3">
-      <Label className="font-medium text-sm">
-        {t('approval.proofOfWork', {
-          current: images.length,
-          max: MAX_IMAGES,
-        })}
-      </Label>
-
-      {images.length < MAX_IMAGES && (
-        <button
-          type="button"
-          className={cn(
-            'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
-            isDragOver
-              ? 'border-dynamic-orange bg-dynamic-orange/10'
-              : 'border-border hover:border-border/80',
-            (isCompressing || disabled) && 'pointer-events-none opacity-50'
-          )}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          aria-label="Click to upload or drag and drop images"
-          disabled={disabled || isCompressing}
-        >
-          <Input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            multiple
-            onChange={handleImageUpload}
-            disabled={disabled || isCompressing}
-            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          />
-          <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
-            <div
-              className={cn(
-                'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
-                isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
-              )}
-            >
-              <Upload
-                className={cn(
-                  'h-5 w-5',
-                  isDragOver ? 'text-dynamic-orange' : 'text-muted-foreground'
-                )}
-              />
-            </div>
-            <p className="mb-1 font-medium text-sm">
-              {isCompressing
-                ? t('approval.compressing')
-                : isDragOver
-                  ? t('approval.dropImages')
-                  : t('approval.clickToUpload')}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {t('approval.imageFormats')}
-            </p>
-          </div>
-        </button>
-      )}
-
-      {imageError && (
-        <div className="flex items-center gap-1 text-dynamic-red text-sm">
-          <AlertCircle className="h-3 w-3" />
-          {imageError}
-        </div>
-      )}
-
-      {imagePreviews.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {imagePreviews.map((preview, index) => (
-            <div key={preview} className="group relative">
-              <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
-                <Image
-                  src={isValidBlobUrl(preview) ? preview : '/placeholder.svg'}
-                  alt={t('approval.proofImageAlt', {
-                    number: index + 1,
-                  })}
-                  className="h-full w-full object-cover"
-                  width={100}
-                  height={100}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                onClick={() => removeImage(index)}
-                disabled={disabled}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
@@ -851,6 +642,38 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   const isLoading = isCreatingMissedEntry || isDiscarding;
 
+  // Common props for ImageUploadSection components
+  const imageUploadCommonProps = {
+    images,
+    imagePreviews,
+    isCompressing,
+    isDragOver,
+    imageError,
+    canAddMore: canAddMoreImages,
+    maxImages: 5,
+    totalCount: totalImageCount,
+    fileInputRef,
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    onDrop: handleDrop,
+    onFileChange: handleImageUpload,
+    onRemoveNew: removeImage,
+    onRemoveExisting: () => {},
+    labels: {
+      proofOfWork: t('approval.proofOfWork', {
+        current: totalImageCount,
+        max: 5,
+      }),
+      compressing: t('approval.compressing'),
+      dropImages: t('approval.dropImages'),
+      clickToUpload: t('approval.clickToUpload'),
+      imageFormats: t('approval.imageFormats'),
+      proofImageAlt: t('approval.proofImageAlt'),
+      existing: t('approval.existingImage'),
+      new: t('approval.newImage'),
+    },
+  };
+
   return (
     <Dialog
       open={open}
@@ -860,7 +683,24 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
         }
       }}
     >
-      <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
+      <DialogContent
+        className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden"
+        onPointerDownOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (hasUnsavedChanges) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="border-b pb-4">
           {isExceededMode || isChainMode ? (
             <>
@@ -1165,12 +1005,20 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               </div>
 
               {/* Image upload section */}
-              {renderImageUploadSection(isCreatingMissedEntry)}
+              <ImageUploadSection
+                {...imageUploadCommonProps}
+                disabled={isCreatingMissedEntry}
+              />
             </div>
           )}
 
           {/* Image upload section for exceeded mode (always required) */}
-          {isExceededMode && renderImageUploadSection(isLoading)}
+          {isExceededMode && (
+            <ImageUploadSection
+              {...imageUploadCommonProps}
+              disabled={isLoading}
+            />
+          )}
 
           {/* Quick time presets - hidden in exceeded mode */}
           {!isExceededMode && (
