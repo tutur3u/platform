@@ -72,7 +72,8 @@ export interface ExceededSessionModeProps extends BaseMissedEntryDialogProps {
 }
 
 // Props for exceeded session chain mode
-export interface ExceededSessionChainModeProps extends BaseMissedEntryDialogProps {
+export interface ExceededSessionChainModeProps
+  extends BaseMissedEntryDialogProps {
   mode: 'exceeded-session-chain';
   session: SessionWithRelations;
   thresholdDays: number | null;

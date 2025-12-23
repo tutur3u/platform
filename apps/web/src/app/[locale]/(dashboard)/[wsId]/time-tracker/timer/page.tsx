@@ -46,7 +46,13 @@ export default async function TimeTrackerPage({ params }: Props) {
           })),
         };
 
-        return <TimeTrackerWrapper wsId={wsId} initialData={initialData} workspace={workspace} />;
+        return (
+          <TimeTrackerWrapper
+            wsId={wsId}
+            initialData={initialData}
+            workspace={workspace}
+          />
+        );
       }}
     </WorkspaceWrapper>
   );

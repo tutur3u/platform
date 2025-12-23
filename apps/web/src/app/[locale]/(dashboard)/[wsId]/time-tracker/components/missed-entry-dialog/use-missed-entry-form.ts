@@ -59,7 +59,9 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
   const effectiveWsId = isNormalMode ? selectedWorkspaceId : wsId;
 
   // Validation helper
-  const { getValidationErrorMessage } = useSessionActions({ wsId: effectiveWsId });
+  const { getValidationErrorMessage } = useSessionActions({
+    wsId: effectiveWsId,
+  });
 
   // Form state
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
@@ -469,12 +471,12 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
     isExceededMode,
     isChainMode,
     isNormalMode,
-    
+
     // Workspace
     selectedWorkspaceId,
     effectiveWsId,
     setSelectedWorkspaceId,
-    
+
     // Form state
     missedEntryTitle,
     missedEntryDescription,
@@ -488,7 +490,7 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
     setMissedEntryTaskId,
     setMissedEntryStartTime,
     setMissedEntryEndTime,
-    
+
     // Images
     images,
     imagePreviews,
@@ -504,20 +506,20 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
     clearImages,
     totalImageCount,
     canAddMoreImages,
-    
+
     // Validation
     validationErrors,
-    
+
     // Loading states
     isCreatingMissedEntry,
     isDiscarding,
-    
+
     // Computed values
     hasUnsavedChanges,
     currentTime,
     currentDuration,
     sessionStartTime,
-    
+
     // Actions
     createMissedEntry,
     handleDiscardSession,

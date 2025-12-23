@@ -44,16 +44,18 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const form = useMissedEntryForm(props);
 
   // Fetch user workspaces for workspace selector (only in normal mode)
-  const { data: userWorkspaces, isLoading: isLoadingWorkspaces } = useUserWorkspaces({
-    enabled: open && isNormalMode,
-  });
+  const { data: userWorkspaces, isLoading: isLoadingWorkspaces } =
+    useUserWorkspaces({
+      enabled: open && isNormalMode,
+    });
 
   // Fetch categories for the selected workspace
-  const { data: workspaceCategories, isLoading: isLoadingCategories } = useWorkspaceCategories({
-    wsId: open ? form.effectiveWsId : null,
-    enabled: open,
-    initialData: form.effectiveWsId === wsId ? categories : undefined,
-  });
+  const { data: workspaceCategories, isLoading: isLoadingCategories } =
+    useWorkspaceCategories({
+      wsId: open ? form.effectiveWsId : null,
+      enabled: open,
+      initialData: form.effectiveWsId === wsId ? categories : undefined,
+    });
 
   // Fetch tasks for the selected workspace
   const { data: tasks, isLoading: isLoadingTasks } = useWorkspaceTasks({
@@ -66,7 +68,9 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     data: fetchedThresholdData,
     isLoading: isLoadingThreshold,
     isError: isErrorThreshold,
-  } = useWorkspaceTimeThreshold(isExceededMode || isChainMode ? null : form.effectiveWsId);
+  } = useWorkspaceTimeThreshold(
+    isExceededMode || isChainMode ? null : form.effectiveWsId
+  );
 
   // Use provided threshold in exceeded mode, fetched in normal mode
   const thresholdDays =
@@ -262,7 +266,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
           {/* Image upload section for exceeded mode (always required) */}
           {isExceededMode && (
-            <ImageUploadSection {...imageUploadCommonProps} disabled={isLoading} />
+            <ImageUploadSection
+              {...imageUploadCommonProps}
+              disabled={isLoading}
+            />
           )}
 
           {/* Quick time presets - hidden in exceeded mode */}

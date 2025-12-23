@@ -36,7 +36,7 @@ import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration, formatTime } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
-import type {Workspace} from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 
 interface SimpleTimerControlsProps {
   wsId: string;

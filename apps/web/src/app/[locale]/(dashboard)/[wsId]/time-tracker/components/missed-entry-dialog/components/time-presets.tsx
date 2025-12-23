@@ -35,7 +35,7 @@ export function TimePresets({ onSelectPreset, disabled }: TimePresetsProps) {
     },
   ];
 
-  const handlePresetClick = (preset: typeof presets[number]) => {
+  const handlePresetClick = (preset: (typeof presets)[number]) => {
     const now = dayjs();
     let startTime = '';
     let endTime = '';
@@ -53,7 +53,10 @@ export function TimePresets({ onSelectPreset, disabled }: TimePresetsProps) {
         const startMin = parseInt(startParts[1] || '0', 10);
         const endHour = parseInt(endParts[0] || '17', 10);
         const endMin = parseInt(endParts[1] || '0', 10);
-        startTime = today.hour(startHour).minute(startMin).format('YYYY-MM-DDTHH:mm');
+        startTime = today
+          .hour(startHour)
+          .minute(startMin)
+          .format('YYYY-MM-DDTHH:mm');
         endTime = today.hour(endHour).minute(endMin).format('YYYY-MM-DDTHH:mm');
       }
     } else if (preset.minutes) {
@@ -68,7 +71,9 @@ export function TimePresets({ onSelectPreset, disabled }: TimePresetsProps) {
 
   return (
     <div className="rounded-lg border p-3">
-      <Label className="text-muted-foreground text-xs">{t('presets.title')}</Label>
+      <Label className="text-muted-foreground text-xs">
+        {t('presets.title')}
+      </Label>
       <div className="mt-2 flex flex-wrap gap-2">
         {presets.map((preset) => (
           <Button

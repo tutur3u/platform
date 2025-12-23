@@ -59,7 +59,9 @@ export function WorkspaceSelector({
                       {ws.personal ? (
                         <CircleUserRound className="h-3 w-3" />
                       ) : (
-                        ws.name?.charAt(0).toUpperCase() || <Users className="h-3 w-3" />
+                        ws.name?.charAt(0).toUpperCase() || (
+                          <Users className="h-3 w-3" />
+                        )
                       )}
                     </AvatarFallback>
                   </Avatar>
