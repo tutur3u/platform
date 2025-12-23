@@ -9,8 +9,8 @@ import {
   type DragStartEvent,
   KeyboardSensor,
   MeasuringStrategy,
-  MouseSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -99,7 +99,6 @@ import { useBulkOperations } from './kanban-bulk-operations';
 import {
   DRAG_ACTIVATION_DISTANCE,
   MAX_SAFE_INTEGER_SORT,
-  MOBILE_BREAKPOINT,
 } from './kanban-constants';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import { TaskCard } from './task';
@@ -876,18 +875,6 @@ export function KanbanBoard({
     setBulkDeleteOpen,
   });
 
-  // Detect mobile to disable drag sensors
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // Keyboard shortcuts for multiselect mode (Shift for range select, Cmd/Ctrl for toggle)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -928,11 +915,17 @@ export function KanbanBoard({
     };
   }, [isMultiSelectMode, selectedTasks.size]);
 
-  // On mobile, use MouseSensor instead of PointerSensor to allow touch scrolling
+  // Configure sensors for both mouse/pointer and touch interactions
   const sensors = useSensors(
-    useSensor(isMobile ? MouseSensor : PointerSensor, {
+    useSensor(PointerSensor, {
       activationConstraint: {
         distance: DRAG_ACTIVATION_DISTANCE,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 500, // Require 500ms press-and-hold before drag starts
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
