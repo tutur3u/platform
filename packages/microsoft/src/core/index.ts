@@ -32,7 +32,7 @@ export interface MicrosoftOAuthConfig {
 
 // Microsoft calendar scopes (read-only to avoid requiring admin approval)
 export const MICROSOFT_CALENDAR_SCOPES = [
-  'https://graph.microsoft.com/Calendars.Read',
+  // 'https://graph.microsoft.com/Calendars.Read',
   'https://graph.microsoft.com/User.Read',
   'offline_access',
 ];

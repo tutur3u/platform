@@ -1303,6 +1303,9 @@
     "entries": "entries",
     "clear_filters": "Clear",
     "refresh": "Refresh",
+    "total_activities": "Total",
+    "today": "Today",
+    "filter_description": "Filter activity logs by board, type, or field",
     "on": "on",
     "date": {
       "today": "Today",
@@ -1438,12 +1441,14 @@
     "task_restored": "restored",
     "empty": {
       "title": "No activity found",
+      "no_results": "No matching activity",
       "with_filters": "No activity matches your current filters. Try adjusting your search criteria.",
       "no_filters": "Task changes will appear here once you start making updates to your tasks."
     },
     "error": {
       "title": "Failed to load logs",
-      "description": "Please try again later"
+      "description": "Please try again later",
+      "retry": "Try again"
     },
     "view_diff": "View diff",
     "name_changes": "Task Name Changes",
