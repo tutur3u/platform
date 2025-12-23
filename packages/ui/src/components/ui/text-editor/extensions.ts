@@ -4,7 +4,7 @@ import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Highlight from '@tiptap/extension-highlight';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Link from '@tiptap/extension-link';
-import { TaskItem, TaskList } from '@tiptap/extension-list';
+import { TaskList } from '@tiptap/extension-list';
 import Placeholder from '@tiptap/extension-placeholder';
 import Strike from '@tiptap/extension-strike';
 import Subscript from '@tiptap/extension-subscript';
@@ -21,6 +21,11 @@ import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import type * as Y from 'yjs';
 import { CustomImage } from './image-extension';
 import { ListConverter } from './list-converter-extension';
+import {
+  DraggableListItem,
+  DraggableTaskItem,
+  ListItemDrag,
+} from './list-item-drag-extension';
 import { Mention } from './mention-extension';
 import { Video } from './video-extension';
 
@@ -61,6 +66,7 @@ export function getEditorExtensions({
       link: false,
       strike: false,
       horizontalRule: false, // Disable default to use custom config
+      listItem: false, // Disable default to use draggable version
       undoRedo: doc ? false : undefined,
       bulletList: {
         HTMLAttributes: {
@@ -134,11 +140,13 @@ export function getEditorExtensions({
     Subscript,
     Superscript,
     Mention,
-    TaskItem.configure({
+    DraggableListItem,
+    DraggableTaskItem.configure({
       nested: true,
     }),
     TaskList,
     ListConverter,
+    ListItemDrag,
     Table.configure({
       resizable: true,
       lastColumnResizable: true,
