@@ -3,7 +3,6 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -221,14 +220,6 @@ export async function GET(
     if (!memberCheck) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
-        { status: 403 }
-      );
-    }
-
-    const { withoutPermission } = await getPermissions({ wsId });
-    if (withoutPermission('manage_time_tracking_requests')) {
-      return NextResponse.json(
-        { error: 'You do not have permission to view time tracking requests.' },
         { status: 403 }
       );
     }

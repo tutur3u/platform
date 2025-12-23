@@ -18,7 +18,7 @@ export default async function TimeTrackerHistoryPage({
 }) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
+      {async ({ wsId, workspace }) => {
         const user = await getCurrentSupabaseUser();
         const supabase = await createClient();
 
@@ -44,6 +44,7 @@ export default async function TimeTrackerHistoryPage({
             wsId={wsId}
             sessions={sessions}
             categories={categories}
+            workspace={workspace}
           />
         );
       }}

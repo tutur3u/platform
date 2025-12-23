@@ -267,7 +267,7 @@ export async function PUT(
             // Validate file size
             if (imageFile.size > MAX_FILE_SIZE) {
               throw new Error(
-                `Image ${imageFile.name} exceeds the 10MB size limit`
+                `Image ${imageFile.name} exceeds the ${MAX_FILE_SIZE / (1024 * 1024)}MB size limit`
               );
             }
 
