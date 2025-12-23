@@ -1,14 +1,17 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
+  CircleUserRound,
   Clock,
   Coffee,
   Plus,
   RefreshCw,
   Trash2,
+  Users,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
+import type { TimeTrackingCategory, Workspace } from '@tuturuuu/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -44,6 +47,8 @@ import type { SessionWithRelations } from '../types';
 import { getCategoryColor } from './session-history';
 import { useSessionActions } from './session-history/use-session-actions';
 import { TaskCombobox } from './task-combobox';
+import { useWorkspaceCategories } from './use-workspace-categories';
+import { useUserWorkspaces } from './use-user-workspaces';
 import { useWorkspaceTasks } from './use-workspace-tasks';
 
 dayjs.extend(utc);
@@ -55,6 +60,7 @@ interface BaseMissedEntryDialogProps {
   onOpenChange: (open: boolean) => void;
   categories: TimeTrackingCategory[] | null;
   wsId: string;
+  workspace: Workspace;
 }
 
 // Props for normal missed entry mode
@@ -142,6 +148,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
   const isChainMode = mode === 'exceeded-session-chain';
+  const isNormalMode = !isExceededMode && !isChainMode;
   const session = isExceededMode || isChainMode ? props.session : undefined;
   const chainSummary = isChainMode ? props.chainSummary : undefined;
   const providedThresholdDays =
@@ -170,9 +177,29 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Fetch tasks on-demand only when dialog is open
+  const t = useTranslations('time-tracker.missed_entry_dialog');
+
+  // State for selected workspace (only applicable in normal mode)
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
+
+  // Fetch user workspaces for workspace selector (only in normal mode)
+  const { data: userWorkspaces, isLoading: isLoadingWorkspaces } = useUserWorkspaces({
+    enabled: open && isNormalMode,
+  });
+
+  // Determine effective workspace ID for fetching categories and tasks
+  const effectiveWsId = isNormalMode ? selectedWorkspaceId : wsId;
+
+  // Fetch categories for the selected workspace (use initial categories only for current workspace)
+  const { data: workspaceCategories, isLoading: isLoadingCategories } = useWorkspaceCategories({
+    wsId: open ? effectiveWsId : null,
+    enabled: open,
+    initialData: effectiveWsId === wsId ? categories : undefined,
+  });
+
+  // Fetch tasks for the selected workspace
   const { data: tasks, isLoading: isLoadingTasks } = useWorkspaceTasks({
-    wsId: open ? wsId : null,
+    wsId: open ? effectiveWsId : null,
     enabled: open,
   });
 
@@ -181,7 +208,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     data: fetchedThresholdData,
     isLoading: isLoadingThreshold,
     isError: isErrorThreshold,
-  } = useWorkspaceTimeThreshold(isExceededMode || isChainMode ? null : wsId);
+  } = useWorkspaceTimeThreshold(isExceededMode || isChainMode ? null : effectiveWsId);
 
   // Use provided threshold in exceeded mode, fetched in normal mode
   const thresholdDays =
@@ -189,9 +216,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       ? providedThresholdDays
       : fetchedThresholdData?.threshold;
 
-  const t = useTranslations('time-tracker.missed_entry_dialog');
-
-  const { getValidationErrorMessage } = useSessionActions({ wsId });
+  const { getValidationErrorMessage } = useSessionActions({ wsId: effectiveWsId });
 
   // State for missed entry form
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
@@ -202,6 +227,22 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const [missedEntryEndTime, setMissedEntryEndTime] = useState('');
   const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
+
+  // Reset category and task when workspace changes
+  useEffect(() => {
+    if (isNormalMode && selectedWorkspaceId !== wsId) {
+      // Reset category and task selection when switching workspaces
+      setMissedEntryCategoryId('none');
+      setMissedEntryTaskId('none');
+    }
+  }, [selectedWorkspaceId, wsId, isNormalMode]);
+
+  // Reset selected workspace to current workspace when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedWorkspaceId(wsId);
+    }
+  }, [open, wsId]);
 
   // Use shared image upload hook
   const {
@@ -497,7 +538,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
         }
 
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/time-tracking/requests`,
+          `/api/v1/workspaces/${effectiveWsId}/time-tracking/requests`,
           {
             method: 'POST',
             body: formData,
@@ -510,20 +551,20 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
         }
 
         queryClient.invalidateQueries({
-          queryKey: ['time-tracking-requests', wsId, 'pending'],
+          queryKey: ['time-tracking-requests', effectiveWsId, 'pending'],
         });
         queryClient.invalidateQueries({
-          queryKey: ['running-time-session', wsId],
+          queryKey: ['running-time-session', effectiveWsId],
         });
         queryClient.invalidateQueries({
-          queryKey: ['time-tracking-sessions', wsId],
+          queryKey: ['time-tracking-sessions', effectiveWsId],
         });
         // Invalidate paused session queries to refetch after break pause
         queryClient.invalidateQueries({
           predicate: (query) =>
             Array.isArray(query.queryKey) &&
             query.queryKey[0] === 'paused-time-session' &&
-            query.queryKey[1] === wsId,
+            query.queryKey[1] === effectiveWsId,
         });
 
         router.refresh();
@@ -539,7 +580,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       } else {
         // Regular entry creation for entries within threshold days
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+          `/api/v1/workspaces/${effectiveWsId}/time-tracking/sessions`,
           {
             method: 'POST',
             headers: {
@@ -718,7 +759,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             <DialogTitle>{t('title')}</DialogTitle>
           )}
         </DialogHeader>
-        <div className="flex-1 space-y-4 overflow-y-auto py-4">
+        <div className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-6 py-4">
           {/* Session chain timeline - chain mode only */}
           {isChainMode && chainSummary && (
             <div className="space-y-4">
@@ -870,6 +911,67 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             </div>
           )}
 
+          {/* Workspace selector - normal mode only */}
+          {isNormalMode && (
+            <div>
+              <Label htmlFor="missed-entry-workspace">
+                {t('form.workspace')}
+              </Label>
+              <Select
+                value={selectedWorkspaceId}
+                onValueChange={(value) => {
+                  setSelectedWorkspaceId(value);
+                  // Reset category and task when workspace changes
+                  setMissedEntryCategoryId('none');
+                  setMissedEntryTaskId('none');
+                }}
+                disabled={isLoading || isLoadingWorkspaces}
+              >
+                <SelectTrigger id="missed-entry-workspace">
+                  <SelectValue placeholder={t('form.selectWorkspace')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingWorkspaces ? (
+                    <SelectItem value="loading" disabled>
+                      {t('form.loadingWorkspaces')}
+                    </SelectItem>
+                  ) : (
+                    userWorkspaces?.map((ws) => (
+                      <SelectItem key={ws.id} value={ws.id}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage
+                              src={ws.avatar_url || undefined}
+                              alt={ws.name || ''}
+                            />
+                            <AvatarFallback className="text-[10px]">
+                              {ws.personal ? (
+                                <CircleUserRound className="h-3 w-3" />
+                              ) : (
+                                ws.name?.charAt(0).toUpperCase() || <Users className="h-3 w-3" />
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">{ws.name}</span>
+                          {ws.personal && (
+                            <span className="text-muted-foreground text-xs">
+                              ({t('form.personal')})
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {selectedWorkspaceId !== wsId && (
+                <p className="mt-1 text-muted-foreground text-xs">
+                  {t('form.differentWorkspaceHint')}
+                </p>
+              )}
+            </div>
+          )}
+
           <div>
             <Label htmlFor="missed-entry-title">{t('form.title')}</Label>
             <Input
@@ -901,26 +1003,34 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               <Select
                 value={missedEntryCategoryId}
                 onValueChange={setMissedEntryCategoryId}
-                disabled={isLoading}
+                disabled={isLoading || isLoadingCategories}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('form.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{t('form.noCategory')}</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            'h-3 w-3 rounded-full',
-                            getCategoryColor(category.color || 'BLUE')
-                          )}
-                        />
-                        {category.name}
-                      </div>
+                  {isLoadingCategories ? (
+                    <SelectItem value="loading" disabled>
+                      {t('form.loadingCategories')}
                     </SelectItem>
-                  ))}
+                  ) : (
+                    <>
+                      <SelectItem value="none">{t('form.noCategory')}</SelectItem>
+                      {workspaceCategories?.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                'h-3 w-3 rounded-full',
+                                getCategoryColor(category.color || 'BLUE')
+                              )}
+                            />
+                            {category.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

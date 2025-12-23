@@ -52,6 +52,7 @@ export function SessionHistory({
   wsId,
   sessions,
   categories,
+  workspace
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -464,6 +465,7 @@ export function SessionHistory({
         onOpenChange={setShowMissedEntryDialog}
         categories={categories}
         wsId={wsId}
+        workspace={workspace}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
       />
