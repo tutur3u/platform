@@ -23,6 +23,7 @@ import { ValidationErrors } from './components/validation-errors';
 import { WorkspaceSelector } from './components/workspace-selector';
 import type { MissedEntryDialogProps } from './types';
 import { useMissedEntryForm } from './use-missed-entry-form';
+import dayjs from 'dayjs';
 
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const { open, categories, wsId, mode = 'normal' } = props;
@@ -81,8 +82,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     if (thresholdDays === null || thresholdDays === undefined) return false;
     if (thresholdDays === 0) return true;
 
-    const startTime = require('dayjs')(form.missedEntryStartTime);
-    const dayjs = require('dayjs');
+    const startTime = dayjs(form.missedEntryStartTime);
     const thresholdAgo = dayjs().subtract(thresholdDays as number, 'day');
     return startTime.isBefore(thresholdAgo);
   }, [

@@ -1,3 +1,4 @@
+'use client';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import dayjs from 'dayjs';

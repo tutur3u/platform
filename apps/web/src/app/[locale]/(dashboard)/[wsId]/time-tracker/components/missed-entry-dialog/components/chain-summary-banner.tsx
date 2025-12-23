@@ -1,3 +1,5 @@
+'use client';
+
 import { Coffee } from '@tuturuuu/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
@@ -40,19 +42,19 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
 
         {/* Totals */}
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
-            <div className="font-medium text-green-700 text-xs dark:text-green-300">
+          <div className="rounded-lg bg-dynamic-green/10 p-3">
+            <div className="font-medium text-dynamic-green text-xs">
               {t('exceeded.totalWorkTime')}
             </div>
-            <div className="mt-1 font-bold text-green-600 text-xl dark:text-green-400">
+            <div className="mt-1 font-bold text-dynamic-green text-xl">
               {formatDuration(chainSummary.total_work_seconds)}
             </div>
           </div>
-          <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-950/20">
-            <div className="font-medium text-amber-700 text-xs dark:text-amber-300">
+          <div className="rounded-lg bg-dynamic-amber/10 p-3">
+            <div className="font-medium text-dynamic-amber text-xs">
               {t('exceeded.totalBreakTime')}
             </div>
-            <div className="mt-1 font-bold text-amber-600 text-xl dark:text-amber-400">
+            <div className="mt-1 font-bold text-dynamic-amber text-xl">
               {formatDuration(chainSummary.total_break_seconds)}
             </div>
           </div>
@@ -71,8 +73,8 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
           return (
             <div key={sess.id} className="space-y-2">
               {/* Work Session */}
-              <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50/50 p-3 dark:border-green-800 dark:bg-green-950/10">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 font-bold text-white text-xs">
+              <div className="flex items-start gap-3 rounded-lg border border-dynamic-green/30 bg-dynamic-green/10 p-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-dynamic-green font-bold text-white text-xs">
                   {idx + 1}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -80,7 +82,7 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
                   <div className="mt-1 text-muted-foreground text-xs">
                     {dayjs(sess.start_time).format('h:mm A')} →{' '}
                     {dayjs(sess.end_time).format('h:mm A')}
-                    <span className="ml-2 font-medium text-green-600 dark:text-green-400">
+                    <span className="ml-2 font-medium text-dynamic-green">
                       {formatDuration(sess.duration_seconds)}
                     </span>
                   </div>
@@ -91,9 +93,9 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
               {sessionBreaks.map((brk: ChainBreak) => (
                 <div
                   key={brk.id}
-                  className="ml-9 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-800 dark:bg-amber-950/10"
+                  className="ml-9 flex items-start gap-3 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-2"
                 >
-                  <Coffee className="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <Coffee className="mt-0.5 h-4 w-4 text-dynamic-amber" />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm">
                       {brk.break_type_icon && (
@@ -101,7 +103,7 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
                       )}
                       {brk.break_type_name}
                     </div>
-                    <div className="font-medium text-amber-600 text-xs dark:text-amber-400">
+                    <div className="font-medium text-dynamic-amber text-xs">
                       {formatDuration(brk.break_duration_seconds)}
                     </div>
                   </div>

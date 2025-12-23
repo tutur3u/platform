@@ -29,6 +29,7 @@ export default function SimpleTimeTrackerContent({
   initialData,
   currentUser,
   isUserLoading,
+  workspace
 }: SimpleTimeTrackerContentProps) {
   const t = useTranslations('time-tracker');
   // Use React Query for running session to sync with command palette
