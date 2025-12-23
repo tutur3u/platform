@@ -177,6 +177,7 @@ export default function TimeTrackerWrapper({
         initialData={initialData}
         currentUser={currentUser ?? null}
         isUserLoading={isUserLoading}
+        workspace={workspace}
       />
     </div>
   );

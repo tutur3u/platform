@@ -38,11 +38,11 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
 
   const breakTypeId =
     isExceededMode || isChainMode
-      ? (props as any).breakTypeId
+      ? props.breakTypeId
       : undefined;
   const breakTypeName =
     isExceededMode || isChainMode
-      ? (props as any).breakTypeName
+      ? props.breakTypeName
       : undefined;
 
   // State for selected workspace (only applicable in normal mode)
