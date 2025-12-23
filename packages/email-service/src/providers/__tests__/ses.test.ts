@@ -13,6 +13,17 @@ vi.mock('@aws-sdk/client-ses', () => {
   };
 });
 
+// Mock isomorphic-dompurify and juice to prevent slow dynamic imports in CI
+vi.mock('isomorphic-dompurify', () => ({
+  default: {
+    sanitize: (html: string) => html,
+  },
+}));
+
+vi.mock('juice', () => ({
+  default: (html: string) => html,
+}));
+
 describe('SESEmailProvider', () => {
   const mockCredentials = {
     type: 'ses' as const,
