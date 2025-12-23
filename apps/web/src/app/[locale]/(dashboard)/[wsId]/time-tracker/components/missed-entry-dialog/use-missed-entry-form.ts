@@ -71,11 +71,6 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
   const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
-  // Validation state
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
-
   // State to trigger updates for live duration
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
 
@@ -206,8 +201,8 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
     return () => clearInterval(intervalId);
   }, [isExceededMode, isChainMode, sessionStartTime]);
 
-  // Validate form fields in real-time
-  useEffect(() => {
+  // Compute validation errors without triggering re-renders
+  const validationErrors = useMemo(() => {
     const errors: Record<string, string> = {};
 
     const startValidation = validateStartTime(missedEntryStartTime);
@@ -242,7 +237,7 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
       }
     }
 
-    setValidationErrors(errors);
+    return errors;
   }, [missedEntryStartTime, missedEntryEndTime, getValidationErrorMessage]);
 
   const closeMissedEntryDialog = () => {
@@ -254,7 +249,6 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
     setMissedEntryStartTime('');
     setMissedEntryEndTime('');
     clearImages();
-    setValidationErrors({});
   };
 
   const createMissedEntry = async (
