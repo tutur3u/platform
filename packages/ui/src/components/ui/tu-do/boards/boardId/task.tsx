@@ -303,23 +303,10 @@ function TaskCardInner({
   const canMoveToClose =
     targetClosedList && targetClosedList.id !== task.list_id;
 
-  // Detect mobile devices to disable drag and drop
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // Tailwind md breakpoint
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // Check if task is optimistically added (pending realtime confirmation)
   const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
 
   const dragDisabled =
-    isMobile ||
     dialogState.editDialogOpen ||
     dialogState.deleteDialogOpen ||
     dialogState.customDateDialogOpen ||
@@ -332,7 +319,6 @@ function TaskCardInner({
   if (task.name === 'new task') {
     console.log('[TaskCard Debug]', {
       taskId: task.id,
-      isMobile,
       editDialogOpen: dialogState.editDialogOpen,
       deleteDialogOpen: dialogState.deleteDialogOpen,
       customDateDialogOpen: dialogState.customDateDialogOpen,
@@ -1134,7 +1120,7 @@ function TaskCardInner({
                     className={cn(
                       'h-7 w-7 shrink-0 p-0 transition-all duration-200',
                       'hover:scale-105 hover:bg-muted',
-                      menuOpen || isMobile
+                      menuOpen
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
                       menuOpen && 'bg-muted ring-1 ring-border'
