@@ -277,3 +277,137 @@ export function useUpdateRequest() {
     },
   });
 }
+
+interface AddCommentParams {
+  wsId: string;
+  requestId: string;
+  content: string;
+}
+
+export function useAddComment() {
+  const t = useTranslations('time-tracker.requests');
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ wsId, requestId, content }: AddCommentParams) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}/comments`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to post comment');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, { wsId, requestId }) => {
+      // Invalidate comments query
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-request-comments', requestId],
+      });
+
+      toast.success(t('comments.commentPosted'));
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('comments.commentFailed'));
+    },
+  });
+}
+
+interface UpdateCommentParams {
+  wsId: string;
+  requestId: string;
+  commentId: string;
+  content: string;
+}
+
+export function useUpdateComment() {
+  const t = useTranslations('time-tracker.requests');
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      wsId,
+      requestId,
+      commentId,
+      content,
+    }: UpdateCommentParams) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}/comments/${commentId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update comment');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, { requestId }) => {
+      // Invalidate comments query
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-request-comments', requestId],
+      });
+
+      toast.success(t('comments.commentUpdated'));
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('toast.updateFailed'));
+    },
+  });
+}
+
+interface DeleteCommentParams {
+  wsId: string;
+  requestId: string;
+  commentId: string;
+}
+
+export function useDeleteComment() {
+  const t = useTranslations('time-tracker.requests');
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      wsId,
+      requestId,
+      commentId,
+    }: DeleteCommentParams) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}/comments/${commentId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete comment');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, { requestId }) => {
+      // Invalidate comments query
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-request-comments', requestId],
+      });
+
+      toast.success(t('comments.commentDeleted'));
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('toast.deleteFailed'));
+    },
+  });
+}

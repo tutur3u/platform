@@ -7677,6 +7677,24 @@
         "existingImage": "Hiện Tại",
         "newImage": "Mới"
       },
+      "comments": {
+        "title": "Bình Luận",
+        "addComment": "Thêm bình luận...",
+        "postComment": "Gửi Bình Luận",
+        "editComment": "Chỉnh Sửa Bình Luận",
+        "saveComment": "Lưu",
+        "cancelEdit": "Hủy",
+        "deleteComment": "Xóa Bình Luận",
+        "deleteConfirm": "Bạn có chắc chắn muốn xóa bình luận này?",
+        "noComments": "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!",
+        "commentPosted": "Đã đăng bình luận",
+        "commentUpdated": "Đã cập nhật bình luận",
+        "commentDeleted": "Đã xóa bình luận",
+        "commentFailed": "Không thể đăng bình luận",
+        "editExpired": "Chỉ có thể chỉnh sửa trong vòng 15 phút",
+        "deleteExpired": "Chỉ có thể xóa trong vòng 15 phút",
+        "justNow": "vừa xong"
+      },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
         "approveFailed": "Không thể phê duyệt yêu cầu",
@@ -7688,7 +7706,8 @@
         "resubmitFailed": "Không thể gửi lại yêu cầu",
         "loadImagesFailed": "Không thể tải hình ảnh",
         "updateSuccess": "Đã cập nhật yêu cầu thành công",
-        "updateFailed": "Không thể cập nhật yêu cầu"
+        "updateFailed": "Không thể cập nhật yêu cầu",
+        "deleteFailed": "Không thể xóa bình luận"
       },
       "settings": {
         "button": "Cài Đặt",

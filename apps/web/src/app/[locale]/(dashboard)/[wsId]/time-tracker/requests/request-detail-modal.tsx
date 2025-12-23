@@ -36,6 +36,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useImageUpload } from '../hooks/use-image-upload';
 import { ImageUploadSection } from './components/image-upload-section';
+import { CommentList } from './components/comment-list';
 import { useRequestImages } from './hooks/use-request-images';
 import {
   useApproveRequest,
@@ -183,6 +184,11 @@ export function RequestDetailModal({
     request.user_id === currentUser.id &&
     (request.approval_status === 'PENDING' ||
       request.approval_status === 'NEEDS_INFO');
+
+  // Determine if user can view comments
+  const canViewComments =
+    (currentUser && request.user_id === currentUser.id) ||
+    bypassRulesPermission;
 
   const handleEnterEditMode = useCallback(() => {
     setIsEditMode(true);
@@ -879,6 +885,17 @@ export function RequestDetailModal({
                     )}
                   </>
                 ) : null}
+
+              {/* Comments Section */}
+              {!isEditMode && (
+                <CommentList
+                  requestId={request.id}
+                  wsId={wsId}
+                  currentUser={currentUser}
+                  canViewComments={canViewComments}
+                  hasManagePermission={bypassRulesPermission}
+                />
+              )}
             </div>
             {/* End Right Column */}
           </div>

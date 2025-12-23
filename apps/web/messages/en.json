@@ -7875,6 +7875,24 @@
         "existingImage": "Existing",
         "newImage": "New"
       },
+      "comments": {
+        "title": "Comments",
+        "addComment": "Add a comment...",
+        "postComment": "Post Comment",
+        "editComment": "Edit Comment",
+        "saveComment": "Save",
+        "cancelEdit": "Cancel",
+        "deleteComment": "Delete Comment",
+        "deleteConfirm": "Are you sure you want to delete this comment?",
+        "noComments": "No comments yet. Be the first to comment!",
+        "commentPosted": "Comment posted",
+        "commentUpdated": "Comment updated",
+        "commentDeleted": "Comment deleted",
+        "commentFailed": "Failed to post comment",
+        "editExpired": "Can only edit within 15 minutes",
+        "deleteExpired": "Can only delete within 15 minutes",
+        "justNow": "just now"
+      },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",
         "approveFailed": "Failed to approve request",
@@ -7886,7 +7904,8 @@
         "resubmitFailed": "Failed to resubmit request",
         "loadImagesFailed": "Failed to load images",
         "updateSuccess": "Request updated successfully",
-        "updateFailed": "Failed to update request"
+        "updateFailed": "Failed to update request",
+        "deleteFailed": "Failed to delete comment"
       },
       "settings": {
         "button": "Settings",
