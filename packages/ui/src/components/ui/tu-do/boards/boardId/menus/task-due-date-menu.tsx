@@ -12,10 +12,12 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
+import { calculateDaysUntilEndOfWeek } from '../../../utils/weekDateUtils';
 
 interface TaskDueDateMenuProps {
   endDate?: string | null;
   isLoading: boolean;
+  weekStartsOn?: 0 | 1 | 6;
   onDueDateChange: (days: number | null) => void;
   onCustomDateClick: () => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
@@ -30,26 +32,21 @@ const formatSmartDate = (date: Date) => {
 };
 
 const calculateDaysForPreset = (
-  preset: 'today' | 'tomorrow' | 'this_week' | 'next_week'
+  preset: 'today' | 'tomorrow' | 'this_week' | 'next_week',
+  weekStartsOn: 0 | 1 | 6 = 0
 ) => {
-  const today = new Date();
-  const currentDay = today.getDay();
-
   switch (preset) {
     case 'today':
       return 0;
     case 'tomorrow':
       return 1;
     case 'this_week': {
-      // Days until end of week (Sunday)
-      // (7 - currentDay) % 7 gives 0 for Sunday, correct days for other days
-      const daysUntilSunday = (7 - currentDay) % 7;
-      return daysUntilSunday;
+      // Days until end of week (respects first day of week setting)
+      return calculateDaysUntilEndOfWeek(weekStartsOn);
     }
     case 'next_week': {
-      // Days until next Sunday
-      const daysUntilSunday = (7 - currentDay) % 7;
-      return daysUntilSunday + 7;
+      // Days until end of next week
+      return calculateDaysUntilEndOfWeek(weekStartsOn) + 7;
     }
   }
 };
@@ -76,6 +73,7 @@ const dueDateOptions = [
 export function TaskDueDateMenu({
   endDate,
   isLoading,
+  weekStartsOn = 0,
   onDueDateChange,
   onCustomDateClick,
   onMenuItemSelect,
@@ -104,7 +102,9 @@ export function TaskDueDateMenu({
             key={option.preset}
             onSelect={(e) =>
               onMenuItemSelect(e as unknown as Event, () => {
-                onDueDateChange(calculateDaysForPreset(option.preset));
+                onDueDateChange(
+                  calculateDaysForPreset(option.preset, weekStartsOn)
+                );
                 onClose();
               })
             }

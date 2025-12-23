@@ -946,8 +946,12 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             variant="outline"
                             size="xs"
                             onClick={() => {
-                              const daysUntilEndOfWeek = 6 - dayjs().day();
-                              handleQuickDueDate(daysUntilEndOfWeek);
+                              // Calculate days until end of week (respects first day of week setting)
+                              const endOfWeekDay =
+                                ((weekStartsOn ?? 0) - 1 + 7) % 7;
+                              const daysUntilEnd =
+                                (endOfWeekDay - dayjs().day() + 7) % 7;
+                              handleQuickDueDate(daysUntilEnd);
                             }}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
@@ -958,7 +962,14 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             type="button"
                             variant="outline"
                             size="xs"
-                            onClick={() => handleQuickDueDate(7)}
+                            onClick={() => {
+                              // Calculate days until end of next week (respects first day of week setting)
+                              const endOfWeekDay =
+                                ((weekStartsOn ?? 0) - 1 + 7) % 7;
+                              const daysUntilEnd =
+                                (endOfWeekDay - dayjs().day() + 7) % 7;
+                              handleQuickDueDate(daysUntilEnd + 7);
+                            }}
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
