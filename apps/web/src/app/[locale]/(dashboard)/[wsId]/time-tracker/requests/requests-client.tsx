@@ -31,9 +31,15 @@ export function RequestsClient({
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList>
-          <TabsTrigger value="all" disabled={!canManageTimeTrackingRequests}>{t('tabs.all')}</TabsTrigger>
+          <TabsTrigger value="all" disabled={!canManageTimeTrackingRequests}>
+            {t('tabs.all')}
+          </TabsTrigger>
           <TabsTrigger value="my">{t('tabs.my')}</TabsTrigger>
         </TabsList>
 
@@ -76,4 +82,3 @@ export function RequestsClient({
     </>
   );
 }
-

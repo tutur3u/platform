@@ -62,7 +62,10 @@ interface User {
   display_name: string;
 }
 
-export function useAvailableUsers({ wsId, enabled = true }: UseAvailableUsersParams) {
+export function useAvailableUsers({
+  wsId,
+  enabled = true,
+}: UseAvailableUsersParams) {
   return useQuery<User[]>({
     queryKey: ['time-tracking-requests-users', wsId],
     queryFn: async () => {

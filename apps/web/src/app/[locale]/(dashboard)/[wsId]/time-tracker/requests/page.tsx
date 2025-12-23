@@ -115,7 +115,6 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
           'manage_time_tracking_requests'
         );
 
-
         return (
           <div className="container mx-auto px-4 py-6 md:px-8">
             <RequestsClient

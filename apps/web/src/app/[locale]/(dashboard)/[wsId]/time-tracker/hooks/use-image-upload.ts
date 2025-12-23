@@ -72,7 +72,9 @@ export function useImageUpload(
   const [isCompressing, setIsCompressing] = useState(false);
   const [imageError, setImageError] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+  const fileInputRef = useRef<HTMLInputElement>(
+    null
+  ) as React.RefObject<HTMLInputElement>;
   const imagePreviewsRef = useRef<string[]>([]);
 
   // Total count includes both new and existing images
@@ -134,9 +136,9 @@ export function useImageUpload(
             const rejectedNames = rejectedBySize
               .map((item) => item.originalName)
               .join(', ');
-             setImageError(
+            setImageError(
               `${rejectedBySize.length} file(s) rejected (exceeded ${maxSizeBytes / (1024 * 1024)}MB even after compression): ${rejectedNames}`
-             );
+            );
           } else if (imageError && invalidTypeCount === 0) {
             setImageError('');
           }
