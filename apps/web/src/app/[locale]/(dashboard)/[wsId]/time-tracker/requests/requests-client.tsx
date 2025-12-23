@@ -57,7 +57,7 @@ export function RequestsClient({
         <TabsContent value="my">
           <RequestsView
             wsId={wsId}
-            bypassRulesPermission={bypassRulesPermission}
+            onSelectRequest={setSelectedRequest}
             currentUser={currentUser}
             viewMode="my"
           />
