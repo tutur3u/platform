@@ -24,24 +24,31 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
   // Mode-specific props destructuring
   const isExceededMode = mode === 'exceeded-session';
   const isChainMode = mode === 'exceeded-session-chain';
-  const isNormalMode = !isExceededMode && !isChainMode;
+  const isNormalMode = mode === 'normal';
 
-  const session = isExceededMode || isChainMode ? props.session : undefined;
+  const session =
+    props.mode === 'exceeded-session' || props.mode === 'exceeded-session-chain'
+      ? props.session
+      : undefined;
   const onSessionDiscarded =
-    isExceededMode || isChainMode ? props.onSessionDiscarded : undefined;
+    props.mode === 'exceeded-session' || props.mode === 'exceeded-session-chain'
+      ? props.onSessionDiscarded
+      : undefined;
   const onMissedEntryCreated =
-    isExceededMode || isChainMode ? props.onMissedEntryCreated : undefined;
+    props.mode === 'exceeded-session' || props.mode === 'exceeded-session-chain'
+      ? props.onMissedEntryCreated
+      : undefined;
   const prefillStartTime =
-    !isExceededMode && !isChainMode ? props.prefillStartTime : undefined;
+    props.mode === 'normal' ? props.prefillStartTime : undefined;
   const prefillEndTime =
-    !isExceededMode && !isChainMode ? props.prefillEndTime : undefined;
+    props.mode === 'normal' ? props.prefillEndTime : undefined;
 
   const breakTypeId =
-    isExceededMode || isChainMode
+    props.mode === 'exceeded-session' || props.mode === 'exceeded-session-chain'
       ? props.breakTypeId
       : undefined;
   const breakTypeName =
-    isExceededMode || isChainMode
+    props.mode === 'exceeded-session' || props.mode === 'exceeded-session-chain'
       ? props.breakTypeName
       : undefined;
 
