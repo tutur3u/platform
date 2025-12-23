@@ -27,8 +27,6 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
   const isNormalMode = !isExceededMode && !isChainMode;
 
   const session = isExceededMode || isChainMode ? props.session : undefined;
-  const providedThresholdDays =
-    isExceededMode || isChainMode ? props.thresholdDays : undefined;
   const onSessionDiscarded =
     isExceededMode || isChainMode ? props.onSessionDiscarded : undefined;
   const onMissedEntryCreated =

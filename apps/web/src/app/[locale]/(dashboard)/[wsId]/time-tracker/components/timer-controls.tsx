@@ -28,7 +28,7 @@ import {
   Tag,
   Timer,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
+import type { TimeTrackingCategory, WorkspaceTask, Workspace } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -117,6 +117,7 @@ interface TimerControlsProps {
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
   currentUserId?: string | null;
+  workspace: Workspace;
 }
 
 // Pomodoro timer types and interfaces
@@ -260,6 +261,7 @@ export function TimerControls({
   apiCall,
   isDraggingTask = false,
   currentUserId,
+  workspace,
 }: TimerControlsProps) {
   const t = useTranslations('time-tracker.controls');
   const queryClient = useQueryClient();
@@ -4828,6 +4830,7 @@ export function TimerControls({
           session={(currentSession || pausedSession)!}
           categories={categories}
           wsId={wsId}
+          workspace={workspace}
           thresholdDays={thresholdData?.threshold ?? null}
           chainSummary={chainSummary}
           onSessionDiscarded={handleSessionDiscarded}
@@ -4845,6 +4848,7 @@ export function TimerControls({
           session={(currentSession || pausedSession)!}
           categories={categories}
           wsId={wsId}
+          workspace={workspace}
           thresholdDays={thresholdData?.threshold ?? null}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}

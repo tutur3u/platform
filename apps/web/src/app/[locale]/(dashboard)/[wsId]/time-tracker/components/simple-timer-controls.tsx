@@ -36,6 +36,7 @@ import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration, formatTime } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
+import type {Workspace} from '@tuturuuu/types';
 
 interface SimpleTimerControlsProps {
   wsId: string;
@@ -49,6 +50,7 @@ interface SimpleTimerControlsProps {
   ) => Promise<{ session?: SessionWithRelations; [key: string]: unknown }>;
   currentUserId?: string;
   headerAction?: React.ReactNode;
+  workspace: Workspace;
 }
 
 export function SimpleTimerControls({
@@ -60,6 +62,7 @@ export function SimpleTimerControls({
   apiCall,
   currentUserId,
   headerAction,
+  workspace,
 }: SimpleTimerControlsProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -832,6 +835,7 @@ export function SimpleTimerControls({
           session={(currentSession || pausedSession)!}
           categories={categories}
           wsId={wsId}
+          workspace={workspace}
           thresholdDays={thresholdData?.threshold ?? null}
           onSessionDiscarded={handleSessionDiscarded}
           onMissedEntryCreated={handleMissedEntryCreated}

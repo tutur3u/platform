@@ -53,6 +53,7 @@ import {
   useTaskCounts,
 } from '../utils';
 import { TimerControls } from './timer-controls';
+import type {Workspace} from '@tuturuuu/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -62,6 +63,7 @@ interface TimeTrackerContentProps {
   initialData: TimeTrackerData;
   currentUser: User | null;
   isUserLoading: boolean;
+  workspace: Workspace;
 }
 
 export default function TimeTrackerContent({
@@ -69,6 +71,7 @@ export default function TimeTrackerContent({
   initialData,
   currentUser,
   isUserLoading,
+  workspace,
 }: TimeTrackerContentProps) {
   const t = useTranslations('time-tracker.content');
 
@@ -917,7 +920,7 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* Scrollable Task Container */}
-                      <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
+                      <div className="/40 max-h-100 overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
                         <div className="space-y-4">
                           {filteredSidebarTasks.map((task) => (
                             <div
@@ -1124,6 +1127,7 @@ export default function TimeTrackerContent({
               apiCall={apiCall}
               isDraggingTask={isDraggingTask}
               currentUserId={currentUserId ?? null}
+              workspace={workspace}
             />
           </div>
         </div>
