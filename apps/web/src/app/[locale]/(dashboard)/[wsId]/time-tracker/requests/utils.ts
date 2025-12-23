@@ -40,7 +40,6 @@ export const calculateDuration = (startTime: string, endTime: string) => {
 
 export interface RequestsViewProps {
   wsId: string;
-  bypassRulesPermission: boolean;
   currentUser: WorkspaceUser | null;
   onSelectRequest: (request: ExtendedTimeTrackingRequest) => void;
 }

@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION public.update_time_tracking_request(
 )
 RETURNS jsonb
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $function$
 declare
     v_request record;

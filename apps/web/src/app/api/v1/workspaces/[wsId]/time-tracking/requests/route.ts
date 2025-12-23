@@ -87,7 +87,7 @@ export async function POST(
             // Validate file size
             if (imageFile.size > MAX_FILE_SIZE) {
               throw new Error(
-                `Image ${imageFile.name} exceeds the 10MB size limit`
+                `Image ${imageFile.name} exceeds the 1MB size limit`
               );
             }
 

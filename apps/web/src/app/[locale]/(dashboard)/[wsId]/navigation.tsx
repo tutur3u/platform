@@ -331,6 +331,16 @@ export async function WorkspaceNavigationLinks({
       icon: <ClockFading className="h-5 w-5" />,
       // disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
+      aliases: [
+        `/${personalOrWsId}/time-tracker`,
+        `/${personalOrWsId}/time-tracker/timer`,
+        `/${personalOrWsId}/time-tracker/history`,
+        `/${personalOrWsId}/time-tracker/categories`,
+        `/${personalOrWsId}/time-tracker/goals`,
+        `/${personalOrWsId}/time-tracker/management`,
+        `/${personalOrWsId}/time-tracker/requests`,
+        `/${personalOrWsId}/time-tracker/settings`,
+      ],
     },
     null,
 
