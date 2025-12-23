@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/icons';
+import { Loader2, MessageSquareIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@tuturuuu/ui/accordion';
 import { useTranslations } from 'next-intl';
@@ -63,7 +63,7 @@ export function CommentList({
               <div className="flex items-center justify-center gap-2 py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="text-muted-foreground text-sm">
-                  {t('detail.loadingMedia')}
+                  {t('comments.loading')}
                 </span>
               </div>
             ) : !comments || comments.length === 0 ? (
@@ -71,18 +71,7 @@ export function CommentList({
                 <Avatar className="h-12 w-12 opacity-50">
                   <AvatarImage src={currentUser?.avatar_url ?? ''} />
                   <AvatarFallback className="bg-muted text-muted-foreground">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-6 w-6"
-                    >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
+                    <MessageSquareIcon className="h-5 w-5 text-muted-foreground" />
                   </AvatarFallback>
                 </Avatar>
                 <p className="text-muted-foreground text-sm">

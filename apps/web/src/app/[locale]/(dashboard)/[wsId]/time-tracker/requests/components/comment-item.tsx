@@ -3,9 +3,7 @@
 import {
   EditIcon,
   Loader2,
-  MoreVerticalIcon,
   TrashIcon,
-  XIcon,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,10 +16,8 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import {
@@ -105,9 +101,9 @@ export function CommentItem({
     } else if (diffInMinutes < 60) {
       return date.fromNow();
     } else if (diffInMinutes < 24 * 60) {
-      return format(new Date(dateString), 'MMM d, h:mm a');
+      return date.format('MMM D, h:mm A');
     } else {
-      return format(new Date(dateString), 'MMM d, yyyy');
+      return date.format('MMM D, YYYY');
     }
   }, [t]);
 
@@ -138,7 +134,7 @@ export function CommentItem({
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 onClick={() => setIsEditing(true)}
                 className="h-6 w-6"
               >
@@ -146,7 +142,7 @@ export function CommentItem({
               </Button>
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 onClick={() => setShowDeleteDialog(true)}
                 className="h-6 w-6 text-dynamic-red hover:text-dynamic-red/80"
               >

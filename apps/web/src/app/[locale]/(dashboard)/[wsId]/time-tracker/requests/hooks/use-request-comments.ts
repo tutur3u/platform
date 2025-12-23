@@ -20,7 +20,7 @@ export function useRequestComments(
   enabled: boolean
 ) {
   return useQuery<TimeTrackingRequestComment[]>({
-    queryKey: ['time-tracking-request-comments', requestId],
+    queryKey: ['time-tracking-request-comments', requestId, wsId],
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}/comments`

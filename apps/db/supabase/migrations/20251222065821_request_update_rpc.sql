@@ -41,7 +41,7 @@ BEGIN
     -- =========================================================================
     -- NON-OWNER APPROVER PATH: User is NOT the owner
     -- =========================================================================
-    IF NEW.user_id <> auth.uid() THEN
+    IF NEW.user_id <> auth.uid() AND v_has_manage_permission THEN
         -- Non-owners cannot modify content fields
         IF v_content_changed THEN
             RAISE EXCEPTION 'Approvers cannot modify request content fields';

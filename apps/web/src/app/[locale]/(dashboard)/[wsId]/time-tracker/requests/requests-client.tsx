@@ -4,8 +4,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { AllRequestsView } from './components/all-requests-view';
-import { MyRequestsView } from './components/my-requests-view';
+import { RequestsView } from './components/requests-view';
 import type { ExtendedTimeTrackingRequest } from './page';
 import { RequestDetailModal } from './request-detail-modal';
 
@@ -40,21 +39,23 @@ export function RequestsClient({
 
         {canManageTimeTrackingRequests && (
           <TabsContent value="all">
-            <AllRequestsView
+            <RequestsView
               wsId={wsId}
               bypassRulesPermission={bypassRulesPermission}
               currentUser={currentUser}
               onSelectRequest={setSelectedRequest}
+              viewMode="all"
             />
           </TabsContent>
         )}
 
         <TabsContent value="my">
-          <MyRequestsView
+          <RequestsView
             wsId={wsId}
             bypassRulesPermission={bypassRulesPermission}
             currentUser={currentUser}
             onSelectRequest={setSelectedRequest}
+            viewMode="my"
           />
         </TabsContent>
       </Tabs>
@@ -75,3 +76,4 @@ export function RequestsClient({
     </>
   );
 }
+

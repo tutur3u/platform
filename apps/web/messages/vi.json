@@ -7623,7 +7623,7 @@
         "noRequestsDefault": "Chưa có yêu cầu theo dõi thời gian nào được gửi.",
         "duration": "{hours}h {minutes}m",
         "task": "Nhiệm vụ: {name}",
-        "attachments": "{count} hình ảnh{plural}",
+        "attachments": "{count} hình ảnh",
         "approvedBy": "Được phê duyệt bởi {name}",
         "approvedOn": "vào {date}",
         "rejectedBy": "Bị từ chối bởi {name}",
@@ -7681,6 +7681,7 @@
         "title": "Bình Luận",
         "addComment": "Thêm bình luận...",
         "postComment": "Gửi Bình Luận",
+        "sendShortcut": "Ctrl + Enter để gửi",
         "editComment": "Chỉnh Sửa Bình Luận",
         "saveComment": "Lưu",
         "cancelEdit": "Hủy",
@@ -7693,7 +7694,8 @@
         "commentFailed": "Không thể đăng bình luận",
         "editExpired": "Chỉ có thể chỉnh sửa trong vòng 15 phút",
         "deleteExpired": "Chỉ có thể xóa trong vòng 15 phút",
-        "justNow": "vừa xong"
+        "justNow": "vừa xong",
+        "loading": "Đang tải bình luận"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",

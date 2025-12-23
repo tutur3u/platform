@@ -21,6 +21,7 @@ import {
   ClipboardClock,
   ClipboardList,
   Clock,
+  ClockCheck,
   ClockFading,
   Database,
   FileText,
@@ -317,7 +318,7 @@ export async function WorkspaceNavigationLinks({
               {
                 title: t('sidebar_tabs.time_tracker_requests'),
                 href: `/${personalOrWsId}/time-tracker/requests`,
-                icon: <MessageCircleIcon className="h-5 w-5" />,
+                icon: <ClockCheck className="h-5 w-5" />,
                 disabled: isPersonal,
               },
               null,

@@ -2,9 +2,18 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
+import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
 
 export async function POST(
   request: NextRequest,
@@ -75,7 +84,22 @@ export async function POST(
               throw new Error(`Invalid image in field ${key}`);
             }
 
-            const fileName = `${requestId}/${Date.now()}_${imageFile.name}`;
+            // Validate file size
+            if (imageFile.size > MAX_FILE_SIZE) {
+              throw new Error(
+                `Image ${imageFile.name} exceeds the 10MB size limit`
+              );
+            }
+
+            // Validate MIME type
+            if (!ALLOWED_MIME_TYPES.includes(imageFile.type)) {
+              throw new Error(
+                `Invalid file type for ${imageFile.name}. Only JPEG, PNG, WEBP, and GIF are allowed.`
+              );
+            }
+
+            const sanitizedName = sanitizeFilename(imageFile.name) || 'image';
+            const fileName = `${requestId}/${Date.now()}_${sanitizedName}`;
             const buffer = await imageFile.arrayBuffer();
 
             const { data, error } = await storageClient.storage

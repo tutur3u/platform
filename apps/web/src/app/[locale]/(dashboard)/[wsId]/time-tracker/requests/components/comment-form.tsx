@@ -3,6 +3,7 @@
 import { Loader2, SendIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { Kbd } from '@tuturuuu/ui/kbd';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -87,8 +88,11 @@ export function CommentForm({
 
           {/* Submit Button */}
           <div className="flex items-center justify-end gap-2">
-            <span className="text-muted-foreground text-xs">
-              Ctrl + Enter to send
+            <span className="text-muted-foreground text-xs flex items-center gap-1">
+              <Kbd>Ctrl</Kbd>
+              <span>+</span>
+              <Kbd>Enter</Kbd>
+              <span>{t('comments.sendShortcut').replace('Ctrl + Enter', '').trim()}</span>
             </span>
             <Button
               size="sm"

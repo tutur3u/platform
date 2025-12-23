@@ -649,6 +649,38 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   const isLoading = isCreatingMissedEntry || isDiscarding;
 
+  // Common props for ImageUploadSection components
+  const imageUploadCommonProps = {
+    images,
+    imagePreviews,
+    isCompressing,
+    isDragOver,
+    imageError,
+    canAddMore: canAddMoreImages,
+    maxImages: 5,
+    totalCount: totalImageCount,
+    fileInputRef,
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    onDrop: handleDrop,
+    onFileChange: handleImageUpload,
+    onRemoveNew: removeImage,
+    onRemoveExisting: () => {},
+    labels: {
+      proofOfWork: t('approval.proofOfWork', {
+        current: totalImageCount,
+        max: 5,
+      }),
+      compressing: t('approval.compressing'),
+      dropImages: t('approval.dropImages'),
+      clickToUpload: t('approval.clickToUpload'),
+      imageFormats: t('approval.imageFormats'),
+      proofImageAlt: t('approval.proofImageAlt'),
+      existing: t('approval.existingImage'),
+      new: t('approval.newImage'),
+    },
+  };
+
   return (
     <Dialog
       open={open}
@@ -981,35 +1013,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
               {/* Image upload section */}
               <ImageUploadSection
-                images={images}
-                imagePreviews={imagePreviews}
-                isCompressing={isCompressing}
-                isDragOver={isDragOver}
-                imageError={imageError}
+                {...imageUploadCommonProps}
                 disabled={isCreatingMissedEntry}
-                canAddMore={canAddMoreImages}
-                maxImages={5}
-                totalCount={totalImageCount}
-                fileInputRef={fileInputRef}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onFileChange={handleImageUpload}
-                onRemoveNew={removeImage}
-                onRemoveExisting={() => {}}
-                labels={{
-                  proofOfWork: t('approval.proofOfWork', {
-                    current: totalImageCount,
-                    max: 5,
-                  }),
-                  compressing: t('approval.compressing'),
-                  dropImages: t('approval.dropImages'),
-                  clickToUpload: t('approval.clickToUpload'),
-                  imageFormats: t('approval.imageFormats'),
-                  proofImageAlt: t('approval.proofImageAlt'),
-                  existing: t('approval.existingImage'),
-                  new: t('approval.newImage'),
-                }}
               />
             </div>
           )}
@@ -1017,35 +1022,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           {/* Image upload section for exceeded mode (always required) */}
           {isExceededMode && (
             <ImageUploadSection
-              images={images}
-              imagePreviews={imagePreviews}
-              isCompressing={isCompressing}
-              isDragOver={isDragOver}
-              imageError={imageError}
+              {...imageUploadCommonProps}
               disabled={isLoading}
-              canAddMore={canAddMoreImages}
-              maxImages={5}
-              totalCount={totalImageCount}
-              fileInputRef={fileInputRef}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onFileChange={handleImageUpload}
-              onRemoveNew={removeImage}
-              onRemoveExisting={() => {}}
-              labels={{
-                proofOfWork: t('approval.proofOfWork', {
-                  current: totalImageCount,
-                  max: 5,
-                }),
-                compressing: t('approval.compressing'),
-                dropImages: t('approval.dropImages'),
-                clickToUpload: t('approval.clickToUpload'),
-                imageFormats: t('approval.imageFormats'),
-                proofImageAlt: t('approval.proofImageAlt'),
-                existing: t('approval.existingImage'),
-                new: t('approval.newImage'),
-              }}
             />
           )}
 

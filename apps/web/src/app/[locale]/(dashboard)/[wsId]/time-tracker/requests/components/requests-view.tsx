@@ -45,37 +45,54 @@ import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
 import { STATUS_COLORS, STATUS_LABELS, calculateDuration } from '../utils';
 import type { RequestsViewProps } from '../utils';
 
-export function AllRequestsView({
+type ViewMode = 'all' | 'my';
+
+interface ConsolidatedRequestsViewProps extends RequestsViewProps {
+  /**
+   * 'all' - Shows all requests with user filter (for admins/managers)
+   * 'my' - Shows only current user's requests (no user filter)
+   */
+  viewMode: ViewMode;
+}
+
+export function RequestsView({
   wsId,
-  bypassRulesPermission,
   currentUser,
   onSelectRequest,
-}: RequestsViewProps) {
+  viewMode,
+}: ConsolidatedRequestsViewProps) {
   const t = useTranslations('time-tracker.requests');
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
+  const isAllMode = viewMode === 'all';
+
   // Memoize URL params
-  const { currentStatus, currentUserId, currentPage, currentLimit } =
-    useMemo(() => {
-      const rawStatus =
-        (searchParams.get('status') as
-          | 'all'
-          | 'pending'
-          | 'approved'
-          | 'rejected') || 'pending';
-      const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
-      const safePage = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
-      const rawLimit = Number.parseInt(searchParams.get('limit') || '10', 10);
-      const safeLimit = Number.isNaN(rawLimit) || rawLimit < 1 ? 10 : rawLimit;
-      return {
-        currentStatus: rawStatus,
-        currentUserId: searchParams.get('userId') || undefined,
-        currentPage: safePage,
-        currentLimit: safeLimit,
-      };
-    }, [searchParams]);
+  const { currentStatus, currentUserId, currentPage, currentLimit } = useMemo(() => {
+    const rawStatus =
+      (searchParams.get('status') as
+        | 'all'
+        | 'pending'
+        | 'approved'
+        | 'rejected') || 'pending';
+    const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
+    const safePage = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+    const rawLimit = Number.parseInt(searchParams.get('limit') || '10', 10);
+    const safeLimit = Number.isNaN(rawLimit) || rawLimit < 1 ? 10 : rawLimit;
+    return {
+      currentStatus: rawStatus,
+      // Only read userId from URL in 'all' mode
+      currentUserId: isAllMode ? searchParams.get('userId') || undefined : undefined,
+      currentPage: safePage,
+      currentLimit: safeLimit,
+    };
+  }, [searchParams, isAllMode]);
+
+  // Determine userId for the hook:
+  // - In 'my' mode: always use currentUser's id
+  // - In 'all' mode: use the URL filter (if any)
+  const hookUserId = isAllMode ? currentUserId : currentUser?.id;
 
   const {
     data: requestsData,
@@ -85,25 +102,29 @@ export function AllRequestsView({
   } = useRequests({
     wsId,
     status: currentStatus,
-    userId: currentUserId,
+    userId: hookUserId,
     page: currentPage,
     limit: currentLimit,
   });
 
+  // Only fetch available users in 'all' mode
   const { data: availableUsersData = [], isLoading: usersLoading } =
-    useAvailableUsers({ wsId });
+    useAvailableUsers({ wsId, enabled: isAllMode });
 
+  // Only fetch threshold data in 'all' mode
   const { data: thresholdData, isLoading: thresholdLoading } =
-    useWorkspaceTimeThreshold(wsId);
+    useWorkspaceTimeThreshold(wsId, { enabled: isAllMode });
 
   const requests = requestsData?.requests || [];
   const totalCount = requestsData?.totalCount || 0;
   const totalPages = requestsData?.totalPages || 0;
 
-  const hasActiveFilters = useMemo(
-    () => (currentStatus && currentStatus !== 'pending') || !!currentUserId,
-    [currentStatus, currentUserId]
-  );
+  const hasActiveFilters = useMemo(() => {
+    if (isAllMode) {
+      return (currentStatus && currentStatus !== 'pending') || !!currentUserId;
+    }
+    return currentStatus && currentStatus !== 'pending';
+  }, [currentStatus, currentUserId, isAllMode]);
 
   const { startIndex, endIndex } = useMemo(
     () => ({
@@ -201,35 +222,38 @@ export function AllRequestsView({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="user-filter" className="font-medium text-sm leading-none">
-                {t('filters.user')}
-              </label>
-              <Select
-                value={currentUserId || 'all'}
-                onValueChange={(value) =>
-                  updateFilters('userId', value === 'all' ? undefined : value)
-                }
-              >
-                <SelectTrigger id="user-filter" className="border-border/60 hover:bg-accent/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('filters.allUsers')}</SelectItem>
-                  {usersLoading ? (
-                    <div className="px-2 py-1.5 text-muted-foreground text-sm">
-                      {t('filters.loadingUsers')}
-                    </div>
-                  ) : (
-                    availableUsersData.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.display_name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* User filter - only shown in 'all' mode */}
+            {isAllMode && (
+              <div className="space-y-2">
+                <label htmlFor="user-filter" className="font-medium text-sm leading-none">
+                  {t('filters.user')}
+                </label>
+                <Select
+                  value={currentUserId || 'all'}
+                  onValueChange={(value) =>
+                    updateFilters('userId', value === 'all' ? undefined : value)
+                  }
+                >
+                  <SelectTrigger id="user-filter" className="border-border/60 hover:bg-accent/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('filters.allUsers')}</SelectItem>
+                    {usersLoading ? (
+                      <div className="px-2 py-1.5 text-muted-foreground text-sm">
+                        {t('filters.loadingUsers')}
+                      </div>
+                    ) : (
+                      availableUsersData.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.display_name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {hasActiveFilters && (
@@ -268,14 +292,19 @@ export function AllRequestsView({
         </div>
 
         <div className="flex items-center gap-2">
-          {thresholdLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <ThresholdSettingsDialog
-              wsId={wsId}
-              currentThreshold={thresholdData?.threshold}
-              onUpdate={handleThresholdUpdate}
-            />
+          {/* Threshold settings - only shown in 'all' mode */}
+          {isAllMode && (
+            <>
+              {thresholdLoading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <ThresholdSettingsDialog
+                  wsId={wsId}
+                  currentThreshold={thresholdData?.threshold}
+                  onUpdate={handleThresholdUpdate}
+                />
+              )}
+            </>
           )}
           <span className="text-muted-foreground text-sm">{t('list.itemsPerPage')}:</span>
           <Select
@@ -390,23 +419,23 @@ export function AllRequestsView({
                     </div>
 
                     {request.task && (
-                      <Badge variant="outline" className="border-border/60 bg-background/50 text-[10px]">
+                      <Badge
+                        variant="outline"
+                        className="border-border/60 bg-background/50 text-[10px]"
+                      >
                         {t('list.task', { name: request.task.name })}
                       </Badge>
                     )}
 
-                        {request.images && request.images.length > 0 && (
-                          <Badge
-                            variant="outline"
-                            className="border-border/60 bg-background/50 text-[10px]"
-                          >
-                            <Paperclip className="mr-1 h-3 w-3" />{' '}
-                            {t('list.attachments', {
-                              count: request.images.length,
-                              plural: request.images.length === 1 ? '' : 's',
-                            })}
-                          </Badge>
-                        )}
+                    {request.images && request.images.length > 0 && (
+                      <Badge
+                        variant="outline"
+                        className="border-border/60 bg-background/50 text-[10px]"
+                      >
+                        <Paperclip className="mr-1 h-3 w-3" />{' '}
+                        {t('list.attachments', { count: request.images.length })}
+                      </Badge>
+                    )}
                   </div>
 
                   {request.approval_status === 'APPROVED' && request.approved_by_user && (

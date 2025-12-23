@@ -16,8 +16,6 @@ interface ImageUploadSectionProps {
   imageError: string | null;
   disabled?: boolean;
   canAddMore: boolean;
-  maxImages: number;
-  totalCount: number;
   fileInputRef: React.RefObject<HTMLInputElement>;
   onDragOver: (e: DragEvent<Element>) => void;
   onDragLeave: (e: DragEvent<Element>) => void;
@@ -152,7 +150,6 @@ export function ImageUploadSection({
                   size="icon"
                   className="absolute top-2 right-2 h-6 w-6"
                   onClick={() => onRemoveExisting(index)}
-                  disabled={disabled}
                 >
                   <X className="h-4 w-4" />
                 </Button>

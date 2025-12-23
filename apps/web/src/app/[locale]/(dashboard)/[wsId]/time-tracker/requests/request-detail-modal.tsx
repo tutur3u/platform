@@ -46,7 +46,8 @@ import {
   useUpdateRequest,
 } from './hooks/use-request-mutations';
 import type { ExtendedTimeTrackingRequest } from './page';
-import { STATUS_COLORS, STATUS_LABELS } from './utils';
+import { STATUS_COLORS, STATUS_LABELS, calculateDuration as calculateDurationUtil } from './utils';
+
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -304,19 +305,7 @@ export function RequestDetailModal({
     onUpdate,
   ]);
 
-  const calculateDuration = useCallback((startTime: string, endTime: string) => {
-    if (!startTime || !endTime) return '0h 0m';
-    const start = dayjs(startTime);
-    const end = dayjs(endTime);
-    if (!start.isValid() || !end.isValid()) return '0h 0m';
 
-    const diffSeconds = end.diff(start, 'second');
-    if (diffSeconds < 0) return '0h 0m';
-
-    const hours = Math.floor(diffSeconds / 3600);
-    const minutes = Math.floor((diffSeconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -482,7 +471,7 @@ export function RequestDetailModal({
                       className="border-dynamic-blue/30 bg-dynamic-blue/5 px-3 py-1 font-semibold text-dynamic-blue"
                     >
                       <ClockIcon className="mr-1.5 h-3.5 w-3.5" />
-                      {calculateDuration(editStartTime, editEndTime)}
+                      {calculateDurationUtil(editStartTime, editEndTime)}
                     </Badge>
                     <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
                   </div>
@@ -569,17 +558,18 @@ export function RequestDetailModal({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4 sm:grid-cols-2 sm:col-span-2">
+                <div className="flex items-center gap-4 sm:col-span-2">
                   <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
                   <Badge
                     variant="outline"
                     className="border-dynamic-blue/30 bg-dynamic-blue/5 px-3 py-1 font-semibold text-dynamic-blue"
                   >
                     <ClockIcon className="mr-1.5 h-3.5 w-3.5" />
-                    {calculateDuration(request.start_time, request.end_time)}
+                    {calculateDurationUtil(request.start_time, request.end_time)}
                   </Badge>
                   <div className="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
                 </div>
+
               </div>
             )}
 

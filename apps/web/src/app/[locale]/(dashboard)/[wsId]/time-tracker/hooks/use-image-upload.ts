@@ -134,9 +134,9 @@ export function useImageUpload(
             const rejectedNames = rejectedBySize
               .map((item) => item.originalName)
               .join(', ');
-            setImageError(
-              `${rejectedBySize.length} file(s) rejected (exceeded 1MB even after compression): ${rejectedNames}`
-            );
+             setImageError(
+              `${rejectedBySize.length} file(s) rejected (exceeded ${maxSizeBytes / (1024 * 1024)}MB even after compression): ${rejectedNames}`
+             );
           } else if (imageError && invalidTypeCount === 0) {
             setImageError('');
           }
@@ -160,7 +160,7 @@ export function useImageUpload(
         }
       }
     },
-    [images, totalImageCount, maxImages, maxSizeBytes, imageError]
+    [images, totalImageCount, maxImages, maxSizeBytes]
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {

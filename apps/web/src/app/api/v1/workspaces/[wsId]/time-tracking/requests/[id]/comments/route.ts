@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 
 const createCommentSchema = z.object({
   content: z.string().trim().min(1, { message: 'Content cannot be empty' }),
@@ -17,7 +18,14 @@ export async function POST(
   }
 ) {
   try {
+
+        // Parse and validate request body
+        const body = await request.json();
+        const { content } = createCommentSchema.parse(body);
+
+
     const { wsId, id: requestId } = await params;
+    const resolvedWorkspaceId = resolveWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get current user
@@ -33,7 +41,7 @@ export async function POST(
     const { data: membership } = await supabase
       .from('workspace_members')
       .select('ws_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
@@ -41,9 +49,19 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Parse and validate request body
-    const body = await request.json();
-    const { content } = createCommentSchema.parse(body);
+
+
+    // Verify request exists and belongs to workspace
+    const { data: requestExists } = await supabase
+      .from('time_tracking_requests')
+      .select('id')
+      .eq('id', requestId)
+      .eq('workspace_id', resolvedWorkspaceId)
+      .single();
+
+    if (!requestExists) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    }
 
     // Create comment
     const { data: newComment, error: createError } = await supabase
@@ -99,6 +117,7 @@ export async function GET(
 ) {
   try {
     const { wsId, id: requestId } = await params;
+    const resolvedWorkspaceId = resolveWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get current user
@@ -114,13 +133,26 @@ export async function GET(
     const { data: membership } = await supabase
       .from('workspace_members')
       .select('ws_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+
+        // Verify request exists and belongs to workspace
+        const { data: requestExists } = await supabase
+        .from('time_tracking_requests')
+        .select('id')
+        .eq('id', requestId)
+        .eq('workspace_id', resolvedWorkspaceId)
+        .single();
+  
+      if (!requestExists) {
+        return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+      }
 
     // Fetch comments
     const { data: comments, error: fetchError } = await supabase

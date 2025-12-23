@@ -1,4 +1,6 @@
+import dayjs from 'dayjs';
 import type { ExtendedTimeTrackingRequest } from './page';
+
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 export const STATUS_LABELS: Record<
@@ -20,13 +22,19 @@ export const STATUS_COLORS: Record<'PENDING' | 'APPROVED' | 'REJECTED' | 'NEEDS_
 };
 
 export const calculateDuration = (startTime: string, endTime: string) => {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const durationMs = end.getTime() - start.getTime();
-  const hours = Math.floor(durationMs / (1000 * 60 * 60));
-  const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+  if (!startTime || !endTime) return '0h 0m';
+  const start = dayjs(startTime);
+  const end = dayjs(endTime);
+  if (!start.isValid() || !end.isValid()) return '0h 0m';
+
+  const diffSeconds = end.diff(start, 'second');
+  if (diffSeconds < 0) return '0h 0m';
+
+  const hours = Math.floor(diffSeconds / 3600);
+  const minutes = Math.floor((diffSeconds % 3600) / 60);
   return `${hours}h ${minutes}m`;
 };
+
 
 export interface RequestsViewProps {
   wsId: string;

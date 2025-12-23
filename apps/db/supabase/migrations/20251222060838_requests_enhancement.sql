@@ -190,10 +190,12 @@ USING (
     is_org_member(auth.uid(), workspace_id)
     AND auth.uid() <> user_id 
     AND approval_status = 'PENDING'
+    AND has_workspace_permission(workspace_id, auth.uid(), 'manage_time_tracking_requests'::text)
 )
 WITH CHECK (
     is_org_member(auth.uid(), workspace_id)
     AND (approval_status = 'APPROVED' OR approval_status = 'REJECTED' OR approval_status = 'NEEDS_INFO')
+    AND has_workspace_permission(workspace_id, auth.uid(), 'manage_time_tracking_requests'::text)
 );
 
 -- =============================================================================
@@ -263,6 +265,21 @@ USING (
     AND created_at > (NOW() - INTERVAL '15 minutes')
 );
 
+-- Reuse or create the function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for comments table
+CREATE TRIGGER update_time_tracking_request_comments_updated_at
+    BEFORE UPDATE ON time_tracking_request_comments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
 -- =============================================================================
 -- 8. INDEXES
 -- =============================================================================
@@ -273,6 +290,8 @@ CREATE INDEX IF NOT EXISTS idx_time_tracking_request_comments_user_id
 CREATE INDEX IF NOT EXISTS idx_time_tracking_requests_needs_info 
     ON time_tracking_requests(workspace_id, user_id) 
     WHERE approval_status = 'NEEDS_INFO';
+CREATE INDEX IF NOT EXISTS idx_time_tracking_request_comments_created_at 
+    ON time_tracking_request_comments(created_at);
 
 -- =============================================================================
 -- 9. GRANT PERMISSIONS

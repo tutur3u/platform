@@ -7821,7 +7821,7 @@
         "noRequestsDefault": "No time tracking requests have been submitted yet.",
         "duration": "{hours}h {minutes}m",
         "task": "Task: {name}",
-        "attachments": "{count} image{plural}",
+        "attachments": "{count, plural, =1 {image} other {images}}",
         "approvedBy": "Approved by {name}",
         "approvedOn": "on {date}",
         "rejectedBy": "Rejected by {name}",
@@ -7879,6 +7879,7 @@
         "title": "Comments",
         "addComment": "Add a comment...",
         "postComment": "Post Comment",
+        "sendShortcut": "Ctrl + Enter to send",
         "editComment": "Edit Comment",
         "saveComment": "Save",
         "cancelEdit": "Cancel",
@@ -7891,7 +7892,8 @@
         "commentFailed": "Failed to post comment",
         "editExpired": "Can only edit within 15 minutes",
         "deleteExpired": "Can only delete within 15 minutes",
-        "justNow": "just now"
+        "justNow": "just now",
+        "loading": "Loading Comments"
       },
       "toast": {
         "approveSuccess": "Time tracking request approved successfully",

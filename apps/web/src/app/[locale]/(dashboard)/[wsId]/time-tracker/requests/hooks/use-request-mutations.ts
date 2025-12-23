@@ -289,7 +289,7 @@ export function useAddComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ wsId, requestId, content }: AddCommentParams) => {
+    mutationFn: async ({ requestId, wsId, content }: AddCommentParams) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/requests/${requestId}/comments`,
         {
@@ -306,10 +306,10 @@ export function useAddComment() {
 
       return response.json();
     },
-    onSuccess: (_, { wsId, requestId }) => {
+    onSuccess: (_, { requestId, wsId }) => {
       // Invalidate comments query
       queryClient.invalidateQueries({
-        queryKey: ['time-tracking-request-comments', requestId],
+        queryKey: ['time-tracking-request-comments', requestId, wsId],
       });
 
       toast.success(t('comments.commentPosted'));
@@ -354,10 +354,10 @@ export function useUpdateComment() {
 
       return response.json();
     },
-    onSuccess: (_, { requestId }) => {
+    onSuccess: (_, { requestId, wsId }) => {
       // Invalidate comments query
       queryClient.invalidateQueries({
-        queryKey: ['time-tracking-request-comments', requestId],
+        queryKey: ['time-tracking-request-comments', requestId, wsId],
       });
 
       toast.success(t('comments.commentUpdated'));
@@ -398,10 +398,10 @@ export function useDeleteComment() {
 
       return response.json();
     },
-    onSuccess: (_, { requestId }) => {
+    onSuccess: (_, { requestId, wsId }) => {
       // Invalidate comments query
       queryClient.invalidateQueries({
-        queryKey: ['time-tracking-request-comments', requestId],
+        queryKey: ['time-tracking-request-comments', requestId, wsId],
       });
 
       toast.success(t('comments.commentDeleted'));
