@@ -188,9 +188,17 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
       } else if (prefillStartTime && prefillEndTime) {
         setMissedEntryStartTime(prefillStartTime);
         setMissedEntryEndTime(prefillEndTime);
+      } else if (isNormalMode) {
+        // Default to current time and 1 hour later when no prefill values provided
+        const userTz = dayjs.tz.guess();
+        const now = dayjs().tz(userTz);
+        const oneHourBefore = now.subtract(1, 'hour');
+
+        setMissedEntryStartTime(oneHourBefore.format('YYYY-MM-DDTHH:mm'));
+        setMissedEntryEndTime(now.format('YYYY-MM-DDTHH:mm'));
       }
     }
-  }, [open, isExceededMode, session, prefillStartTime, prefillEndTime]);
+  }, [open, isExceededMode, isNormalMode, session, prefillStartTime, prefillEndTime]);
 
   // Update current duration every second in exceeded mode
   useEffect(() => {
