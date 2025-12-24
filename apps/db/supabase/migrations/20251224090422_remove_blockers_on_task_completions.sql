@@ -13,9 +13,6 @@ BEGIN
     DELETE FROM public.task_relationships
     WHERE source_task_id = NEW.id
       AND type = 'blocks';
-    
-    -- Log the removal for debugging (optional)
-    RAISE LOG 'Removed blocking relationships for completed task %', NEW.id;
   END IF;
   
   RETURN NEW;

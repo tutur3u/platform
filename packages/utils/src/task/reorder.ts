@@ -119,23 +119,26 @@ export function useReorderTask(boardId: string) {
       const list = targetList?.find((l) => l.id === newListId);
       const isCompletionList = list?.status === 'done' || list?.status === 'closed';
 
-      // If moving to completion list, fetch blocked task IDs before the update
-      // so we can invalidate their caches after the blocking relationships are removed
-      let blockedTaskIds: string[] = [];
+      // If moving to completion list, start fetching blocked task IDs asynchronously
+      // Don't await here to avoid blocking the optimistic update
+      let blockedTaskIdsPromise: Promise<string[]> | null = null;
       if (isCompletionList) {
         const supabase = createClient();
-        const { data } = await supabase
-          .from('task_relationships')
-          .select('target_task_id')
-          .eq('source_task_id', taskId)
-          .eq('type', 'blocks');
-        
-        if (data) {
-          blockedTaskIds = data.map((r) => r.target_task_id);
-        }
+        blockedTaskIdsPromise = Promise.resolve(
+          supabase
+            .from('task_relationships')
+            .select('target_task_id')
+            .eq('source_task_id', taskId)
+            .eq('type', 'blocks')
+        )
+          .then(({ data }) => data?.map((r) => r.target_task_id) || [])
+          .catch((err: unknown) => {
+            console.error('Failed to fetch blocked task IDs:', err);
+            return []; // Return empty array on error to prevent breaking the flow
+          });
       }
 
-      // Optimistically update the task
+      // Optimistically update the task immediately (not blocked by the fetch above)
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
@@ -157,7 +160,7 @@ export function useReorderTask(boardId: string) {
         }
       );
 
-      return { previousTasks, blockedTaskIds };
+      return { previousTasks, blockedTaskIdsPromise };
     },
     onError: (err, _, context) => {
       console.log('❌ onError triggered - rollback optimistic update');
@@ -191,15 +194,19 @@ export function useReorderTask(boardId: string) {
           queryKey: ['task-relationships', variables.taskId],
         });
 
-        // Invalidate all blocked tasks' relationships (they're now unblocked)
-        if (context?.blockedTaskIds && context.blockedTaskIds.length > 0) {
-          await Promise.all(
-            context.blockedTaskIds.map((blockedTaskId) =>
-              queryClient.invalidateQueries({
-                queryKey: ['task-relationships', blockedTaskId],
-              })
-            )
-          );
+        // Await the blockedTaskIdsPromise to get the list of blocked tasks
+        // Then invalidate all blocked tasks' relationships (they're now unblocked)
+        if (context?.blockedTaskIdsPromise) {
+          const blockedTaskIds = await context.blockedTaskIdsPromise;
+          if (blockedTaskIds.length > 0) {
+            await Promise.all(
+              blockedTaskIds.map((blockedTaskId) =>
+                queryClient.invalidateQueries({
+                  queryKey: ['task-relationships', blockedTaskId],
+                })
+              )
+            );
+          }
         }
       }
     },
