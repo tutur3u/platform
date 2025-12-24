@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION public.remove_blockers_on_completion()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Only act when task is newly completed (completed_at changes from NULL to a timestamp)
-  IF OLD.completed_at IS NULL AND NEW.completed_at IS NOT NULL THEN
+  IF (OLD.completed_at IS NULL AND NEW.completed_at IS NOT NULL) OR (OLD.closed_at IS NULL AND NEW.closed_at IS NOT NULL) THEN
     -- Delete all 'blocks' relationships where this task was the blocker
     DELETE FROM public.task_relationships
     WHERE source_task_id = NEW.id
