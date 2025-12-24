@@ -10,12 +10,15 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Clock, FileEdit, MessageSquare, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from '@tuturuuu/icons';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useState, useCallback } from 'react';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import type { Database } from '@tuturuuu/types';
+
+type ActivityAction = Database['public']['Enums']['time_tracking_request_activity_action'];
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -119,7 +122,7 @@ export function ActivityTimeline({
 
   const formatFieldName = useCallback((field: string): string => {
     // Try to get translation first, fallback to formatted field name
-    const translationKey = `activity.fields.${field}`;
+    const translationKey = `activity.fields.${field}` as any;
     const translated = t(translationKey);
     
     // If translation exists and is different from key, use it
@@ -154,7 +157,7 @@ export function ActivityTimeline({
         return (
           <div>
             <p className="text-sm font-medium">{t('activity.actions.created')}</p>
-            {activity.metadata?.title && (
+            {activity.metadata?.title != null && (
               <p className="text-sm text-foreground/60 mt-1">
                 {t('activity.titleLabel')}: {String(activity.metadata.title)}
               </p>
@@ -355,9 +358,9 @@ export function ActivityTimeline({
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-4 pt-4 border-t border-dynamic-border">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-foreground/60">
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-dynamic-border">
+                <div className="flex items-center gap-2 min-w-0">
+                  <label className="text-sm text-foreground/60 whitespace-nowrap">
                     {t('activity.itemsPerPage')}:
                   </label>
                   <select
@@ -377,32 +380,36 @@ export function ActivityTimeline({
                   </select>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1 || isLoading}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  {t('activity.previous')}
-                </Button>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1 || isLoading}
+                    className="shrink-0"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">{t('activity.previous')}</span>
+                  </Button>
 
-                <span className="text-sm text-foreground/60">
-                  {t('activity.pageInfo', {
-                    current: currentPage,
-                    total: totalPages,
-                  })}
-                </span>
+                  <span className="text-sm text-foreground/60 whitespace-nowrap">
+                    {t('activity.pageInfo', {
+                      current: currentPage,
+                      total: totalPages,
+                    })}
+                  </span>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages || isLoading}
-                >
-                  {t('activity.next')}
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages || isLoading}
+                    className="shrink-0"
+                  >
+                    <span className="hidden sm:inline">{t('activity.next')}</span>
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>

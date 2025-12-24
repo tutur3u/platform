@@ -1,6 +1,6 @@
 'use client';
 
-import { EditIcon, Loader2 } from '@tuturuuu/icons';
+import { EditIcon } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
