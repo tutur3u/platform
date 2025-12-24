@@ -20,8 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { UserPresenceAvatars } from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -76,6 +76,7 @@ export function CustomWhiteboard({
   // Set up collaboration
   const {
     collaborators,
+    presenceState,
     isConnected,
     currentUserId,
     broadcastElementChanges,
@@ -370,9 +371,6 @@ export function CustomWhiteboard({
     }
   }, [excalidrawAPI, isSaving, boardId, supabase]);
 
-  // Get collaborator count (excluding self)
-  const collaboratorCount = collaborators.size;
-
   return (
     <TooltipProvider>
       <div className="relative h-full w-full">
@@ -420,40 +418,12 @@ export function CustomWhiteboard({
             </Tooltip>
 
             {/* Collaborator Avatars */}
-            {collaboratorCount > 0 && (
-              <div className="flex -space-x-2">
-                {Array.from(collaborators.values())
-                  .slice(0, 5)
-                  .map((collab) => (
-                    <Tooltip key={collab.id}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className="h-7 w-7 rounded-full border-2 border-white dark:border-gray-800"
-                          style={{ backgroundColor: collab.color }}
-                        >
-                          {collab.avatarUrl ? (
-                            <Image
-                              src={collab.avatarUrl}
-                              alt={collab.displayName}
-                              className="h-full w-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center font-medium text-white text-xs">
-                              {collab.displayName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>{collab.displayName}</TooltipContent>
-                    </Tooltip>
-                  ))}
-                {collaboratorCount > 5 && (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-muted text-xs dark:border-gray-800">
-                    +{collaboratorCount - 5}
-                  </div>
-                )}
-              </div>
-            )}
+            <UserPresenceAvatars
+              presenceState={presenceState}
+              currentUserId={currentUserId}
+              maxDisplay={5}
+              avatarClassName="h-7 w-7"
+            />
           </div>
         </div>
 
