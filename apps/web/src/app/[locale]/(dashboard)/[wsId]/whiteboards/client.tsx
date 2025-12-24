@@ -336,7 +336,10 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
             variant="ghost"
             size="sm"
             className="opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -348,6 +351,7 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
               <DropdownMenuItem
                 className="gap-2"
                 onSelect={(e) => e.preventDefault()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <Pencil className="h-4 w-4" />
                 Edit
@@ -357,7 +361,10 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
           <DropdownMenuItem
             className="gap-2 text-destructive focus:text-destructive"
             onSelect={(e) => e.preventDefault()}
-            onClick={() => setShowDeleteDialog(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(true);
+            }}
           >
             <Trash className="h-4 w-4" />
             Delete
@@ -375,8 +382,15 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDelete(whiteboard)}>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(whiteboard);
+              }}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
