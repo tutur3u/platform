@@ -3,11 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type ElementChange, mergeElements } from '@/utils/excalidraw-helper';
-import {
-  type ExcalidrawCursorPosition,
-  useExcalidrawCursor,
-} from './useExcalidrawCursor';
+import { useExcalidrawCursor } from './useExcalidrawCursor';
 import { useExcalidrawElementSync } from './useExcalidrawElementSync';
 import {
   type CurrentUserInfo,
@@ -121,6 +117,7 @@ export function useWhiteboardCollaboration({
         setCurrentUserData({
           id: user.id,
           display_name: userData?.display_name,
+          email: user.email,
           avatar_url: userData?.avatar_url,
         });
       } catch (error) {
@@ -142,8 +139,8 @@ export function useWhiteboardCollaboration({
     return {
       id: currentUserId || '',
       displayName: currentUserData?.display_name || 'Unknown',
+      email: currentUserData?.email || '',
       avatarUrl: currentUserData?.avatar_url || undefined,
-      color: currentUserId ? getCollaboratorColor(currentUserId) : '#808080',
     };
   }, [currentUserData, currentUserId]);
 
@@ -231,7 +228,3 @@ export function useWhiteboardCollaboration({
     disconnect: disconnectPresence,
   };
 }
-
-// Re-export types and utilities
-export type { ElementChange, ExcalidrawCursorPosition };
-export { mergeElements };

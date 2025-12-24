@@ -7,7 +7,6 @@ export interface ExcalidrawCursorUser {
   id: string;
   displayName: string;
   avatarUrl?: string;
-  color: string;
 }
 
 export interface ExcalidrawCursorPosition {
@@ -223,7 +222,7 @@ export function useExcalidrawCursor({
         handleError(err);
       }
     };
-    console.log('setting up channel');
+
     setupChannel();
 
     return () => {
