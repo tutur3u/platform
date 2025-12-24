@@ -143,18 +143,40 @@ export function useEditorCommands({
         chain.deleteRange(mentionState.range);
       }
 
+      let attributes: Record<string, any> = {
+        userId: option.type === 'user' ? option.id : null,
+        entityId: option.id,
+        entityType: option.type,
+        displayName: option.label,
+        avatarUrl: option.avatarUrl ?? null,
+        subtitle: option.subtitle ?? null,
+      };
+
+      // For tasks, we want to use the display number as the display name
+      // and populate additional attributes for the chip
+      if (option.type === 'task' && option.payload) {
+        const task = option.payload as any;
+        if (task.display_number) {
+          attributes.displayName = String(task.display_number);
+        }
+        // Set subtitle to task name (option.label) for consistent chip display
+        attributes.subtitle = option.label;
+        if (task.priority) {
+          attributes.priority = task.priority;
+        }
+        if (task.list?.color) {
+          attributes.listColor = task.list.color;
+        }
+        if (task.assignees) {
+          attributes.assignees = JSON.stringify(task.assignees);
+        }
+      }
+
       chain
         .insertContent([
           {
             type: 'mention',
-            attrs: {
-              userId: option.type === 'user' ? option.id : null,
-              entityId: option.id,
-              entityType: option.type,
-              displayName: option.label,
-              avatarUrl: option.avatarUrl ?? null,
-              subtitle: option.subtitle ?? null,
-            },
+            attrs: attributes,
           },
           { type: 'text', text: ' ' },
         ])

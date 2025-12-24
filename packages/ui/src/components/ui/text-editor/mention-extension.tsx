@@ -183,6 +183,16 @@ export const Mention = Node.create({
       subtitle: {
         default: null,
       },
+      // Task-specific attributes (optional, for enhanced rendering)
+      priority: {
+        default: null,
+      },
+      listColor: {
+        default: null,
+      },
+      assignees: {
+        default: null,
+      },
     };
   },
 
@@ -207,6 +217,10 @@ export const Mention = Node.create({
             displayName,
             avatarUrl: element.dataset.avatarUrl ?? null,
             subtitle: element.dataset.subtitle ?? null,
+            // Task-specific attributes (optional)
+            priority: element.dataset.priority ?? null,
+            listColor: element.dataset.listColor ?? null,
+            assignees: element.dataset.assignees ?? null,
           };
         },
       },
@@ -221,6 +235,9 @@ export const Mention = Node.create({
     const displayNameRaw = (attrs.displayName as string | null) ?? null;
     const avatarUrl = (attrs.avatarUrl as string | null) ?? null;
     const subtitle = (attrs.subtitle as string | null) ?? null;
+    const priority = (attrs.priority as string | null) ?? null;
+    const listColor = (attrs.listColor as string | null) ?? null;
+    const assignees = (attrs.assignees as string | null) ?? null;
 
     delete attrs.userId;
     delete attrs.entityId;
@@ -228,6 +245,9 @@ export const Mention = Node.create({
     delete attrs.displayName;
     delete attrs.avatarUrl;
     delete attrs.subtitle;
+    delete attrs.priority;
+    delete attrs.listColor;
+    delete attrs.assignees;
 
     const displayName = (displayNameRaw || 'Member').trim();
     const visuals = getMentionVisualMeta(entityType);
@@ -237,7 +257,7 @@ export const Mention = Node.create({
         ? initials
         : visuals.fallback;
 
-    const baseAttributes = {
+    const baseAttributes: any = {
       'data-mention': 'true',
       'data-user-id': userId ?? '',
       'data-entity-id': entityId ?? '',
@@ -248,6 +268,15 @@ export const Mention = Node.create({
       class: `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium leading-none transition-colors ${visuals.pillClass}`,
       ...attrs,
     };
+
+    // Add task-specific data attributes if present
+    if (entityType === 'task') {
+      if (priority) baseAttributes['data-priority'] = priority;
+      if (listColor) baseAttributes['data-list-color'] = listColor;
+      if (assignees) baseAttributes['data-assignees'] = assignees;
+      // Use display-number for tasks
+      baseAttributes['data-display-number'] = displayName;
+    }
 
     const avatarNode: any = avatarUrl
       ? [

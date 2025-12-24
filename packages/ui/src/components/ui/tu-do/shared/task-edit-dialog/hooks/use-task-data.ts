@@ -165,9 +165,10 @@ export function useTaskData({
             `
           id,
           name,
+          display_number,
           priority,
           created_at,
-          list:task_lists!inner(id, name, board_id)
+          list:task_lists!inner(id, name, board_id, color)
         `
           )
           .in('task_lists.board_id', boardIds)

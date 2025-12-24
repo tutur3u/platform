@@ -18,7 +18,7 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import {
@@ -48,6 +48,12 @@ import { TaskNewProjectDialog } from '../tu-do/boards/boardId/task-dialogs/TaskN
 import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationships';
 import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
+import {
+  getAssigneeInitials,
+  getTicketBadgeColorClasses,
+} from '../tu-do/utils/taskColorUtils';
+import { getPriorityIcon } from '../tu-do/utils/taskPriorityUtils';
+import { TaskSummaryPopover } from './task-summary-popover';
 
 // Extended Task type that includes board_id (denormalized field in database)
 interface TaskWithBoardId extends Task {
@@ -70,8 +76,10 @@ export function TaskMentionChip({
   className,
 }: TaskMentionChipProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
 
@@ -81,7 +89,7 @@ export function TaskMentionChip({
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
 
-  // Fetch full task data
+  // Fetch full task data - load immediately to show priority, assignees, and colors
   const {
     data: task,
     isLoading: taskLoading,
@@ -148,7 +156,7 @@ export function TaskMentionChip({
         })),
       } as TaskWithBoardId;
     },
-    enabled: menuOpen,
+    enabled: true, // Always load to show inline metadata
     staleTime: 30000,
     retry: false,
   });
@@ -184,10 +192,10 @@ export function TaskMentionChip({
   // Fetch workspace members
   const { data: workspaceMembers = [], isLoading: membersLoading } =
     useWorkspaceMembers(boardConfig?.ws_id, {
-      enabled: !!boardConfig?.ws_id && menuOpen,
+      enabled: !!boardConfig?.ws_id && menuOpen, // Only needed for editing
     });
 
-  // Fetch available task lists
+  // Fetch available task lists - enable when we have task data to get current list color
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', task?.board_id],
     queryFn: async () => {
@@ -203,9 +211,15 @@ export function TaskMentionChip({
       if (error) throw error;
       return data as TaskList[];
     },
-    enabled: !!task?.board_id && menuOpen,
+    enabled: !!task?.board_id, // Load when we have task data
     staleTime: 10 * 60 * 1000,
   });
+
+  // Get current task's list for color rendering
+  const currentTaskList = useMemo(() => {
+    if (!task || !availableLists.length) return null;
+    return availableLists.find((list) => list.id === task.list_id) || null;
+  }, [task, availableLists]);
 
   // Placeholder task for hooks when task is not loaded yet
   const placeholderTask: Task = useMemo(
@@ -543,11 +557,20 @@ export function TaskMentionChip({
       toast.error('Failed to copy link');
     }
     setMenuOpen(false);
+    setPopoverOpen(false);
   };
 
   const title = subtitle
     ? `#${displayNumber} • ${subtitle}`
     : `#${displayNumber}`;
+
+  // Get styling based on task list color or priority
+  const chipColorClasses = useMemo(() => {
+    return getTicketBadgeColorClasses(
+      currentTaskList || undefined,
+      task?.priority || undefined
+    );
+  }, [currentTaskList, task?.priority]);
 
   const chipContent = (
     <span
@@ -557,41 +580,86 @@ export function TaskMentionChip({
       data-display-number={displayNumber}
       data-avatar-url={avatarUrl ?? ''}
       data-subtitle={subtitle ?? ''}
+      data-priority={task?.priority ?? ''}
+      data-list-color={currentTaskList?.color ?? ''}
       title={title}
       contentEditable={false}
+      onClick={(e) => {
+        e.stopPropagation();
+        (e as any).stopImmediatePropagation?.();
+        e.preventDefault();
+        setPopoverOpen((prev) => !prev);
+      }}
+      onContextMenu={(e) => {
+        e.stopPropagation();
+        (e as any).stopImmediatePropagation?.();
+        e.preventDefault();
+        // Right-click: close popover and open dropdown menu directly
+        setPopoverOpen(false);
+        setMenuOpen(true);
+        setMenuGuardUntil(Date.now() + 300);
+      }}
+      onAuxClick={(e) => {
+        e.stopPropagation();
+        (e as any).stopImmediatePropagation?.();
+        e.preventDefault();
+      }}
       className={cn(
         'inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-medium text-[12px] leading-none transition-colors',
-        'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
-        'hover:border-dynamic-blue/60 hover:bg-dynamic-blue/20',
+        chipColorClasses,
+        'hover:opacity-80',
         className
       )}
     >
-      {/* Avatar/Icon */}
-      <Avatar className="-ml-0.5 h-4 w-4 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/20 text-dynamic-blue">
-        {avatarUrl ? (
-          <AvatarImage
-            src={avatarUrl}
-            alt={displayNumber}
-            referrerPolicy="no-referrer"
-          />
-        ) : null}
-        <AvatarFallback className="flex h-full w-full items-center justify-center bg-transparent font-semibold text-[10px]">
-          <CheckCircle2 className="h-3 w-3" />
-        </AvatarFallback>
-      </Avatar>
+      {/* Chip content - updated 2025-12-23 11:52 */}
+      {/* Task Number */}
+      <span className="font-semibold">#{displayNumber}</span>
 
-      {/* Label */}
-      <span className="flex items-center gap-1 text-current">
-        <span className="font-semibold">#{displayNumber}</span>
-        {(subtitle || task?.name) && (
-          <>
-            <span className="opacity-50">•</span>
-            <span className="max-w-[200px] truncate font-medium">
-              {subtitle || task?.name}
+      {/* Priority Icon */}
+      {task?.priority && (
+        <span className="ml-1 flex items-center justify-center">
+          {getPriorityIcon(task.priority, 'h-3 w-3')}
+        </span>
+      )}
+
+      {/* Task Name */}
+      {(subtitle || task?.name) && (
+        <>
+          <span className="opacity-50">•</span>
+          <span className='max-w-50 truncate font-medium'>
+            {subtitle || task?.name}
+          </span>
+        </>
+      )}
+
+      {/* Assignee Avatars */}
+      {task?.assignees && task.assignees.length > 0 && (
+        <span className="ml-1 flex -space-x-1">
+          {task.assignees.slice(0, 3).map((assignee) => (
+            <Avatar
+              key={assignee.id}
+              className="h-4 w-4 border border-background"
+              title={assignee.display_name || 'Unknown'}
+            >
+              {assignee.avatar_url && (
+                <AvatarImage
+                  src={assignee.avatar_url}
+                  alt={assignee.display_name || 'User'}
+                  referrerPolicy="no-referrer"
+                />
+              )}
+              <AvatarFallback className="text-[8px]">
+                {getAssigneeInitials(assignee.display_name, null)}
+              </AvatarFallback>
+            </Avatar>
+          ))}
+          {task.assignees.length > 3 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-background bg-muted font-medium text-[8px]">
+              +{task.assignees.length - 3}
             </span>
-          </>
-        )}
-      </span>
+          )}
+        </span>
+      )}
     </span>
   );
 
@@ -808,9 +876,27 @@ export function TaskMentionChip({
     </>
   );
 
-  // Use DropdownMenu (click to toggle) - required for sub-menu components to work
+  // Render chip that opens popover, and a separate dropdown menu for editing
   return (
-    <>
+    <div style={{ display: 'inline-flex', position: 'relative' }}>
+      <TaskSummaryPopover
+        task={task || null}
+        taskList={currentTaskList}
+        isLoading={taskLoading}
+        onEdit={() => {
+          setPopoverOpen(false);
+          setTimeout(() => setMenuOpen(true), 100);
+        }}
+        onGoToTask={handleGoToTask}
+        open={popoverOpen}
+        onOpenChange={setPopoverOpen}
+        blockedBy={blockedByTasks as Task[]}
+        workspaceId={boardConfig?.ws_id}
+      >
+        {chipContent}
+      </TaskSummaryPopover>
+
+      {/* Dropdown menu for editing */}
       <DropdownMenu
         open={menuOpen}
         onOpenChange={(open) => {
@@ -820,12 +906,26 @@ export function TaskMentionChip({
           }
         }}
       >
-        <DropdownMenuTrigger asChild>{chipContent}</DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
+          <div
+            ref={dropdownTriggerRef}
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              pointerEvents: 'none',
+              opacity: 0,
+              width: '1px',
+              height: '1px',
+            }}
+          />
+        </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          sideOffset={4}
           className="w-56"
-          onClick={(e) => e.stopPropagation()}
+          side="bottom"
+          sideOffset={8}
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
         >
           {taskLoading ? (
             <div className="flex items-center justify-center p-4">
@@ -891,6 +991,6 @@ export function TaskMentionChip({
           />
         </>
       )}
-    </>
+    </div>
   );
 }
