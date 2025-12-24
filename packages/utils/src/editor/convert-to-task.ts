@@ -4,10 +4,7 @@ export interface ConvertToTaskOptions {
   editor: Editor;
   listId: string;
   listName: string;
-  createTask: (params: {
-    name: string;
-    listId: string;
-  }) => Promise<{
+  createTask: (params: { name: string; listId: string }) => Promise<{
     id: string;
     name: string;
     display_number?: number;
