@@ -54,7 +54,6 @@ import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
-import { defaultSmartSchedulingData } from './calendar/smart-scheduling-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import MembersSettings from './workspace/members-settings';
@@ -330,12 +329,12 @@ export function SettingsDialog({
     navItems[0]?.items[0];
 
   return (
-    <DialogContent className="flex h-full flex-col overflow-hidden p-0 md:max-h-[800px] md:max-w-[1000px] lg:max-w-[1200px]">
+    <DialogContent className="flex h-full flex-col overflow-hidden p-0 md:max-h-200 md:max-w-250 lg:max-w-300">
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
       <DialogDescription className="sr-only">
         {t('common.settings')}
       </DialogDescription>
-      <SidebarProvider className="flex h-full min-h-0 w-full flex-1 items-start">
+      <SidebarProvider className="flex items-start">
         <Sidebar
           collapsible="none"
           className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
@@ -391,18 +390,6 @@ export function SettingsDialog({
                         timezone: {
                           timezone: workspace.timezone || 'auto',
                           showSecondaryTimezone: false,
-                        },
-                        smartScheduling: {
-                          ...defaultSmartSchedulingData,
-                          energyProfile:
-                            (workspace.energy_profile as any) ||
-                            'morning_person',
-                          minBuffer:
-                            (workspace.scheduling_settings as any)
-                              ?.min_buffer || 5,
-                          preferredBuffer:
-                            (workspace.scheduling_settings as any)
-                              ?.preferred_buffer || 15,
                         },
                       }
                     : undefined

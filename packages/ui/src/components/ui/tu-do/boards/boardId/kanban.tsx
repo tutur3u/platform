@@ -9,8 +9,8 @@ import {
   type DragStartEvent,
   KeyboardSensor,
   MeasuringStrategy,
-  MouseSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -99,7 +99,6 @@ import { useBulkOperations } from './kanban-bulk-operations';
 import {
   DRAG_ACTIVATION_DISTANCE,
   MAX_SAFE_INTEGER_SORT,
-  MOBILE_BREAKPOINT,
 } from './kanban-constants';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import { TaskCard } from './task';
@@ -135,7 +134,7 @@ function BulkCustomDateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>Set Custom Due Date</DialogTitle>
           <DialogDescription>
@@ -230,6 +229,7 @@ export function KanbanBoard({
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId ?? '');
   const reorderTaskMutation = useReorderTask(boardId ?? '');
   const { createTask } = useTaskDialog();
+  const { weekStartsOn } = useCalendarPreferences();
 
   // Use React Query hook for board config (shared cache)
   const { data: boardConfig } = useBoardConfig(boardId);
@@ -871,22 +871,11 @@ export function KanbanBoard({
     columns,
     workspaceLabels,
     workspaceProjects,
+    weekStartsOn,
     setBulkWorking,
     clearSelection,
     setBulkDeleteOpen,
   });
-
-  // Detect mobile to disable drag sensors
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Keyboard shortcuts for multiselect mode (Shift for range select, Cmd/Ctrl for toggle)
   useEffect(() => {
@@ -928,11 +917,17 @@ export function KanbanBoard({
     };
   }, [isMultiSelectMode, selectedTasks.size]);
 
-  // On mobile, use MouseSensor instead of PointerSensor to allow touch scrolling
+  // Configure sensors for both mouse/pointer and touch interactions
   const sensors = useSensors(
-    useSensor(isMobile ? MouseSensor : PointerSensor, {
+    useSensor(PointerSensor, {
       activationConstraint: {
         distance: DRAG_ACTIVATION_DISTANCE,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 500, // Require 500ms press-and-hold before drag starts
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -1936,7 +1931,7 @@ export function KanbanBoard({
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="flex h-full gap-4 p-4">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="h-full w-[350px] animate-pulse">
+              <Card key={i} className="h-full w-87.5 animate-pulse">
                 <div className="p-4">
                   <div className="mb-4 h-6 w-32 rounded bg-gray-200"></div>
                   <div className="space-y-3">
@@ -2172,7 +2167,7 @@ export function KanbanBoard({
                       Estimation
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent className="w-40">
-                      <div className="max-h-[200px] overflow-auto">
+                      <div className="max-h-50 overflow-auto">
                         <div className="p-1">
                           {estimationOptions.map((idx) => {
                             const disabledByExtended =
@@ -2247,7 +2242,7 @@ export function KanbanBoard({
                           : 'No labels available'}
                       </div>
                     ) : (
-                      <div className="max-h-[200px] overflow-auto">
+                      <div className="max-h-50 overflow-auto">
                         <div className="flex flex-col gap-1 p-1">
                           {filteredLabels.map((label) => {
                             const isApplied = appliedLabels.has(label.id);
@@ -2347,7 +2342,7 @@ export function KanbanBoard({
                           : 'No projects available'}
                       </div>
                     ) : (
-                      <div className="max-h-[200px] overflow-auto">
+                      <div className="max-h-50 overflow-auto">
                         <div className="flex flex-col gap-1 p-1">
                           {filteredProjects.map((project: any) => {
                             const isApplied = appliedProjects.has(project.id);
@@ -2420,8 +2415,8 @@ export function KanbanBoard({
                       <Move className="h-4 w-4 text-dynamic-blue" />
                       Move to List
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                      <div className="max-h-[200px] overflow-auto">
+                    <DropdownMenuSubContent className="max-h-100 w-56 overflow-hidden p-0">
+                      <div className="max-h-50 overflow-auto">
                         <div className="p-1">
                           {columns.map((list) => {
                             const getStatusIcon = (status: string) => {
@@ -2513,7 +2508,7 @@ export function KanbanBoard({
                             : 'No workspace members available'}
                         </div>
                       ) : (
-                        <div className="max-h-[150px] overflow-auto">
+                        <div className="max-h-37.5 overflow-auto">
                           <div className="flex flex-col gap-1 p-1">
                             {filteredMembers.map((member: any) => {
                               const isApplied = appliedAssignees.has(member.id);
@@ -2777,7 +2772,7 @@ export function KanbanBoard({
 
       {/* Bulk delete confirmation */}
       <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="sm:max-w-105">
           <DialogHeader>
             <DialogTitle>Delete selected tasks</DialogTitle>
             <DialogDescription>

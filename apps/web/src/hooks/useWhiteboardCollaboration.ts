@@ -1,15 +1,13 @@
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type ElementChange, mergeElements } from '@/utils/excalidraw-helper';
-import {
-  type ExcalidrawCursorPosition,
-  useExcalidrawCursor,
-} from './useExcalidrawCursor';
+import { useExcalidrawCursor } from './useExcalidrawCursor';
 import { useExcalidrawElementSync } from './useExcalidrawElementSync';
 import {
   type CurrentUserInfo,
+  type UserPresenceState,
   useExcalidrawPresence,
 } from './useExcalidrawPresence';
 
@@ -65,9 +63,10 @@ export interface UseWhiteboardCollaborationConfig {
 export interface UseWhiteboardCollaborationResult {
   // State
   collaborators: Map<string, WhiteboardCollaborator>;
+  presenceState: RealtimePresenceState<UserPresenceState>;
+  currentUserId: string | undefined;
   isConnected: boolean;
   isSynced: boolean;
-  currentUserId: string | undefined;
 
   // Actions
   broadcastElementChanges: (
@@ -118,6 +117,7 @@ export function useWhiteboardCollaboration({
         setCurrentUserData({
           id: user.id,
           display_name: userData?.display_name,
+          email: user.email,
           avatar_url: userData?.avatar_url,
         });
       } catch (error) {
@@ -139,8 +139,8 @@ export function useWhiteboardCollaboration({
     return {
       id: currentUserId || '',
       displayName: currentUserData?.display_name || 'Unknown',
+      email: currentUserData?.email || '',
       avatarUrl: currentUserData?.avatar_url || undefined,
-      color: currentUserId ? getCollaboratorColor(currentUserId) : '#808080',
     };
   }, [currentUserData, currentUserId]);
 
@@ -187,8 +187,6 @@ export function useWhiteboardCollaboration({
 
     // Add users from presence state
     for (const [userId, presences] of Object.entries(presenceState)) {
-      if (userId === currentUser.id) continue; // Skip self
-
       const presence = presences[0]; // Take first presence entry
       if (!presence) continue;
 
@@ -212,7 +210,7 @@ export function useWhiteboardCollaboration({
     }
 
     return collabMap;
-  }, [presenceState, remoteCursors, currentUser.id]);
+  }, [presenceState, remoteCursors]);
 
   // Overall connection status
   const isConnected =
@@ -221,6 +219,7 @@ export function useWhiteboardCollaboration({
 
   return {
     collaborators,
+    presenceState,
     isConnected,
     isSynced,
     currentUserId,
@@ -229,7 +228,3 @@ export function useWhiteboardCollaboration({
     disconnect: disconnectPresence,
   };
 }
-
-// Re-export types and utilities
-export type { ElementChange, ExcalidrawCursorPosition };
-export { mergeElements };

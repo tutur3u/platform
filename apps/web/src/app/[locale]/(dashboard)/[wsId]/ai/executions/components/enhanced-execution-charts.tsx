@@ -284,7 +284,7 @@ export function EnhancedExecutionCharts({
     date: item.date,
     input: item.inputTokens,
     output: item.outputTokens,
-    reasoning: item.reasoningTokens,
+    reasoningText: item.reasoningTokens,
   }));
 
   // Summary calculations
@@ -350,7 +350,7 @@ export function EnhancedExecutionCharts({
             <div className="h-4 w-48 animate-pulse rounded bg-muted" />
           </CardHeader>
           <CardContent>
-            <div className="h-[400px] animate-pulse rounded bg-muted" />
+            <div className="h-100 animate-pulse rounded bg-muted" />
           </CardContent>
         </Card>
       </div>
@@ -565,7 +565,7 @@ export function EnhancedExecutionCharts({
                     }
                   />
                 ) : (
-                  <div className="h-[300px]">
+                  <div className="h-75">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={costChartData}>
                         <CartesianGrid
@@ -657,7 +657,7 @@ export function EnhancedExecutionCharts({
                     }
                   />
                 ) : (
-                  <div className="h-[300px]">
+                  <div className="h-75">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -717,7 +717,7 @@ export function EnhancedExecutionCharts({
                   }
                 />
               ) : (
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={costChartData}>
                       <CartesianGrid
@@ -811,7 +811,7 @@ export function EnhancedExecutionCharts({
                   }
                 />
               ) : (
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={tokenChartData}>
                       <CartesianGrid
@@ -890,7 +890,7 @@ export function EnhancedExecutionCharts({
                   }
                 />
               ) : (
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={modelData}>
                       <CartesianGrid

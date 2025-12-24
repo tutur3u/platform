@@ -2,9 +2,17 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
 
 export async function POST(
   request: NextRequest,
@@ -75,7 +83,22 @@ export async function POST(
               throw new Error(`Invalid image in field ${key}`);
             }
 
-            const fileName = `${requestId}/${Date.now()}_${imageFile.name}`;
+            // Validate file size
+            if (imageFile.size > MAX_FILE_SIZE) {
+              throw new Error(
+                `Image ${imageFile.name} exceeds the 1MB size limit`
+              );
+            }
+
+            // Validate MIME type
+            if (!ALLOWED_MIME_TYPES.includes(imageFile.type)) {
+              throw new Error(
+                `Invalid file type for ${imageFile.name}. Only JPEG, PNG, WEBP, and GIF are allowed.`
+              );
+            }
+
+            const sanitizedName = sanitizeFilename(imageFile.name) || 'image';
+            const fileName = `${requestId}/${Date.now()}_${sanitizedName}`;
             const buffer = await imageFile.arrayBuffer();
 
             const { data, error } = await storageClient.storage
@@ -201,14 +224,6 @@ export async function GET(
       );
     }
 
-    const { withoutPermission } = await getPermissions({ wsId });
-    if (withoutPermission('manage_time_tracking_requests')) {
-      return NextResponse.json(
-        { error: 'You do not have permission to view time tracking requests.' },
-        { status: 403 }
-      );
-    }
-
     const url = new URL(request.url);
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
@@ -238,6 +253,8 @@ export async function GET(
       countQuery = countQuery.eq('approval_status', 'APPROVED');
     } else if (status === 'rejected') {
       countQuery = countQuery.eq('approval_status', 'REJECTED');
+    } else if (status === 'needs_info') {
+      countQuery = countQuery.eq('approval_status', 'NEEDS_INFO');
     }
 
     // Filter by user if specified
@@ -286,6 +303,10 @@ export async function GET(
         rejected_by_user:users!time_tracking_requests_rejected_by_fkey(
           id,
           display_name
+        ),
+        needs_info_requested_by_user:users!time_tracking_requests_needs_info_requested_by_fkey(
+          id,
+          display_name
         )
       `
       )
@@ -298,6 +319,8 @@ export async function GET(
       query = query.eq('approval_status', 'APPROVED');
     } else if (status === 'rejected') {
       query = query.eq('approval_status', 'REJECTED');
+    } else if (status === 'needs_info') {
+      query = query.eq('approval_status', 'NEEDS_INFO');
     }
 
     // Filter by user if specified

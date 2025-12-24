@@ -48,7 +48,7 @@ const evaluatorModel = google('gemini-2.0-flash');
 const PlagiarismSchema = z.object({
   similarity_score: z.number().min(0).max(1),
   is_plagiarism: z.boolean(),
-  reasoning: z.string(),
+  reasoningText: z.string(),
 });
 
 const CriteriaEvaluationSchema = z.object({
@@ -93,7 +93,7 @@ const TestCaseEvaluationSchema = z
         ),
       input: z.string().describe('The input for the test case'),
       output: z.string().describe('The output for the test case'),
-      reasoning: z
+      reasoningText: z
         .string()
         .max(2000)
         .optional()
@@ -115,7 +115,7 @@ const TestCaseCheckSchema = z.object({
     .min(0)
     .max(1)
     .describe('Confidence level in the match assessment (0-1)'),
-  reasoning: z
+  reasoningText: z
     .string()
     .describe("Brief explanation of why outputs match or don't match"),
 });
@@ -364,7 +364,7 @@ export async function POST(
         let testCaseInserts: Array<
           NovaSubmissionTestCase & {
             confidence?: number;
-            reasoning?: string;
+            reasoningText?: string;
           }
         > = [];
 
@@ -860,7 +860,7 @@ async function processTestCaseResults(
   const testCaseInserts: Array<
     NovaSubmissionTestCase & {
       confidence?: number;
-      reasoning?: string;
+      reasoningText?: string;
     }
   > = [];
 
@@ -888,7 +888,7 @@ async function processTestCaseResults(
       );
 
       // Evaluate output match using AI
-      const { isMatch, confidence, reasoning } = await evaluateOutputMatch(
+      const { isMatch, confidence, reasoningText } = await evaluateOutputMatch(
         problem,
         testCase,
         matchingTestCase,
@@ -901,7 +901,7 @@ async function processTestCaseResults(
         output: testCase.output,
         matched: isMatch,
         confidence,
-        reasoning,
+        reasoningText,
       });
 
       processedCount++;
@@ -925,7 +925,7 @@ async function processTestCaseResults(
               matched: tc.matched,
               output: tc.output,
               confidence: tc.confidence,
-              reasoning: tc.reasoning,
+              reasoningText: tc.reasoningText,
             })),
             matchedTestCases: currentMatched,
             totalTestCases: processedCount,
@@ -969,14 +969,14 @@ async function evaluateOutputMatch(
     return {
       isMatch: object.matched,
       confidence: object.confidence || 0,
-      reasoning: object.reasoning || '',
+      reasoningText: object.reasoningText || '',
     };
   } catch (error) {
     console.error('Error evaluating test case with LLM:', error);
     return {
       isMatch: false,
       confidence: 0,
-      reasoning: 'Error during evaluation',
+      reasoningText: 'Error during evaluation',
     };
   }
 }
@@ -985,7 +985,7 @@ async function saveTestCaseResults(
   testCaseInserts: Array<
     NovaSubmissionTestCase & {
       confidence?: number;
-      reasoning?: string;
+      reasoningText?: string;
     }
   >
 ) {
@@ -1003,14 +1003,14 @@ async function saveTestCaseResults(
               output,
               matched,
               confidence,
-              reasoning,
+              reasoningText,
             }) => ({
               submission_id,
               test_case_id,
               output,
               matched,
               confidence,
-              reasoning,
+              reasoningText,
             })
           )
         );

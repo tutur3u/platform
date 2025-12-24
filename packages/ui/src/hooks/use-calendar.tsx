@@ -111,6 +111,7 @@ const CalendarContext = createContext<{
   setHideNonPreviewEvents: (hide: boolean) => void;
   // UX: allow callers (e.g. create button) to influence default tab for *new* events.
   defaultNewEventTab: 'manual' | 'ai';
+  readOnly: boolean;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -159,6 +160,7 @@ const CalendarContext = createContext<{
   hideNonPreviewEvents: false,
   setHideNonPreviewEvents: () => undefined,
   defaultNewEventTab: 'manual',
+  readOnly: false,
 });
 
 // Add this interface before the updateEvent function
@@ -327,12 +329,14 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   experimentalGoogleToken,
+  readOnly = false,
 }: {
   ws?: Workspace;
   useQuery: any;
   useQueryClient: any;
   children: ReactNode;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  readOnly?: boolean;
 }) => {
   const queryClient = useQueryClient();
 
@@ -530,6 +534,10 @@ export const CalendarProvider = ({
   // CRUD operations with Supabase
   const addEvent = useCallback(
     async (event: Omit<CalendarEvent, 'id'>) => {
+      if (readOnly) {
+        console.warn('Calendar is in read-only mode');
+        return undefined;
+      }
       if (!ws) throw new Error('No workspace selected');
 
       // Round start and end times to nearest 15-minute interval
@@ -690,6 +698,12 @@ export const CalendarProvider = ({
 
   // Process the update queue
   const processUpdateQueue = useCallback(async () => {
+    if (readOnly) {
+      updateQueueRef.current = [];
+      pendingUpdatesRef.current.clear();
+      isProcessingQueueRef.current = false;
+      return;
+    }
     if (isProcessingQueueRef.current || updateQueueRef.current.length === 0) {
       return;
     }
@@ -832,6 +846,10 @@ export const CalendarProvider = ({
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
+      if (readOnly) {
+        console.warn('Calendar is in read-only mode');
+        return undefined;
+      }
       if (!ws) throw new Error('No workspace selected');
 
       // Clean and validate the event updates - only allow known CalendarEvent fields
@@ -951,6 +969,10 @@ export const CalendarProvider = ({
 
   const deleteEvent = useCallback(
     async (eventId: string) => {
+      if (readOnly) {
+        console.warn('Calendar is in read-only mode');
+        return;
+      }
       // If this is a pending new event that hasn't been saved yet
       if (pendingNewEvent && eventId === 'new') {
         // Just clear the pending event
@@ -1904,6 +1926,7 @@ export const CalendarProvider = ({
     hideNonPreviewEvents,
     setHideNonPreviewEvents,
     defaultNewEventTab,
+    readOnly,
   };
 
   // Clean up any pending updates when component unmounts

@@ -133,7 +133,7 @@ export default async function TimeTrackerPage({
 }) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, locale, isPersonal }) => {
+      {async ({ workspace, wsId, locale, isPersonal }) => {
         const user = await getCurrentSupabaseUser();
         if (!user) return notFound();
 
@@ -159,6 +159,7 @@ export default async function TimeTrackerPage({
                 <TimerCardWrapper
                   timerDataPromise={timerDataPromise}
                   wsId={wsId}
+                  workspace={workspace}
                 />
               </Suspense>
             </div>
@@ -182,9 +183,13 @@ export default async function TimeTrackerPage({
 async function TimerCardWrapper({
   timerDataPromise,
   wsId,
+  workspace,
 }: {
   timerDataPromise: Promise<Awaited<ReturnType<typeof fetchTimerData>>>;
   wsId: string;
+  workspace: Awaited<
+    ReturnType<typeof import('@tuturuuu/utils/workspace-helper').getWorkspace>
+  >;
 }) {
   const timerData = await timerDataPromise;
   return (
@@ -192,6 +197,7 @@ async function TimerCardWrapper({
       wsId={wsId}
       categories={timerData.categories}
       initialRunningSession={timerData.runningSession}
+      workspace={workspace}
     />
   );
 }

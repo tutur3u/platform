@@ -87,7 +87,7 @@ export function CostExport({ executions }: CostExportProps) {
         tokens: {
           input: execution.input_tokens,
           output: execution.output_tokens,
-          reasoning: execution.reasoning_tokens,
+          reasoningText: execution.reasoning_tokens,
           total: execution.total_tokens,
         },
         cost: {
@@ -96,7 +96,7 @@ export function CostExport({ executions }: CostExportProps) {
           breakdown: {
             input: cost.inputCost,
             output: cost.outputCost,
-            reasoning: cost.reasoningCost,
+            reasoningText: cost.reasoningCost,
           },
         },
         created_at: execution.created_at,

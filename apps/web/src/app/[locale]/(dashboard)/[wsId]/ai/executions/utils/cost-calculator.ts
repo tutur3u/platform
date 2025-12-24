@@ -67,11 +67,12 @@ export function calculateCost(
   }
 
   const inputCost =
-    (usage.inputTokens / 1_000_000) * model.price.per1MInputTokens;
+    (usage?.inputTokens ?? 0 / 1_000_000) * model.price.per1MInputTokens;
   const outputCost =
-    (usage.outputTokens / 1_000_000) * model.price.per1MOutputTokens;
+    (usage?.outputTokens ?? 0 / 1_000_000) * model.price.per1MOutputTokens;
   const reasoningCost =
-    (usage.reasoningTokens / 1_000_000) * model.price.per1MReasoningTokens;
+    (usage?.reasoningTokens ?? 0 / 1_000_000) *
+    model.price.per1MReasoningTokens;
 
   const totalCostUSD = inputCost + outputCost + reasoningCost;
   const exchangeRate = 26000; // VND per USD

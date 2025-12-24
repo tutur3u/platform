@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
     try {
       // Generate embeddings for all tasks in parallel
       const { embeddings } = await embedMany({
-        model: google.textEmbeddingModel('gemini-embedding-001'),
+        model: google.embeddingModel('gemini-embedding-001'),
         values: taskData.map((t) => t.text),
         maxParallelCalls: 10,
         providerOptions: {

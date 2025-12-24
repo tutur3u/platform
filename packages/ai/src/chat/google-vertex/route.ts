@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
-    const modelMessages = convertToModelMessages(messages);
+    const modelMessages = await convertToModelMessages(messages);
 
     // Filter user messages, and save message (prompt) to DB
     if (messages.length !== 1) {

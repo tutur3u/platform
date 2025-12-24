@@ -12,15 +12,18 @@ import { useEffect, useState } from 'react';
 import type { TimeTrackerData } from '../types';
 import SimpleTimeTrackerContent from './simple-time-tracker-content';
 import TimeTrackerContent from './time-tracker-content';
+import type { Workspace } from '@tuturuuu/types';
 
 interface TimeTrackerWrapperProps {
   wsId: string;
   initialData: TimeTrackerData;
+  workspace: Workspace;
 }
 
 export default function TimeTrackerWrapper({
   wsId,
   initialData,
+  workspace,
 }: TimeTrackerWrapperProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -132,6 +135,7 @@ export default function TimeTrackerWrapper({
           initialData={initialData}
           currentUser={currentUser ?? null}
           isUserLoading={isUserLoading}
+          workspace={workspace}
         />
       </div>
     );
@@ -173,6 +177,7 @@ export default function TimeTrackerWrapper({
         initialData={initialData}
         currentUser={currentUser ?? null}
         isUserLoading={isUserLoading}
+        workspace={workspace}
       />
     </div>
   );

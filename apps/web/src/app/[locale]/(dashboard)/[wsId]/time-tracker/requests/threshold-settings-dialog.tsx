@@ -119,7 +119,24 @@ export function ThresholdSettingsDialog({
           {t('button')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="sm:max-w-[500px]"
+        onPointerDownOutside={(e) => {
+          if (hasChanged) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (hasChanged) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (hasChanged) {
+            e.preventDefault();
+          }
+        }}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{t('title')}</DialogTitle>

@@ -1,18 +1,7 @@
 'use client';
 
-import {
-  CalendarIcon,
-  CheckCircle2Icon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ClockIcon,
-  Loader2,
-  UserIcon,
-  XCircleIcon,
-  XIcon,
-} from '@tuturuuu/icons';
+import { EditIcon } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,16 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { format } from 'date-fns';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { CommentList } from './components/comment-list';
+import { ActivityTimeline } from './components/activity-timeline';
+import { UserInfoCard } from './components/user-info-card';
+import { RequestEditForm } from './components/request-edit-form';
+import { RequestViewMode } from './components/request-view-mode';
+import { ApprovalStatusCard } from './components/approval-status-card';
+import { ActionButtons } from './components/action-buttons';
+import { ImagePreviewDialog } from './components/image-preview-dialog';
 import { useRequestImages } from './hooks/use-request-images';
-import {
-  useApproveRequest,
-  useRejectRequest,
-} from './hooks/use-request-mutations';
+import { useRequestActions } from './hooks/use-request-actions';
+import { useRequestEditMode } from './hooks/use-request-edit-mode';
 import type { ExtendedTimeTrackingRequest } from './page';
+import { STATUS_COLORS, STATUS_LABELS } from './utils';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -39,7 +35,7 @@ interface RequestDetailModalProps {
   onClose: () => void;
   onUpdate?: () => void;
   wsId: string;
-  bypassRulesPermission: boolean;
+  canManageTimeTrackingRequests: boolean;
   currentUser: WorkspaceUser | null;
 }
 
@@ -49,19 +45,27 @@ export function RequestDetailModal({
   onClose,
   onUpdate,
   wsId,
-  bypassRulesPermission,
+  canManageTimeTrackingRequests,
   currentUser,
 }: RequestDetailModalProps) {
   const t = useTranslations('time-tracker.requests');
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [showRejectionForm, setShowRejectionForm] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
   );
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityItemsPerPage, setActivityItemsPerPage] = useState(3);
 
-  // React Query mutations
-  const approveMutation = useApproveRequest();
-  const rejectMutation = useRejectRequest();
+  // Determine if user can edit (owner + status is PENDING or NEEDS_INFO)
+  const canEdit =
+    currentUser &&
+    request.user_id === currentUser.id &&
+    (request.approval_status === 'PENDING' ||
+      request.approval_status === 'NEEDS_INFO');
+
+  // Determine if user can view comments
+  const canViewComments =
+    (currentUser && request.user_id === currentUser.id) ||
+    canManageTimeTrackingRequests;
 
   // Fetch images with React Query
   const { data: imageUrls = [], isLoading: isLoadingImages } = useRequestImages(
@@ -70,62 +74,75 @@ export function RequestDetailModal({
     isOpen
   );
 
-  const handleApprove = useCallback(async () => {
-    await approveMutation.mutateAsync(
-      { wsId, requestId: request.id },
-      {
-        onSuccess: () => {
-          onUpdate?.();
-          onClose();
-        },
-      }
-    );
-  }, [request.id, wsId, onUpdate, onClose, approveMutation]);
+  // Fetch activity log with React Query
+  const { data: activityData, isLoading: isLoadingActivity } = useQuery({
+    queryKey: [
+      'time-tracking-request-activity',
+      request.id,
+      activityPage,
+      activityItemsPerPage,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(activityPage),
+        limit: String(activityItemsPerPage),
+      });
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${request.id}/activity?${params}`
+      );
+      if (!res.ok) throw new Error('Failed to fetch activity');
+      const json = await res.json();
+      return json;
+    },
+    enabled: isOpen && canViewComments,
+  });
 
-  const handleReject = useCallback(async () => {
-    if (!rejectionReason.trim()) {
-      // Toast error will be shown by mutation
-      return;
-    }
+  // Edit mode hook
+  const editMode = useRequestEditMode({
+    request,
+    wsId,
+    imageUrls,
+    onUpdate,
+  });
 
-    await rejectMutation.mutateAsync(
-      {
-        wsId,
-        requestId: request.id,
-        rejection_reason: rejectionReason.trim(),
-      },
-      {
-        onSuccess: () => {
-          setRejectionReason('');
-          setShowRejectionForm(false);
-          onUpdate?.();
-          onClose();
-        },
-      }
-    );
-  }, [request.id, wsId, rejectionReason, onUpdate, onClose, rejectMutation]);
+  // Actions hook
+  const actions = useRequestActions({
+    wsId,
+    requestId: request.id,
+    onSuccess: onUpdate,
+    onClose,
+  });
 
-  const calculateDuration = (startTime: string, endTime: string) => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const durationMs = end.getTime() - start.getTime();
-    const hours = Math.floor(durationMs / (1000 * 60 * 60));
-    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
-  };
+  const { resetForms } = actions;
 
   useEffect(() => {
     if (!isOpen) {
-      setShowRejectionForm(false);
-      setRejectionReason('');
+      resetForms();
       setSelectedImageIndex(null);
     }
-  }, [isOpen]);
+  }, [isOpen, resetForms]);
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogContent
+          className="max-h-[90vh] md:max-w-6xl overflow-y-auto"
+          onPointerDownOutside={(e) => {
+            if (editMode.hasUnsavedChanges) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            if (editMode.hasUnsavedChanges) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (editMode.hasUnsavedChanges) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1.5">
@@ -133,386 +150,144 @@ export function RequestDetailModal({
                 <DialogDescription className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
-                    className={
-                      request.approval_status === 'PENDING'
-                        ? 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange'
-                        : request.approval_status === 'APPROVED'
-                          ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
-                          : 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
-                    }
+                    className={cn(
+                      'border font-medium text-xs',
+                      STATUS_COLORS[request.approval_status]
+                    )}
                   >
-                    {request.approval_status}
+                    {t(
+                      `status.${request.approval_status.toLowerCase() as keyof typeof STATUS_LABELS}`
+                    )}
                   </Badge>
-                  {request.category && (
+                  {request.category ? (
                     <Badge
                       variant="outline"
                       className="border-dynamic-purple/20"
                     >
                       {request.category.name}
                     </Badge>
-                  )}
+                  ) : null}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* User Info */}
-            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
-              {request.user ? (
-                <>
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarImage src={request.user.avatar_url || ''} />
-                    <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                      {request.user.display_name?.[0] ||
-                        request.user.user_private_details.email?.[0] ||
-                        'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="font-medium text-foreground">
-                      {request.user.display_name || 'Unknown User'}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {request.user.user_private_details.email}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {format(
-                        new Date(request.created_at),
-                        'MMM d, yyyy · h:mm a'
-                      )}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                      <UserIcon className="h-6 w-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="font-medium text-foreground">Unknown User</p>
-                    <p className="text-muted-foreground text-xs">
-                      {format(
-                        new Date(request.created_at),
-                        'MMM d, yyyy · h:mm a'
-                      )}
-                    </p>
-                  </div>
-                </>
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2">
+            {/* Left Column - Main Content */}
+            <div className="order-2 space-y-6 lg:order-1">
+              {/* User Info */}
+              <UserInfoCard request={request} />
+
+              {/* Edit Mode UI */}
+              {editMode.isEditMode && (
+                <RequestEditForm
+                  editTitle={editMode.editTitle}
+                  setEditTitle={editMode.setEditTitle}
+                  editDescription={editMode.editDescription}
+                  setEditDescription={editMode.setEditDescription}
+                  editStartTime={editMode.editStartTime}
+                  setEditStartTime={editMode.setEditStartTime}
+                  editEndTime={editMode.editEndTime}
+                  setEditEndTime={editMode.setEditEndTime}
+                  imageUpload={editMode.imageUpload}
+                  existingImageUrlsForDisplay={
+                    editMode.existingImageUrlsForDisplay
+                  }
+                  isUpdating={editMode.updateMutation.isPending}
+                  onSave={editMode.handleSaveChanges}
+                  onCancel={editMode.handleCancelEdit}
+                />
+              )}
+
+              {/* View Mode */}
+              {!editMode.isEditMode && (
+                <RequestViewMode
+                  request={request}
+                  imageUrls={imageUrls}
+                  isLoadingImages={isLoadingImages}
+                  onImageClick={setSelectedImageIndex}
+                />
               )}
             </div>
+            {/* End Left Column */}
 
-            {/* Time Info */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{t('detail.startTime')}</span>
-                </div>
-                <p className="font-medium">
-                  {format(new Date(request.start_time), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{t('detail.endTime')}</span>
-                </div>
-                <p className="font-medium">
-                  {format(new Date(request.end_time), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4 md:col-span-2">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <ClockIcon className="h-4 w-4" />
-                  <span>{t('detail.duration')}</span>
-                </div>
-                <p className="font-medium">
-                  {calculateDuration(request.start_time, request.end_time)}
-                </p>
-              </div>
+            {/* Right Column - Status & Actions */}
+            <div className="order-1 space-y-4 lg:order-2">
+              {/* Edit button for request owner */}
+              {canEdit && !editMode.isEditMode && (
+                <Button
+                  variant="outline"
+                  onClick={editMode.handleEnterEditMode}
+                  className="w-full"
+                >
+                  <EditIcon className="mr-2 h-4 w-4" />
+                  {t('detail.editButton')}
+                </Button>
+              )}
+
+              {/* Approval/Rejection/Needs Info Display */}
+              <ApprovalStatusCard request={request} />
+
+              {/* Action Buttons */}
+              <ActionButtons
+                request={request}
+                currentUser={currentUser}
+                canManageTimeTrackingRequests={canManageTimeTrackingRequests}
+                isApproving={actions.approveMutation.isPending}
+                onApprove={actions.handleApprove}
+                showRejectionForm={actions.showRejectionForm}
+                rejectionReason={actions.rejectionReason}
+                setRejectionReason={actions.setRejectionReason}
+                setShowRejectionForm={actions.setShowRejectionForm}
+                isRejecting={actions.rejectMutation.isPending}
+                onReject={actions.handleReject}
+                showNeedsInfoForm={actions.showNeedsInfoForm}
+                needsInfoReason={actions.needsInfoReason}
+                setNeedsInfoReason={actions.setNeedsInfoReason}
+                setShowNeedsInfoForm={actions.setShowNeedsInfoForm}
+                isRequestingInfo={actions.requestInfoMutation.isPending}
+                onRequestMoreInfo={actions.handleRequestMoreInfo}
+                isResubmitting={actions.resubmitMutation.isPending}
+                onResubmit={actions.handleResubmit}
+              />
+
+              {/* Comments Section */}
+              {!editMode.isEditMode && (
+                <CommentList
+                  requestId={request.id}
+                  wsId={wsId}
+                  currentUser={currentUser}
+                  canViewComments={canViewComments}
+                  hasManagePermission={canManageTimeTrackingRequests}
+                />
+              )}
+
+              {/* Activity Timeline Section */}
+              {!editMode.isEditMode && canViewComments && (
+                <ActivityTimeline
+                  activities={activityData?.data || []}
+                  currentPage={activityPage}
+                  onPageChange={setActivityPage}
+                  itemsPerPage={activityItemsPerPage}
+                  onItemsPerPageChange={setActivityItemsPerPage}
+                  totalCount={activityData?.total || 0}
+                  isLoading={isLoadingActivity}
+                />
+              )}
             </div>
-
-            {/* Task Info */}
-            {request.task && (
-              <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-                <div className="text-muted-foreground text-sm">
-                  {t('detail.linkedTask')}
-                </div>
-                <p className="font-medium">{request.task.name}</p>
-              </div>
-            )}
-
-            {/* Description */}
-            {request.description && (
-              <div className="space-y-3">
-                <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                  {t('detail.description')}
-                </h2>
-                <div className="rounded-lg border bg-muted/10 p-4">
-                  <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
-                    {request.description}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Attachments */}
-            {request.images && request.images.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                    {t('detail.attachments', { count: request.images.length })}
-                  </h2>
-                </div>
-                {isLoadingImages ? (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border bg-muted/20 py-8">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    <p className="text-muted-foreground text-sm">
-                      {t('detail.loadingMedia')}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {imageUrls.map((url, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(index)}
-                        className="group relative overflow-hidden rounded-lg border bg-muted/10 transition-all hover:ring-2 hover:ring-dynamic-blue/50"
-                      >
-                        <img
-                          src={url}
-                          alt={`Attachment ${index + 1}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Approval/Rejection Info */}
-            {request.approval_status === 'APPROVED' &&
-              request.approved_by_user && (
-                <div className="flex items-start gap-3 rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
-                  <CheckCircle2Icon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
-                  <div className="space-y-1">
-                    <p className="font-medium text-sm">
-                      {t('detail.requestApproved')}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {t('detail.approvedDate', {
-                        name: request.approved_by_user.display_name,
-                        date: request.approved_at
-                          ? format(
-                              new Date(request.approved_at),
-                              'MMM d, yyyy · h:mm a'
-                            )
-                          : '',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-            {request.approval_status === 'REJECTED' &&
-              request.rejected_by_user &&
-              request.rejection_reason && (
-                <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
-                  <div className="flex items-start gap-3">
-                    <XCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-red" />
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">
-                        {t('detail.requestRejected')}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {t('detail.rejectedDate', {
-                          name: request.rejected_by_user.display_name,
-                          date: request.rejected_at
-                            ? format(
-                                new Date(request.rejected_at),
-                                'MMM d, yyyy · h:mm a'
-                              )
-                            : '',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="font-medium text-sm">
-                      {t('detail.rejectionReason')}
-                    </p>
-                    <p className="whitespace-pre-wrap text-muted-foreground text-sm">
-                      {request.rejection_reason}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-            {/* Action Buttons */}
-            {request.approval_status === 'PENDING' &&
-              (bypassRulesPermission ||
-                (currentUser && request.user_id !== currentUser.id)) && (
-                <>
-                  {!showRejectionForm ? (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={handleApprove}
-                        disabled={approveMutation.isPending}
-                        className="flex-1 bg-dynamic-green hover:bg-dynamic-green/90"
-                      >
-                        {approveMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        <CheckCircle2Icon className="mr-2 h-4 w-4" />
-                        {t('detail.approveButton')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => setShowRejectionForm(true)}
-                        className="flex-1"
-                      >
-                        <XCircleIcon className="mr-2 h-4 w-4" />
-                        {t('detail.rejectButton')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium text-sm">
-                          {t('detail.rejectionReasonLabel')}
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setShowRejectionForm(false);
-                            setRejectionReason('');
-                          }}
-                          className="h-8 w-8 p-0"
-                        >
-                          <XIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <Textarea
-                        placeholder={t('detail.rejectionReasonPlaceholder')}
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        className="min-h-24"
-                      />
-                      <Button
-                        variant="destructive"
-                        onClick={handleReject}
-                        disabled={
-                          rejectMutation.isPending || !rejectionReason.trim()
-                        }
-                        className="w-full"
-                      >
-                        {rejectMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {t('detail.confirmRejection')}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
+            {/* End Right Column */}
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Image Preview Dialog */}
-      {selectedImageIndex !== null ? (
-        <Dialog
-          open={true}
-          onOpenChange={(open) => !open && setSelectedImageIndex(null)}
-        >
-          <DialogContent className="max-h-[90vh] max-w-4xl">
-            <DialogHeader>
-              <div className="flex items-center justify-between">
-                <DialogTitle>
-                  {t('detail.imageNavigation', {
-                    current: (selectedImageIndex as number) + 1,
-                    total: imageUrls.length,
-                  })}
-                </DialogTitle>
-              </div>
-            </DialogHeader>
-
-            {imageUrls[selectedImageIndex as number] && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center overflow-hidden rounded-lg bg-muted/10">
-                  <img
-                    src={imageUrls[selectedImageIndex as number]}
-                    alt={`Full view - Attachment ${(selectedImageIndex as number) + 1}`}
-                    className="max-h-[60vh] w-auto object-contain"
-                  />
-                </div>
-
-                {imageUrls.length > 1 && (
-                  <div className="flex items-center justify-between gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const current = selectedImageIndex as number;
-                        if (current === 0) {
-                          setSelectedImageIndex(imageUrls.length - 1);
-                        } else {
-                          setSelectedImageIndex(current - 1);
-                        }
-                      }}
-                      className="flex-1"
-                    >
-                      <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                      {t('detail.previousImage')}
-                    </Button>
-
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      {Array.from({ length: imageUrls.length }).map(
-                        (_, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setSelectedImageIndex(idx)}
-                            className={`h-2 w-2 rounded-full transition-all ${
-                              idx === selectedImageIndex
-                                ? 'w-4 bg-dynamic-blue'
-                                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                            }`}
-                          />
-                        )
-                      )}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const current = selectedImageIndex as number;
-                        if (current === imageUrls.length - 1) {
-                          setSelectedImageIndex(0);
-                        } else {
-                          setSelectedImageIndex(current + 1);
-                        }
-                      }}
-                      className="flex-1"
-                    >
-                      {t('detail.nextImage')}
-                      <ChevronRightIcon className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      ) : null}
+      <ImagePreviewDialog
+        isOpen={selectedImageIndex !== null}
+        selectedImageIndex={selectedImageIndex}
+        imageUrls={imageUrls}
+        onClose={() => setSelectedImageIndex(null)}
+        onNavigate={setSelectedImageIndex}
+      />
     </>
   );
 }

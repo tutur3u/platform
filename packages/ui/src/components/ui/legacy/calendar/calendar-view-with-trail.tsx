@@ -8,7 +8,13 @@ import { TimeTrail } from './time-trail';
 
 dayjs.extend(timezone);
 
-export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
+export const CalendarViewWithTrail = ({
+  dates,
+  overlay,
+}: {
+  dates: Date[];
+  overlay?: React.ReactNode;
+}) => {
   const [initialized, setInitialized] = useState(false);
   const calendarViewRef = useRef<HTMLDivElement>(null);
   const { settings } = useCalendarSettings();
@@ -36,7 +42,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
       }}
     >
       <TimeTrail />
-      <CalendarView dates={dates} />
+      <CalendarView dates={dates} overlay={overlay} />
     </div>
   );
 };

@@ -22,7 +22,7 @@ interface Props {
 export default async function TimeTrackerPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
+      {async ({ workspace, wsId }) => {
         const user = await getCurrentUser();
         if (!user) {
           notFound();
@@ -46,7 +46,13 @@ export default async function TimeTrackerPage({ params }: Props) {
           })),
         };
 
-        return <TimeTrackerWrapper wsId={wsId} initialData={initialData} />;
+        return (
+          <TimeTrackerWrapper
+            wsId={wsId}
+            initialData={initialData}
+            workspace={workspace}
+          />
+        );
       }}
     </WorkspaceWrapper>
   );

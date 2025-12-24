@@ -16,6 +16,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
+import { calculateDaysUntilEndOfWeek } from '../../utils/weekDateUtils';
 
 interface WorkspaceProject {
   id: string;
@@ -39,6 +40,7 @@ interface BulkOperationsConfig {
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
   workspaceMembers?: WorkspaceMember[];
+  weekStartsOn?: 0 | 1 | 6;
   setBulkWorking: (working: boolean) => void;
   clearSelection: () => void;
   setBulkDeleteOpen: (open: boolean) => void;
@@ -213,7 +215,8 @@ function useBulkUpdateEstimation(
 function useBulkUpdateDueDate(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  weekStartsOn: 0 | 1 | 6 = 0
 ) {
   return useMutation({
     mutationFn: async ({
@@ -230,16 +233,13 @@ function useBulkUpdateDueDate(
         if (preset === 'tomorrow') {
           d.setDate(d.getDate() + 1);
         } else if (preset === 'this_week') {
-          // Calculate days until end of week (Sunday)
-          // (7 - currentDay) % 7 gives 0 for Sunday, correct days for other days
-          const currentDay = d.getDay();
-          const daysUntilSunday = (7 - currentDay) % 7;
-          d.setDate(d.getDate() + daysUntilSunday);
+          // Calculate days until end of week (respects first day of week setting)
+          d.setDate(d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn));
         } else if (preset === 'next_week') {
-          // Calculate days until next Sunday
-          const currentDay = d.getDay();
-          const daysUntilSunday = (7 - currentDay) % 7;
-          d.setDate(d.getDate() + daysUntilSunday + 7);
+          // Calculate days until end of next week
+          d.setDate(
+            d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn) + 7
+          );
         }
         d.setHours(23, 59, 59, 999);
         newDate = d.toISOString();
@@ -277,16 +277,13 @@ function useBulkUpdateDueDate(
         if (preset === 'tomorrow') {
           d.setDate(d.getDate() + 1);
         } else if (preset === 'this_week') {
-          // Calculate days until end of week (Sunday)
-          // (7 - currentDay) % 7 gives 0 for Sunday, correct days for other days
-          const currentDay = d.getDay();
-          const daysUntilSunday = (7 - currentDay) % 7;
-          d.setDate(d.getDate() + daysUntilSunday);
+          // Calculate days until end of week (respects first day of week setting)
+          d.setDate(d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn));
         } else if (preset === 'next_week') {
-          // Calculate days until next Sunday
-          const currentDay = d.getDay();
-          const daysUntilSunday = (7 - currentDay) % 7;
-          d.setDate(d.getDate() + daysUntilSunday + 7);
+          // Calculate days until end of next week
+          d.setDate(
+            d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn) + 7
+          );
         }
         d.setHours(23, 59, 59, 999);
         newDate = d.toISOString();
@@ -1272,6 +1269,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     workspaceLabels = [],
     workspaceProjects = [],
     workspaceMembers = [],
+    weekStartsOn = 0,
     setBulkWorking,
     clearSelection,
     setBulkDeleteOpen,
@@ -1288,7 +1286,12 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     supabase,
     boardId
   );
-  const dueDateMutation = useBulkUpdateDueDate(queryClient, supabase, boardId);
+  const dueDateMutation = useBulkUpdateDueDate(
+    queryClient,
+    supabase,
+    boardId,
+    weekStartsOn
+  );
   const customDueDateMutation = useBulkUpdateCustomDueDate(
     queryClient,
     supabase,

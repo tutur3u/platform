@@ -3,7 +3,7 @@ import type { ExtendedTimeTrackingRequest } from '../page';
 
 interface UseRequestsParams {
   wsId: string;
-  status?: 'all' | 'pending' | 'approved' | 'rejected';
+  status?: 'all' | 'pending' | 'approved' | 'rejected' | 'needs_info';
   userId?: string;
   page?: number;
   limit?: number;
@@ -53,6 +53,8 @@ export function useRequests({
 
 interface UseAvailableUsersParams {
   wsId: string;
+  /** If false, skip fetching. Default is true. */
+  enabled?: boolean;
 }
 
 interface User {
@@ -60,7 +62,10 @@ interface User {
   display_name: string;
 }
 
-export function useAvailableUsers({ wsId }: UseAvailableUsersParams) {
+export function useAvailableUsers({
+  wsId,
+  enabled = true,
+}: UseAvailableUsersParams) {
   return useQuery<User[]>({
     queryKey: ['time-tracking-requests-users', wsId],
     queryFn: async () => {
@@ -74,6 +79,7 @@ export function useAvailableUsers({ wsId }: UseAvailableUsersParams) {
 
       return response.json();
     },
+    enabled,
     staleTime: 60000, // 1 minute
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

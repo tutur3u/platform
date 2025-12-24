@@ -1399,6 +1399,9 @@
     "entries": "mục",
     "clear_filters": "Xóa",
     "refresh": "Làm mới",
+    "total_activities": "Tổng",
+    "today": "Hôm nay",
+    "filter_description": "Lọc nhật ký hoạt động theo bảng, loại hoặc trường",
     "on": "trên",
     "date": {
       "today": "Hôm nay",
@@ -1534,12 +1537,14 @@
     "task_restored": "đã khôi phục",
     "empty": {
       "title": "Không có hoạt động nào",
+      "no_results": "Không có hoạt động phù hợp",
       "with_filters": "Không có hoạt động nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.",
       "no_filters": "Các thay đổi công việc sẽ xuất hiện ở đây khi bạn bắt đầu cập nhật công việc."
     },
     "error": {
       "title": "Không thể tải nhật ký",
-      "description": "Vui lòng thử lại sau"
+      "description": "Vui lòng thử lại sau",
+      "retry": "Thử lại"
     },
     "view_diff": "Xem so sánh",
     "name_changes": "Thay đổi tên công việc",
@@ -4376,6 +4381,41 @@
     "cancel": "Hủy",
     "create_calendar": "Tạo lịch mới",
     "create": "Tạo"
+  },
+  "calendar_lab": {
+    "title": "Phòng thí nghiệm thuật toán",
+    "controls": "Điều khiển Lab",
+    "scenarios": "Kịch bản",
+    "data_source": "Nguồn dữ liệu",
+    "import_workspace": "Nhập từ không gian làm việc",
+    "randomize": "Ngẫu nhiên",
+    "select_preset": "Chọn kịch bản có sẵn...",
+    "tasks": "Công việc",
+    "habits": "Thói quen",
+    "visualization": "Trực quan hóa",
+    "heatmap": "Bản đồ nhiệt điểm số",
+    "heatmap_description": "Trực quan hóa điểm số phù hợp",
+    "select_item_to_score": "Chọn mục để chấm điểm...",
+    "execution": "Thực thi",
+    "run_algorithm": "Chạy thuật toán",
+    "tuning": "Tinh chỉnh trọng số",
+    "reset": "ĐẶT LẠI",
+    "habit_ideal_time": "Thời gian lý tưởng thói quen",
+    "habit_preference": "Ưu tiên thói quen",
+    "task_preference": "Ưu tiên công việc",
+    "task_base_urgency": "Độ khẩn cấp cơ bản",
+    "diff_mode": "Chế độ so sánh",
+    "highlight_changes": "Làm nổi bật thay đổi",
+    "set_baseline": "Đặt làm mốc so sánh",
+    "baseline_captured": "Đã ghi nhận mốc so sánh. Điều chỉnh trọng số và chạy lại để so sánh.",
+    "summary": "Tóm tắt",
+    "stats": "Thống kê mô phỏng",
+    "violations": "Vi phạm",
+    "no_results": "Chạy mô phỏng để xem kết quả.",
+    "log": "Nhật ký quyết định",
+    "hover_to_see_logic": "Di chuột qua sự kiện để xem logic sắp xếp.",
+    "decision_context": "Bối cảnh quyết định",
+    "slots_considered": "Các khung giờ đã xem xét"
   },
   "documents": {
     "documents": "Tài liệu",
@@ -7592,6 +7632,10 @@
       "description": "Quản lý trình theo dõi thời gian trong không gian làm việc của bạn."
     },
     "requests": {
+      "tabs": {
+        "all": "Tất cả yêu cầu",
+        "my": "Yêu cầu của tôi"
+      },
       "title": "Yêu Cầu Theo Dõi Thời Gian",
       "description": "Xem xét và phê duyệt yêu cầu theo dõi thời gian từ các thành viên trong nhóm",
       "filters": {
@@ -7600,13 +7644,15 @@
         "status": "Trạng Thái",
         "user": "Người Dùng",
         "clearFilters": "Xóa Bộ Lọc",
-        "allUsers": "Tất Cả Người Dùng"
+        "allUsers": "Tất Cả Người Dùng",
+        "loadingUsers": "Đang tải danh sách người dùng..."
       },
       "status": {
         "all": "Tất Cả",
         "pending": "Đang Chờ",
         "approved": "Đã Duyệt",
-        "rejected": "Đã Từ Chối"
+        "rejected": "Đã Từ Chối",
+        "needs_info": "Cần Thêm Thông Tin"
       },
       "list": {
         "title": "Yêu Cầu",
@@ -7617,11 +7663,13 @@
         "noRequestsDefault": "Chưa có yêu cầu theo dõi thời gian nào được gửi.",
         "duration": "{hours}h {minutes}m",
         "task": "Nhiệm vụ: {name}",
-        "attachments": "{count} hình ảnh{plural}",
+        "attachments": "{count} hình ảnh",
         "approvedBy": "Được phê duyệt bởi {name}",
         "approvedOn": "vào {date}",
         "rejectedBy": "Bị từ chối bởi {name}",
         "rejectedOn": "vào {date}",
+        "needsInfoBy": "Yêu cầu thêm thông tin bởi {name}",
+        "needsInfoOn": "vào {date}",
         "loading": "Đang tải yêu cầu...",
         "error": "Không thể tải yêu cầu"
       },
@@ -7650,14 +7698,88 @@
         "nextImage": "Tiếp theo",
         "unknownUser": "Người Dùng Không Xác Định",
         "approvedDate": "Được phê duyệt bởi {name} vào {date}",
-        "rejectedDate": "Bị từ chối bởi {name} vào {date}"
+        "rejectedDate": "Bị từ chối bởi {name} vào {date}",
+        "requestNeedsInfo": "Yêu Cầu Thêm Thông Tin",
+        "activityHistory": "Lịch sử hoạt động",
+        "needsInfoDate": "Được yêu cầu bởi {name} vào {date}",
+        "needsInfoReason": "Thông Tin Được Yêu Cầu:",
+        "requestInfoButton": "Yêu Cầu Thêm Thông Tin",
+        "needsInfoReasonLabel": "Bạn cần thông tin gì?",
+        "needsInfoReasonPlaceholder": "Vui lòng mô tả thông tin bổ sung cần thiết...",
+        "needsInfoReasonRequired": "Vui lòng cung cấp lý do yêu cầu thêm thông tin",
+        "confirmRequestInfo": "Yêu Cầu Thông Tin",
+        "resubmitButton": "Gửi Lại Yêu Cầu",
+        "editButton": "Chỉnh Sửa Yêu Cầu",
+        "saveButton": "Lưu Thay Đổi",
+        "cancelEditButton": "Hủy",
+        "titleLabel": "Tiêu Đề",
+        "descriptionLabel": "Mô Tả",
+        "addMoreImages": "Thêm Hình Ảnh ({current}/{max})",
+        "existingImage": "Hiện Tại",
+        "newImage": "Mới",
+        "activity": {
+          "title": "Lịch sử hoạt động",
+          "noActivity": "Chưa có hoạt động nào",
+          "unknownUser": "Người dùng không xác định",
+          "unknownActivity": "Hoạt động không xác định",
+          "titleLabel": "Tiêu đề",
+          "feedbackLabel": "Phản hồi",
+          "itemsPerPage": "Mục mỗi trang",
+          "previous": "Trước",
+          "next": "Tiếp",
+          "pageInfo": "Trang {current} / {total}",
+          "actions": {
+            "created": "Đã tạo yêu cầu",
+            "statusChanged": "Đã thay đổi trạng thái",
+            "contentUpdated": "Đã cập nhật nội dung",
+            "commentAdded": "Đã thêm bình luận",
+            "commentUpdated": "Đã cập nhật bình luận",
+            "commentDeleted": "Đã xóa bình luận"
+          },
+          "fields": {
+            "title": "Tiêu đề",
+            "description": "Mô tả",
+            "start_time": "Thời gian bắt đầu",
+            "end_time": "Thời gian kết thúc",
+            "task_id": "Nhiệm vụ",
+            "category_id": "Danh mục",
+            "images": "Hình ảnh"
+          }
+        }
+      },
+      "comments": {
+        "title": "Bình Luận",
+        "addComment": "Thêm bình luận...",
+        "postComment": "Gửi Bình Luận",
+        "sendShortcut": "Ctrl + Enter để gửi",
+        "editComment": "Chỉnh Sửa Bình Luận",
+        "saveComment": "Lưu",
+        "cancelEdit": "Hủy",
+        "deleteComment": "Xóa Bình Luận",
+        "deleteConfirm": "Bạn có chắc chắn muốn xóa bình luận này?",
+        "noComments": "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!",
+        "commentPosted": "Đã đăng bình luận",
+        "commentUpdated": "Đã cập nhật bình luận",
+        "commentDeleted": "Đã xóa bình luận",
+        "commentFailed": "Không thể đăng bình luận",
+        "editExpired": "Chỉ có thể chỉnh sửa trong vòng 15 phút",
+        "deleteExpired": "Chỉ có thể xóa trong vòng 15 phút",
+        "justNow": "vừa xong",
+        "loading": "Đang tải bình luận"
       },
       "toast": {
         "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
         "approveFailed": "Không thể phê duyệt yêu cầu",
         "rejectSuccess": "Yêu cầu theo dõi thời gian đã bị từ chối",
         "rejectFailed": "Không thể từ chối yêu cầu",
-        "loadImagesFailed": "Không thể tải hình ảnh"
+        "requestInfoSuccess": "Đã yêu cầu thêm thông tin thành công",
+        "requestInfoFailed": "Không thể yêu cầu thêm thông tin",
+        "resubmitSuccess": "Đã gửi lại yêu cầu để phê duyệt thành công",
+        "resubmitFailed": "Không thể gửi lại yêu cầu",
+        "loadImagesFailed": "Không thể tải hình ảnh",
+        "updateSuccess": "Đã cập nhật yêu cầu thành công",
+        "updateFailed": "Không thể cập nhật yêu cầu",
+        "deleteFailed": "Không thể xóa bình luận"
       },
       "settings": {
         "button": "Cài Đặt",
@@ -7925,6 +8047,12 @@
         "titlePlaceholder": "Bạn đang làm gì?",
         "description": "Mô Tả",
         "descriptionPlaceholder": "Chi tiết tùy chọn về công việc",
+        "workspace": "Không Gian Làm Việc",
+        "selectWorkspace": "Chọn không gian làm việc",
+        "loadingWorkspaces": "Đang tải không gian làm việc...",
+        "personal": "Cá nhân",
+        "differentWorkspaceHint": "Mục này sẽ được thêm vào một không gian làm việc khác với không gian hiện tại.",
+        "loadingCategories": "Đang tải danh mục...",
         "category": "Danh Mục",
         "selectCategory": "Chọn danh mục",
         "noCategory": "Không có danh mục",
@@ -7947,7 +8075,9 @@
         "dropImages": "Thả hình ảnh vào đây",
         "clickToUpload": "Nhấp để tải lên hoặc kéo thả",
         "imageFormats": "PNG, JPG, GIF hoặc WebP tối đa 1MB mỗi tệp",
-        "proofImageAlt": "Hình ảnh bằng chứng {number}"
+        "proofImageAlt": "Hình ảnh bằng chứng",
+        "existingImage": "Hiện Tại",
+        "newImage": "Mới"
       },
       "presets": {
         "title": "Cài Đặt Nhanh",

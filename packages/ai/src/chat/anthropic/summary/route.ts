@@ -56,7 +56,7 @@ export async function PATCH(req: Request) {
     if (messages[messages.length - 1]?.role === 'user')
       return new Response('Cannot summarize user message', { status: 400 });
 
-    const modelMessages = convertToModelMessages(messages);
+    const modelMessages = await convertToModelMessages(messages);
 
     const google = createGoogleGenerativeAI({
       apiKey,

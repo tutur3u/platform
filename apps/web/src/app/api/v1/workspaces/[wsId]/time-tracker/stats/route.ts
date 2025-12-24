@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import z from 'zod';
+import { z } from 'zod';
 
 const querySchema = z.object({
   userId: process.env.NODE_ENV === 'development' ? z.string() : z.uuid(),

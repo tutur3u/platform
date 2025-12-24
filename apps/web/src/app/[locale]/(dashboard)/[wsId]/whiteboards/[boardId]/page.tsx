@@ -58,6 +58,7 @@ export default async function WhiteboardPage({ params }: WhiteboardPageProps) {
           <CustomWhiteboard
             wsId={wsId}
             boardId={boardId}
+            boardName={whiteboard.title}
             initialData={initialData}
           />
         );

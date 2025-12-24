@@ -13,7 +13,7 @@ export interface CurrentUserInfo {
   id: string;
   displayName: string;
   avatarUrl?: string;
-  color: string;
+  email?: string;
 }
 
 export interface UseExcalidrawPresenceConfig {
@@ -109,6 +109,7 @@ export function useExcalidrawPresence({
                   user: {
                     id: currentUser.id,
                     display_name: currentUser.displayName,
+                    email: currentUser.email,
                     avatar_url: currentUser.avatarUrl,
                   },
                   online_at: new Date().toISOString(),

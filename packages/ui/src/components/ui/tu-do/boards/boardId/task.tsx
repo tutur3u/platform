@@ -138,7 +138,7 @@ function TaskCardInner({
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
-  const { timeFormat } = useCalendarPreferences();
+  const { weekStartsOn, timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -303,23 +303,10 @@ function TaskCardInner({
   const canMoveToClose =
     targetClosedList && targetClosedList.id !== task.list_id;
 
-  // Detect mobile devices to disable drag and drop
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // Tailwind md breakpoint
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // Check if task is optimistically added (pending realtime confirmation)
   const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
 
   const dragDisabled =
-    isMobile ||
     dialogState.editDialogOpen ||
     dialogState.deleteDialogOpen ||
     dialogState.customDateDialogOpen ||
@@ -332,7 +319,6 @@ function TaskCardInner({
   if (task.name === 'new task') {
     console.log('[TaskCard Debug]', {
       taskId: task.id,
-      isMobile,
       editDialogOpen: dialogState.editDialogOpen,
       deleteDialogOpen: dialogState.deleteDialogOpen,
       customDateDialogOpen: dialogState.customDateDialogOpen,
@@ -1064,7 +1050,7 @@ function TaskCardInner({
       {/* Overdue indicator */}
       {isOverdue && !(!!task.closed_at || !!task.completed_at) && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
-          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
+          <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
         </div>
       )}
       {/* Selection indicator */}
@@ -1134,7 +1120,7 @@ function TaskCardInner({
                     className={cn(
                       'h-7 w-7 shrink-0 p-0 transition-all duration-200',
                       'hover:scale-105 hover:bg-muted',
-                      menuOpen || isMobile
+                      menuOpen
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
                       menuOpen && 'bg-muted ring-1 ring-border'
@@ -1227,6 +1213,7 @@ function TaskCardInner({
                   <TaskDueDateMenu
                     endDate={task.end_date}
                     isLoading={isLoading}
+                    weekStartsOn={weekStartsOn}
                     onDueDateChange={handleDueDateChange}
                     onCustomDateClick={() => {
                       setMenuOpen(false);
@@ -1491,7 +1478,7 @@ function TaskCardInner({
           <div className="flex items-center gap-2">
             {/* Hidden measurement container - render all badges to measure their width */}
             <div
-              className="pointer-events-none absolute top-0 left-[-9999px] flex items-center gap-1 opacity-0"
+              className="pointer-events-none absolute top-0 -left-2499.75 flex items-center gap-1 opacity-0"
               aria-hidden="true"
             >
               {taskBadges.map((badge) => badge.element)}

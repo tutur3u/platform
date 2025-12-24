@@ -9,17 +9,20 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SessionWithRelations } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
+import type { Workspace } from '@tuturuuu/types';
 
 interface OverviewTimerProps {
   wsId: string;
   categories: TimeTrackingCategory[];
   initialRunningSession: SessionWithRelations | null;
+  workspace: Workspace;
 }
 
 export default function OverviewTimer({
   wsId,
   categories,
   initialRunningSession,
+  workspace,
 }: OverviewTimerProps) {
   const tModes = useTranslations('time-tracker.modes');
 
@@ -116,6 +119,7 @@ export default function OverviewTimer({
       isRunning={isRunning}
       categories={categories}
       apiCall={apiCall}
+      workspace={workspace}
       headerAction={
         <Link href={`/${wsId}/time-tracker/timer?mode=advanced`}>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
