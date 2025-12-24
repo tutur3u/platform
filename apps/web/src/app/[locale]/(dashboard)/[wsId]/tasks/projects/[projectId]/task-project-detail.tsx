@@ -52,6 +52,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { KanbanBoard } from '@tuturuuu/ui/tu-do/boards/boardId/kanban';
@@ -203,7 +204,7 @@ function UpdateCard({
                 <Textarea
                   value={editingContent}
                   onChange={(e) => onContentChange(e.target.value)}
-                  className="min-h-[100px] resize-none"
+                  className="min-h-25 resize-none"
                   autoFocus
                 />
                 <div className="flex items-center gap-2">
@@ -419,6 +420,10 @@ export function TaskProjectDetail({
         })()
       : ''
   );
+  const [editedArchived, setEditedArchived] = useState(
+    project.archived ?? false
+  );
+  const [showTimelineEditor, setShowTimelineEditor] = useState(false);
 
   // Task management state
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
@@ -554,6 +559,7 @@ export function TaskProjectDetail({
                   return new Date(Date.UTC(year, month - 1, day)).toISOString();
                 })()
               : null,
+            archived: editedArchived,
           }),
         }
       );
@@ -568,6 +574,7 @@ export function TaskProjectDetail({
       toast.success('Project updated successfully');
       setIsEditingName(false);
       setIsEditingDescription(false);
+      setShowTimelineEditor(false);
       router.refresh();
     } catch (error) {
       console.error('Error updating project:', error);
@@ -611,6 +618,8 @@ export function TaskProjectDetail({
     setIsEditingName(false);
     setIsEditingDescription(false);
     setShowLeadSelector(false);
+    setShowTimelineEditor(false);
+    setEditedArchived(project.archived ?? false);
   };
 
   const hasUnsavedChanges =
@@ -639,7 +648,8 @@ export function TaskProjectDetail({
             const day = String(date.getUTCDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
           })()
-        : '');
+        : '') ||
+    editedArchived !== (project.archived ?? false);
 
   const virtualBoard: Pick<
     WorkspaceTaskBoard,
@@ -1139,7 +1149,7 @@ export function TaskProjectDetail({
                           value={editedDescription}
                           onChange={(e) => setEditedDescription(e.target.value)}
                           placeholder="Describe your project..."
-                          className="min-h-[200px] resize-none"
+                          className="min-h-50 resize-none"
                           autoFocus
                         />
                         <p className="text-muted-foreground text-xs">
@@ -1322,6 +1332,22 @@ export function TaskProjectDetail({
                             value={editedEndDate}
                             onChange={(e) => setEditedEndDate(e.target.value)}
                             className="border-dynamic-purple/30 bg-background/50"
+                          />
+                        </div>
+
+                        {/* Archived */}
+                        <div className="flex items-center justify-between rounded-lg border border-dynamic-purple/30 bg-background/50 p-3">
+                          <div className="space-y-0.5">
+                            <Label className="text-foreground/70 text-sm">
+                              Archive Project
+                            </Label>
+                            <p className="text-muted-foreground text-xs">
+                              Archived projects are hidden from default views
+                            </p>
+                          </div>
+                          <Switch
+                            checked={editedArchived}
+                            onCheckedChange={setEditedArchived}
                           />
                         </div>
                       </div>
@@ -1565,35 +1591,80 @@ export function TaskProjectDetail({
                 {/* Timeline */}
                 <motion.div {...fadeInViewVariant(0.3)}>
                   <Card className="group border-2 border-dynamic-green/20 bg-dynamic-green/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-green/30 hover:shadow-lg">
-                    <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-green to-dynamic-cyan">
-                        <Calendar className="h-4 w-4 text-white" />
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-green to-dynamic-cyan">
+                          <Calendar className="h-4 w-4 text-white" />
+                        </div>
+                        <h3 className="font-semibold text-sm">Timeline</h3>
                       </div>
-                      <h3 className="font-semibold text-sm">Timeline</h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={() =>
+                          setShowTimelineEditor(!showTimelineEditor)
+                        }
+                        aria-label="Edit timeline"
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <div className="space-y-2 text-sm">
-                      {editedStartDate && (
-                        <div className="flex justify-between">
-                          <span className="text-foreground/60">Start:</span>
-                          <span className="font-medium">
-                            {new Date(editedStartDate).toLocaleDateString()}
-                          </span>
+
+                    {showTimelineEditor ? (
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-foreground/70 text-xs">
+                            Start Date
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editedStartDate}
+                            onChange={(e) => setEditedStartDate(e.target.value)}
+                            className="h-9 border-dynamic-green/30 bg-background/50 text-sm"
+                          />
                         </div>
-                      )}
-                      {editedEndDate && (
-                        <div className="flex justify-between">
-                          <span className="text-foreground/60">End:</span>
-                          <span className="font-medium">
-                            {new Date(editedEndDate).toLocaleDateString()}
-                          </span>
+                        <div className="space-y-1.5">
+                          <Label className="text-foreground/70 text-xs">
+                            End Date
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editedEndDate}
+                            onChange={(e) => setEditedEndDate(e.target.value)}
+                            className="h-9 border-dynamic-green/30 bg-background/50 text-sm"
+                          />
                         </div>
-                      )}
-                      {!editedStartDate && !editedEndDate && (
-                        <p className="text-muted-foreground text-sm italic">
-                          No timeline set
-                        </p>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 text-sm">
+                        {editedStartDate && (
+                          <div className="flex justify-between">
+                            <span className="text-foreground/60">Start:</span>
+                            <span className="font-medium">
+                              {new Date(editedStartDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                        {editedEndDate && (
+                          <div className="flex justify-between">
+                            <span className="text-foreground/60">End:</span>
+                            <span className="font-medium">
+                              {new Date(editedEndDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                        {!editedStartDate && !editedEndDate && (
+                          <button
+                            type="button"
+                            onClick={() => setShowTimelineEditor(true)}
+                            className="w-full rounded-lg border border-dynamic-green/30 border-dashed p-3 text-center text-muted-foreground text-sm italic transition-colors hover:border-dynamic-green/50 hover:bg-dynamic-green/5"
+                          >
+                            Click to set timeline
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
 
@@ -1678,7 +1749,7 @@ export function TaskProjectDetail({
                     value={newUpdateContent}
                     onChange={(e) => setNewUpdateContent(e.target.value)}
                     placeholder="Share progress, celebrate wins, or discuss challenges..."
-                    className="min-h-[120px] resize-none border-dynamic-purple/30"
+                    className="min-h-30 resize-none border-dynamic-purple/30"
                     disabled={isPostingUpdate}
                   />
                   <div className="flex items-center justify-between">
@@ -1824,7 +1895,7 @@ export function TaskProjectDetail({
             </div>
 
             {/* Results */}
-            <div className="max-h-[400px] space-y-2 overflow-auto">
+            <div className="max-h-100 space-y-2 overflow-auto">
               {searchQuery ? (
                 filteredAvailableTasks.length > 0 ? (
                   filteredAvailableTasks.map((task) => (
