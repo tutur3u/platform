@@ -9,7 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
-import { Clock, FileEdit, MessageSquare, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import { Clock, FileEdit, MessageSquare, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from '@tuturuuu/icons';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useState, useCallback } from 'react';
@@ -115,6 +115,7 @@ export function ActivityTimeline({
   isLoading = false,
 }: ActivityTimelineProps) {
   const t = useTranslations('time-tracker.requests.detail');
+  const [accordionValue, setAccordionValue] = useState<string>(''); // Closed by default
 
   const formatFieldName = useCallback((field: string): string => {
     // Try to get translation first, fallback to formatted field name
@@ -254,7 +255,8 @@ export function ActivityTimeline({
     }
   }, [t, formatFieldName, formatFieldValue]);
 
-  if (!activities || activities.length === 0) {
+  // Show "no activity" message only when not loading and no data
+  if (!isLoading && (!activities || activities.length === 0)) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <Clock className="h-12 w-12 text-foreground/20 mb-3" />
@@ -275,18 +277,34 @@ export function ActivityTimeline({
   };
 
   return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem value="activity-timeline" className="border-none">
-        <AccordionTrigger className="hover:no-underline py-2">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-foreground/60" />
-            <span className="text-sm font-medium">
-              {t('activity.title')} ({totalCount})
-            </span>
+    <Accordion
+      type="single"
+      collapsible
+      className="border-0"
+      value={accordionValue}
+      onValueChange={setAccordionValue}
+    >
+      <AccordionItem value="activity-timeline" className="border-b-0">
+        <AccordionTrigger className="rounded-lg border hover:bg-muted/50 px-4 py-3">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <span className="font-semibold">{t('activity.title')}</span>
+              <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+                {totalCount}
+              </span>
+            </div>
           </div>
         </AccordionTrigger>
-        <AccordionContent>
-          <div className="space-y-4 pt-2">
+        <AccordionContent className="space-y-4 pt-4">
+          <div className="relative space-y-4 pt-2">
+            {/* Loading Overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-dynamic-surface/60 backdrop-blur-sm rounded-lg">
+                <Loader2 className="h-6 w-6 animate-spin text-foreground/60" />
+              </div>
+            )}
+
             {activities.map((activity, index) => (
               <div key={activity.id} className="flex gap-4">
                 {/* Timeline line */}

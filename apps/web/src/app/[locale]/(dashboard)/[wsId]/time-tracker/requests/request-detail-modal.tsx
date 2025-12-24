@@ -262,23 +262,15 @@ export function RequestDetailModal({
 
               {/* Activity Timeline Section */}
               {!editMode.isEditMode && canViewComments && (
-                <div className="rounded-lg border border-dynamic-border bg-dynamic-surface/30 p-4">
-                  {isLoadingActivity ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-foreground/40" />
-                    </div>
-                  ) : (
-                    <ActivityTimeline
-                      activities={activityData?.data || []}
-                      currentPage={activityPage}
-                      onPageChange={setActivityPage}
-                      itemsPerPage={activityItemsPerPage}
-                      onItemsPerPageChange={setActivityItemsPerPage}
-                      totalCount={activityData?.total || 0}
-                      isLoading={isLoadingActivity}
-                    />
-                  )}
-                </div>
+                  <ActivityTimeline
+                    activities={activityData?.data || []}
+                    currentPage={activityPage}
+                    onPageChange={setActivityPage}
+                    itemsPerPage={activityItemsPerPage}
+                    onItemsPerPageChange={setActivityItemsPerPage}
+                    totalCount={activityData?.total || 0}
+                    isLoading={isLoadingActivity}
+                  />
               )}
             </div>
             {/* End Right Column */}
