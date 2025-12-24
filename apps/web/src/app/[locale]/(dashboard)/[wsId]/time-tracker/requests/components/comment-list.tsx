@@ -46,13 +46,14 @@ export function CommentList({
       <Accordion
         type="single"
         collapsible
-        defaultValue="comments-section"
+        // defaultValue="comments-section"
         className="border-0"
       >
         <AccordionItem value="comments-section" className="border-b-0">
           <AccordionTrigger className="rounded-lg border hover:bg-muted/50 px-4 py-3">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2">
+                <MessageSquareIcon className="h-5 w-5 text-muted-foreground" />
                 <span className="font-semibold">{t('comments.title')}</span>
                 <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
                   {comments?.length || 0}

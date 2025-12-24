@@ -8235,6 +8235,94 @@ export type Database = {
           },
         ];
       };
+      time_tracking_request_activity: {
+        Row: {
+          action_type: Database['public']['Enums']['time_tracking_request_activity_action'];
+          actor_id: string;
+          changed_fields: Json | null;
+          comment_content: string | null;
+          comment_id: string | null;
+          created_at: string;
+          feedback_reason: string | null;
+          id: string;
+          metadata: Json | null;
+          new_status: string | null;
+          previous_status: string | null;
+          request_id: string;
+        };
+        Insert: {
+          action_type: Database['public']['Enums']['time_tracking_request_activity_action'];
+          actor_id: string;
+          changed_fields?: Json | null;
+          comment_content?: string | null;
+          comment_id?: string | null;
+          created_at?: string;
+          feedback_reason?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          new_status?: string | null;
+          previous_status?: string | null;
+          request_id: string;
+        };
+        Update: {
+          action_type?: Database['public']['Enums']['time_tracking_request_activity_action'];
+          actor_id?: string;
+          changed_fields?: Json | null;
+          comment_content?: string | null;
+          comment_id?: string | null;
+          created_at?: string;
+          feedback_reason?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          new_status?: string | null;
+          previous_status?: string | null;
+          request_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_comment_id_fkey';
+            columns: ['comment_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_request_comments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_request_id_fkey';
+            columns: ['request_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_requests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       time_tracking_request_comments: {
         Row: {
           content: string;
@@ -14694,6 +14782,78 @@ export type Database = {
           },
         ];
       };
+      time_tracking_request_activity_with_users: {
+        Row: {
+          action_type:
+            | Database['public']['Enums']['time_tracking_request_activity_action']
+            | null;
+          actor_avatar_url: string | null;
+          actor_display_name: string | null;
+          actor_handle: string | null;
+          actor_id: string | null;
+          changed_fields: Json | null;
+          comment_content: string | null;
+          comment_id: string | null;
+          created_at: string | null;
+          feedback_reason: string | null;
+          id: string | null;
+          metadata: Json | null;
+          new_status: string | null;
+          previous_status: string | null;
+          request_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_comment_id_fkey';
+            columns: ['comment_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_request_comments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_request_activity_request_id_fkey';
+            columns: ['request_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_requests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'users_handle_fkey';
+            columns: ['actor_handle'];
+            isOneToOne: true;
+            referencedRelation: 'handles';
+            referencedColumns: ['value'];
+          },
+        ];
+      };
       time_tracking_session_analytics: {
         Row: {
           category_color: string | null;
@@ -17131,6 +17291,13 @@ export type Database = {
       task_priority: 'low' | 'normal' | 'high' | 'critical';
       task_relationship_type: 'parent_child' | 'blocks' | 'related';
       time_of_day_preference: 'morning' | 'afternoon' | 'evening' | 'night';
+      time_tracking_request_activity_action:
+        | 'CREATED'
+        | 'CONTENT_UPDATED'
+        | 'STATUS_CHANGED'
+        | 'COMMENT_ADDED'
+        | 'COMMENT_UPDATED'
+        | 'COMMENT_DELETED';
       time_tracking_request_status:
         | 'PENDING'
         | 'APPROVED'
@@ -17719,6 +17886,14 @@ export const Constants = {
       task_priority: ['low', 'normal', 'high', 'critical'],
       task_relationship_type: ['parent_child', 'blocks', 'related'],
       time_of_day_preference: ['morning', 'afternoon', 'evening', 'night'],
+      time_tracking_request_activity_action: [
+        'CREATED',
+        'CONTENT_UPDATED',
+        'STATUS_CHANGED',
+        'COMMENT_ADDED',
+        'COMMENT_UPDATED',
+        'COMMENT_DELETED',
+      ],
       time_tracking_request_status: [
         'PENDING',
         'APPROVED',

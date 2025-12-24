@@ -7700,6 +7700,7 @@
         "approvedDate": "Được phê duyệt bởi {name} vào {date}",
         "rejectedDate": "Bị từ chối bởi {name} vào {date}",
         "requestNeedsInfo": "Yêu Cầu Thêm Thông Tin",
+        "activityHistory": "Lịch sử hoạt động",
         "needsInfoDate": "Được yêu cầu bởi {name} vào {date}",
         "needsInfoReason": "Thông Tin Được Yêu Cầu:",
         "requestInfoButton": "Yêu Cầu Thêm Thông Tin",
@@ -7715,7 +7716,36 @@
         "descriptionLabel": "Mô Tả",
         "addMoreImages": "Thêm Hình Ảnh ({current}/{max})",
         "existingImage": "Hiện Tại",
-        "newImage": "Mới"
+        "newImage": "Mới",
+        "activity": {
+          "title": "Lịch sử hoạt động",
+          "noActivity": "Chưa có hoạt động nào",
+          "unknownUser": "Người dùng không xác định",
+          "unknownActivity": "Hoạt động không xác định",
+          "titleLabel": "Tiêu đề",
+          "feedbackLabel": "Phản hồi",
+          "itemsPerPage": "Mục mỗi trang",
+          "previous": "Trước",
+          "next": "Tiếp",
+          "pageInfo": "Trang {current} / {total}",
+          "actions": {
+            "created": "Đã tạo yêu cầu",
+            "statusChanged": "Đã thay đổi trạng thái",
+            "contentUpdated": "Đã cập nhật nội dung",
+            "commentAdded": "Đã thêm bình luận",
+            "commentUpdated": "Đã cập nhật bình luận",
+            "commentDeleted": "Đã xóa bình luận"
+          },
+          "fields": {
+            "title": "Tiêu đề",
+            "description": "Mô tả",
+            "start_time": "Thời gian bắt đầu",
+            "end_time": "Thời gian kết thúc",
+            "task_id": "Nhiệm vụ",
+            "category_id": "Danh mục",
+            "images": "Hình ảnh"
+          }
+        }
       },
       "comments": {
         "title": "Bình Luận",

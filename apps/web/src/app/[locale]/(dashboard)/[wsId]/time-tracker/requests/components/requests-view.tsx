@@ -76,7 +76,8 @@ export function RequestsView({
           | 'all'
           | 'pending'
           | 'approved'
-          | 'rejected') || 'pending';
+          | 'rejected'
+          | 'needs_info') || 'pending';
       const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
       const safePage = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
       const rawLimit = Number.parseInt(searchParams.get('limit') || '10', 10);

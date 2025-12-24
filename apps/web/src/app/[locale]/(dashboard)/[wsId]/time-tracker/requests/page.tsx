@@ -105,10 +105,6 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
 
         const { containsPermission } = await getPermissions({ wsId });
 
-        const bypassRulesPermission = containsPermission(
-          'bypass_time_tracking_request_approval'
-        );
-
         const currentUser = await getCurrentUser();
 
         const canManageTimeTrackingRequests = containsPermission(
@@ -119,7 +115,6 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
           <div className="container mx-auto px-4 py-6 md:px-8">
             <RequestsClient
               wsId={wsId}
-              bypassRulesPermission={bypassRulesPermission}
               currentUser={currentUser}
               canManageTimeTrackingRequests={canManageTimeTrackingRequests}
             />

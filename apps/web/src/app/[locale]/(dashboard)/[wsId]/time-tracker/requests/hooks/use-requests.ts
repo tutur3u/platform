@@ -3,7 +3,7 @@ import type { ExtendedTimeTrackingRequest } from '../page';
 
 interface UseRequestsParams {
   wsId: string;
-  status?: 'all' | 'pending' | 'approved' | 'rejected';
+  status?: 'all' | 'pending' | 'approved' | 'rejected' | 'needs_info';
   userId?: string;
   page?: number;
   limit?: number;
