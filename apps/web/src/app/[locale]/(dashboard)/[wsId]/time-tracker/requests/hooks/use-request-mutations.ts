@@ -357,7 +357,7 @@ export function useUpdateComment() {
     onSuccess: (_, { requestId, wsId }) => {
       // Invalidate comments query
       queryClient.invalidateQueries({
-        queryKey: ['time-tracking-request-comments', requestId, wsId],
+        queryKey: ['time-tracking-request-comments', wsId, requestId],
       });
 
       toast.success(t('comments.commentUpdated'));
@@ -397,7 +397,7 @@ export function useDeleteComment() {
     onSuccess: (_, { requestId, wsId }) => {
       // Invalidate comments query
       queryClient.invalidateQueries({
-        queryKey: ['time-tracking-request-comments', requestId, wsId],
+        queryKey: ['time-tracking-request-comments', wsId, requestId],
       });
 
       toast.success(t('comments.commentDeleted'));
