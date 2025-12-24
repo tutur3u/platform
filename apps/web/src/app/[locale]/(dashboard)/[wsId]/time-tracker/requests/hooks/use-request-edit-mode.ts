@@ -31,7 +31,7 @@ export function useRequestEditMode({
   const [editEndTime, setEditEndTime] = useState('');
 
   const updateMutation = useUpdateRequest();
-  const imageUpload = useImageUpload({maxImages: 5});
+  const imageUpload = useImageUpload({ maxImages: 5 });
 
   const handleEnterEditMode = useCallback(() => {
     setIsEditMode(true);

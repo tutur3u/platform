@@ -46,7 +46,10 @@ export function ApprovalStatusCard({ request }: ApprovalStatusCardProps) {
               {t('detail.rejectedDate', {
                 name: request.rejected_by_user.display_name,
                 date: request.rejected_at
-                  ? format(new Date(request.rejected_at), 'MMM d, yyyy · h:mm a')
+                  ? format(
+                      new Date(request.rejected_at),
+                      'MMM d, yyyy · h:mm a'
+                    )
                   : '',
               })}
             </p>
@@ -73,7 +76,9 @@ export function ApprovalStatusCard({ request }: ApprovalStatusCardProps) {
         <div className="flex items-start gap-3">
           <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-blue" />
           <div className="space-y-1">
-            <p className="font-medium text-sm">{t('detail.requestNeedsInfo')}</p>
+            <p className="font-medium text-sm">
+              {t('detail.requestNeedsInfo')}
+            </p>
             <p className="text-muted-foreground text-xs">
               {t('detail.needsInfoDate', {
                 name: request.needs_info_requested_by_user.display_name,

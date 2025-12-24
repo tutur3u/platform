@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { ChevronLeftIcon, ChevronRightIcon } from '@tuturuuu/icons';
 import {
   Dialog,

@@ -264,15 +264,15 @@ export function RequestDetailModal({
 
               {/* Activity Timeline Section */}
               {!editMode.isEditMode && canViewComments && (
-                  <ActivityTimeline
-                    activities={activityData?.data || []}
-                    currentPage={activityPage}
-                    onPageChange={setActivityPage}
-                    itemsPerPage={activityItemsPerPage}
-                    onItemsPerPageChange={setActivityItemsPerPage}
-                    totalCount={activityData?.total || 0}
-                    isLoading={isLoadingActivity}
-                  />
+                <ActivityTimeline
+                  activities={activityData?.data || []}
+                  currentPage={activityPage}
+                  onPageChange={setActivityPage}
+                  itemsPerPage={activityItemsPerPage}
+                  onItemsPerPageChange={setActivityItemsPerPage}
+                  totalCount={activityData?.total || 0}
+                  isLoading={isLoadingActivity}
+                />
               )}
             </div>
             {/* End Right Column */}
