@@ -189,7 +189,7 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
         setMissedEntryStartTime(prefillStartTime);
         setMissedEntryEndTime(prefillEndTime);
       } else if (isNormalMode) {
-        // Default to current time and 1 hour later when no prefill values provided
+        // Default to 1 hour before and current time when no prefill values provided
         const userTz = dayjs.tz.guess();
         const now = dayjs().tz(userTz);
         const oneHourBefore = now.subtract(1, 'hour');

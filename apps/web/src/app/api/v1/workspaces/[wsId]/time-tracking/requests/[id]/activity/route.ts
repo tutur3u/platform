@@ -1,5 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import {z} from 'zod';
+
+const paginationSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(5),
+});
+
+
 
 export async function GET(
   req: Request,
@@ -36,10 +44,33 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+// Verify the request belongs to this workspace
+    const { data: request, error: requestError } = await supabase
+    .from('time_tracking_requests')
+    .select('id')
+    .eq('id', requestId)
+    .eq('workspace_id', wsId)
+    .single();
+
+  if (requestError || !request) {
+    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+  }
+
+
+
   // Parse pagination parameters
   const url = new URL(req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-  const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '5', 10)));
+    const parsed = paginationSchema.safeParse({   
+    page: url.searchParams.get('page'),
+    limit: url.searchParams.get('limit'), 
+  })
+    if (!parsed.success) {
+        return NextResponse.json(
+        { error: 'Invalid pagination parameters' },
+        { status: 400 }
+      );
+    }
+    const {page, limit} = parsed.data;
   const offset = (page - 1) * limit;
 
   // Get total count

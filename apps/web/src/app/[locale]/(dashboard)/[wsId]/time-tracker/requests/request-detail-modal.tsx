@@ -113,12 +113,14 @@ export function RequestDetailModal({
     onClose,
   });
 
+  const { resetForms } = actions;
+
   useEffect(() => {
     if (!isOpen) {
-      actions.resetForms();
+      resetForms();
       setSelectedImageIndex(null);
     }
-  }, [isOpen, actions]);
+  }, [isOpen, resetForms]);
 
   return (
     <>

@@ -319,6 +319,8 @@ export async function GET(
       query = query.eq('approval_status', 'APPROVED');
     } else if (status === 'rejected') {
       query = query.eq('approval_status', 'REJECTED');
+    } else if (status === 'needs_info') {
+      query = query.eq('approval_status', 'NEEDS_INFO');
     }
 
     // Filter by user if specified
