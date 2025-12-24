@@ -111,6 +111,30 @@ export function useReorderTask(boardId: string) {
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
+      // Check if moving to a done or closed list
+      const targetList = queryClient.getQueryData([
+        'task_lists',
+        boardId,
+      ]) as TaskList[] | undefined;
+      const list = targetList?.find((l) => l.id === newListId);
+      const isCompletionList = list?.status === 'done' || list?.status === 'closed';
+
+      // If moving to completion list, fetch blocked task IDs before the update
+      // so we can invalidate their caches after the blocking relationships are removed
+      let blockedTaskIds: string[] = [];
+      if (isCompletionList) {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('task_relationships')
+          .select('target_task_id')
+          .eq('source_task_id', taskId)
+          .eq('type', 'blocks');
+        
+        if (data) {
+          blockedTaskIds = data.map((r) => r.target_task_id);
+        }
+      }
+
       // Optimistically update the task
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -118,11 +142,6 @@ export function useReorderTask(boardId: string) {
           if (!old) return old;
           return old.map((task) => {
             if (task.id === taskId) {
-              const targetList = queryClient.getQueryData([
-                'task_lists',
-                boardId,
-              ]) as TaskList[] | undefined;
-              const list = targetList?.find((l) => l.id === newListId);
               const shouldArchive =
                 list?.status === 'done' || list?.status === 'closed';
 
@@ -138,7 +157,7 @@ export function useReorderTask(boardId: string) {
         }
       );
 
-      return { previousTasks };
+      return { previousTasks, blockedTaskIds };
     },
     onError: (err, _, context) => {
       console.log('❌ onError triggered - rollback optimistic update');
@@ -148,7 +167,7 @@ export function useReorderTask(boardId: string) {
 
       console.error('Failed to reorder task:', err);
     },
-    onSuccess: (updatedTask) => {
+    onSuccess: async (updatedTask, variables, context) => {
       console.log(
         '✅ onSuccess triggered - updating cache with server response'
       );
@@ -163,6 +182,26 @@ export function useReorderTask(boardId: string) {
           );
         }
       );
+
+      // If task was moved to done/closed list (has completed_at or closed_at set),
+      // invalidate task relationships to reflect removed blocking relationships
+      if (updatedTask.completed_at || updatedTask.closed_at) {
+        // Invalidate the completed/closed task's relationships
+        await queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.taskId],
+        });
+
+        // Invalidate all blocked tasks' relationships (they're now unblocked)
+        if (context?.blockedTaskIds && context.blockedTaskIds.length > 0) {
+          await Promise.all(
+            context.blockedTaskIds.map((blockedTaskId) =>
+              queryClient.invalidateQueries({
+                queryKey: ['task-relationships', blockedTaskId],
+              })
+            )
+          );
+        }
+      }
     },
   });
 }

@@ -794,6 +794,23 @@ export function useUpdateTask(boardId: string) {
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
+      // If marking task as complete, fetch blocked task IDs before the update
+      // so we can invalidate their caches after the blocking relationships are removed
+      let blockedTaskIds: string[] = [];
+      if (updates.completed_at !== undefined && updates.completed_at !== null) {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('task_relationships')
+          .select('target_task_id')
+          .eq('source_task_id', taskId)
+          .eq('type', 'blocks');
+        
+        if (data) {
+          blockedTaskIds = data.map((r) => r.target_task_id);
+        }
+      }
+      console.log(blockedTaskIds)
+
       // Optimistically update the cache
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -805,7 +822,7 @@ export function useUpdateTask(boardId: string) {
         }
       );
 
-      return { previousTasks };
+      return { previousTasks, blockedTaskIds };
     },
     onError: (err, _, context) => {
       // Rollback optimistic update on error
@@ -815,7 +832,7 @@ export function useUpdateTask(boardId: string) {
 
       console.error('Failed to update task:', err);
     },
-    onSuccess: (updatedTask) => {
+    onSuccess: async (updatedTask, variables, context) => {
       // Update the cache with the server response
       // Preserve joined data (assignees, labels, projects) from cache since updateTask doesn't fetch them
       queryClient.setQueryData(
@@ -836,6 +853,27 @@ export function useUpdateTask(boardId: string) {
           });
         }
       );
+
+      // If completed_at was updated (task marked as done), invalidate task relationships
+      // This ensures the UI reflects the automatic removal of blocking relationships
+      // triggered by the database when a task is completed
+      if (variables.updates.completed_at !== undefined) {
+        // Invalidate the completed task's relationships
+        await queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.taskId],
+        });
+
+        // Invalidate all blocked tasks' relationships (they're now unblocked)
+        if (context?.blockedTaskIds && context.blockedTaskIds.length > 0) {
+          await Promise.all(
+            context.blockedTaskIds.map((blockedTaskId) =>
+              queryClient.invalidateQueries({
+                queryKey: ['task-relationships', blockedTaskId],
+              })
+            )
+          );
+        }
+      }
     },
   });
 }
