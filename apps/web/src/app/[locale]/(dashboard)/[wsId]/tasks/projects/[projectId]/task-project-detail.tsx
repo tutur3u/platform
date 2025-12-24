@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   Check,
@@ -58,12 +59,14 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { KanbanBoard } from '@tuturuuu/ui/tu-do/boards/boardId/kanban';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
 import { TimelineBoard } from '@tuturuuu/ui/tu-do/boards/boardId/timeline-board';
+import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
 import {
   BoardHeader,
   type ListStatusFilter,
 } from '@tuturuuu/ui/tu-do/shared/board-header';
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
+import { TaskDialogManager } from '@tuturuuu/ui/tu-do/shared/task-dialog-manager';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import type { MotionProps } from 'framer-motion';
@@ -140,7 +143,7 @@ function UpdateCard({
 
   return (
     <motion.div {...fadeInVariant}>
-      <Card className="group relative border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:-translate-y-1 hover:border-dynamic-blue/30 hover:shadow-lg">
+      <Card className="group relative border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:border-dynamic-blue/30 hover:shadow-lg">
         <div className="mb-3 flex items-start gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={update.creator?.avatar_url || undefined} />
@@ -425,6 +428,57 @@ export function TaskProjectDetail({
   );
   const [showTimelineEditor, setShowTimelineEditor] = useState(false);
 
+  // Sync local form state when project prop changes (e.g., after router.refresh())
+  useEffect(() => {
+    setEditedName(project.name);
+    setEditedDescription(project.description || '');
+    setEditedPriority(project.priority);
+    setEditedHealthStatus(project.health_status);
+    setEditedStatus(project.status);
+    setEditedLeadId(project.lead_id);
+    setEditedStartDate(
+      project.start_date
+        ? (() => {
+            const date = new Date(project.start_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
+        : ''
+    );
+    setEditedEndDate(
+      project.end_date
+        ? (() => {
+            const date = new Date(project.end_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
+        : ''
+    );
+    setEditedArchived(project.archived ?? false);
+  }, [project]);
+
+  // Virtual board ID for project-scoped task caching
+  // This ensures mutations update the correct cache key
+  const projectBoardId = `project:${project.id}`;
+
+  // Use TanStack Query for client-side task caching
+  // Server-rendered tasks are used as initialData, and cache is updated by mutations
+  const { data: cachedTasks } = useQuery({
+    queryKey: ['tasks', projectBoardId],
+    queryFn: () => Promise.resolve(tasks), // No refetch needed - data comes from server
+    initialData: tasks,
+    staleTime: Infinity, // Never auto-refetch, we control updates via mutations + router.refresh
+  });
+
+  // Handle task updates - refresh server data and sync cache
+  const handleUpdate = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   // Task management state
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [filters, setFilters] = useState<TaskFilters>({
@@ -454,7 +508,8 @@ export function TaskProjectDetail({
   // Filter tasks based on filters AND filtered lists
   const filteredTasks = useMemo(() => {
     const listIds = new Set(filteredLists.map((list) => list.id));
-    let result = tasks.filter((task) => listIds.has(task.list_id));
+    const tasksToFilter = cachedTasks ?? tasks;
+    let result = tasksToFilter.filter((task) => listIds.has(task.list_id));
 
     // Filter by labels
     if (filters.labels.length > 0) {
@@ -508,7 +563,7 @@ export function TaskProjectDetail({
     }
 
     return result;
-  }, [tasks, filters, filteredLists, currentUserId]);
+  }, [cachedTasks, tasks, filters, filteredLists, currentUserId]);
 
   // Apply optimistic overrides
   const effectiveTasks = useMemo(() => {
@@ -675,11 +730,11 @@ export function TaskProjectDetail({
       //     />
       //   );
       case 'kanban':
-        // Use null boardId to prevent useBoardConfig from querying workspace_boards
+        // Use projectBoardId for proper cache scoping
         return (
           <KanbanBoard
             workspace={workspace}
-            boardId={null}
+            boardId={projectBoardId}
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}
@@ -688,7 +743,7 @@ export function TaskProjectDetail({
       case 'list':
         return (
           <ListView
-            boardId={project.id}
+            boardId={projectBoardId}
             tasks={effectiveTasks}
             lists={filteredLists}
             isPersonalWorkspace={workspace.personal}
@@ -706,7 +761,7 @@ export function TaskProjectDetail({
         return (
           <KanbanBoard
             workspace={workspace}
-            boardId={null}
+            boardId={projectBoardId}
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}
@@ -968,19 +1023,24 @@ export function TaskProjectDetail({
   }, [showLinkTaskDialog, fetchAvailableTasks]);
 
   return (
-    <div className="relative flex h-full flex-col overflow-x-hidden">
-      {/* Simplified Background */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute top-0 -left-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-transparent blur-3xl" />
-        <div className="absolute top-1/3 -right-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/5 to-transparent blur-3xl" />
-      </div>
+    <TaskDialogProvider
+      onUpdate={handleUpdate}
+      isPersonalWorkspace={workspace.personal}
+    >
+      <div className="relative flex h-full flex-col overflow-x-hidden">
+        {/* Task Dialog Manager for centralized task editing */}
+        <TaskDialogManager wsId={wsId} />
+        {/* Simplified Background */}
+        <div className="pointer-events-none fixed inset-0 -z-10">
+          <div className="absolute top-0 -left-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-transparent blur-3xl" />
+          <div className="absolute top-1/3 -right-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/5 to-transparent blur-3xl" />
+        </div>
 
-      {/* Header with gradient and animations */}
-      <motion.div
-        {...fadeInUpVariant(0)}
-        className="relative mx-6 rounded-xl border border-dynamic-gray/20 bg-dynamic-gray/10 bg-linear-to-r p-6"
-      >
-        <div className="mx-auto max-w-7xl">
+        {/* Header with gradient and animations */}
+        <motion.div
+          {...fadeInUpVariant(0)}
+          className="relative rounded-xl border border-dynamic-gray/20 bg-dynamic-gray/10 bg-linear-to-r p-2 md:p-4"
+        >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-4">
               {/* Project name - editable */}
@@ -1082,39 +1142,37 @@ export function TaskProjectDetail({
               </motion.div>
             )}
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as ActiveTab)}
-        className="flex flex-1 flex-col overflow-hidden"
-      >
-        <TabsList className="mx-6 mt-4 w-fit justify-start gap-1 rounded-lg border border-border/50 bg-muted/50">
-          <TabsTrigger value="overview" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="updates" className="gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Updates
-          </TabsTrigger>
-          <TabsTrigger value="tasks" className="gap-2">
-            <Target className="h-4 w-4" />
-            Tasks ({tasks.length})
-          </TabsTrigger>
-        </TabsList>
+        {/* Tabs */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as ActiveTab)}
+          className="flex flex-1 flex-col overflow-hidden"
+        >
+          <TabsList className="mt-4 mb-2">
+            <TabsTrigger value="overview" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="updates" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Updates
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="gap-2">
+              <Target className="h-4 w-4" />
+              Tasks ({tasks.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-0 flex-1 overflow-auto p-6">
-          <div className="mx-auto max-w-7xl">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="mt-0 flex-1 overflow-auto">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Main content area */}
               <div className="space-y-6 lg:col-span-2">
                 {/* Description Card */}
                 <motion.div {...fadeInViewVariant(0)}>
-                  <Card className="group relative border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6 transition-all hover:-translate-y-1 hover:border-dynamic-purple/30 hover:shadow-xl">
+                  <Card className="group relative border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6 transition-all hover:border-dynamic-purple/30 hover:shadow-xl">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-lg text-transparent">
                         Description
@@ -1177,7 +1235,7 @@ export function TaskProjectDetail({
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card className="border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:-translate-y-1 hover:border-dynamic-blue/30 hover:shadow-xl">
+                    <Card className="border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:border-dynamic-blue/30 hover:shadow-xl">
                       <h2 className="mb-6 bg-linear-to-r from-dynamic-blue to-dynamic-cyan bg-clip-text font-bold text-lg text-transparent">
                         Project Configuration
                       </h2>
@@ -1514,7 +1572,7 @@ export function TaskProjectDetail({
               <div className="space-y-4">
                 {/* Project Lead */}
                 <motion.div {...fadeInViewVariant(0.2)}>
-                  <Card className="group border-2 border-dynamic-pink/20 bg-dynamic-pink/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-pink/30 hover:shadow-lg">
+                  <Card className="group border-2 border-dynamic-pink/20 bg-dynamic-pink/5 p-4 transition-all hover:border-dynamic-pink/30 hover:shadow-lg">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-pink to-dynamic-red">
@@ -1590,7 +1648,7 @@ export function TaskProjectDetail({
 
                 {/* Timeline */}
                 <motion.div {...fadeInViewVariant(0.3)}>
-                  <Card className="group border-2 border-dynamic-green/20 bg-dynamic-green/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-green/30 hover:shadow-lg">
+                  <Card className="group border-2 border-dynamic-green/20 bg-dynamic-green/5 p-4 transition-all hover:border-dynamic-green/30 hover:shadow-lg">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-green to-dynamic-cyan">
@@ -1670,7 +1728,7 @@ export function TaskProjectDetail({
 
                 {/* Stats */}
                 <motion.div {...fadeInViewVariant(0.4)}>
-                  <Card className="group border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-blue/30 hover:shadow-lg">
+                  <Card className="group border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-4 transition-all hover:border-dynamic-blue/30 hover:shadow-lg">
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
                         <Target className="h-4 w-4 text-white" />
@@ -1732,244 +1790,246 @@ export function TaskProjectDetail({
                 </motion.div>
               </div>
             </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        {/* Updates Tab */}
-        <TabsContent value="updates" className="mt-0 flex-1 overflow-auto p-6">
-          <div className="mx-auto space-y-6">
-            {/* Post Update Form */}
-            <motion.div {...fadeInViewVariant(0)}>
-              <Card className="border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6">
-                <h3 className="mb-4 bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-semibold text-lg text-transparent">
-                  Share an Update
-                </h3>
-                <div className="space-y-3">
-                  <Textarea
-                    value={newUpdateContent}
-                    onChange={(e) => setNewUpdateContent(e.target.value)}
-                    placeholder="Share progress, celebrate wins, or discuss challenges..."
-                    className="min-h-30 resize-none border-dynamic-purple/30"
-                    disabled={isPostingUpdate}
-                  />
-                  <div className="flex items-center justify-between">
-                    <p className="text-muted-foreground text-xs">
-                      Rich text editor, reactions, and attachments coming soon
-                    </p>
-                    <Button
-                      onClick={postUpdate}
-                      disabled={isPostingUpdate || !newUpdateContent.trim()}
-                      className="bg-linear-to-r from-dynamic-purple to-dynamic-pink shadow-lg transition-all hover:shadow-xl"
-                    >
-                      {isPostingUpdate ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Posting...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Post Update
-                        </>
-                      )}
-                    </Button>
+          {/* Updates Tab */}
+          <TabsContent value="updates" className="mt-0 flex-1 overflow-auto">
+            <div className="mx-auto space-y-6">
+              {/* Post Update Form */}
+              <motion.div {...fadeInViewVariant(0)}>
+                <Card className="border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6">
+                  <h3 className="mb-4 bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-semibold text-lg text-transparent">
+                    Share an Update
+                  </h3>
+                  <div className="space-y-3">
+                    <Textarea
+                      value={newUpdateContent}
+                      onChange={(e) => setNewUpdateContent(e.target.value)}
+                      placeholder="Share progress, celebrate wins, or discuss challenges..."
+                      className="min-h-30 resize-none border-dynamic-purple/30"
+                      disabled={isPostingUpdate}
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">
+                        Rich text editor, reactions, and attachments coming soon
+                      </p>
+                      <Button
+                        onClick={postUpdate}
+                        disabled={isPostingUpdate || !newUpdateContent.trim()}
+                        className="bg-linear-to-r from-dynamic-purple to-dynamic-pink shadow-lg transition-all hover:shadow-xl"
+                      >
+                        {isPostingUpdate ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Posting...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Post Update
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Updates Feed */}
-            {isLoadingUpdates ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-dynamic-purple" />
-              </div>
-            ) : updates.length > 0 ? (
-              <div className="space-y-4">
-                {updates.map((update, index) => (
-                  <UpdateCard
-                    key={update.id}
-                    update={update}
-                    currentUserId={currentUserId}
-                    isEditing={editingUpdateId === update.id}
-                    isDeleting={isDeletingUpdateId === update.id}
-                    editingContent={editingUpdateContent}
-                    onEdit={() => startEditingUpdate(update)}
-                    onDelete={() => deleteUpdate(update.id)}
-                    onSave={() => saveEditedUpdate(update.id)}
-                    onCancel={cancelEditingUpdate}
-                    onContentChange={setEditingUpdateContent}
-                    fadeInVariant={fadeInViewVariant(index * 0.1)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <motion.div {...fadeInViewVariant(0.1)}>
-                <Card className="border-2 border-muted/20 p-12 text-center">
-                  <Sparkles className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-                  <h3 className="mb-2 font-semibold text-lg">No updates yet</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Be the first to share progress on this project!
-                  </p>
                 </Card>
               </motion.div>
-            )}
-          </div>
-        </TabsContent>
 
-        {/* Tasks Tab */}
-        <TabsContent value="tasks" className="mt-0 flex-1 overflow-hidden">
-          {tasks.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-              <Target className="h-16 w-16 text-muted-foreground/50" />
-              <div>
-                <p className="mb-2 font-semibold text-lg">
-                  No tasks linked yet
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Link existing tasks or create new ones to get started
-                </p>
-              </div>
-              <Button
-                onClick={() => setShowLinkTaskDialog(true)}
-                className="bg-linear-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all hover:shadow-xl"
-              >
-                <Link2 className="mr-2 h-4 w-4" />
-                Link Tasks
-              </Button>
+              {/* Updates Feed */}
+              {isLoadingUpdates ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-dynamic-purple" />
+                </div>
+              ) : updates.length > 0 ? (
+                <div className="space-y-4">
+                  {updates.map((update, index) => (
+                    <UpdateCard
+                      key={update.id}
+                      update={update}
+                      currentUserId={currentUserId}
+                      isEditing={editingUpdateId === update.id}
+                      isDeleting={isDeletingUpdateId === update.id}
+                      editingContent={editingUpdateContent}
+                      onEdit={() => startEditingUpdate(update)}
+                      onDelete={() => deleteUpdate(update.id)}
+                      onSave={() => saveEditedUpdate(update.id)}
+                      onCancel={cancelEditingUpdate}
+                      onContentChange={setEditingUpdateContent}
+                      fadeInVariant={fadeInViewVariant(index * 0.1)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <motion.div {...fadeInViewVariant(0.1)}>
+                  <Card className="border-2 border-muted/20 p-12 text-center">
+                    <Sparkles className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+                    <h3 className="mb-2 font-semibold text-lg">
+                      No updates yet
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Be the first to share progress on this project!
+                    </p>
+                  </Card>
+                </motion.div>
+              )}
             </div>
-          ) : (
-            <div className="flex h-full flex-col">
-              <div className="flex items-center gap-2 border-b px-6 py-3">
-                <div className="flex-1">
-                  <BoardHeader
-                    board={virtualBoard}
-                    currentView={currentView}
-                    currentUserId={currentUserId}
-                    onViewChange={setCurrentView}
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    listStatusFilter={listStatusFilter}
-                    onListStatusFilterChange={setListStatusFilter}
-                    isPersonalWorkspace={workspace.personal}
-                    backUrl={`/${wsId}/tasks/projects`}
-                    hideActions={true}
-                  />
+          </TabsContent>
+
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="mt-0 flex-1 overflow-hidden">
+            {tasks.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+                <Target className="h-16 w-16 text-muted-foreground/50" />
+                <div>
+                  <p className="mb-2 font-semibold text-lg">
+                    No tasks linked yet
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Link existing tasks or create new ones to get started
+                  </p>
                 </div>
                 <Button
                   onClick={() => setShowLinkTaskDialog(true)}
-                  variant="outline"
-                  size="sm"
-                  className="border-dynamic-purple/30 transition-all hover:border-dynamic-purple/50 hover:bg-dynamic-purple/10"
+                  className="bg-linear-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all hover:shadow-xl"
                 >
                   <Link2 className="mr-2 h-4 w-4" />
                   Link Tasks
                 </Button>
               </div>
-              <div className="h-full overflow-hidden">{renderView()}</div>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            ) : (
+              <div className="flex h-full flex-col">
+                <div className="flex items-center gap-2 border-b px-6 py-3">
+                  <div className="flex-1">
+                    <BoardHeader
+                      board={virtualBoard}
+                      currentView={currentView}
+                      currentUserId={currentUserId}
+                      onViewChange={setCurrentView}
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      listStatusFilter={listStatusFilter}
+                      onListStatusFilterChange={setListStatusFilter}
+                      isPersonalWorkspace={workspace.personal}
+                      backUrl={`/${wsId}/tasks/projects`}
+                      hideActions={true}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => setShowLinkTaskDialog(true)}
+                    variant="outline"
+                    size="sm"
+                    className="border-dynamic-purple/30 transition-all hover:border-dynamic-purple/50 hover:bg-dynamic-purple/10"
+                  >
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Link Tasks
+                  </Button>
+                </div>
+                <div className="h-full overflow-hidden">{renderView()}</div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
-      {/* Link Tasks Dialog */}
-      <Dialog open={showLinkTaskDialog} onOpenChange={setShowLinkTaskDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text text-transparent">
-              Link Tasks to Project
-            </DialogTitle>
-            <DialogDescription>
-              Search for existing tasks to link to this project
-            </DialogDescription>
-          </DialogHeader>
+        {/* Link Tasks Dialog */}
+        <Dialog open={showLinkTaskDialog} onOpenChange={setShowLinkTaskDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text text-transparent">
+                Link Tasks to Project
+              </DialogTitle>
+              <DialogDescription>
+                Search for existing tasks to link to this project
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Search Input */}
-            <div className="relative">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tasks by title..."
-                className="border-dynamic-purple/30"
-              />
-            </div>
+            <div className="space-y-4">
+              {/* Search Input */}
+              <div className="relative">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tasks by title..."
+                  className="border-dynamic-purple/30"
+                />
+              </div>
 
-            {/* Results */}
-            <div className="max-h-100 space-y-2 overflow-auto">
-              {searchQuery ? (
-                filteredAvailableTasks.length > 0 ? (
-                  filteredAvailableTasks.map((task) => (
-                    <Card
-                      key={task.id}
-                      className="group cursor-pointer border-2 border-muted/20 p-4 transition-all hover:-translate-y-1 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5 hover:shadow-md"
-                      onClick={() => linkTaskToProject(task.id)}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <h4 className="mb-1 font-medium">{task.name}</h4>
-                          {task.description && (
-                            <p className="line-clamp-2 text-muted-foreground text-sm">
-                              {getDescriptionText(task.description)}
-                            </p>
-                          )}
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {task.priority && (
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  'text-xs',
-                                  task.priority === 'critical'
-                                    ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
-                                    : task.priority === 'high'
-                                      ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
-                                      : task.priority === 'normal'
-                                        ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
-                                        : 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
-                                )}
-                              >
-                                {task.priority}
-                              </Badge>
+              {/* Results */}
+              <div className="max-h-100 space-y-2 overflow-auto">
+                {searchQuery ? (
+                  filteredAvailableTasks.length > 0 ? (
+                    filteredAvailableTasks.map((task) => (
+                      <Card
+                        key={task.id}
+                        className="group cursor-pointer border-2 border-muted/20 p-4 transition-all hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5 hover:shadow-md"
+                        onClick={() => linkTaskToProject(task.id)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <h4 className="mb-1 font-medium">{task.name}</h4>
+                            {task.description && (
+                              <p className="line-clamp-2 text-muted-foreground text-sm">
+                                {getDescriptionText(task.description)}
+                              </p>
                             )}
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {task.priority && (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'text-xs',
+                                    task.priority === 'critical'
+                                      ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+                                      : task.priority === 'high'
+                                        ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
+                                        : task.priority === 'normal'
+                                          ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
+                                          : 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
+                                  )}
+                                >
+                                  {task.priority}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 transition-opacity group-hover:opacity-100"
+                            disabled={isLinkingTask}
+                          >
+                            <Link2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 transition-opacity group-hover:opacity-100"
-                          disabled={isLinkingTask}
-                        >
-                          <Link2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="py-12 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        No tasks found matching "{searchQuery}"
+                      </p>
+                    </div>
+                  )
                 ) : (
                   <div className="py-12 text-center">
+                    <Target className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
                     <p className="text-muted-foreground text-sm">
-                      No tasks found matching "{searchQuery}"
+                      Start typing to search for tasks
                     </p>
                   </div>
-                )
-              ) : (
-                <div className="py-12 text-center">
-                  <Target className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
-                  <p className="text-muted-foreground text-sm">
-                    Start typing to search for tasks
-                  </p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Info */}
-            <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3">
-              <p className="text-foreground/70 text-xs">
-                💡 Tip: You can also create new tasks directly in the Tasks tab
-                and they will automatically be linked to this project
-              </p>
+              {/* Info */}
+              <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3">
+                <p className="text-foreground/70 text-xs">
+                  💡 Tip: You can also create new tasks directly in the Tasks
+                  tab and they will automatically be linked to this project
+                </p>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TaskDialogProvider>
   );
 }
