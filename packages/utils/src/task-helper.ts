@@ -797,7 +797,10 @@ export function useUpdateTask(boardId: string) {
       // If marking task as complete, start fetching blocked task IDs asynchronously
       // Don't await here to avoid blocking the optimistic update
       let blockedTaskIdsPromise: Promise<string[]> | null = null;
-      if ((updates.completed_at !== undefined && updates.completed_at !== null) || (updates.closed_at !== undefined && updates.closed_at !== null)) {
+      if (
+        (updates.completed_at !== undefined && updates.completed_at !== null) ||
+        (updates.closed_at !== undefined && updates.closed_at !== null)
+      ) {
         const supabase = createClient();
         blockedTaskIdsPromise = Promise.resolve(
           supabase
@@ -859,7 +862,10 @@ export function useUpdateTask(boardId: string) {
       // If completed_at was updated (task marked as done), invalidate task relationships
       // This ensures the UI reflects the automatic removal of blocking relationships
       // triggered by the database when a task is completed
-      if (variables.updates.completed_at !== undefined || variables.updates.closed_at !== undefined) {
+      if (
+        variables.updates.completed_at !== undefined ||
+        variables.updates.closed_at !== undefined
+      ) {
         // Invalidate the completed task's relationships
         await queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.taskId],
