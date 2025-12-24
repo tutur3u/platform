@@ -37,6 +37,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useImageUpload } from '../hooks/use-image-upload';
 import { ImageUploadSection } from './components/image-upload-section';
 import { CommentList } from './components/comment-list';
+import { ActivityTimeline } from './components/activity-timeline';
 import { useRequestImages } from './hooks/use-request-images';
 import {
   useApproveRequest,
@@ -51,6 +52,7 @@ import {
   STATUS_LABELS,
   calculateDuration as calculateDurationUtil,
 } from './utils';
+import { useQuery } from '@tanstack/react-query';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -61,7 +63,7 @@ interface RequestDetailModalProps {
   onClose: () => void;
   onUpdate?: () => void;
   wsId: string;
-  bypassRulesPermission: boolean;
+  canManageTimeTrackingRequests: boolean;
   currentUser: WorkspaceUser | null;
 }
 
@@ -71,7 +73,7 @@ export function RequestDetailModal({
   onClose,
   onUpdate,
   wsId,
-  bypassRulesPermission,
+  canManageTimeTrackingRequests,
   currentUser,
 }: RequestDetailModalProps) {
   const t = useTranslations('time-tracker.requests');
@@ -83,6 +85,8 @@ export function RequestDetailModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
   );
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityItemsPerPage, setActivityItemsPerPage] = useState(3);
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -92,6 +96,18 @@ export function RequestDetailModal({
   );
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+
+  // Determine if user can edit (owner + status is PENDING or NEEDS_INFO)
+  const canEdit =
+    currentUser &&
+    request.user_id === currentUser.id &&
+    (request.approval_status === 'PENDING' ||
+      request.approval_status === 'NEEDS_INFO');
+
+  // Determine if user can view comments
+  const canViewComments =
+    (currentUser && request.user_id === currentUser.id) ||
+    canManageTimeTrackingRequests;
 
   // React Query mutations
   const approveMutation = useApproveRequest();
@@ -106,6 +122,29 @@ export function RequestDetailModal({
     request.images,
     isOpen
   );
+
+  // Fetch activity log with React Query
+  const { data: activityData, isLoading: isLoadingActivity } = useQuery({
+    queryKey: [
+      'time-tracking-request-activity',
+      request.id,
+      activityPage,
+      activityItemsPerPage,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(activityPage),
+        limit: String(activityItemsPerPage),
+      });
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/requests/${request.id}/activity?${params}`
+      );
+      if (!res.ok) throw new Error('Failed to fetch activity');
+      const json = await res.json();
+      return json;
+    },
+    enabled: isOpen && canViewComments,
+  });
 
   const handleApprove = useCallback(async () => {
     await approveMutation.mutateAsync(
@@ -189,17 +228,7 @@ export function RequestDetailModal({
   // Image upload hook for edit mode
   const imageUpload = useImageUpload({ maxImages: 5 });
 
-  // Determine if user can edit (owner + status is PENDING or NEEDS_INFO)
-  const canEdit =
-    currentUser &&
-    request.user_id === currentUser.id &&
-    (request.approval_status === 'PENDING' ||
-      request.approval_status === 'NEEDS_INFO');
 
-  // Determine if user can view comments
-  const canViewComments =
-    (currentUser && request.user_id === currentUser.id) ||
-    bypassRulesPermission;
 
   const handleEnterEditMode = useCallback(() => {
     setIsEditMode(true);
@@ -382,7 +411,7 @@ export function RequestDetailModal({
             </div>
           </DialogHeader>
 
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_400px]">
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2">
             {/* Left Column - Main Content */}
             <div className="order-2 space-y-6 lg:order-1">
               {/* User Info */}
@@ -802,7 +831,7 @@ export function RequestDetailModal({
 
               {/* Action Buttons */}
               {request.approval_status === 'PENDING' &&
-              (bypassRulesPermission ||
+              (canManageTimeTrackingRequests ||
                 (currentUser && request.user_id !== currentUser.id)) ? (
                 <>
                   {!showRejectionForm && !showNeedsInfoForm ? (
@@ -924,8 +953,29 @@ export function RequestDetailModal({
                   wsId={wsId}
                   currentUser={currentUser}
                   canViewComments={canViewComments}
-                  hasManagePermission={bypassRulesPermission}
+                  hasManagePermission={canManageTimeTrackingRequests}
                 />
+              )}
+
+              {/* Activity Timeline Section */}
+              {!isEditMode && canViewComments && (
+                <div className="rounded-lg border border-dynamic-border bg-dynamic-surface/30 p-4">
+                  {isLoadingActivity ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-foreground/40" />
+                    </div>
+                  ) : (
+                    <ActivityTimeline
+                      activities={activityData?.data || []}
+                      currentPage={activityPage}
+                      onPageChange={setActivityPage}
+                      itemsPerPage={activityItemsPerPage}
+                      onItemsPerPageChange={setActivityItemsPerPage}
+                      totalCount={activityData?.total || 0}
+                      isLoading={isLoadingActivity}
+                    />
+                  )}
+                </div>
               )}
             </div>
             {/* End Right Column */}
