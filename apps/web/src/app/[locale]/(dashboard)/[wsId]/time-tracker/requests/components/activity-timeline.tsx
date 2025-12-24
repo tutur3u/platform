@@ -297,6 +297,13 @@ export function ActivityTimeline({
           </div>
         </AccordionTrigger>
         <AccordionContent className="space-y-4 pt-4">
+          {/* Show "no activity" message when not loading and no data */}
+          {!isLoading && (!activities || activities.length === 0) ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Clock className="h-12 w-12 text-foreground/20 mb-3" />
+              <p className="text-sm text-foreground/60">{t('activity.noActivity')}</p>
+            </div>
+          ) : (
           <div className="relative space-y-4 pt-2">
             {/* Loading Overlay */}
             {isLoading && (
@@ -399,6 +406,7 @@ export function ActivityTimeline({
               </div>
             )}
           </div>
+          )}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
