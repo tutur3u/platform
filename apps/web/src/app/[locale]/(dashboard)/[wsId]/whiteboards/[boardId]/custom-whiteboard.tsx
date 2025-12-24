@@ -14,12 +14,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { UserPresenceAvatars } from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -38,6 +33,7 @@ const Excalidraw = dynamic(
 interface CustomWhiteboardProps {
   wsId: string;
   boardId: string;
+  boardName: string;
   initialData?: {
     elements?: ExcalidrawElement[];
     appState?: Partial<AppState>;
@@ -51,6 +47,7 @@ const AUTO_SAVE_DEBOUNCE_MS = 5000;
 export function CustomWhiteboard({
   wsId,
   boardId,
+  boardName,
   initialData,
 }: CustomWhiteboardProps) {
   const supabase = createClient();
@@ -372,78 +369,79 @@ export function CustomWhiteboard({
   }, [excalidrawAPI, isSaving, boardId, supabase]);
 
   return (
-    <TooltipProvider>
-      <div className="relative h-full w-full">
-        {/* Toolbar */}
-        <div className="pointer-events-auto absolute top-0 left-0 z-1000 flex items-center gap-4 px-16 py-4">
-          <Link href={`/${wsId}/whiteboards`}>
-            <Button variant="ghost">
-              <ArrowLeftIcon className="h-4 w-4" />
-              Back
-            </Button>
-          </Link>
-          <Button
-            variant="default"
-            onClick={save}
-            disabled={!hasUnsavedChanges || isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
+    <div className="absolute inset-0 flex h-screen flex-col">
+      {/* Toolbar */}
+      <div className="pointer-events-auto flex items-center gap-4 border-border border-b bg-background p-4">
+        <Link href={`/${wsId}/whiteboards`}>
+          <Button variant="ghost">
+            <ArrowLeftIcon className="h-4 w-4" />
+            Back
           </Button>
+        </Link>
 
-          {/* Collaboration Status */}
-          <div className="flex items-center gap-2">
-            {/* Connection Status */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs ${
-                    isConnected
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                  }`}
-                >
-                  {isConnected ? (
-                    <WifiIcon className="h-3.5 w-3.5" />
-                  ) : (
-                    <WifiOffIcon className="h-3.5 w-3.5" />
-                  )}
-                  <span>{isConnected ? 'Live' : 'Offline'}</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isConnected
-                  ? 'Connected - Changes sync in real-time'
-                  : 'Disconnected - Changes will sync when reconnected'}
-              </TooltipContent>
-            </Tooltip>
+        {/* Board Title */}
+        <h1 className="flex-1 truncate font-semibold text-lg">{boardName}</h1>
 
-            {/* Collaborator Avatars */}
-            <UserPresenceAvatars
-              presenceState={presenceState}
-              currentUserId={currentUserId}
-              maxDisplay={5}
-              avatarClassName="h-7 w-7"
-            />
-          </div>
+        <Button
+          variant="default"
+          onClick={save}
+          disabled={!hasUnsavedChanges || isSaving}
+        >
+          {isSaving ? 'Saving...' : 'Save'}
+        </Button>
+
+        {/* Collaboration Status */}
+        <div className="flex items-center gap-2">
+          {/* Connection Status */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs ${
+                  isConnected
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}
+              >
+                {isConnected ? (
+                  <WifiIcon className="h-3.5 w-3.5" />
+                ) : (
+                  <WifiOffIcon className="h-3.5 w-3.5" />
+                )}
+                <span>{isConnected ? 'Live' : 'Offline'}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isConnected
+                ? 'Connected - Changes sync in real-time'
+                : 'Disconnected - Changes will sync when reconnected'}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Collaborator Avatars */}
+          <UserPresenceAvatars
+            presenceState={presenceState}
+            currentUserId={currentUserId}
+            maxDisplay={5}
+            avatarClassName="h-7 w-7"
+          />
         </div>
-
+      </div>
+      <div className="flex-1">
         {/* Excalidraw Editor */}
         {resolvedTheme ? (
-          <div className="absolute -inset-4 h-screen w-full">
-            <Excalidraw
-              excalidrawAPI={(api) => setExcalidrawAPI(api)}
-              initialData={initialData}
-              onChange={handleChange}
-              onPointerUpdate={handlePointerUpdate}
-              theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
-            />
-          </div>
+          <Excalidraw
+            excalidrawAPI={(api) => setExcalidrawAPI(api)}
+            initialData={initialData}
+            onChange={handleChange}
+            onPointerUpdate={handlePointerUpdate}
+            theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <LoadingIndicator className="h-10 w-10" />
           </div>
         )}
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
