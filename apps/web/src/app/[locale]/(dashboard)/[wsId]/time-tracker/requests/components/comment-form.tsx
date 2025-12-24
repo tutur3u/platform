@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Kbd } from '@tuturuuu/ui/kbd';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAddComment } from '../hooks/use-request-mutations';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
@@ -25,12 +25,6 @@ export function CommentForm({
   const addComment = useAddComment();
 
   const [content, setContent] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-focus on mount
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
 
   const handleSubmit = useCallback(() => {
     if (!content.trim() || !currentUser) {
@@ -76,7 +70,6 @@ export function CommentForm({
         {/* Comment Input */}
         <div className="flex-1 space-y-2">
           <Textarea
-            ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
