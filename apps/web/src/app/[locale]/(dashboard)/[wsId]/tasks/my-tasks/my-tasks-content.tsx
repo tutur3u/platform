@@ -195,7 +195,8 @@ export default function MyTasksContent({
   // Connect the centralized task dialog's onUpdate to page refresh
   useEffect(() => {
     console.log('✅ Registering My Tasks update callback');
-    onUpdate(handleUpdate);
+    const cleanup = onUpdate(handleUpdate);
+    return cleanup;
   }, [onUpdate, handleUpdate]);
 
   // Fetch user's workspaces (only if in personal workspace)
@@ -916,7 +917,7 @@ export default function MyTasksContent({
   return (
     <div className="space-y-6">
       {/* Header with stats */}
-      <div className="flex min-h-[72px] flex-col items-center justify-between gap-2 px-1 md:flex-row md:gap-4">
+      <div className="flex min-h-18 flex-col items-center justify-between gap-2 px-1 md:flex-row md:gap-4">
         <div className="fade-in slide-in-from-left-2 animate-in space-y-1 duration-300">
           <h1 className="font-bold text-xl tracking-tight md:text-4xl">
             {t('sidebar_tabs.my_tasks')}
