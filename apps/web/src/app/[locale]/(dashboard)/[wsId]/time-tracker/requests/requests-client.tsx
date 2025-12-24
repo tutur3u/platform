@@ -10,14 +10,12 @@ import { RequestDetailModal } from './request-detail-modal';
 
 interface RequestsClientProps {
   wsId: string;
-  bypassRulesPermission: boolean;
   currentUser: WorkspaceUser | null;
   canManageTimeTrackingRequests: boolean;
 }
 
 export function RequestsClient({
   wsId,
-  bypassRulesPermission,
   currentUser,
   canManageTimeTrackingRequests,
 }: RequestsClientProps) {
@@ -73,7 +71,7 @@ export function RequestsClient({
             setSelectedRequest(null);
           }}
           wsId={wsId}
-          bypassRulesPermission={bypassRulesPermission}
+          canManageTimeTrackingRequests={canManageTimeTrackingRequests}
           currentUser={currentUser}
         />
       )}

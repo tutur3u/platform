@@ -7898,6 +7898,7 @@
         "approvedDate": "Approved by {name} on {date}",
         "rejectedDate": "Rejected by {name} on {date}",
         "requestNeedsInfo": "More Information Requested",
+        "activityHistory": "Activity History",
         "needsInfoDate": "Requested by {name} on {date}",
         "needsInfoReason": "Requested Information:",
         "requestInfoButton": "Request More Info",
@@ -7913,7 +7914,36 @@
         "descriptionLabel": "Description",
         "addMoreImages": "Add More Images ({current}/{max})",
         "existingImage": "Existing",
-        "newImage": "New"
+        "newImage": "New",
+        "activity": {
+          "title": "Activity History",
+          "noActivity": "No activity yet",
+          "unknownUser": "Unknown User",
+          "unknownActivity": "Unknown activity",
+          "titleLabel": "Title",
+          "feedbackLabel": "Feedback",
+          "itemsPerPage": "Items per page",
+          "previous": "Previous",
+          "next": "Next",
+          "pageInfo": "Page {current} of {total}",
+          "actions": {
+            "created": "Created request",
+            "statusChanged": "Changed status",
+            "contentUpdated": "Updated content",
+            "commentAdded": "Added comment",
+            "commentUpdated": "Updated comment",
+            "commentDeleted": "Deleted comment"
+          },
+          "fields": {
+            "title": "Title",
+            "description": "Description",
+            "start_time": "Start Time",
+            "end_time": "End Time",
+            "task_id": "Task",
+            "category_id": "Category",
+            "images": "Images"
+          }
+        }
       },
       "comments": {
         "title": "Comments",
