@@ -84,8 +84,8 @@ export function ActionButtons({
   // Action buttons for approvers when status is PENDING
   if (
     request.approval_status === 'PENDING' &&
-    (canManageTimeTrackingRequests &&
-      (currentUser && request.user_id !== currentUser.id))
+    canManageTimeTrackingRequests && currentUser &&
+    request.user_id !== currentUser.id
   ) {
     // Show rejection form
     if (showRejectionForm) {

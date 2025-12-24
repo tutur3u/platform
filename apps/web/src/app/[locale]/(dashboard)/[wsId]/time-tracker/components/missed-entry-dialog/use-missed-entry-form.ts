@@ -198,7 +198,14 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
         setMissedEntryEndTime(now.format('YYYY-MM-DDTHH:mm'));
       }
     }
-  }, [open, isExceededMode, isNormalMode, session, prefillStartTime, prefillEndTime]);
+  }, [
+    open,
+    isExceededMode,
+    isNormalMode,
+    session,
+    prefillStartTime,
+    prefillEndTime,
+  ]);
 
   // Update current duration every second in exceeded mode
   useEffect(() => {

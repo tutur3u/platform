@@ -87,7 +87,14 @@ export function useRequestActions({
         },
       }
     );
-  }, [requestId, wsId, needsInfoReason, onSuccess, onClose, requestInfoMutation]);
+  }, [
+    requestId,
+    wsId,
+    needsInfoReason,
+    onSuccess,
+    onClose,
+    requestInfoMutation,
+  ]);
 
   const handleResubmit = useCallback(async () => {
     await resubmitMutation.mutateAsync(
