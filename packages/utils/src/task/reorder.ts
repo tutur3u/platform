@@ -112,12 +112,12 @@ export function useReorderTask(boardId: string) {
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       // Check if moving to a done or closed list
-      const targetList = queryClient.getQueryData([
-        'task_lists',
-        boardId,
-      ]) as TaskList[] | undefined;
+      const targetList = queryClient.getQueryData(['task_lists', boardId]) as
+        | TaskList[]
+        | undefined;
       const list = targetList?.find((l) => l.id === newListId);
-      const isCompletionList = list?.status === 'done' || list?.status === 'closed';
+      const isCompletionList =
+        list?.status === 'done' || list?.status === 'closed';
 
       // If moving to completion list, start fetching blocked task IDs asynchronously
       // Don't await here to avoid blocking the optimistic update
