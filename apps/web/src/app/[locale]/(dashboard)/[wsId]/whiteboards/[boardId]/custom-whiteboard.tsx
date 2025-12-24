@@ -2,6 +2,7 @@
 
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import '@excalidraw/excalidraw/index.css';
+import './excalidraw-overrides.css';
 import type {
   AppState,
   BinaryFiles,
@@ -9,13 +10,23 @@ import type {
   ExcalidrawImperativeAPI,
   SocketId,
 } from '@excalidraw/excalidraw/types';
-import { ArrowLeftIcon, WifiIcon, WifiOffIcon } from '@tuturuuu/icons';
+import {
+  ArrowLeftIcon,
+  CloudIcon,
+  CloudOffIcon,
+  Loader2Icon,
+  PencilIcon,
+  WifiIcon,
+  WifiOffIcon,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { UserPresenceAvatars } from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
+import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -41,8 +52,12 @@ interface CustomWhiteboardProps {
   };
 }
 
-// Auto-save debounce interval (5 seconds)
-const AUTO_SAVE_DEBOUNCE_MS = 5000;
+// Auto-save debounce interval (1 second for responsive saving)
+const AUTO_SAVE_DEBOUNCE_MS = 1000;
+// Title save debounce (500ms)
+const TITLE_SAVE_DEBOUNCE_MS = 500;
+
+type SyncStatus = 'synced' | 'syncing' | 'error';
 
 export function CustomWhiteboard({
   wsId,
@@ -55,12 +70,19 @@ export function CustomWhiteboard({
 
   const [excalidrawAPI, setExcalidrawAPI] =
     useState<ExcalidrawImperativeAPI | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
+
+  // Inline title editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(boardName);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const lastSavedRef = useRef<string | null>(null);
   const previousElementsRef = useRef<readonly ExcalidrawElement[]>([]);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingChangesRef = useRef(false);
 
   // Helper to deep clone elements array
   const cloneElements = useCallback(
@@ -155,47 +177,71 @@ export function CustomWhiteboard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData, cloneElements]);
 
-  // Auto-save function
+  // Perform the actual save to database
+  const performSave = useCallback(async () => {
+    if (!excalidrawAPI) return;
+
+    setSyncStatus('syncing');
+    setLastSyncError(null);
+
+    try {
+      const elements = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      const files = excalidrawAPI.getFiles();
+
+      const essentialAppState: Partial<AppState> = {
+        viewBackgroundColor: appState.viewBackgroundColor,
+        gridSize: appState.gridSize,
+      };
+
+      const snapshot = {
+        elements,
+        appState: essentialAppState,
+        files,
+      };
+
+      const { error } = await supabase
+        .from('workspace_whiteboards')
+        .update({
+          snapshot: JSON.stringify(snapshot),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', boardId);
+
+      if (error) throw error;
+
+      lastSavedRef.current = JSON.stringify({ elements, files });
+      pendingChangesRef.current = false;
+      setSyncStatus('synced');
+    } catch (error) {
+      console.error('Save error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      setLastSyncError(errorMessage);
+      setSyncStatus('error');
+      toast.error('Failed to save whiteboard', {
+        description: 'Your changes may not be saved. Click to retry.',
+        action: {
+          label: 'Retry',
+          onClick: () => performSave(),
+        },
+      });
+    }
+  }, [excalidrawAPI, supabase, boardId]);
+
+  // Auto-save function with debounce
   const triggerAutoSave = useCallback(() => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
+    pendingChangesRef.current = true;
+    setSyncStatus('syncing');
+
     autoSaveTimeoutRef.current = setTimeout(() => {
-      // Will trigger save via the save function
-      if (hasUnsavedChanges && excalidrawAPI) {
-        // Trigger save silently
-        const elements = excalidrawAPI.getSceneElements();
-        const appState = excalidrawAPI.getAppState();
-        const files = excalidrawAPI.getFiles();
-
-        const essentialAppState: Partial<AppState> = {
-          viewBackgroundColor: appState.viewBackgroundColor,
-          gridSize: appState.gridSize,
-        };
-
-        const snapshot = {
-          elements,
-          appState: essentialAppState,
-          files,
-        };
-
-        supabase
-          .from('workspace_whiteboards')
-          .update({
-            snapshot: JSON.stringify(snapshot),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', boardId)
-          .then(({ error }) => {
-            if (!error) {
-              lastSavedRef.current = JSON.stringify({ elements, files });
-              setHasUnsavedChanges(false);
-            }
-          });
-      }
+      performSave();
     }, AUTO_SAVE_DEBOUNCE_MS);
-  }, [hasUnsavedChanges, excalidrawAPI, supabase, boardId]);
+  }, [performSave]);
 
   // Clean up auto-save timeout on unmount
   useEffect(() => {
@@ -203,8 +249,28 @@ export function CustomWhiteboard({
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
+      if (titleSaveTimeoutRef.current) {
+        clearTimeout(titleSaveTimeoutRef.current);
+      }
     };
   }, []);
+
+  // Handle keyboard shortcuts (Cmd+S / Ctrl+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        // Force immediate save
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        performSave();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [performSave]);
 
   // Change detection and collaboration broadcast via onChange callback
   const handleChange = useCallback(
@@ -219,7 +285,6 @@ export function CustomWhiteboard({
         files,
       });
       const hasChanges = currentState !== lastSavedRef.current;
-      setHasUnsavedChanges(hasChanges);
 
       // Broadcast element changes to collaborators
       if (previousElementsRef.current.length > 0 || elements.length > 0) {
@@ -249,158 +314,178 @@ export function CustomWhiteboard({
     [broadcastCursorPosition]
   );
 
-  // Save function
-  const save = useCallback(async () => {
-    if (!excalidrawAPI || isSaving) return;
+  // Title editing handlers
+  const handleTitleClick = useCallback(() => {
+    setIsEditingTitle(true);
+    setTimeout(() => titleInputRef.current?.select(), 0);
+  }, []);
 
-    setIsSaving(true);
+  const saveTitle = useCallback(
+    async (newTitle: string) => {
+      const trimmedTitle = newTitle.trim();
+      if (!trimmedTitle || trimmedTitle === boardName) {
+        setEditedTitle(boardName);
+        return;
+      }
 
-    // Generate thumbnail using exportToBlob
-    // const generateThumbnail = async (): Promise<Blob | null> => {
-    //   const elements = excalidrawAPI.getSceneElements();
-    //   if (elements.length === 0) return null;
+      try {
+        const { error } = await supabase
+          .from('workspace_whiteboards')
+          .update({
+            title: trimmedTitle,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', boardId);
 
-    //   try {
-    //     const { exportToBlob } = await import('@excalidraw/excalidraw');
-    //     return await exportToBlob({
-    //       elements,
-    //       appState: excalidrawAPI.getAppState(),
-    //       files: excalidrawAPI.getFiles(),
-    //       mimeType: 'image/png',
-    //       quality: 0.8,
-    //       exportPadding: 16,
-    //     });
-    //   } catch (error) {
-    //     console.error('Failed to generate thumbnail:', error);
-    //     return null;
-    //   }
-    // };
+        if (error) throw error;
+      } catch (error) {
+        console.error('Failed to save title:', error);
+        toast.error('Failed to update title');
+        setEditedTitle(boardName);
+      }
+    },
+    [supabase, boardId, boardName]
+  );
 
-    // const generateFileName = (name: string) => {
-    //   const now = new Date();
-    //   const year = now.getFullYear();
-    //   const month = String(now.getMonth() + 1).padStart(2, '0');
-    //   const day = String(now.getDate()).padStart(2, '0');
-    //   const hours = String(now.getHours()).padStart(2, '0');
-    //   const minutes = String(now.getMinutes()).padStart(2, '0');
-    //   const seconds = String(now.getSeconds()).padStart(2, '0');
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      setEditedTitle(newValue);
 
-    //   return `${year}${month}${day}-${hours}-${minutes}-${seconds}-${name}`;
-    // };
+      // Debounced save
+      if (titleSaveTimeoutRef.current) {
+        clearTimeout(titleSaveTimeoutRef.current);
+      }
+      titleSaveTimeoutRef.current = setTimeout(() => {
+        saveTitle(newValue);
+      }, TITLE_SAVE_DEBOUNCE_MS);
+    },
+    [saveTitle]
+  );
 
-    try {
-      const elements = excalidrawAPI.getSceneElements();
-      const appState = excalidrawAPI.getAppState();
-      const files = excalidrawAPI.getFiles();
-
-      // let thumbnailUrl: string | null = null;
-
-      // Generate and upload thumbnail if there are elements
-      // if (elements.length > 0) {
-      // const thumbnailBlob = await generateThumbnail();
-      // if (thumbnailBlob) {
-      // const thumbnailFileName = generateFileName(`${boardId}.png`);
-      // const thumbnailFile = new File([thumbnailBlob], thumbnailFileName, {
-      //   type: 'image/png',
-      // });
-
-      // const { error: thumbnailError } = await supabase.storage
-      //   .from('workspaces')
-      //   .upload(
-      //     `${wsId}/whiteboards/${boardId}/${thumbnailFileName}`,
-      //     thumbnailFile
-      //   );
-
-      // if (thumbnailError) {
-      //   console.error('Thumbnail upload error:', thumbnailError);
-      // } else {
-      //   const { data: urlData } = supabase.storage
-      //     .from('workspaces')
-      //     .getPublicUrl(
-      //       `${wsId}/whiteboards/${boardId}/${thumbnailFileName}`
-      //     );
-      //   thumbnailUrl = urlData.publicUrl;
-      // }
-      // }
-      // }
-
-      // Filter appState to only include essential properties
-      const essentialAppState: Partial<AppState> = {
-        viewBackgroundColor: appState.viewBackgroundColor,
-        gridSize: appState.gridSize,
-      };
-
-      const snapshot = {
-        elements,
-        appState: essentialAppState,
-        files,
-      };
-
-      const updateData: Record<string, unknown> = {
-        snapshot: JSON.stringify(snapshot),
-        updated_at: new Date().toISOString(),
-      };
-
-      // if (thumbnailUrl) {
-      //   updateData.thumbnail_url = thumbnailUrl;
-      // }
-
-      const { error: updateError } = await supabase
-        .from('workspace_whiteboards')
-        .update(updateData)
-        .eq('id', boardId);
-
-      if (updateError) throw updateError;
-
-      // Update the last saved reference
-      lastSavedRef.current = JSON.stringify({
-        elements,
-        files,
-      });
-      setHasUnsavedChanges(false);
-
-      toast.success('Whiteboard saved successfully');
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Failed to save whiteboard');
-    } finally {
-      setIsSaving(false);
+  const handleTitleBlur = useCallback(() => {
+    setIsEditingTitle(false);
+    // Clear pending debounce and save immediately
+    if (titleSaveTimeoutRef.current) {
+      clearTimeout(titleSaveTimeoutRef.current);
     }
-  }, [excalidrawAPI, isSaving, boardId, supabase]);
+    saveTitle(editedTitle);
+  }, [saveTitle, editedTitle]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        titleInputRef.current?.blur();
+      } else if (e.key === 'Escape') {
+        setEditedTitle(boardName);
+        setIsEditingTitle(false);
+      }
+    },
+    [boardName]
+  );
+
+  // Sync status indicator component
+  const SyncStatusIndicator = useMemo(() => {
+    const config = {
+      synced: {
+        icon: CloudIcon,
+        label: 'Synced',
+        className: 'bg-dynamic-green/10 text-dynamic-green',
+        tooltip: 'All changes saved',
+      },
+      syncing: {
+        icon: Loader2Icon,
+        label: 'Syncing...',
+        className: 'bg-dynamic-blue/10 text-dynamic-blue',
+        tooltip: 'Saving changes...',
+      },
+      error: {
+        icon: CloudOffIcon,
+        label: 'Sync failed',
+        className: 'bg-dynamic-red/10 text-dynamic-red',
+        tooltip: lastSyncError || 'Failed to save changes. Click to retry.',
+      },
+    };
+
+    const { icon: Icon, label, className, tooltip } = config[syncStatus];
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={syncStatus === 'error' ? () => performSave() : undefined}
+            className={cn(
+              'flex cursor-default items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
+              className,
+              syncStatus === 'error' && 'cursor-pointer hover:bg-dynamic-red/20'
+            )}
+          >
+            <Icon
+              className={cn(
+                'h-3.5 w-3.5',
+                syncStatus === 'syncing' && 'animate-spin'
+              )}
+            />
+            <span>{label}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    );
+  }, [syncStatus, lastSyncError, performSave]);
 
   return (
     <div className="absolute inset-0 flex h-screen flex-col">
       {/* Toolbar */}
       <div className="pointer-events-auto flex items-center gap-4 border-border border-b bg-background p-4">
         <Link href={`/${wsId}/whiteboards`}>
-          <Button variant="ghost">
+          <Button variant="ghost" size="sm">
             <ArrowLeftIcon className="h-4 w-4" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Button>
         </Link>
 
-        {/* Board Title */}
-        <h1 className="flex-1 truncate font-semibold text-lg">{boardName}</h1>
-
-        <Button
-          variant="default"
-          onClick={save}
-          disabled={!hasUnsavedChanges || isSaving}
-        >
-          {isSaving ? 'Saving...' : 'Save'}
-        </Button>
+        {/* Board Title - Editable */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {isEditingTitle ? (
+            <Input
+              ref={titleInputRef}
+              value={editedTitle}
+              onChange={handleTitleChange}
+              onBlur={handleTitleBlur}
+              onKeyDown={handleTitleKeyDown}
+              className="h-8 max-w-md font-semibold text-lg"
+              autoFocus
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={handleTitleClick}
+              className="group flex min-w-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-muted"
+            >
+              <h1 className="truncate font-semibold text-lg">{editedTitle}</h1>
+              <PencilIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            </button>
+          )}
+        </div>
 
         {/* Collaboration Status */}
         <div className="flex items-center gap-2">
+          {/* Sync Status */}
+          {SyncStatusIndicator}
+
           {/* Connection Status */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div
-                className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs ${
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
                   isConnected
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                }`}
+                    ? 'bg-dynamic-green/10 text-dynamic-green'
+                    : 'bg-dynamic-red/10 text-dynamic-red'
+                )}
               >
                 {isConnected ? (
                   <WifiIcon className="h-3.5 w-3.5" />

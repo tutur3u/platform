@@ -210,12 +210,12 @@ export default function WhiteboardsList({
               href={`/${wsId}/whiteboards/${whiteboard.id}`}
               className="block"
             >
-              <Card className="group cursor-pointer transition-shadow hover:shadow-md">
+              <Card className="group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <LayoutPanelTop className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-violet-500/10 to-purple-500/10 transition-colors group-hover:from-violet-500/20 group-hover:to-purple-500/20">
+                        <LayoutPanelTop className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                       </div>
                       <CardTitle className="line-clamp-1 text-base">
                         {whiteboard.title}
@@ -234,7 +234,9 @@ export default function WhiteboardsList({
                   <div className="flex items-center justify-between text-muted-foreground text-xs">
                     <div className="flex items-center gap-1">
                       <UserIcon className="h-3 w-3" />
-                      {whiteboard.creatorName}
+                      <span className="max-w-24 truncate">
+                        {whiteboard.creatorName}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Pen className="h-3 w-3" />
@@ -254,11 +256,11 @@ export default function WhiteboardsList({
               href={`/${wsId}/whiteboards/${whiteboard.id}`}
               className="block"
             >
-              <Card className="group cursor-pointer transition-shadow hover:shadow-sm">
+              <Card className="group cursor-pointer transition-all duration-200 hover:bg-muted/50">
                 <CardContent className="flex items-center gap-4 p-4">
                   {/* Icon */}
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                    <LayoutPanelTop className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-violet-500/10 to-purple-500/10">
+                    <LayoutPanelTop className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                   </div>
 
                   {/* Content */}
@@ -274,10 +276,12 @@ export default function WhiteboardsList({
                   </div>
 
                   {/* Metadata */}
-                  <div className="flex items-center gap-6 text-muted-foreground text-sm">
+                  <div className="hidden items-center gap-6 text-muted-foreground text-sm md:flex">
                     <div className="flex items-center gap-1">
                       <UserIcon className="h-3 w-3" />
-                      {whiteboard.creatorName}
+                      <span className="max-w-20 truncate">
+                        {whiteboard.creatorName}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Pen className="h-3 w-3" />
