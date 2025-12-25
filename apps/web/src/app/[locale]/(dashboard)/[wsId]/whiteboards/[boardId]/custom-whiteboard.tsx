@@ -319,9 +319,15 @@ export function CustomWhiteboard({
     async (file: File) => {
       try {
         // Upload file to Supabase Storage
-        const [fileName, fileExt] = file.name.split('.');
+        const lastDotIndex = file.name.lastIndexOf('.');
+        const fileName =
+          lastDotIndex > 0 ? file.name.substring(0, lastDotIndex) : file.name;
+        const fileExt =
+          lastDotIndex > 0 ? file.name.substring(lastDotIndex + 1) : '';
         const fileId = `${Date.now()}-${fileName}`;
-        const storagePath = `${wsId}/whiteboards/${boardId}/${fileId}.${fileExt}`;
+        const storagePath = fileExt
+          ? `${wsId}/whiteboards/${boardId}/${fileId}.${fileExt}`
+          : `${wsId}/whiteboards/${boardId}/${fileId}`;
 
         const { error } = await supabase.storage
           .from('workspaces')
@@ -335,17 +341,6 @@ export function CustomWhiteboard({
           toast.error('Failed to upload image');
           throw error;
         }
-
-        // Get public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('workspaces').getPublicUrl(storagePath);
-
-        console.log('File uploaded:', {
-          fileId,
-          storagePath,
-          publicUrl,
-        });
 
         // Return the ID - Excalidraw will use this to reference the file
         // The file URL will be stored in Excalidraw's files object
