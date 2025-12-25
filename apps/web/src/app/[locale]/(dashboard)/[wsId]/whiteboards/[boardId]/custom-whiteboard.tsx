@@ -314,6 +314,51 @@ export function CustomWhiteboard({
     [broadcastCursorPosition]
   );
 
+  // Handle image upload
+  const handleGenerateIdForFile = useCallback(
+    async (file: File) => {
+      try {
+        // Upload file to Supabase Storage
+        const [fileName, fileExt] = file.name.split('.');
+        const fileId = `${Date.now()}-${fileName}`;
+        const storagePath = `${wsId}/whiteboards/${boardId}/${fileId}.${fileExt}`;
+
+        const { error } = await supabase.storage
+          .from('workspaces')
+          .upload(storagePath, file, {
+            contentType: file.type || 'image/png',
+            upsert: false,
+          });
+
+        if (error) {
+          console.error('Failed to upload file:', error);
+          toast.error('Failed to upload image');
+          throw error;
+        }
+
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('workspaces').getPublicUrl(storagePath);
+
+        console.log('File uploaded:', {
+          fileId,
+          storagePath,
+          publicUrl,
+        });
+
+        // Return the ID - Excalidraw will use this to reference the file
+        // The file URL will be stored in Excalidraw's files object
+        return fileId;
+      } catch (error) {
+        console.error('Error in handleGenerateIdForFile:', error);
+        toast.error('Failed to process image');
+        throw error;
+      }
+    },
+    [supabase, wsId, boardId]
+  );
+
   // Title editing handlers
   const handleTitleClick = useCallback(() => {
     setIsEditingTitle(true);
@@ -519,6 +564,7 @@ export function CustomWhiteboard({
             initialData={initialData}
             onChange={handleChange}
             onPointerUpdate={handlePointerUpdate}
+            generateIdForFile={handleGenerateIdForFile}
             theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
           />
         ) : (
