@@ -74,41 +74,41 @@ export function TaskSummaryPopover({
         sideOffset={8}
         onClick={(e) => {
           e.stopPropagation();
-          (e as any).stopImmediatePropagation?.();
+          e.nativeEvent.stopImmediatePropagation();
           // Do not preventDefault on click, as it might block legitimate actions like buttons
         }}
         onMouseDown={(e) => {
           e.stopPropagation();
-          (e as any).stopImmediatePropagation?.();
+          e.nativeEvent.stopImmediatePropagation();
           // Do not preventDefault on mousedown globally, it might prevent focus or text selection
         }}
         onMouseUp={(e) => {
           e.stopPropagation();
-          (e as any).stopImmediatePropagation?.();
+          e.nativeEvent.stopImmediatePropagation();
         }}
         onPointerDown={(e) => {
           e.stopPropagation();
-          (e as any).stopImmediatePropagation?.();
+          e.nativeEvent.stopImmediatePropagation();
         }}
         onPointerUp={(e) => {
           e.stopPropagation();
-          (e as any).stopImmediatePropagation?.();
+          e.nativeEvent.stopImmediatePropagation();
         }}
         onDoubleClick={(e) => {
           e.stopPropagation();
-          (e as any).stopImmediatePropagation?.();
+          e.nativeEvent.stopImmediatePropagation();
         }}
       >
         <div
           className="flex flex-col text-sm"
           onClick={(e) => {
             e.stopPropagation();
-            (e as any).stopImmediatePropagation?.();
+            e.nativeEvent.stopImmediatePropagation();
             e.preventDefault();
           }}
           onMouseDown={(e) => {
             e.stopPropagation();
-            (e as any).stopImmediatePropagation?.();
+            e.nativeEvent.stopImmediatePropagation();
           }}
         >
           {/* Header */}
@@ -299,22 +299,34 @@ export function TaskSummaryPopover({
                   <span className="mb-0.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                     Blocked by
                   </span>
-                  {blockedBy.map((blocker) => (
-                    <a
-                      key={blocker.id}
-                      href={`/${workspaceId || '_'}/tasks/${blocker.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-1.5 truncate text-xs transition-colors hover:text-foreground"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span className="font-mono text-[10px] text-muted-foreground opacity-70 group-hover:text-foreground">
-                        #{blocker.display_number}
+                  {blockedBy.map((blocker) =>
+                    workspaceId ? (
+                      <a
+                        key={blocker.id}
+                        href={`/${workspaceId}/tasks/${blocker.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-1.5 truncate text-xs transition-colors hover:text-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="font-mono text-[10px] text-muted-foreground opacity-70 group-hover:text-foreground">
+                          #{blocker.display_number}
+                        </span>
+                        <span className="truncate">{blocker.name}</span>
+                        <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover:opacity-50" />
+                      </a>
+                    ) : (
+                      <span
+                        key={blocker.id}
+                        className="flex items-center gap-1.5 truncate text-muted-foreground text-xs"
+                      >
+                        <span className="font-mono text-[10px] opacity-70">
+                          #{blocker.display_number}
+                        </span>
+                        <span className="truncate">{blocker.name}</span>
                       </span>
-                      <span className="truncate">{blocker.name}</span>
-                      <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover:opacity-50" />
-                    </a>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             )}

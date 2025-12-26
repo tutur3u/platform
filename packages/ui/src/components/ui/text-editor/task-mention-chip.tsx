@@ -79,7 +79,7 @@ export function TaskMentionChip({
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
-  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownTriggerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
 

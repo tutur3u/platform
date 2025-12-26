@@ -7,6 +7,22 @@ import type {
 } from '../../mention-system/types';
 import type { SlashCommandDefinition } from '../../slash-commands/definitions';
 
+/**
+ * Payload structure for task mentions inserted via the editor
+ */
+interface TaskPayload {
+  display_number?: number;
+  priority?: string;
+  list?: {
+    color?: string;
+  };
+  assignees?: Array<{
+    id: string;
+    display_name?: string;
+    avatar_url?: string;
+  }>;
+}
+
 export interface UseEditorCommandsProps {
   editorInstance: Editor | null;
   slashState: SuggestionState;
@@ -143,7 +159,7 @@ export function useEditorCommands({
         chain.deleteRange(mentionState.range);
       }
 
-      let attributes: Record<string, any> = {
+      const attributes: Record<string, any> = {
         userId: option.type === 'user' ? option.id : null,
         entityId: option.id,
         entityType: option.type,
@@ -155,7 +171,7 @@ export function useEditorCommands({
       // For tasks, we want to use the display number as the display name
       // and populate additional attributes for the chip
       if (option.type === 'task' && option.payload) {
-        const task = option.payload as any;
+        const task = option.payload as TaskPayload;
         if (task.display_number) {
           attributes.displayName = String(task.display_number);
         }
