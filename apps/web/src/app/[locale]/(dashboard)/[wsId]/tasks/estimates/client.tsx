@@ -38,8 +38,6 @@ interface Props {
   initialBoards: Partial<WorkspaceTaskBoard>[];
 }
 
-
-
 export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
   const t = useTranslations('task-estimates');
   const router = useRouter();
@@ -56,44 +54,43 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
     useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   const estimationTypes = [
-  {
-    value: 'none' as const,
-    actualValue: null,
-    label: t('estimation_types.none.label'),
-    description: t('estimation_types.none.description'),
-    color: 'bg-muted/50 text-muted-foreground',
-  },
-  {
-    value: 'fibonacci' as const,
-    actualValue: 'fibonacci' as const,
-    label: t('estimation_types.fibonacci.label'),
-    description: t('estimation_types.fibonacci.description'),
-    color: 'bg-dynamic-blue/10 text-dynamic-blue',
-  },
-  {
-    value: 'linear' as const,
-    actualValue: 'linear' as const,
-    label: t('estimation_types.linear.label'),
-    description: t('estimation_types.linear.description'),
-    color: 'bg-dynamic-green/10 text-dynamic-green',
-  },
-  {
-    value: 'exponential' as const,
-    actualValue: 'exponential' as const,
-    label: t('estimation_types.exponential.label'),
-    description: t('estimation_types.exponential.description'),
-    color: 'bg-dynamic-purple/10 text-dynamic-purple',
-  },
-  {
-    value: 't-shirt' as const,
-    actualValue: 't-shirt' as const,
-    label: t('estimation_types.t-shirt.label'),
-    description: t('estimation_types.t-shirt.description'),
-    color: 'bg-dynamic-orange/10 text-dynamic-orange',
-  },
-];
+    {
+      value: 'none' as const,
+      actualValue: null,
+      label: t('estimation_types.none.label'),
+      description: t('estimation_types.none.description'),
+      color: 'bg-muted/50 text-muted-foreground',
+    },
+    {
+      value: 'fibonacci' as const,
+      actualValue: 'fibonacci' as const,
+      label: t('estimation_types.fibonacci.label'),
+      description: t('estimation_types.fibonacci.description'),
+      color: 'bg-dynamic-blue/10 text-dynamic-blue',
+    },
+    {
+      value: 'linear' as const,
+      actualValue: 'linear' as const,
+      label: t('estimation_types.linear.label'),
+      description: t('estimation_types.linear.description'),
+      color: 'bg-dynamic-green/10 text-dynamic-green',
+    },
+    {
+      value: 'exponential' as const,
+      actualValue: 'exponential' as const,
+      label: t('estimation_types.exponential.label'),
+      description: t('estimation_types.exponential.description'),
+      color: 'bg-dynamic-purple/10 text-dynamic-purple',
+    },
+    {
+      value: 't-shirt' as const,
+      actualValue: 't-shirt' as const,
+      label: t('estimation_types.t-shirt.label'),
+      description: t('estimation_types.t-shirt.description'),
+      color: 'bg-dynamic-orange/10 text-dynamic-orange',
+    },
+  ];
 
   const getEstimationTypeInfo = (type: string | null) => {
     return (
@@ -137,7 +134,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
           },
           extended: {
             label: t('dialog.extended_range'),
-            description: t('estimation_types.fibonacci.description_standard').replace('(0, 1, 2, 3, 5, 8)', '(0, 1, 2, 3, 5, 8, 13, 21)'),
+            description: t(
+              'estimation_types.fibonacci.description_standard'
+            ).replace('(0, 1, 2, 3, 5, 8)', '(0, 1, 2, 3, 5, 8, 13, 21)'),
           },
         };
       case 'linear':
@@ -149,7 +148,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
           },
           extended: {
             label: t('dialog.extended_range'),
-            description: t('estimation_types.linear.description_standard').replace('(0, 1, 2, 3, 4, 5)', '(0, 1, 2, 3, 4, 5, 6, 7)'),
+            description: t(
+              'estimation_types.linear.description_standard'
+            ).replace('(0, 1, 2, 3, 4, 5)', '(0, 1, 2, 3, 4, 5, 6, 7)'),
           },
         };
       case 'exponential':
@@ -161,7 +162,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
           },
           extended: {
             label: t('dialog.extended_range'),
-            description: t('estimation_types.exponential.description_standard').replace('(0, 1, 2, 4, 8, 16)', '(0, 1, 2, 4, 8, 16, 32, 64)'),
+            description: t(
+              'estimation_types.exponential.description_standard'
+            ).replace('(0, 1, 2, 4, 8, 16)', '(0, 1, 2, 4, 8, 16, 32, 64)'),
           },
         };
       case 't-shirt':
@@ -173,7 +176,12 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
           },
           extended: {
             label: t('dialog.extended_range'),
-            description: t('estimation_types.t-shirt.description_standard').replace('(-, XS, S, M, L, XL)', '(-, XS, S, M, L, XL, XXL, XXXL)'),
+            description: t(
+              'estimation_types.t-shirt.description_standard'
+            ).replace(
+              '(-, XS, S, M, L, XL)',
+              '(-, XS, S, M, L, XL, XXL, XXXL)'
+            ),
           },
         };
       default:
@@ -420,7 +428,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   <Calculator className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="font-semibold text-base">{t('no_boards_found')}</h3>
+                  <h3 className="font-semibold text-base">
+                    {t('no_boards_found')}
+                  </h3>
                   <p className="text-muted-foreground text-sm">
                     {t('no_boards_description')}
                   </p>
@@ -499,7 +509,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
                   <Target className="h-4 w-4 text-dynamic-orange" />
                 </div>
-                <span>{t('dialog.title', { name: editingBoard.name ?? '' })}</span>
+                <span>
+                  {t('dialog.title', { name: editingBoard.name ?? '' })}
+                </span>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-5">
@@ -521,7 +533,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                     id="estimation-method"
                     className="flex h-full w-full items-center justify-between text-left text-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 [&>svg]:rotate-180 data-[state=open]:[&>svg]:rotate-0"
                   >
-                    <SelectValue placeholder={t('dialog.select_estimation_method')} />
+                    <SelectValue
+                      placeholder={t('dialog.select_estimation_method')}
+                    />
                   </SelectTrigger>
                   <SelectContent
                     align="end"

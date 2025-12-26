@@ -23,49 +23,44 @@ interface Props {
 }
 
 export default async function TaskEstimatesPage({ params }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
-
       {async ({ wsId }) => {
         const { withoutPermission } = await getPermissions({
           wsId,
         });
-                      if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
-          // Fetch boards data with estimation types
-  const { boards } = await getTaskBoards(wsId);
+        if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+        // Fetch boards data with estimation types
+        const { boards } = await getTaskBoards(wsId);
 
-  const t = await getTranslations('task-estimates');
+        const t = await getTranslations('task-estimates');
 
-  return (
-    <div className="space-y-6 pb-8">
-      {/* Header with gradient accent matching task-edit-dialog pattern */}
-      <div className="space-y-3 rounded-lg border border-border/50 bg-linear-to-r from-dynamic-orange/5 via-background to-background p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
-            <Calculator className="h-5 w-5 text-dynamic-orange" />
+        return (
+          <div className="space-y-6 pb-8">
+            {/* Header with gradient accent matching task-edit-dialog pattern */}
+            <div className="space-y-3 rounded-lg border border-border/50 bg-linear-to-r from-dynamic-orange/5 via-background to-background p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
+                  <Calculator className="h-5 w-5 text-dynamic-orange" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-2xl tracking-tight">
+                    {t('page_title')}
+                  </h1>
+                  <p className="text-muted-foreground text-sm">
+                    {t('page_description')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Estimation Management */}
+            <TaskEstimatesClient wsId={wsId} initialBoards={boards} />
           </div>
-          <div>
-            <h1 className="font-bold text-2xl tracking-tight">
-              {t('page_title')}
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {t('page_description')}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Estimation Management */}
-      <TaskEstimatesClient wsId={wsId} initialBoards={boards} />
-    </div>
-  );
+        );
       }}
-
-      </WorkspaceWrapper>
+    </WorkspaceWrapper>
   );
-
-
 }
 
 async function getTaskBoards(
