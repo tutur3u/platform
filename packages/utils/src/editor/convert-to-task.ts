@@ -4,10 +4,14 @@ export interface ConvertToTaskOptions {
   editor: Editor;
   listId: string;
   listName: string;
-  createTask: (params: {
+  createTask: (params: { name: string; listId: string }) => Promise<{
+    id: string;
     name: string;
-    listId: string;
-  }) => Promise<{ id: string; name: string; display_number?: number }>;
+    display_number?: number;
+    priority?: string;
+    listColor?: string;
+    assignees?: string;
+  }>;
   wrapInParagraph?: boolean;
 }
 
@@ -90,6 +94,10 @@ export async function convertListItemToTask(
             : newTask.name,
           avatarUrl: null,
           subtitle: newTask.name,
+          // Add task-specific attributes if present
+          priority: newTask.priority || null,
+          listColor: newTask.listColor || null,
+          assignees: newTask.assignees || null,
         });
 
         // Insert mention at the selection start position
@@ -213,6 +221,10 @@ export async function convertListItemToTask(
           : newTask.name,
         avatarUrl: null,
         subtitle: newTask.name,
+        // Add task-specific attributes if present
+        priority: newTask.priority || null,
+        listColor: newTask.listColor || null,
+        assignees: newTask.assignees || null,
       });
 
       // Wrap in paragraph if requested and paragraph node exists
