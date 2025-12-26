@@ -40,6 +40,7 @@ interface Props {
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
   showCancel?: boolean;
   onCancel?: () => void;
+  hideHeader?: boolean;
 }
 
 const FormSchema = z.object({
@@ -64,6 +65,7 @@ export function TaskBoardForm({
   onFinish,
   showCancel,
   onCancel,
+
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -149,34 +151,36 @@ export function TaskBoardForm({
   };
 
   const formContent = (
-    <div className="w-full space-y-6 p-6">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          {isEditMode ? (
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Plus className="h-4 w-4 text-muted-foreground" />
-          )}
-          <h2 className="font-semibold text-lg">
-            {isEditMode ? t('common.edit') : t('ws-task-boards.create')}
-          </h2>
+    <div className="w-full space-y-6 overflow-y-auto p-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            {isEditMode ? (
+              <Pencil className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Plus className="h-4 w-4 text-muted-foreground" />
+            )}
+            <h2 className="font-semibold text-lg">
+              {isEditMode ? t('common.edit') : t('ws-task-boards.create')}
+            </h2>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            {isEditMode
+              ? t('ws-task-boards.name')
+              : t('ws-task-boards.description')}
+          </p>
         </div>
-        <p className="text-muted-foreground text-sm">
-          {isEditMode
-            ? t('ws-task-boards.name')
-            : t('ws-task-boards.description')}
-        </p>
-      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-4">
             <FormField
               control={form.control}
               name="icon"
               render={() => (
-                <FormItem className="w-10 shrink-0">
-                  <FormLabel>{t('ws-task-boards.icon_label')}</FormLabel>
+                <FormItem className="w-fit shrink-0">
+                  <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t('ws-task-boards.icon_label')}
+                  </FormLabel>
                   <FormControl>
                     <IconPicker
                       value={form.watch('icon') ?? null}
@@ -201,13 +205,16 @@ export function TaskBoardForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('ws-task-boards.name')}</FormLabel>
+                    <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t('ws-task-boards.name')}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Untitled board"
                         autoComplete="off"
                         autoFocus
                         {...field}
+                        className="h-10"
                       />
                     </FormControl>
                     <FormMessage />
