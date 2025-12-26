@@ -29,6 +29,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -37,45 +38,8 @@ interface Props {
   initialBoards: Partial<WorkspaceTaskBoard>[];
 }
 
-const estimationTypes = [
-  {
-    value: 'none' as const,
-    actualValue: null,
-    label: 'No Estimation',
-    description: 'No estimation method configured',
-    color: 'bg-muted/50 text-muted-foreground',
-  },
-  {
-    value: 'fibonacci' as const,
-    actualValue: 'fibonacci' as const,
-    label: 'Fibonacci',
-    description: '0, 1, 2, 3, 5, 8',
-    color: 'bg-dynamic-blue/10 text-dynamic-blue',
-  },
-  {
-    value: 'linear' as const,
-    actualValue: 'linear' as const,
-    label: 'Linear',
-    description: '0, 1, 2, 3, 4, 5',
-    color: 'bg-dynamic-green/10 text-dynamic-green',
-  },
-  {
-    value: 'exponential' as const,
-    actualValue: 'exponential' as const,
-    label: 'Exponential',
-    description: '0, 1, 2, 4, 8, 16',
-    color: 'bg-dynamic-purple/10 text-dynamic-purple',
-  },
-  {
-    value: 't-shirt' as const,
-    actualValue: 't-shirt' as const,
-    label: 'T-Shirt Sizes',
-    description: '-, XS, S, M, L, XL',
-    color: 'bg-dynamic-orange/10 text-dynamic-orange',
-  },
-];
-
 export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
+  const t = useTranslations('task-estimates');
   const router = useRouter();
   const queryClient = useQueryClient();
   const [boards, setBoards] =
@@ -90,6 +54,44 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
     useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const estimationTypes = [
+    {
+      value: 'none' as const,
+      actualValue: null,
+      label: t('estimation_types.none.label'),
+      description: t('estimation_types.none.description'),
+      color: 'bg-muted/50 text-muted-foreground',
+    },
+    {
+      value: 'fibonacci' as const,
+      actualValue: 'fibonacci' as const,
+      label: t('estimation_types.fibonacci.label'),
+      description: t('estimation_types.fibonacci.description'),
+      color: 'bg-dynamic-blue/10 text-dynamic-blue',
+    },
+    {
+      value: 'linear' as const,
+      actualValue: 'linear' as const,
+      label: t('estimation_types.linear.label'),
+      description: t('estimation_types.linear.description'),
+      color: 'bg-dynamic-green/10 text-dynamic-green',
+    },
+    {
+      value: 'exponential' as const,
+      actualValue: 'exponential' as const,
+      label: t('estimation_types.exponential.label'),
+      description: t('estimation_types.exponential.description'),
+      color: 'bg-dynamic-purple/10 text-dynamic-purple',
+    },
+    {
+      value: 't-shirt' as const,
+      actualValue: 't-shirt' as const,
+      label: t('estimation_types.t-shirt.label'),
+      description: t('estimation_types.t-shirt.description'),
+      color: 'bg-dynamic-orange/10 text-dynamic-orange',
+    },
+  ];
+
   const getEstimationTypeInfo = (type: string | null) => {
     return (
       estimationTypes.find((et) => et.actualValue === type) ||
@@ -99,76 +101,87 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
 
   const getFibonacciDescription = (isExtended: boolean) => {
     return isExtended
-      ? 'Fibonacci sequence (0, 1, 2, 3, 5, 8, 13, 21)'
-      : 'Fibonacci sequence (0, 1, 2, 3, 5, 8)';
+      ? t('estimation_types.fibonacci.description_extended')
+      : t('estimation_types.fibonacci.description_standard');
   };
 
   const getLinearDescription = (isExtended: boolean) => {
     return isExtended
-      ? 'Linear scale (0, 1, 2, 3, 4, 5, 6, 7)'
-      : 'Linear scale (0, 1, 2, 3, 4, 5)';
+      ? t('estimation_types.linear.description_extended')
+      : t('estimation_types.linear.description_standard');
   };
 
   const getExponentialDescription = (isExtended: boolean) => {
     return isExtended
-      ? 'Powers of 2 (0, 1, 2, 4, 8, 16, 32, 64)'
-      : 'Powers of 2 (0, 1, 2, 4, 8, 16)';
+      ? t('estimation_types.exponential.description_extended')
+      : t('estimation_types.exponential.description_standard');
   };
 
   const getTShirtDescription = (isExtended: boolean) => {
     return isExtended
-      ? 'T-shirt sizes (-, XS, S, M, L, XL, XXL, XXXL)'
-      : 'T-shirt sizes (-, XS, S, M, L, XL)';
+      ? t('estimation_types.t-shirt.description_extended')
+      : t('estimation_types.t-shirt.description_standard');
   };
 
   const getRangeInfo = (type: string) => {
     switch (type) {
       case 'fibonacci':
         return {
-          label: 'Fibonacci Sequence Range',
+          label: t('dialog.fibonacci_range'),
           standard: {
-            label: 'Standard Range',
-            description: '0, 1, 2, 3, 5, 8',
+            label: t('dialog.standard_range'),
+            description: t('estimation_types.fibonacci.description'),
           },
           extended: {
-            label: 'Extended Range',
-            description: '0, 1, 2, 3, 5, 8, 13, 21',
+            label: t('dialog.extended_range'),
+            description: t(
+              'estimation_types.fibonacci.description_standard'
+            ).replace('(0, 1, 2, 3, 5, 8)', '(0, 1, 2, 3, 5, 8, 13, 21)'),
           },
         };
       case 'linear':
         return {
-          label: 'Linear Scale Range',
+          label: t('dialog.linear_range'),
           standard: {
-            label: 'Standard Range',
-            description: '0, 1, 2, 3, 4, 5',
+            label: t('dialog.standard_range'),
+            description: t('estimation_types.linear.description'),
           },
           extended: {
-            label: 'Extended Range',
-            description: '0, 1, 2, 3, 4, 5, 6, 7',
+            label: t('dialog.extended_range'),
+            description: t(
+              'estimation_types.linear.description_standard'
+            ).replace('(0, 1, 2, 3, 4, 5)', '(0, 1, 2, 3, 4, 5, 6, 7)'),
           },
         };
       case 'exponential':
         return {
-          label: 'Exponential Scale Range',
+          label: t('dialog.exponential_range'),
           standard: {
-            label: 'Standard Range',
-            description: '0, 1, 2, 4, 8, 16',
+            label: t('dialog.standard_range'),
+            description: t('estimation_types.exponential.description'),
           },
           extended: {
-            label: 'Extended Range',
-            description: '0, 1, 2, 4, 8, 16, 32, 64',
+            label: t('dialog.extended_range'),
+            description: t(
+              'estimation_types.exponential.description_standard'
+            ).replace('(0, 1, 2, 4, 8, 16)', '(0, 1, 2, 4, 8, 16, 32, 64)'),
           },
         };
       case 't-shirt':
         return {
-          label: 'T-Shirt Size Range',
+          label: t('dialog.t_shirt_range'),
           standard: {
-            label: 'Standard Range',
-            description: '-, XS, S, M, L, XL',
+            label: t('dialog.standard_range'),
+            description: t('estimation_types.t-shirt.description'),
           },
           extended: {
-            label: 'Extended Range',
-            description: '-, XS, S, M, L, XL, XXL, XXXL',
+            label: t('dialog.extended_range'),
+            description: t(
+              'estimation_types.t-shirt.description_standard'
+            ).replace(
+              '(-, XS, S, M, L, XL)',
+              '(-, XS, S, M, L, XL, XXL, XXXL)'
+            ),
           },
         };
       default:
@@ -181,7 +194,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
     isExtended?: boolean
   ) => {
     if (!type || type === 'none') {
-      return 'No estimation configured';
+      return t('estimation_types.none.description');
     }
 
     if (isExtended === undefined) {
@@ -199,7 +212,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       case 't-shirt':
         return getTShirtDescription(isExtended);
       default:
-        return 'No estimation configured';
+        return t('estimation_types.none.description');
     }
   };
 
@@ -252,11 +265,11 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       );
 
       setEditingBoard(null);
-      toast.success('Estimation type updated successfully');
+      toast.success(t('toast.update_success'));
       router.refresh();
     } catch (error) {
       console.error('Error updating estimation type:', error);
-      toast.error('Failed to update estimation type');
+      toast.error(t('toast.update_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -309,7 +322,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-muted-foreground text-xs">
-                Total Boards
+                {t('stats.total_boards')}
               </p>
               <p className="font-bold text-2xl tabular-nums">
                 {stats.totalBoards}
@@ -325,7 +338,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-muted-foreground text-xs">
-                Configured
+                {t('stats.configured')}
               </p>
               <p className="font-bold text-2xl tabular-nums">
                 {stats.configuredBoards}
@@ -341,7 +354,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-muted-foreground text-xs">
-                Extended Range
+                {t('stats.extended_range')}
               </p>
               <p className="font-bold text-2xl tabular-nums">
                 {stats.extendedBoards}
@@ -359,7 +372,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
               <BarChart3 className="h-4 w-4 text-dynamic-orange" />
             </div>
             <h3 className="font-semibold text-base text-foreground">
-              Estimation Methods Distribution
+              {t('estimation_methods_distribution')}
             </h3>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -371,7 +384,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm">{type.label}</p>
                   <p className="text-muted-foreground text-xs">
-                    {type.count} {type.count === 1 ? 'board' : 'boards'}
+                    {type.count} {type.count === 1 ? t('board') : t('boards')}
                     {type.extendedCount > 0 && (
                       <span className="text-dynamic-orange">
                         {' '}
@@ -398,12 +411,12 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <Target className="h-4 w-4 text-dynamic-orange" />
               </div>
               <h3 className="font-semibold text-base text-foreground">
-                Board Estimation Configuration
+                {t('board_estimation_configuration')}
               </h3>
             </div>
             {boards.length > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {boards.length} {boards.length === 1 ? 'board' : 'boards'}
+                {boards.length} {boards.length === 1 ? t('board') : t('boards')}
               </Badge>
             )}
           </div>
@@ -415,9 +428,11 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   <Calculator className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="font-semibold text-base">No boards found</h3>
+                  <h3 className="font-semibold text-base">
+                    {t('no_boards_found')}
+                  </h3>
                   <p className="text-muted-foreground text-sm">
-                    Create some task boards to configure estimation methods
+                    {t('no_boards_description')}
                   </p>
                 </div>
               </div>
@@ -453,7 +468,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                                 variant="outline"
                                 className="border-dynamic-orange/50 text-[10px] text-dynamic-orange"
                               >
-                                Extended
+                                {t('extended_badge')}
                               </Badge>
                             )}
                         </div>
@@ -494,7 +509,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
                   <Target className="h-4 w-4 text-dynamic-orange" />
                 </div>
-                <span>Configure Estimation for "{editingBoard.name}"</span>
+                <span>
+                  {t('dialog.title', { name: editingBoard.name ?? '' })}
+                </span>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-5">
@@ -506,7 +523,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                     <Calculator className="h-3.5 w-3.5 text-dynamic-orange" />
                   </div>
-                  Estimation Method
+                  {t('dialog.estimation_method')}
                 </Label>
                 <Select
                   value={selectedEstimationType}
@@ -516,7 +533,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                     id="estimation-method"
                     className="flex h-full w-full items-center justify-between text-left text-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 [&>svg]:rotate-180 data-[state=open]:[&>svg]:rotate-0"
                   >
-                    <SelectValue placeholder="Select estimation method" />
+                    <SelectValue
+                      placeholder={t('dialog.select_estimation_method')}
+                    />
                   </SelectTrigger>
                   <SelectContent
                     align="end"
@@ -626,17 +645,17 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                     <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                       <CheckSquare className="h-3.5 w-3.5 text-dynamic-orange" />
                     </div>
-                    Estimation Options
+                    {t('dialog.estimation_options')}
                   </Label>
 
                   {/* Allow Zero Estimates Toggle */}
                   <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background p-3.5 transition-all hover:border-primary/30">
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="font-medium text-sm">
-                        Allow zero estimates
+                        {t('dialog.allow_zero_estimates')}
                       </div>
                       <div className="text-muted-foreground text-xs leading-snug">
-                        When enabled, issues can be estimated with zero points
+                        {t('dialog.allow_zero_estimates_description')}
                       </div>
                     </div>
                     <Switch
@@ -650,11 +669,10 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background p-3.5 transition-all hover:border-primary/30">
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="font-medium text-sm">
-                        Count unestimated issues
+                        {t('dialog.count_unestimated_issues')}
                       </div>
                       <div className="text-muted-foreground text-xs leading-snug">
-                        When enabled, unestimated issues count as 1 estimate
-                        point. When disabled, they count as 0
+                        {t('dialog.count_unestimated_issues_description')}
                       </div>
                     </div>
                     <Switch
@@ -674,7 +692,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                     </div>
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <p className="font-semibold text-dynamic-orange text-sm">
-                        Selected Configuration
+                        {t('dialog.selected_configuration')}
                       </p>
                       <p className="text-muted-foreground text-xs leading-snug">
                         {getEstimationDescription(
@@ -698,7 +716,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   disabled={isSubmitting}
                   className="sm:w-auto"
                 >
-                  Cancel
+                  {t('dialog.cancel')}
                 </Button>
                 <Button
                   onClick={handleUpdateEstimationType}
@@ -711,12 +729,12 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   {isSubmitting ? (
                     <>
                       <Calculator className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
+                      {t('dialog.updating')}
                     </>
                   ) : (
                     <>
                       <CheckSquare className="mr-2 h-4 w-4" />
-                      Update Estimation
+                      {t('dialog.update_estimation')}
                     </>
                   )}
                 </Button>
