@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Eye, EyeOff, Lock } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -10,9 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -35,21 +36,25 @@ export function PasswordManagementDialog({
 }: PasswordManagementDialogProps) {
   const router = useRouter();
   const t = useTranslations();
-  const [loading, setLoading] = useState(false);
-  const [isPasswordProtected, setIsPasswordProtected] = useState(initialIsProtected);
+  const [isPasswordProtected, setIsPasswordProtected] =
+    useState(initialIsProtected);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordHint, setPasswordHint] = useState(initialPasswordHint || '');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  const handleSave = async () => {
-    setLoading(true);
+  const resetForm = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setPasswordHint('');
+  };
 
-    try {
-      if (!isPasswordProtected) {
-        // Remove password protection
-        const response = await fetch(`/api/v1/link-shortener/${linkId}/password`, {
+  const removePasswordMutation = useMutation({
+    mutationFn: async (currentPassword?: string) => {
+      const response = await fetch(
+        `/api/v1/link-shortener/${linkId}/password`,
+        {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -57,85 +62,119 @@ export function PasswordManagementDialog({
           body: JSON.stringify({
             currentPassword: initialIsProtected ? currentPassword : undefined,
           }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || t('link-shortener.password_removed'));
         }
+      );
 
-        toast(t('link-shortener.password_removed'));
-      } else {
-        // Set or update password/hint
-        // Build request body dynamically - only include fields that are being updated
-        const requestBody: {
-          currentPassword?: string;
-          newPassword?: string;
-          passwordHint?: string;
-        } = {};
+      const data = await response.json();
 
-        // Include current password if link is already protected
-        if (initialIsProtected) {
-          requestBody.currentPassword = currentPassword;
-        }
+      if (!response.ok) {
+        throw new Error(data.error || t('link-shortener.password_removed'));
+      }
 
-        // Include new password if provided
-        if (newPassword) {
-          if (newPassword.length < 4) {
-            toast.error(t('link-shortener.password_min_length'));
-            return;
-          }
-          requestBody.newPassword = newPassword;
-        }
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(t('link-shortener.password_removed'));
 
-        // Include password hint if it has been modified (including clearing it)
-        if (passwordHint !== initialPasswordHint) {
-          requestBody.passwordHint = passwordHint.trim();
-        }
+      router.refresh();
+      onOpenChange(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('link-shortener.error_occurred'));
+    },
+  });
 
-        // For new password protection, password is required
-        if (!initialIsProtected && !newPassword) {
-          toast.error(t('link-shortener.password_required_for_protection'));
-          return;
-        }
-
-        // For updates, ensure at least one field is being changed
-        if (initialIsProtected && !requestBody.newPassword && requestBody.passwordHint === undefined) {
-          toast.error(t('link-shortener.no_changes_to_save'));
-          return;
-        }
-
-        const response = await fetch(`/api/v1/link-shortener/${linkId}/password`, {
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (requestBody: {
+      currentPassword?: string;
+      newPassword?: string;
+      passwordHint?: string;
+    }) => {
+      const response = await fetch(
+        `/api/v1/link-shortener/${linkId}/password`,
+        {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || t('link-shortener.error_occurred'));
         }
+      );
 
-        toast.success(t('link-shortener.password_updated'));
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || t('link-shortener.error_occurred'));
       }
 
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(t('link-shortener.password_updated'));
       router.refresh();
       onOpenChange(false);
-      
-      // Reset form
-      setCurrentPassword('');
-      setNewPassword('');
-      setPasswordHint('');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('link-shortener.error_occurred'));
-    } finally {
-      setLoading(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('link-shortener.error_occurred'));
+    },
+  });
+
+  const handleSave = () => {
+    if (!isPasswordProtected) {
+      // Remove password protection
+      removePasswordMutation.mutate(currentPassword);
+    } else {
+      // Set or update password/hint
+      // Build request body dynamically - only include fields that are being updated
+      const requestBody: {
+        currentPassword?: string;
+        newPassword?: string;
+        passwordHint?: string;
+      } = {};
+
+      // Include current password if link is already protected
+      if (initialIsProtected) {
+        requestBody.currentPassword = currentPassword;
+      }
+
+      // Include new password if provided
+      if (newPassword) {
+        if (newPassword.length < 4) {
+          toast.error(t('link-shortener.password_min_length'));
+          return;
+        }
+        requestBody.newPassword = newPassword;
+      }
+
+      // Include password hint if it has been modified (including clearing it)
+      if (passwordHint !== initialPasswordHint) {
+        requestBody.passwordHint = passwordHint.trim();
+      }
+
+      // For new password protection, password is required
+      if (!initialIsProtected && !newPassword) {
+        toast.error(t('link-shortener.password_required_for_protection'));
+        return;
+      }
+
+      // For updates, ensure at least one field is being changed
+      if (
+        initialIsProtected &&
+        !requestBody.newPassword &&
+        requestBody.passwordHint === undefined
+      ) {
+        toast.error(t('link-shortener.no_changes_to_save'));
+        return;
+      }
+
+      updatePasswordMutation.mutate(requestBody);
     }
   };
+
+  const loading =
+    removePasswordMutation.isPending || updatePasswordMutation.isPending;
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -181,9 +220,12 @@ export function PasswordManagementDialog({
           {isPasswordProtected && (
             <div className="space-y-4 rounded-lg border border-border/40 bg-muted/30 p-4">
               {initialIsProtected && initialPasswordHint && (
-                <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-950/30">
-                  <p className="text-blue-700 text-sm dark:text-blue-300">
-                    <span className="font-medium">{t('link-shortener.current_hint')}:</span> {initialPasswordHint}
+                <div className="rounded-md bg-dynamic-blue/50 p-3 dark:bg-dynamic-blue/30">
+                  <p className="text-dynamic-blue/70 text-sm">
+                    <span className="font-medium">
+                      {t('link-shortener.current_hint')}:
+                    </span>{' '}
+                    {initialPasswordHint}
                   </p>
                 </div>
               )}
@@ -208,7 +250,9 @@ export function PasswordManagementDialog({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      onClick={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
                       className="absolute inset-y-0 right-0 flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
                       tabIndex={-1}
                     >
@@ -224,7 +268,9 @@ export function PasswordManagementDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="new-password" className="text-sm">
-                  {initialIsProtected ? t('link-shortener.new_password') : t('link-shortener.password')}
+                  {initialIsProtected
+                    ? t('link-shortener.new_password')
+                    : t('link-shortener.password')}
                   {!initialIsProtected && ' *'}
                 </Label>
                 <div className="relative">
@@ -289,7 +335,9 @@ export function PasswordManagementDialog({
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder={t('link-shortener.enter_current_password_to_remove')}
+                  placeholder={t(
+                    'link-shortener.enter_current_password_to_remove'
+                  )}
                   disabled={loading}
                   required
                   className="pr-10"
@@ -327,7 +375,9 @@ export function PasswordManagementDialog({
             onClick={handleSave}
             disabled={
               loading ||
-              (!isPasswordProtected && initialIsProtected && !currentPassword) ||
+              (!isPasswordProtected &&
+                initialIsProtected &&
+                !currentPassword) ||
               (isPasswordProtected && !initialIsProtected && !newPassword) ||
               (isPasswordProtected && initialIsProtected && !currentPassword)
             }

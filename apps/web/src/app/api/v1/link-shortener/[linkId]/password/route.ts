@@ -4,12 +4,15 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import bcrypt from 'bcrypt';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-interface PasswordUpdateRequest {
-  currentPassword?: string;
-  newPassword?: string;
-  passwordHint?: string;
-}
+const passwordUpdateSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string().min(4).max(100).optional(),
+  passwordHint: z.string().max(200).optional(),
+});
+
+export type PasswordUpdateRequest = z.infer<typeof passwordUpdateSchema>;
 
 interface RouteContext {
   params: Promise<{ linkId: string }>;
@@ -30,8 +33,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const { linkId } = await context.params;
-    const body: PasswordUpdateRequest = await request.json();
-    const { currentPassword, newPassword, passwordHint } = body;
+    const body = await request.json();
+    const result = passwordUpdateSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: result.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { currentPassword, newPassword, passwordHint } = result.data;
 
     // Get the link and verify ownership
     const { data: link, error: fetchError } = await sbAdmin
@@ -77,21 +89,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
-    // Validate new password if provided
-    if (newPassword && (newPassword.length < 4 || newPassword.length > 100)) {
-      return NextResponse.json(
-        { error: 'Password must be between 4 and 100 characters' },
-        { status: 400 }
-      );
-    }
-
-    // Validate password hint if provided
-    if (passwordHint && passwordHint.length > 200) {
-      return NextResponse.json(
-        { error: 'Password hint must be 200 characters or less' },
-        { status: 400 }
-      );
-    }
 
     // Build update payload dynamically - only include fields that are explicitly provided
     const updatePayload: {
@@ -166,8 +163,16 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     let currentPassword: string | undefined;
     try {
       const body = await request.json();
-      currentPassword = body.currentPassword;
-    } catch {
+      const result = passwordUpdateSchema.safeParse(body);
+      if (result.success) {
+        currentPassword = result.data.currentPassword;
+      } else {
+        return NextResponse.json(
+          { error: 'Invalid request body', details: result.error.flatten() },
+          { status: 400 }
+        );
+      }
+    } catch (error) {
       // Body is optional for DELETE, but needed if password is set
     }
 
@@ -198,7 +203,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     if (link.password_hash) {
       if (!currentPassword) {
         return NextResponse.json(
-          { error: 'Current password is required to remove password protection' },
+          {
+            error: 'Current password is required to remove password protection',
+          },
           { status: 400 }
         );
       }

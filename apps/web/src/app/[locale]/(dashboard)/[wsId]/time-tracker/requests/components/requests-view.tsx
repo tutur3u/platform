@@ -42,8 +42,8 @@ import { useCallback, useMemo } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { useAvailableUsers, useRequests } from '../hooks/use-requests';
 import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
-import { STATUS_COLORS, STATUS_LABELS, calculateDuration } from '../utils';
 import type { RequestsViewProps } from '../utils';
+import { calculateDuration, STATUS_COLORS, STATUS_LABELS } from '../utils';
 
 type ViewMode = 'all' | 'my';
 

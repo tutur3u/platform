@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, SendIcon } from '@tuturuuu/icons';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Kbd } from '@tuturuuu/ui/kbd';
@@ -8,7 +9,6 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { useAddComment } from '../hooks/use-request-mutations';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 interface CommentFormProps {
   wsId: string;
@@ -62,7 +62,7 @@ export function CommentForm({
         {/* Current User Avatar */}
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarImage src={currentUser?.avatar_url || ''} />
-          <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-xs text-white">
+          <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white text-xs">
             {currentUser?.display_name?.[0] || 'U'}
           </AvatarFallback>
         </Avatar>
@@ -81,7 +81,7 @@ export function CommentForm({
 
           {/* Submit Button */}
           <div className="flex items-center justify-end gap-2">
-            <span className="text-muted-foreground text-xs flex items-center gap-1">
+            <span className="flex items-center gap-1 text-muted-foreground text-xs">
               <Kbd>Ctrl</Kbd>
               <span>+</span>
               <Kbd>Enter</Kbd>

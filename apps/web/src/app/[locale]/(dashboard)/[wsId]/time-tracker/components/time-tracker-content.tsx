@@ -12,7 +12,7 @@ import {
   Tag,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
+import type { TimeTrackingCategory, Workspace } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
@@ -53,7 +53,6 @@ import {
   useTaskCounts,
 } from '../utils';
 import { TimerControls } from './timer-controls';
-import type { Workspace } from '@tuturuuu/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

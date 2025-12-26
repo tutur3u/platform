@@ -13,7 +13,7 @@ import {
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -60,15 +60,12 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast({
-        title: t('link-shortener.copied_to_clipboard'),
+      toast.success(t('link-shortener.copied_to_clipboard'), {
         description: t('link-shortener.copied_description'),
       });
     } catch (_err) {
-      toast({
-        title: t('link-shortener.copy_failed'),
+      toast.error(t('link-shortener.copy_failed'), {
         description: t('link-shortener.copy_failed_description'),
-        variant: 'destructive',
       });
     }
   };
@@ -77,20 +74,12 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
     e.preventDefault();
 
     if (!url.trim()) {
-      toast({
-        title: t('common.error'),
-        description: t('link-shortener.url_required'),
-        variant: 'destructive',
-      });
+      toast.error(t('link-shortener.url_required'));
       return;
     }
 
     if (!validateUrl(url)) {
-      toast({
-        title: t('common.error'),
-        description: t('link-shortener.invalid_url'),
-        variant: 'destructive',
-      });
+      toast.error(t('link-shortener.invalid_url'));
       return;
     }
 
@@ -107,7 +96,10 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
           customSlug: customSlug.trim() || undefined,
           wsId,
           password: isPasswordProtected ? password : undefined,
-          passwordHint: isPasswordProtected && passwordHint.trim() ? passwordHint.trim() : undefined,
+          passwordHint:
+            isPasswordProtected && passwordHint.trim()
+              ? passwordHint.trim()
+              : undefined,
         }),
       });
 
@@ -118,22 +110,16 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
       }
 
       setResult(data);
-      toast({
-        title: t('common.success'),
-        description: t('link-shortener.created_successfully'),
-      });
+      toast.success(t('link-shortener.created_successfully'));
 
       // Refresh the table data
       router.refresh();
     } catch (err) {
-      toast({
-        title: t('common.error'),
-        description:
-          err instanceof Error
-            ? err.message
-            : t('link-shortener.failed_to_create'),
-        variant: 'destructive',
-      });
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('link-shortener.failed_to_create')
+      );
     } finally {
       setLoading(false);
     }
@@ -213,11 +199,14 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                   </p>
                 </div>
 
-                <div className="border-t border-border/40 pt-4">
+                <div className="border-border/40 border-t pt-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Lock className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor="password-toggle" className="font-semibold text-foreground text-sm">
+                      <Label
+                        htmlFor="password-toggle"
+                        className="font-semibold text-foreground text-sm"
+                      >
                         {t('link-shortener.password_protection')}
                       </Label>
                     </div>
@@ -232,7 +221,10 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                   {isPasswordProtected && (
                     <div className="mt-4 space-y-3">
                       <div className="space-y-2">
-                        <Label htmlFor="password" className="text-muted-foreground text-sm">
+                        <Label
+                          htmlFor="password"
+                          className="text-muted-foreground text-sm"
+                        >
                           {t('link-shortener.password')} *
                         </Label>
                         <div className="relative">
@@ -265,7 +257,10 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="passwordHint" className="text-muted-foreground text-sm">
+                        <Label
+                          htmlFor="passwordHint"
+                          className="text-muted-foreground text-sm"
+                        >
                           {t('link-shortener.password_hint_optional')}
                         </Label>
                         <Input
@@ -273,7 +268,9 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                           type="text"
                           value={passwordHint}
                           onChange={(e) => setPasswordHint(e.target.value)}
-                          placeholder={t('link-shortener.password_hint_description')}
+                          placeholder={t(
+                            'link-shortener.password_hint_description'
+                          )}
                           disabled={loading}
                           maxLength={200}
                           className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"

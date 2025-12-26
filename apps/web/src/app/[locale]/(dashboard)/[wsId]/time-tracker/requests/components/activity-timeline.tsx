@@ -1,32 +1,32 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileEdit,
+  Loader2,
+  MessageSquare,
+  XCircle,
+} from '@tuturuuu/icons';
+import type { Database } from '@tuturuuu/types';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
-import {
-  Clock,
-  FileEdit,
-  MessageSquare,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { formatDistanceToNow } from 'date-fns';
-import { useTranslations } from 'next-intl';
-import { useState, useCallback } from 'react';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import type { Database } from '@tuturuuu/types';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
 
 type ActivityAction =
   Database['public']['Enums']['time_tracking_request_activity_action'];
@@ -184,11 +184,11 @@ export function ActivityTimeline({
         case 'CREATED':
           return (
             <div>
-              <p className="text-sm font-medium">
+              <p className="font-medium text-sm">
                 {t('activity.actions.created')}
               </p>
               {activity.metadata?.title != null && (
-                <p className="text-sm text-foreground/60 mt-1">
+                <p className="mt-1 text-foreground/60 text-sm">
                   {t('activity.titleLabel')}: {String(activity.metadata.title)}
                 </p>
               )}
@@ -199,7 +199,7 @@ export function ActivityTimeline({
           return (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium">
+                <p className="font-medium text-sm">
                   {t('activity.actions.statusChanged')}
                 </p>
               </div>
@@ -227,11 +227,11 @@ export function ActivityTimeline({
                 )}
               </div>
               {feedback_reason && (
-                <div className="mt-2 p-3 rounded-md bg-dynamic-surface/50 border border-dynamic-border">
-                  <p className="text-sm font-medium text-foreground/80 mb-1">
+                <div className="mt-2 rounded-md border border-dynamic-border bg-dynamic-surface/50 p-3">
+                  <p className="mb-1 font-medium text-foreground/80 text-sm">
                     {t('activity.feedbackLabel')}:
                   </p>
-                  <p className="text-sm text-foreground/60">
+                  <p className="text-foreground/60 text-sm">
                     {feedback_reason}
                   </p>
                 </div>
@@ -242,13 +242,13 @@ export function ActivityTimeline({
         case 'CONTENT_UPDATED':
           return (
             <div className="space-y-2">
-              <p className="text-sm font-medium">
+              <p className="font-medium text-sm">
                 {t('activity.actions.contentUpdated')}
               </p>
               {changed_fields && (
                 <div className="space-y-1">
                   {Object.entries(changed_fields).map(([field, values]) => (
-                    <div key={field} className="text-sm text-foreground/60">
+                    <div key={field} className="text-foreground/60 text-sm">
                       <span className="font-medium">
                         {formatFieldName(field)}:
                       </span>{' '}
@@ -267,12 +267,12 @@ export function ActivityTimeline({
         case 'COMMENT_ADDED':
           return (
             <div className="space-y-2">
-              <p className="text-sm font-medium">
+              <p className="font-medium text-sm">
                 {t('activity.actions.commentAdded')}
               </p>
               {comment_content && (
-                <div className="p-3 rounded-md bg-dynamic-surface/50 border border-dynamic-border">
-                  <p className="text-sm text-foreground/80">
+                <div className="rounded-md border border-dynamic-border bg-dynamic-surface/50 p-3">
+                  <p className="text-foreground/80 text-sm">
                     {comment_content}
                   </p>
                 </div>
@@ -283,12 +283,12 @@ export function ActivityTimeline({
         case 'COMMENT_UPDATED':
           return (
             <div className="space-y-2">
-              <p className="text-sm font-medium">
+              <p className="font-medium text-sm">
                 {t('activity.actions.commentUpdated')}
               </p>
               {comment_content && (
-                <div className="p-3 rounded-md bg-dynamic-surface/50 border border-dynamic-border">
-                  <p className="text-sm text-foreground/80">
+                <div className="rounded-md border border-dynamic-border bg-dynamic-surface/50 p-3">
+                  <p className="text-foreground/80 text-sm">
                     {comment_content}
                   </p>
                 </div>
@@ -299,12 +299,12 @@ export function ActivityTimeline({
         case 'COMMENT_DELETED':
           return (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-destructive">
+              <p className="font-medium text-destructive text-sm">
                 {t('activity.actions.commentDeleted')}
               </p>
               {comment_content && (
-                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                  <p className="text-sm text-foreground/60 line-through">
+                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3">
+                  <p className="text-foreground/60 text-sm line-through">
                     {comment_content}
                   </p>
                 </div>
@@ -323,8 +323,8 @@ export function ActivityTimeline({
   if (!isLoading && (!activities || activities.length === 0)) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <Clock className="h-12 w-12 text-foreground/20 mb-3" />
-        <p className="text-sm text-foreground/60">{t('activity.noActivity')}</p>
+        <Clock className="mb-3 h-12 w-12 text-foreground/20" />
+        <p className="text-foreground/60 text-sm">{t('activity.noActivity')}</p>
       </div>
     );
   }
@@ -349,12 +349,12 @@ export function ActivityTimeline({
       onValueChange={setAccordionValue}
     >
       <AccordionItem value="activity-timeline" className="border-b-0">
-        <AccordionTrigger className="rounded-lg border hover:bg-muted/50 px-4 py-3">
-          <div className="flex items-center justify-between w-full">
+        <AccordionTrigger className="rounded-lg border px-4 py-3 hover:bg-muted/50">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-muted-foreground" />
               <span className="font-semibold">{t('activity.title')}</span>
-              <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
                 {totalCount}
               </span>
             </div>
@@ -364,8 +364,8 @@ export function ActivityTimeline({
           {/* Show "no activity" message when not loading and no data */}
           {!isLoading && (!activities || activities.length === 0) ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Clock className="h-12 w-12 text-foreground/20 mb-3" />
-              <p className="text-sm text-foreground/60">
+              <Clock className="mb-3 h-12 w-12 text-foreground/20" />
+              <p className="text-foreground/60 text-sm">
                 {t('activity.noActivity')}
               </p>
             </div>
@@ -373,7 +373,7 @@ export function ActivityTimeline({
             <div className="relative space-y-4 pt-2">
               {/* Loading Overlay */}
               {isLoading && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-dynamic-surface/60 backdrop-blur-sm rounded-lg">
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-dynamic-surface/60 backdrop-blur-sm">
                   <Loader2 className="h-6 w-6 animate-spin text-foreground/60" />
                 </div>
               )}
@@ -382,11 +382,11 @@ export function ActivityTimeline({
                 <div key={activity.id} className="flex gap-4">
                   {/* Timeline line */}
                   <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-dynamic-surface border-2 border-dynamic-border">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-dynamic-border bg-dynamic-surface">
                       {getActionIcon(activity.action_type)}
                     </div>
                     {index < activities.length - 1 && (
-                      <div className="flex-1 w-0.5 bg-dynamic-border min-h-10" />
+                      <div className="min-h-10 w-0.5 flex-1 bg-dynamic-border" />
                     )}
                   </div>
 
@@ -404,14 +404,14 @@ export function ActivityTimeline({
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2 mb-1">
-                          <span className="text-sm font-medium">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-baseline gap-2">
+                          <span className="font-medium text-sm">
                             {activity.actor_display_name ||
                               activity.actor_handle ||
                               t('activity.unknownUser')}
                           </span>
-                          <span className="text-xs text-foreground/40">
+                          <span className="text-foreground/40 text-xs">
                             {formatDistanceToNow(
                               new Date(activity.created_at),
                               { addSuffix: true }
@@ -428,9 +428,9 @@ export function ActivityTimeline({
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-dynamic-border">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <label className="text-sm text-foreground/60 whitespace-nowrap">
+                <div className="flex flex-wrap items-center justify-center gap-3 border-dynamic-border border-t pt-4">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <label className="whitespace-nowrap text-foreground/60 text-sm">
                       {t('activity.itemsPerPage')}:
                     </label>
                     <select
@@ -439,7 +439,7 @@ export function ActivityTimeline({
                         onItemsPerPageChange(Number(e.target.value));
                         onPageChange(1); // Reset to first page
                       }}
-                      className="px-2 py-1 text-sm rounded-md border border-dynamic-border bg-dynamic-surface hover:bg-dynamic-surface/80 transition-colors"
+                      className="rounded-md border border-dynamic-border bg-dynamic-surface px-2 py-1 text-sm transition-colors hover:bg-dynamic-surface/80"
                       disabled={isLoading}
                     >
                       {paginationOptions.map((option) => (
@@ -450,7 +450,7 @@ export function ActivityTimeline({
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -458,13 +458,13 @@ export function ActivityTimeline({
                       disabled={currentPage === 1 || isLoading}
                       className="shrink-0"
                     >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      <ChevronLeft className="mr-1 h-4 w-4" />
                       <span className="hidden sm:inline">
                         {t('activity.previous')}
                       </span>
                     </Button>
 
-                    <span className="text-sm text-foreground/60 whitespace-nowrap">
+                    <span className="whitespace-nowrap text-foreground/60 text-sm">
                       {t('activity.pageInfo', {
                         current: currentPage,
                         total: totalPages,
@@ -481,7 +481,7 @@ export function ActivityTimeline({
                       <span className="hidden sm:inline">
                         {t('activity.next')}
                       </span>
-                      <ChevronRight className="h-4 w-4 ml-1" />
+                      <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
                   </div>
                 </div>

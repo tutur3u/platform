@@ -2,24 +2,44 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import bcrypt from 'bcrypt';
 import { type NextRequest, NextResponse } from 'next/server';
 import { trackLinkClick } from '@/lib/analytics';
+import { z } from 'zod';
 
-interface VerifyRequest {
-  linkId: string;
-  slug: string;
-  password: string;
-}
+const verifySchema = z.object({
+  linkId: z.string(),
+  password: z.string(),
+  slug: z.string().optional(),
+});
 
+/**
+ * POST handler for verifying password-protected links.
+ *
+ * @param {NextRequest} request - The incoming request containing link context and password.
+ * @returns {Promise<NextResponse>} A JSON response with the destination URL or an error message.
+ *
+ * @example
+ * // Request body
+ * {
+ *   "linkId": "uuid-here",
+ *   "password": "plain-text-password",
+ *   "slug": "optional-slug"
+ * }
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body: VerifyRequest = await request.json();
-    const { linkId, slug, password } = body;
+    const json = await request.json();
+    const result = verifySchema.safeParse(json);
 
-    if (!linkId || !password) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Link ID and password are required' },
+        {
+          error: 'Invalid request data',
+          details: result.error.format(),
+        },
         { status: 400 }
       );
     }
+
+    const { linkId, slug, password } = result.data;
 
     const sbAdmin = await createAdminClient();
 
@@ -50,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Track analytics on successful password verification
-    await trackLinkClick(link.id, slug);
+    await trackLinkClick(link.id, slug ?? '');
 
     return NextResponse.json({ url: link.link, success: true });
   } catch (error) {

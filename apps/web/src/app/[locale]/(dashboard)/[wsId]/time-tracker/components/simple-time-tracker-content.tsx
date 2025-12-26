@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Timer, TrendingUp } from '@tuturuuu/icons';
+import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
@@ -11,7 +12,6 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { SessionWithRelations, TimeTrackerData } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
-import type { Workspace } from '@tuturuuu/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

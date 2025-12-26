@@ -5,10 +5,10 @@ import {
   XCircleIcon,
   XIcon,
 } from '@tuturuuu/icons';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { ExtendedTimeTrackingRequest } from '../page';
 
 interface ActionButtonsProps {
@@ -182,7 +182,7 @@ export function ActionButtons({
         <Button
           variant="outline"
           onClick={() => setShowNeedsInfoForm(true)}
-          className="w-full border-dynamic-blue/20 hover:bg-dynamic-blue/90 bg-dynamic-blue"
+          className="w-full border-dynamic-blue/20 bg-dynamic-blue hover:bg-dynamic-blue/90"
         >
           <InfoIcon className="mr-2 h-4 w-4" />
           <span className="truncate">{t('detail.requestInfoButton')}</span>

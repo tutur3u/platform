@@ -30,12 +30,14 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
+    "@tuturuuu/icons": "workspace:*",
     "bcrypt": "^6.0.0",
     "dayjs": "^1.11.19",
     "nanoid": "^5.1.6",
     "next": "^16.1.1",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

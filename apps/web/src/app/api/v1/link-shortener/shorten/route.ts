@@ -5,29 +5,21 @@ import {
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-interface ShortenRequest {
-  url: string;
-  customSlug?: string;
-  wsId?: string;
-  password?: string;
-  passwordHint?: string;
-}
+const ShortenRequestSchema = z.object({
+  url: z.string().url(),
+  customSlug: z
+    .string()
+    .regex(/^[a-zA-Z0-9\-_]+$/)
+    .max(50)
+    .optional(),
+  wsId: z.string(),
+  password: z.string().min(4).max(100).optional(),
+  passwordHint: z.string().max(200).optional(),
+});
 
-// Validate URL format
-function isValidUrl(string: string): boolean {
-  try {
-    new URL(string);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
-// Validate slug format (alphanumeric, hyphens, underscores only)
-function isValidSlug(slug: string): boolean {
-  return /^[a-zA-Z0-9\-_]+$/.test(slug);
-}
 
 // Generate a random slug
 function generateSlug(length = 6): string {
@@ -46,58 +38,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body: ShortenRequest = await request.json();
-    const { url, customSlug, wsId, password, passwordHint } = body;
+    const parsed = ShortenRequestSchema.safeParse(await request.json());
 
-    // Validate required fields
-    if (!url || typeof url !== 'string') {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'URL is required and must be a string' },
+        { error: 'Invalid request data', details: parsed.error.issues },
         { status: 400 }
       );
     }
 
-    if (!wsId) {
-      return NextResponse.json(
-        { error: 'Workspace ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate URL format
-    if (!isValidUrl(url.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid URL format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate custom slug if provided
-    if (customSlug && (!isValidSlug(customSlug) || customSlug.length > 50)) {
-      return NextResponse.json(
-        {
-          error:
-            'Custom slug can only contain letters, numbers, hyphens, and underscores (max 50 characters)',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate password if provided
-    if (password && (password.length < 4 || password.length > 100)) {
-      return NextResponse.json(
-        { error: 'Password must be between 4 and 100 characters' },
-        { status: 400 }
-      );
-    }
-
-    // Validate password hint length
-    if (passwordHint && passwordHint.length > 200) {
-      return NextResponse.json(
-        { error: 'Password hint must be 200 characters or less' },
-        { status: 400 }
-      );
-    }
+    const { url, customSlug, wsId, password, passwordHint } = parsed.data;
 
     // Hash password if provided
     const passwordHash = password ? await bcrypt.hash(password, 10) : null;

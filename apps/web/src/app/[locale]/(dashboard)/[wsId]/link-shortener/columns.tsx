@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   Tooltip,
   TooltipContent,
@@ -40,16 +40,13 @@ type ShortenedLink = Tables<'shortened_links'> & {
 const copyToClipboard = async (text: string, t: any) => {
   try {
     await navigator.clipboard.writeText(text);
-    toast({
-      title: t('link-shortener.copied_to_clipboard'),
+    toast.success(t('link-shortener.copied_to_clipboard'), {
       description: t('link-shortener.copied_description'),
     });
   } catch (err) {
     console.error('Failed to copy to clipboard:', err);
-    toast({
-      title: t('link-shortener.copy_failed'),
+    toast.error(t('link-shortener.copy_failed'), {
       description: t('link-shortener.copy_failed_description'),
-      variant: 'destructive',
     });
   }
 };
@@ -185,11 +182,17 @@ export const linkShortenerColumns = (
                   onClick={() => setDialogOpen(true)}
                   className="h-8 w-8 p-0 hover:bg-muted"
                 >
-                  <Lock className={`h-4 w-4 ${isPasswordProtected ? 'text-dynamic-orange' : 'text-muted-foreground'}`} />
+                  <Lock
+                    className={`h-4 w-4 ${isPasswordProtected ? 'text-dynamic-orange' : 'text-muted-foreground'}`}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{isPasswordProtected ? t('link-shortener.password_protected') : t('link-shortener.manage_password')}</p>
+                <p>
+                  {isPasswordProtected
+                    ? t('link-shortener.password_protected')
+                    : t('link-shortener.manage_password')}
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
