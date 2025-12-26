@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -39,7 +39,7 @@ export function PasswordManagementDialog({
   const [isPasswordProtected, setIsPasswordProtected] = useState(initialIsProtected);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [passwordHint, setPasswordHint] = useState('');
+  const [passwordHint, setPasswordHint] = useState(initialPasswordHint || '');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
@@ -65,18 +65,44 @@ export function PasswordManagementDialog({
           throw new Error(data.error || t('link-shortener.password_removed'));
         }
 
-        toast({
-          title: t('common.success'),
-          description: t('link-shortener.password_removed'),
-        });
+        toast(t('link-shortener.password_removed'));
       } else {
-        // Set or update password
-        if (!newPassword || newPassword.length < 4) {
-          toast({
-            title: t('common.error'),
-            description: 'Password must be at least 4 characters',
-            variant: 'destructive',
-          });
+        // Set or update password/hint
+        // Build request body dynamically - only include fields that are being updated
+        const requestBody: {
+          currentPassword?: string;
+          newPassword?: string;
+          passwordHint?: string;
+        } = {};
+
+        // Include current password if link is already protected
+        if (initialIsProtected) {
+          requestBody.currentPassword = currentPassword;
+        }
+
+        // Include new password if provided
+        if (newPassword) {
+          if (newPassword.length < 4) {
+            toast.error(t('link-shortener.password_min_length'));
+            return;
+          }
+          requestBody.newPassword = newPassword;
+        }
+
+        // Include password hint if it has been modified (including clearing it)
+        if (passwordHint !== initialPasswordHint) {
+          requestBody.passwordHint = passwordHint.trim();
+        }
+
+        // For new password protection, password is required
+        if (!initialIsProtected && !newPassword) {
+          toast.error(t('link-shortener.password_required_for_protection'));
+          return;
+        }
+
+        // For updates, ensure at least one field is being changed
+        if (initialIsProtected && !requestBody.newPassword && requestBody.passwordHint === undefined) {
+          toast.error(t('link-shortener.no_changes_to_save'));
           return;
         }
 
@@ -85,23 +111,16 @@ export function PasswordManagementDialog({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            currentPassword: initialIsProtected ? currentPassword : undefined,
-            newPassword,
-            passwordHint: passwordHint.trim() || undefined,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || t('link-shortener.password_updated'));
+          throw new Error(data.error || t('link-shortener.error_occurred'));
         }
 
-        toast({
-          title: t('common.success'),
-          description: t('link-shortener.password_updated'),
-        });
+        toast.success(t('link-shortener.password_updated'));
       }
 
       router.refresh();
@@ -112,11 +131,7 @@ export function PasswordManagementDialog({
       setNewPassword('');
       setPasswordHint('');
     } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
+      toast.error(error instanceof Error ? error.message : t('link-shortener.error_occurred'));
     } finally {
       setLoading(false);
     }
@@ -145,8 +160,8 @@ export function PasswordManagementDialog({
           </DialogTitle>
           <DialogDescription>
             {initialIsProtected
-              ? 'Update or remove password protection for this link'
-              : 'Add password protection to this link'}
+              ? t('link-shortener.update_or_remove_password_description')
+              : t('link-shortener.add_password_description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,7 +183,7 @@ export function PasswordManagementDialog({
               {initialIsProtected && initialPasswordHint && (
                 <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-950/30">
                   <p className="text-blue-700 text-sm dark:text-blue-300">
-                    <span className="font-medium">Current hint:</span> {initialPasswordHint}
+                    <span className="font-medium">{t('link-shortener.current_hint')}:</span> {initialPasswordHint}
                   </p>
                 </div>
               )}
@@ -184,7 +199,7 @@ export function PasswordManagementDialog({
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
+                      placeholder={t('link-shortener.enter_current_password')}
                       disabled={loading}
                       required
                       className="pr-10"
@@ -209,7 +224,8 @@ export function PasswordManagementDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="new-password" className="text-sm">
-                  {initialIsProtected ? t('link-shortener.new_password') : t('link-shortener.password')} *
+                  {initialIsProtected ? t('link-shortener.new_password') : t('link-shortener.password')}
+                  {!initialIsProtected && ' *'}
                 </Label>
                 <div className="relative">
                   <Input
@@ -217,9 +233,13 @@ export function PasswordManagementDialog({
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder={t('link-shortener.enter_password')}
+                    placeholder={
+                      initialIsProtected
+                        ? t('link-shortener.leave_blank_keep_password')
+                        : t('link-shortener.enter_password')
+                    }
                     disabled={loading}
-                    required
+                    required={!initialIsProtected}
                     minLength={4}
                     maxLength={100}
                     className="pr-10"
@@ -269,7 +289,7 @@ export function PasswordManagementDialog({
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password to remove protection"
+                  placeholder={t('link-shortener.enter_current_password_to_remove')}
                   disabled={loading}
                   required
                   className="pr-10"
@@ -305,7 +325,12 @@ export function PasswordManagementDialog({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={loading || (isPasswordProtected && !newPassword) || (initialIsProtected && !currentPassword)}
+            disabled={
+              loading ||
+              (!isPasswordProtected && initialIsProtected && !currentPassword) ||
+              (isPasswordProtected && !initialIsProtected && !newPassword) ||
+              (isPasswordProtected && initialIsProtected && !currentPassword)
+            }
           >
             {loading ? t('common.saving') : t('common.save')}
           </Button>

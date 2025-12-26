@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
-    // Validate new password
+    // Validate new password if provided
     if (newPassword && (newPassword.length < 4 || newPassword.length > 100)) {
       return NextResponse.json(
         { error: 'Password must be between 4 and 100 characters' },
@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Validate password hint
+    // Validate password hint if provided
     if (passwordHint && passwordHint.length > 200) {
       return NextResponse.json(
         { error: 'Password hint must be 200 characters or less' },
@@ -93,16 +93,34 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Hash new password if provided
-    const passwordHash = newPassword ? await bcrypt.hash(newPassword, 10) : null;
+    // Build update payload dynamically - only include fields that are explicitly provided
+    const updatePayload: {
+      password_hash?: string | null;
+      password_hint?: string | null;
+    } = {};
+
+    // Only update password if newPassword is provided
+    if (newPassword !== undefined) {
+      updatePayload.password_hash = await bcrypt.hash(newPassword, 10);
+    }
+
+    // Only update hint if passwordHint is provided (including empty string to clear it)
+    if (passwordHint !== undefined) {
+      updatePayload.password_hint = passwordHint.trim() || null;
+    }
+
+    // Ensure at least one field is being updated
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json(
+        { error: 'No fields to update' },
+        { status: 400 }
+      );
+    }
 
     // Update the link
     const { data: updatedLink, error: updateError } = await sbAdmin
       .from('shortened_links')
-      .update({
-        password_hash: passwordHash,
-        password_hint: passwordHint?.trim() || null,
-      })
+      .update(updatePayload)
       .eq('id', linkId)
       .select()
       .single();

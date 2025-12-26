@@ -1693,7 +1693,17 @@
     "remove_password": "Gỡ mật khẩu",
     "current_password": "Mật khẩu hiện tại",
     "new_password": "Mật khẩu mới",
-    "manage_password": "Quản lý mật khẩu"
+    "manage_password": "Quản lý mật khẩu",
+    "update_or_remove_password_description": "Cập nhật hoặc gỡ bỏ bảo vệ bằng mật khẩu cho liên kết này",
+    "add_password_description": "Thêm bảo vệ bằng mật khẩu cho liên kết này",
+    "current_hint": "Gợi ý hiện tại",
+    "password_min_length": "Mật khẩu phải có ít nhất 4 ký tự",
+    "password_required_for_protection": "Mật khẩu là bắt buộc để bật bảo vệ bằng mật khẩu",
+    "no_changes_to_save": "Không có thay đổi để lưu",
+    "error_occurred": "Đã xảy ra lỗi",
+    "enter_current_password": "Nhập mật khẩu hiện tại",
+    "leave_blank_keep_password": "Để trống để giữ mật khẩu hiện tại",
+    "enter_current_password_to_remove": "Nhập mật khẩu hiện tại để gỡ bỏ bảo vệ"
   },
   "link-shortener-data-table": {
     "slug": "URL ngắn",

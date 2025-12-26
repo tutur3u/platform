@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { redirect } from 'next/navigation';
 
 interface PasswordFormProps {
   linkId: string;
@@ -41,9 +42,10 @@ export default function PasswordForm({ linkId, slug, hint }: PasswordFormProps) 
 
       // Redirect to the destination URL
       if (data.url) {
-        window.location.href = data.url;
+        redirect(data.url);
       }
-    } catch {
+    } catch (err) {
+      console.error('An error occurred while verifying the password.', err);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
