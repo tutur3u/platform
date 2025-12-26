@@ -6,9 +6,7 @@ import './excalidraw-overrides.css';
 import type {
   AppState,
   BinaryFiles,
-  Collaborator,
   ExcalidrawImperativeAPI,
-  SocketId,
 } from '@excalidraw/excalidraw/types';
 import {
   ArrowLeftIcon,
@@ -127,40 +125,13 @@ export function CustomWhiteboard({
     }, []),
   });
 
-  // Convert collaborators to Excalidraw format
-  const excalidrawCollaborators = useMemo(() => {
-    const collabMap = new Map<SocketId, Collaborator>();
-
-    collaborators.forEach((collab, id) => {
-      if (id !== currentUserId) {
-        collabMap.set(id as SocketId, {
-          username: collab.displayName,
-          avatarUrl: collab.avatarUrl,
-          color: {
-            background: collab.color,
-            stroke: collab.color,
-          },
-          // Add pointer if cursor is available and not off-screen
-          ...(collab.cursor &&
-            collab.cursor.x > -100 && {
-              pointer: {
-                x: collab.cursor.x,
-                y: collab.cursor.y,
-                tool: collab.cursor.tool === 'laser' ? 'laser' : 'pointer',
-              },
-            }),
-        });
-      }
-    });
-
-    return collabMap;
-  }, [collaborators, currentUserId]);
+  console.log(collaborators);
 
   // Update Excalidraw collaborators when they change
   useEffect(() => {
     if (!excalidrawAPI) return;
-    excalidrawAPI.updateScene({ collaborators: excalidrawCollaborators });
-  }, [excalidrawAPI, excalidrawCollaborators]);
+    excalidrawAPI.updateScene({ collaborators });
+  }, [excalidrawAPI, collaborators]);
 
   // Initialize last saved state and previous elements on mount
   useEffect(() => {
@@ -561,6 +532,7 @@ export function CustomWhiteboard({
             onPointerUpdate={handlePointerUpdate}
             generateIdForFile={handleGenerateIdForFile}
             theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+            isCollaborating={true}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

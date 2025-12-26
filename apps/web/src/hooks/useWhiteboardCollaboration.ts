@@ -1,4 +1,5 @@
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
+import type { Collaborator, SocketId } from '@excalidraw/excalidraw/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -62,7 +63,7 @@ export interface UseWhiteboardCollaborationConfig {
 
 export interface UseWhiteboardCollaborationResult {
   // State
-  collaborators: Map<string, WhiteboardCollaborator>;
+  collaborators: Map<SocketId, Collaborator>;
   presenceState: RealtimePresenceState<UserPresenceState>;
   currentUserId: string | undefined;
   isConnected: boolean;
@@ -183,7 +184,7 @@ export function useWhiteboardCollaboration({
 
   // Combine presence state with cursor positions to create collaborators
   const collaborators = useMemo(() => {
-    const collabMap = new Map<string, WhiteboardCollaborator>();
+    const collabMap = new Map<SocketId, Collaborator>();
 
     // Add users from presence state
     for (const [userId, presences] of Object.entries(presenceState)) {
@@ -191,21 +192,24 @@ export function useWhiteboardCollaboration({
       if (!presence) continue;
 
       const cursor = remoteCursors.get(userId);
-      const color = getCollaboratorColor(userId);
+      const color = {
+        background: getCollaboratorColor(userId),
+        stroke: getCollaboratorColor(userId),
+      };
 
-      collabMap.set(userId, {
+      collabMap.set(userId as SocketId, {
         id: userId,
-        displayName: presence.user.display_name || 'Unknown',
+        socketId: userId as SocketId,
+        username: presence.user.display_name || 'Unknown',
         avatarUrl: presence.user.avatar_url || undefined,
         color,
-        cursor: cursor
+        pointer: cursor
           ? {
               x: cursor.x,
               y: cursor.y,
-              tool: cursor.tool,
+              tool: cursor.tool as 'pointer' | 'laser',
             }
           : undefined,
-        onlineAt: presence.online_at,
       });
     }
 
