@@ -40,7 +40,6 @@ interface Props {
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
   showCancel?: boolean;
   onCancel?: () => void;
-  hideHeader?: boolean;
 }
 
 const FormSchema = z.object({
