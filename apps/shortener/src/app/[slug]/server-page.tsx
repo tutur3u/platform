@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isValidUrl } from '@/lib/utils';
+import PasswordForm from './password-form';
 
 export default async function ServerPage({
   params,
@@ -13,7 +14,7 @@ export default async function ServerPage({
 
   const { data: shortenedLink, error } = await sbAdmin
     .from('shortened_links')
-    .select('id, link')
+    .select('id, link, password_hash, password_hint')
     .eq('slug', slug)
     .single();
 
@@ -64,7 +65,18 @@ export default async function ServerPage({
     );
   }
 
-  // Track click analytics
+  // If password protected, show password form instead of redirecting
+  if (shortenedLink.password_hash) {
+    return (
+      <PasswordForm
+        linkId={shortenedLink.id}
+        slug={slug}
+        hint={shortenedLink.password_hint}
+      />
+    );
+  }
+
+  // Track click analytics (only for non-password-protected links)
   try {
     const headersList = await headers();
 
@@ -146,3 +158,4 @@ export default async function ServerPage({
 
   redirect(shortenedLink.link);
 }
+

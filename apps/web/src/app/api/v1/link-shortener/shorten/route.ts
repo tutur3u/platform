@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -9,6 +10,8 @@ interface ShortenRequest {
   url: string;
   customSlug?: string;
   wsId?: string;
+  password?: string;
+  passwordHint?: string;
 }
 
 // Validate URL format
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ShortenRequest = await request.json();
-    const { url, customSlug, wsId } = body;
+    const { url, customSlug, wsId, password, passwordHint } = body;
 
     // Validate required fields
     if (!url || typeof url !== 'string') {
@@ -79,6 +82,25 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate password if provided
+    if (password && (password.length < 4 || password.length > 100)) {
+      return NextResponse.json(
+        { error: 'Password must be between 4 and 100 characters' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password hint length
+    if (passwordHint && passwordHint.length > 200) {
+      return NextResponse.json(
+        { error: 'Password hint must be 200 characters or less' },
+        { status: 400 }
+      );
+    }
+
+    // Hash password if provided
+    const passwordHash = password ? await bcrypt.hash(password, 10) : null;
 
     // Determine the slug to use
     let slug = customSlug || generateSlug();
@@ -141,6 +163,8 @@ export async function POST(request: NextRequest) {
         creator_id: user.id,
         ws_id: wsId,
         domain: new URL(url.trim()).hostname,
+        password_hash: passwordHash,
+        password_hint: passwordHint?.trim() || null,
       })
       .select()
       .single();

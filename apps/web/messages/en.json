@@ -1578,7 +1578,26 @@
       "hourly_chart_title": "Hourly Activity Chart",
       "hour_label": "Hour",
       "clicks_label": "Clicks"
-    }
+    },
+    "password_protection": "Password Protection",
+    "password_protected": "Password Protected",
+    "enable_password": "Enable Password Protection",
+    "password": "Password",
+    "password_hint": "Password Hint",
+    "password_hint_optional": "Password hint (optional)",
+    "password_hint_description": "Help users remember the password",
+    "enter_password": "Enter password",
+    "incorrect_password": "Incorrect password. Please try again.",
+    "password_required": "This link is password protected",
+    "access_denied": "Access Denied",
+    "verify_password": "Verify Password",
+    "password_updated": "Password updated successfully",
+    "password_removed": "Password protection removed",
+    "change_password": "Change Password",
+    "remove_password": "Remove Password",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "manage_password": "Manage Password"
   },
   "link-shortener-data-table": {
     "slug": "Short URL",

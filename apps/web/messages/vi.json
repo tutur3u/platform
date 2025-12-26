@@ -1674,7 +1674,26 @@
       "hourly_chart_title": "Biểu đồ hoạt động theo giờ",
       "hour_label": "Giờ",
       "clicks_label": "Nhấp chuột"
-    }
+    },
+    "password_protection": "Bảo vệ bằng mật khẩu",
+    "password_protected": "Được bảo vệ bằng mật khẩu",
+    "enable_password": "Bật bảo vệ bằng mật khẩu",
+    "password": "Mật khẩu",
+    "password_hint": "Gợi ý mật khẩu",
+    "password_hint_optional": "Gợi ý mật khẩu (tùy chọn)",
+    "password_hint_description": "Giúp người dùng nhớ mật khẩu",
+    "enter_password": "Nhập mật khẩu",
+    "incorrect_password": "Mật khẩu không đúng. Vui lòng thử lại.",
+    "password_required": "Liên kết này được bảo vệ bằng mật khẩu",
+    "access_denied": "Truy cập bị từ chối",
+    "verify_password": "Xác minh mật khẩu",
+    "password_updated": "Mật khẩu đã được cập nhật",
+    "password_removed": "Đã gỡ bỏ bảo vệ bằng mật khẩu",
+    "change_password": "Đổi mật khẩu",
+    "remove_password": "Gỡ mật khẩu",
+    "current_password": "Mật khẩu hiện tại",
+    "new_password": "Mật khẩu mới",
+    "manage_password": "Quản lý mật khẩu"
   },
   "link-shortener-data-table": {
     "slug": "URL ngắn",

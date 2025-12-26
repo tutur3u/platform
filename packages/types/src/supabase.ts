@@ -6468,6 +6468,8 @@ export type Database = {
           domain: string;
           id: string;
           link: string;
+          password_hash: string | null;
+          password_hint: string | null;
           slug: string;
           ws_id: string;
         };
@@ -6477,6 +6479,8 @@ export type Database = {
           domain: string;
           id?: string;
           link: string;
+          password_hash?: string | null;
+          password_hint?: string | null;
           slug: string;
           ws_id: string;
         };
@@ -6486,6 +6490,8 @@ export type Database = {
           domain?: string;
           id?: string;
           link?: string;
+          password_hash?: string | null;
+          password_hint?: string | null;
           slug?: string;
           ws_id?: string;
         };
