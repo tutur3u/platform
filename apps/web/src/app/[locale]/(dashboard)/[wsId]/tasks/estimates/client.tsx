@@ -6,7 +6,6 @@ import {
   Calculator,
   Calendar,
   CheckSquare,
-  Edit2,
   Target,
   TrendingUp,
 } from '@tuturuuu/icons';
@@ -432,7 +431,8 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 return (
                   <div
                     key={board.id}
-                    className="group flex flex-col gap-3 overflow-hidden rounded-lg border border-border/60 bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md hover:ring-1 hover:ring-primary/15 sm:flex-row sm:items-center sm:justify-between"
+                    onClick={() => openEditDialog(board)}
+                    className="group flex cursor-pointer flex-col gap-3 overflow-hidden rounded-lg border border-border/60 bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md hover:ring-1 hover:ring-primary/15 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
@@ -477,15 +477,6 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                         </p>
                       )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditDialog(board)}
-                      className="h-7 shrink-0 text-xs transition-all group-hover:border-primary/50 sm:h-8"
-                    >
-                      <Edit2 className="mr-1.5 h-3.5 w-3.5" />
-                      Configure
-                    </Button>
                   </div>
                 );
               })}
@@ -497,7 +488,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       {/* Edit Estimation Type Dialog - Aligned with task-edit-dialog style */}
       {editingBoard && (
         <Dialog open={!!editingBoard} onOpenChange={() => closeDialog()}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[540px]">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-135">
             <DialogHeader className="border-b pb-4">
               <DialogTitle className="flex items-center gap-2.5 text-lg">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
