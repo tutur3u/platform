@@ -2,29 +2,22 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-interface ShortenRequest {
-  url: string;
-  customSlug?: string;
-  wsId?: string;
-}
-
-// Validate URL format
-function isValidUrl(string: string): boolean {
-  try {
-    new URL(string);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Validate slug format (alphanumeric, hyphens, underscores only)
-function isValidSlug(slug: string): boolean {
-  return /^[a-zA-Z0-9\-_]+$/.test(slug);
-}
+const ShortenRequestSchema = z.object({
+  url: z.string().url(),
+  customSlug: z
+    .string()
+    .regex(/^[a-zA-Z0-9\-_]+$/)
+    .max(50)
+    .optional(),
+  wsId: z.string(),
+  password: z.string().min(4).max(100).optional(),
+  passwordHint: z.string().max(200).optional(),
+});
 
 // Generate a random slug
 function generateSlug(length = 6): string {
@@ -43,42 +36,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body: ShortenRequest = await request.json();
-    const { url, customSlug, wsId } = body;
+    const parsed = ShortenRequestSchema.safeParse(await request.json());
 
-    // Validate required fields
-    if (!url || typeof url !== 'string') {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'URL is required and must be a string' },
+        { error: 'Invalid request data', details: parsed.error.issues },
         { status: 400 }
       );
     }
 
-    if (!wsId) {
-      return NextResponse.json(
-        { error: 'Workspace ID is required' },
-        { status: 400 }
-      );
-    }
+    const { url, customSlug, wsId, password, passwordHint } = parsed.data;
 
-    // Validate URL format
-    if (!isValidUrl(url.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid URL format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate custom slug if provided
-    if (customSlug && (!isValidSlug(customSlug) || customSlug.length > 50)) {
-      return NextResponse.json(
-        {
-          error:
-            'Custom slug can only contain letters, numbers, hyphens, and underscores (max 50 characters)',
-        },
-        { status: 400 }
-      );
-    }
+    // Hash password if provided
+    const passwordHash = password ? await bcrypt.hash(password, 10) : null;
 
     // Determine the slug to use
     let slug = customSlug || generateSlug();
@@ -141,6 +111,8 @@ export async function POST(request: NextRequest) {
         creator_id: user.id,
         ws_id: wsId,
         domain: new URL(url.trim()).hostname,
+        password_hash: passwordHash,
+        password_hint: passwordHint?.trim() || null,
       })
       .select()
       .single();

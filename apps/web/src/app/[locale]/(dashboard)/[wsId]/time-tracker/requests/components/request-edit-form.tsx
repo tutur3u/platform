@@ -5,9 +5,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { ImageUploadSection } from './image-upload-section';
-import { calculateDuration as calculateDurationUtil } from '../utils';
 import type { UseImageUploadReturn } from '../../hooks/use-image-upload';
+import { calculateDuration as calculateDurationUtil } from '../utils';
+import { ImageUploadSection } from './image-upload-section';
 
 interface RequestEditFormProps {
   editTitle: string;

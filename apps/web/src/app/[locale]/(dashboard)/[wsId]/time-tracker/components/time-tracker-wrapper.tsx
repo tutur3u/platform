@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Settings, Timer, Zap } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -12,7 +13,6 @@ import { useEffect, useState } from 'react';
 import type { TimeTrackerData } from '../types';
 import SimpleTimeTrackerContent from './simple-time-tracker-content';
 import TimeTrackerContent from './time-tracker-content';
-import type { Workspace } from '@tuturuuu/types';
 
 interface TimeTrackerWrapperProps {
   wsId: string;

@@ -25,7 +25,7 @@ export function RequestViewMode({
       {/* Time Info */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold uppercase tracking-wider">
+          <div className="flex items-center gap-2 font-semibold text-muted-foreground text-sm uppercase tracking-wider">
             <CalendarIcon className="h-4 w-4" />
             <span>{t('detail.startTime')}</span>
           </div>
@@ -34,7 +34,7 @@ export function RequestViewMode({
           </p>
         </div>
         <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold uppercase tracking-wider">
+          <div className="flex items-center gap-2 font-semibold text-muted-foreground text-sm uppercase tracking-wider">
             <CalendarIcon className="h-4 w-4" />
             <span>{t('detail.endTime')}</span>
           </div>

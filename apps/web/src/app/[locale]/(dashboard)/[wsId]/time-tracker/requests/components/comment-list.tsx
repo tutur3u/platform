@@ -1,18 +1,18 @@
 'use client';
 
 import { Loader2, MessageSquareIcon } from '@tuturuuu/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { useTranslations } from 'next-intl';
 import { useRequestComments } from '../hooks/use-request-comments';
-import { CommentItem } from './comment-item';
 import { CommentForm } from './comment-form';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { CommentItem } from './comment-item';
 
 interface CommentListProps {
   requestId: string;
@@ -50,12 +50,12 @@ export function CommentList({
         className="border-0"
       >
         <AccordionItem value="comments-section" className="border-b-0">
-          <AccordionTrigger className="rounded-lg border hover:bg-muted/50 px-4 py-3">
-            <div className="flex items-center justify-between w-full">
+          <AccordionTrigger className="rounded-lg border px-4 py-3 hover:bg-muted/50">
+            <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquareIcon className="h-5 w-5 text-muted-foreground" />
                 <span className="font-semibold">{t('comments.title')}</span>
-                <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
                   {comments?.length || 0}
                 </span>
               </div>
