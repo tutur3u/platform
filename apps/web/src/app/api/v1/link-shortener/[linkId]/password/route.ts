@@ -7,7 +7,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const passwordUpdateSchema = z.object({
-  currentPassword: z.string(),
+  currentPassword: z.string().optional(),
   newPassword: z.string().min(4).max(100).optional(),
   passwordHint: z.string().max(200).optional(),
 });
@@ -171,7 +171,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
           { status: 400 }
         );
       }
-    } catch (error) {
+    } catch (_) {
       // Body is optional for DELETE, but needed if password is set
     }
 
