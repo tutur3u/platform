@@ -9085,5 +9085,75 @@
       "105": "1 hour 45 minutes",
       "120": "2 hours"
     }
+  },
+  "task-estimates": {
+    "page_title": "Task Estimation",
+    "page_description": "Configure estimation methods for your task boards and view analytics",
+    "stats": {
+      "total_boards": "Total Boards",
+      "configured": "Configured",
+      "extended_range": "Extended Range"
+    },
+    "estimation_methods_distribution": "Estimation Methods Distribution",
+    "board_estimation_configuration": "Board Estimation Configuration",
+    "no_boards_found": "No boards found",
+    "no_boards_description": "Create some task boards to configure estimation methods",
+    "board": "board",
+    "boards": "boards",
+    "extended_badge": "Extended",
+    "estimation_types": {
+      "none": {
+        "label": "No Estimation",
+        "description": "No estimation method configured"
+      },
+      "fibonacci": {
+        "label": "Fibonacci",
+        "description": "0, 1, 2, 3, 5, 8",
+        "description_standard": "Fibonacci sequence (0, 1, 2, 3, 5, 8)",
+        "description_extended": "Fibonacci sequence (0, 1, 2, 3, 5, 8, 13, 21)"
+      },
+      "linear": {
+        "label": "Linear",
+        "description": "0, 1, 2, 3, 4, 5",
+        "description_standard": "Linear scale (0, 1, 2, 3, 4, 5)",
+        "description_extended": "Linear scale (0, 1, 2, 3, 4, 5, 6, 7)"
+      },
+      "exponential": {
+        "label": "Exponential",
+        "description": "0, 1, 2, 4, 8, 16",
+        "description_standard": "Powers of 2 (0, 1, 2, 4, 8, 16)",
+        "description_extended": "Powers of 2 (0, 1, 2, 4, 8, 16, 32, 64)"
+      },
+      "t-shirt": {
+        "label": "T-Shirt Sizes",
+        "description": "-, XS, S, M, L, XL",
+        "description_standard": "T-shirt sizes (-, XS, S, M, L, XL)",
+        "description_extended": "T-shirt sizes (-, XS, S, M, L, XL, XXL, XXXL)"
+      }
+    },
+    "dialog": {
+      "title": "Configure Estimation for \"{name}\"",
+      "estimation_method": "Estimation Method",
+      "select_estimation_method": "Select estimation method",
+      "fibonacci_range": "Fibonacci Sequence Range",
+      "linear_range": "Linear Scale Range",
+      "exponential_range": "Exponential Scale Range",
+      "t_shirt_range": "T-Shirt Size Range",
+      "standard_range": "Standard Range",
+      "extended_range": "Extended Range",
+      "estimation_options": "Estimation Options",
+      "allow_zero_estimates": "Allow zero estimates",
+      "allow_zero_estimates_description": "When enabled, issues can be estimated with zero points",
+      "count_unestimated_issues": "Count unestimated issues",
+      "count_unestimated_issues_description": "When enabled, unestimated issues count as 1 estimate point. When disabled, they count as 0",
+      "selected_configuration": "Selected Configuration",
+      "cancel": "Cancel",
+      "update_estimation": "Update Estimation",
+      "updating": "Updating..."
+    },
+    "toast": {
+      "update_success": "Estimation type updated successfully",
+      "update_error": "Failed to update estimation type"
+    }
   }
 }
