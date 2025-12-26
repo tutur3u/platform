@@ -17,6 +17,7 @@ import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
+import { PersonalWorkspaceCollaborationBanner } from './personal-workspace-collaboration-banner';
 import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
 
@@ -145,7 +146,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           <Suspense
             key={user.id}
             fallback={
-              <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
             <NavbarActions />
@@ -167,6 +168,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             isPersonalWorkspace={!!workspace.personal}
             wsId={wsId}
           >
+            {workspace.personal && <PersonalWorkspaceCollaborationBanner />}
             {children}
           </TaskDialogWrapper>
         </RealtimeLogProvider>

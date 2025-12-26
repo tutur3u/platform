@@ -211,6 +211,7 @@
     "create_new_workspace": "Tạo không gian mới",
     "create_workspace": "Tạo không gian làm việc",
     "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
+    "personal_workspace_collaboration_note": "Không gian làm việc cá nhân của bạn chỉ dành cho một người dùng và không hỗ trợ mời người khác. Để hợp tác với bạn bè, đồng nghiệp hoặc nhóm, vui lòng tạo một không gian làm việc mới.",
     "workspace_name": "Tên không gian làm việc",
     "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
     "error_creating_workspace": "Lỗi khi tạo không gian làm việc",
@@ -1386,7 +1387,12 @@
         "high": "Cao",
         "urgent": "Khẩn cấp"
       }
-    }
+    },
+    "task_completed": "Nhiệm vụ hoàn thành!",
+    "task_marked_incomplete": "Nhiệm vụ đánh dấu chưa hoàn thành",
+    "task_not_associated": "Nhiệm vụ không liên kết với bảng nào",
+    "could_not_find_lists": "Không tìm thấy danh sách phù hợp để hoàn thành nhiệm vụ",
+    "failed_to_update_task": "Cập nhật nhiệm vụ thất bại"
   },
   "tasks-logs": {
     "title": "Nhật ký hoạt động",

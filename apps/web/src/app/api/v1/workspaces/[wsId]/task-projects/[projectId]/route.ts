@@ -39,6 +39,7 @@ const updateProjectSchema = z
         'on_hold',
       ])
       .optional(),
+    archived: z.boolean().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     // Validate that end_date is not before start_date when both are present
@@ -116,6 +117,7 @@ async function updateProject(
         | 'cancelled'
         | 'active'
         | 'on_hold';
+      archived: boolean | null;
     }>;
 
     const updateData: UpdateData = {};
@@ -135,6 +137,8 @@ async function updateProject(
       updateData.health_status = validatedData.health_status;
     if (validatedData.status !== undefined)
       updateData.status = validatedData.status;
+    if (validatedData.archived !== undefined)
+      updateData.archived = validatedData.archived;
 
     // Reject empty updates
     if (Object.keys(updateData).length === 0) {
@@ -210,6 +214,7 @@ async function updateProject(
       end_date: updatedProject.end_date,
       health_status: updatedProject.health_status,
       status: updatedProject.status,
+      archived: updatedProject.archived,
       created_at: updatedProject.created_at,
       updated_at: updatedProject.updated_at,
       creator_id: updatedProject.creator_id,

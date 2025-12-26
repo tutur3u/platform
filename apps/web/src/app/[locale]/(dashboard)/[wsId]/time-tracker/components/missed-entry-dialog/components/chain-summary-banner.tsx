@@ -17,7 +17,7 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
     <div className="space-y-4">
       {/* Chain Summary Header */}
       <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-dynamic-orange text-lg">
               {t('exceeded.chainSummaryTitle')}
@@ -41,7 +41,7 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
         </div>
 
         {/* Totals */}
-        <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="rounded-lg bg-dynamic-green/10 p-3">
             <div className="font-medium text-dynamic-green text-xs">
               {t('exceeded.totalWorkTime')}

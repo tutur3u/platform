@@ -28,11 +28,17 @@ vi.mock('./calendar-sync-coordination', () => ({
 }));
 
 // Mock the calendar utils
-vi.mock('@tuturuuu/ui/hooks/calendar-utils', () => ({
-  convertGoogleAllDayEvent: vi.fn((start, end, timezone) => ({
+vi.mock('@tuturuuu/utils/calendar-utils', () => ({
+  convertGoogleAllDayEvent: vi.fn((start, end, _) => ({
     start_at: start,
     end_at: end,
   })),
+}));
+
+// Mock the google library to avoid loading heavy googleapis
+vi.mock('@tuturuuu/google', () => ({
+  calendar_v3: {},
+  OAuth2Client: vi.fn(),
 }));
 
 // Dynamically import the actual functions after env and mocks are set
@@ -44,7 +50,7 @@ beforeAll(async () => {
   syncGoogleCalendarEventsForWorkspaceBatched =
     mod.syncGoogleCalendarEventsForWorkspaceBatched;
   syncWorkspaceBatched = mod.syncWorkspaceBatched;
-});
+}, 30000);
 
 // Mock Google Calendar events for testing
 const createMockGoogleEvent = (

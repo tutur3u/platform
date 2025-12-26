@@ -12,8 +12,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { getCategoryColor } from '../../session-history';
-import { TaskCombobox } from '../../task-combobox';
 import type { TaskWithDetails } from '../../session-history/session-types';
+import { TaskCombobox } from '../../task-combobox';
 
 interface TimeEntryFormProps {
   title: string;
@@ -85,7 +85,7 @@ export function TimeEntryForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="missed-entry-category">{t('form.category')}</Label>
           <Select
@@ -136,7 +136,7 @@ export function TimeEntryForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="missed-entry-start-time">{t('form.startTime')}</Label>
           <Input

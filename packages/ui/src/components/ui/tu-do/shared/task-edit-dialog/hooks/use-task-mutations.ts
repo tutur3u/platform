@@ -69,6 +69,14 @@ export function useTaskMutations({
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [schedulingSaving, setSchedulingSaving] = useState(false);
 
+  // Helper to trigger refresh after successful mutations
+  // Note: The kanban board uses realtime subscriptions directly and doesn't
+  // register a refresh callback via the task dialog system, so calling onUpdate
+  // here won't conflict with realtime sync on the board page.
+  const triggerRefresh = useCallback(() => {
+    onUpdate();
+  }, [onUpdate]);
+
   const updateEstimation = useCallback(
     async (points: number | null) => {
       if (points === estimationPoints) return;
@@ -95,7 +103,9 @@ export function useTaskMutations({
           .update({ estimation_points: points })
           .eq('id', taskId);
         if (error) throw error;
-        // Don't invalidate cache - realtime sync handles updates
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating estimation', e);
         // Revert optimistic update on error
@@ -117,6 +127,7 @@ export function useTaskMutations({
       boardId,
       toast,
       setEstimationPoints,
+      triggerRefresh,
     ]
   );
 
@@ -145,7 +156,9 @@ export function useTaskMutations({
           .update({ priority: newPriority })
           .eq('id', taskId);
         if (error) throw error;
-        // Don't invalidate cache - realtime sync handles updates
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating priority', e);
         // Revert optimistic update on error
@@ -157,7 +170,16 @@ export function useTaskMutations({
         });
       }
     },
-    [priority, isCreateMode, taskId, queryClient, boardId, toast, setPriority]
+    [
+      priority,
+      isCreateMode,
+      taskId,
+      queryClient,
+      boardId,
+      toast,
+      setPriority,
+      triggerRefresh,
+    ]
   );
 
   const updateStartDate = useCallback(
@@ -186,7 +208,9 @@ export function useTaskMutations({
           .update({ start_date: dateString })
           .eq('id', taskId);
         if (error) throw error;
-        // Don't invalidate cache - realtime sync handles updates
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating start date', e);
         // Revert optimistic update on error
@@ -198,7 +222,15 @@ export function useTaskMutations({
         });
       }
     },
-    [isCreateMode, taskId, queryClient, boardId, toast, setStartDate]
+    [
+      isCreateMode,
+      taskId,
+      queryClient,
+      boardId,
+      toast,
+      setStartDate,
+      triggerRefresh,
+    ]
   );
 
   const updateEndDate = useCallback(
@@ -227,7 +259,9 @@ export function useTaskMutations({
           .update({ end_date: dateString })
           .eq('id', taskId);
         if (error) throw error;
-        // Don't invalidate cache - realtime sync handles updates
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating end date', e);
         // Revert optimistic update on error
@@ -239,7 +273,15 @@ export function useTaskMutations({
         });
       }
     },
-    [isCreateMode, taskId, queryClient, boardId, toast, setEndDate]
+    [
+      isCreateMode,
+      taskId,
+      queryClient,
+      boardId,
+      toast,
+      setEndDate,
+      triggerRefresh,
+    ]
   );
 
   const updateList = useCallback(
@@ -272,7 +314,9 @@ export function useTaskMutations({
           title: 'List updated',
           description: 'Task moved to new list',
         });
-        onUpdate();
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating list', e);
         // Revert optimistic update on error
@@ -291,7 +335,7 @@ export function useTaskMutations({
       queryClient,
       boardId,
       toast,
-      onUpdate,
+      triggerRefresh,
       setSelectedListId,
     ]
   );
@@ -323,8 +367,9 @@ export function useTaskMutations({
           .update({ name: trimmedName })
           .eq('id', taskId);
         if (error) throw error;
-        // Don't invalidate cache - realtime sync will handle updates
-        // and we've already optimistically updated the cache above
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating task name', e);
         // Revert optimistic update on error by invalidating to refetch
@@ -336,7 +381,15 @@ export function useTaskMutations({
         });
       }
     },
-    [taskName, taskId, isCreateMode, queryClient, boardId, toast]
+    [
+      taskName,
+      taskId,
+      isCreateMode,
+      queryClient,
+      boardId,
+      toast,
+      triggerRefresh,
+    ]
   );
 
   const saveSchedulingSettings = useCallback(
@@ -391,7 +444,9 @@ export function useTaskMutations({
             'Saved to your personal scheduling profile for this task.',
         });
 
-        onUpdate();
+        // Notify parent components (e.g., server component refresh)
+        // Skip in collaboration mode where realtime sync handles updates
+        triggerRefresh();
         return true;
       } catch (e: any) {
         console.error('Failed updating scheduling settings', e);
@@ -409,7 +464,7 @@ export function useTaskMutations({
         setSchedulingSaving(false);
       }
     },
-    [isCreateMode, taskId, queryClient, toast, onUpdate]
+    [isCreateMode, taskId, queryClient, toast, triggerRefresh]
   );
 
   return {

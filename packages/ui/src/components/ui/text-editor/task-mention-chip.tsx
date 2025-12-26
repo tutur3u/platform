@@ -626,7 +626,7 @@ export function TaskMentionChip({
       {(subtitle || task?.name) && (
         <>
           <span className="opacity-50">•</span>
-          <span className='max-w-50 truncate font-medium'>
+          <span className="max-w-50 truncate font-medium">
             {subtitle || task?.name}
           </span>
         </>

@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Form,
   FormControl,
@@ -52,57 +51,52 @@ export default function WhiteboardForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {isEditing ? 'Edit Whiteboard' : 'Create Whiteboard'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter whiteboard title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Enter whiteboard title"
+                  autoFocus
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter whiteboard description"
-                      className="min-h-24"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Add a brief description..."
+                  className="min-h-20 resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end pt-2">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting
               ? isEditing
                 ? 'Updating...'
                 : 'Creating...'
               : isEditing
-                ? 'Update Whiteboard'
-                : 'Create Whiteboard'}
+                ? 'Update'
+                : 'Create'}
           </Button>
         </div>
       </form>
