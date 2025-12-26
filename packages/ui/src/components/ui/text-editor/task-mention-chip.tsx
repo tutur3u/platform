@@ -560,9 +560,31 @@ export function TaskMentionChip({
     setPopoverOpen(false);
   };
 
-  const title = subtitle
-    ? `#${displayNumber} • ${subtitle}`
-    : `#${displayNumber}`;
+  // Derive actual display number - prefer fetched task data over props
+  // This fixes legacy mentions where task name was stored instead of display number
+  const actualDisplayNumber = useMemo(() => {
+    // If we have task data with a valid display_number, use it
+    if (task?.display_number !== undefined && task.display_number !== null) {
+      return String(task.display_number);
+    }
+    // Otherwise use the prop (for new mentions, this should be correct)
+    return displayNumber;
+  }, [task?.display_number, displayNumber]);
+
+  // Derive actual task name - prefer fetched task data over subtitle prop
+  const actualTaskName = useMemo(() => {
+    // If we have task data with a name, use it
+    if (task?.name) {
+      return task.name;
+    }
+    // For legacy mentions where displayNumber might be the task name
+    // and subtitle is also the task name, use subtitle
+    return subtitle || null;
+  }, [task?.name, subtitle]);
+
+  const title = actualTaskName
+    ? `#${actualDisplayNumber} • ${actualTaskName}`
+    : `#${actualDisplayNumber}`;
 
   // Get styling based on task list color or priority
   const chipColorClasses = useMemo(() => {
@@ -611,9 +633,9 @@ export function TaskMentionChip({
         className
       )}
     >
-      {/* Chip content - updated 2025-12-23 11:52 */}
-      {/* Task Number */}
-      <span className="font-semibold">#{displayNumber}</span>
+      {/* Chip content - updated 2025-12-26 */}
+      {/* Task Number - use derived value for legacy mention support */}
+      <span className="font-semibold">#{actualDisplayNumber}</span>
 
       {/* Priority Icon */}
       {task?.priority && (
@@ -622,12 +644,12 @@ export function TaskMentionChip({
         </span>
       )}
 
-      {/* Task Name */}
-      {(subtitle || task?.name) && (
+      {/* Task Name - use derived value for legacy mention support */}
+      {actualTaskName && (
         <>
           <span className="opacity-50">•</span>
           <span className="max-w-50 truncate font-medium">
-            {subtitle || task?.name}
+            {actualTaskName}
           </span>
         </>
       )}

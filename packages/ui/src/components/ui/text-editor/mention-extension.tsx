@@ -309,6 +309,23 @@ export const Mention = Node.create({
             fallbackGlyph,
           ];
 
+    // For task mentions, render in a task-chip-like format: #number • taskName
+    if (entityType === 'task') {
+      const taskChildren: any[] = [
+        ['span', { class: 'font-semibold' }, `#${displayName}`],
+      ];
+      // Add separator and task name (subtitle) if available
+      if (subtitle) {
+        taskChildren.push(['span', { class: 'opacity-50' }, '•']);
+        taskChildren.push([
+          'span',
+          { class: 'max-w-[200px] truncate font-medium' },
+          subtitle,
+        ]);
+      }
+      return ['span', baseAttributes, ...taskChildren] as any;
+    }
+
     return [
       'span',
       baseAttributes,
