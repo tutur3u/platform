@@ -2,14 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Settings } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
+import type { TimeTrackingCategory, Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SessionWithRelations } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
-import type { Workspace } from '@tuturuuu/types';
 
 interface OverviewTimerProps {
   wsId: string;

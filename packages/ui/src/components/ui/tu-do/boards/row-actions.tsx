@@ -173,8 +173,8 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         <ModifiableDialogTrigger
           data={data}
           open={showEditDialog}
-          title={t('ws-user-group-tags.edit')}
-          editDescription={t('ws-user-group-tags.edit_description')}
+          // title={t('ws-user-group-tags.edit')}
+          // editDescription={t('ws-user-group-tags.edit_description')}
           setOpen={setShowEditDialog}
           form={<TaskBoardForm wsId={data.ws_id} data={data} />}
         />
@@ -309,7 +309,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         open={showUnarchiveDialog}
         onOpenChange={setShowUnarchiveDialog}
       >
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('ws-task-boards.row_actions.dialog.unarchive_title')}

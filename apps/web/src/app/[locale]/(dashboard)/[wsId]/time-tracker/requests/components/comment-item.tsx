@@ -16,11 +16,11 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import type { TimeTrackingRequestComment } from '../hooks/use-request-comments';
 import {
   useDeleteComment,
   useUpdateComment,
 } from '../hooks/use-request-mutations';
-import type { TimeTrackingRequestComment } from '../hooks/use-request-comments';
 
 dayjs.extend(relativeTime);
 
@@ -112,7 +112,7 @@ export function CommentItem({
       {/* Avatar */}
       <Avatar className="h-8 w-8 shrink-0">
         <AvatarImage src={comment.user.avatar_url || ''} />
-        <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-xs text-white">
+        <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white text-xs">
           {comment.user.display_name?.[0] || 'U'}
         </AvatarFallback>
       </Avatar>
@@ -187,7 +187,7 @@ export function CommentItem({
             </div>
           </div>
         ) : (
-          <p className="text-foreground/80 whitespace-pre-wrap text-sm">
+          <p className="whitespace-pre-wrap text-foreground/80 text-sm">
             {comment.content}
           </p>
         )}

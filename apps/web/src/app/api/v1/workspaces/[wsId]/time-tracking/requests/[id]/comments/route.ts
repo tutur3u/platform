@@ -1,8 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 
 const createCommentSchema = z.object({
   content: z.string().trim().min(1, { message: 'Content cannot be empty' }),

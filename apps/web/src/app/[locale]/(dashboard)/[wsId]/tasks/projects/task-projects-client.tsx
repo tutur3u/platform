@@ -59,7 +59,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import NextLink from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface LinkedTask {
   id: string;
@@ -124,6 +125,7 @@ export function TaskProjectsClient({
   initialProjects,
 }: TaskProjectsClientProps) {
   const t = useTranslations('dashboard.bucket_dump');
+  const router = useRouter();
 
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -659,6 +661,13 @@ export function TaskProjectsClient({
     setHealthFilter([]);
   };
 
+  const navigateToProject = useCallback(
+    (projectId: string) => {
+      router.push(`/${wsId}/tasks/projects/${projectId}`);
+    },
+    [router, wsId]
+  );
+
   return (
     <>
       {/* Header with controls */}
@@ -920,7 +929,11 @@ export function TaskProjectsClient({
             return (
               <Card
                 key={project.id}
-                className="group overflow-hidden border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/5 to-transparent transition-all hover:border-dynamic-purple/30 hover:shadow-lg"
+                className="group cursor-pointer overflow-hidden border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/5 to-transparent transition-all hover:border-dynamic-purple/30 hover:shadow-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateToProject(project.id);
+                }}
               >
                 <div className="flex">
                   {/* Left Accent Bar with Progress */}
@@ -944,6 +957,7 @@ export function TaskProjectsClient({
                         <NextLink
                           href={`/${wsId}/tasks/projects/${project.id}`}
                           className="group/link"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <h3 className="inline-flex items-center gap-2 font-bold text-xl transition-colors hover:text-dynamic-purple">
                             {project.name}
@@ -961,20 +975,27 @@ export function TaskProjectsClient({
                             variant="ghost"
                             disabled={isUpdating || isDeleting}
                             className="h-9 w-9 p-0"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => handleEditProject(project)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditProject(project);
+                            }}
                             disabled={isUpdating}
                           >
                             <Edit3 className="mr-2 h-4 w-4 text-dynamic-blue" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDeleteProject(project.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project.id);
+                            }}
                             disabled={isDeleting}
                             className="text-dynamic-red focus:text-dynamic-red"
                           >
@@ -1117,7 +1138,10 @@ export function TaskProjectsClient({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleOpenManageTasks(project)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenManageTasks(project);
+                          }}
                           disabled={isLinking || isUnlinking}
                           className="whitespace-nowrap"
                         >
@@ -1137,7 +1161,11 @@ export function TaskProjectsClient({
           {filteredProjects.map((project) => (
             <Card
               key={project.id}
-              className="group flex flex-col border-dynamic-purple/20 bg-dynamic-purple/5 transition-all hover:border-dynamic-purple/30 hover:shadow-md"
+              className="group flex cursor-pointer flex-col border-dynamic-purple/20 bg-dynamic-purple/5 transition-all hover:border-dynamic-purple/30 hover:shadow-md"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigateToProject(project.id);
+              }}
             >
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between gap-2">
@@ -1156,20 +1184,27 @@ export function TaskProjectsClient({
                         variant="ghost"
                         disabled={isUpdating || isDeleting}
                         className="h-8 w-8 shrink-0 p-0 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => handleEditProject(project)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProject(project);
+                        }}
                         disabled={isUpdating}
                       >
                         <Edit3 className="mr-2 h-4 w-4 text-dynamic-blue" />
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteProject(project.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProject(project.id);
+                        }}
                         disabled={isDeleting}
                         className="text-dynamic-red focus:text-dynamic-red"
                       >
@@ -1300,7 +1335,10 @@ export function TaskProjectsClient({
 
                 {/* Actions */}
                 <div className="mt-auto flex flex-col gap-2 pt-2">
-                  <NextLink href={`/${wsId}/tasks/projects/${project.id}`}>
+                  <NextLink
+                    href={`/${wsId}/tasks/projects/${project.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button size="sm" variant="default" className="w-full">
                       <ExternalLink className="mr-2 h-4 w-4" />
                       View Details
@@ -1309,7 +1347,10 @@ export function TaskProjectsClient({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleOpenManageTasks(project)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenManageTasks(project);
+                    }}
                     disabled={isLinking || isUnlinking}
                     className="w-full"
                   >
@@ -1360,7 +1401,7 @@ export function TaskProjectsClient({
                 value={newProjectDescription}
                 onChange={(e) => setNewProjectDescription(e.target.value)}
                 disabled={isCreating}
-                className="min-h-[80px]"
+                className="min-h-20"
               />
             </div>
           </div>
@@ -1424,7 +1465,7 @@ export function TaskProjectsClient({
                 value={editProjectDescription}
                 onChange={(e) => setEditProjectDescription(e.target.value)}
                 disabled={isUpdating}
-                className="min-h-[80px]"
+                className="min-h-20"
               />
             </div>
           </div>
@@ -1481,7 +1522,7 @@ export function TaskProjectsClient({
                   )}
                 </div>
                 {managingProject.linkedTasks.length > 0 ? (
-                  <div className="max-h-[300px] space-y-2 overflow-y-auto pr-2">
+                  <div className="max-h-75 space-y-2 overflow-y-auto pr-2">
                     {managingProject.linkedTasks.map((task) => (
                       <div
                         key={task.id}

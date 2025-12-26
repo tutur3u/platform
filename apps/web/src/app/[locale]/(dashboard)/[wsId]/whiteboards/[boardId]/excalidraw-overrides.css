@@ -1,3 +1,4 @@
-.excalidraw .sidebar-trigger {
+.excalidraw .sidebar-trigger,
+.excalidraw .UserList {
   display: none !important;
 }

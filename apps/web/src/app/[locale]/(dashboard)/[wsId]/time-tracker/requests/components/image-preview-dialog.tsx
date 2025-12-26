@@ -1,12 +1,12 @@
 'use client';
 import { ChevronLeftIcon, ChevronRightIcon } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 
 interface ImagePreviewDialogProps {
