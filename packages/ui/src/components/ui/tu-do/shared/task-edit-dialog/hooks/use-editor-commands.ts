@@ -23,6 +23,23 @@ interface TaskPayload {
   }>;
 }
 
+/**
+ * Attributes structure for mention nodes in the editor
+ * Aligns with the Tiptap mention node schema
+ */
+interface MentionAttributes {
+  userId: string | null;
+  entityId: string;
+  entityType: string;
+  displayName: string;
+  avatarUrl: string | null;
+  subtitle: string | null;
+  // Task-specific attributes
+  priority?: string;
+  listColor?: string;
+  assignees?: string;
+}
+
 export interface UseEditorCommandsProps {
   editorInstance: Editor | null;
   slashState: SuggestionState;
@@ -159,7 +176,7 @@ export function useEditorCommands({
         chain.deleteRange(mentionState.range);
       }
 
-      const attributes: Record<string, any> = {
+      const attributes: MentionAttributes = {
         userId: option.type === 'user' ? option.id : null,
         entityId: option.id,
         entityType: option.type,
