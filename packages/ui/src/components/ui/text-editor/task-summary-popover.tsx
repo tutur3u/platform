@@ -14,9 +14,9 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { format } from 'date-fns';
 import type { ReactNode } from 'react';
-
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
 import { Button } from '../button';
@@ -69,7 +69,7 @@ export function TaskSummaryPopover({
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
-        className="w-full min-w-60 touch-none overflow-hidden p-0 shadow-xl"
+        className="w-full min-w-50 max-w-100 touch-none overflow-hidden p-0 shadow-xl"
         align="start"
         sideOffset={8}
         onClick={(e) => {
@@ -139,10 +139,10 @@ export function TaskSummaryPopover({
           </div>
 
           {/* Description */}
-          {task.description && (
+          {task.description && getDescriptionText(task.description) && (
             <div className="border-border/50 border-b px-3 py-2">
-              <p className="line-clamp-2 text-muted-foreground text-xs leading-relaxed">
-                {task.description}
+              <p className="line-clamp-3 text-muted-foreground text-xs leading-relaxed">
+                {getDescriptionText(task.description)}
               </p>
             </div>
           )}
