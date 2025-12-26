@@ -499,7 +499,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
                   <Target className="h-4 w-4 text-dynamic-orange" />
                 </div>
-                <span>{t('dialog.title', { name: editingBoard.name })}</span>
+                <span>{t('dialog.title', { name: editingBoard.name ?? '' })}</span>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-5">
