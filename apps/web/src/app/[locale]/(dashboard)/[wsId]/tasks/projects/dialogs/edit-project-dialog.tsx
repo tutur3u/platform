@@ -44,8 +44,11 @@ export function EditProjectDialog({
   }, [project]);
 
   const handleSubmit = () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return; // Prevent empty names
+
     onSubmit({
-      name: name.trim(),
+      name: trimmedName,
       description: description.trim() || undefined,
     });
   };
@@ -105,7 +108,7 @@ export function EditProjectDialog({
           >
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isUpdating}>
+          <Button onClick={handleSubmit} disabled={isUpdating || !name.trim()}>
             {isUpdating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

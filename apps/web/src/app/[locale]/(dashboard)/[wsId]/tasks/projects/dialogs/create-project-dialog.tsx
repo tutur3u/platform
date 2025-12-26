@@ -34,8 +34,11 @@ export function CreateProjectDialog({
   const [description, setDescription] = useState('');
 
   const handleSubmit = () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return; // Prevent empty names
+
     onSubmit({
-      name: name.trim(),
+      name: trimmedName,
       description: description.trim() || undefined,
     });
     setName('');
@@ -97,7 +100,7 @@ export function CreateProjectDialog({
           >
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isCreating}>
+          <Button onClick={handleSubmit} disabled={isCreating || !name.trim()}>
             {isCreating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

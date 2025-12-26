@@ -36,7 +36,6 @@ export interface TaskProject {
 export interface TaskProjectsClientProps {
   wsId: string;
   initialProjects: TaskProject[];
-  currentUserId: string;
 }
 
 export interface TaskOption {

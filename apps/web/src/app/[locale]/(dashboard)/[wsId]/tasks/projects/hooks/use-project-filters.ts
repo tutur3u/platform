@@ -78,6 +78,7 @@ export function useProjectFilters(projects: TaskProject[]) {
         status: undefined,
         priority: undefined,
         health: undefined,
+        q: undefined, // Clear search query too
       },
       false
     );
@@ -91,7 +92,7 @@ export function useProjectFilters(projects: TaskProject[]) {
     if (searchQuery) {
       result = result.filter(
         (project) =>
-          project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           project.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
