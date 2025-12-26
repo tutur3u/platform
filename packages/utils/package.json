@@ -18,7 +18,7 @@
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@upstash/redis": "^1.35.8",
+    "@upstash/redis": "^1.36.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
