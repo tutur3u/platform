@@ -19,8 +19,6 @@ const ShortenRequestSchema = z.object({
   passwordHint: z.string().max(200).optional(),
 });
 
-
-
 // Generate a random slug
 function generateSlug(length = 6): string {
   return nanoid(length);
