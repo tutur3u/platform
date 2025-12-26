@@ -89,7 +89,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
-
     // Build update payload dynamically - only include fields that are explicitly provided
     const updatePayload: {
       password_hash?: string | null;
