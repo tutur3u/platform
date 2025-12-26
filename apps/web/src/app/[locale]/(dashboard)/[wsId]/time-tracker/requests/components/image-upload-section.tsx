@@ -36,7 +36,6 @@ interface ImageUploadSectionProps {
 }
 
 export function ImageUploadSection({
-  images,
   imagePreviews,
   existingImageUrls = [],
   isCompressing,
@@ -55,7 +54,7 @@ export function ImageUploadSection({
 }: ImageUploadSectionProps) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{labels.proofOfWork}</Label>
+      <Label className="font-medium text-sm">{labels.proofOfWork}</Label>
 
       {canAddMore && (
         <button
@@ -126,15 +125,17 @@ export function ImageUploadSection({
 
       {/* All images (existing + new) */}
       {(existingImageUrls.length > 0 || imagePreviews.length > 0) && (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {/* Existing images */}
           {existingImageUrls.map((url, index) => (
             <div key={`existing-${index}`} className="relative">
               <div className="relative h-32 overflow-hidden rounded-lg border bg-muted/10">
-                <img
+                <Image
                   src={url}
                   alt={`${labels.proofImageAlt} ${index + 1}`}
                   className="h-full w-full object-cover"
+                  width={128}
+                  height={128}
                 />
                 <Badge
                   variant="secondary"

@@ -202,7 +202,7 @@ export default async function TaskProjectPage({ params }: Props) {
               status: list.status ?? 'active',
               color: (list.color as any) ?? 'gray',
             }))}
-            currentUserId={user?.id!}
+            currentUserId={user!.id}
             wsId={wsId}
           />
         );

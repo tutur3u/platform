@@ -66,7 +66,7 @@ export function useTaskDialog(): {
     availableLists?: TaskList[]
   ) => void;
   closeDialog: () => void;
-  onUpdate: (callback: () => void) => void;
+  onUpdate: (callback: () => void) => () => void;
   onClose: (callback: () => void) => void;
 } {
   const {

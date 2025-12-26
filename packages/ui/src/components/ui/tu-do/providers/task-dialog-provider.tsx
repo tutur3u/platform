@@ -115,8 +115,8 @@ interface TaskDialogContextValue {
   // Close dialog
   closeDialog: () => void;
 
-  // Register callback for when task is updated
-  onUpdate: (callback: () => void) => void;
+  // Register callback for when task is updated (returns cleanup function)
+  onUpdate: (callback: () => void) => () => void;
 
   // Register callback for when dialog is closed
   onClose: (callback: () => void) => void;
@@ -155,8 +155,8 @@ export function TaskDialogProvider({
     isOpen: false,
   });
 
-  // Store the update callback in a ref for dynamic registration
-  const updateCallbackRef = useRef<(() => void) | null>(null);
+  // Store all update callbacks in a ref set for multiple registrations
+  const updateCallbacksRef = useRef<Set<() => void>>(new Set());
   // Store the close callback in a ref for dynamic registration
   const closeCallbackRef = useRef<(() => void) | null>(null);
 
@@ -358,10 +358,16 @@ export function TaskDialogProvider({
     });
   }, []);
 
-  // Register an update callback
+  // Register an update callback (returns cleanup function)
   const onUpdate = useCallback((callback: () => void) => {
     console.log('📝 TaskDialogProvider: Registering update callback');
-    updateCallbackRef.current = callback;
+    updateCallbacksRef.current.add(callback);
+
+    // Return cleanup function to remove this callback
+    return () => {
+      console.log('📝 TaskDialogProvider: Unregistering update callback');
+      updateCallbacksRef.current.delete(callback);
+    };
   }, []);
 
   // Register a close callback
@@ -370,13 +376,20 @@ export function TaskDialogProvider({
     closeCallbackRef.current = callback;
   }, []);
 
-  // Call the registered update callback (used internally by TaskEditDialog)
+  // Call all registered update callbacks (used internally by TaskEditDialog)
   const triggerUpdate = useCallback(() => {
-    console.log('🔔 TaskDialogProvider: Triggering update callback', {
-      hasCallback: !!updateCallbackRef.current,
+    console.log('🔔 TaskDialogProvider: Triggering update callbacks', {
+      callbackCount: updateCallbacksRef.current.size,
       hasExternalCallback: !!externalOnUpdate,
     });
-    updateCallbackRef.current?.();
+    // Call all registered callbacks
+    updateCallbacksRef.current.forEach((callback) => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('Error in update callback:', error);
+      }
+    });
     externalOnUpdate?.();
   }, [externalOnUpdate]);
 

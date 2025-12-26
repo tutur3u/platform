@@ -219,6 +219,7 @@
     "create_new_workspace": "Create New Workspace",
     "create_workspace": "Create Workspace",
     "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
+    "personal_workspace_collaboration_note": "Your personal workspace is designed for individual use only and doesn't support inviting others. To collaborate with friends, colleagues, or teams, please create a new workspace.",
     "workspace_name": "Workspace Name",
     "workspace_limit_reached": "Workspace Limit Reached",
     "error_creating_workspace": "Error Creating Workspace",
@@ -1290,7 +1291,12 @@
         "high": "High",
         "urgent": "Urgent"
       }
-    }
+    },
+    "task_completed": "Task completed!",
+    "task_marked_incomplete": "Task marked as incomplete",
+    "task_not_associated": "Task is not associated with a board",
+    "could_not_find_lists": "Could not find appropriate lists for task completion",
+    "failed_to_update_task": "Failed to update task"
   },
   "tasks-logs": {
     "title": "Activity Logs",

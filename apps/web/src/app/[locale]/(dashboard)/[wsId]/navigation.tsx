@@ -48,7 +48,7 @@ import {
   MessageCircleIcon,
   NotepadText,
   Package,
-  PencilLine,
+  PencilRuler,
   Play,
   QrCodeIcon,
   Radio,
@@ -263,6 +263,11 @@ export async function WorkspaceNavigationLinks({
       experimental: 'beta',
     },
     {
+      title: t('sidebar_tabs.whiteboards'),
+      href: `/${personalOrWsId}/whiteboards`,
+      icon: <PencilRuler className="h-5 w-5" />,
+    },
+    {
       title: t('sidebar_tabs.chat'),
       href: `/${personalOrWsId}/chat`,
       icon: <MessageCircleIcon className="h-5 w-5" />,
@@ -343,7 +348,12 @@ export async function WorkspaceNavigationLinks({
       ],
     },
     null,
-
+    {
+      title: t('sidebar_tabs.qr_generator'),
+      href: `/${personalOrWsId}/qr-generator`,
+      icon: <QrCodeIcon className="h-5 w-5" />,
+    },
+    null,
     {
       title: t('sidebar_tabs.finance'),
       aliases: [
@@ -852,21 +862,6 @@ export async function WorkspaceNavigationLinks({
                 !hasSecret('ENABLE_EDUCATION', 'true') ||
                 withoutPermission('ai_lab'),
               experimental: 'beta',
-            },
-            {
-              title: t('sidebar_tabs.whiteboards'),
-              href: `/${personalOrWsId}/whiteboards`,
-              icon: <PencilLine className="h-5 w-5" />,
-              disabled:
-                ENABLE_AI_ONLY ||
-                !hasSecret('ENABLE_WHITEBOARDS', 'true') ||
-                withoutPermission('manage_projects'),
-              experimental: 'alpha',
-            },
-            {
-              title: t('sidebar_tabs.qr_generator'),
-              href: `/${personalOrWsId}/qr-generator`,
-              icon: <QrCodeIcon className="h-5 w-5" />,
             },
             {
               title: t('sidebar_tabs.link_shortener'),
