@@ -64,7 +64,6 @@ export function TaskBoardForm({
   onFinish,
   showCancel,
   onCancel,
-
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -151,23 +150,23 @@ export function TaskBoardForm({
 
   const formContent = (
     <div className="w-full space-y-6 overflow-y-auto p-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            {isEditMode ? (
-              <Pencil className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Plus className="h-4 w-4 text-muted-foreground" />
-            )}
-            <h2 className="font-semibold text-lg">
-              {isEditMode ? t('common.edit') : t('ws-task-boards.create')}
-            </h2>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            {isEditMode
-              ? t('ws-task-boards.name')
-              : t('ws-task-boards.description')}
-          </p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          {isEditMode ? (
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          )}
+          <h2 className="font-semibold text-lg">
+            {isEditMode ? t('common.edit') : t('ws-task-boards.create')}
+          </h2>
         </div>
+        <p className="text-muted-foreground text-sm">
+          {isEditMode
+            ? t('ws-task-boards.name')
+            : t('ws-task-boards.description')}
+        </p>
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
