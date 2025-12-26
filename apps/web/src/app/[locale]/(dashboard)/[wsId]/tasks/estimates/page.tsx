@@ -1,16 +1,20 @@
 import { Calculator } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import TaskEstimatesClient from './client';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
-export const metadata: Metadata = {
-  title: 'Task Estimation',
-  description:
-    'Configure estimation methods for your task boards and view estimation analytics.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('task-estimates');
+  return {
+    title: t('page_title'),
+    description: t('page_description'),
+  };
+}
 
 interface Props {
   params: Promise<{
@@ -19,19 +23,19 @@ interface Props {
 }
 
 export default async function TaskEstimatesPage({ params }: Props) {
-  const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
+  return (
+    <WorkspaceWrapper params={params}>
 
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
-
-  // Fetch boards data with estimation types
+      {async ({ wsId }) => {
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
+                      if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+          // Fetch boards data with estimation types
   const { boards } = await getTaskBoards(wsId);
+
+  const t = await getTranslations('task-estimates');
 
   return (
     <div className="space-y-6 pb-8">
@@ -43,11 +47,10 @@ export default async function TaskEstimatesPage({ params }: Props) {
           </div>
           <div>
             <h1 className="font-bold text-2xl tracking-tight">
-              Task Estimation
+              {t('page_title')}
             </h1>
             <p className="text-muted-foreground text-sm">
-              Configure estimation methods for your task boards and view
-              analytics
+              {t('page_description')}
             </p>
           </div>
         </div>
@@ -57,6 +60,12 @@ export default async function TaskEstimatesPage({ params }: Props) {
       <TaskEstimatesClient wsId={wsId} initialBoards={boards} />
     </div>
   );
+      }}
+
+      </WorkspaceWrapper>
+  );
+
+
 }
 
 async function getTaskBoards(

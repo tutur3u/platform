@@ -8880,5 +8880,75 @@
       "105": "1 giờ 45 phút",
       "120": "2 giờ"
     }
+  },
+  "task-estimates": {
+    "page_title": "Ước Lượng Công Việc",
+    "page_description": "Cấu hình phương pháp ước lượng cho bảng công việc và xem phân tích",
+    "stats": {
+      "total_boards": "Tổng Số Bảng",
+      "configured": "Đã Cấu Hình",
+      "extended_range": "Phạm Vi Mở Rộng"
+    },
+    "estimation_methods_distribution": "Phân Bổ Phương Pháp Ước Lượng",
+    "board_estimation_configuration": "Cấu Hình Ước Lượng Bảng",
+    "no_boards_found": "Không tìm thấy bảng nào",
+    "no_boards_description": "Tạo một số bảng công việc để cấu hình phương pháp ước lượng",
+    "board": "bảng",
+    "boards": "bảng",
+    "extended_badge": "Mở Rộng",
+    "estimation_types": {
+      "none": {
+        "label": "Không Ước Lượng",
+        "description": "Chưa cấu hình phương pháp ước lượng"
+      },
+      "fibonacci": {
+        "label": "Fibonacci",
+        "description": "0, 1, 2, 3, 5, 8",
+        "description_standard": "Dãy Fibonacci (0, 1, 2, 3, 5, 8)",
+        "description_extended": "Dãy Fibonacci (0, 1, 2, 3, 5, 8, 13, 21)"
+      },
+      "linear": {
+        "label": "Tuyến Tính",
+        "description": "0, 1, 2, 3, 4, 5",
+        "description_standard": "Thang đo tuyến tính (0, 1, 2, 3, 4, 5)",
+        "description_extended": "Thang đo tuyến tính (0, 1, 2, 3, 4, 5, 6, 7)"
+      },
+      "exponential": {
+        "label": "Lũy Thừa",
+        "description": "0, 1, 2, 4, 8, 16",
+        "description_standard": "Lũy thừa của 2 (0, 1, 2, 4, 8, 16)",
+        "description_extended": "Lũy thừa của 2 (0, 1, 2, 4, 8, 16, 32, 64)"
+      },
+      "t-shirt": {
+        "label": "Kích Cỡ Áo",
+        "description": "-, XS, S, M, L, XL",
+        "description_standard": "Kích cỡ áo (-, XS, S, M, L, XL)",
+        "description_extended": "Kích cỡ áo (-, XS, S, M, L, XL, XXL, XXXL)"
+      }
+    },
+    "dialog": {
+      "title": "Cấu Hình Ước Lượng cho \"{name}\"",
+      "estimation_method": "Phương Pháp Ước Lượng",
+      "select_estimation_method": "Chọn phương pháp ước lượng",
+      "fibonacci_range": "Phạm Vi Dãy Fibonacci",
+      "linear_range": "Phạm Vi Thang Tuyến Tính",
+      "exponential_range": "Phạm Vi Thang Lũy Thừa",
+      "t_shirt_range": "Phạm Vi Kích Cỡ Áo",
+      "standard_range": "Phạm Vi Tiêu Chuẩn",
+      "extended_range": "Phạm Vi Mở Rộng",
+      "estimation_options": "Tùy Chọn Ước Lượng",
+      "allow_zero_estimates": "Cho phép ước lượng bằng 0",
+      "allow_zero_estimates_description": "Khi bật, các vấn đề có thể được ước lượng với 0 điểm",
+      "count_unestimated_issues": "Đếm các vấn đề chưa ước lượng",
+      "count_unestimated_issues_description": "Khi bật, các vấn đề chưa ước lượng sẽ được tính là 1 điểm. Khi tắt, chúng được tính là 0",
+      "selected_configuration": "Cấu Hình Đã Chọn",
+      "cancel": "Hủy",
+      "update_estimation": "Cập Nhật Ước Lượng",
+      "updating": "Đang cập nhật..."
+    },
+    "toast": {
+      "update_success": "Đã cập nhật loại ước lượng thành công",
+      "update_error": "Không thể cập nhật loại ước lượng"
+    }
   }
 }
