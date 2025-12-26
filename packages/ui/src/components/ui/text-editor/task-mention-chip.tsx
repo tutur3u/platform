@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  Ban,
   CheckCircle2,
   CircleSlash,
   Copy,
@@ -18,9 +19,11 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { useTheme } from 'next-themes';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
+import { Badge } from '../badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +51,7 @@ import { TaskNewProjectDialog } from '../tu-do/boards/boardId/task-dialogs/TaskN
 import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationships';
 import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
+import { computeAccessibleLabelStyles } from '../tu-do/utils/label-colors';
 import {
   getAssigneeInitials,
   getTicketBadgeColorClasses,
@@ -82,6 +86,8 @@ export function TaskMentionChip({
   const dropdownTriggerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -594,6 +600,17 @@ export function TaskMentionChip({
     );
   }, [currentTaskList, task?.priority]);
 
+  // Priority text color classes for applying priority color to task name
+  const priorityTextColorClasses: Record<
+    NonNullable<Task['priority']>,
+    string
+  > = {
+    critical: 'text-dynamic-red',
+    high: 'text-dynamic-orange',
+    normal: 'text-dynamic-yellow',
+    low: 'text-dynamic-blue',
+  };
+
   const chipContent = (
     <span
       data-mention="true"
@@ -627,7 +644,7 @@ export function TaskMentionChip({
         e.preventDefault();
       }}
       className={cn(
-        'inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-medium text-[12px] leading-none transition-colors',
+        'inline-flex cursor-pointer items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 font-medium text-[12px] leading-normal transition-colors',
         chipColorClasses,
         'hover:opacity-80',
         className
@@ -639,19 +656,34 @@ export function TaskMentionChip({
 
       {/* Priority Icon */}
       {task?.priority && (
-        <span className="ml-1 flex items-center justify-center">
+        <span className="flex items-center justify-center">
           {getPriorityIcon(task.priority, 'h-3 w-3')}
         </span>
       )}
 
-      {/* Task Name - use derived value for legacy mention support */}
+      {/* Dot separator between priority and blocked icon */}
+      <span className="opacity-50">•</span>
+
+      {/* Blocked indicator - show if task has blocking tasks */}
+      {blockedByTasks.length > 0 && (
+        <span
+          className="flex items-center justify-center text-dynamic-red"
+          title={`Blocked by ${blockedByTasks.length} task${blockedByTasks.length > 1 ? 's' : ''}`}
+        >
+          <Ban className="h-3 w-3" />
+        </span>
+      )}
+
+      {/* Task Name - use derived value for legacy mention support, with priority color */}
       {actualTaskName && (
-        <>
-          <span className="opacity-50">•</span>
-          <span className="max-w-50 truncate font-medium">
-            {actualTaskName}
-          </span>
-        </>
+        <span
+          className={cn(
+            'max-w-50 truncate font-medium',
+            task?.priority && priorityTextColorClasses[task.priority]
+          )}
+        >
+          {actualTaskName}
+        </span>
       )}
 
       {/* Assignee Avatars */}
@@ -679,6 +711,42 @@ export function TaskMentionChip({
             <span className="flex h-4 w-4 items-center justify-center rounded-full border border-background bg-muted font-medium text-[8px]">
               +{task.assignees.length - 3}
             </span>
+          )}
+        </span>
+      )}
+
+      {/* Labels with cross-theme accessible colors - using same strategy as TaskLabelsDisplay */}
+      {task?.labels && task.labels.length > 0 && (
+        <span className="flex items-center gap-0.5">
+          {task.labels.slice(0, 2).map((label) => {
+            const styles = computeAccessibleLabelStyles(label.color, isDark);
+            return (
+              <Badge
+                key={label.id}
+                variant="outline"
+                className="inline-flex h-4 max-w-16 items-center gap-0.5 truncate rounded-full border px-1 font-medium text-[8px] ring-0"
+                style={
+                  styles
+                    ? {
+                        backgroundColor: styles.bg,
+                        borderColor: styles.border,
+                        color: styles.text,
+                      }
+                    : undefined
+                }
+                title={label.name}
+              >
+                <span className="truncate">{label.name}</span>
+              </Badge>
+            );
+          })}
+          {task.labels.length > 2 && (
+            <Badge
+              variant="outline"
+              className="inline-flex h-4 items-center border-dashed px-1 font-medium text-[8px] opacity-80"
+            >
+              +{task.labels.length - 2}
+            </Badge>
           )}
         </span>
       )}

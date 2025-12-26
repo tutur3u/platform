@@ -8,6 +8,7 @@ import {
   User,
 } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { ThemeProvider } from 'next-themes';
 import { createRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { TaskMentionChip } from './task-mention-chip';
@@ -364,14 +365,16 @@ export const Mention = Node.create({
             reactRoot = createRoot(dom);
           }
           reactRoot.render(
-            <QueryClientProvider client={mentionQueryClient}>
-              <TaskMentionChip
-                entityId={currentEntityId ?? ''}
-                displayNumber={currentDisplayName}
-                avatarUrl={currentAvatarUrl}
-                subtitle={currentSubtitle}
-              />
-            </QueryClientProvider>
+            <ThemeProvider attribute="class" enableSystem>
+              <QueryClientProvider client={mentionQueryClient}>
+                <TaskMentionChip
+                  entityId={currentEntityId ?? ''}
+                  displayNumber={currentDisplayName}
+                  avatarUrl={currentAvatarUrl}
+                  subtitle={currentSubtitle}
+                />
+              </QueryClientProvider>
+            </ThemeProvider>
           );
         };
 
