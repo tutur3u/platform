@@ -177,7 +177,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-3 lg:flex lg:items-end">
-              <div className="min-w-[160px]">
+              <div className="min-w-40">
                 <div className="font-medium text-sm">
                   {t('ws-task-boards.filters.status_label')}
                 </div>
@@ -207,7 +207,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                 </Select>
               </div>
 
-              <div className="min-w-[160px]">
+              <div className="min-w-40">
                 <div className="font-medium text-sm">
                   {t('ws-task-boards.filters.sort_label')}
                 </div>
@@ -356,6 +356,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                 id: false,
                 created_at: false,
               }}
+              onRowClick={(row) => navigateToBoard(row.id)}
             />
           </TabsContent>
         </Tabs>
