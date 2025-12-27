@@ -6838,6 +6838,24 @@
       "japan_trip_realized": "Chuyến Đi Nhật Bản Thành Hiện Thực",
       "japan_trip_realized_desc": "Cả team cùng đi!",
       "celebration_message": "Team đã làm việc chăm chỉ và cùng nhau đạt được chuyến đi mơ ước"
+    },
+    "bucket_dump": {
+      "errors": {
+        "fetch_projects": "Không thể tải dự án",
+        "fetch_tasks": "Không tải được nhiệm vụ",
+        "create_project": "Không tạo được dự án",
+        "update_project": "Không thể cập nhật dự án",
+        "delete_project": "Không thể xóa dự án",
+        "link_task": "Không thể liên kết tác vụ với dự án",
+        "unlink_task": "Không thể hủy liên kết tác vụ khỏi dự án"
+      },
+      "success": {
+        "project_created": "Dự án được tạo thành công",
+        "project_updated": "Dự án được cập nhật thành công",
+        "project_deleted": "Dự án đã được xóa thành công",
+        "task_linked": "Nhiệm vụ được liên kết với dự án",
+        "task_unlinked": "Nhiệm vụ đã bị xóa khỏi dự án"
+      }
     }
   },
   "changelog-data-table": {
@@ -8949,6 +8967,114 @@
     "toast": {
       "update_success": "Đã cập nhật loại ước lượng thành công",
       "update_error": "Không thể cập nhật loại ước lượng"
+    }
+  },
+  "task-projects": {
+    "toolbar": {
+      "all_projects": "Tất Cả Dự Án",
+      "project_count": "{count} trong {total} dự án",
+      "project_count_plural": "{count} trong {total} dự án",
+      "search_placeholder": "Tìm kiếm dự án...",
+      "filters": "Bộ Lọc",
+      "filter_status": "Trạng Thái",
+      "filter_priority": "Độ Ưu Tiên",
+      "filter_health": "Sức Khỏe",
+      "clear_all_filters": "Xóa tất cả bộ lọc",
+      "sort": "Sắp Xếp",
+      "sort_created_date": "Ngày Tạo",
+      "sort_name": "Tên",
+      "sort_status": "Trạng Thái",
+      "sort_priority": "Độ Ưu Tiên",
+      "sort_health_status": "Tình Trạng Sức Khỏe",
+      "sort_task_count": "Số Lượng Nhiệm Vụ",
+      "sort_ascending": "Tăng Dần",
+      "sort_descending": "Giảm Dần",
+      "new_project": "Dự Án Mới"
+    },
+    "badges": {
+      "on_track": "Đúng Tiến Độ",
+      "at_risk": "Có Rủi Ro",
+      "off_track": "Trễ Tiến Độ",
+      "critical": "Cực Kỳ Quan Trọng",
+      "high": "Cao",
+      "normal": "Trung Bình",
+      "low": "Thấp"
+    },
+    "status": {
+      "backlog": "DANH SÁCH CÔNG VIỆC",
+      "planned": "ĐÃ LÊN KẾ HOẠCH",
+      "in_progress": "ĐANG THỰC HIỆN",
+      "in_review": "ĐANG DUYỆT",
+      "completed": "HOÀN THÀNH",
+      "cancelled": "ĐÃ HỦY",
+      "active": "ĐANG HOẠT ĐỘNG",
+      "on_hold": "TẠM DỪNG"
+    },
+    "empty_state": {
+      "no_projects_found": "Không tìm thấy dự án",
+      "no_projects_yet": "Chưa có dự án nào",
+      "adjust_filters": "Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn",
+      "create_first_project": "Tạo dự án đầu tiên của bạn để bắt đầu tổ chức các nhiệm vụ trên các bảng.",
+      "create_project": "Tạo Dự Án"
+    },
+    "project_card": {
+      "complete": "Hoàn Thành",
+      "edit": "Chỉnh Sửa",
+      "delete": "Xóa",
+      "project_lead": "Trưởng Dự Án",
+      "unknown": "Không Rõ",
+      "tasks": "Nhiệm Vụ",
+      "timeline": "Tiến Độ",
+      "linked": "Đã Liên Kết",
+      "task": "nhiệm vụ",
+      "tasks_plural": "nhiệm vụ",
+      "more": "thêm",
+      "manage": "Quản Lý",
+      "task_progress": "Tiến Độ Nhiệm Vụ",
+      "completed": "hoàn thành",
+      "linked_tasks": "Nhiệm Vụ Đã Liên Kết",
+      "view_details": "Xem Chi Tiết",
+      "manage_tasks": "Quản Lý Nhiệm Vụ"
+    },
+    "create_dialog": {
+      "title": "Tạo Dự Án Mới",
+      "description": "Tạo dự án nhiệm vụ mới để tổ chức các nhiệm vụ trên nhiều bảng.",
+      "project_name": "Tên Dự Án",
+      "project_name_placeholder": "Nhập tên dự án",
+      "description_label": "Mô Tả (Tùy Chọn)",
+      "description_placeholder": "Nhập mô tả dự án",
+      "cancel": "Hủy",
+      "creating": "Đang tạo...",
+      "create_project": "Tạo Dự Án"
+    },
+    "edit_dialog": {
+      "title": "Chỉnh Sửa Dự Án",
+      "description": "Cập nhật thông tin chi tiết của dự án.",
+      "project_name": "Tên Dự Án",
+      "project_name_placeholder": "Nhập tên dự án",
+      "description_label": "Mô Tả (Tùy Chọn)",
+      "description_placeholder": "Nhập mô tả dự án",
+      "cancel": "Hủy",
+      "updating": "Đang cập nhật...",
+      "update_project": "Cập Nhật Dự Án"
+    },
+    "manage_tasks_dialog": {
+      "title": "Quản Lý Nhiệm Vụ Đã Liên Kết",
+      "description": "Liên kết các nhiệm vụ hiện có với dự án này hoặc xóa chúng.",
+      "linked_tasks": "Nhiệm Vụ Đã Liên Kết",
+      "task": "nhiệm vụ",
+      "tasks_plural": "nhiệm vụ",
+      "remove": "Xóa",
+      "no_tasks_linked": "Chưa có nhiệm vụ nào được liên kết.",
+      "link_a_task": "Liên Kết Nhiệm Vụ",
+      "select_task_placeholder": "Chọn nhiệm vụ để liên kết",
+      "loading_tasks": "Đang tải nhiệm vụ...",
+      "no_available_tasks": "Không có nhiệm vụ khả dụng",
+      "unassigned_list": "Danh sách chưa được gán",
+      "all_tasks_linked": "Tất cả nhiệm vụ trong không gian làm việc đã được liên kết với dự án này.",
+      "close": "Đóng",
+      "linking": "Đang liên kết...",
+      "link_task": "Liên Kết Nhiệm Vụ"
     }
   }
 }
