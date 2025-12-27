@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
-import { yearPlanSchema } from '../types.js';
+import { yearPlanSchema } from '../types';
 
 interface PlanRequest {
   wsId: string;

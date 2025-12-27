@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
-import { quizSchema } from '../types.js';
+import { quizSchema } from '../types';
 
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
