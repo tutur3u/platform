@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
-import { flashcardSchema } from '../types';
+import { flashcardSchema } from '../types.js';
 
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';

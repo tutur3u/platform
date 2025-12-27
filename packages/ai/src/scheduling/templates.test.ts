@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { templateScenarios } from './templates';
+import { templateScenarios } from './templates.js';
 
 describe('templateScenarios', () => {
   it('should be an array of template scenarios', () => {

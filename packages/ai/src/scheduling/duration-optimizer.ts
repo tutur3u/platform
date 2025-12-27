@@ -15,7 +15,7 @@
 
 import type { TimeOfDayPreference } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import type { SchedulingWeights } from './types';
+import type { SchedulingWeights } from './types.js';
 
 // ============================================================================
 // TIMEZONE HELPERS

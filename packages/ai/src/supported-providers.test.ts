@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { supportedProviders } from './supported-providers';
+import { supportedProviders } from './supported-providers.js';
 
 describe('supportedProviders', () => {
   it('should be a readonly array', () => {

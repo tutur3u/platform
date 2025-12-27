@@ -5,7 +5,7 @@ import {
   quizOptionExplanationSchema,
   quizSchema,
   yearPlanSchema,
-} from './types';
+} from './types.js';
 
 describe('flashcardSchema', () => {
   it('should validate valid flashcard data', () => {

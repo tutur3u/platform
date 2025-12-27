@@ -1,7 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
-import { calendarEventsSchema } from './events';
+import { calendarEventsSchema } from './events.js';
 
 export async function POST(req: Request) {
   const context = (await req.json()) as {
@@ -76,7 +76,7 @@ function extractTimezone(context: string): string {
   try {
     // Look for the timezone pattern in the context
     const timezoneMatch = context.match(/User timezone:\s*([^)]+)/i);
-    if (timezoneMatch && timezoneMatch[1]) {
+    if (timezoneMatch?.[1]) {
       timezone = timezoneMatch[1].trim();
     }
   } catch (error) {
@@ -91,7 +91,7 @@ function extractPriority(context: string): string | null {
   try {
     // Look for the priority pattern in the context
     const priorityMatch = context.match(/Priority:\s*(low|medium|high)/i);
-    if (priorityMatch && priorityMatch[1]) {
+    if (priorityMatch?.[1]) {
       return priorityMatch[1].toLowerCase().trim();
     }
   } catch (error) {

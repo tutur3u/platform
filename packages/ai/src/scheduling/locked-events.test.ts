@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { scheduleTasks } from './algorithm';
-import { defaultActiveHours } from './default';
-import type { Event, Task } from './types';
+import { scheduleTasks } from './algorithm.js';
+import { defaultActiveHours } from './default.js';
+import type { Event, Task } from './types.js';
 
 describe('Scheduling Algorithm - Locked Events', () => {
   it('should not schedule a task during a locked event time slot', () => {
@@ -17,6 +17,7 @@ describe('Scheduling Algorithm - Locked Events', () => {
         start: baseDate.hour(10).minute(0).second(0).millisecond(0),
         end: baseDate.hour(12).minute(0).second(0).millisecond(0),
       },
+      taskId: '',
       locked: true,
     };
 
@@ -71,6 +72,7 @@ describe('Scheduling Algorithm - Locked Events', () => {
         start: dayjs().hour(10).minute(0).second(0).millisecond(0),
         end: dayjs().hour(12).minute(0).second(0).millisecond(0),
       },
+      taskId: '',
       locked: true,
     };
 

@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { scheduleTasks } from './algorithm';
-import { defaultActiveHours } from './default';
-import type { Event, Task } from './types';
+import { scheduleTasks } from './algorithm.js';
+import { defaultActiveHours } from './default.js';
+import type { Event, Task } from './types.js';
 
 describe('Deadline-aware scheduling', () => {
   describe('Task fits entirely before deadline', () => {

@@ -2,7 +2,12 @@
   "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "paths": {
+      "next/server": ["./node_modules/next/server.d.ts"],
+      "next/headers": ["./node_modules/next/headers.d.ts"],
+      "*": ["./*"]
+    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", ".turbo"]

@@ -21,7 +21,7 @@ import {
   OUTPUT_COMPARISON_PROMPT,
   PLAGIARISM_DETECTION_PROMPT,
   TEST_CASE_EVALUATION_PROMPT,
-} from './prompts';
+} from './prompts.js';
 
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';

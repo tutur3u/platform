@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { scheduleTasks } from './algorithm';
-import type { Task } from './types';
+import { scheduleTasks } from './algorithm.js';
+import type { Task } from './types.js';
 
 describe('Scheduling Algorithm - Performance', () => {
   it('should schedule 500 tasks in less than 5000ms', () => {
