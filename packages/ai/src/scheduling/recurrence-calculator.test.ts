@@ -5,7 +5,7 @@ import {
   getNextOccurrence,
   getOccurrencesInRange,
   isOccurrenceDate,
-} from './recurrence-calculator.js';
+} from './recurrence-calculator';
 
 function createTestHabit(overrides: Partial<Habit>): Habit {
   return {

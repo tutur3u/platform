@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scoreSlotForHabit, scoreSlotForTask } from './duration-optimizer.js';
+import { scoreSlotForHabit, scoreSlotForTask } from './duration-optimizer';
 
 describe('Duration Optimizer - Weights', () => {
   const mockHabit = {

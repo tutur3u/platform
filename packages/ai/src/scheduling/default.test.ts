@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultActiveHours, defaultTasks } from './default.js';
+import { defaultActiveHours, defaultTasks } from './default';
 
 describe('defaultActiveHours', () => {
   it('should have personal hours defined', () => {

@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { scheduleTasks } from './algorithm.js';
-import { defaultActiveHours } from './default.js';
-import type { Event, Task } from './types.js';
+import { scheduleTasks } from './algorithm';
+import { defaultActiveHours } from './default';
+import type { Event, Task } from './types';
 
 describe('Scheduling Algorithm - Locked Events', () => {
   it('should not schedule a task during a locked event time slot', () => {

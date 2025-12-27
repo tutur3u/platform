@@ -27,7 +27,7 @@ import {
   type TaskSlotConfig,
   type TimeSlotInfo,
   timeMatchesSlot,
-} from './duration-optimizer.js';
+} from './duration-optimizer';
 
 // Helper to create a habit config with defaults
 function createHabit(

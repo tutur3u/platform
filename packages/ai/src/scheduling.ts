@@ -3,4 +3,4 @@
  *
  * Re-exports from the scheduling directory for package exports compatibility.
  */
-export * from './scheduling/index.js';
+export * from './scheduling/index';

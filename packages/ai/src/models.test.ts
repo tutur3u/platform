@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultModel, models, providers } from './models.js';
+import { defaultModel, models, providers } from './models';
 
 describe('models', () => {
   it('should have unique model values within each provider', () => {

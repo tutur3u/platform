@@ -1,7 +1,7 @@
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { UIMessage } from 'ai';
-import type { supportedActions } from './supported-actions.js';
-import type { supportedProviders } from './supported-providers.js';
+import type { supportedActions } from './supported-actions';
+import type { supportedProviders } from './supported-providers';
 
 export type { UIMessage, UseChatHelpers };
 

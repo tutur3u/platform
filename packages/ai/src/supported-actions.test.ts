@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { supportedActions } from './supported-actions.js';
+import { supportedActions } from './supported-actions';
 
 describe('supportedActions', () => {
   it('should be a readonly array', () => {

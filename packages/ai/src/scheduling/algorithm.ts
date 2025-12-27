@@ -1,8 +1,8 @@
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import dayjs from 'dayjs';
-import minMax from 'dayjs/plugin/minMax.js';
+import minMax from 'dayjs/plugin/minMax';
 import { v4 as uuidv4 } from 'uuid';
-import { defaultActiveHours } from './default.js';
+import { defaultActiveHours } from './default';
 import type {
   ActiveHours,
   DateRange,
@@ -13,7 +13,7 @@ import type {
   SchedulingSettings,
   Task,
   TimeOfDayPreference,
-} from './types.js';
+} from './types';
 
 /**
  * Extended task type used internally for scheduling with additional tracking fields

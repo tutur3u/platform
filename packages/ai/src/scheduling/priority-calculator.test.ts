@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { PrioritizableItem } from './priority-calculator.js';
+import type { PrioritizableItem } from './priority-calculator';
 import {
   calculatePriorityScore,
   canBump,
@@ -16,7 +16,7 @@ import {
   isUrgent,
   PRIORITY_WEIGHTS,
   sortByPriority,
-} from './priority-calculator.js';
+} from './priority-calculator';
 
 // ============================================================================
 // HELPER FUNCTIONS

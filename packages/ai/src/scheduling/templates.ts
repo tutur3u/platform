@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import type { TemplateScenario } from './types.js';
+import type { TemplateScenario } from './types';
 
 export const templateScenarios: TemplateScenario[] = [
   {

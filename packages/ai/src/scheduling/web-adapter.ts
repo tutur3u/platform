@@ -7,7 +7,7 @@
 
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import dayjs from 'dayjs';
-import { scheduleTasks } from './algorithm.js';
+import { scheduleTasks } from './algorithm';
 import type {
   ActiveHours,
   CalendarHoursType,
@@ -17,7 +17,7 @@ import type {
   WebCalendarEvent,
   WebScheduleResult,
   WebTaskInput,
-} from './types.js';
+} from './types';
 
 /**
  * Map web calendar hours type to scheduler category

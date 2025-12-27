@@ -7,7 +7,7 @@
 
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import dayjs from 'dayjs';
-import isoWeek from 'dayjs/plugin/isoWeek.js';
+import isoWeek from 'dayjs/plugin/isoWeek';
 
 dayjs.extend(isoWeek);
 

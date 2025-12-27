@@ -13,14 +13,14 @@ export {
   promoteEventToTask,
   scheduleTasks,
   scheduleWithFlexibleEvents,
-} from './algorithm.js';
-export { defaultActiveHours, defaultTasks } from './default.js';
+} from './algorithm';
+export { defaultActiveHours, defaultTasks } from './default';
 export type {
   HabitDurationConfig,
   SlotCharacteristics,
   TaskSlotConfig,
   TimeSlotInfo,
-} from './duration-optimizer.js';
+} from './duration-optimizer';
 export {
   calculateIdealStartTimeForHabit,
   calculateIdealStartTimeForTask,
@@ -34,8 +34,8 @@ export {
   scoreSlotForTask,
   slotMatchesPreference,
   timeMatchesSlot,
-} from './duration-optimizer.js';
-export type { PrioritizableItem } from './priority-calculator.js';
+} from './duration-optimizer';
+export type { PrioritizableItem } from './priority-calculator';
 export {
   calculatePriorityScore,
   canBump,
@@ -45,15 +45,15 @@ export {
   isUrgent,
   PRIORITY_WEIGHTS,
   sortByPriority,
-} from './priority-calculator.js';
+} from './priority-calculator';
 export {
   calculateOccurrences,
   getNextOccurrence,
   getNextOccurrenceDescription,
   getOccurrencesInRange,
   isOccurrenceDate,
-} from './recurrence-calculator.js';
-export { templateScenarios } from './templates.js';
+} from './recurrence-calculator';
+export { templateScenarios } from './templates';
 export type {
   ActiveHours,
   CalendarHoursType,
@@ -67,7 +67,7 @@ export type {
   WebCalendarEvent,
   WebScheduleResult,
   WebTaskInput,
-} from './types.js';
+} from './types';
 export {
   convertHourSettingsToActiveHours,
   convertWebEventsToLocked,
@@ -76,4 +76,4 @@ export {
   mapCalendarHoursToCategory,
   scheduleWebTask,
   scheduleWebTasks,
-} from './web-adapter.js';
+} from './web-adapter';

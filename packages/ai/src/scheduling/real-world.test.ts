@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { scheduleTasks } from './algorithm.js';
-import type { Event, Task } from './types.js';
+import { scheduleTasks } from './algorithm';
+import type { Event, Task } from './types';
 
 describe('Scheduling Algorithm - Real World Scenarios', () => {
   it('should handle a "Student Day" scenario correctly', () => {

@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { scheduleTasks } from './algorithm.js';
-import { defaultActiveHours } from './default.js';
-import type { Task } from './types.js';
+import { scheduleTasks } from './algorithm';
+import { defaultActiveHours } from './default';
+import type { Task } from './types';
 
 describe('Scheduling Algorithm - Priority & Streaks', () => {
   it('should prioritize habits with streaks over generic tasks of same base priority', () => {
