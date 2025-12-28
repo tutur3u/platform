@@ -94,7 +94,7 @@
     "eventemitter3": "^5.0.1",
     "framer-motion": "^12.23.26",
     "html2canvas-pro": "^1.6.2",
-    "isomorphic-dompurify": "^2.34.0",
+    "isomorphic-dompurify": "^2.35.0",
     "jotai": "^2.16.1",
     "juice": "^11.0.3",
     "lodash": "^4.17.21",
