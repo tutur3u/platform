@@ -170,7 +170,7 @@ export function ManageTasksDialog({
               </Select>
               {tasksError ? (
                 <p className="text-dynamic-red text-sm">
-                  {(tasksError as Error).message}
+                  {tasksError.message}
                 </p>
               ) : filteredTaskOptions.length === 0 && !tasksLoading ? (
                 <p className="text-muted-foreground text-sm">

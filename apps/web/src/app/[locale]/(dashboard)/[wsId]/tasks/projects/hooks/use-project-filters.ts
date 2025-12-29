@@ -15,34 +15,31 @@ const VALID_SORT_BY: SortBy[] = [
 ];
 const VALID_SORT_ORDER: SortOrder[] = ['asc', 'desc'];
 
+const validateParam = <T extends string>(value: string | undefined, validValues: readonly T[], defaultValue: T) => {
+  return validValues.includes(value as T) ? (value as T) : defaultValue;
+}
+
 export function useProjectFilters(projects: TaskProject[]) {
   const { getSingle, get, set } = useSearchParams();
 
   // Read from URL with validation and defaults
-  const viewMode = (
-    VALID_VIEW_MODES.includes(getSingle('view') as ViewMode)
-      ? getSingle('view')
-      : 'list'
-  ) as ViewMode;
+  const viewMode = validateParam(getSingle('view'), VALID_VIEW_MODES, 'list') as ViewMode;
 
-  const sortBy = (
-    VALID_SORT_BY.includes(getSingle('sort') as SortBy)
-      ? getSingle('sort')
-      : 'created_at'
-  ) as SortBy;
+  const sortBy = validateParam(getSingle('sort'), VALID_SORT_BY, 'created_at') as SortBy;
 
-  const sortOrder = (
-    VALID_SORT_ORDER.includes(getSingle('order') as SortOrder)
-      ? getSingle('order')
-      : 'desc'
-  ) as SortOrder;
+  const sortOrder = validateParam(getSingle('order'), VALID_SORT_ORDER, 'desc') as SortOrder;
 
   const searchQuery = getSingle('q') ?? '';
 
   // Array filters
-  const statusFilter = (get('status') as string[]) ?? [];
-  const priorityFilter = (get('priority') as string[]) ?? [];
-  const healthFilter = (get('health') as string[]) ?? [];
+  const normalizeArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return [value];
+    return [];
+  };
+  const statusFilter = normalizeArray(get('status'));
+  const priorityFilter = normalizeArray(get('priority'));
+  const healthFilter = normalizeArray(get('health'));
 
   // Setters that update URL (with refresh=false to avoid full page reload)
   const setViewMode = useCallback((mode: ViewMode) => set({ view: mode }, false), [set]);
@@ -51,22 +48,22 @@ export function useProjectFilters(projects: TaskProject[]) {
   const setSearchQuery = useCallback((q: string) => set({ q: q || undefined }, false), [set]);
 
   const setStatusFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
-    const currentValue = (get('status') as string[]) ?? [];
+    const currentValue = statusFilter;
     const newValue = typeof value === 'function' ? value(currentValue) : value;
     set({ status: newValue.length ? newValue : undefined }, false);
-  }, [get, set]);
+  }, [set, statusFilter]);
 
   const setPriorityFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
-    const currentValue = (get('priority') as string[]) ?? [];
+    const currentValue = priorityFilter;
     const newValue = typeof value === 'function' ? value(currentValue) : value;
     set({ priority: newValue.length ? newValue : undefined }, false);
-  }, [get, set]);
+  }, [set, priorityFilter]);
 
   const setHealthFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
-    const currentValue = (get('health') as string[]) ?? [];
+    const currentValue = healthFilter;
     const newValue = typeof value === 'function' ? value(currentValue) : value;
     set({ health: newValue.length ? newValue : undefined }, false);
-  }, [get, set]);
+  }, [set, healthFilter]);
 
   // Computed values
   const hasActiveFilters =

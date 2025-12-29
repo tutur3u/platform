@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -54,6 +54,7 @@ export function ProjectListItem({
   isUnlinking,
 }: ProjectListItemProps) {
   const t = useTranslations('task-projects.project_card');
+  const { dateTime } = useFormatter();
 
   const progressPercent =
     project.tasksCount > 0
@@ -196,24 +197,18 @@ export function ProjectListItem({
                       </p>
                       <p className="font-semibold">
                         {project.start_date &&
-                          new Date(project.start_date).toLocaleDateString(
-                            'en-GB',
-                            {
-                              day: 'numeric',
-                              month: 'numeric',
-                              year: 'numeric',
-                            }
-                          )}
+                          dateTime(new Date(project.start_date), {
+                            day: 'numeric',
+                            month: 'numeric',
+                            year: 'numeric',
+                          })}
                         {project.start_date && project.end_date && ' → '}
                         {project.end_date &&
-                          new Date(project.end_date).toLocaleDateString(
-                            'en-GB',
-                            {
-                              day: 'numeric',
-                              month: 'numeric',
-                              year: 'numeric',
-                            }
-                          )}
+                          dateTime(new Date(project.end_date), {
+                            day: 'numeric',
+                            month: 'numeric',
+                            year: 'numeric',
+                          })}
                       </p>
                     </div>
                   </div>

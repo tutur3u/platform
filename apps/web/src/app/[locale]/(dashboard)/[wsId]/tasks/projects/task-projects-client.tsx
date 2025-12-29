@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2 } from '@tuturuuu/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TaskProject, TaskProjectsClientProps } from './types';
 import { useTaskProjects, useProjectFilters } from './hooks';
@@ -41,27 +41,6 @@ export function TaskProjectsClient({
   });
 
   const filters = useProjectFilters(taskProjects.projects);
-
-  // // Sync managing project with latest data (only when projects data changes)
-  // useEffect(() => {
-  //   if (!managingProject) return;
-
-  //   const updated = taskProjects.projects.find(
-  //     (project) => project.id === managingProject.id
-  //   );
-
-  //   if (!updated) return;
-
-  //   // Only update if the data actually changed (compare specific fields)
-  //   const hasChanged =
-  //     updated.linkedTasks.length !== managingProject.linkedTasks.length ||
-  //     updated.name !== managingProject.name ||
-  //     updated.description !== managingProject.description;
-
-  //   if (hasChanged) {
-  //     setManagingProject(updated);
-  //   }
-  // }, [taskProjects.projects, managingProject]); // Only depend on projects array, not managingProject
 
   // Handlers
   const handleEditProject = (project: TaskProject) => {

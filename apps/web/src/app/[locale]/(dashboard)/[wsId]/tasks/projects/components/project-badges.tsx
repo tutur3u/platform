@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Target, TrendingUp } from '@tuturuuu/icons';
+import { Target } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 export function HealthStatusBadge({ health }: { health: string | null }) {
@@ -15,26 +14,26 @@ export function HealthStatusBadge({ health }: { health: string | null }) {
       label: t('on_track'),
       className:
         'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
-      icon: '🟢',
+      iconColor: 'text-dynamic-green',
     },
     at_risk: {
       label: t('at_risk'),
       className:
         'border-dynamic-yellow/40 bg-dynamic-yellow/10 text-dynamic-yellow',
-      icon: '🟡',
+      iconColor: 'text-dynamic-yellow',
     },
     off_track: {
       label: t('off_track'),
       className: 'border-dynamic-red/40 bg-dynamic-red/10 text-dynamic-red',
-      icon: '🔴',
+      iconColor: 'text-dynamic-red',
     },
   };
-  const { label, className, icon } =
+  const { label, className, iconColor } =
     config[health as keyof typeof config] || config.on_track;
   return (
     <Badge variant="outline" className={cn('text-xs', className)}>
-      <TrendingUp className="mr-1 h-3 w-3" />
-      {icon} {label}
+      <Circle className={cn('mr-1 h-2 w-2 fill-current', iconColor)}/>
+      {label}
     </Badge>
   );
 }

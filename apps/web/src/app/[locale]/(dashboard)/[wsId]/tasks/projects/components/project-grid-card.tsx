@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -60,6 +60,7 @@ export function ProjectGridCard({
   isUnlinking,
 }: ProjectGridCardProps) {
   const t = useTranslations('task-projects.project_card');
+  const { dateTime } = useFormatter();
 
   return (
     <Card
@@ -173,14 +174,14 @@ export function ProjectGridCard({
                 <p className="text-muted-foreground text-xs">{t('timeline')}</p>
                 <p className="truncate font-medium text-sm">
                   {project.start_date &&
-                    new Date(project.start_date).toLocaleDateString('en-US', {
+                    dateTime(new Date(project.start_date), {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
                     })}
                   {project.start_date && project.end_date && ' → '}
                   {project.end_date &&
-                    new Date(project.end_date).toLocaleDateString('en-US', {
+                    dateTime(new Date(project.end_date), {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',

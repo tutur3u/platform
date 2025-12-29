@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { z } from 'zod';
 import type { TaskProject, TaskOption, LinkedTask } from '../types';
 
 interface UseTaskProjectsParams {
@@ -10,6 +11,20 @@ interface UseTaskProjectsParams {
   initialProjects: TaskProject[];
   managingProject: TaskProject | null;
 }
+
+const taskSchema = z.object({
+  id: z.string(),
+  name: z.string().optional().default('Untitled task'),
+  completed_at: z.string().optional().nullable(),
+  list_name: z.string().optional().nullable(),
+});
+
+const payloadSchema = z.union([
+  z.array(taskSchema),
+  z.object({
+    tasks: z.array(taskSchema),
+  }),
+]);
 
 export function useTaskProjects({
   wsId,
@@ -49,24 +64,21 @@ export function useTaskProjects({
       }
 
       const payload = await response.json();
-      const rawTasks = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.tasks)
-          ? payload.tasks
-          : [];
+      const result = payloadSchema.safeParse(payload);
 
-      return rawTasks
-        .map((task: Record<string, unknown>) => ({
-          id: String(task.id ?? ''),
-          name:
-            typeof task.name === 'string' && task.name.trim().length > 0
-              ? task.name
-              : 'Untitled task',
-          completed_at:
-            typeof task.completed_at === 'string' ? task.completed_at : null,
-          listName: typeof task.list_name === 'string' ? task.list_name : null,
-        }))
-        .filter((task: TaskOption) => Boolean(task.id));
+      if (!result.success) {
+        throw new Error(t('errors.fetch_tasks'));
+      }
+
+      const data = result.data;
+      const tasks = Array.isArray(data) ? data : data.tasks;
+
+      return tasks.map((task) => ({
+        id: task.id,
+        name: task.name || 'Untitled task',
+        completed_at: task.completed_at ?? null,
+        listName: task.list_name ?? null,
+      }));
     },
     enabled: Boolean(managingProject),
     staleTime: 60_000,

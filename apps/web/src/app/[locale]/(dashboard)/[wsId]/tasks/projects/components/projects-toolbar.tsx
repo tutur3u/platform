@@ -209,11 +209,15 @@ export function ProjectsToolbar({
                     );
                   }}
                 >
-                  {health === 'on_track'
-                    ? `🟢 ${t('badges.on_track')}`
-                    : health === 'at_risk'
-                      ? `🟡 ${t('badges.at_risk')}`
-                      : `🔴 ${t('badges.off_track')}`}
+                  <Circle
+                    className={cn(
+                      'mr-1 h-3 w-3 fill-current',
+                      health === 'on_track' && 'text-dynamic-green',
+                      health === 'at_risk' && 'text-dynamic-yellow',
+                      health === 'off_track' && 'text-dynamic-red'
+                    )}
+                  />
+                  {t(`badges.${health}` as any)}
                 </DropdownMenuCheckboxItem>
               ))}
             </div>
