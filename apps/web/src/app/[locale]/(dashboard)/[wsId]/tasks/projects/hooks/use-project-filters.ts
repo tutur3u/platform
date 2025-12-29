@@ -1,7 +1,7 @@
 'use client';
 
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
-import { useMemo, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { TaskProject, ViewMode, SortBy, SortOrder } from '../types';
 
 const VALID_VIEW_MODES: ViewMode[] = ['list', 'grid'];
@@ -45,26 +45,28 @@ export function useProjectFilters(projects: TaskProject[]) {
   const healthFilter = (get('health') as string[]) ?? [];
 
   // Setters that update URL (with refresh=false to avoid full page reload)
-  const setViewMode = (mode: ViewMode) => set({ view: mode }, false);
-  const setSortBy = (sort: SortBy) => set({ sort }, false);
-  const setSortOrder = (order: SortOrder) => set({ order }, false);
-  const setSearchQuery = (q: string) => set({ q: q || undefined }, false);
+  const setViewMode = useCallback((mode: ViewMode) => set({ view: mode }, false), [set]);
+  const setSortBy = useCallback((sort: SortBy) => set({ sort }, false), [set]);
+  const setSortOrder = useCallback((order: SortOrder) => set({ order }, false), [set]);
+  const setSearchQuery = useCallback((q: string) => set({ q: q || undefined }, false), [set]);
 
-  const setStatusFilter: Dispatch<SetStateAction<string[]>> = (value) => {
-    const newValue = typeof value === 'function' ? value(statusFilter) : value;
+  const setStatusFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
+    const currentValue = (get('status') as string[]) ?? [];
+    const newValue = typeof value === 'function' ? value(currentValue) : value;
     set({ status: newValue.length ? newValue : undefined }, false);
-  };
+  }, [get, set]);
 
-  const setPriorityFilter: Dispatch<SetStateAction<string[]>> = (value) => {
-    const newValue =
-      typeof value === 'function' ? value(priorityFilter) : value;
+  const setPriorityFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
+    const currentValue = (get('priority') as string[]) ?? [];
+    const newValue = typeof value === 'function' ? value(currentValue) : value;
     set({ priority: newValue.length ? newValue : undefined }, false);
-  };
+  }, [get, set]);
 
-  const setHealthFilter: Dispatch<SetStateAction<string[]>> = (value) => {
-    const newValue = typeof value === 'function' ? value(healthFilter) : value;
+  const setHealthFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
+    const currentValue = (get('health') as string[]) ?? [];
+    const newValue = typeof value === 'function' ? value(currentValue) : value;
     set({ health: newValue.length ? newValue : undefined }, false);
-  };
+  }, [get, set]);
 
   // Computed values
   const hasActiveFilters =
@@ -72,7 +74,7 @@ export function useProjectFilters(projects: TaskProject[]) {
     priorityFilter.length > 0 ||
     healthFilter.length > 0;
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     set(
       {
         status: undefined,
@@ -82,7 +84,7 @@ export function useProjectFilters(projects: TaskProject[]) {
       },
       false
     );
-  };
+  }, [set]);
 
   // Filtered and sorted projects
   const filteredProjects = useMemo(() => {
