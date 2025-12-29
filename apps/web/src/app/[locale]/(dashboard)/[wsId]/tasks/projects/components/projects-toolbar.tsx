@@ -20,6 +20,7 @@ import {
   List,
   Plus,
   X,
+  Circle
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type { ViewMode, SortBy, SortOrder } from '../types';
