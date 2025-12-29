@@ -1,7 +1,12 @@
 'use client';
 
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
-import { useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
+import {
+  useMemo,
+  useCallback,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import type { TaskProject, ViewMode, SortBy, SortOrder } from '../types';
 
 const VALID_VIEW_MODES: ViewMode[] = ['list', 'grid'];
@@ -15,19 +20,35 @@ const VALID_SORT_BY: SortBy[] = [
 ];
 const VALID_SORT_ORDER: SortOrder[] = ['asc', 'desc'];
 
-const validateParam = <T extends string>(value: string | undefined, validValues: readonly T[], defaultValue: T) => {
+const validateParam = <T extends string>(
+  value: string | undefined,
+  validValues: readonly T[],
+  defaultValue: T
+) => {
   return validValues.includes(value as T) ? (value as T) : defaultValue;
-}
+};
 
 export function useProjectFilters(projects: TaskProject[]) {
   const { getSingle, get, set } = useSearchParams();
 
   // Read from URL with validation and defaults
-  const viewMode = validateParam(getSingle('view'), VALID_VIEW_MODES, 'list') as ViewMode;
+  const viewMode = validateParam(
+    getSingle('view'),
+    VALID_VIEW_MODES,
+    'list'
+  ) as ViewMode;
 
-  const sortBy = validateParam(getSingle('sort'), VALID_SORT_BY, 'created_at') as SortBy;
+  const sortBy = validateParam(
+    getSingle('sort'),
+    VALID_SORT_BY,
+    'created_at'
+  ) as SortBy;
 
-  const sortOrder = validateParam(getSingle('order'), VALID_SORT_ORDER, 'desc') as SortOrder;
+  const sortOrder = validateParam(
+    getSingle('order'),
+    VALID_SORT_ORDER,
+    'desc'
+  ) as SortOrder;
 
   const searchQuery = getSingle('q') ?? '';
 
@@ -42,28 +63,49 @@ export function useProjectFilters(projects: TaskProject[]) {
   const healthFilter = normalizeArray(get('health'));
 
   // Setters that update URL (with refresh=false to avoid full page reload)
-  const setViewMode = useCallback((mode: ViewMode) => set({ view: mode }, false), [set]);
+  const setViewMode = useCallback(
+    (mode: ViewMode) => set({ view: mode }, false),
+    [set]
+  );
   const setSortBy = useCallback((sort: SortBy) => set({ sort }, false), [set]);
-  const setSortOrder = useCallback((order: SortOrder) => set({ order }, false), [set]);
-  const setSearchQuery = useCallback((q: string) => set({ q: q || undefined }, false), [set]);
+  const setSortOrder = useCallback(
+    (order: SortOrder) => set({ order }, false),
+    [set]
+  );
+  const setSearchQuery = useCallback(
+    (q: string) => set({ q: q || undefined }, false),
+    [set]
+  );
 
-  const setStatusFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
-    const currentValue = statusFilter;
-    const newValue = typeof value === 'function' ? value(currentValue) : value;
-    set({ status: newValue.length ? newValue : undefined }, false);
-  }, [set, statusFilter]);
+  const setStatusFilter: Dispatch<SetStateAction<string[]>> = useCallback(
+    (value) => {
+      const currentValue = statusFilter;
+      const newValue =
+        typeof value === 'function' ? value(currentValue) : value;
+      set({ status: newValue.length ? newValue : undefined }, false);
+    },
+    [set, statusFilter]
+  );
 
-  const setPriorityFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
-    const currentValue = priorityFilter;
-    const newValue = typeof value === 'function' ? value(currentValue) : value;
-    set({ priority: newValue.length ? newValue : undefined }, false);
-  }, [set, priorityFilter]);
+  const setPriorityFilter: Dispatch<SetStateAction<string[]>> = useCallback(
+    (value) => {
+      const currentValue = priorityFilter;
+      const newValue =
+        typeof value === 'function' ? value(currentValue) : value;
+      set({ priority: newValue.length ? newValue : undefined }, false);
+    },
+    [set, priorityFilter]
+  );
 
-  const setHealthFilter: Dispatch<SetStateAction<string[]>> = useCallback((value) => {
-    const currentValue = healthFilter;
-    const newValue = typeof value === 'function' ? value(currentValue) : value;
-    set({ health: newValue.length ? newValue : undefined }, false);
-  }, [set, healthFilter]);
+  const setHealthFilter: Dispatch<SetStateAction<string[]>> = useCallback(
+    (value) => {
+      const currentValue = healthFilter;
+      const newValue =
+        typeof value === 'function' ? value(currentValue) : value;
+      set({ health: newValue.length ? newValue : undefined }, false);
+    },
+    [set, healthFilter]
+  );
 
   // Computed values
   const hasActiveFilters =
@@ -156,8 +198,8 @@ export function useProjectFilters(projects: TaskProject[]) {
           bVal = b.tasksCount;
           break;
         case 'created_at':
-          aVal = new Date(a.created_at).getTime();
-          bVal = new Date(b.created_at).getTime();
+          aVal = new Date(a.created_at ?? 0).getTime();
+          bVal = new Date(b.created_at ?? 0).getTime();
           break;
       }
 

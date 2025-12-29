@@ -1,4 +1,4 @@
-import { TaskProjectWithRelations } from '@tuturuuu/types/db';
+import type { TaskProjectWithRelations } from '@tuturuuu/types/db';
 
 export type ProjectStatus =
   | 'backlog'

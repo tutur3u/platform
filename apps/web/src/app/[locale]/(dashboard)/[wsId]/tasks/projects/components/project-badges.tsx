@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Target } from '@tuturuuu/icons';
+import { Target, Circle } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 export function HealthStatusBadge({ health }: { health: string | null }) {
@@ -32,7 +32,7 @@ export function HealthStatusBadge({ health }: { health: string | null }) {
     config[health as keyof typeof config] || config.on_track;
   return (
     <Badge variant="outline" className={cn('text-xs', className)}>
-      <Circle className={cn('mr-1 h-2 w-2 fill-current', iconColor)}/>
+      <Circle className={cn('mr-1 h-2 w-2 fill-current', iconColor)} />
       {label}
     </Badge>
   );

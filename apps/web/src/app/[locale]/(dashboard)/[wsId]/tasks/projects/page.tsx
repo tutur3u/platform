@@ -5,6 +5,12 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectsClient } from './task-projects-client';
+import type {
+  TaskProject,
+  ProjectStatus,
+  ProjectPriority,
+  ProjectHealth,
+} from './types';
 
 export const metadata: Metadata = {
   title: 'Task Projects',
@@ -73,37 +79,43 @@ export default async function TaskProjectsPage({ params }: Props) {
           notFound();
         }
 
-        const formattedProjects = (projects ?? []).map((project) => {
-          // Filter out soft-deleted tasks
-          const activeTasks =
-            project.task_project_tasks?.filter(
-              (link) => link.task && link.task.deleted_at === null
-            ) ?? [];
+        const formattedProjects: TaskProject[] = (projects ?? []).map(
+          (project) => {
+            // Filter out soft-deleted tasks
+            const activeTasks =
+              project.task_project_tasks?.filter(
+                (link) => link.task && link.task.deleted_at === null
+              ) ?? [];
 
-          return {
-            ...project,
-            created_at: project.created_at ?? new Date().toISOString(),
-            tasksCount: activeTasks.length,
-            completedTasksCount: activeTasks.filter(
-              (link) =>
-                link.task?.completed_at !== null ||
-                link.task?.closed_at !== null
-            ).length,
-            linkedTasks: activeTasks.flatMap(({ task }) =>
-              task
-                ? [
-                    {
-                      id: task.id,
-                      name: task.name,
-                      completed_at: task.completed_at,
-                      priority: task.priority,
-                      listName: task.task_lists?.name ?? null,
-                    },
-                  ]
-                : []
-            ),
-          };
-        });
+            return {
+              ...project,
+              // Type cast database string unions to proper TypeScript types
+              status: project.status as ProjectStatus | null,
+              priority: project.priority as ProjectPriority | null,
+              health_status: project.health_status as ProjectHealth | null,
+              created_at: project.created_at ?? new Date().toISOString(),
+              tasksCount: activeTasks.length,
+              completedTasksCount: activeTasks.filter(
+                (link) =>
+                  link.task?.completed_at !== null ||
+                  link.task?.closed_at !== null
+              ).length,
+              linkedTasks: activeTasks.flatMap(({ task }) =>
+                task
+                  ? [
+                      {
+                        id: task.id,
+                        name: task.name,
+                        completed_at: task.completed_at,
+                        priority: task.priority as ProjectPriority | null,
+                        listName: task.task_lists?.name ?? null,
+                      },
+                    ]
+                  : []
+              ),
+            };
+          }
+        );
 
         return (
           <div className="space-y-6">
@@ -118,7 +130,6 @@ export default async function TaskProjectsPage({ params }: Props) {
             <TaskProjectsClient
               wsId={wsId}
               initialProjects={formattedProjects}
-              currentUserId={currentUser.id}
             />
           </div>
         );
