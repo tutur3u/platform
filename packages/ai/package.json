@@ -8,7 +8,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "type-check": "tsgo --project tsconfig.build.json"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.3",

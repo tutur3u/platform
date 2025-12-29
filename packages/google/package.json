@@ -8,6 +8,9 @@
   "exports": {
     ".": "./src/core/index.ts"
   },
+  "scripts": {
+    "type-check": "tsgo --build"
+  },
   "dependencies": {
     "googleapis": "^169.0.0",
     "google-auth-library": "^10.5.0"

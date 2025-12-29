@@ -16,6 +16,16 @@ import type {
 } from './types';
 
 /**
+ * Extended task type used internally for scheduling with additional tracking fields
+ */
+interface TaskPoolItem extends Task {
+  remaining: number;
+  nextPart: number;
+  scheduledParts: number;
+  priorityScore: number;
+}
+
+/**
  * Check if a given time matches the user's time of day preference
  */
 function matchesTimePreference(
@@ -217,7 +227,7 @@ function isPeakHour(time: dayjs.Dayjs, profile?: EnergyProfile): boolean {
  * Calculate the reason for a task being scheduled at a specific time
  */
 function calculateSchedulingReason(
-  task: any,
+  task: TaskPoolItem,
   time: dayjs.Dayjs,
   profile?: EnergyProfile
 ): string {
@@ -283,7 +293,7 @@ export const scheduleTasks = (
   }));
   const logs: Log[] = [];
   const minBuffer = settings?.schedulingSettings?.min_buffer || 0;
-  let taskPool: any[] = [];
+  let taskPool: TaskPoolItem[] = [];
   try {
     taskPool = tasks.map((task) => ({
       ...task,
