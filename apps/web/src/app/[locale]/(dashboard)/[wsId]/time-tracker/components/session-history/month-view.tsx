@@ -97,14 +97,14 @@ export function MonthView({
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted font-medium text-xs">
                         {index + 1}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <div
                           className={cn(
-                            'h-3 w-3 rounded-full',
+                            'h-3 w-3 shrink-0 rounded-full',
                             getCategoryColor(cat.color)
                           )}
                         />
-                        <span className="font-medium">{cat.name}</span>
+                        <span className="truncate font-medium">{cat.name}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export function MonthView({
                 <div className="mb-1 text-muted-foreground text-xs">
                   {t('longest_session')}
                 </div>
-                <div className="font-medium text-sm">
+                <div className="line-clamp-2 break-all font-medium text-sm">
                   {periodStats?.longestSession.title}
                 </div>
                 <div className="text-muted-foreground text-xs">
@@ -255,9 +255,11 @@ export function MonthView({
                 key={groupTitle}
                 className="rounded-lg border bg-muted/30 p-4"
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <h4 className="font-medium text-foreground">{groupTitle}</h4>
-                  <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h4 className="truncate font-medium text-foreground">
+                    {groupTitle}
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm sm:gap-3">
                     <span>
                       {t('activities_count', {
                         count: groupSessions.length,
@@ -277,7 +279,7 @@ export function MonthView({
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <h5 className="truncate font-medium text-sm">
+                          <h5 className="line-clamp-1 break-all font-medium text-sm">
                             {session.title}
                           </h5>
                           <div className="mt-1 flex items-center gap-2">
