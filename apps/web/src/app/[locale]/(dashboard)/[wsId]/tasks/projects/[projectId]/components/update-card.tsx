@@ -1,6 +1,13 @@
 'use client';
 
-import { Edit2, Loader2, MoreVertical, Trash2, Check, X } from '@tuturuuu/icons';
+import {
+  Edit2,
+  Loader2,
+  MoreVertical,
+  Trash2,
+  Check,
+  X,
+} from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

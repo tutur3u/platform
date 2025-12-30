@@ -22,15 +22,17 @@ function formatDateToInput(dateString: string | null | undefined): string {
 
 function formatInputToISO(dateString: string): string | null {
   if (!dateString) return null;
-  
+
   // Use dayjs to parse and validate the date string
   const date = dayjs(dateString, 'YYYY-MM-DD', true); // strict parsing
-  
+
   if (!date.isValid()) {
-    console.error(`Invalid date format: expected YYYY-MM-DD, got "${dateString}"`);
+    console.error(
+      `Invalid date format: expected YYYY-MM-DD, got "${dateString}"`
+    );
     return null;
   }
-  
+
   return date.toISOString();
 }
 

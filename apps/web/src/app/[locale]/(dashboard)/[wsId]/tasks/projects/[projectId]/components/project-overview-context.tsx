@@ -4,7 +4,12 @@ import { createContext, useContext } from 'react';
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
-import type { ActiveTab, HealthStatus, ProjectUpdate, TaskPriority } from '../types';
+import type {
+  ActiveTab,
+  HealthStatus,
+  ProjectUpdate,
+  TaskPriority,
+} from '../types';
 
 interface ProjectOverviewContextType {
   project: TaskProjectWithRelations;
@@ -47,7 +52,9 @@ interface ProjectOverviewContextType {
   fadeInViewVariant: (delay?: number) => object;
 }
 
-const ProjectOverviewContext = createContext<ProjectOverviewContextType | null>(null);
+const ProjectOverviewContext = createContext<ProjectOverviewContextType | null>(
+  null
+);
 
 export function ProjectOverviewProvider({
   children,
@@ -66,7 +73,9 @@ export function ProjectOverviewProvider({
 export function useProjectOverview() {
   const context = useContext(ProjectOverviewContext);
   if (!context) {
-    throw new Error('useProjectOverview must be used within a ProjectOverviewProvider');
+    throw new Error(
+      'useProjectOverview must be used within a ProjectOverviewProvider'
+    );
   }
   return context;
 }

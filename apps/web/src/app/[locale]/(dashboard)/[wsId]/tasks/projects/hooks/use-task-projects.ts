@@ -79,14 +79,14 @@ export function useTaskProjects({
       if (!response.ok) {
         throw new Error(t('errors.fetch_projects'));
       }
-      
+
       const payload = await response.json();
       const result = z.array(projectSchema).safeParse(payload);
-      
+
       if (!result.success) {
         throw new Error(t('errors.fetch_projects'));
       }
-      
+
       return result.data as TaskProject[];
     },
     initialData: initialProjects,
