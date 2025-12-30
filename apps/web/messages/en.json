@@ -9281,6 +9281,10 @@
     }
   },
   "task-projects": {
+    "page_title": "Task Projects",
+    "page_description": "Manage and track task projects across your workspace.",
+    "page_heading": "Task Projects",
+    "page_subheading": "Manage and track cross-functional task projects across your workspace.",
     "toolbar": {
       "all_projects": "All Projects",
       "project_count": "{count} of {total} project",

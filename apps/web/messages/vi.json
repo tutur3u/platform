@@ -9094,6 +9094,10 @@
     }
   },
   "task-projects": {
+    "page_title": "Dự Án Nhiệm Vụ",
+    "page_description": "Quản lý và theo dõi các dự án nhiệm vụ trong không gian làm việc của bạn.",
+    "page_heading": "Dự Án Nhiệm Vụ",
+    "page_subheading": "Quản lý và theo dõi các dự án nhiệm vụ liên chức năng trong không gian làm việc của bạn.",
     "toolbar": {
       "all_projects": "Tất Cả Dự Án",
       "project_count": "{count} trong {total} dự án",
