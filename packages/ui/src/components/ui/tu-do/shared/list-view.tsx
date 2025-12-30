@@ -128,7 +128,6 @@ export function ListView({
   };
 
   const handleBulkDeleteConfirmed = async () => {
-    setShowBulkDeleteDialog(false);
     setIsLoading(true);
     try {
       const supabase = createClient();
@@ -151,6 +150,7 @@ export function ListView({
       setLocalTasks(updatedTasks);
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       setSelectedTasks(new Set());
+      setShowBulkDeleteDialog(false);
       toast({
         title: 'Tasks deleted',
         description: `${successCount} task${successCount !== 1 ? 's' : ''} deleted successfully.`,
@@ -795,7 +795,10 @@ export function ListView({
             <AlertDialogAction asChild>
               <Button
                 variant="destructive"
-                onClick={handleBulkDeleteConfirmed}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBulkDeleteConfirmed();
+                }}
                 disabled={isLoading}
               >
                 {isLoading ? t('deleting') : t('delete')}

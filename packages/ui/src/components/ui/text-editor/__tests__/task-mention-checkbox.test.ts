@@ -216,8 +216,8 @@ describe('Task Mention Detection', () => {
 
   describe('isChecked priority logic', () => {
     it('should prioritize manual override', () => {
-      const manualOverride = true;
-      const nodeChecked = false;
+      const manualOverride: boolean | null = true;
+      const nodeChecked: boolean | undefined = false;
       const allMentionedTasksCompleted = false;
 
       const result =
@@ -231,8 +231,8 @@ describe('Task Mention Detection', () => {
     });
 
     it('should use node.attrs.checked when no manual override', () => {
-      const manualOverride = null;
-      const nodeChecked = true;
+      const manualOverride: boolean | null = null;
+      const nodeChecked: boolean | undefined = true;
       const allMentionedTasksCompleted = false;
 
       const result =
@@ -246,8 +246,8 @@ describe('Task Mention Detection', () => {
     });
 
     it('should use allMentionedTasksCompleted as fallback', () => {
-      const manualOverride = null;
-      const nodeChecked = undefined;
+      const manualOverride: boolean | null = null;
+      const nodeChecked: boolean | undefined = undefined;
       const allMentionedTasksCompleted = true;
 
       const result =
