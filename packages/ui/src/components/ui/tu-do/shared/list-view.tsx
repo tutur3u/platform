@@ -801,7 +801,7 @@ export function ListView({
                 }}
                 disabled={isLoading}
               >
-                {isLoading ? t('deleting') : t('delete')}
+                {t('delete')}
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>

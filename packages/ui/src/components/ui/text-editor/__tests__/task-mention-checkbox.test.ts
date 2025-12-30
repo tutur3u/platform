@@ -221,11 +221,7 @@ describe('Task Mention Detection', () => {
       const allMentionedTasksCompleted = false;
 
       const result =
-        manualOverride !== null
-          ? manualOverride
-          : nodeChecked !== undefined
-            ? nodeChecked
-            : allMentionedTasksCompleted;
+        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
 
       expect(result).toBe(true);
     });
@@ -236,11 +232,7 @@ describe('Task Mention Detection', () => {
       const allMentionedTasksCompleted = false;
 
       const result =
-        manualOverride !== null
-          ? manualOverride
-          : nodeChecked !== undefined
-            ? nodeChecked
-            : allMentionedTasksCompleted;
+        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
 
       expect(result).toBe(true);
     });
@@ -251,11 +243,7 @@ describe('Task Mention Detection', () => {
       const allMentionedTasksCompleted = true;
 
       const result =
-        manualOverride !== null
-          ? manualOverride
-          : nodeChecked !== undefined
-            ? nodeChecked
-            : allMentionedTasksCompleted;
+        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
 
       expect(result).toBe(true);
     });
