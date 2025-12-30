@@ -1,11 +1,11 @@
 import type {
+  ProjectUpdate,
   TaskProjectWithRelations,
   Workspace,
-  ProjectUpdate,
 } from '@tuturuuu/types';
-import type { Database } from '@tuturuuu/types/supabase';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { Database } from '@tuturuuu/types/supabase';
 import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import type { MotionProps } from 'framer-motion';
 

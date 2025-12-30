@@ -2,8 +2,8 @@ import { Plus, Search, Tag } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
-import { LabelCard } from './label-card';
 import type { TaskLabel } from '../types';
+import { LabelCard } from './label-card';
 
 interface LabelListProps {
   labels: TaskLabel[];

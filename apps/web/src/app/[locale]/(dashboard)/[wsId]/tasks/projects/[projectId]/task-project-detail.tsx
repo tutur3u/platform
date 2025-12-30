@@ -5,13 +5,13 @@ import { Sparkles, Target, TrendingUp } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
+import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
 import type { ListStatusFilter } from '@tuturuuu/ui/tu-do/shared/board-header';
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { TaskDialogManager } from '@tuturuuu/ui/tu-do/shared/task-dialog-manager';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 
 import { OverviewTab, ProjectHeader, TasksTab, UpdatesTab } from './components';

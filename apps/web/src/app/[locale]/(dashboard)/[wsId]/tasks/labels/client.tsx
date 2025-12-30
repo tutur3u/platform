@@ -45,7 +45,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
       }
       setIsLabelDialogOpen(false);
       setEditingLabel(null);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by hook
     }
   };
@@ -55,7 +55,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
     try {
       await deleteLabel(deletingLabel.id);
       setDeletingLabel(null);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by hook
     }
   };

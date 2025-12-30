@@ -6,8 +6,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { useProjectOverview } from '../project-overview-context';
 import { PriorityBadge } from '../../../components/project-badges';
+import { useProjectOverview } from '../project-overview-context';
 
 export function OverviewLinkedTasks() {
   const t = useTranslations('task_project_detail.overview');

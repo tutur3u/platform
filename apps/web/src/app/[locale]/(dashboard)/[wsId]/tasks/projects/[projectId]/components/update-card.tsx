@@ -1,11 +1,11 @@
 'use client';
 
 import {
+  Check,
   Edit2,
   Loader2,
   MoreVertical,
   Trash2,
-  Check,
   X,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -20,7 +20,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { motion } from 'framer-motion';
-import { useTranslations, useFormatter } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import type { UpdateCardProps } from '../types';
 
 export function UpdateCard({

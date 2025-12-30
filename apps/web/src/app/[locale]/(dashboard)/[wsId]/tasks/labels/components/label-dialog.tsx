@@ -17,7 +17,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { type TaskLabel, colorPresets } from '../types';
+import { colorPresets, type TaskLabel } from '../types';
 
 interface LabelDialogProps {
   label: TaskLabel | null;
@@ -58,7 +58,7 @@ export function LabelDialog({
         color: colorPresets[0] || '#EF4444',
       });
     }
-  }, [label, open]);
+  }, [label]);
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) return;
@@ -67,7 +67,7 @@ export function LabelDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>
             {label ? t('edit_label') : t('create_label')}

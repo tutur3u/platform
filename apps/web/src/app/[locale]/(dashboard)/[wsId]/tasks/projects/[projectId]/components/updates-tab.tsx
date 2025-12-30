@@ -4,11 +4,11 @@ import { Loader2, Send, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { motion } from 'framer-motion';
 import type { MotionProps } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { UpdateCard } from './update-card';
 import type { ProjectUpdate } from '../types';
+import { UpdateCard } from './update-card';
 
 interface UpdatesTabProps {
   updates: ProjectUpdate[];

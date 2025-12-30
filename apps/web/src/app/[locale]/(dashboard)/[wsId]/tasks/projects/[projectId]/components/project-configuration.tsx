@@ -1,4 +1,5 @@
 'use client';
+import { Circle } from '@tuturuuu/icons';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -12,9 +13,8 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { ProjectLeadSelector } from './project-lead-selector';
 import type { HealthStatus, TaskPriority } from '../types';
-import { Circle } from '@tuturuuu/icons';
+import { ProjectLeadSelector } from './project-lead-selector';
 import { useProjectOverview } from './project-overview-context';
 
 export function ProjectConfiguration() {
