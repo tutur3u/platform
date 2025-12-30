@@ -818,15 +818,15 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <span>
                     {selectedListId
                       ? availableLists?.find((l) => l.id === selectedListId)
-                          ?.name || 'List'
-                      : 'List'}
+                          ?.name || t('ws-task-boards.dialog.field.list')
+                      : t('ws-task-boards.dialog.field.list')}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-0">
                 {!availableLists || availableLists.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground text-sm">
-                    No lists found
+                    {t('ws-task-boards.dialog.no_lists_found')}
                   </div>
                 ) : (
                   <div
@@ -877,8 +877,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
                     {startDate || endDate
-                      ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
-                      : 'Dates'}
+                      ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
+                      : t('ws-task-boards.dialog.dates')}
                   </span>
                 </button>
               </PopoverTrigger>
@@ -888,7 +888,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     {/* Start Date */}
                     <div className="space-y-1.5">
                       <Label className="font-normal text-muted-foreground text-xs">
-                        Start Date
+                        {t('ws-task-boards.dialog.start_date')}
                       </Label>
                       <DateTimePicker
                         date={startDate}
@@ -904,7 +904,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     {/* Due Date */}
                     <div className="space-y-1.5">
                       <Label className="font-normal text-muted-foreground text-xs">
-                        Due Date
+                        {t('ws-task-boards.dialog.due_date')}
                       </Label>
                       <DateTimePicker
                         date={endDate}
@@ -921,7 +921,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
                           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
                           <span className="text-dynamic-orange">
-                            Start date is after due date
+                            {t('ws-task-boards.dialog.start_date_after_due_date')}
                           </span>
                         </div>
                       )}
@@ -929,7 +929,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       {/* Quick Due Date Actions */}
                       <div className="space-y-1.5 pt-2">
                         <Label className="font-normal text-muted-foreground text-xs">
-                          Quick Actions
+                          {t('ws-task-boards.dialog.quick_actions')}
                         </Label>
                         <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                           <Button
@@ -940,7 +940,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            Today
+                            {t('common.today')}
                           </Button>
                           <Button
                             type="button"
@@ -950,7 +950,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            Tomorrow
+                            {t('common.tomorrow')}
                           </Button>
                           <Button
                             type="button"
@@ -967,7 +967,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            This week
+                            {t('common.this_week')}
                           </Button>
                           <Button
                             type="button"
@@ -984,7 +984,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            Next week
+                            {t('common.next_week')}
                           </Button>
                         </div>
                       </div>
@@ -1017,17 +1017,19 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             estimationPoints,
                             boardConfig.estimation_type
                           )
-                        : 'Estimate'
-                      : 'Estimate'}
+                        : t('ws-task-boards.dialog.estimate')
+                      : t('ws-task-boards.dialog.estimate')}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-0">
                 {!boardConfig?.estimation_type ? (
                   <EmptyStateCard
-                    title="No estimation configured yet"
-                    description="Configure estimation for this board"
-                    actionLabel="Configure"
+                    title={t('ws-task-boards.dialog.no_estimation_configured')}
+                    description={t(
+                      'ws-task-boards.dialog.configure_estimation_description'
+                    )}
+                    actionLabel={t('common.configure')}
                     ActionIcon={Pen}
                     onAction={() => {
                       setIsEstimationPopoverOpen(false);
@@ -1063,7 +1065,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     ))}
                     {estimationPoints != null && (
                       <ClearMenuItem
-                        label="Clear estimate"
+                        label={t('ws-task-boards.dialog.clear_estimate')}
                         onClick={() => {
                           onEstimationChange(null);
                           setIsEstimationPopoverOpen(false);
@@ -1093,19 +1095,23 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Tag className="h-3.5 w-3.5" />
                   <span>
                     {selectedLabels.length === 0
-                      ? 'Labels'
+                      ? t('common.labels')
                       : selectedLabels.length === 1
                         ? selectedLabels[0]?.name
-                        : `${selectedLabels.length} labels`}
+                        : t('common.n_labels', {
+                            count: selectedLabels.length,
+                          })}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 p-0">
                 {availableLabels.length === 0 ? (
                   <EmptyStateCard
-                    title="No labels configured yet"
-                    description="Create labels to organize your tasks"
-                    actionLabel="Create Label"
+                    title={t('ws-task-boards.dialog.no_labels_configured')}
+                    description={t(
+                      'ws-task-boards.dialog.create_labels_description'
+                    )}
+                    actionLabel={t('ws-task-boards.dialog.create_label')}
                     ActionIcon={Plus}
                     onAction={() => {
                       setIsLabelsPopoverOpen(false);
@@ -1188,7 +1194,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="h-8 w-full justify-start"
                       >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Create New Label
+                        {t('ws-task-boards.dialog.create_new_label')}
                       </Button>
                     </div>
                   </>
@@ -1214,19 +1220,23 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Box className="h-3.5 w-3.5" />
                   <span>
                     {selectedProjects.length === 0
-                      ? 'Projects'
+                      ? t('common.projects')
                       : selectedProjects.length === 1
                         ? selectedProjects[0]?.name
-                        : `${selectedProjects.length} projects`}
+                        : t('common.n_projects', {
+                            count: selectedProjects.length,
+                          })}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 p-0">
                 {taskProjects.length === 0 ? (
                   <EmptyStateCard
-                    title="No projects configured yet"
-                    description="Create projects to coordinate tasks across boards"
-                    actionLabel="Create Project"
+                    title={t('ws-task-boards.dialog.no_projects_configured')}
+                    description={t(
+                      'ws-task-boards.dialog.create_projects_description'
+                    )}
+                    actionLabel={t('ws-task-boards.dialog.create_project')}
                     ActionIcon={Plus}
                     onAction={() => {
                       setIsProjectsPopoverOpen(false);
@@ -1290,7 +1300,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="h-8 w-full justify-start"
                       >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Create New Project
+                        {t('ws-task-boards.dialog.create_new_project')}
                       </Button>
                     </div>
                   </>
@@ -1317,17 +1327,20 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <Users className="h-3.5 w-3.5" />
                     <span>
                       {selectedAssignees.length === 0
-                        ? 'Assignees'
+                        ? t('common.assignees')
                         : selectedAssignees.length === 1
-                          ? selectedAssignees[0]?.display_name || 'Unknown'
-                          : `${selectedAssignees.length} assignees`}
+                          ? selectedAssignees[0]?.display_name ||
+                            t('ws-task-boards.dialog.unknown_user')
+                          : t('common.n_assignees', {
+                              count: selectedAssignees.length,
+                            })}
                     </span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-72 p-0">
                   {workspaceMembers.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
-                      No members found
+                      {t('ws-task-boards.dialog.no_members_found')}
                     </div>
                   ) : (
                     <>
@@ -1346,7 +1359,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                 onClick={() => onAssigneeToggle(assignee)}
                               >
                                 <UserAvatar user={assignee} size="xs" />
-                                {assignee.display_name || 'Unknown'}
+                                {assignee.display_name ||
+                                  t('ws-task-boards.dialog.unknown_user')}
                                 <X className="h-2.5 w-2.5" />
                               </Badge>
                             ))}
@@ -1383,7 +1397,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   className="shrink-0 border"
                                 />
                                 <span className="flex-1">
-                                  {member.display_name || 'Unknown'}
+                                  {member.display_name ||
+                                    t('ws-task-boards.dialog.unknown_user')}
                                 </span>
                                 <Plus className="h-4 w-4 shrink-0" />
                               </button>
@@ -1421,10 +1436,12 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <span>
                     {totalMinutes > 0
                       ? formatDuration(totalMinutes, t)
-                      : 'Schedule'}
+                      : t('ws-task-boards.dialog.schedule')}
                   </span>
                   {hasUnsavedSchedulingChanges && (
-                    <span className="text-[10px] opacity-75">unsaved</span>
+                    <span className="text-[10px] opacity-75">
+                      {t('ws-task-boards.dialog.unsaved')}
+                    </span>
                   )}
                 </button>
               </PopoverTrigger>
@@ -1435,7 +1452,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
                         <Clock className="h-3.5 w-3.5" />
-                        Estimated Duration
+                        {t('ws-task-boards.dialog.estimated_duration')}
                         <span className="text-dynamic-red">*</span>
                       </Label>
                       <div className="flex items-center gap-3">
@@ -1445,7 +1462,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           min={0}
                           max={999}
                           disabled={isLoading}
-                          label="h"
+                          label={t('ws-task-boards.dialog.h')}
                         />
                         <DurationInput
                           value={durationMinutes}
@@ -1454,7 +1471,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           max={45}
                           step={15}
                           disabled={isLoading}
-                          label="m"
+                          label={t('ws-task-boards.dialog.m')}
                           allowRollover={true}
                           canDecrement={
                             durationHours > 0 || durationMinutes > 0
@@ -1470,7 +1487,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
                       >
                         <Scissors className="h-3.5 w-3.5" />
-                        Splittable
+                        {t('ws-task-boards.dialog.splittable')}
                       </Label>
                       <Switch
                         id="splittable"
@@ -1485,7 +1502,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="font-normal text-muted-foreground text-xs">
-                            Min split
+                            {t('ws-task-boards.dialog.min_split')}
                           </Label>
                           <DurationInput
                             value={minSplitDurationMinutes ?? 30}
@@ -1496,12 +1513,12 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             max={maxSplitDurationMinutes ?? 480}
                             step={15}
                             disabled={isLoading}
-                            label="min"
+                            label={t('ws-task-boards.dialog.min')}
                           />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="font-normal text-muted-foreground text-xs">
-                            Max split
+                            {t('ws-task-boards.dialog.max_split')}
                           </Label>
                           <DurationInput
                             value={maxSplitDurationMinutes ?? 120}
@@ -1512,7 +1529,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             max={480}
                             step={15}
                             disabled={isLoading}
-                            label="min"
+                            label={t('ws-task-boards.dialog.min')}
                           />
                         </div>
                       </div>
@@ -1522,7 +1539,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
                         <Briefcase className="h-3.5 w-3.5" />
-                        Hour Type
+                        {t('ws-task-boards.dialog.hour_type')}
                         <span className="text-dynamic-red">*</span>
                       </Label>
                       <div
@@ -1723,7 +1740,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           ) : (
                             <>
                               <Save className="mr-1.5 h-3.5 w-3.5" />
-                              Save
+                              {t('common.save')}
                             </>
                           )}
                         </Button>
@@ -1746,7 +1763,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       totalDuration !== null &&
                       totalDuration > 0 && (
                         <ClearMenuItem
-                          label="Clear duration"
+                          label={t('ws-task-boards.dialog.clear_duration')}
                           onClick={() => {
                             onTotalDurationChange(null);
                             setIsSchedulingPopoverOpen(false);
