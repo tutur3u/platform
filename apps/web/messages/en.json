@@ -6902,6 +6902,11 @@
       "converted_to_task": "Converted to Task",
       "converted_to_project": "Converted to Project",
       "no_notes": "No notes yet. Add your first note above!",
+      "no_notes_description": "Use the command bar above to create your first note",
+      "no_archived_notes_description": "Archived notes will appear here",
+      "active_description": "Your quick notes and ideas",
+      "archived_description": "View your archived notes",
+      "untitled_note": "Untitled Note",
       "no_projects": "No projects yet. Convert a note to create your first project!",
       "conversion_dialog": {
         "title": "Convert Note",
@@ -6936,7 +6941,9 @@
         "content_placeholder": "Enter your note content...",
         "cancel": "Cancel",
         "save": "Save Changes",
-        "updating": "Updating..."
+        "updating": "Updating...",
+        "note_title_placeholder": "Note title...",
+        "close": "Close"
       },
       "success": {
         "note_created": "Note added successfully",
