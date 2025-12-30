@@ -74,7 +74,9 @@ export function ProjectConfiguration({
         <div className="grid gap-6 md:grid-cols-2">
           {/* Status */}
           <div className="space-y-2">
-            <Label className="text-foreground/70 text-sm">{t('status_label')}</Label>
+            <Label className="text-foreground/70 text-sm">
+              {t('status_label')}
+            </Label>
             <Select
               value={editedStatus || undefined}
               onValueChange={(value) => setEditedStatus(value)}
@@ -85,11 +87,21 @@ export function ProjectConfiguration({
               <SelectContent>
                 <SelectItem value="backlog">{t('status.backlog')}</SelectItem>
                 <SelectItem value="planned">{t('status.planned')}</SelectItem>
-                <SelectItem value="in_progress">{t('status.in_progress')}</SelectItem>
-                <SelectItem value="in_review">{t('status.in_review')}</SelectItem>
-                <SelectItem value="in_testing">{t('status.in_testing')}</SelectItem>
-                <SelectItem value="completed">{t('status.completed')}</SelectItem>
-                <SelectItem value="cancelled">{t('status.cancelled')}</SelectItem>
+                <SelectItem value="in_progress">
+                  {t('status.in_progress')}
+                </SelectItem>
+                <SelectItem value="in_review">
+                  {t('status.in_review')}
+                </SelectItem>
+                <SelectItem value="in_testing">
+                  {t('status.in_testing')}
+                </SelectItem>
+                <SelectItem value="completed">
+                  {t('status.completed')}
+                </SelectItem>
+                <SelectItem value="cancelled">
+                  {t('status.cancelled')}
+                </SelectItem>
                 <SelectItem value="active">{t('status.active')}</SelectItem>
                 <SelectItem value="on_hold">{t('status.on_hold')}</SelectItem>
               </SelectContent>
@@ -98,7 +110,9 @@ export function ProjectConfiguration({
 
           {/* Priority */}
           <div className="space-y-2">
-            <Label className="text-foreground/70 text-sm">{t('priority_label')}</Label>
+            <Label className="text-foreground/70 text-sm">
+              {t('priority_label')}
+            </Label>
             <Select
               value={editedPriority || undefined}
               onValueChange={(value) =>
@@ -139,7 +153,9 @@ export function ProjectConfiguration({
 
           {/* Health Status */}
           <div className="space-y-2">
-            <Label className="text-foreground/70 text-sm">{t('health_status_label')}</Label>
+            <Label className="text-foreground/70 text-sm">
+              {t('health_status_label')}
+            </Label>
             <Select
               value={editedHealthStatus || undefined}
               onValueChange={(value) =>
@@ -151,13 +167,19 @@ export function ProjectConfiguration({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="on_track">
-                  <span className="flex items-center gap-2">🟢 {t('health_status.on_track')}</span>
+                  <span className="flex items-center gap-2">
+                    🟢 {t('health_status.on_track')}
+                  </span>
                 </SelectItem>
                 <SelectItem value="at_risk">
-                  <span className="flex items-center gap-2">🟡 {t('health_status.at_risk')}</span>
+                  <span className="flex items-center gap-2">
+                    🟡 {t('health_status.at_risk')}
+                  </span>
                 </SelectItem>
                 <SelectItem value="off_track">
-                  <span className="flex items-center gap-2">🔴 {t('health_status.off_track')}</span>
+                  <span className="flex items-center gap-2">
+                    🔴 {t('health_status.off_track')}
+                  </span>
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -165,7 +187,9 @@ export function ProjectConfiguration({
 
           {/* Project Lead */}
           <div className="space-y-2">
-            <Label className="text-foreground/70 text-sm">{t('project_lead_label')}</Label>
+            <Label className="text-foreground/70 text-sm">
+              {t('project_lead_label')}
+            </Label>
             <ProjectLeadSelector
               leadId={editedLeadId}
               workspaceMembers={workspaceMembers}
@@ -176,7 +200,9 @@ export function ProjectConfiguration({
 
           {/* Start Date */}
           <div className="space-y-2">
-            <Label className="text-foreground/70 text-sm">{t('start_date_label')}</Label>
+            <Label className="text-foreground/70 text-sm">
+              {t('start_date_label')}
+            </Label>
             <Input
               type="date"
               value={editedStartDate}
@@ -187,7 +213,9 @@ export function ProjectConfiguration({
 
           {/* End Date */}
           <div className="space-y-2">
-            <Label className="text-foreground/70 text-sm">{t('end_date_label')}</Label>
+            <Label className="text-foreground/70 text-sm">
+              {t('end_date_label')}
+            </Label>
             <Input
               type="date"
               value={editedEndDate}

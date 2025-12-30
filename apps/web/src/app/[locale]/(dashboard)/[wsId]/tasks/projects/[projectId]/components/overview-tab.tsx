@@ -1,6 +1,13 @@
 'use client';
 
-import { ChevronRight, Edit2, Loader2, Settings, Sparkles, Target } from '@tuturuuu/icons';
+import {
+  ChevronRight,
+  Edit2,
+  Loader2,
+  Settings,
+  Sparkles,
+  Target,
+} from '@tuturuuu/icons';
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -14,7 +21,12 @@ import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ProjectConfiguration } from './project-configuration';
 import { ProjectSidebar } from './project-sidebar';
-import type { ActiveTab, HealthStatus, ProjectUpdate, TaskPriority } from '../types';
+import type {
+  ActiveTab,
+  HealthStatus,
+  ProjectUpdate,
+  TaskPriority,
+} from '../types';
 
 interface OverviewTabProps {
   project: TaskProjectWithRelations;
@@ -123,7 +135,9 @@ export function OverviewTab({
                   className="border-dynamic-purple/30 transition-all hover:border-dynamic-purple/50 hover:bg-dynamic-purple/10"
                 >
                   <Settings className="mr-2 h-4 w-4" />
-                  {showConfiguration ? t('hide_configuration') : t('show_configuration')}
+                  {showConfiguration
+                    ? t('hide_configuration')
+                    : t('show_configuration')}
                 </Button>
               </div>
             </div>

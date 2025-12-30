@@ -47,9 +47,8 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     project.description || ''
   );
   const [editedPriority, setEditedPriority] = useState(project.priority);
-  const [editedHealthStatus, setEditedHealthStatus] = useState<HealthStatus | null>(
-    project.health_status as HealthStatus | null
-  );
+  const [editedHealthStatus, setEditedHealthStatus] =
+    useState<HealthStatus | null>(project.health_status as HealthStatus | null);
   const [editedStatus, setEditedStatus] = useState(project.status);
   const [editedLeadId, setEditedLeadId] = useState(project.lead_id);
   const [editedStartDate, setEditedStartDate] = useState(
@@ -180,7 +179,9 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     editedDescription,
     setEditedDescription,
     editedPriority,
-    setEditedPriority: setEditedPriority as (value: TaskPriority | null) => void,
+    setEditedPriority: setEditedPriority as (
+      value: TaskPriority | null
+    ) => void,
     editedHealthStatus,
     setEditedHealthStatus: setEditedHealthStatus as (
       value: HealthStatus | null
