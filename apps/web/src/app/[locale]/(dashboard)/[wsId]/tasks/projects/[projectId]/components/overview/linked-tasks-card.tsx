@@ -8,6 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useProjectOverview } from '../project-overview-context';
+import { PriorityBadge } from '../../../components/project-badges';
 
 export function OverviewLinkedTasks() {
   const t = useTranslations('task_project_detail.overview');
@@ -43,23 +44,7 @@ export function OverviewLinkedTasks() {
               >
                 <div className="flex-1">
                   <h4 className="font-medium text-sm">{task.name}</h4>
-                  {task.priority && (
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'mt-1 text-xs',
-                        task.priority === 'critical'
-                          ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
-                          : task.priority === 'high'
-                            ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
-                            : task.priority === 'normal'
-                              ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
-                              : 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
-                      )}
-                    >
-                      {task.priority}
-                    </Badge>
-                  )}
+                  {task.priority && <PriorityBadge priority={task.priority} />}
                 </div>
                 {task.closed_at && (
                   <Badge
