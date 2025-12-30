@@ -1566,6 +1566,130 @@
     "word_added_label": "Văn bản mới",
     "word_removed_label": "Văn bản đã xóa"
   },
+  "task_project_detail": {
+    "tabs": {
+      "overview": "Tổng quan",
+      "updates": "Cập nhật",
+      "tasks": "Công việc"
+    },
+    "overview": {
+      "description": "Mô tả",
+      "edit_description_aria": "Chỉnh sửa mô tả dự án",
+      "show_configuration": "Hiện cấu hình",
+      "hide_configuration": "Ẩn cấu hình",
+      "describe_placeholder": "Mô tả dự án của bạn...",
+      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
+      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
+      "recent_updates": "Cập nhật gần đây",
+      "view_all": "Xem tất cả",
+      "unknown_user": "Không xác định",
+      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
+      "post_update": "Đăng cập nhật",
+      "linked_tasks": "Công việc đã liên kết",
+      "done": "Hoàn thành",
+      "no_tasks_linked": "Chưa liên kết công việc nào",
+      "link_tasks": "Liên kết công việc"
+    },
+    "configuration": {
+      "title": "Cấu hình dự án",
+      "status_label": "Trạng thái",
+      "status": {
+        "backlog": "Tồn đọng",
+        "planned": "Đã lên kế hoạch",
+        "in_progress": "Đang thực hiện",
+        "in_review": "Đang xem xét",
+        "in_testing": "Đang kiểm tra",
+        "completed": "Hoàn thành",
+        "cancelled": "Đã hủy",
+        "active": "Đang hoạt động",
+        "on_hold": "Tạm dừng"
+      },
+      "priority_label": "Mức độ ưu tiên",
+      "priority_placeholder": "Chọn mức độ ưu tiên",
+      "priority": {
+        "critical": "Nghiêm trọng",
+        "high": "Cao",
+        "normal": "Bình thường",
+        "low": "Thấp"
+      },
+      "health_status_label": "Tình trạng sức khỏe",
+      "health_status_placeholder": "Chọn tình trạng sức khỏe",
+      "health_status": {
+        "on_track": "Đúng tiến độ",
+        "at_risk": "Có rủi ro",
+        "off_track": "Lệch tiến độ"
+      },
+      "project_lead_label": "Trưởng dự án",
+      "start_date_label": "Ngày bắt đầu",
+      "end_date_label": "Ngày kết thúc",
+      "archive_project": "Lưu trữ dự án",
+      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định"
+    },
+    "header": {
+      "project_name_placeholder": "Tên dự án",
+      "edit_name_aria": "Chỉnh sửa tên dự án",
+      "cancel": "Hủy",
+      "saving": "Đang lưu...",
+      "save_changes": "Lưu thay đổi"
+    },
+    "lead_selector": {
+      "loading": "Đang tải...",
+      "select_lead": "Chọn trưởng dự án",
+      "no_lead": "Không có trưởng dự án"
+    },
+    "sidebar": {
+      "project_lead": "Trưởng dự án",
+      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
+      "select_lead_label": "Chọn trưởng dự án",
+      "unknown": "Không xác định",
+      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
+      "timeline": "Tiến độ",
+      "edit_timeline_aria": "Chỉnh sửa tiến độ",
+      "start_date": "Ngày bắt đầu",
+      "end_date": "Ngày kết thúc",
+      "start_label": "Bắt đầu:",
+      "end_label": "Kết thúc:",
+      "click_set_timeline": "Nhấp để đặt tiến độ",
+      "project_stats": "Thống kê dự án",
+      "total_tasks": "Tổng công việc",
+      "completed": "Đã hoàn thành",
+      "in_progress": "Đang thực hiện"
+    },
+    "tasks_tab": {
+      "no_tasks_title": "Chưa liên kết công việc nào",
+      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
+      "link_tasks": "Liên kết công việc"
+    },
+    "update_card": {
+      "unknown_user": "Không xác định",
+      "edited_badge": "Đã chỉnh sửa",
+      "actions_aria": "Hành động cập nhật",
+      "edit": "Chỉnh sửa",
+      "delete": "Xóa",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "updates_tab": {
+      "share_update": "Chia sẻ cập nhật",
+      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
+      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
+      "posting": "Đang đăng...",
+      "post_update": "Đăng cập nhật",
+      "no_updates_title": "Chưa có cập nhật nào",
+      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!"
+    },
+    "link_dialog": {
+      "title": "Liên kết công việc vào dự án",
+      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
+      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
+      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
+      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
+      "tip": "💡 Mẹo: Bạn cũng có thể tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này"
+    },
+    "common": {
+      "untitled_list": "Danh sách chưa đặt tên"
+    }
+  },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
     "plural": "Liên kết đã rút ngắn",
