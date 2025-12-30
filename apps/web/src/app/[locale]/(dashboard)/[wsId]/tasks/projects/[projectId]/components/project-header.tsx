@@ -5,7 +5,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { HealthStatusBadge, StatusBadge } from '../../components/project-badges';
+import {
+  HealthStatusBadge,
+  StatusBadge,
+} from '../../components/project-badges';
 import type { HealthStatus } from '../types';
 
 interface ProjectHeaderProps {

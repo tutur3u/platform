@@ -117,7 +117,9 @@ export function UpdatesTab({
         <motion.div {...fadeInViewVariant(0.1)}>
           <Card className="border-2 border-muted/20 p-12 text-center">
             <Sparkles className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mb-2 font-semibold text-lg">{t('no_updates_title')}</h3>
+            <h3 className="mb-2 font-semibold text-lg">
+              {t('no_updates_title')}
+            </h3>
             <p className="text-muted-foreground text-sm">
               {t('no_updates_description')}
             </p>

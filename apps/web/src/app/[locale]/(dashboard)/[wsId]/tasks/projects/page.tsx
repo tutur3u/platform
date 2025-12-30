@@ -128,9 +128,7 @@ export default async function TaskProjectsPage({ params }: Props) {
           <div className="space-y-6">
             <div>
               <h1 className="font-bold text-2xl">{t('page_heading')}</h1>
-              <p className="text-muted-foreground">
-                {t('page_subheading')}
-              </p>
+              <p className="text-muted-foreground">{t('page_subheading')}</p>
             </div>
 
             <TaskProjectsClient

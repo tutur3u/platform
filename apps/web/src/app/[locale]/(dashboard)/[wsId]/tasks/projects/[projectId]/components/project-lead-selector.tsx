@@ -31,7 +31,9 @@ export function ProjectLeadSelector({
           compact && 'h-9'
         )}
       >
-        <SelectValue placeholder={isLoading ? t('loading') : t('select_lead')} />
+        <SelectValue
+          placeholder={isLoading ? t('loading') : t('select_lead')}
+        />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="none">

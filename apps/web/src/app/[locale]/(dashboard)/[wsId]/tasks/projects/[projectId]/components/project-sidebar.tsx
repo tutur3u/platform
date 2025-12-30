@@ -74,7 +74,9 @@ export function ProjectSidebar({
 
           {showLeadSelector ? (
             <div className="space-y-2">
-              <Label className="text-foreground/70 text-xs">{t('select_lead_label')}</Label>
+              <Label className="text-foreground/70 text-xs">
+                {t('select_lead_label')}
+              </Label>
               <ProjectLeadSelector
                 leadId={editedLeadId}
                 workspaceMembers={workspaceMembers}
@@ -147,7 +149,9 @@ export function ProjectSidebar({
           {showTimelineEditor ? (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-foreground/70 text-xs">{t('start_date')}</Label>
+                <Label className="text-foreground/70 text-xs">
+                  {t('start_date')}
+                </Label>
                 <Input
                   type="date"
                   value={editedStartDate}
@@ -156,7 +160,9 @@ export function ProjectSidebar({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-foreground/70 text-xs">{t('end_date')}</Label>
+                <Label className="text-foreground/70 text-xs">
+                  {t('end_date')}
+                </Label>
                 <Input
                   type="date"
                   value={editedEndDate}

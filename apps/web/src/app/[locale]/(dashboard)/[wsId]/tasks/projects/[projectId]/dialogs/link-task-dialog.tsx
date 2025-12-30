@@ -44,9 +44,7 @@ export function LinkTaskDialog({
           <DialogTitle className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text text-transparent">
             {t('title')}
           </DialogTitle>
-          <DialogDescription>
-            {t('description')}
-          </DialogDescription>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -128,9 +126,7 @@ export function LinkTaskDialog({
 
           {/* Info */}
           <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3">
-            <p className="text-foreground/70 text-xs">
-              {t('tip')}
-            </p>
+            <p className="text-foreground/70 text-xs">{t('tip')}</p>
           </div>
         </div>
       </DialogContent>
