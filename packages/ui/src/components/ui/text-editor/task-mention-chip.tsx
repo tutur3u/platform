@@ -1008,18 +1008,6 @@ export function TaskMentionChip({
             // This fixes the issue where closing the dropdown causes the parent dialog to close
             e.preventDefault();
           }}
-          onPointerDownOutside={(e) => {
-            // Prevent the event from closing parent dialogs
-            e.preventDefault();
-          }}
-          onInteractOutside={(e) => {
-            // Prevent the event from closing parent dialogs
-            e.preventDefault();
-          }}
-          onFocusOutside={(e) => {
-            // Prevent focus moving outside from closing parent dialogs
-            e.preventDefault();
-          }}
         >
           {taskLoading ? (
             <div className="flex items-center justify-center p-4">
