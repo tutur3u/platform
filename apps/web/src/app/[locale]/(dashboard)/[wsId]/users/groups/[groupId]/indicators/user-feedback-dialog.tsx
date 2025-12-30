@@ -142,11 +142,12 @@ export default function UserFeedbackDialog({
   const hasMore = feedbackHistory?.hasMore || false;
 
   // Reset pagination when user changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: user?.id is intentionally included to reset currentPage when user context changes, even though it's not used inside the effect
   useEffect(() => {
     setCurrentPage(1);
     // Don't reset feedbacks, totalCount, and hasMore here - let React Query handle the data
     // The query will automatically refetch when user?.id changes due to the queryKey dependency
-  }, []);
+  }, [user?.id]);
 
   // Mutation for creating feedback
   const createFeedbackMutation = useMutation({

@@ -1,8 +1,9 @@
 -- Migrate user preferences from public.users to public.user_private_details
 -- This migration:
 -- 1. Adds task_auto_assign_to_self and fade_completed_tasks to user_private_details
--- 2. Migrates existing data from users table
--- 3. Drops the column from users table
+-- 2. Migrates existing task_auto_assign_to_self data from the users table
+--    (fade_completed_tasks is a new column and has no existing data to migrate)
+-- 3. Drops the task_auto_assign_to_self column from the users table
 
 -- Step 1: Add new columns to user_private_details
 ALTER TABLE "public"."user_private_details"
