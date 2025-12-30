@@ -16,6 +16,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
+import { PriorityBadge } from '../../components/project-badges';
 
 interface LinkTaskDialogProps {
   open: boolean;
@@ -77,23 +78,7 @@ export function LinkTaskDialog({
                           </p>
                         )}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {task.priority && (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'text-xs',
-                                task.priority === 'critical'
-                                  ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
-                                  : task.priority === 'high'
-                                    ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
-                                    : task.priority === 'normal'
-                                      ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
-                                      : 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
-                              )}
-                            >
-                              {task.priority}
-                            </Badge>
-                          )}
+                          {task.priority && <PriorityBadge priority={task.priority} />}
                         </div>
                       </div>
                       <Button

@@ -2,6 +2,7 @@
 
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import type { HealthStatus, TaskPriority } from '../types';
@@ -30,13 +31,24 @@ function formatInputToISO(dateString: string): string | null {
   return new Date(Date.UTC(year, month - 1, day)).toISOString();
 }
 
+interface UpdateProjectData {
+  name: string;
+  description: string | null;
+  priority: string | null;
+  health_status: HealthStatus | null;
+  status: string | null;
+  lead_id: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  archived: boolean;
+}
+
 export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   const router = useRouter();
 
   // Editing UI state
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [showLeadSelector, setShowLeadSelector] = useState(false);
   const [showTimelineEditor, setShowTimelineEditor] = useState(false);
   const [showConfiguration, setShowConfiguration] = useState(false);
@@ -85,26 +97,15 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     editedEndDate !== formatDateToInput(project.end_date) ||
     editedArchived !== (project.archived ?? false);
 
-  const saveProject = useCallback(async () => {
-    setIsSaving(true);
-
-    try {
+  // React Query mutation for updating project
+  const updateProjectMutation = useMutation({
+    mutationFn: async (data: UpdateProjectData) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/task-projects/${project.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: editedName,
-            description: editedDescription || null,
-            priority: editedPriority || null,
-            health_status: editedHealthStatus || null,
-            status: editedStatus,
-            lead_id: editedLeadId || null,
-            start_date: formatInputToISO(editedStartDate),
-            end_date: formatInputToISO(editedEndDate),
-            archived: editedArchived,
-          }),
+          body: JSON.stringify(data),
         }
       );
 
@@ -115,22 +116,37 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
         throw new Error(errorMessage);
       }
 
+      return response.json();
+    },
+    onSuccess: () => {
       toast.success('Project updated successfully');
       setIsEditingName(false);
       setIsEditingDescription(false);
       setShowTimelineEditor(false);
       router.refresh();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error updating project:', error);
       toast.error(
         error instanceof Error ? error.message : 'Failed to update project'
       );
-    } finally {
-      setIsSaving(false);
-    }
+    },
+  });
+
+  const saveProject = useCallback(() => {
+    updateProjectMutation.mutate({
+      name: editedName,
+      description: editedDescription || null,
+      priority: editedPriority || null,
+      health_status: editedHealthStatus || null,
+      status: editedStatus,
+      lead_id: editedLeadId || null,
+      start_date: formatInputToISO(editedStartDate),
+      end_date: formatInputToISO(editedEndDate),
+      archived: editedArchived,
+    });
   }, [
-    wsId,
-    project.id,
+    updateProjectMutation,
     editedName,
     editedDescription,
     editedPriority,
@@ -140,7 +156,6 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     editedStartDate,
     editedEndDate,
     editedArchived,
-    router,
   ]);
 
   const cancelEdits = useCallback(() => {
@@ -165,7 +180,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     setIsEditingName,
     isEditingDescription,
     setIsEditingDescription,
-    isSaving,
+    isSaving: updateProjectMutation.isPending,
     showLeadSelector,
     setShowLeadSelector,
     showTimelineEditor,

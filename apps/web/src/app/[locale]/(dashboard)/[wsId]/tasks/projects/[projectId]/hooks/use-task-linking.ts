@@ -2,8 +2,9 @@
 
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface UseTaskLinkingOptions {
   wsId: string;
@@ -19,8 +20,21 @@ export function useTaskLinking({
   const router = useRouter();
   const [showLinkTaskDialog, setShowLinkTaskDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
-  const [isLinkingTask, setIsLinkingTask] = useState(false);
+
+  // Query for fetching available tasks (only when dialog is open)
+  const { data: availableTasks = [] } = useQuery({
+    queryKey: ['workspace-tasks', wsId],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+      const data = await response.json();
+      return (data.tasks || []) as Task[];
+    },
+    enabled: showLinkTaskDialog,
+    staleTime: 60000, // 1 minute
+  });
 
   // Filter available tasks based on search
   const filteredAvailableTasks = useMemo(() => {
@@ -32,60 +46,45 @@ export function useTaskLinking({
     );
   }, [availableTasks, searchQuery, linkedTasks]);
 
-  // Fetch all workspace tasks for linking
-  const fetchAvailableTasks = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`);
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableTasks(data.tasks || []);
-      }
-    } catch (error) {
-      console.error('Error fetching available tasks:', error);
-    }
-  }, [wsId]);
-
-  // Link task to project
-  const linkTaskToProject = useCallback(
-    async (taskId: string) => {
-      setIsLinkingTask(true);
-      try {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId }),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to link task');
+  // Mutation for linking task to project
+  const linkTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId }),
         }
+      );
 
-        toast.success('Task linked successfully');
-        router.refresh();
-        setShowLinkTaskDialog(false);
-        setSearchQuery('');
-      } catch (error) {
-        console.error('Error linking task:', error);
-        toast.error(
-          error instanceof Error ? error.message : 'Failed to link task'
-        );
-      } finally {
-        setIsLinkingTask(false);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to link task');
       }
-    },
-    [wsId, projectId, router]
-  );
 
-  // Fetch available tasks when dialog opens
-  useEffect(() => {
-    if (showLinkTaskDialog) {
-      fetchAvailableTasks();
-    }
-  }, [showLinkTaskDialog, fetchAvailableTasks]);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success('Task linked successfully');
+      router.refresh();
+      setShowLinkTaskDialog(false);
+      setSearchQuery('');
+    },
+    onError: (error) => {
+      console.error('Error linking task:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to link task'
+      );
+    },
+  });
+
+  const linkTaskToProject = useCallback(
+    (taskId: string) => {
+      linkTaskMutation.mutate(taskId);
+    },
+    [linkTaskMutation]
+  );
 
   return {
     showLinkTaskDialog,
@@ -93,7 +92,7 @@ export function useTaskLinking({
     searchQuery,
     setSearchQuery,
     filteredAvailableTasks,
-    isLinkingTask,
+    isLinkingTask: linkTaskMutation.isPending,
     linkTaskToProject,
   };
 }

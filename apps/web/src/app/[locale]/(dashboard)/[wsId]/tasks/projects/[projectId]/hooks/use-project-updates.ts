@@ -1,7 +1,8 @@
 'use client';
 
 import { toast } from '@tuturuuu/ui/sonner';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
 import type { ProjectUpdate } from '../types';
 
 interface UseProjectUpdatesOptions {
@@ -13,50 +14,43 @@ export function useProjectUpdates({
   wsId,
   projectId,
 }: UseProjectUpdatesOptions) {
-  const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
-  const [isLoadingUpdates, setIsLoadingUpdates] = useState(false);
+  const queryClient = useQueryClient();
   const [newUpdateContent, setNewUpdateContent] = useState('');
-  const [isPostingUpdate, setIsPostingUpdate] = useState(false);
   const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
   const [editingUpdateContent, setEditingUpdateContent] = useState('');
-  const [isDeletingUpdateId, setIsDeletingUpdateId] = useState<string | null>(
-    null
-  );
+
+  // Query for fetching updates
+  const {
+    data: updates = [],
+    isLoading: isLoadingUpdates,
+    refetch: fetchUpdates,
+  } = useQuery({
+    queryKey: ['project-updates', wsId, projectId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch updates');
+      }
+      const data = await response.json();
+      return (data.updates || []) as ProjectUpdate[];
+    },
+    staleTime: 30000, // 30 seconds
+  });
 
   // Recent updates for overview (limit to 3)
   const recentUpdates = useMemo(() => updates.slice(0, 3), [updates]);
 
-  const fetchUpdates = useCallback(async () => {
-    setIsLoadingUpdates(true);
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUpdates(data.updates || []);
-      }
-    } catch (error) {
-      console.error('Error fetching updates:', error);
-    } finally {
-      setIsLoadingUpdates(false);
-    }
-  }, [wsId, projectId]);
-
-  const postUpdate = useCallback(async () => {
-    if (!newUpdateContent.trim()) {
-      toast.error('Update content cannot be empty');
-      return;
-    }
-
-    setIsPostingUpdate(true);
-    try {
+  // Mutation for posting new update
+  const postUpdateMutation = useMutation({
+    mutationFn: async (content: string) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: newUpdateContent }),
+          body: JSON.stringify({ content }),
         }
       );
 
@@ -65,46 +59,110 @@ export function useProjectUpdates({
         throw new Error(errorData.error || 'Failed to post update');
       }
 
-      const newUpdate = await response.json();
-      setUpdates((prev) => [newUpdate, ...prev]);
+      return response.json();
+    },
+    onSuccess: (newUpdate) => {
+      queryClient.setQueryData<ProjectUpdate[]>(
+        ['project-updates', wsId, projectId],
+        (old = []) => [newUpdate, ...old]
+      );
       setNewUpdateContent('');
       toast.success('Update posted successfully');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error posting update:', error);
       toast.error(
         error instanceof Error ? error.message : 'Failed to post update'
       );
-    } finally {
-      setIsPostingUpdate(false);
+    },
+  });
+
+  // Mutation for deleting update
+  const deleteUpdateMutation = useMutation({
+    mutationFn: async (updateId: string) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`,
+        { method: 'DELETE' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete update');
+      }
+
+      return updateId;
+    },
+    onSuccess: (updateId) => {
+      queryClient.setQueryData<ProjectUpdate[]>(
+        ['project-updates', wsId, projectId],
+        (old = []) => old.filter((u) => u.id !== updateId)
+      );
+      toast.success('Update deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting update:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete update'
+      );
+    },
+  });
+
+  // Mutation for editing update
+  const editUpdateMutation = useMutation({
+    mutationFn: async ({
+      updateId,
+      content,
+    }: {
+      updateId: string;
+      content: string;
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update');
+      }
+
+      return response.json();
+    },
+    onSuccess: (updatedUpdate, { updateId }) => {
+      queryClient.setQueryData<ProjectUpdate[]>(
+        ['project-updates', wsId, projectId],
+        (old = []) =>
+          old.map((u) => (u.id === updateId ? { ...u, ...updatedUpdate } : u))
+      );
+      setEditingUpdateId(null);
+      setEditingUpdateContent('');
+      toast.success('Update saved successfully');
+    },
+    onError: (error) => {
+      console.error('Error saving update:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save update'
+      );
+    },
+  });
+
+  const postUpdate = useCallback(() => {
+    if (!newUpdateContent.trim()) {
+      toast.error('Update content cannot be empty');
+      return;
     }
-  }, [wsId, projectId, newUpdateContent]);
+    postUpdateMutation.mutate(newUpdateContent);
+  }, [newUpdateContent, postUpdateMutation]);
 
   const deleteUpdate = useCallback(
-    async (updateId: string) => {
-      setIsDeletingUpdateId(updateId);
-      try {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`,
-          { method: 'DELETE' }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to delete update');
-        }
-
-        setUpdates((prev) => prev.filter((u) => u.id !== updateId));
-        toast.success('Update deleted successfully');
-      } catch (error) {
-        console.error('Error deleting update:', error);
-        toast.error(
-          error instanceof Error ? error.message : 'Failed to delete update'
-        );
-      } finally {
-        setIsDeletingUpdateId(null);
-      }
+    (updateId: string) => {
+      deleteUpdateMutation.mutate(updateId);
     },
-    [wsId, projectId]
+    [deleteUpdateMutation]
   );
 
   const startEditingUpdate = useCallback((update: ProjectUpdate) => {
@@ -118,48 +176,15 @@ export function useProjectUpdates({
   }, []);
 
   const saveEditedUpdate = useCallback(
-    async (updateId: string) => {
+    (updateId: string) => {
       if (!editingUpdateContent.trim()) {
         toast.error('Update content cannot be empty');
         return;
       }
-
-      try {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/task-projects/${projectId}/updates/${updateId}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: editingUpdateContent }),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to update');
-        }
-
-        const updatedUpdate = await response.json();
-        setUpdates((prev) =>
-          prev.map((u) => (u.id === updateId ? { ...u, ...updatedUpdate } : u))
-        );
-        setEditingUpdateId(null);
-        setEditingUpdateContent('');
-        toast.success('Update saved successfully');
-      } catch (error) {
-        console.error('Error saving update:', error);
-        toast.error(
-          error instanceof Error ? error.message : 'Failed to save update'
-        );
-      }
+      editUpdateMutation.mutate({ updateId, content: editingUpdateContent });
     },
-    [wsId, projectId, editingUpdateContent]
+    [editingUpdateContent, editUpdateMutation]
   );
-
-  // Load updates on mount
-  useEffect(() => {
-    if (updates.length === 0) fetchUpdates();
-  }, [fetchUpdates, updates.length]);
 
   return {
     updates,
@@ -167,11 +192,13 @@ export function useProjectUpdates({
     isLoadingUpdates,
     newUpdateContent,
     setNewUpdateContent,
-    isPostingUpdate,
+    isPostingUpdate: postUpdateMutation.isPending,
     editingUpdateId,
     editingUpdateContent,
     setEditingUpdateContent,
-    isDeletingUpdateId,
+    isDeletingUpdateId: deleteUpdateMutation.isPending
+      ? deleteUpdateMutation.variables
+      : null,
     fetchUpdates,
     postUpdate,
     deleteUpdate,
