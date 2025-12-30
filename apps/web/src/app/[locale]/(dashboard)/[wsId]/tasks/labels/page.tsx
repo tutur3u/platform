@@ -1,8 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { type TaskLabel } from './types';
 import TaskLabelsClient from './client';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Labels',
@@ -15,43 +18,38 @@ interface Props {
   }>;
 }
 
-interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-  creator_id: string | null;
-}
-
 export default async function TaskLabelsPage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
-
-  // Check permissions
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
-
-  // Fetch labels data
-  const { labels } = await getTaskLabels(wsId);
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="font-bold text-2xl tracking-tight">Task Labels</h1>
-        <p className="text-muted-foreground">
-          Organize and categorize your tasks with custom labels
-        </p>
-      </div>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        // Check permissions
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
 
-      {/* Labels Management */}
-      <TaskLabelsClient wsId={wsId} initialLabels={labels} />
-    </div>
+        if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+
+        // Fetch labels data
+        const { labels } = await getTaskLabels(wsId);
+
+        const t = await getTranslations('ws-tasks-labels');
+
+        return (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="space-y-2">
+              <h1 className="font-bold text-2xl tracking-tight">
+                {t('header')}
+              </h1>
+              <p className="text-muted-foreground">{t('description')}</p>
+            </div>
+
+            {/* Labels Management */}
+            <TaskLabelsClient wsId={wsId} initialLabels={labels} />
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
