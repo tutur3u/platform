@@ -2,7 +2,6 @@
 
 import { Link2, Target } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -13,7 +12,6 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { PriorityBadge } from '../../components/project-badges';
