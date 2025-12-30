@@ -40,7 +40,7 @@ export function TimeSelector({
   return (
     <Select
       value={value?.toString()}
-      onValueChange={(value) => onValueChange(parseInt(value))}
+      onValueChange={(value) => onValueChange(parseInt(value, 10))}
     >
       <SelectTrigger className="bg-background/50 transition hover:bg-background/80">
         <SelectValue placeholder="Select a time" />

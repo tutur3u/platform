@@ -62,7 +62,7 @@ interface UseTimeTrackerReturn {
 
 export function useTimeTracker({
   wsId,
-  tasks = [],
+  tasks: _tasks = [],
 }: UseTimeTrackerProps): UseTimeTrackerReturn {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);

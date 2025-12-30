@@ -41,7 +41,7 @@ export function Filter({ className }: { className: string }) {
         : 'date';
 
     setView(view);
-  }, [searchParams.get('view')]);
+  }, [searchParams.get]);
 
   useEffect(() => {
     if (searchParams.toString() === '') return;
@@ -54,7 +54,7 @@ export function Filter({ className }: { className: string }) {
 
     if (endDateParam !== dayjs(endDate).format('yyyy-MM-dd'))
       setEndDate(endDateParam ? new Date(endDateParam) : undefined);
-  }, [searchParams]);
+  }, [searchParams, endDate, startDate]);
 
   const resetFilter = () => {
     setView('date');

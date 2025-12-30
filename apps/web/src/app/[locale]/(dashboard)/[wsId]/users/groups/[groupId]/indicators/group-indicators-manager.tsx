@@ -444,6 +444,7 @@ export default function GroupIndicatorsManager({
       canCreateUserGroupsScores,
       canUpdateUserGroupsScores,
       canDeleteUserGroupsScores,
+      t,
     ]
   );
 
@@ -832,6 +833,7 @@ export default function GroupIndicatorsManager({
                     >
                       {canUpdateUserGroupsScores ? (
                         <button
+                          type="button"
                           className="w-full rounded px-2 py-1 text-center hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
                           onClick={() => openEditDialog(indicator)}
                         >
@@ -859,6 +861,7 @@ export default function GroupIndicatorsManager({
                     </td>
                     <td className="sticky left-12 z-10 border-r bg-background px-4 py-2">
                       <button
+                        type="button"
                         onClick={() => openFeedbackDialog(user)}
                         className="w-full rounded px-2 py-1 text-left transition-colors hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
                       >

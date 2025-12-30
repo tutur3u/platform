@@ -106,6 +106,7 @@ export function RequestViewMode({
                   onClick={() => onImageClick(index)}
                   className="group relative h-48 overflow-hidden rounded-lg border bg-muted/10 transition-all hover:ring-2 hover:ring-dynamic-blue/50"
                 >
+                  {/* biome-ignore lint/performance/noImgElement: Dynamic blob URL from Supabase storage */}
                   <img
                     src={url}
                     alt={`Attachment ${index + 1}`}

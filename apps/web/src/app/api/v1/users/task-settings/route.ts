@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const taskSettingsSchema = z.object({
   task_auto_assign_to_self: z.boolean().optional(),
+  fade_completed_tasks: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -20,11 +21,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch user task settings
+    // Fetch user task settings from user_private_details
     const { data: userData, error } = await supabase
-      .from('users')
-      .select('task_auto_assign_to_self')
-      .eq('id', user.id)
+      .from('user_private_details')
+      .select('task_auto_assign_to_self, fade_completed_tasks')
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
@@ -36,7 +37,8 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      task_auto_assign_to_self: userData.task_auto_assign_to_self ?? false,
+      task_auto_assign_to_self: userData?.task_auto_assign_to_self ?? false,
+      fade_completed_tasks: userData?.fade_completed_tasks ?? false,
     });
   } catch (error) {
     console.error('Error in user task settings API:', error);
@@ -65,14 +67,26 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const validatedData = taskSettingsSchema.parse(body);
 
-    // Update user task settings
+    // Build the update object dynamically (only include fields that are provided)
+    const updateData: {
+      task_auto_assign_to_self?: boolean;
+      fade_completed_tasks?: boolean;
+    } = {};
+
+    if (validatedData.task_auto_assign_to_self !== undefined) {
+      updateData.task_auto_assign_to_self =
+        validatedData.task_auto_assign_to_self;
+    }
+    if (validatedData.fade_completed_tasks !== undefined) {
+      updateData.fade_completed_tasks = validatedData.fade_completed_tasks;
+    }
+
+    // Update user task settings in user_private_details
     const { data, error } = await supabase
-      .from('users')
-      .update({
-        task_auto_assign_to_self: validatedData.task_auto_assign_to_self,
-      })
-      .eq('id', user.id)
-      .select('task_auto_assign_to_self')
+      .from('user_private_details')
+      .update(updateData)
+      .eq('user_id', user.id)
+      .select('task_auto_assign_to_self, fade_completed_tasks')
       .single();
 
     if (error) {
@@ -84,7 +98,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json({
-      task_auto_assign_to_self: data.task_auto_assign_to_self ?? false,
+      task_auto_assign_to_self: data?.task_auto_assign_to_self ?? false,
+      fade_completed_tasks: data?.fade_completed_tasks ?? false,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

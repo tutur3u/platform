@@ -496,6 +496,7 @@ export function TaskProjectDetail({
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // Filter lists based on selected status filter
   const filteredLists = useMemo(() => {
@@ -738,6 +739,8 @@ export function TaskProjectDetail({
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         );
       case 'list':
@@ -765,6 +768,8 @@ export function TaskProjectDetail({
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         );
     }
@@ -1912,6 +1917,8 @@ export function TaskProjectDetail({
                       isPersonalWorkspace={workspace.personal}
                       backUrl={`/${wsId}/tasks/projects`}
                       hideActions={true}
+                      isMultiSelectMode={isMultiSelectMode}
+                      setIsMultiSelectMode={setIsMultiSelectMode}
                     />
                   </div>
                   <Button

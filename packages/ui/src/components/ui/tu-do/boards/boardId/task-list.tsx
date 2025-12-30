@@ -6,6 +6,7 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MeasuredTaskCard } from './task';
 
@@ -168,6 +169,7 @@ function VirtualizedTaskListInner({
   optimisticUpdateInProgress,
   bulkUpdateCustomDueDate,
 }: VirtualizedTaskListProps) {
+  const t = useTranslations('common');
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { setNodeRef: setDroppableRef, isOver: isColumnDragOverRaw } =
     useDroppable({
@@ -367,12 +369,14 @@ function VirtualizedTaskListInner({
               />
             </svg>
           </div>
-          <p className="font-semibold text-primary text-sm">Drop here to add</p>
+          <p className="font-semibold text-primary text-sm">
+            {t('drop_here_to_add')}
+          </p>
         </div>
       )}
       {tasks.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
-          <p className="text-center text-sm">No tasks yet</p>
+          <p className="text-center text-sm">{t('no_tasks_yet')}</p>
         </div>
       ) : shouldVirtualize ? (
         <SortableContext

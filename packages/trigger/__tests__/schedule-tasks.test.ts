@@ -14,8 +14,11 @@ import {
 
 // Use vi.hoisted to properly hoist the storage variables
 const { taskRunFunctions, scheduledTaskRunFunctions } = vi.hoisted(() => ({
-  taskRunFunctions: {} as Record<string, Function>,
-  scheduledTaskRunFunctions: {} as Record<string, Function>,
+  taskRunFunctions: {} as Record<string, (...args: unknown[]) => unknown>,
+  scheduledTaskRunFunctions: {} as Record<
+    string,
+    (...args: unknown[]) => unknown
+  >,
 }));
 
 // Mock dependencies
@@ -46,15 +49,9 @@ vi.mock('../src/schedule-tasks-helper', () => ({
   schedulableTasksHelper: vi.fn(),
 }));
 
-// Import after mock setup - some imports are only used to trigger side effects
-// @ts-expect-error - imported for mock setup
-import { schedules, task } from '@trigger.dev/sdk/v3';
 import { getWorkspacesForSync } from '../src/google-calendar-sync';
 // Import module to trigger task registration (variables may appear unused)
-import {
-  scheduleTasksTrigger as _scheduleTasksTrigger,
-  scheduleTask,
-} from '../src/schedule-tasks';
+import { scheduleTask } from '../src/schedule-tasks';
 import { schedulableTasksHelper } from '../src/schedule-tasks-helper';
 
 describe('Schedule Tasks', () => {
@@ -79,7 +76,10 @@ describe('Schedule Tasks', () => {
       (schedulableTasksHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['schedule-task'];
-      const result = await runFn!({ ws_id: 'test-ws-id' });
+      const result = (await runFn!({ ws_id: 'test-ws-id' })) as {
+        success: boolean;
+        ws_id: string;
+      };
 
       expect(schedulableTasksHelper).toHaveBeenCalledWith('test-ws-id');
       expect(result.success).toBe(true);
@@ -91,7 +91,10 @@ describe('Schedule Tasks', () => {
       (schedulableTasksHelper as Mock).mockResolvedValue(mockResult);
 
       const runFn = taskRunFunctions['schedule-task'];
-      const result = await runFn!({ ws_id: 'test-ws-id' });
+      const result = (await runFn!({ ws_id: 'test-ws-id' })) as {
+        success: boolean;
+        error: string;
+      };
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('API error');
@@ -103,7 +106,10 @@ describe('Schedule Tasks', () => {
       );
 
       const runFn = taskRunFunctions['schedule-task'];
-      const result = await runFn!({ ws_id: 'test-ws-id' });
+      const result = (await runFn!({ ws_id: 'test-ws-id' })) as {
+        success: boolean;
+        error: string;
+      };
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Network error');
@@ -114,7 +120,10 @@ describe('Schedule Tasks', () => {
       (schedulableTasksHelper as Mock).mockRejectedValue('String error');
 
       const runFn = taskRunFunctions['schedule-task'];
-      const result = await runFn!({ ws_id: 'test-ws-id' });
+      const result = (await runFn!({ ws_id: 'test-ws-id' })) as {
+        success: boolean;
+        error: string;
+      };
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Unknown error');
@@ -134,7 +143,7 @@ describe('Schedule Tasks', () => {
       scheduleTask.trigger = mockTrigger;
 
       const runFn = scheduledTaskRunFunctions['schedule-tasks'];
-      const results = await runFn!();
+      const results = (await runFn!()) as unknown[];
 
       expect(getWorkspacesForSync).toHaveBeenCalled();
       expect(mockTrigger).toHaveBeenCalledTimes(3);
@@ -145,7 +154,7 @@ describe('Schedule Tasks', () => {
       (getWorkspacesForSync as Mock).mockResolvedValue([]);
 
       const runFn = scheduledTaskRunFunctions['schedule-tasks'];
-      const results = await runFn!();
+      const results = (await runFn!()) as unknown[];
 
       expect(results.length).toBe(0);
     });
@@ -162,12 +171,12 @@ describe('Schedule Tasks', () => {
       scheduleTask.trigger = mockTrigger;
 
       const runFn = scheduledTaskRunFunctions['schedule-tasks'];
-      const results = await runFn!();
+      const results = (await runFn!()) as { status: string; error?: string }[];
 
       expect(results.length).toBe(2);
-      expect(results[0].status).toBe('triggered');
-      expect(results[1].status).toBe('failed');
-      expect(results[1].error).toBe('Trigger failed');
+      expect(results[0]!.status).toBe('triggered');
+      expect(results[1]!.status).toBe('failed');
+      expect(results[1]!.error).toBe('Trigger failed');
     });
 
     it('should throw when getWorkspacesForSync fails', async () => {

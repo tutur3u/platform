@@ -68,7 +68,7 @@ export default function GroupMembers({
   initialData,
   pageSize,
   canViewPersonalInfo,
-  canViewPublicInfo,
+  canViewPublicInfo: _canViewPublicInfo,
   canUpdateUserGroups,
 }: GroupMembersProps) {
   const t = useTranslations();

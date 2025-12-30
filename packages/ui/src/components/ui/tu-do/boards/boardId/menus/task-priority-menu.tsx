@@ -24,6 +24,14 @@ interface TaskPriorityMenuProps {
   onPriorityChange: (priority: TaskPriority | null) => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
   onClose: () => void;
+  translations?: {
+    priority?: string;
+    none?: string;
+    urgent?: string;
+    high?: string;
+    medium?: string;
+    low?: string;
+  };
 }
 
 const priorityOptions: Array<{
@@ -68,20 +76,32 @@ const priorityIconColor: Record<TaskPriority, string> = {
   low: 'text-dynamic-blue',
 };
 
-const priorityLabel: Record<TaskPriority, string> = {
-  critical: 'Urgent',
-  high: 'High',
-  normal: 'Medium',
-  low: 'Low',
-};
-
 export function TaskPriorityMenu({
   currentPriority,
   isLoading,
   onPriorityChange,
   onMenuItemSelect,
   onClose,
+  translations,
 }: TaskPriorityMenuProps) {
+  // Use provided translations or fall back to English defaults
+  const t = {
+    priority: translations?.priority ?? 'Priority',
+    none: translations?.none ?? 'None',
+    urgent: translations?.urgent ?? 'Urgent',
+    high: translations?.high ?? 'High',
+    medium: translations?.medium ?? 'Medium',
+    low: translations?.low ?? 'Low',
+  };
+
+  // Translated priority labels
+  const priorityLabelTranslated: Record<TaskPriority, string> = {
+    critical: t.urgent,
+    high: t.high,
+    normal: t.medium,
+    low: t.low,
+  };
+
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
@@ -89,9 +109,11 @@ export function TaskPriorityMenu({
           <Flag className="h-4 w-4 text-dynamic-orange" />
         </div>
         <div className="flex w-full items-center justify-between">
-          <span>Priority</span>
+          <span>{t.priority}</span>
           <span className="ml-auto text-muted-foreground text-xs">
-            {currentPriority ? priorityLabel[currentPriority] : 'None'}
+            {currentPriority
+              ? priorityLabelTranslated[currentPriority]
+              : t.none}
           </span>
         </div>
       </DropdownMenuSubTrigger>
@@ -112,7 +134,7 @@ export function TaskPriorityMenu({
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2">
               <X className="h-4 w-4" />
-              None
+              {t.none}
             </div>
             {!currentPriority && <Check className="h-4 w-4" />}
           </div>
@@ -141,7 +163,7 @@ export function TaskPriorityMenu({
                     className={cn('h-4 w-4', iconColor)}
                     {...option.iconProps}
                   />
-                  {option.label}
+                  {priorityLabelTranslated[option.value]}
                 </div>
                 {isActive && <Check className={cn('h-4 w-4', iconColor)} />}
               </div>

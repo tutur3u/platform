@@ -39,7 +39,9 @@ export function AudioRecorder({
       mediaRecorderRef.current.stop();
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      for (const track of streamRef.current.getTracks()) {
+        track.stop();
+      }
       streamRef.current = null;
     }
     if (audioChunksRef.current.length > 0) {

@@ -21,7 +21,7 @@ export function AddAccountButton() {
         addAccount,
         accounts,
       });
-    } catch (error) {
+    } catch (_error) {
       // prepareAddAccountAndNavigate handles navigation even on error,
       // but reset loading state in case navigation was prevented
       setIsLoading(false);

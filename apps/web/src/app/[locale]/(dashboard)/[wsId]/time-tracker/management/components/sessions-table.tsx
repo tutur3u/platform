@@ -142,7 +142,7 @@ export default function SessionsTable({
 
       return `${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM YYYY')}`;
     } else {
-      const monthDate = dayjs(periodStr + '-01');
+      const monthDate = dayjs(`${periodStr}-01`);
 
       if (now.isSame(monthDate, 'month') && now.isSame(monthDate, 'year')) {
         return tPeriod('thisMonth', { month: monthDate.format('MMMM YYYY') });

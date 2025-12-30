@@ -132,7 +132,7 @@ export function ProductSelection({
             <div className="space-y-3">
               <Label>{t('ws-invoices.available_stock')}</Label>
               <div className="grid gap-3">
-                {availableInventory.map((inventory, index) => (
+                {availableInventory.map((inventory, _index) => (
                   <StockItem
                     key={`${inventory.warehouse_id}-${inventory.unit_id}`}
                     inventory={inventory}
@@ -208,7 +208,7 @@ export function ProductSelection({
                       type="number"
                       value={item.quantity}
                       onChange={(e) =>
-                        updateQuantity(index, parseInt(e.target.value) || 0)
+                        updateQuantity(index, parseInt(e.target.value, 10) || 0)
                       }
                       className="w-20 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       min="1"
@@ -311,7 +311,7 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
         <Input
           type="number"
           value={quantity}
-          onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+          onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
           className="w-20 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           min="1"
           {...(inventory.amount !== null && { max: inventory.amount })}

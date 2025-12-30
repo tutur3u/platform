@@ -17,7 +17,7 @@ export function AttendanceCalendar({
   locale,
 }: AttendanceCalendarProps) {
   const currentDate = useMemo(
-    () => new Date(selectedMonth + '-01'),
+    () => new Date(`${selectedMonth}-01`),
     [selectedMonth]
   );
 
@@ -66,7 +66,7 @@ export function AttendanceCalendar({
     if (!sessions || !Array.isArray(sessions)) return false;
 
     try {
-      const startOfMonth = new Date(selectedMonth + '-01');
+      const startOfMonth = new Date(`${selectedMonth}-01`);
       const nextMonth = new Date(startOfMonth);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
@@ -74,7 +74,7 @@ export function AttendanceCalendar({
         if (!session) return false;
         const sessionDate = new Date(session);
         // Check if date is valid
-        if (isNaN(sessionDate.getTime())) return false;
+        if (Number.isNaN(sessionDate.getTime())) return false;
         return (
           sessionDate >= startOfMonth &&
           sessionDate < nextMonth &&

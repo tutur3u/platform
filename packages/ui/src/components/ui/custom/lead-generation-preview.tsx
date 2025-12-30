@@ -27,7 +27,7 @@ interface LeadGenerationPreviewProps {
 }
 
 export default function LeadGenerationPreview({
-  t,
+  t: _t,
   parseDynamicText: externalParseDynamicText,
   getConfig: externalGetConfig,
   theme = 'light',
@@ -36,7 +36,7 @@ export default function LeadGenerationPreview({
   showCard = false,
   showMissingConfigWarning = false,
 
-  maxHeight,
+  maxHeight: _maxHeight,
 }: LeadGenerationPreviewProps) {
   // Create getConfig function based on provided props
   const getConfig = (id: string): string | null | undefined => {
@@ -163,11 +163,14 @@ export default function LeadGenerationPreview({
       {/* Header with Logo and Brand Info */}
       <div className="flex items-center justify-between gap-8">
         {brandLogoUrl && (
-          <img
-            src={brandLogoUrl}
-            alt="logo"
-            // onLoad={() => setIsLogoLoaded(true)}
-          />
+          <>
+            {/* biome-ignore lint/performance/noImgElement: external branding image */}
+            <img
+              src={brandLogoUrl}
+              alt="logo"
+              // onLoad={() => setIsLogoLoaded(true)}
+            />
+          </>
         )}
 
         <div className="text-center">

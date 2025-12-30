@@ -15,8 +15,8 @@ export async function GET(
   try {
     const { datasetId } = await params;
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
 

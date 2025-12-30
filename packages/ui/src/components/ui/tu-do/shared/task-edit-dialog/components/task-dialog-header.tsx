@@ -12,6 +12,7 @@ import { DialogDescription, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { UserPresenceAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
@@ -19,6 +20,7 @@ import type {
   PendingRelationship,
   PendingRelationshipType,
 } from '../types/pending-relationship';
+import { QuickSettingsPopover } from './quick-settings-popover';
 
 // Re-export for external use
 export type { PendingRelationship, PendingRelationshipType };
@@ -43,68 +45,64 @@ export interface DialogHeaderInfo {
 }
 
 /** Configuration for each relationship type */
-const RELATIONSHIP_HEADER_CONFIG: Record<
-  PendingRelationshipType,
-  {
-    title: string;
-    descriptionPrefix: string;
-    icon: ReactNode;
-    iconBgClass: string;
-    iconRingClass: string;
-  }
-> = {
+const RELATIONSHIP_HEADER_CONFIG = (t: any) => ({
   subtask: {
-    title: 'Create Sub-Task',
-    descriptionPrefix: 'Sub-task of',
+    title: t('ws-task-boards.dialog.create_subtask'),
+    descriptionPrefix: t('ws-task-boards.dialog.subtask_of'),
     icon: <ArrowDownFromLine className="h-4 w-4 text-dynamic-blue" />,
     iconBgClass: 'bg-dynamic-blue/10',
     iconRingClass: 'ring-dynamic-blue/20',
   },
   parent: {
-    title: 'Create Parent Task',
-    descriptionPrefix: 'Parent of',
+    title: t('ws-task-boards.dialog.create_parent_task'),
+    descriptionPrefix: t('ws-task-boards.dialog.parent_of'),
     icon: <ArrowUpFromLine className="h-4 w-4 text-dynamic-purple" />,
     iconBgClass: 'bg-dynamic-purple/10',
     iconRingClass: 'ring-dynamic-purple/20',
   },
   blocking: {
-    title: 'Create Blocking Task',
-    descriptionPrefix: 'Will be blocked by',
+    title: t('ws-task-boards.dialog.create_blocking_task'),
+    descriptionPrefix: t('ws-task-boards.dialog.will_be_blocked_by'),
     icon: <ShieldAlert className="h-4 w-4 text-dynamic-red" />,
     iconBgClass: 'bg-dynamic-red/10',
     iconRingClass: 'ring-dynamic-red/20',
   },
   'blocked-by': {
-    title: 'Create Blocked Task',
-    descriptionPrefix: 'Will block',
+    title: t('ws-task-boards.dialog.create_blocked_task'),
+    descriptionPrefix: t('ws-task-boards.dialog.will_block'),
     icon: <ShieldAlert className="h-4 w-4 text-dynamic-yellow" />,
     iconBgClass: 'bg-dynamic-yellow/10',
     iconRingClass: 'ring-dynamic-yellow/20',
   },
   related: {
-    title: 'Create Related Task',
-    descriptionPrefix: 'Related to',
+    title: t('ws-task-boards.dialog.create_related_task'),
+    descriptionPrefix: t('ws-task-boards.dialog.related_to'),
     icon: <Link2 className="h-4 w-4 text-dynamic-cyan" />,
     iconBgClass: 'bg-dynamic-cyan/10',
     iconRingClass: 'ring-dynamic-cyan/20',
   },
-};
+});
 
 /**
  * Helper to generate dialog header info based on task context
  */
-export function getTaskDialogHeaderInfo(options: {
-  isCreateMode: boolean;
-  parentTaskId?: string | null;
-  parentTaskName?: string | null;
-  pendingRelationship?: PendingRelationship | null;
-}): DialogHeaderInfo {
+export function getTaskDialogHeaderInfo(
+  options: {
+    isCreateMode: boolean;
+    parentTaskId?: string | null;
+    parentTaskName?: string | null;
+    pendingRelationship?: PendingRelationship | null;
+  },
+  t: any
+): DialogHeaderInfo {
   const { isCreateMode, parentTaskId, parentTaskName, pendingRelationship } =
     options;
 
+  const relationshipConfig = RELATIONSHIP_HEADER_CONFIG(t);
+
   // Handle pending relationship (new way)
   if (isCreateMode && pendingRelationship) {
-    const config = RELATIONSHIP_HEADER_CONFIG[pendingRelationship.type];
+    const config = relationshipConfig[pendingRelationship.type];
     return {
       title: config.title,
       description: (
@@ -123,7 +121,7 @@ export function getTaskDialogHeaderInfo(options: {
 
   // Handle legacy subtask creation via parentTaskId
   if (isCreateMode && parentTaskId) {
-    const config = RELATIONSHIP_HEADER_CONFIG.subtask;
+    const config = relationshipConfig.subtask;
     return {
       title: config.title,
       description: parentTaskName ? (
@@ -134,7 +132,7 @@ export function getTaskDialogHeaderInfo(options: {
           </span>
         </span>
       ) : (
-        'of parent task'
+        t('ws-task-boards.dialog.of_parent_task')
       ),
       icon: config.icon,
       iconBgClass: config.iconBgClass,
@@ -145,13 +143,13 @@ export function getTaskDialogHeaderInfo(options: {
   // Default create mode
   if (isCreateMode) {
     return {
-      title: 'Create New Task',
+      title: t('ws-task-boards.dialog.create_new_task'),
     };
   }
 
   // Edit mode
   return {
-    title: 'Edit Task',
+    title: t('ws-task-boards.dialog.edit_task'),
   };
 }
 
@@ -188,6 +186,8 @@ interface TaskDialogHeaderProps {
   handleSave: () => void;
   /** Callback to navigate back to the related task (for create mode with pending relationship) */
   onNavigateBack?: () => void;
+  /** Whether the workspace is personal (affects auto-assign setting) */
+  isPersonalWorkspace?: boolean;
 }
 
 export function TaskDialogHeader({
@@ -215,16 +215,22 @@ export function TaskDialogHeader({
   clearDraftState,
   handleSave,
   onNavigateBack,
+  isPersonalWorkspace = false,
 }: TaskDialogHeaderProps) {
+  const t = useTranslations();
+
   // Use custom headerInfo if provided, otherwise generate from task context
   const resolvedHeaderInfo =
     headerInfo ??
-    getTaskDialogHeaderInfo({
-      isCreateMode,
-      parentTaskId,
-      parentTaskName,
-      pendingRelationship,
-    });
+    getTaskDialogHeaderInfo(
+      {
+        isCreateMode,
+        parentTaskId,
+        parentTaskName,
+        pendingRelationship,
+      },
+      t
+    );
 
   // Determine the task name to navigate back to (from pending relationship or parent task)
   const navigateBackTaskName =
@@ -289,10 +295,10 @@ export function TaskDialogHeader({
                 />
                 <span className="font-medium">
                   {synced && connected
-                    ? 'Synced'
+                    ? t('ws-task-boards.dialog.synced')
                     : !connected
-                      ? 'Reconnecting...'
-                      : 'Syncing...'}
+                      ? t('ws-task-boards.dialog.reconnecting')
+                      : t('ws-task-boards.dialog.syncing')}
                 </span>
               </div>
             </TooltipTrigger>
@@ -300,28 +306,36 @@ export function TaskDialogHeader({
               <div className="space-y-1.5">
                 <p className="font-medium">
                   {synced && connected
-                    ? 'All changes synced'
+                    ? t('ws-task-boards.dialog.all_changes_synced')
                     : !connected
-                      ? 'Connection lost'
-                      : 'Syncing in progress'}
+                      ? t('ws-task-boards.dialog.connection_lost')
+                      : t('ws-task-boards.dialog.syncing_in_progress')}
                 </p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-dynamic-green' : 'bg-dynamic-red'}`}
                     />
-                    <span>{connected ? 'Connected' : 'Disconnected'}</span>
+                    <span>
+                      {connected
+                        ? t('ws-task-boards.dialog.connected')
+                        : t('ws-task-boards.dialog.disconnected')}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${synced ? 'bg-dynamic-green' : 'bg-dynamic-yellow'}`}
                     />
-                    <span>{synced ? 'Synced' : 'Syncing'}</span>
+                    <span>
+                      {synced
+                        ? t('ws-task-boards.dialog.synced')
+                        : t('ws-task-boards.dialog.syncing')}
+                    </span>
                   </div>
                 </div>
                 {!connected && (
                   <p className="text-muted-foreground text-xs">
-                    Attempting to reconnect automatically...
+                    {t('ws-task-boards.dialog.reconnect_automatic')}
                   </p>
                 )}
               </div>
@@ -348,9 +362,12 @@ export function TaskDialogHeader({
               checked={createMultiple}
               onCheckedChange={(v) => setCreateMultiple(Boolean(v))}
             />
-            Create multiple
+            {t('ws-task-boards.dialog.create_multiple')}
           </label>
         )}
+
+        {/* Quick Settings */}
+        <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
 
         <TaskDialogActions
           isCreateMode={isCreateMode}
@@ -380,12 +397,14 @@ export function TaskDialogHeader({
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
+                    {t('ws-task-boards.dialog.saving')}
                   </>
                 ) : (
                   <>
                     <Check className="h-4 w-4" />
-                    {isCreateMode ? 'Create Task' : 'Save Changes'}
+                    {isCreateMode
+                      ? t('ws-task-boards.dialog.create_task')
+                      : t('ws-task-boards.dialog.save_changes')}
                   </>
                 )}
               </Button>

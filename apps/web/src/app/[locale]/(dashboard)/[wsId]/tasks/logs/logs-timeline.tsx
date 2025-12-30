@@ -1945,12 +1945,12 @@ function getChangeDescription(
       const newText = getDescriptionText(entry.new_value);
       const oldSummary = oldText
         ? oldText.length > 30
-          ? oldText.slice(0, 27) + '...'
+          ? `${oldText.slice(0, 27)}...`
           : oldText
         : t('value.empty', { defaultValue: 'Empty' });
       const newSummary = newText
         ? newText.length > 30
-          ? newText.slice(0, 27) + '...'
+          ? `${newText.slice(0, 27)}...`
           : newText
         : t('value.empty', { defaultValue: 'Empty' });
 
@@ -2473,7 +2473,7 @@ function formatValue(
   // Default: convert to string
   const strValue = String(value);
   if (strValue.length > 40) {
-    return strValue.slice(0, 37) + '...';
+    return `${strValue.slice(0, 37)}...`;
   }
   return strValue;
 }

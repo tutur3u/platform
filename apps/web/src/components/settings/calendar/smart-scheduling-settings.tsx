@@ -96,7 +96,7 @@ export function SmartSchedulingSettings({
     buffer: string
   ) => {
     const bufferMinutes = parseInt(buffer, 10);
-    if (!isNaN(bufferMinutes) && bufferMinutes >= 0) {
+    if (!Number.isNaN(bufferMinutes) && bufferMinutes >= 0) {
       onChange({
         ...value,
         [field]: bufferMinutes,
@@ -106,7 +106,7 @@ export function SmartSchedulingSettings({
 
   const handleMaxMeetingsChange = (max: string) => {
     const maxMeetings = parseInt(max, 10);
-    if (!isNaN(maxMeetings) && maxMeetings > 0) {
+    if (!Number.isNaN(maxMeetings) && maxMeetings > 0) {
       onChange({
         ...value,
         maximumMeetingsPerDay: maxMeetings,

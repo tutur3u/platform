@@ -22,14 +22,18 @@ interface TaskDueDateMenuProps {
   onCustomDateClick: () => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
   onClose: () => void;
+  translations?: {
+    dueDate?: string;
+    none?: string;
+    today?: string;
+    tomorrow?: string;
+    yesterday?: string;
+    thisWeek?: string;
+    nextWeek?: string;
+    customDate?: string;
+    removeDueDate?: string;
+  };
 }
-
-const formatSmartDate = (date: Date) => {
-  if (isToday(date)) return 'Today';
-  if (isTomorrow(date)) return 'Tomorrow';
-  if (isYesterday(date)) return 'Yesterday';
-  return formatDistanceToNow(date, { addSuffix: true });
-};
 
 const calculateDaysForPreset = (
   preset: 'today' | 'tomorrow' | 'this_week' | 'next_week',
@@ -51,25 +55,6 @@ const calculateDaysForPreset = (
   }
 };
 
-const dueDateOptions = [
-  { preset: 'today' as const, label: 'Today', color: 'text-dynamic-green' },
-  {
-    preset: 'tomorrow' as const,
-    label: 'Tomorrow',
-    color: 'text-dynamic-blue',
-  },
-  {
-    preset: 'this_week' as const,
-    label: 'This Week',
-    color: 'text-dynamic-purple',
-  },
-  {
-    preset: 'next_week' as const,
-    label: 'Next Week',
-    color: 'text-dynamic-orange',
-  },
-];
-
 export function TaskDueDateMenu({
   endDate,
   isLoading,
@@ -78,10 +63,50 @@ export function TaskDueDateMenu({
   onCustomDateClick,
   onMenuItemSelect,
   onClose,
+  translations,
 }: TaskDueDateMenuProps) {
+  // Use provided translations or fall back to English defaults
+  const t = {
+    dueDate: translations?.dueDate ?? 'Due Date',
+    none: translations?.none ?? 'None',
+    today: translations?.today ?? 'Today',
+    tomorrow: translations?.tomorrow ?? 'Tomorrow',
+    yesterday: translations?.yesterday ?? 'Yesterday',
+    thisWeek: translations?.thisWeek ?? 'This Week',
+    nextWeek: translations?.nextWeek ?? 'Next Week',
+    customDate: translations?.customDate ?? 'Custom Date',
+    removeDueDate: translations?.removeDueDate ?? 'Remove Due Date',
+  };
+
+  const formatSmartDateTranslated = (date: Date) => {
+    if (isToday(date)) return t.today;
+    if (isTomorrow(date)) return t.tomorrow;
+    if (isYesterday(date)) return t.yesterday;
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+
+  const dueDateOptionsTranslated = [
+    { preset: 'today' as const, label: t.today, color: 'text-dynamic-green' },
+    {
+      preset: 'tomorrow' as const,
+      label: t.tomorrow,
+      color: 'text-dynamic-blue',
+    },
+    {
+      preset: 'this_week' as const,
+      label: t.thisWeek,
+      color: 'text-dynamic-purple',
+    },
+    {
+      preset: 'next_week' as const,
+      label: t.nextWeek,
+      color: 'text-dynamic-orange',
+    },
+  ];
+
   const currentDateDisplay = endDate
-    ? formatSmartDate(new Date(endDate))
-    : 'None';
+    ? formatSmartDateTranslated(new Date(endDate))
+    : t.none;
 
   return (
     <DropdownMenuSub>
@@ -90,14 +115,14 @@ export function TaskDueDateMenu({
           <Calendar className="h-4 w-4 text-dynamic-purple" />
         </div>
         <div className="flex w-full items-center justify-between">
-          <span>Due Date</span>
+          <span>{t.dueDate}</span>
           <span className="ml-auto text-muted-foreground text-xs">
             {currentDateDisplay}
           </span>
         </div>
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
-        {dueDateOptions.map((option) => (
+        {dueDateOptionsTranslated.map((option) => (
           <DropdownMenuItem
             key={option.preset}
             onSelect={(e) =>
@@ -128,7 +153,7 @@ export function TaskDueDateMenu({
         >
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Custom Date
+            {t.customDate}
           </div>
         </DropdownMenuItem>
         {endDate && (
@@ -145,7 +170,7 @@ export function TaskDueDateMenu({
               disabled={isLoading}
             >
               <X className="h-4 w-4" />
-              Remove Due Date
+              {t.removeDueDate}
             </DropdownMenuItem>
           </>
         )}

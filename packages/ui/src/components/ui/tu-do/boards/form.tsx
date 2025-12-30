@@ -176,7 +176,7 @@ export function TaskBoardForm({
               name="icon"
               render={() => (
                 <FormItem className="w-fit shrink-0">
-                  <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <FormLabel className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
                     {t('ws-task-boards.icon_label')}
                   </FormLabel>
                   <FormControl>
@@ -203,7 +203,7 @@ export function TaskBoardForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <FormLabel className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
                       {t('ws-task-boards.name')}
                     </FormLabel>
                     <FormControl>

@@ -126,7 +126,7 @@ function isOnboardingPath(pathname: string): boolean {
   const isLocale = supportedLocales.includes(firstSegment as Locale);
 
   const pathWithoutLocale = isLocale
-    ? '/' + segments.slice(1).join('/')
+    ? `/${segments.slice(1).join('/')}`
     : pathname;
 
   return (
@@ -148,7 +148,7 @@ function shouldBypassOnboardingCheck(pathname: string): boolean {
 
   // Get the path without locale prefix
   const pathWithoutLocale = isLocale
-    ? '/' + segments.slice(1).join('/')
+    ? `/${segments.slice(1).join('/')}`
     : pathname;
 
   // Check against bypass paths

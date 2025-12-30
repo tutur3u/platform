@@ -23,6 +23,8 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface TimelineProps {
@@ -170,6 +172,7 @@ export function TimelineBoard({
   className,
   onTaskPartialUpdate,
 }: TimelineProps) {
+  const t = useTranslations('common');
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<'day' | 'week'>('day');
   const [density, setDensity] = useState<
@@ -456,20 +459,20 @@ export function TimelineBoard({
         <div className="flex items-center justify-between gap-4 border-b bg-background/80 px-2 py-2 backdrop-blur-sm md:px-4">
           <div className="flex items-center gap-3 text-muted-foreground text-sm">
             <Clock className="h-4 w-4" />
-            <span className="font-medium">{spans.length} scheduled</span>
+            <span className="font-medium">
+              {spans.length} {t('scheduled')}
+            </span>
             {unscheduled.length > 0 && (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="cursor-help rounded-md bg-dynamic-amber/20 px-2 py-1 font-medium text-dynamic-amber text-xs">
-                      {unscheduled.length} unscheduled
+                      {unscheduled.length} {t('unscheduled')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-xs">
                     <p>
-                      {unscheduled.length} task
-                      {unscheduled.length !== 1 ? 's' : ''} without dates.
-                      Switch to Board or List view to manage unscheduled tasks.
+                      {t('tasks_without_dates', { count: unscheduled.length })}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -481,18 +484,18 @@ export function TimelineBoard({
                   <button
                     type="button"
                     className="inline-flex items-center gap-1 text-xs underline-offset-2 opacity-60 transition-opacity hover:underline hover:opacity-100 focus:outline-none"
-                    aria-label="Timeline help"
+                    aria-label={t('help')}
                   >
-                    <Info className="h-3.5 w-3.5" /> Help
+                    <Info className="h-3.5 w-3.5" /> {t('help')}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs">
-                  <p className="mb-2 font-medium">Timeline Navigation</p>
+                  <p className="mb-2 font-medium">{t('timeline_navigation')}</p>
                   <ul className="space-y-1 text-[11px]">
-                    <li>• Drag horizontally to explore timeline</li>
-                    <li>• Click task bars to edit details</li>
-                    <li>• Drag bar edges to resize duration</li>
-                    <li>• Use density controls to zoom</li>
+                    <li>• {t('timeline_help_drag')}</li>
+                    <li>• {t('timeline_help_click')}</li>
+                    <li>• {t('timeline_help_resize')}</li>
+                    <li>• {t('timeline_help_density')}</li>
                   </ul>
                 </TooltipContent>
               </Tooltip>
@@ -504,9 +507,9 @@ export function TimelineBoard({
               variant="outline"
               onClick={scrollToToday}
               className="h-7 px-3 text-xs"
-              aria-label="Scroll to today"
+              aria-label={t('today')}
             >
-              Today
+              {t('today')}
             </Button>
             <div className="flex items-center overflow-hidden rounded-md border bg-background/60">
               <Button
@@ -519,8 +522,8 @@ export function TimelineBoard({
               >
                 -
               </Button>
-              <span className="min-w-[86px] select-none px-2 text-center font-medium text-[11px] capitalize tracking-wide">
-                {density}
+              <span className="min-w-21.5 select-none px-2 text-center font-medium text-[11px] capitalize tracking-wide">
+                {t(density as 'compact' | 'comfortable' | 'expanded')}
               </span>
               <Button
                 size="sm"
@@ -539,7 +542,7 @@ export function TimelineBoard({
               onClick={toggleScale}
               className="hidden h-7 px-2 text-xs md:flex"
             >
-              {scale === 'day' ? 'Week' : 'Day'}
+              {scale === 'day' ? t('week') : t('day')}
             </Button>
           </div>
         </div>
@@ -768,7 +771,7 @@ export function TimelineBoard({
                             </p>
                           )}
                         <p className="mt-2 text-[10px] italic opacity-60">
-                          Click to edit • Drag edges to resize
+                          {t('click_to_edit_drag_to_resize')}
                         </p>
                       </TooltipContent>
                     </Tooltip>

@@ -93,6 +93,7 @@ export class GameStateManager {
     if (this.state.crops.has(key)) return false;
 
     // Check if player has seeds
+    // biome-ignore lint/correctness/useHookAtTopLevel: not a hook
     if (!this.state.inventory.useSeed(cropType)) return false;
 
     // Plant the crop

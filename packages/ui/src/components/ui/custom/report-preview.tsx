@@ -3,7 +3,7 @@ import { Separator } from '../separator';
 
 export default function ReportPreview({
   t,
-  lang,
+  lang: _lang,
   data,
   parseDynamicText,
   getConfig,
@@ -34,11 +34,14 @@ export default function ReportPreview({
         >
           <div className="flex items-center justify-between gap-8">
             {getConfig('BRAND_LOGO_URL') && (
-              <img
-                src={getConfig('BRAND_LOGO_URL')!}
-                alt="logo"
-                // onLoad={() => setIsLogoLoaded(true)}
-              />
+              <>
+                {/* biome-ignore lint/performance/noImgElement: specific logo scenario where dimensions are unknown */}
+                <img
+                  src={getConfig('BRAND_LOGO_URL')!}
+                  alt="logo"
+                  // onLoad={() => setIsLogoLoaded(true)}
+                />
+              </>
             )}
 
             <div className="text-center">

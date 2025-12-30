@@ -73,7 +73,7 @@ describe('Email Validation', () => {
     });
 
     it('rejects emails longer than 254 characters', () => {
-      const longEmail = 'a'.repeat(250) + '@b.com';
+      const longEmail = `${'a'.repeat(250)}@b.com`;
       const result = emailAddressSchema.safeParse(longEmail);
       expect(result.success).toBe(false);
     });

@@ -10,7 +10,7 @@ const paramsSchema = z.object({
 
 // POST handler for archiving
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {
@@ -71,7 +71,7 @@ export async function POST(
 
 // DELETE handler for unarchiving
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {

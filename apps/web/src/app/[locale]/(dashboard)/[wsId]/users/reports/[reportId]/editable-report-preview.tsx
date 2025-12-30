@@ -123,7 +123,7 @@ export default function EditableReportPreview({
       feedback: report?.feedback || '',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [report?.id, report?.title, report?.content, report?.feedback]);
+  }, [report?.title, report?.content, report?.feedback, form.reset]);
 
   const title = form.watch('title');
   const content = form.watch('content');
@@ -562,7 +562,7 @@ export default function EditableReportPreview({
 
       return { scores, averageScore, vitals };
     },
-    onSuccess: async (data) => {
+    onSuccess: async (_data) => {
       toast.success(t('ws-reports.scores_updated'));
 
       // Update the local report state
@@ -641,7 +641,7 @@ export default function EditableReportPreview({
             const styleElement = styleSheet.ownerNode as HTMLStyleElement;
             return `<style>${styleElement.innerHTML}</style>`;
           }
-        } catch (e) {
+        } catch (_e) {
           // Handle CORS issues with external stylesheets
           if (styleSheet.href) {
             return `<link rel="stylesheet" href="${styleSheet.href}">`;
@@ -980,7 +980,8 @@ export default function EditableReportPreview({
                       return (
                         <div key={log.id} className="relative">
                           {/* Timeline item */}
-                          <div
+                          <button
+                            type="button"
                             className={`flex cursor-pointer gap-4 ${isSelected ? 'opacity-100' : 'opacity-100'} `}
                             onClick={() =>
                               setSelectedLog((prev) =>
@@ -996,7 +997,6 @@ export default function EditableReportPreview({
                                     }
                               )
                             }
-                            role="button"
                             aria-pressed={isSelected}
                           >
                             {/* Timeline icon container */}
@@ -1047,7 +1047,7 @@ export default function EditableReportPreview({
                                 )}
                               </div>
                             </div>
-                          </div>
+                          </button>
                         </div>
                       );
                     })}

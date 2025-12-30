@@ -284,7 +284,7 @@ export function NotificationPagination({
                     <button
                       type="button"
                       onClick={() => {
-                        const current = parseInt(inputValue) || 2;
+                        const current = parseInt(inputValue, 10) || 2;
                         if (current > 1) {
                           setInputValue(String(current - 1));
                         }

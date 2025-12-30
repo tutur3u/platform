@@ -71,7 +71,7 @@ export async function PUT(
     let validatedTime = time;
     if (time) {
       const parsedTime = new Date(time);
-      if (isNaN(parsedTime.getTime())) {
+      if (Number.isNaN(parsedTime.getTime())) {
         return NextResponse.json(
           { error: 'Invalid time format' },
           { status: 400 }
@@ -120,7 +120,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {

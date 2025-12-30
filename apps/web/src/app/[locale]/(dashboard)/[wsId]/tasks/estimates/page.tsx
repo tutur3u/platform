@@ -3,10 +3,10 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import TaskEstimatesClient from './client';
+import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import TaskEstimatesClient from './client';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('task-estimates');

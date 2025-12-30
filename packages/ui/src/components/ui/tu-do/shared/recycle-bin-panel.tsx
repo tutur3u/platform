@@ -37,6 +37,39 @@ interface RecycleBinPanelProps {
   onOpenChange: (open: boolean) => void;
   boardId: string;
   lists: TaskList[];
+  translations?: {
+    recycleBin?: string;
+    recycleBinDescription?: string;
+    noDeletedTasks?: string;
+    deletedTasksWillAppearHere?: string;
+    selectedOfTotal?: string;
+    deletedTasksCount?: string;
+    restore?: string;
+    delete?: string;
+    restoreTasksTitle?: string;
+    restoreTasksDescription?: string;
+    cancel?: string;
+    restoring?: string;
+    permanentlyDeleteTitle?: string;
+    permanentlyDeleteDescription?: string;
+    deleting?: string;
+    deletePermanently?: string;
+    noListsAvailable?: string;
+    restoredTasks?: string;
+    failedToRestore?: string;
+    permanentlyDeleted?: string;
+    failedToDelete?: string;
+    deletedAgo?: string;
+    unknownList?: string;
+    fromList?: string;
+    nProjects?: string;
+    selectAllTasks?: string;
+    selectTask?: string;
+    critical?: string;
+    high?: string;
+    normal?: string;
+    low?: string;
+  };
 }
 
 export function RecycleBinPanel({
@@ -44,7 +77,62 @@ export function RecycleBinPanel({
   onOpenChange,
   boardId,
   lists,
+  translations,
 }: RecycleBinPanelProps) {
+  // Use provided translations or fall back to English defaults
+  const t = useMemo(
+    () => ({
+      recycleBin: translations?.recycleBin ?? 'Recycle Bin',
+      recycleBinDescription:
+        translations?.recycleBinDescription ??
+        'Restore or permanently delete tasks that were previously removed.',
+      noDeletedTasks: translations?.noDeletedTasks ?? 'No deleted tasks',
+      deletedTasksWillAppearHere:
+        translations?.deletedTasksWillAppearHere ??
+        'Deleted tasks will appear here.',
+      selectedOfTotal:
+        translations?.selectedOfTotal ?? '{selected} of {total} selected',
+      deletedTasksCount:
+        translations?.deletedTasksCount ?? '{count} deleted tasks',
+      restore: translations?.restore ?? 'Restore',
+      delete: translations?.delete ?? 'Delete',
+      restoreTasksTitle:
+        translations?.restoreTasksTitle ?? 'Restore {count} tasks?',
+      restoreTasksDescription:
+        translations?.restoreTasksDescription ??
+        'These tasks will be restored to their original lists (or the first available list if the original list was deleted).',
+      cancel: translations?.cancel ?? 'Cancel',
+      restoring: translations?.restoring ?? 'Restoring...',
+      permanentlyDeleteTitle:
+        translations?.permanentlyDeleteTitle ??
+        'Permanently delete {count} tasks?',
+      permanentlyDeleteDescription:
+        translations?.permanentlyDeleteDescription ??
+        'This action cannot be undone. These tasks will be permanently removed.',
+      deleting: translations?.deleting ?? 'Deleting...',
+      deletePermanently:
+        translations?.deletePermanently ?? 'Delete Permanently',
+      noListsAvailable: translations?.noListsAvailable ?? 'No lists available',
+      restoredTasks: translations?.restoredTasks ?? 'Restored {count} tasks',
+      failedToRestore:
+        translations?.failedToRestore ?? 'Failed to restore tasks',
+      permanentlyDeleted:
+        translations?.permanentlyDeleted ?? 'Permanently deleted {count} tasks',
+      failedToDelete: translations?.failedToDelete ?? 'Failed to delete tasks',
+      deletedAgo: translations?.deletedAgo ?? 'Deleted {time}',
+      unknownList: translations?.unknownList ?? 'Unknown List',
+      fromList: translations?.fromList ?? 'from: {list}',
+      nProjects: translations?.nProjects ?? '{count} projects',
+      selectAllTasks: translations?.selectAllTasks ?? 'Select all tasks',
+      selectTask: translations?.selectTask ?? 'Select {name}',
+      critical: translations?.critical ?? 'Critical',
+      high: translations?.high ?? 'High',
+      normal: translations?.normal ?? 'Normal',
+      low: translations?.low ?? 'Low',
+    }),
+    [translations]
+  );
+
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -116,7 +204,7 @@ export function RecycleBinPanel({
     if (selectedTasks.size === 0) return;
 
     if (!firstListId) {
-      toast.error('No lists available to restore tasks to');
+      toast.error(t.noListsAvailable);
       return;
     }
 
@@ -125,26 +213,30 @@ export function RecycleBinPanel({
         taskIds: Array.from(selectedTasks),
         fallbackListId: firstListId,
       });
-      toast.success(`Restored ${selectedTasks.size} task(s)`);
+      toast.success(
+        t.restoredTasks.replace('{count}', String(selectedTasks.size))
+      );
       setSelectedTasks(new Set());
       setRestoreDialogOpen(false);
     } catch {
-      toast.error('Failed to restore tasks');
+      toast.error(t.failedToRestore);
     }
-  }, [selectedTasks, firstListId, restoreMutation]);
+  }, [selectedTasks, firstListId, restoreMutation, t]);
 
   const handlePermanentDelete = useCallback(async () => {
     if (selectedTasks.size === 0) return;
 
     try {
       await deleteMutation.mutateAsync(Array.from(selectedTasks));
-      toast.success(`Permanently deleted ${selectedTasks.size} task(s)`);
+      toast.success(
+        t.permanentlyDeleted.replace('{count}', String(selectedTasks.size))
+      );
       setSelectedTasks(new Set());
       setDeleteDialogOpen(false);
     } catch {
-      toast.error('Failed to delete tasks');
+      toast.error(t.failedToDelete);
     }
-  }, [selectedTasks, deleteMutation]);
+  }, [selectedTasks, deleteMutation, t]);
 
   const allSelected =
     deletedTasks.length > 0 && selectedTasks.size === deletedTasks.length;
@@ -158,12 +250,9 @@ export function RecycleBinPanel({
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
-              Recycle Bin
+              {t.recycleBin}
             </SheetTitle>
-            <SheetDescription>
-              Deleted tasks from this board. Select tasks to restore or
-              permanently delete them.
-            </SheetDescription>
+            <SheetDescription>{t.recycleBinDescription}</SheetDescription>
           </SheetHeader>
 
           <div className="flex flex-1 flex-col overflow-hidden">
@@ -173,12 +262,17 @@ export function RecycleBinPanel({
                 <Checkbox
                   checked={allSelected}
                   onCheckedChange={handleSelectAll}
-                  aria-label="Select all tasks"
+                  aria-label={t.selectAllTasks}
                 />
                 <span className="text-foreground text-sm">
                   {someSelected
-                    ? `${selectedTasks.size} of ${deletedTasks.length} selected`
-                    : `${deletedTasks.length} deleted task(s)`}
+                    ? t.selectedOfTotal
+                        .replace('{selected}', String(selectedTasks.size))
+                        .replace('{total}', String(deletedTasks.length))
+                    : t.deletedTasksCount.replace(
+                        '{count}',
+                        String(deletedTasks.length)
+                      )}
                 </span>
               </div>
             )}
@@ -192,9 +286,9 @@ export function RecycleBinPanel({
               ) : deletedTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Trash2 className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                  <p className="text-muted-foreground">No deleted tasks</p>
+                  <p className="text-muted-foreground">{t.noDeletedTasks}</p>
                   <p className="mt-1 text-muted-foreground/70 text-xs">
-                    Deleted tasks will appear here
+                    {t.deletedTasksWillAppearHere}
                   </p>
                 </div>
               ) : (
@@ -207,6 +301,7 @@ export function RecycleBinPanel({
                       isSelected={selectedTasks.has(task.id)}
                       onSelect={(checked) => handleSelectTask(task.id, checked)}
                       disabled={isWorking}
+                      translations={t}
                     />
                   ))}
                 </div>
@@ -224,7 +319,7 @@ export function RecycleBinPanel({
                   disabled={isWorking}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Restore ({selectedTasks.size})
+                  {t.restore} ({selectedTasks.size})
                 </Button>
                 <Button
                   variant="destructive"
@@ -234,7 +329,7 @@ export function RecycleBinPanel({
                   disabled={isWorking}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete ({selectedTasks.size})
+                  {t.delete} ({selectedTasks.size})
                 </Button>
               </div>
             )}
@@ -250,16 +345,19 @@ export function RecycleBinPanel({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Restore {selectedTasks.size} task(s)?
+              {t.restoreTasksTitle.replace(
+                '{count}',
+                String(selectedTasks.size)
+              )}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              These tasks will be restored to their original lists. If the
-              original list no longer exists, they will be placed in the first
-              available list.
+              {t.restoreTasksDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isWorking}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isWorking}>
+              {t.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRestore}
               disabled={isWorking}
@@ -268,12 +366,12 @@ export function RecycleBinPanel({
               {isWorking ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Restoring...
+                  {t.restoring}
                 </>
               ) : (
                 <>
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Restore
+                  {t.restore}
                 </>
               )}
             </AlertDialogAction>
@@ -289,15 +387,19 @@ export function RecycleBinPanel({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Permanently delete {selectedTasks.size} task(s)?
+              {t.permanentlyDeleteTitle.replace(
+                '{count}',
+                String(selectedTasks.size)
+              )}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. These tasks will be permanently
-              removed.
+              {t.permanentlyDeleteDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isWorking}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isWorking}>
+              {t.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handlePermanentDelete}
               disabled={isWorking}
@@ -306,12 +408,12 @@ export function RecycleBinPanel({
               {isWorking ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  {t.deleting}
                 </>
               ) : (
                 <>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Permanently
+                  {t.deletePermanently}
                 </>
               )}
             </AlertDialogAction>
@@ -322,13 +424,22 @@ export function RecycleBinPanel({
   );
 }
 
-// Individual task row component
 interface RecycleBinTaskRowProps {
   task: Task;
   listName?: string;
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
   disabled?: boolean;
+  translations: {
+    critical: string;
+    high: string;
+    normal: string;
+    low: string;
+    selectTask: string;
+    fromList: string;
+    nProjects: string;
+    deletedAgo: string;
+  } & Record<string, string>;
 }
 
 function RecycleBinTaskRow({
@@ -337,6 +448,7 @@ function RecycleBinTaskRow({
   isSelected,
   onSelect,
   disabled,
+  translations: t,
 }: RecycleBinTaskRowProps) {
   const deletedTimeAgo = task.deleted_at
     ? formatDistanceToNow(new Date(task.deleted_at), { addSuffix: true })
@@ -349,21 +461,21 @@ function RecycleBinTaskRow({
     const priorityConfig: Record<string, { label: string; className: string }> =
       {
         critical: {
-          label: 'Critical',
+          label: t.critical,
           className: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
         },
         high: {
-          label: 'High',
+          label: t.high,
           className:
             'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
         },
         normal: {
-          label: 'Normal',
+          label: t.normal,
           className:
             'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
         },
         low: {
-          label: 'Low',
+          label: t.low,
           className:
             'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray',
         },
@@ -407,7 +519,7 @@ function RecycleBinTaskRow({
           onCheckedChange={onSelect}
           disabled={disabled}
           className="h-4 w-4 border-0 bg-transparent"
-          aria-label={`Select ${task.name}`}
+          aria-label={t.selectTask.replace('{name}', task.name || '')}
         />
       </div>
 
@@ -428,7 +540,7 @@ function RecycleBinTaskRow({
           {listName && (
             <span className="inline-flex items-center gap-1 rounded-md border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 py-0.5 text-[10px] text-dynamic-purple">
               <Trash2 className="h-2.5 w-2.5" />
-              from: {listName}
+              {t.fromList.replace('{list}', listName)}
             </span>
           )}
 
@@ -466,7 +578,7 @@ function RecycleBinTaskRow({
             <span className="inline-flex items-center gap-1 rounded-md border border-dynamic-sky/30 bg-dynamic-sky/10 px-2 py-0.5 text-[10px] text-dynamic-sky">
               {task.projects.length === 1
                 ? task.projects[0]?.name
-                : `${task.projects.length} projects`}
+                : t.nProjects.replace('{count}', String(task.projects.length))}
             </span>
           )}
         </div>
@@ -474,7 +586,7 @@ function RecycleBinTaskRow({
         {/* Deleted timestamp */}
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <Trash2 className="h-2.5 w-2.5" />
-          <span>Deleted {deletedTimeAgo}</span>
+          <span>{t.deletedAgo.replace('{time}', deletedTimeAgo)}</span>
         </div>
       </div>
     </div>

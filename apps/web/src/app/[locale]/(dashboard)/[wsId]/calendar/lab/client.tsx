@@ -67,7 +67,6 @@ interface CalendarLabClientPageProps {
 export default function CalendarLabClientPage({
   workspace,
   googleToken,
-  calendarConnections,
 }: CalendarLabClientPageProps) {
   const t = useTranslations('calendar_lab');
   const tCalendar = useTranslations('calendar');
@@ -284,8 +283,6 @@ export default function CalendarLabClientPage({
   }, [
     simulationResult,
     currentStep,
-    showDiff,
-    baselineResult,
     setPreviewEvents,
     clearPreviewEvents,
     convertToCalendarEvents,

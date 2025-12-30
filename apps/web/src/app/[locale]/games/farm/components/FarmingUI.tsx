@@ -97,6 +97,7 @@ export function FarmingUI({
       {/* Tab Navigation */}
       <div className="flex gap-1 rounded bg-dynamic-gray/10 p-1">
         <button
+          type="button"
           onClick={() => setActiveTab('tools')}
           className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'tools'
@@ -107,6 +108,7 @@ export function FarmingUI({
           Tools
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('seeds')}
           className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'seeds'
@@ -117,6 +119,7 @@ export function FarmingUI({
           Seeds
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('crops')}
           className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'crops'
@@ -127,6 +130,7 @@ export function FarmingUI({
           Crops
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('stats')}
           className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'stats'
@@ -146,6 +150,7 @@ export function FarmingUI({
             <div className="grid grid-cols-1 gap-2">
               {(['plant', 'water', 'harvest'] as const).map((tool) => (
                 <button
+                  type="button"
                   key={tool}
                   onClick={() =>
                     onToolSelect(selectedTool === tool ? null : tool)
@@ -206,6 +211,7 @@ export function FarmingUI({
                         {inventory.getSeeds(seed.type)}
                       </div>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           onBuySeeds(seed.type, 1);
@@ -257,6 +263,7 @@ export function FarmingUI({
                     <div className="text-right">
                       <div className="font-semibold">{quantity}</div>
                       <button
+                        type="button"
                         onClick={() => onSellCrops(cropType, 1)}
                         className="rounded bg-dynamic-orange/20 px-2 py-1 text-dynamic-orange text-xs hover:bg-dynamic-orange/30"
                       >
@@ -321,6 +328,7 @@ export function FarmingUI({
         <div className="mb-2 font-semibold text-xs">Quick Actions</div>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => {
               Object.values(CropType).forEach((type) => {
                 const quantity = inventory.getHarvestedCrops(type);
@@ -332,6 +340,7 @@ export function FarmingUI({
             Sell All
           </button>
           <button
+            type="button"
             onClick={() => {
               Object.values(CropType).forEach((type) => {
                 onBuySeeds(type, 1);

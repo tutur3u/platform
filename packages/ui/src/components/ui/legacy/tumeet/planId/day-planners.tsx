@@ -51,10 +51,10 @@ function DayPlanners({
     []
   );
 
-  function preventScroll(e: Event) {
+  const preventScroll = useCallback((e: Event) => {
     e.preventDefault();
     return false;
-  }
+  }, []);
 
   useEffect(() => {
     const scrollableDiv = document?.querySelector('#scrollable');
@@ -74,7 +74,7 @@ function DayPlanners({
       scrollableDiv?.removeEventListener('wheel', preventScroll);
       scrollableDiv?.removeEventListener('touchmove', preventScroll);
     };
-  }, [editing.enabled]);
+  }, [editing.enabled, preventScroll]);
 
   // Memoize expensive global availability calculations
   const { globalMaxAvailable, dayTimeblocksMap } = useMemo(() => {

@@ -146,7 +146,7 @@ export default function UserFeedbackDialog({
     setCurrentPage(1);
     // Don't reset feedbacks, totalCount, and hasMore here - let React Query handle the data
     // The query will automatically refetch when user?.id changes due to the queryKey dependency
-  }, [user?.id]);
+  }, []);
 
   // Mutation for creating feedback
   const createFeedbackMutation = useMutation({

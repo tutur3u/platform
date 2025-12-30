@@ -134,7 +134,10 @@ export default function PasswordForm({
                     className="h-4 w-4 animate-spin"
                     viewBox="0 0 24 24"
                     fill="none"
+                    role="img"
+                    aria-label="Loading"
                   >
+                    <title>Loading spinner</title>
                     <circle
                       className="opacity-25"
                       cx="12"

@@ -32,7 +32,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Member = {
   id: string;
@@ -90,7 +90,7 @@ export default function GroupAttendanceClient({
     if (format(next, 'yyyy-MM-dd') !== format(currentDate, 'yyyy-MM-dd')) {
       setCurrentDate(next);
     }
-  }, [dateParam, initialDateStr]);
+  }, [dateParam, initialDateStr, currentDate]);
 
   // Ensure URL contains date on first load (no refresh)
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function GroupAttendanceClient({
       searchParams.set({ date: initialDateStr }, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateParam, initialDateStr, searchParams.set]);
 
   // Sessions query (client) with initial data from RSC
   const { data: sessions = [] } = useQuery({
@@ -207,17 +207,20 @@ export default function GroupAttendanceClient({
   );
   // Submitting state comes from mutation below
 
-  const getEffectiveEntry = (userId: string): AttendanceEntry => {
-    const base = attendance[userId] || {
-      status: 'NONE' as AttendanceStatus,
-      note: '',
-    };
-    const pending = pendingMap.get(userId);
-    return {
-      status: pending?.status ?? base.status,
-      note: (pending?.note ?? base.note) || '',
-    };
-  };
+  const getEffectiveEntry = useCallback(
+    (userId: string): AttendanceEntry => {
+      const base = attendance[userId] || {
+        status: 'NONE' as AttendanceStatus,
+        note: '',
+      };
+      const pending = pendingMap.get(userId);
+      return {
+        status: pending?.status ?? base.status,
+        note: (pending?.note ?? base.note) || '',
+      };
+    },
+    [attendance, pendingMap]
+  );
 
   const setLocalAttendance = (
     userId: string,
@@ -408,7 +411,7 @@ export default function GroupAttendanceClient({
     });
     const notAttended = total - present - absent - late;
     return { total, present, absent, late, notAttended };
-  }, [pendingMap, attendance, members]);
+  }, [members, getEffectiveEntry]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">

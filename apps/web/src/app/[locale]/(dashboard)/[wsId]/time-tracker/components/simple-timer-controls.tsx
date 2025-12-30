@@ -252,6 +252,8 @@ export function SimpleTimerControls({
     wsId,
     queryClient,
     t,
+    currentUserId, // Refresh server-side data to update overview page stats
+    router.refresh,
   ]);
 
   // Stop timer
@@ -350,7 +352,6 @@ export function SimpleTimerControls({
     wsId,
     queryClient,
     workCategory,
-    formatDuration,
     t,
     currentUserId,
     router,

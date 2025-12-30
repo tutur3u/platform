@@ -12,7 +12,7 @@ const CreateEmailBlacklistSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const supabase = await createClient();
 
   // Check if user is authenticated and from root workspace

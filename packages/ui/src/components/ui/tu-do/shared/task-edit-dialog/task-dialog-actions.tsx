@@ -19,6 +19,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface TaskDialogActionsProps {
@@ -55,6 +56,7 @@ export function TaskDialogActions({
   onClearDraft,
   onNavigateBack,
 }: TaskDialogActionsProps) {
+  const t = useTranslations();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   // Determine if we should show the back button (create mode with a pending relationship)
@@ -70,7 +72,7 @@ export function TaskDialogActions({
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              title="More options"
+              title={t('common.more_options')}
             >
               <MoreVertical className="h-4 w-4" />
             </Button>
@@ -85,29 +87,29 @@ export function TaskDialogActions({
               }}
             >
               <ListTodo className="mr-2 h-4 w-4" />
-              View Board
+              {t('ws-task-boards.actions.view_board')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(taskId);
-                toast.success('Task ID copied to clipboard');
+                toast.success(t('ws-task-boards.messages.task_id_copied'));
                 setIsMoreMenuOpen(false);
               }}
             >
               <Copy className="mr-2 h-4 w-4" />
-              Copy ID
+              {t('common.copy_id')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
                 const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${taskId}`;
                 navigator.clipboard.writeText(url);
-                toast.success('Task link copied to clipboard');
+                toast.success(t('ws-task-boards.messages.task_link_copied'));
                 setIsMoreMenuOpen(false);
               }}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
-              Copy Link
+              {t('common.copy_link')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -118,7 +120,7 @@ export function TaskDialogActions({
               className="text-dynamic-red focus:text-dynamic-red"
             >
               <Trash className="mr-2 h-4 w-4" />
-              Delete
+              {t('common.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -133,13 +135,13 @@ export function TaskDialogActions({
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
               onClick={onNavigateBack}
-              title={`Back to "${navigateBackTaskName}"`}
+              title={t('common.back_to', { name: navigateBackTaskName })}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            Back to "{navigateBackTaskName}"
+            {t('common.back_to', { name: navigateBackTaskName })}
           </TooltipContent>
         </Tooltip>
       )}
@@ -150,7 +152,7 @@ export function TaskDialogActions({
         size="icon"
         className="h-7 w-7 text-muted-foreground hover:text-foreground"
         onClick={onClose}
-        title="Close"
+        title={t('common.close')}
       >
         <X className="h-4 w-4" />
       </Button>
@@ -162,7 +164,7 @@ export function TaskDialogActions({
           size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-dynamic-red"
           onClick={onClearDraft}
-          title="Discard draft"
+          title={t('common.discard_draft')}
         >
           <Trash className="h-4 w-4" />
         </Button>

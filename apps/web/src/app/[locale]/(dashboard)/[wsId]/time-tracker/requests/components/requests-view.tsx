@@ -314,19 +314,16 @@ export function RequestsView({
 
         <div className="flex items-center gap-2">
           {/* Threshold settings - only shown in 'all' mode */}
-          {isAllMode && (
-            <>
-              {thresholdLoading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <ThresholdSettingsDialog
-                  wsId={wsId}
-                  currentThreshold={thresholdData?.threshold}
-                  onUpdate={handleThresholdUpdate}
-                />
-              )}
-            </>
-          )}
+          {isAllMode &&
+            (thresholdLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <ThresholdSettingsDialog
+                wsId={wsId}
+                currentThreshold={thresholdData?.threshold}
+                onUpdate={handleThresholdUpdate}
+              />
+            ))}
           <span className="text-muted-foreground text-sm">
             {t('list.itemsPerPage')}:
           </span>

@@ -48,7 +48,7 @@ export function FileDisplay({
     };
 
     fetchSignedUrl();
-  }, [file.id]);
+  }, [file.id, file.name, path, supabase.storage.from]);
 
   if (!signedUrl) return null;
 

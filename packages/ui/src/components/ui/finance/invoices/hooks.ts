@@ -235,7 +235,7 @@ export const useUserAttendance = (
       const supabase = createClient();
 
       // Parse the month to get start and end dates
-      const startOfMonth = new Date(month + '-01');
+      const startOfMonth = new Date(`${month}-01`);
       const nextMonth = new Date(startOfMonth);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
@@ -469,8 +469,8 @@ export const usePendingInvoices = (
       const supabase = createClient();
 
       // Calculate limit and offset
-      const parsedPage = page ? parseInt(page) : 1;
-      const parsedSize = pageSize ? parseInt(pageSize) : 10;
+      const parsedPage = page ? parseInt(page, 10) : 1;
+      const parsedSize = pageSize ? parseInt(pageSize, 10) : 10;
       const offset = (parsedPage - 1) * parsedSize;
 
       // Fetch data with pagination

@@ -5,9 +5,9 @@
  * to prevent brute force attacks and enumeration.
  */
 
+import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
-import { createHash } from 'crypto';
 
 import {
   ABUSE_THRESHOLDS,
@@ -200,7 +200,9 @@ async function deleteKeys(...keys: string[]): Promise<void> {
     }
   }
 
-  keys.forEach((key) => memoryStore.delete(key));
+  for (const key of keys) {
+    memoryStore.delete(key);
+  }
 }
 
 /**

@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 // Utils
 import { findHorseRanking } from '@/utils/horseRacing';
 import type { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
@@ -125,79 +125,80 @@ export function HorseRacingVisualization() {
   }, [races.length, currentRaceIndex]);
 
   // Generate custom horses based on the selected distribution
-  const generateCustomHorses = (
-    count: number,
-    distributionType:
-      | 'uniform'
-      | 'normal'
-      | 'exponential'
-      | 'clustered' = 'uniform'
-  ) => {
-    const newHorses: Horse[] = [];
+  const generateCustomHorses = useCallback(
+    (
+      count: number,
+      distributionType:
+        | 'uniform'
+        | 'normal'
+        | 'exponential'
+        | 'clustered' = 'uniform'
+    ) => {
+      const newHorses: Horse[] = [];
 
-    // Reset relationship tracking
-    fasterThanRelationships.clear();
-    slowerThanRelationships.clear();
+      // Reset relationship tracking
+      fasterThanRelationships.clear();
+      slowerThanRelationships.clear();
 
-    // Generate speeds based on distribution type
-    for (let i = 0; i < count; i++) {
-      let speed: number;
+      // Generate speeds based on distribution type
+      for (let i = 0; i < count; i++) {
+        let speed: number;
 
-      switch (distributionType) {
-        case 'normal': {
-          // Bell curve distribution around 5.5
-          const u1 = Math.random();
-          const u2 = Math.random();
-          const z0 =
-            Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-          speed = 5.5 + 1.5 * z0; // Mean 5.5, SD 1.5
-          speed = Math.max(1, Math.min(10, speed)); // Clamp between 1-10
-          break;
-        }
-
-        case 'exponential':
-          // Exponential distribution - many slow horses, few fast ones
-          speed = -2 * Math.log(1 - Math.random());
-          speed = Math.max(1, Math.min(10, speed)); // Clamp between 1-10
-          break;
-
-        case 'clustered': {
-          // Three clusters of speeds (fast, medium, slow)
-          const cluster = Math.floor(Math.random() * 3);
-          if (cluster === 0) {
-            speed = 1 + Math.random() * 2; // Fast: 1-3
-          } else if (cluster === 1) {
-            speed = 4 + Math.random() * 3; // Medium: 4-7
-          } else {
-            speed = 8 + Math.random() * 2; // Slow: 8-10
+        switch (distributionType) {
+          case 'normal': {
+            // Bell curve distribution around 5.5
+            const u1 = Math.random();
+            const u2 = Math.random();
+            const z0 =
+              Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+            speed = 5.5 + 1.5 * z0; // Mean 5.5, SD 1.5
+            speed = Math.max(1, Math.min(10, speed)); // Clamp between 1-10
+            break;
           }
-          break;
+
+          case 'exponential':
+            // Exponential distribution - many slow horses, few fast ones
+            speed = -2 * Math.log(1 - Math.random());
+            speed = Math.max(1, Math.min(10, speed)); // Clamp between 1-10
+            break;
+
+          case 'clustered': {
+            // Three clusters of speeds (fast, medium, slow)
+            const cluster = Math.floor(Math.random() * 3);
+            if (cluster === 0) {
+              speed = 1 + Math.random() * 2; // Fast: 1-3
+            } else if (cluster === 1) {
+              speed = 4 + Math.random() * 3; // Medium: 4-7
+            } else {
+              speed = 8 + Math.random() * 2; // Slow: 8-10
+            }
+            break;
+          }
+          default:
+            // Uniform distribution (default)
+            speed = Math.random() * 9 + 1; // Random speed between 1 and 10
         }
 
-        case 'uniform':
-        default:
-          // Uniform distribution (default)
-          speed = Math.random() * 9 + 1; // Random speed between 1 and 10
+        newHorses.push({
+          id: i,
+          speed: speed,
+          color: COLORS[i % COLORS.length]!,
+        });
+
+        // Initialize relationship tracking for this horse
+        fasterThanRelationships.set(i, new Set<number>());
+        slowerThanRelationships.set(i, new Set<number>());
       }
 
-      newHorses.push({
-        id: i,
-        speed: speed,
-        color: COLORS[i % COLORS.length]!,
-      });
-
-      // Initialize relationship tracking for this horse
-      fasterThanRelationships.set(i, new Set<number>());
-      slowerThanRelationships.set(i, new Set<number>());
-    }
-
-    return newHorses;
-  };
+      return newHorses;
+    },
+    [fasterThanRelationships, slowerThanRelationships]
+  );
 
   // Initialize horses with the selected distribution when parameters change
   useMemo(() => {
     setHorses(generateCustomHorses(numHorses, speedDistribution));
-  }, [numHorses, speedDistribution]);
+  }, [numHorses, speedDistribution, generateCustomHorses]);
 
   // Reset the visualization and regenerate horses
   const regenerateHorses = () => {

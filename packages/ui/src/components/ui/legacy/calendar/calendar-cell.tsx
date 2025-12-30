@@ -183,7 +183,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   // Format time for display - only show when hovering
   const formatTime = (hour: number, minute: number = 0) => {
-    const base = dayjs(date + 'T00:00:00');
+    const base = dayjs(`${date}T00:00:00`);
     const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
     return dateTz
       .hour(hour)
@@ -192,11 +192,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Helper to get a Date object for a given hour/minute, timezone-aware
-  const getCellDate = (hour: number, minute: number = 0) => {
-    const base = dayjs(date + 'T00:00:00');
-    const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
-    return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
-  };
+  const getCellDate = useCallback(
+    (hour: number, minute: number = 0) => {
+      const base = dayjs(`${date}T00:00:00`);
+      const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
+      return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
+    },
+    [date, tz]
+  );
 
   // --- HTML5 Drag-and-Drop handlers for task scheduling ---
   const handleDragEnter = useCallback(
@@ -222,7 +225,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         }
       }
     },
-    [readOnly, setIsDropTarget]
+    [readOnly]
   );
 
   // Calculate preview height based on task duration
@@ -335,7 +338,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         console.error('Failed to drop task:', err);
       }
     },
-    [hour, getCellDate, scheduleTaskAsEvent]
+    [hour, getCellDate, scheduleTaskAsEvent, readOnly]
   );
 
   const handleCreateEvent = (midHour?: boolean) => {
@@ -349,7 +352,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Improved rounding for Google Calendar parity
-  const roundToNearest15Minutes = (date: Date): Date => {
+  const roundToNearest15Minutes = useCallback((date: Date): Date => {
     const minutes = date.getMinutes();
     const remainder = minutes % 15;
     const roundedMinutes =
@@ -359,7 +362,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     roundedDate.setSeconds(0);
     roundedDate.setMilliseconds(0);
     return roundedDate;
-  };
+  }, []);
 
   // Convert Y coordinate to time (hour and minutes)
   const yToTime = useCallback(
@@ -432,7 +435,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       document.body.style.cursor = 'ns-resize';
       document.body.classList.add('select-none');
     },
-    [yToTime, getCellDate, setIsDragging]
+    [yToTime, getCellDate, setIsDragging, readOnly, roundToNearest15Minutes]
   );
 
   // Enhanced mouse move for Google Calendar-like drag
@@ -483,7 +486,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         isReversed,
       });
     },
-    [isDragging, yToTime, getCellDate, autoScroll]
+    [isDragging, getCellDate, autoScroll, hour, roundToNearest15Minutes]
   );
 
   // Setup scroll container ref on mount
@@ -609,6 +612,9 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       addEmptyEvent,
       addEmptyEventWithDuration,
       setIsDragging,
+      hour,
+      readOnly,
+      roundToNearest15Minutes,
     ]
   );
 
@@ -851,7 +857,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       window.removeEventListener('blur', cancelDrag);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [setIsDragging]);
 
   return (
     <div
@@ -932,6 +938,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
       {/* Full cell clickable area (hour) */}
       <button
+        type="button"
         className={cn(
           'absolute inset-0 h-1/2 w-full focus:outline-none',
           readOnly ? 'cursor-default' : 'cursor-pointer'
@@ -949,6 +956,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 15-minute marker */}
       <button
+        type="button"
         className={cn(
           'absolute top-1/4 right-0 left-0 h-1/4 w-full focus:outline-none',
           readOnly ? 'cursor-default' : 'cursor-pointer'
@@ -966,6 +974,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {/* Half-hour marker */}
       <div className="absolute top-1/2 right-0 left-0 border-border/30 border-t border-dashed" />
       <button
+        type="button"
         className={cn(
           'absolute inset-x-0 top-1/2 h-1/2 focus:outline-none',
           readOnly ? 'cursor-default' : 'cursor-pointer'
@@ -983,6 +992,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 45-minute marker */}
       <button
+        type="button"
         className={cn(
           'absolute top-3/4 right-0 left-0 h-1/4 w-full focus:outline-none',
           readOnly ? 'cursor-default' : 'cursor-pointer'

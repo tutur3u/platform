@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import bcrypt from 'bcrypt';
 import { type NextRequest, NextResponse } from 'next/server';
-import { trackLinkClick } from '@/lib/analytics';
 import { z } from 'zod';
+import { trackLinkClick } from '@/lib/analytics';
 
 const verifySchema = z.object({
   linkId: z.string(),
