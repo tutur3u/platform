@@ -26,6 +26,41 @@ const payloadSchema = z.union([
   }),
 ]);
 
+const linkedTaskSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  completed_at: z.string().nullable(),
+  priority: z.string().nullable(),
+  listName: z.string().nullable(),
+});
+
+const relatedUserSchema = z.object({
+  id: z.string(),
+  display_name: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+});
+
+const projectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  ws_id: z.string(),
+  creator_id: z.string(),
+  lead_id: z.string().nullable(),
+  status: z.string().nullable(),
+  priority: z.string().nullable(),
+  health_status: z.string().nullable(),
+  start_date: z.string().nullable(),
+  end_date: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string().nullable(),
+  creator: relatedUserSchema.nullable().optional(),
+  lead: relatedUserSchema.nullable().optional(),
+  tasksCount: z.number(),
+  completedTasksCount: z.number(),
+  linkedTasks: z.array(linkedTaskSchema),
+});
+
 export function useTaskProjects({
   wsId,
   initialProjects,
@@ -44,7 +79,15 @@ export function useTaskProjects({
       if (!response.ok) {
         throw new Error(t('errors.fetch_projects'));
       }
-      return response.json();
+
+      const payload = await response.json();
+      const result = z.array(projectSchema).safeParse(payload);
+
+      if (!result.success) {
+        throw new Error(t('errors.fetch_projects'));
+      }
+
+      return result.data as TaskProject[];
     },
     initialData: initialProjects,
   });

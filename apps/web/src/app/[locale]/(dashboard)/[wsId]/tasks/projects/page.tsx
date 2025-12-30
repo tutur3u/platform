@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectsClient } from './task-projects-client';
@@ -12,10 +13,14 @@ import type {
   ProjectHealth,
 } from './types';
 
-export const metadata: Metadata = {
-  title: 'Task Projects',
-  description: 'Manage and track task projects across your workspace.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('task-projects');
+
+  return {
+    title: t('page_title'),
+    description: t('page_description'),
+  };
+}
 
 interface Props {
   params: Promise<{
@@ -24,6 +29,8 @@ interface Props {
 }
 
 export default async function TaskProjectsPage({ params }: Props) {
+  const t = await getTranslations('task-projects');
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -120,11 +127,8 @@ export default async function TaskProjectsPage({ params }: Props) {
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="font-bold text-2xl">Task Projects</h1>
-              <p className="text-muted-foreground">
-                Manage and track cross-functional task projects across your
-                workspace.
-              </p>
+              <h1 className="font-bold text-2xl">{t('page_heading')}</h1>
+              <p className="text-muted-foreground">{t('page_subheading')}</p>
             </div>
 
             <TaskProjectsClient

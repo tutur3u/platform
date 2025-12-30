@@ -1470,6 +1470,130 @@
     "word_added_label": "New text",
     "word_removed_label": "Deleted text"
   },
+  "task_project_detail": {
+    "tabs": {
+      "overview": "Overview",
+      "updates": "Updates",
+      "tasks": "Tasks"
+    },
+    "overview": {
+      "description": "Description",
+      "edit_description_aria": "Edit project description",
+      "show_configuration": "Show Configuration",
+      "hide_configuration": "Hide Configuration",
+      "describe_placeholder": "Describe your project...",
+      "rich_text_note": "Note: Rich text editing will be added in a future update",
+      "no_description": "No description provided. Click the edit icon to add one.",
+      "recent_updates": "Recent Updates",
+      "view_all": "View all",
+      "unknown_user": "Unknown",
+      "no_updates_yet": "No updates yet. Share the first one!",
+      "post_update": "Post Update",
+      "linked_tasks": "Linked Tasks",
+      "done": "Done",
+      "no_tasks_linked": "No tasks linked yet",
+      "link_tasks": "Link Tasks"
+    },
+    "configuration": {
+      "title": "Project Configuration",
+      "status_label": "Status",
+      "status": {
+        "backlog": "Backlog",
+        "planned": "Planned",
+        "in_progress": "In Progress",
+        "in_review": "In Review",
+        "in_testing": "In Testing",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "active": "Active",
+        "on_hold": "On Hold"
+      },
+      "priority_label": "Priority",
+      "priority_placeholder": "Select priority",
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "normal": "Normal",
+        "low": "Low"
+      },
+      "health_status_label": "Health Status",
+      "health_status_placeholder": "Select health status",
+      "health_status": {
+        "on_track": "On Track",
+        "at_risk": "At Risk",
+        "off_track": "Off Track"
+      },
+      "project_lead_label": "Project Lead",
+      "start_date_label": "Start Date",
+      "end_date_label": "End Date",
+      "archive_project": "Archive Project",
+      "archive_description": "Archived projects are hidden from default views"
+    },
+    "header": {
+      "project_name_placeholder": "Project name",
+      "edit_name_aria": "Edit project name",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "save_changes": "Save Changes"
+    },
+    "lead_selector": {
+      "loading": "Loading...",
+      "select_lead": "Select lead",
+      "no_lead": "No lead"
+    },
+    "sidebar": {
+      "project_lead": "Project Lead",
+      "edit_lead_aria": "Edit project lead",
+      "select_lead_label": "Select Lead",
+      "unknown": "Unknown",
+      "click_assign_lead": "Click to assign a lead",
+      "timeline": "Timeline",
+      "edit_timeline_aria": "Edit timeline",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "start_label": "Start:",
+      "end_label": "End:",
+      "click_set_timeline": "Click to set timeline",
+      "project_stats": "Project Stats",
+      "total_tasks": "Total Tasks",
+      "completed": "Completed",
+      "in_progress": "In Progress"
+    },
+    "tasks_tab": {
+      "no_tasks_title": "No tasks linked yet",
+      "no_tasks_description": "Link existing tasks or create new ones to get started",
+      "link_tasks": "Link Tasks"
+    },
+    "update_card": {
+      "unknown_user": "Unknown",
+      "edited_badge": "Edited",
+      "actions_aria": "Update actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "updates_tab": {
+      "share_update": "Share an Update",
+      "share_placeholder": "Share progress, celebrate wins, or discuss challenges...",
+      "rich_text_coming_soon": "Rich text editor, reactions, and attachments coming soon",
+      "posting": "Posting...",
+      "post_update": "Post Update",
+      "no_updates_title": "No updates yet",
+      "no_updates_description": "Be the first to share progress on this project!"
+    },
+    "link_dialog": {
+      "title": "Link Tasks to Project",
+      "description": "Search for existing tasks to link to this project",
+      "search_placeholder": "Search tasks by title...",
+      "no_tasks_found": "No tasks found matching \"{query}\"",
+      "start_typing": "Start typing to search for tasks",
+      "tip": "💡 Tip: You can also create new tasks directly in the Tasks tab and they will automatically be linked to this project"
+    },
+    "common": {
+      "untitled_list": "Untitled List"
+    }
+  },
   "link-shortener": {
     "title": "Link Shortener",
     "plural": "Shortened Links",
@@ -9157,6 +9281,10 @@
     }
   },
   "task-projects": {
+    "page_title": "Task Projects",
+    "page_description": "Manage and track task projects across your workspace.",
+    "page_heading": "Task Projects",
+    "page_subheading": "Manage and track cross-functional task projects across your workspace.",
     "toolbar": {
       "all_projects": "All Projects",
       "project_count": "{count} of {total} project",
