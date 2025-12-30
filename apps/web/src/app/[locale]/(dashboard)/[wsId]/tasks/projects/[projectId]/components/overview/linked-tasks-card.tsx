@@ -4,7 +4,6 @@ import { ChevronRight, Target } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useProjectOverview } from '../project-overview-context';
