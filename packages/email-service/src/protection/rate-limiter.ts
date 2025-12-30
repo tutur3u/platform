@@ -5,7 +5,7 @@
  * Uses Redis with in-memory fallback (consistent with abuse-protection patterns).
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 import {
   EMAIL_RATE_LIMITS,

@@ -14,7 +14,9 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
     <div data-testid="dropdown-sub">{children}</div>
   ),
   DropdownMenuSubTrigger: ({ children }: any) => (
-    <button data-testid="dropdown-trigger">{children}</button>
+    <button type="button" data-testid="dropdown-trigger">
+      {children}
+    </button>
   ),
   DropdownMenuSubContent: ({ children }: any) => (
     <div data-testid="dropdown-content">{children}</div>

@@ -14,8 +14,7 @@ const AI_PROMPT = '\n\nAssistant:';
 const vertexModel = vertex(DEFAULT_MODEL_NAME);
 
 async function generateChatTitle(message: string) {
-  const prompt =
-    'Generate a concise title for the following chat conversation: ' + message;
+  const prompt = `Generate a concise title for the following chat conversation: ${message}`;
 
   try {
     const res = await generateText({

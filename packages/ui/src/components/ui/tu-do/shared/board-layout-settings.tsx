@@ -73,7 +73,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { CreateListDialog } from './create-list-dialog';
 
 interface BoardLayoutSettingsProps {
@@ -82,6 +82,55 @@ interface BoardLayoutSettingsProps {
   boardId: string;
   lists: WorkspaceTaskList[];
   onUpdate: () => void;
+  translations?: {
+    boardLayoutSettings?: string;
+    boardLayoutSettingsDescription?: string;
+    addNewList?: string;
+    noListsInStatus?: string;
+    done?: string;
+    editList?: string;
+    updateListDescription?: string;
+    listName?: string;
+    statusCategory?: string;
+    color?: string;
+    cancel?: string;
+    saving?: string;
+    saveChanges?: string;
+    deleteListTitle?: string;
+    deleteListDescription?: string;
+    deleteListConfirm?: string;
+    listUpdatedSuccessfully?: string;
+    failedToUpdateList?: string;
+    colorUpdated?: string;
+    failedToUpdateColor?: string;
+    listDeletedSuccessfully?: string;
+    failedToDeleteList?: string;
+    cannotMoveToClosedStatus?: string;
+    listsReordered?: string;
+    failedToReorderLists?: string;
+    movedToStatus?: string;
+    // Status labels
+    backlog?: string;
+    active?: string;
+    doneStatus?: string;
+    closed?: string;
+    documents?: string;
+    // Common
+    task?: string;
+    tasks?: string;
+    changeColor?: string;
+    deleteList?: string;
+    gray?: string;
+    red?: string;
+    blue?: string;
+    green?: string;
+    yellow?: string;
+    orange?: string;
+    purple?: string;
+    pink?: string;
+    indigo?: string;
+    cyan?: string;
+  };
 }
 
 const statusConfig = {
@@ -135,20 +184,6 @@ const colorClasses: Record<SupportedColor, string> = {
   CYAN: 'border-dynamic-cyan/30 bg-dynamic-cyan/10',
 };
 
-const colorOptions: { value: SupportedColor; label: string; class: string }[] =
-  [
-    { value: 'GRAY', label: 'Gray', class: 'bg-dynamic-gray/30' },
-    { value: 'RED', label: 'Red', class: 'bg-dynamic-red/30' },
-    { value: 'BLUE', label: 'Blue', class: 'bg-dynamic-blue/30' },
-    { value: 'GREEN', label: 'Green', class: 'bg-dynamic-green/30' },
-    { value: 'YELLOW', label: 'Yellow', class: 'bg-dynamic-yellow/30' },
-    { value: 'ORANGE', label: 'Orange', class: 'bg-dynamic-orange/30' },
-    { value: 'PURPLE', label: 'Purple', class: 'bg-dynamic-purple/30' },
-    { value: 'PINK', label: 'Pink', class: 'bg-dynamic-pink/30' },
-    { value: 'INDIGO', label: 'Indigo', class: 'bg-dynamic-indigo/30' },
-    { value: 'CYAN', label: 'Cyan', class: 'bg-dynamic-cyan/30' },
-  ];
-
 interface SortableListItemProps {
   list: WorkspaceTaskList;
   taskCount: number;
@@ -156,6 +191,28 @@ interface SortableListItemProps {
   onDelete: (list: WorkspaceTaskList) => void;
   onColorChange: (listId: string, color: SupportedColor) => void;
   isDragging?: boolean;
+  translations?: {
+    task?: string;
+    tasks?: string;
+    changeColor?: string;
+    editList?: string;
+    deleteList?: string;
+    backlog?: string;
+    active?: string;
+    doneStatus?: string;
+    closed?: string;
+    documents?: string;
+    gray?: string;
+    red?: string;
+    blue?: string;
+    green?: string;
+    yellow?: string;
+    orange?: string;
+    purple?: string;
+    pink?: string;
+    indigo?: string;
+    cyan?: string;
+  };
 }
 
 function SortableListItem({
@@ -165,7 +222,106 @@ function SortableListItem({
   onDelete,
   onColorChange,
   isDragging,
+  translations,
 }: SortableListItemProps) {
+  const t = {
+    task: translations?.task ?? 'task',
+    tasks: translations?.tasks ?? 'tasks',
+    changeColor: translations?.changeColor ?? 'Change Color',
+    editList: translations?.editList ?? 'Edit List',
+    deleteList: translations?.deleteList ?? 'Delete List',
+    backlog: translations?.backlog ?? 'Backlog',
+    active: translations?.active ?? 'Active',
+    doneStatus: translations?.doneStatus ?? 'Done',
+    closed: translations?.closed ?? 'Closed',
+    documents: translations?.documents ?? 'Documents',
+    gray: translations?.gray ?? 'Gray',
+    red: translations?.red ?? 'Red',
+    blue: translations?.blue ?? 'Blue',
+    green: translations?.green ?? 'Green',
+    yellow: translations?.yellow ?? 'Yellow',
+    orange: translations?.orange ?? 'Orange',
+    purple: translations?.purple ?? 'Purple',
+    pink: translations?.pink ?? 'Pink',
+    indigo: translations?.indigo ?? 'Indigo',
+    cyan: translations?.cyan ?? 'Cyan',
+  };
+
+  const statusLabels: Record<TaskBoardStatus, string> = {
+    not_started: t.backlog,
+    active: t.active,
+    done: t.doneStatus,
+    closed: t.closed,
+    documents: t.documents,
+  };
+
+  const colorOptions = useMemo(
+    () => [
+      {
+        value: 'GRAY' as SupportedColor,
+        label: t.gray,
+        class: 'bg-dynamic-gray/30',
+      },
+      {
+        value: 'RED' as SupportedColor,
+        label: t.red,
+        class: 'bg-dynamic-red/30',
+      },
+      {
+        value: 'BLUE' as SupportedColor,
+        label: t.blue,
+        class: 'bg-dynamic-blue/30',
+      },
+      {
+        value: 'GREEN' as SupportedColor,
+        label: t.green,
+        class: 'bg-dynamic-green/30',
+      },
+      {
+        value: 'YELLOW' as SupportedColor,
+        label: t.yellow,
+        class: 'bg-dynamic-yellow/30',
+      },
+      {
+        value: 'ORANGE' as SupportedColor,
+        label: t.orange,
+        class: 'bg-dynamic-orange/30',
+      },
+      {
+        value: 'PURPLE' as SupportedColor,
+        label: t.purple,
+        class: 'bg-dynamic-purple/30',
+      },
+      {
+        value: 'PINK' as SupportedColor,
+        label: t.pink,
+        class: 'bg-dynamic-pink/30',
+      },
+      {
+        value: 'INDIGO' as SupportedColor,
+        label: t.indigo,
+        class: 'bg-dynamic-indigo/30',
+      },
+      {
+        value: 'CYAN' as SupportedColor,
+        label: t.cyan,
+        class: 'bg-dynamic-cyan/30',
+      },
+    ],
+    [
+      t.gray,
+      t.red,
+      t.blue,
+      t.green,
+      t.yellow,
+      t.orange,
+      t.purple,
+      t.pink,
+      t.indigo,
+      t.cyan,
+    ]
+  );
+
   const {
     attributes,
     listeners,
@@ -222,11 +378,11 @@ function SortableListItem({
           <div className="flex items-center gap-2">
             <span className="truncate font-medium text-sm">{list.name}</span>
             <Badge variant="secondary" className="shrink-0 text-[10px]">
-              {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+              {taskCount} {taskCount === 1 ? t.task : t.tasks}
             </Badge>
           </div>
           <p className="truncate text-muted-foreground text-xs">
-            {list.status && statusConfig[list.status].label}
+            {list.status && statusLabels[list.status]}
           </p>
         </div>
       </div>
@@ -243,7 +399,7 @@ function SortableListItem({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <div className="px-2 py-1 font-medium text-muted-foreground text-xs">
-            Change Color
+            {t.changeColor}
           </div>
           <div className="grid grid-cols-5 gap-1 p-2">
             {colorOptions.map((color) => (
@@ -263,7 +419,7 @@ function SortableListItem({
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onEdit(list)} className="gap-2">
             <Pencil className="h-4 w-4" />
-            Edit List
+            {t.editList}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -271,7 +427,7 @@ function SortableListItem({
             className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
           >
             <Trash2 className="h-4 w-4" />
-            Delete List
+            {t.deleteList}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -285,8 +441,143 @@ export function BoardLayoutSettings({
   boardId,
   lists,
   onUpdate,
+  translations,
 }: BoardLayoutSettingsProps) {
+  const t = useMemo(
+    () => ({
+      boardLayoutSettings:
+        translations?.boardLayoutSettings ?? 'Board Layout Settings',
+      boardLayoutSettingsDescription:
+        translations?.boardLayoutSettingsDescription ??
+        'Manage your board columns and organize them by status. Drag to reorder within each status group.',
+      addNewList: translations?.addNewList ?? 'Add New List',
+      noListsInStatus:
+        translations?.noListsInStatus ?? 'No lists in this status',
+      done: translations?.done ?? 'Done',
+      editList: translations?.editList ?? 'Edit List',
+      updateListDescription:
+        translations?.updateListDescription ??
+        'Update the list name and status category.',
+      listName: translations?.listName ?? 'List Name',
+      statusCategory: translations?.statusCategory ?? 'Status Category',
+      color: translations?.color ?? 'Color',
+      cancel: translations?.cancel ?? 'Cancel',
+      saving: translations?.saving ?? 'Saving...',
+      saveChanges: translations?.saveChanges ?? 'Save Changes',
+      deleteListTitle: translations?.deleteListTitle ?? 'Delete List?',
+      deleteListDescription:
+        translations?.deleteListDescription ??
+        'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.',
+      deleteListConfirm: translations?.deleteListConfirm ?? 'Delete List',
+      listUpdatedSuccessfully:
+        translations?.listUpdatedSuccessfully ?? 'List updated successfully',
+      failedToUpdateList:
+        translations?.failedToUpdateList ?? 'Failed to update list',
+      colorUpdated: translations?.colorUpdated ?? 'Color updated',
+      failedToUpdateColor:
+        translations?.failedToUpdateColor ?? 'Failed to update color',
+      listDeletedSuccessfully:
+        translations?.listDeletedSuccessfully ?? 'List deleted successfully',
+      failedToDeleteList:
+        translations?.failedToDeleteList ?? 'Failed to delete list',
+      cannotMoveToClosedStatus:
+        translations?.cannotMoveToClosedStatus ??
+        'Cannot move lists to or from closed status',
+      listsReordered: translations?.listsReordered ?? 'Lists reordered',
+      failedToReorderLists:
+        translations?.failedToReorderLists ?? 'Failed to reorder lists',
+      movedToStatus: translations?.movedToStatus ?? 'Moved to {status}',
+      // Status labels
+      backlog: translations?.backlog ?? 'Backlog',
+      active: translations?.active ?? 'Active',
+      doneStatus: translations?.doneStatus ?? 'Done',
+      closed: translations?.closed ?? 'Closed',
+      documents: translations?.documents ?? 'Documents',
+      // Common
+      task: translations?.task ?? 'task',
+      tasks: translations?.tasks ?? 'tasks',
+      changeColor: translations?.changeColor ?? 'Change Color',
+      deleteList: translations?.deleteList ?? 'Delete List',
+      gray: translations?.gray ?? 'Gray',
+      red: translations?.red ?? 'Red',
+      blue: translations?.blue ?? 'Blue',
+      green: translations?.green ?? 'Green',
+      yellow: translations?.yellow ?? 'Yellow',
+      orange: translations?.orange ?? 'Orange',
+      purple: translations?.purple ?? 'Purple',
+      pink: translations?.pink ?? 'Pink',
+      indigo: translations?.indigo ?? 'Indigo',
+      cyan: translations?.cyan ?? 'Cyan',
+    }),
+    [translations]
+  );
+
+  const statusLabels: Record<TaskBoardStatus, string> = useMemo(
+    () => ({
+      not_started: t.backlog,
+      active: t.active,
+      done: t.doneStatus,
+      closed: t.closed,
+      documents: t.documents,
+    }),
+    [t]
+  );
   const queryClient = useQueryClient();
+  const colorOptions = useMemo(
+    () => [
+      {
+        value: 'GRAY' as SupportedColor,
+        label: t.gray,
+        class: 'bg-dynamic-gray/30',
+      },
+      {
+        value: 'RED' as SupportedColor,
+        label: t.red,
+        class: 'bg-dynamic-red/30',
+      },
+      {
+        value: 'BLUE' as SupportedColor,
+        label: t.blue,
+        class: 'bg-dynamic-blue/30',
+      },
+      {
+        value: 'GREEN' as SupportedColor,
+        label: t.green,
+        class: 'bg-dynamic-green/30',
+      },
+      {
+        value: 'YELLOW' as SupportedColor,
+        label: t.yellow,
+        class: 'bg-dynamic-yellow/30',
+      },
+      {
+        value: 'ORANGE' as SupportedColor,
+        label: t.orange,
+        class: 'bg-dynamic-orange/30',
+      },
+      {
+        value: 'PURPLE' as SupportedColor,
+        label: t.purple,
+        class: 'bg-dynamic-purple/30',
+      },
+      {
+        value: 'PINK' as SupportedColor,
+        label: t.pink,
+        class: 'bg-dynamic-pink/30',
+      },
+      {
+        value: 'INDIGO' as SupportedColor,
+        label: t.indigo,
+        class: 'bg-dynamic-indigo/30',
+      },
+      {
+        value: 'CYAN' as SupportedColor,
+        label: t.cyan,
+        class: 'bg-dynamic-cyan/30',
+      },
+    ],
+    [t]
+  );
   const supabase = createClient();
 
   const [editingList, setEditingList] = useState<WorkspaceTaskList | null>(
@@ -333,13 +624,13 @@ export function BoardLayoutSettings({
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('List updated successfully');
+      toast.success(t.listUpdatedSuccessfully);
       queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
       setEditingList(null);
       onUpdate();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to update list');
+      toast.error(error.message || t.failedToUpdateList);
     },
   });
 
@@ -359,12 +650,12 @@ export function BoardLayoutSettings({
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Color updated');
+      toast.success(t.colorUpdated);
       queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
       onUpdate();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to update color');
+      toast.error(error.message || t.failedToUpdateColor);
     },
   });
 
@@ -378,14 +669,14 @@ export function BoardLayoutSettings({
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('List deleted successfully');
+      toast.success(t.listDeletedSuccessfully);
       queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       setDeletingList(null);
       onUpdate();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to delete list');
+      toast.error(error.message || t.failedToDeleteList);
     },
   });
 
@@ -414,7 +705,7 @@ export function BoardLayoutSettings({
 
       // Prevent moving to/from closed status
       if (draggedList.status === 'closed' || targetStatus === 'closed') {
-        toast.error('Cannot move lists to or from closed status');
+        toast.error(t.cannotMoveToClosedStatus);
         return;
       }
 
@@ -457,10 +748,10 @@ export function BoardLayoutSettings({
                 .eq('id', list.id)
             )
           );
-          toast.success('Lists reordered');
+          toast.success(t.listsReordered);
         } catch (error) {
           console.error('Failed to reorder lists:', error);
-          toast.error('Failed to reorder lists');
+          toast.error(t.failedToReorderLists);
           if (previousLists) {
             queryClient.setQueryData(['task_lists', boardId], previousLists);
           } else {
@@ -519,10 +810,12 @@ export function BoardLayoutSettings({
             .eq('id', draggedList.id);
 
           if (error) throw error;
-          toast.success(`Moved to ${statusConfig[targetStatus].label}`);
+          toast.success(
+            t.movedToStatus.replace('{status}', statusLabels[targetStatus])
+          );
         } catch (error) {
           console.error('Failed to move list:', error);
-          toast.error('Failed to move list');
+          toast.error(t.failedToUpdateList);
           if (previousLists) {
             queryClient.setQueryData(['task_lists', boardId], previousLists);
           } else {
@@ -533,7 +826,7 @@ export function BoardLayoutSettings({
         }
       }
     },
-    [boardId, groupedLists, lists, queryClient, supabase]
+    [boardId, groupedLists, lists, queryClient, statusLabels, supabase, t]
   );
 
   const handleColorChange = (listId: string, color: SupportedColor) => {
@@ -553,10 +846,9 @@ export function BoardLayoutSettings({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Board Layout Settings</DialogTitle>
+            <DialogTitle>{t.boardLayoutSettings}</DialogTitle>
             <DialogDescription>
-              Manage your board columns and organize them by status. Drag to
-              reorder within each status group.
+              {t.boardLayoutSettingsDescription}
             </DialogDescription>
           </DialogHeader>
 
@@ -568,11 +860,11 @@ export function BoardLayoutSettings({
               onClick={() => setCreatingList(true)}
             >
               <Plus className="h-4 w-4" />
-              Add New List
+              {t.addNewList}
             </Button>
 
             {/* Lists by Status */}
-            <ScrollArea className="h-[500px] pr-4">
+            <ScrollArea className="h-125 pr-4">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -602,7 +894,7 @@ export function BoardLayoutSettings({
                             />
                           </div>
                           <h3 className="font-semibold text-sm">
-                            {statusConfig[status].label}
+                            {statusLabels[status]}
                           </h3>
                           <Badge variant="secondary" className="text-[10px]">
                             {statusLists.length}
@@ -612,7 +904,7 @@ export function BoardLayoutSettings({
                         {statusLists.length === 0 ? (
                           <div className="rounded-lg border-2 border-dashed p-4 text-center">
                             <p className="text-muted-foreground text-sm">
-                              No lists in this status
+                              {t.noListsInStatus}
                             </p>
                           </div>
                         ) : (
@@ -629,6 +921,28 @@ export function BoardLayoutSettings({
                                   onEdit={setEditingList}
                                   onDelete={setDeletingList}
                                   onColorChange={handleColorChange}
+                                  translations={{
+                                    task: t.task,
+                                    tasks: t.tasks,
+                                    changeColor: t.changeColor,
+                                    editList: t.editList,
+                                    deleteList: t.deleteList,
+                                    backlog: t.backlog,
+                                    active: t.active,
+                                    doneStatus: t.doneStatus,
+                                    closed: t.closed,
+                                    documents: t.documents,
+                                    gray: t.gray,
+                                    red: t.red,
+                                    blue: t.blue,
+                                    green: t.green,
+                                    yellow: t.yellow,
+                                    orange: t.orange,
+                                    purple: t.purple,
+                                    pink: t.pink,
+                                    indigo: t.indigo,
+                                    cyan: t.cyan,
+                                  }}
                                 />
                               ))}
                             </div>
@@ -644,7 +958,7 @@ export function BoardLayoutSettings({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Done
+              {t.done}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -663,16 +977,14 @@ export function BoardLayoutSettings({
       {/* Edit List Dialog */}
       {editingList && (
         <Dialog open={!!editingList} onOpenChange={() => setEditingList(null)}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-106.25">
             <DialogHeader>
-              <DialogTitle>Edit List</DialogTitle>
-              <DialogDescription>
-                Update the list name and status category.
-              </DialogDescription>
+              <DialogTitle>{t.editList}</DialogTitle>
+              <DialogDescription>{t.updateListDescription}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-name">List Name</Label>
+                <Label htmlFor="edit-name">{t.listName}</Label>
                 <Input
                   defaultValue={editingList?.name || ''}
                   onKeyDown={(e) => {
@@ -689,7 +1001,7 @@ export function BoardLayoutSettings({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-status">Status Category</Label>
+                <Label htmlFor="edit-status">{t.statusCategory}</Label>
                 <Select
                   defaultValue={editingList?.status || ''}
                   onValueChange={(value) => {
@@ -714,7 +1026,7 @@ export function BoardLayoutSettings({
                                 statusConfig[status].color
                               )}
                             />
-                            {statusConfig[status].label}
+                            {statusLabels[status]}
                           </div>
                         </SelectItem>
                       );
@@ -723,7 +1035,7 @@ export function BoardLayoutSettings({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Color</Label>
+                <Label>{t.color}</Label>
                 <div className="grid grid-cols-5 gap-2">
                   {colorOptions.map((color) => (
                     <button
@@ -753,7 +1065,7 @@ export function BoardLayoutSettings({
                 onClick={() => setEditingList(null)}
                 disabled={updateListMutation.isPending}
               >
-                Cancel
+                {t.cancel}
               </Button>
               <Button
                 onClick={() => {
@@ -769,7 +1081,7 @@ export function BoardLayoutSettings({
                 }}
                 disabled={updateListMutation.isPending}
               >
-                {updateListMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {updateListMutation.isPending ? t.saving : t.saveChanges}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -783,16 +1095,17 @@ export function BoardLayoutSettings({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete List?</AlertDialogTitle>
+            <AlertDialogTitle>{t.deleteListTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deletingList?.name}&quot;?
-              All tasks in this list will also be deleted. This action cannot be
-              undone.
+              {t.deleteListDescription.replace(
+                '{name}',
+                deletingList?.name || ''
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteListMutation.isPending}>
-              Cancel
+              {t.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -803,7 +1116,7 @@ export function BoardLayoutSettings({
               disabled={deleteListMutation.isPending}
               className="bg-dynamic-red/90 text-white hover:bg-dynamic-red"
             >
-              {deleteListMutation.isPending ? 'Deleting...' : 'Delete List'}
+              {deleteListMutation.isPending ? t.saving : t.deleteListConfirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

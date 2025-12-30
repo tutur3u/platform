@@ -2,12 +2,12 @@
 
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import {
-  useMemo,
-  useCallback,
   type Dispatch,
   type SetStateAction,
+  useCallback,
+  useMemo,
 } from 'react';
-import type { TaskProject, ViewMode, SortBy, SortOrder } from '../types';
+import type { SortBy, SortOrder, TaskProject, ViewMode } from '../types';
 
 const VALID_VIEW_MODES: ViewMode[] = ['list', 'grid'];
 const VALID_SORT_BY: SortBy[] = [

@@ -3,9 +3,9 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { type TaskLabel } from './types';
-import TaskLabelsClient from './client';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import TaskLabelsClient from './client';
+import type { TaskLabel } from './types';
 
 export const metadata: Metadata = {
   title: 'Labels',

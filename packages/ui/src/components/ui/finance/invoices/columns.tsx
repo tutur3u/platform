@@ -15,7 +15,7 @@ import moment from 'moment';
 export const invoiceColumns = (
   t: any,
   namespace: string | undefined,
-  extraColumns?: any[],
+  _extraColumns?: any[],
   extraData?: {
     canDeleteInvoices?: boolean;
   }

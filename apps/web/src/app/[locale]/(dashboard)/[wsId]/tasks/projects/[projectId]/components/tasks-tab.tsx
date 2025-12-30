@@ -32,6 +32,8 @@ interface TasksTabProps {
   setListStatusFilter: (filter: ListStatusFilter) => void;
   setShowLinkTaskDialog: (show: boolean) => void;
   onTaskPartialUpdate: (taskId: string, partial: Partial<Task>) => void;
+  isMultiSelectMode: boolean;
+  setIsMultiSelectMode: (mode: boolean) => void;
 }
 
 export function TasksTab({
@@ -50,6 +52,8 @@ export function TasksTab({
   setListStatusFilter,
   setShowLinkTaskDialog,
   onTaskPartialUpdate,
+  isMultiSelectMode,
+  setIsMultiSelectMode,
 }: TasksTabProps) {
   const t = useTranslations('task_project_detail.tasks_tab');
   const projectBoardId = `project:${projectId}`;
@@ -74,6 +78,8 @@ export function TasksTab({
             tasks={tasks}
             lists={lists}
             isLoading={false}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         );
       case 'list':
@@ -101,6 +107,8 @@ export function TasksTab({
             tasks={tasks}
             lists={lists}
             isLoading={false}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         );
     }
@@ -143,6 +151,8 @@ export function TasksTab({
             isPersonalWorkspace={workspace.personal}
             backUrl={`/${wsId}/tasks/projects`}
             hideActions={true}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         </div>
         <Button

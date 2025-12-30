@@ -84,6 +84,7 @@ import {
   useReorderTask,
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskViewerProvider } from '../../providers/task-viewer-provider';
@@ -114,6 +115,8 @@ interface Props {
   disableSort?: boolean; // When true, skip internal sort_key sorting (parent already sorted)
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
+  isMultiSelectMode: boolean;
+  setIsMultiSelectMode: (enabled: boolean) => void;
 }
 
 // Bulk Custom Date Dialog Component
@@ -130,15 +133,18 @@ function BulkCustomDateDialog({
   onClear: () => void;
   isLoading: boolean;
 }) {
+  const t = useTranslations();
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-106.25">
         <DialogHeader>
-          <DialogTitle>Set Custom Due Date</DialogTitle>
+          <DialogTitle>
+            {t('ws-task-boards.bulk.set_custom_due_date')}
+          </DialogTitle>
           <DialogDescription>
-            Choose a specific date and time for all selected tasks.
+            {t('ws-task-boards.bulk.set_custom_due_date_description')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -158,7 +164,7 @@ function BulkCustomDateDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -171,7 +177,7 @@ function BulkCustomDateDialog({
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
-            Remove Due Date
+            {t('common.remove_due_date')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -188,7 +194,11 @@ export function KanbanBoard({
   disableSort = false,
   listStatusFilter = 'all',
   filters,
+  isMultiSelectMode,
+  setIsMultiSelectMode,
 }: Props) {
+  const t = useTranslations();
+  const tc = useTranslations('common');
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
@@ -205,7 +215,6 @@ export function KanbanBoard({
     Set<string>
   >(new Set());
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -382,7 +391,7 @@ export function KanbanBoard({
     setIsMultiSelectMode(false);
     anchoredTask.current = null;
     anchoredColumn.current = null;
-  }, []);
+  }, [setIsMultiSelectMode]);
 
   // Cross-board move handler
   const handleCrossBoardMove = useCallback(() => {
@@ -915,7 +924,7 @@ export function KanbanBoard({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isMultiSelectMode, selectedTasks.size]);
+  }, [isMultiSelectMode, selectedTasks.size, setIsMultiSelectMode]);
 
   // Configure sensors for both mouse/pointer and touch interactions
   const sensors = useSensors(
@@ -1464,11 +1473,11 @@ export function KanbanBoard({
           );
 
           // Find where the over task is in the target list
-          const overTaskIndex = tasksWithoutActive.findIndex(
+          const overTaskInFiltered = tasksWithoutActive.findIndex(
             (t) => t.id === over.id
           );
 
-          if (overTaskIndex === -1) {
+          if (overTaskInFiltered === -1) {
             // Over task not found (shouldn't happen), append to end
             reorderedTasks = [...tasksWithoutActive, activeTask];
             console.log(
@@ -1478,13 +1487,13 @@ export function KanbanBoard({
             // Insert BEFORE the over task to match @dnd-kit's visual preview
             // When you drag over a task, @dnd-kit places your task BEFORE it
             reorderedTasks = [
-              ...tasksWithoutActive.slice(0, overTaskIndex),
+              ...tasksWithoutActive.slice(0, overTaskInFiltered),
               activeTask,
-              ...tasksWithoutActive.slice(overTaskIndex),
+              ...tasksWithoutActive.slice(overTaskInFiltered),
             ];
             console.log(
               '📍 Cross-list move, inserting BEFORE task at index:',
-              overTaskIndex
+              overTaskInFiltered
             );
           }
         }
@@ -1954,25 +1963,25 @@ export function KanbanBoard({
   return (
     <div className="flex h-full flex-col">
       {/* Multi-select indicator */}
-      {isMultiSelectMode ? (
+      {isMultiSelectMode && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-linear-to-r from-primary/5 via-primary/3 to-transparent px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm">
             <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 ring-1 ring-primary/20">
               <Check className="h-3.5 w-3.5 text-primary" />
               <span className="font-semibold text-primary">
-                {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}
+                {selectedTasks.size}{' '}
+                {selectedTasks.size === 1 ? tc('task') : tc('tasks_plural')}
               </span>
             </div>
             <span className="hidden text-muted-foreground text-xs sm:inline">
-              Click cards to toggle • Drag to move • Ctrl+M board move • Esc
-              clear
+              {tc('selection_instruction')}
             </span>
             {bulkWorking && (
               <Badge
                 variant="outline"
                 className="animate-pulse border-dynamic-blue/40 text-[10px]"
               >
-                Working...
+                {t('common.working')}
               </Badge>
             )}
           </div>
@@ -1985,7 +1994,8 @@ export function KanbanBoard({
                   className="h-6 px-2 text-xs"
                   disabled={bulkWorking}
                 >
-                  <MoreHorizontal className="mr-1 h-3 w-3" /> Bulk
+                  <MoreHorizontal className="mr-1 h-3 w-3" />{' '}
+                  {t('common.bulk_actions')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -2004,7 +2014,7 @@ export function KanbanBoard({
                     className="cursor-pointer"
                   >
                     <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                    Mark as Done
+                    {t('common.mark_as_done')}
                   </DropdownMenuItem>
                 )}
                 {columns.some((c) => c.status === 'closed') && (
@@ -2014,7 +2024,7 @@ export function KanbanBoard({
                     className="cursor-pointer"
                   >
                     <CircleSlash className="h-4 w-4 text-dynamic-purple" />
-                    Mark as Closed
+                    {t('common.mark_as_closed')}
                   </DropdownMenuItem>
                 )}
                 {(columns.some((c) => c.status === 'done') ||
@@ -2026,7 +2036,7 @@ export function KanbanBoard({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Flag className="h-4 w-4 text-dynamic-red" />
-                    Priority
+                    {t('common.priority')}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-40">
                     <DropdownMenuItem
@@ -2041,7 +2051,7 @@ export function KanbanBoard({
                             className="h-3.5 w-3.5 text-dynamic-red"
                           />
                         </div>
-                        <span>Critical</span>
+                        <span>{t('tasks.priority_critical')}</span>
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -2056,7 +2066,7 @@ export function KanbanBoard({
                             className="h-3.5 w-3.5 text-dynamic-orange"
                           />
                         </div>
-                        <span>High</span>
+                        <span>{t('tasks.priority_high')}</span>
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -2068,7 +2078,7 @@ export function KanbanBoard({
                         <div className="flex h-5 w-5 items-center justify-center rounded bg-dynamic-yellow/10">
                           <Rabbit className="h-3.5 w-3.5 text-dynamic-yellow" />
                         </div>
-                        <span>Normal</span>
+                        <span>{t('tasks.priority_normal')}</span>
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -2080,7 +2090,7 @@ export function KanbanBoard({
                         <div className="flex h-5 w-5 items-center justify-center rounded bg-dynamic-blue/10">
                           <Turtle className="h-3.5 w-3.5 text-dynamic-blue" />
                         </div>
-                        <span>Low</span>
+                        <span>{t('tasks.priority_low')}</span>
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -2090,7 +2100,7 @@ export function KanbanBoard({
                       className="cursor-pointer text-muted-foreground"
                     >
                       <X className="h-4 w-4" />
-                      None
+                      {t('tasks.priority_none')}
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
@@ -2102,7 +2112,7 @@ export function KanbanBoard({
                       <Calendar className="h-4 w-4 text-dynamic-purple" />
                     </div>
                     <div className="flex w-full items-center justify-between">
-                      <span>Due Date</span>
+                      <span>{tc('due_date')}</span>
                     </div>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -2112,7 +2122,7 @@ export function KanbanBoard({
                       className="cursor-pointer"
                     >
                       <Calendar className="h-4 w-4 text-dynamic-green" />
-                      Today
+                      {t('common.today')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={bulkWorking}
@@ -2120,7 +2130,7 @@ export function KanbanBoard({
                       className="cursor-pointer"
                     >
                       <Calendar className="h-4 w-4 text-dynamic-blue" />
-                      Tomorrow
+                      {t('common.tomorrow')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={bulkWorking}
@@ -2128,7 +2138,7 @@ export function KanbanBoard({
                       className="cursor-pointer"
                     >
                       <Calendar className="h-4 w-4 text-dynamic-purple" />
-                      This Week
+                      {t('common.this_week')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={bulkWorking}
@@ -2136,7 +2146,7 @@ export function KanbanBoard({
                       className="cursor-pointer"
                     >
                       <Calendar className="h-4 w-4 text-dynamic-orange" />
-                      Next Week
+                      {t('common.next_week')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -2145,7 +2155,7 @@ export function KanbanBoard({
                       className="cursor-pointer"
                     >
                       <Calendar className="h-4 w-4" />
-                      Custom Date
+                      {t('ws-task-boards.bulk.set_custom_due_date')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -2154,7 +2164,7 @@ export function KanbanBoard({
                       className="cursor-pointer text-muted-foreground"
                     >
                       <X className="h-4 w-4" />
-                      Remove Due Date
+                      {t('common.remove_due_date')}
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
@@ -2164,7 +2174,7 @@ export function KanbanBoard({
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Timer className="h-4 w-4 text-dynamic-pink" />
-                      Estimation
+                      {t('common.estimation')}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent className="w-40">
                       <div className="max-h-50 overflow-auto">
@@ -2190,7 +2200,7 @@ export function KanbanBoard({
                                     {label}
                                     {disabledByExtended && (
                                       <span className="ml-1 text-[10px] text-muted-foreground/60">
-                                        (upgrade)
+                                        ({t('common.upgrade')})
                                       </span>
                                     )}
                                   </span>
@@ -2207,7 +2217,7 @@ export function KanbanBoard({
                           className="cursor-pointer text-muted-foreground"
                         >
                           <X className="h-4 w-4" />
-                          None
+                          {t('common.none')}
                         </DropdownMenuItem>
                       </div>
                     </DropdownMenuSubContent>
@@ -2218,7 +2228,7 @@ export function KanbanBoard({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Tags className="h-4 w-4 text-dynamic-sky" />
-                    Labels
+                    {t('common.labels')}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-80 p-0">
                     {/* Search Input */}
@@ -2226,7 +2236,7 @@ export function KanbanBoard({
                       <div className="relative">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                          placeholder="Search labels..."
+                          placeholder={t('common.search_labels')}
                           value={labelSearchQuery}
                           onChange={(e) => setLabelSearchQuery(e.target.value)}
                           className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
@@ -2238,8 +2248,8 @@ export function KanbanBoard({
                     {filteredLabels.length === 0 ? (
                       <div className="px-2 py-6 text-center text-muted-foreground text-xs">
                         {labelSearchQuery
-                          ? 'No labels found'
-                          : 'No labels available'}
+                          ? t('common.no_labels_found')
+                          : t('common.no_labels_available')}
                       </div>
                     ) : (
                       <div className="max-h-50 overflow-auto">
@@ -2291,7 +2301,9 @@ export function KanbanBoard({
                     {appliedLabels.size > 0 && (
                       <div className="relative z-10 border-t bg-background shadow-sm">
                         <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-                          {appliedLabels.size} applied to all
+                          {t('ws-task-boards.bulk.applied_to_all', {
+                            count: appliedLabels.size,
+                          })}
                         </div>
                       </div>
                     )}
@@ -2301,12 +2313,12 @@ export function KanbanBoard({
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.preventDefault();
-                          toast.info('Create label feature coming soon');
+                          toast.info(tc('feature_coming_soon'));
                         }}
                         className="cursor-pointer text-muted-foreground hover:text-foreground"
                       >
                         <Plus className="h-4 w-4" />
-                        Create New Label
+                        {tc('create_new_label')}
                       </DropdownMenuItem>
                     </div>
                   </DropdownMenuSubContent>
@@ -2316,7 +2328,7 @@ export function KanbanBoard({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Box className="h-4 w-4 text-dynamic-sky" />
-                    Projects
+                    {tc('projects')}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-80 p-0">
                     {/* Search Input */}
@@ -2324,7 +2336,7 @@ export function KanbanBoard({
                       <div className="relative">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                          placeholder="Search projects..."
+                          placeholder={tc('search_projects')}
                           value={projectSearchQuery}
                           onChange={(e) =>
                             setProjectSearchQuery(e.target.value)
@@ -2338,8 +2350,8 @@ export function KanbanBoard({
                     {filteredProjects.length === 0 ? (
                       <div className="px-2 py-6 text-center text-muted-foreground text-xs">
                         {projectSearchQuery
-                          ? 'No projects found'
-                          : 'No projects available'}
+                          ? tc('no_projects_found')
+                          : tc('no_projects_available')}
                       </div>
                     ) : (
                       <div className="max-h-50 overflow-auto">
@@ -2385,7 +2397,9 @@ export function KanbanBoard({
                     {appliedProjects.size > 0 && (
                       <div className="relative z-10 border-t bg-background shadow-sm">
                         <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-                          {appliedProjects.size} assigned to all
+                          {t('ws-task-boards.bulk.applied_to_all', {
+                            count: appliedProjects.size,
+                          })}
                         </div>
                       </div>
                     )}
@@ -2400,7 +2414,7 @@ export function KanbanBoard({
                         className="cursor-pointer text-muted-foreground hover:text-foreground"
                       >
                         <Plus className="h-4 w-4" />
-                        Create New Project
+                        {t('common.create_new_project')}
                       </DropdownMenuItem>
                     </div>
                   </DropdownMenuSubContent>
@@ -2413,7 +2427,7 @@ export function KanbanBoard({
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Move className="h-4 w-4 text-dynamic-blue" />
-                      Move to List
+                      {t('common.move_to_list')}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent className="max-h-100 w-56 overflow-hidden p-0">
                       <div className="max-h-50 overflow-auto">
@@ -2482,7 +2496,7 @@ export function KanbanBoard({
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <UserStar className="h-4 w-4 text-dynamic-yellow" />
-                      Assignees
+                      {t('common.assignees')}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent className="w-80 p-0">
                       {/* Search Input */}
@@ -2490,7 +2504,7 @@ export function KanbanBoard({
                         <div className="relative">
                           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
-                            placeholder="Search members..."
+                            placeholder={tc('search_members')}
                             value={assigneeSearchQuery}
                             onChange={(e) =>
                               setAssigneeSearchQuery(e.target.value)
@@ -2504,8 +2518,8 @@ export function KanbanBoard({
                       {filteredMembers.length === 0 ? (
                         <div className="px-2 py-6 text-center text-muted-foreground text-xs">
                           {assigneeSearchQuery
-                            ? 'No members found'
-                            : 'No workspace members available'}
+                            ? tc('no_members_found')
+                            : tc('no_members_available')}
                         </div>
                       ) : (
                         <div className="max-h-37.5 overflow-auto">
@@ -2558,7 +2572,9 @@ export function KanbanBoard({
                       {appliedAssignees.size > 0 && (
                         <div className="relative z-10 border-t bg-background shadow-sm">
                           <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-                            {appliedAssignees.size} assigned to all
+                            {t('ws-task-boards.bulk.assigned_to_all', {
+                              count: appliedAssignees.size,
+                            })}
                           </div>
                         </div>
                       )}
@@ -2575,7 +2591,7 @@ export function KanbanBoard({
                   disabled={bulkWorking}
                 >
                   <Trash2 className="h-4 w-4 text-dynamic-red" />
-                  Delete tasks
+                  {t('common.delete_tasks')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -2588,7 +2604,7 @@ export function KanbanBoard({
               disabled={selectedTasks.size === 0 || bulkWorking}
             >
               <ArrowRightLeft className="mr-1 h-3 w-3" />
-              Move
+              {t('common.move')}
             </Button>
             <Button
               variant="ghost"
@@ -2597,21 +2613,9 @@ export function KanbanBoard({
               className="h-6 px-2 text-xs"
               disabled={bulkWorking}
             >
-              Clear
+              {t('common.clear')}
             </Button>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-end px-3 pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsMultiSelectMode(true)}
-            className="px-2 text-muted-foreground hover:text-primary"
-          >
-            <Check className="h-3.5 w-3.5 text-primary" />
-            <span className="text-sm">Choose tasks</span>
-          </Button>
         </div>
       )}
 

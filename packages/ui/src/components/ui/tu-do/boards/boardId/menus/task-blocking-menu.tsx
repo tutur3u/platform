@@ -65,8 +65,12 @@ export function TaskBlockingMenu({
   // Exclude current task and all already-related tasks
   const excludeIds = React.useMemo(() => {
     const ids = new Set([taskId]);
-    blockingTasks.forEach((t) => ids.add(t.id));
-    blockedByTasks.forEach((t) => ids.add(t.id));
+    for (const t of blockingTasks) {
+      ids.add(t.id);
+    }
+    for (const t of blockedByTasks) {
+      ids.add(t.id);
+    }
     return Array.from(ids);
   }, [taskId, blockingTasks, blockedByTasks]);
 
@@ -84,7 +88,7 @@ export function TaskBlockingMenu({
   // Reset search when tab changes
   React.useEffect(() => {
     setSearchQuery('');
-  }, [activeTab]);
+  }, []);
 
   const totalCount = blockingTasks.length + blockedByTasks.length;
   const currentList = activeTab === 'blocks' ? blockingTasks : blockedByTasks;
@@ -135,7 +139,7 @@ export function TaskBlockingMenu({
         {/* Current List */}
         {currentList.length > 0 && (
           <div className="border-b">
-            <ScrollArea className="max-h-[150px]">
+            <ScrollArea className="max-h-37.5">
               <div className="space-y-1 p-2">
                 {currentList.map((task) => (
                   <div
@@ -189,7 +193,7 @@ export function TaskBlockingMenu({
             onValueChange={setSearchQuery}
             className="h-9"
           />
-          <CommandList className="max-h-[200px]">
+          <CommandList className="max-h-50">
             {tasksLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

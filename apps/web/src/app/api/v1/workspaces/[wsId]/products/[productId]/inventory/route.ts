@@ -211,7 +211,7 @@ export async function PATCH(req: Request, { params }: Params) {
       // Log stock change for deletion (negative amount)
       if (workspaceUserId) {
         const existingItem = existingMap.get(key);
-        if (existingItem && existingItem.amount) {
+        if (existingItem?.amount) {
           await supabase.from('product_stock_changes').insert({
             product_id: productId,
             unit_id: unit_id,

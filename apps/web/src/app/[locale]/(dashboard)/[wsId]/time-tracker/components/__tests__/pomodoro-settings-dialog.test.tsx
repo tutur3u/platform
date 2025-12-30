@@ -25,7 +25,9 @@ vi.mock('@tuturuuu/ui/label', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/switch', () => ({
-  Switch: (props: any) => <button role="switch" {...props} />,
+  Switch: (props: any) => (
+    <button role="switch" aria-checked={props.checked ?? false} {...props} />
+  ),
 }));
 
 vi.mock('@tuturuuu/icons', () => ({

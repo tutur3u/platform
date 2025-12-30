@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { Loader2, Trash2 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -18,10 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Label } from '@tuturuuu/ui/label';
-import { Loader2, Trash2 } from '@tuturuuu/icons';
-import type { TaskProject, TaskOption } from '../types';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
+import type { TaskOption, TaskProject } from '../types';
 
 interface ManageTasksDialogProps {
   project: TaskProject | null;

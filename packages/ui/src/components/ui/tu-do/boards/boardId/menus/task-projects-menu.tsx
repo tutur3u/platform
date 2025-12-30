@@ -23,6 +23,15 @@ interface TaskProjectsMenuProps {
   onToggleProject: (projectId: string) => void;
   onCreateNewProject: () => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
+  translations?: {
+    projects?: string;
+    searchProjects?: string;
+    loading?: string;
+    noProjectsFound?: string;
+    noProjectsAvailable?: string;
+    assigned?: string;
+    createNewProject?: string;
+  };
 }
 
 export function TaskProjectsMenu({
@@ -33,7 +42,20 @@ export function TaskProjectsMenu({
   onToggleProject,
   onCreateNewProject,
   onMenuItemSelect,
+  translations,
 }: TaskProjectsMenuProps) {
+  // Use provided translations or fall back to English defaults
+  const t = {
+    projects: translations?.projects ?? 'Projects',
+    searchProjects: translations?.searchProjects ?? 'Search projects...',
+    loading: translations?.loading ?? 'Loading...',
+    noProjectsFound: translations?.noProjectsFound ?? 'No projects found',
+    noProjectsAvailable:
+      translations?.noProjectsAvailable ?? 'No projects available',
+    assigned: translations?.assigned ?? 'assigned',
+    createNewProject: translations?.createNewProject ?? 'Create New Project',
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter projects based on search
@@ -47,7 +69,7 @@ export function TaskProjectsMenu({
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <Box className="h-4 w-4 text-dynamic-sky" />
-        Projects
+        {t.projects}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
         {/* Search Input */}
@@ -55,7 +77,7 @@ export function TaskProjectsMenu({
           <div className="relative">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder={t.searchProjects}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
@@ -67,14 +89,14 @@ export function TaskProjectsMenu({
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 px-2 py-6">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground text-xs">Loading...</p>
+            <p className="text-muted-foreground text-xs">{t.loading}</p>
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="px-2 py-6 text-center text-muted-foreground text-xs">
-            {searchQuery ? 'No projects found' : 'No projects available'}
+            {searchQuery ? t.noProjectsFound : t.noProjectsAvailable}
           </div>
         ) : (
-          <div className="max-h-[200px] overflow-auto">
+          <div className="max-h-50 overflow-auto">
             <div className="flex flex-col gap-1 p-1">
               {filteredProjects.map((project) => {
                 const active = taskProjects.some((p) => p.id === project.id);
@@ -112,7 +134,7 @@ export function TaskProjectsMenu({
         {!isLoading && taskProjects.length > 0 && (
           <div className="relative z-10 border-t bg-background shadow-sm">
             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-              {taskProjects.length} assigned
+              {taskProjects.length} {t.assigned}
             </div>
           </div>
         )}
@@ -127,7 +149,7 @@ export function TaskProjectsMenu({
               className="cursor-pointer text-muted-foreground hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
-              Create New Project
+              {t.createNewProject}
             </DropdownMenuItem>
           </div>
         )}

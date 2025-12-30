@@ -84,7 +84,7 @@ export default function ScheduleCalendar({
         return newPending;
       });
     },
-    [sessions, isOriginalSession]
+    [sessions, isOriginalSession, canUpdateSchedule]
   );
 
   // Handle day header click - select/deselect all dates in that column for the month
@@ -160,7 +160,7 @@ export default function ScheduleCalendar({
         return newPending;
       });
     },
-    [sessions, isOriginalSession]
+    [sessions, isOriginalSession, canUpdateSchedule]
   );
 
   // Reset changes

@@ -30,6 +30,7 @@ import { cn } from '@tuturuuu/utils/format';
 import type { CurrentTaskState } from '@tuturuuu/utils/task-snapshot';
 import { format, formatDistanceToNow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { EstimationType } from '../estimation-mapping';
 import { mapEstimationPoints } from '../estimation-mapping';
@@ -67,8 +68,6 @@ interface TaskActivitySectionProps {
   boardId?: string;
   /** Current task state for comparison in snapshot dialog */
   currentTask?: CurrentTaskState;
-  locale?: string;
-  t?: (key: string, options?: { defaultValue?: string }) => string;
   className?: string;
   /** Maximum number of entries to show initially */
   initialLimit?: number;
@@ -80,22 +79,21 @@ interface TaskActivitySectionProps {
   revertDisabled?: boolean;
 }
 
-const defaultT = (key: string, opts?: { defaultValue?: string }) =>
-  opts?.defaultValue || key;
+// Task history section for showing activity logs and snapshots
 
 export function TaskActivitySection({
   wsId,
   taskId,
   boardId,
   currentTask,
-  locale = 'en',
-  t = defaultT,
   className,
   initialLimit = 10,
   onTaskUpdate,
   estimationType,
   revertDisabled = false,
 }: TaskActivitySectionProps) {
+  const t = useTranslations('tasks-history');
+  const locale = useLocale();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [snapshotEntry, setSnapshotEntry] = useState<TaskHistoryEntry | null>(
@@ -136,9 +134,7 @@ export function TaskActivitySection({
         className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-muted/50 md:px-8"
       >
         <History className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium text-sm">
-          {t('activity', { defaultValue: 'Activity' })}
-        </span>
+        <span className="font-medium text-sm">{t('activity')}</span>
         {data?.count !== undefined && data.count > 0 && (
           <Badge variant="secondary" className="ml-1 text-xs">
             {data.count}
@@ -161,13 +157,11 @@ export function TaskActivitySection({
               </div>
             ) : error ? (
               <div className="py-4 text-center text-muted-foreground text-sm">
-                {t('failed_to_load', {
-                  defaultValue: 'Failed to load activity',
-                })}
+                {t('failed_to_load')}
               </div>
             ) : entries.length === 0 ? (
               <div className="py-4 text-center text-muted-foreground text-sm">
-                {t('no_activity', { defaultValue: 'No activity yet' })}
+                {t('no_activity')}
               </div>
             ) : (
               <div className="space-y-2">
@@ -175,7 +169,12 @@ export function TaskActivitySection({
                   <ActivityEntry
                     key={entry.id}
                     entry={entry}
-                    t={t}
+                    t={
+                      t as (
+                        key: string,
+                        options?: { defaultValue?: string }
+                      ) => string
+                    }
                     dateLocale={dateLocale}
                     showActions={!!currentTask && !!boardId}
                     onViewSnapshot={() => setSnapshotEntry(entry)}
@@ -192,9 +191,9 @@ export function TaskActivitySection({
                     className="mt-2 w-full text-muted-foreground"
                   >
                     {showAll
-                      ? t('show_less', { defaultValue: 'Show less' })
+                      ? t('show_less')
                       : t('show_more', {
-                          defaultValue: `Show ${entries.length - initialLimit} more`,
+                          count: entries.length - initialLimit,
                         })}
                   </Button>
                 )}
@@ -219,7 +218,7 @@ export function TaskActivitySection({
             onTaskUpdate?.();
           }}
           locale={locale}
-          t={t}
+          t={t as (key: string, options?: { defaultValue?: string }) => string}
           estimationType={estimationType}
           revertDisabled={revertDisabled}
         />
@@ -246,7 +245,12 @@ function ActivityEntry({
   estimationType,
 }: ActivityEntryProps) {
   const { icon, color } = getChangeIcon(entry.change_type, entry.field_name);
-  const description = getChangeDescription(entry, t, estimationType);
+  const description = getChangeDescription(
+    entry,
+    t,
+    estimationType,
+    dateLocale
+  );
   const timeAgo = formatDistanceToNow(new Date(entry.changed_at), {
     addSuffix: true,
     locale: dateLocale,
@@ -255,8 +259,7 @@ function ActivityEntry({
     locale: dateLocale,
   });
 
-  const userName =
-    entry.user?.name || t('unknown_user', { defaultValue: 'Unknown user' });
+  const userName = entry.user?.name || t('unknown_user');
   const userInitials = userName
     .split(' ')
     .map((n) => n[0])
@@ -328,7 +331,7 @@ function ActivityEntry({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {t('view_snapshot', { defaultValue: 'View snapshot & revert' })}
+              {t('view_snapshot')}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -445,7 +448,8 @@ interface ChangeDescription {
 function getChangeDescription(
   entry: TaskHistoryEntry,
   t: (key: string, options?: { defaultValue?: string }) => string,
-  estimationType?: EstimationType
+  estimationType?: EstimationType,
+  dateLocale?: typeof enUS | typeof vi
 ): ChangeDescription {
   // Handle task_created - show metadata badges like the logs page
   if (entry.change_type === 'task_created') {
@@ -468,7 +472,7 @@ function getChangeDescription(
     if (hasDescription) {
       badges.push(
         <Badge key="desc" variant="secondary" className="text-xs">
-          {t('with_description', { defaultValue: 'with description' })}
+          {t('with_description')}
         </Badge>
       );
     }
@@ -476,7 +480,7 @@ function getChangeDescription(
       const points = metadata.estimation_points as number;
       const displayPoints = estimationType
         ? mapEstimationPoints(points, estimationType)
-        : `${points} ${t('points', { defaultValue: 'pts' })}`;
+        : `${points} ${t('points')}`;
       badges.push(
         <Badge key="est" variant="secondary" className="gap-1 text-xs">
           <Target className="h-3 w-3" />
@@ -488,7 +492,9 @@ function getChangeDescription(
       badges.push(
         <Badge key="start" variant="secondary" className="gap-1 text-xs">
           <Clock className="h-3 w-3" />
-          {format(new Date(metadata.start_date as string), 'MMM d')}
+          {format(new Date(metadata.start_date as string), 'MMM d', {
+            locale: dateLocale,
+          })}
         </Badge>
       );
     }
@@ -496,13 +502,15 @@ function getChangeDescription(
       badges.push(
         <Badge key="end" variant="secondary" className="gap-1 text-xs">
           <Calendar className="h-3 w-3" />
-          {format(new Date(metadata.end_date as string), 'MMM d')}
+          {format(new Date(metadata.end_date as string), 'MMM d', {
+            locale: dateLocale,
+          })}
         </Badge>
       );
     }
 
     return {
-      action: t('created_task', { defaultValue: 'created this task' }),
+      action: t('created_task'),
       details:
         badges.length > 0 ? (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -537,8 +545,7 @@ function getChangeDescription(
     };
 
     const action =
-      fieldLabels[entry.field_name || ''] ||
-      t('field_updated.unknown', { defaultValue: 'made an update' });
+      fieldLabels[entry.field_name || ''] || t('field_updated.unknown');
 
     // Format values for display
     if (
@@ -547,10 +554,10 @@ function getChangeDescription(
       entry.new_value !== null
     ) {
       const priorityLabels: Record<number, string> = {
-        1: t('priority.low', { defaultValue: 'Low' }),
-        2: t('priority.medium', { defaultValue: 'Medium' }),
-        3: t('priority.high', { defaultValue: 'High' }),
-        4: t('priority.urgent', { defaultValue: 'Urgent' }),
+        1: t('priority.low'),
+        2: t('priority.medium'),
+        3: t('priority.high'),
+        4: t('priority.urgent'),
       };
       return {
         action,
@@ -573,9 +580,7 @@ function getChangeDescription(
     if (entry.field_name === 'completed') {
       const isCompleted = entry.new_value === true;
       return {
-        action: isCompleted
-          ? t('marked_complete', { defaultValue: 'marked as complete' })
-          : t('marked_incomplete', { defaultValue: 'marked as incomplete' }),
+        action: isCompleted ? t('marked_complete') : t('marked_incomplete'),
       };
     }
 
@@ -585,113 +590,96 @@ function getChangeDescription(
   // Handle relationship changes
   switch (entry.change_type) {
     case 'assignee_added': {
-      const assigneeData = entry.new_value as {
-        user_name?: string;
-      } | null;
-      const assigneeName =
-        assigneeData?.user_name ||
-        (entry.metadata?.assignee_name as string) ||
-        t('unknown_user', { defaultValue: 'Unknown' });
+      const newValueData =
+        typeof entry.new_value === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(entry.new_value);
+              } catch {
+                return null;
+              }
+            })()
+          : (entry.new_value as Record<string, unknown> | null);
 
       return {
-        action: t('assigned', { defaultValue: 'assigned' }),
+        action: t('assigned'),
         details: (
-          <Badge variant="secondary" className="text-xs">
-            {assigneeName}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={newValueData?.avatar_url as string} />
+              <AvatarFallback className="text-[10px]">
+                {(
+                  (newValueData?.name as string) ||
+                  (newValueData?.displayName as string) ||
+                  '?'
+                ).substring(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-medium text-xs">
+              {(newValueData?.name as string) ||
+                (newValueData?.displayName as string) ||
+                t('unknown_user')}
+            </span>
+          </div>
         ),
       };
     }
     case 'assignee_removed': {
-      const assigneeData = entry.old_value as {
-        user_name?: string;
-      } | null;
-      const assigneeName =
-        assigneeData?.user_name ||
-        (entry.metadata?.assignee_name as string) ||
-        t('unknown_user', { defaultValue: 'Unknown' });
+      const oldValueData =
+        typeof entry.old_value === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(entry.old_value);
+              } catch {
+                return null;
+              }
+            })()
+          : (entry.old_value as Record<string, unknown> | null);
 
       return {
-        action: t('unassigned', { defaultValue: 'unassigned' }),
+        action: t('unassigned'),
         details: (
-          <Badge variant="outline" className="text-xs opacity-70">
-            {assigneeName}
-          </Badge>
+          <div className="flex items-center gap-1.5 opacity-70">
+            <Avatar className="h-5 w-5 grayscale">
+              <AvatarImage src={oldValueData?.avatar_url as string} />
+              <AvatarFallback className="text-[10px]">
+                {(
+                  (oldValueData?.name as string) ||
+                  (oldValueData?.displayName as string) ||
+                  '?'
+                ).substring(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-medium text-xs">
+              {(oldValueData?.name as string) ||
+                (oldValueData?.displayName as string) ||
+                t('unknown_user')}
+            </span>
+          </div>
         ),
       };
     }
     case 'label_added': {
-      const labelData = entry.new_value as {
-        name?: string;
-        color?: string;
-      } | null;
       const labelName =
-        labelData?.name ||
-        (entry.metadata?.label_name as string) ||
-        t('unknown_label', { defaultValue: 'Unknown' });
-      const labelColor =
-        labelData?.color || (entry.metadata?.label_color as string);
-
+        (entry.metadata?.label_name as string) || t('unknown_label');
       return {
-        action: t('added_label', { defaultValue: 'added label' }),
+        action: t('added_label'),
         details: (
-          <Badge
-            variant="secondary"
-            className="gap-1 text-xs"
-            style={
-              labelColor
-                ? {
-                    backgroundColor: `${labelColor}20`,
-                    borderColor: `${labelColor}40`,
-                    color: labelColor,
-                  }
-                : undefined
-            }
-          >
-            {labelColor && (
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: labelColor }}
-              />
-            )}
+          <Badge variant="secondary" className="text-xs">
+            <Tag className="mr-1 h-3 w-3" />
             {labelName}
           </Badge>
         ),
       };
     }
     case 'label_removed': {
-      const labelData = entry.old_value as {
-        name?: string;
-        color?: string;
-      } | null;
       const labelName =
-        labelData?.name ||
-        (entry.metadata?.label_name as string) ||
-        t('unknown_label', { defaultValue: 'Unknown' });
-      const labelColor =
-        labelData?.color || (entry.metadata?.label_color as string);
-
+        (entry.metadata?.label_name as string) || t('unknown_label');
       return {
-        action: t('removed_label', { defaultValue: 'removed label' }),
+        action: t('removed_label'),
         details: (
-          <Badge
-            variant="outline"
-            className="gap-1 text-xs opacity-70"
-            style={
-              labelColor
-                ? {
-                    borderColor: `${labelColor}60`,
-                    color: labelColor,
-                  }
-                : undefined
-            }
-          >
-            {labelColor && (
-              <span
-                className="h-1.5 w-1.5 rounded-full opacity-60"
-                style={{ backgroundColor: labelColor }}
-              />
-            )}
+          <Badge variant="outline" className="text-xs opacity-70">
+            <Tag className="mr-1 h-3 w-3" />
             {labelName}
           </Badge>
         ),
@@ -710,16 +698,12 @@ function getChangeDescription(
           : (entry.new_value as Record<string, unknown> | null);
 
       const projectName =
+        (newValueData?.name as string) ||
         (entry.metadata?.project_name as string) ||
-        newValueData?.project_name ||
-        newValueData?.name ||
-        (typeof entry.new_value === 'string' && !newValueData
-          ? entry.new_value
-          : null) ||
-        t('unknown_project', { defaultValue: 'Unknown' });
+        t('unknown_project');
 
       return {
-        action: t('linked_to_project', { defaultValue: 'linked to project' }),
+        action: t('linked_to_project'),
         details: (
           <Badge variant="secondary" className="gap-1 text-xs">
             <FolderKanban className="h-3 w-3" />
@@ -741,18 +725,12 @@ function getChangeDescription(
           : (entry.old_value as Record<string, unknown> | null);
 
       const projectName =
+        (oldValueData?.name as string) ||
         (entry.metadata?.project_name as string) ||
-        oldValueData?.project_name ||
-        oldValueData?.name ||
-        (typeof entry.old_value === 'string' && !oldValueData
-          ? entry.old_value
-          : null) ||
-        t('unknown_project', { defaultValue: 'Unknown' });
+        t('unknown_project');
 
       return {
-        action: t('unlinked_from_project', {
-          defaultValue: 'unlinked from project',
-        }),
+        action: t('unlinked_from_project'),
         details: (
           <Badge variant="outline" className="gap-1 text-xs opacity-70">
             <FolderKanban className="h-3 w-3" />
@@ -763,7 +741,7 @@ function getChangeDescription(
     }
     default:
       return {
-        action: t('unknown_change', { defaultValue: 'made a change' }),
+        action: t('unknown_change'),
       };
   }
 }

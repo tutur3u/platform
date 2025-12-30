@@ -39,7 +39,7 @@
     "@ai-sdk/replicate": "^2.0.1",
     "@ai-sdk/revai": "^2.0.1",
     "@ai-sdk/togetherai": "^2.0.1",
-    "@ai-sdk/xai": "^3.0.1",
+    "@ai-sdk/xai": "^3.0.2",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "ai": "^6.0.3",

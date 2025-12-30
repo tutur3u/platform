@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { TabButton } from './relationships/components/tab-button';
 import { DependenciesSection } from './relationships/dependencies-section';
@@ -51,6 +52,7 @@ export function TaskRelationshipsProperties({
   isSaving,
   savingTaskId,
 }: TaskRelationshipsPropertiesProps) {
+  const t = useTranslations();
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<RelationshipTab>('parent');
 
@@ -59,28 +61,28 @@ export function TaskRelationshipsProperties({
     () => [
       {
         id: 'parent' as const,
-        label: 'Parent',
+        label: t('ws-task-boards.dialog.parent'),
         icon: <ArrowUpCircle className="h-3.5 w-3.5" />,
         count: parentTask ? 1 : 0,
         color: 'purple' as const,
       },
       {
         id: 'subtasks' as const,
-        label: 'Sub-tasks',
+        label: t('ws-task-boards.dialog.sub_tasks'),
         icon: <ListTree className="h-3.5 w-3.5" />,
         count: childTasks.length,
         color: 'green' as const,
       },
       {
         id: 'dependencies' as const,
-        label: 'Dependencies',
+        label: t('ws-task-boards.dialog.dependencies'),
         icon: <Ban className="h-3.5 w-3.5" />,
         count: blockingTasks.length + blockedByTasks.length,
         color: 'red' as const,
       },
       {
         id: 'related' as const,
-        label: 'Related',
+        label: t('ws-task-boards.dialog.related'),
         icon: <Link2 className="h-3.5 w-3.5" />,
         count: relatedTasks.length,
         color: 'blue' as const,
@@ -92,6 +94,7 @@ export function TaskRelationshipsProperties({
       blockingTasks.length,
       blockedByTasks.length,
       relatedTasks.length,
+      t,
     ]
   );
 
@@ -120,7 +123,7 @@ export function TaskRelationshipsProperties({
             )}
           />
           <span className="shrink-0 font-semibold text-foreground text-sm">
-            Relationships
+            {t('ws-task-boards.dialog.relationships')}
           </span>
 
           {/* Summary badges when collapsed */}
@@ -132,7 +135,7 @@ export function TaskRelationshipsProperties({
                   className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
                 >
                   <ArrowUpCircle className="h-2.5 w-2.5" />
-                  Parent
+                  {t('ws-task-boards.dialog.parent')}
                 </Badge>
               )}
               {childTasks.length > 0 && (
@@ -190,7 +193,7 @@ export function TaskRelationshipsProperties({
           </div>
 
           {/* Tab content */}
-          <div className="min-h-[120px]">
+          <div className="min-h-30">
             {activeTab === 'parent' && (
               <ParentSection
                 wsId={wsId}

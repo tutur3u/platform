@@ -13,9 +13,9 @@ import {
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';

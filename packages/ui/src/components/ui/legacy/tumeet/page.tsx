@@ -48,8 +48,8 @@ export async function MeetTogetherPage({
   const tCommon = await getTranslations('common');
 
   const resolvedSearchParams = await searchParams;
-  const page = parseInt(resolvedSearchParams?.page || '1');
-  const pageSize = parseInt(resolvedSearchParams?.pageSize || '9');
+  const page = parseInt(resolvedSearchParams?.page || '1', 10);
+  const pageSize = parseInt(resolvedSearchParams?.pageSize || '9', 10);
 
   const {
     data: plans,

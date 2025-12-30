@@ -11,8 +11,8 @@ interface CrawledUrlNextUrl {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
     const domain = searchParams.get('domain');
     const search = searchParams.get('search');
 
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
     // Create a set of existing URLs for faster lookup
     const existingUrlSet = new Set(
       existingUrls.map((url) =>
-        url.url.trim().endsWith('/') ? url.url.trim() : url.url.trim() + '/'
+        url.url.trim().endsWith('/') ? url.url.trim() : `${url.url.trim()}/`
       )
     );
 
@@ -90,7 +90,7 @@ export async function GET(req: Request) {
       (nextUrl) => {
         const normalizedUrl = nextUrl.url.trim().endsWith('/')
           ? nextUrl.url.trim()
-          : nextUrl.url.trim() + '/';
+          : `${nextUrl.url.trim()}/`;
         return !existingUrlSet.has(normalizedUrl);
       }
     );

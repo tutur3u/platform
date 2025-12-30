@@ -136,7 +136,7 @@ export function MeetingsContent({
       setFormError(null);
       refetch();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (_err) {
       setFormError('Failed to create meeting.');
       setCreating(false);
     }
@@ -179,7 +179,7 @@ export function MeetingsContent({
       setEditingMeeting(null);
       refetch();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (_err) {
       setEditFormError('Failed to update meeting.');
       setEditing(false);
     }
@@ -211,7 +211,7 @@ export function MeetingsContent({
 
       refetch();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (_err) {
       alert('Failed to delete meeting.');
       setDeleting(false);
     }

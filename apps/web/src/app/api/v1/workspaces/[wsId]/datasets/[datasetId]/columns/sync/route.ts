@@ -58,15 +58,17 @@ export async function POST(
 
     // Add new columns
     const columnsToAdd = filteredColumns.filter(
-      (col) => !existingNames.includes(col?.name!)
+      (col) => col?.name && !existingNames.includes(col.name)
     );
 
     if (columnsToAdd.length) {
       await supabase.from('workspace_dataset_columns').insert(
-        columnsToAdd.map((col) => ({
-          dataset_id: datasetId,
-          name: col?.name!,
-        }))
+        columnsToAdd
+          .filter((col): col is { name: string } => Boolean(col?.name))
+          .map((col) => ({
+            dataset_id: datasetId,
+            name: col.name,
+          }))
       );
     }
 

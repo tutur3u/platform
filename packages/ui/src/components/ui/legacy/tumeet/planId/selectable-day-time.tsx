@@ -153,6 +153,7 @@ export default function SelectableDayTime({
           } as const;
 
           return (
+            // biome-ignore lint/a11y/useKeyWithMouseEvents: mouse drag selection is intentional UX for time blocking
             <div
               key={`${date}-${i}`}
               onMouseDown={

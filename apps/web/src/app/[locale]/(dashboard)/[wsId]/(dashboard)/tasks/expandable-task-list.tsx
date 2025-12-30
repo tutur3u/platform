@@ -250,7 +250,7 @@ export default function ExpandableTaskList({
       case 'urgent':
         return {
           color: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20',
-          label: t('priority_urgent'),
+          label: t('priority_critical'),
         };
       case 'high':
         return {
@@ -263,7 +263,7 @@ export default function ExpandableTaskList({
         return {
           color:
             'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20',
-          label: t('priority_medium'),
+          label: t('priority_normal'),
         };
       case 'low':
         return {

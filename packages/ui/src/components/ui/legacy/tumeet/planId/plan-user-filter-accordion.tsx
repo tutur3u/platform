@@ -160,6 +160,7 @@ export default function PlanUserFilterAccordion({
 
             return (
               <button
+                type="button"
                 key={userId}
                 className={`w-full rounded-lg border p-3 text-left transition-all duration-200 ease-in-out ${
                   isSelected

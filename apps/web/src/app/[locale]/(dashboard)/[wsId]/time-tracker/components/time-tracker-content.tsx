@@ -437,7 +437,7 @@ export default function TimeTrackerContent({
         }
       }
     },
-    [wsId, apiCall, currentUserId]
+    [wsId, apiCall, currentUserId, t]
   );
 
   // Handle starting a task session
@@ -498,7 +498,7 @@ export default function TimeTrackerContent({
         toast.error(t('toast.failedToStart'));
       }
     },
-    [wsId, apiCall, currentUserId, categories, fetchData]
+    [wsId, apiCall, currentUserId, categories, fetchData, t]
   );
 
   // Auto-refresh with exponential backoff and visibility check

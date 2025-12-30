@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import Image from 'next/image';
 import { useState } from 'react';
 
 interface Props {
@@ -122,7 +123,9 @@ export function Bill({ wsId, transactionId }: Props) {
                         className="group flex items-center gap-2 rounded"
                       >
                         <div className="size-8">
-                          <img
+                          <Image
+                            width={640}
+                            height={640}
                             src={URL.createObjectURL(f.rawFile)}
                             alt={f.rawFile.name}
                             className="h-8 w-8 rounded object-cover"
@@ -251,7 +254,8 @@ export async function uploadBill(
         lastFileName.substring(
           lastFileName.lastIndexOf('(') + 1,
           lastFileName.lastIndexOf(')')
-        )
+        ),
+        10
       );
       newFileName = `${baseName}(${lastFileNameIndex + 1}).${fileExtension}`;
     } else {

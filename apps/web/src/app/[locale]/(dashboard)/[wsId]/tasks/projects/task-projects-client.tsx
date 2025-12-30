@@ -1,21 +1,21 @@
 'use client';
 
 import { Loader2 } from '@tuturuuu/icons';
-import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TaskProject, TaskProjectsClientProps } from './types';
-import { useTaskProjects, useProjectFilters } from './hooks';
+import { useCallback, useState } from 'react';
 import {
-  ProjectsToolbar,
-  ProjectsEmptyState,
-  ProjectListItem,
   ProjectGridCard,
+  ProjectListItem,
+  ProjectsEmptyState,
+  ProjectsToolbar,
 } from './components';
 import {
   CreateProjectDialog,
   EditProjectDialog,
   ManageTasksDialog,
 } from './dialogs';
+import { useProjectFilters, useTaskProjects } from './hooks';
+import type { TaskProject, TaskProjectsClientProps } from './types';
 
 export function TaskProjectsClient({
   wsId,

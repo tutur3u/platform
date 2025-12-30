@@ -78,7 +78,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient();

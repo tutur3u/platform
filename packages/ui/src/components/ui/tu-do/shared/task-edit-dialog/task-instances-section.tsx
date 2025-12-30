@@ -20,6 +20,7 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { ScheduledCalendarEvent } from './task-properties-section';
 
@@ -38,6 +39,7 @@ export function TaskInstancesSection({
   onLockToggle,
   isLocking,
 }: TaskInstancesSectionProps) {
+  const t = useTranslations();
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (scheduledEvents.length === 0) return null;
@@ -52,7 +54,7 @@ export function TaskInstancesSection({
       >
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span className="font-medium text-foreground/80 text-sm">
-          Scheduled Instances
+          {t('ws-task-boards.dialog.scheduled_instances')}
         </span>
         <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
           {scheduledEvents.length}

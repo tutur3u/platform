@@ -32,7 +32,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function PrivacyPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -285,7 +285,7 @@ Response Time: 48 hours
   }));
 
   // Track active section for better navigation
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const sectionElements = sections.map((section) => {
       const id = section.title.toLowerCase().replace(/\s+/g, '-');
       return {
@@ -305,7 +305,7 @@ Response Time: 48 hours
         }
       }
     }
-  };
+  }, []);
 
   // Add scroll event listener when component mounts
   useEffect(() => {
@@ -316,7 +316,7 @@ Response Time: 48 hours
       if (typeof window !== 'undefined')
         window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [handleScroll]);
 
   return (
     <main className="container relative space-y-16 py-24">

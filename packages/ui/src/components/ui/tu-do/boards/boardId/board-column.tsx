@@ -10,6 +10,7 @@ import { Card } from '@tuturuuu/ui/card';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React, { useMemo } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { ListActions } from './list-actions';
@@ -78,7 +79,20 @@ function BoardColumnInner({
 }: BoardColumnProps) {
   const params = useParams();
   const wsId = params.wsId as string;
+  const t = useTranslations('common');
   const { createTask } = useTaskDialog();
+
+  // Helper to translate standard list names
+  const translateListName = (name: string): string => {
+    const normalized = name.toLowerCase().replace(/\s+/g, '');
+    const translations: Record<string, string> = {
+      todo: t('list_name_to_do'),
+      inprogress: t('list_name_in_progress'),
+      done: t('list_name_done'),
+      closed: t('list_name_closed'),
+    };
+    return translations[normalized] ?? name;
+  };
 
   const {
     setNodeRef,
@@ -123,13 +137,13 @@ function BoardColumnInner({
           isDragging && 'opacity-100',
           isOverlay && 'cursor-grabbing'
         )}
-        title="Drag to move list"
+        title={t('drag_to_move_list')}
       >
-        <span className="sr-only">Move list</span>
+        <span className="sr-only">{t('move_list')}</span>
         <GripVertical className="h-4 w-4" />
       </div>
     ),
-    [attributes, listeners, isDragging, isOverlay]
+    [attributes, listeners, isDragging, isOverlay, t]
   );
 
   const handleSelectAll = () => {
@@ -157,7 +171,7 @@ function BoardColumnInner({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
+        'group flex h-full w-87.5 flex-col rounded-xl transition-all duration-200',
         'touch-none select-none',
         colorClass,
         isDragging &&
@@ -174,7 +188,7 @@ function BoardColumnInner({
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
           <h3 className="font-semibold text-foreground/90 text-sm">
-            {column.name}
+            {translateListName(column.name)}
           </h3>
           <Badge
             variant="secondary"
@@ -228,7 +242,7 @@ function BoardColumnInner({
           }
           className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
         >
-          + Add task
+          + {t('add_task')}
         </Button>
       </div>
     </Card>

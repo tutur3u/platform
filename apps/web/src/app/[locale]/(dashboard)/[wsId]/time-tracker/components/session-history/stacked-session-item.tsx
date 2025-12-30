@@ -109,7 +109,7 @@ export function StackedSessionItem({
           <div className="min-w-0 flex-1 space-y-2 md:space-y-2.5">
             {/* Title row with duration on mobile */}
             <div className="flex items-start justify-between gap-2">
-              <h4 className="line-clamp-1 break-all min-w-0 flex-1 font-semibold text-base leading-tight md:text-lg">
+              <h4 className="line-clamp-1 min-w-0 flex-1 break-all font-semibold text-base leading-tight md:text-lg">
                 {stackedSession?.title}
               </h4>
               {/* Duration badge - visible on mobile */}

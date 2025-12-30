@@ -38,7 +38,7 @@ export const createCalendarOptimizer = (
       .eq('ws_id', wsId);
 
     // Apply intelligent date filtering if provided
-    if (dateRange && dateRange.startDate && dateRange.endDate) {
+    if (dateRange?.startDate && dateRange.endDate) {
       const startDateTime = `${dateRange.startDate}T00:00:00.000Z`;
       const endDateTime = `${dateRange.endDate}T23:59:59.999Z`;
 

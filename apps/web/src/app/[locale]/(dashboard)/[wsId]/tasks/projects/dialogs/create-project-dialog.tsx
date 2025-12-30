@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -14,7 +13,8 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { Loader2 } from '@tuturuuu/icons';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface CreateProjectDialogProps {
   open: boolean;

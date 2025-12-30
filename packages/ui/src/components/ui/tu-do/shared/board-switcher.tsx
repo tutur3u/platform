@@ -29,6 +29,20 @@ interface BoardSwitcherProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
     icon?: WorkspaceTaskBoard['icon'];
   };
+  translations?: {
+    loadingBoards?: string;
+    noOtherBoards?: string;
+    activeBoards?: string;
+    archivedBoards?: string;
+    deletedBoards?: string;
+    untitled?: string;
+    active?: string;
+    archived?: string;
+    deleted?: string;
+    daysLeft?: string;
+    // Board name translations (case-insensitive matching)
+    tasks?: string;
+  };
 }
 
 type BoardWithStatus = {
@@ -49,8 +63,31 @@ function getDaysRemaining(deletedAt: string) {
   return Math.max(0, 30 - daysPassed);
 }
 
-export function BoardSwitcher({ board }: BoardSwitcherProps) {
+export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   const router = useRouter();
+
+  // Use provided translations or fall back to English defaults
+  const t = {
+    loadingBoards: translations?.loadingBoards ?? 'Loading boards...',
+    noOtherBoards: translations?.noOtherBoards ?? 'No other boards',
+    activeBoards: translations?.activeBoards ?? 'Active Boards',
+    archivedBoards: translations?.archivedBoards ?? 'Archived Boards',
+    deletedBoards: translations?.deletedBoards ?? 'Deleted Boards',
+    untitled: translations?.untitled ?? 'Untitled',
+    active: translations?.active ?? 'Active',
+    archived: translations?.archived ?? 'Archived',
+    deleted: translations?.deleted ?? 'Deleted',
+    daysLeft: translations?.daysLeft ?? '{count} days left',
+    tasks: translations?.tasks ?? 'Tasks',
+  };
+
+  // Helper to translate board names (case-insensitive matching)
+  const translateBoardName = (name: string | null): string => {
+    if (!name) return t.untitled;
+    // Check if board name matches known translatable names
+    if (name.toLowerCase() === 'tasks') return t.tasks;
+    return name;
+  };
 
   const { data: boards = [], isLoading: isFetchingBoards } = useQuery({
     queryKey: ['other-boards', board.ws_id, board.id],
@@ -89,7 +126,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
             <CurrentBoardIcon className="h-4 w-4" />
           </div>
           <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
-            {board.name}
+            {translateBoardName(board.name)}
           </h1>
           <ChevronsUpDown className="h-4 w-4 text-muted-foreground transition-transform group-hover:scale-110" />
         </div>
@@ -98,11 +135,11 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
         {isFetchingBoards ? (
           <DropdownMenuItem disabled>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading boards...
+            {t.loadingBoards}
           </DropdownMenuItem>
         ) : boards.length === 0 ? (
           <DropdownMenuItem disabled className="justify-center">
-            No other boards
+            {t.noOtherBoards}
           </DropdownMenuItem>
         ) : (
           <>
@@ -110,7 +147,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
             {activeBoards.length > 0 && (
               <>
                 <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  Active Boards
+                  {t.activeBoards}
                 </DropdownMenuLabel>
                 {activeBoards.map((otherBoard) => {
                   const isCurrentBoard = otherBoard.id === board.id;
@@ -136,7 +173,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="truncate font-medium text-sm leading-none">
-                          {otherBoard.name || 'Untitled'}
+                          {translateBoardName(otherBoard.name)}
                         </span>
                       </div>
                       <Badge
@@ -146,7 +183,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                         )}
                       >
                         <CheckCircle2 className="h-3 w-3 text-dynamic-green/50" />
-                        Active
+                        {t.active}
                       </Badge>
                     </DropdownMenuItem>
                   );
@@ -159,7 +196,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
               <>
                 {activeBoards.length > 0 && <DropdownMenuSeparator />}
                 <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  Archived Boards
+                  {t.archivedBoards}
                 </DropdownMenuLabel>
                 {archivedBoards.map((otherBoard) => {
                   const isCurrentBoard = otherBoard.id === board.id;
@@ -186,7 +223,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="truncate font-medium text-sm leading-none">
-                          {otherBoard.name || 'Untitled'}
+                          {otherBoard.name || t.untitled}
                         </span>
                       </div>
                       <Badge
@@ -196,7 +233,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                         )}
                       >
                         <Archive className="h-3 w-3 text-foreground/50" />
-                        Archived
+                        {t.archived}
                       </Badge>
                     </DropdownMenuItem>
                   );
@@ -211,7 +248,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   <DropdownMenuSeparator />
                 )}
                 <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  Deleted Boards
+                  {t.deletedBoards}
                 </DropdownMenuLabel>
                 {deletedBoards.map((otherBoard) => {
                   const daysRemaining = getDaysRemaining(
@@ -242,10 +279,10 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="truncate font-medium text-sm leading-none">
-                          {otherBoard.name || 'Untitled'}
+                          {otherBoard.name || t.untitled}
                         </span>
                         <span className="text-[10px] text-muted-foreground leading-none">
-                          {daysRemaining} days left
+                          {t.daysLeft.replace('{count}', String(daysRemaining))}
                         </span>
                       </div>
                       <Badge
@@ -255,7 +292,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                         )}
                       >
                         <Trash2 className="h-3 w-3 text-dynamic-red/50" />
-                        Deleted
+                        {t.deleted}
                       </Badge>
                     </DropdownMenuItem>
                   );

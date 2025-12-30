@@ -224,7 +224,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   {
     params,
   }: { params: Promise<{ wsId: string; meetingId: string; sessionId: string }> }

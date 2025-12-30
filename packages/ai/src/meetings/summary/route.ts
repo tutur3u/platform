@@ -1,7 +1,7 @@
 export function createPOST(
-  options: { serverAPIKeyFallback?: boolean } = {
+  _options: { serverAPIKeyFallback?: boolean } = {
     serverAPIKeyFallback: false,
   }
 ) {
-  return async function handler(req: Request) {};
+  return async function handler(_req: Request) {};
 }

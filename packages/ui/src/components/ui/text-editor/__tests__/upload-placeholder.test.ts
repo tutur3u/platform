@@ -51,7 +51,7 @@ describe('upload-placeholder', () => {
       const id = generateUploadId();
       const after = Date.now();
 
-      const timestamp = parseInt(id.split('-')[1] || '0');
+      const timestamp = parseInt(id.split('-')[1] || '0', 10);
       expect(timestamp).toBeGreaterThanOrEqual(before);
       expect(timestamp).toBeLessThanOrEqual(after);
     });
@@ -60,8 +60,8 @@ describe('upload-placeholder', () => {
       const id1 = generateUploadId();
       const id2 = generateUploadId();
 
-      const counter1 = parseInt(id1.split('-')[2] || '0');
-      const counter2 = parseInt(id2.split('-')[2] || '0');
+      const counter1 = parseInt(id1.split('-')[2] || '0', 10);
+      const counter2 = parseInt(id2.split('-')[2] || '0', 10);
 
       expect(counter2).toBe(counter1 + 1);
     });

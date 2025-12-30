@@ -1,7 +1,7 @@
 'use client';
 
-import { toast } from '@tuturuuu/ui/sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useMemo, useState } from 'react';
 import type { ProjectUpdate } from '../types';
 

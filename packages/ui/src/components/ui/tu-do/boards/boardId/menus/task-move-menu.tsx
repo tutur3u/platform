@@ -20,6 +20,10 @@ interface TaskMoveMenuProps {
   isLoading: boolean;
   onMoveToList: (listId: string) => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
+  translations?: {
+    move?: string;
+    noOtherListsAvailable?: string;
+  };
 }
 
 const getStatusIcon = (status: TaskList['status']) => {
@@ -56,7 +60,15 @@ export function TaskMoveMenu({
   isLoading,
   onMoveToList,
   onMenuItemSelect,
+  translations,
 }: TaskMoveMenuProps) {
+  // Use provided translations or fall back to English defaults
+  const t = {
+    move: translations?.move ?? 'Move',
+    noOtherListsAvailable:
+      translations?.noOtherListsAvailable ?? 'No other lists available',
+  };
+
   const otherLists = availableLists.filter((list) => list.id !== currentListId);
 
   if (availableLists.length <= 1) return null;
@@ -68,12 +80,12 @@ export function TaskMoveMenu({
           <Move className="h-4 w-4 text-dynamic-blue" />
         </div>
         <div className="flex w-full items-center justify-between">
-          <span>Move</span>
+          <span>{t.move}</span>
         </div>
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
+      <DropdownMenuSubContent className="max-h-100 w-56 overflow-hidden p-0">
         {otherLists.length > 0 ? (
-          <div className="max-h-[200px] overflow-auto">
+          <div className="max-h-50 overflow-auto">
             <div className="p-1">
               {otherLists.map((list) => {
                 const StatusIcon = getStatusIcon(list.status);
@@ -104,7 +116,7 @@ export function TaskMoveMenu({
         ) : (
           <DropdownMenuItem disabled className="text-muted-foreground">
             <List className="h-4 w-4" />
-            No other lists available
+            {t.noOtherListsAvailable}
           </DropdownMenuItem>
         )}
       </DropdownMenuSubContent>

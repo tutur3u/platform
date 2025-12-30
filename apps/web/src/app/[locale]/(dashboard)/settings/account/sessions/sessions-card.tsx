@@ -306,7 +306,7 @@ export default function SessionsCard() {
           <div className="space-y-2 rounded-lg border bg-background p-4">
             <div className="font-bold text-2xl text-dynamic-orange">
               {stats.current_session_age
-                ? `${Math.floor(parseInt(stats.current_session_age.split(':')[0] || '0') / 24)}d`
+                ? `${Math.floor(parseInt(stats.current_session_age.split(':')[0] || '0', 10) / 24)}d`
                 : 'N/A'}
             </div>
             <div className="text-muted-foreground text-sm">

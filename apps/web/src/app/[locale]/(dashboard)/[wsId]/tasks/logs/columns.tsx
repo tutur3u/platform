@@ -147,7 +147,7 @@ export function getColumns({
 
         const content = (
           <span
-            className={`block max-w-[200px] truncate font-medium text-sm ${
+            className={`block max-w-50 truncate font-medium text-sm ${
               !task_id || task_permanently_deleted
                 ? 'text-muted-foreground line-through'
                 : 'hover:underline'
@@ -209,7 +209,7 @@ export function getColumns({
             <TooltipTrigger asChild>
               <Link
                 href={`/${wsId}/tasks/boards/${board_id}`}
-                className="group/board inline-flex max-w-[150px] items-center gap-1.5 text-sm hover:text-foreground"
+                className="group/board inline-flex max-w-37.5 items-center gap-1.5 text-sm hover:text-foreground"
               >
                 <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate text-muted-foreground group-hover/board:text-foreground group-hover/board:underline">
@@ -290,7 +290,7 @@ export function getColumns({
             <div className="flex items-center gap-2 text-sm">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="max-w-[100px] truncate text-muted-foreground line-through">
+                  <span className="max-w-25 truncate text-muted-foreground line-through">
                     {oldTruncated}
                   </span>
                 </TooltipTrigger>
@@ -306,7 +306,7 @@ export function getColumns({
               <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="max-w-[100px] truncate font-medium">
+                  <span className="max-w-25 truncate font-medium">
                     {newTruncated}
                   </span>
                 </TooltipTrigger>
@@ -738,7 +738,7 @@ function formatValue(
       return translate('value.empty', { defaultValue: 'Empty' });
     }
     if (text.length > 50) {
-      return text.slice(0, 47) + '...';
+      return `${text.slice(0, 47)}...`;
     }
     return text;
   }
@@ -746,7 +746,7 @@ function formatValue(
   // Default: convert to string and truncate if too long
   const strValue = String(value);
   if (strValue.length > 50) {
-    return strValue.slice(0, 47) + '...';
+    return `${strValue.slice(0, 47)}...`;
   }
   return strValue;
 }

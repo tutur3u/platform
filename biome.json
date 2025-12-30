@@ -48,7 +48,7 @@
           "fix": "safe",
           "options": {
             "attributes": ["className"],
-            "functions": ["cn"]
+            "functions": ["cn", "clsx"]
           }
         }
       },

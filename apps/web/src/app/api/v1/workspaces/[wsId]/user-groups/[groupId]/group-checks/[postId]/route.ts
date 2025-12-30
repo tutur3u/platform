@@ -86,7 +86,7 @@ export async function PUT(req: Request, { params }: Params) {
       console.error(
         `[PUT /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}] Error upserting multiple user_group_post_checks:`,
         error.message || error,
-        `Attempted to update ${validatedData instanceof Array ? validatedData.length : 1} records`
+        `Attempted to update ${Array.isArray(validatedData) ? validatedData.length : 1} records`
       );
       return NextResponse.json(
         {

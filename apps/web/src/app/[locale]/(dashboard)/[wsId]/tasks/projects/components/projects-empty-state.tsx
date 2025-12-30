@@ -1,9 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Archive, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { useTranslations } from 'next-intl';
 
 interface ProjectsEmptyStateProps {
   hasFilters: boolean;

@@ -23,6 +23,7 @@ export default function PlanUserFilter({ users }: { users: PlanUser[] }) {
         {users.length > 0 ? (
           users.map((user) => (
             <button
+              type="button"
               key={user.id}
               className={`rounded-lg border p-4 ${
                 filteredUserIds.includes(user.id || '')

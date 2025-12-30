@@ -44,7 +44,7 @@ export function CoverImageUpload({
   const [urlInput, setUrlInput] = useState(value || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return 'Invalid file type. Please use PNG, JPG, GIF, or WebP.';
     }
@@ -52,7 +52,7 @@ export function CoverImageUpload({
       return `File too large. Maximum size is ${MAX_SIZE_MB}MB.`;
     }
     return null;
-  };
+  }, []);
 
   const handleFileUpload = useCallback(
     async (file: File) => {

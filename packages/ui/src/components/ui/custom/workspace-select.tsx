@@ -4,6 +4,7 @@ import { CheckIcon, ChevronDown, PlusCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -171,6 +172,12 @@ export function WorkspaceSelect({
           label: personalWorkspace.name || 'Personal',
           value: PERSONAL_WORKSPACE_SLUG,
           avatarUrl: personalWorkspace.avatar_url,
+          tier: (personalWorkspace as any)?.tier as
+            | 'FREE'
+            | 'PLUS'
+            | 'PRO'
+            | 'ENTERPRISE'
+            | null,
         },
       ],
     },
@@ -184,6 +191,7 @@ export function WorkspaceSelect({
           created_by_me?: boolean;
           personal?: boolean;
           avatar_url?: string | null;
+          tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
         }) => ({
           label: workspace.name || 'Untitled',
           value: toWorkspaceSlug(workspace.id, {
@@ -192,6 +200,7 @@ export function WorkspaceSelect({
           // Signal creator-owned workspaces for UI
           isCreator: workspace?.created_by_me === true,
           avatarUrl: workspace.avatar_url,
+          tier: workspace.tier || null,
         })
       ),
     },
@@ -203,6 +212,7 @@ export function WorkspaceSelect({
       value: string | undefined;
       isCreator?: boolean;
       avatarUrl?: string | null;
+      tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
     }[];
   }[];
 
@@ -280,10 +290,35 @@ export function WorkspaceSelect({
                   {workspace?.name ? getInitials(workspace.name) : '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className={cn(hideLeading ? 'hidden' : 'w-full')}>
-                <span className="line-clamp-1 w-full break-all text-xs">
+              <div
+                className={cn(
+                  hideLeading
+                    ? 'hidden'
+                    : 'flex min-w-0 flex-1 items-center gap-1.5'
+                )}
+              >
+                <span className="line-clamp-1 min-w-0 flex-1 break-all text-xs">
                   {workspace?.name || `${t('common.loading')}...`}
                 </span>
+                {(workspace as any)?.tier !== undefined && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+                      (!(workspace as any)?.tier ||
+                        (workspace as any)?.tier === 'FREE') &&
+                        'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
+                      (workspace as any)?.tier === 'PLUS' &&
+                        'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+                      (workspace as any)?.tier === 'PRO' &&
+                        'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+                      (workspace as any)?.tier === 'ENTERPRISE' &&
+                        'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                    )}
+                  >
+                    {(workspace as any)?.tier || 'FREE'}
+                  </Badge>
+                )}
               </div>
               {hideLeading || (
                 <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
@@ -303,6 +338,7 @@ export function WorkspaceSelect({
                         value: string | undefined;
                         isCreator?: boolean;
                         avatarUrl?: string | null;
+                        tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
                       }) => (
                         <CommandItem
                           key={team.value}
@@ -312,7 +348,10 @@ export function WorkspaceSelect({
                             onValueChange(team.value);
                             setOpen(false);
                           }}
-                          className="text-sm"
+                          className={cn(
+                            'text-sm',
+                            wsId === team.value && 'bg-accent'
+                          )}
                           disabled={!team}
                         >
                           <Avatar
@@ -343,6 +382,22 @@ export function WorkspaceSelect({
                           <span className="line-clamp-1 text-xs">
                             {team.label}
                           </span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+                              (!team.tier || team.tier === 'FREE') &&
+                                'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
+                              team.tier === 'PLUS' &&
+                                'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+                              team.tier === 'PRO' &&
+                                'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+                              team.tier === 'ENTERPRISE' &&
+                                'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                            )}
+                          >
+                            {team.tier || 'FREE'}
+                          </Badge>
                           <CheckIcon
                             className={cn(
                               'ml-auto h-4 w-4',
@@ -579,7 +634,7 @@ async function fetchWorkspaces() {
   const { data: workspaces, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id)'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions(workspace_subscription_products(tier))'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -622,6 +677,17 @@ async function fetchWorkspaces() {
 
   // For personal workspaces, override the name and avatar with the user's data
   return (workspaces || []).map((ws) => {
+    // Extract tier from workspace subscription
+    const subscriptions = (ws as any)?.workspace_subscriptions as
+      | Array<{
+          workspace_subscription_products: {
+            tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
+          } | null;
+        }>
+      | undefined;
+    const tier =
+      subscriptions?.[0]?.workspace_subscription_products?.tier || null;
+
     const base = ws?.personal
       ? {
           ...ws,
@@ -633,6 +699,8 @@ async function fetchWorkspaces() {
       ...base,
       // Mark if current user is the creator for downstream UI
       created_by_me: base?.creator_id === user.id,
+      // Include tier information
+      tier,
     };
   });
 }

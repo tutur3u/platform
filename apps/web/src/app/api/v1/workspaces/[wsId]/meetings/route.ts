@@ -34,17 +34,17 @@ export async function GET(
     }
 
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(url.searchParams.get('pageSize') || '10', 10);
 
-    if (isNaN(page) || page < 1) {
+    if (Number.isNaN(page) || page < 1) {
       return NextResponse.json(
         { error: 'Invalid page parameter' },
         { status: 400 }
       );
     }
 
-    if (isNaN(pageSize) || pageSize < 1 || pageSize > 100) {
+    if (Number.isNaN(pageSize) || pageSize < 1 || pageSize > 100) {
       return NextResponse.json(
         { error: 'Invalid pageSize parameter (must be between 1 and 100)' },
         { status: 400 }

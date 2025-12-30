@@ -92,7 +92,7 @@ export default function LinkedPromotionsClient({
   userId,
   canUpdateUsers,
   initialPromotions,
-  initialCount,
+  initialCount: _initialCount,
 }: LinkedPromotionsClientProps) {
   const t = useTranslations();
 
@@ -221,7 +221,7 @@ export default function LinkedPromotionsClient({
       if (error) throw error;
       return { promoId };
     },
-    onSuccess: ({ promoId }) => {
+    onSuccess: ({ promoId: _promoId }) => {
       setIsDeleteDialogOpen(false);
       setDeletingPromotion(null);
       toast(t('ws-user-linked-coupons.unlink_success'));

@@ -72,7 +72,7 @@ export function NavigationSection({
     onSelect?.();
   };
 
-  const renderNavigationItem = (item: FlatNavItem, score: number) => {
+  const renderNavigationItem = (item: FlatNavItem, _score: number) => {
     // Build breadcrumb path
     const breadcrumb = item.path.join(' › ');
 

@@ -72,7 +72,7 @@ export function MonthPicker({
         <Button
           variant={'outline'}
           className={cn(
-            'w-[280px] justify-start text-left font-normal',
+            'w-70 justify-start text-left font-normal',
             !defaultValue && 'text-muted-foreground',
             className
           )}
@@ -129,6 +129,7 @@ export function MonthPicker({
           </Button>
         </div>
 
+        {/* biome-ignore lint/a11y/useSemanticElements: role="grid" is intentional for keyboard navigation in pickers */}
         <div
           className="grid w-full grid-cols-3 gap-2"
           role="grid"

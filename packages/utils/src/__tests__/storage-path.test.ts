@@ -203,12 +203,12 @@ describe('Storage Path Sanitization', () => {
     });
 
     it('rejects filenames exceeding 255 characters', () => {
-      const longName = 'a'.repeat(256) + '.txt';
+      const longName = `${'a'.repeat(256)}.txt`;
       expect(sanitizeFilename(longName)).toBeNull();
     });
 
     it('accepts filenames at exactly 255 characters', () => {
-      const maxName = 'a'.repeat(251) + '.txt';
+      const maxName = `${'a'.repeat(251)}.txt`;
       expect(sanitizeFilename(maxName)).toBe(maxName);
     });
 

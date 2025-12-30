@@ -178,17 +178,21 @@ export default function MultipleChoiceVote({
   // On mount/options change: set selected to previous votes (if any)
   useEffect(() => {
     setSelectedOptionIds(votedOptionIds);
-  }, [optionsState.length, votedOptionIds]);
+  }, [votedOptionIds]);
 
   // Calculate unique voters across all options to avoid double counting
   const uniqueVoters = useMemo(() => {
     const userVoters = new Set<string>();
     const guestVoters = new Set<string>();
 
-    optionsState.forEach((option) => {
-      option.userVotes.forEach((vote) => userVoters.add(vote.user_id));
-      option.guestVotes.forEach((vote) => guestVoters.add(vote.guest_id));
-    });
+    for (const option of optionsState) {
+      for (const vote of option.userVotes) {
+        userVoters.add(vote.user_id);
+      }
+      for (const vote of option.guestVotes) {
+        guestVoters.add(vote.guest_id);
+      }
+    }
 
     return userVoters.size + guestVoters.size;
   }, [optionsState]);
@@ -374,9 +378,8 @@ export default function MultipleChoiceVote({
 
           return (
             <div key={option.id} className="flex flex-col gap-2">
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className={cn(
                   'flex w-full cursor-pointer items-center justify-between rounded-lg border p-3',
                   'touch-manipulation border-dynamic-purple/50',
@@ -385,12 +388,6 @@ export default function MultipleChoiceVote({
                     'border-dynamic-purple bg-dynamic-purple/10'
                 )}
                 onClick={() => !isDisplayMode && handleToggleOption(option.id)}
-                onKeyDown={(e) => {
-                  if (!isDisplayMode && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    handleToggleOption(option.id);
-                  }
-                }}
               >
                 <div className="flex w-full cursor-pointer items-start gap-2">
                   <Checkbox
@@ -447,7 +444,7 @@ export default function MultipleChoiceVote({
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
-              </div>
+              </button>
               {/* Voter list - mobile friendly */}
               <VoterList
                 userVotes={option.userVotes}

@@ -1,3 +1,4 @@
+import { FadeSettingInitializer } from '@/components/fade-setting-initializer';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
@@ -69,7 +70,10 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelAnalytics />
         <VercelInsights />
         <Suspense>
-          <Providers>{children}</Providers>
+          <Providers>
+            <FadeSettingInitializer />
+            {children}
+          </Providers>
         </Suspense>
         <TailwindIndicator />
         <ProductionIndicator />

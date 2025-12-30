@@ -141,7 +141,7 @@ export function useSessionActions({
           return t('validation_invalid_time');
       }
     },
-    []
+    [t]
   );
 
   const setEditFormState = useCallback(
@@ -392,6 +392,7 @@ export function useSessionActions({
     router,
     t,
     closeEditDialog,
+    getValidationErrorMessage,
   ]);
 
   const deleteSession = useCallback(async () => {

@@ -56,8 +56,10 @@ import {
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, formatDistanceToNow } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import React, {
   useCallback,
   useEffect,
@@ -138,6 +140,9 @@ function TaskCardInner({
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
+  const t = useTranslations('common');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
   const { weekStartsOn, timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
 
@@ -1149,7 +1154,7 @@ function TaskCardInner({
                         className="flex items-center gap-2"
                       >
                         <Timer className="h-4 w-4 text-dynamic-blue" />
-                        Start tracking time
+                        {t('start_tracking_time')}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -1169,10 +1174,9 @@ function TaskCardInner({
                       disabled={isLoading}
                     >
                       <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                      Mark as{' '}
                       {targetCompletionList?.status === 'done'
-                        ? 'Done'
-                        : 'Closed'}
+                        ? t('mark_as_done')
+                        : t('mark_as_closed')}
                     </DropdownMenuItem>
                   )}
 
@@ -1191,7 +1195,7 @@ function TaskCardInner({
                         disabled={isLoading}
                       >
                         <CircleSlash className="h-4 w-4 text-dynamic-purple" />
-                        Mark as Closed
+                        {t('mark_as_closed')}
                       </DropdownMenuItem>
                     )}
 
@@ -1207,6 +1211,14 @@ function TaskCardInner({
                     onPriorityChange={handlePriorityChange}
                     onMenuItemSelect={handleMenuItemSelect}
                     onClose={() => setMenuOpen(false)}
+                    translations={{
+                      priority: t('priority'),
+                      none: t('none'),
+                      urgent: t('priority_urgent'),
+                      high: t('priority_high'),
+                      medium: t('priority_medium'),
+                      low: t('priority_low'),
+                    }}
                   />
 
                   {/* Due Date Menu */}
@@ -1224,6 +1236,17 @@ function TaskCardInner({
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
                     onClose={() => setMenuOpen(false)}
+                    translations={{
+                      dueDate: t('due_date'),
+                      none: t('none'),
+                      today: t('today'),
+                      tomorrow: t('tomorrow'),
+                      yesterday: t('yesterday'),
+                      thisWeek: t('this_week'),
+                      nextWeek: t('next_week'),
+                      customDate: t('custom_date'),
+                      removeDueDate: t('remove_due_date'),
+                    }}
                   />
 
                   {/* Estimation Menu */}
@@ -1251,6 +1274,15 @@ function TaskCardInner({
                       setMenuOpen(false);
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
+                    translations={{
+                      labels: t('labels'),
+                      searchLabels: t('search_labels'),
+                      loading: t('loading'),
+                      noLabelsFound: t('no_labels_found'),
+                      noLabelsAvailable: t('no_labels_available'),
+                      applied: t('applied'),
+                      createNewLabel: t('create_new_label'),
+                    }}
                   />
 
                   {/* Projects Menu */}
@@ -1265,6 +1297,15 @@ function TaskCardInner({
                       setMenuOpen(false);
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
+                    translations={{
+                      projects: t('projects'),
+                      searchProjects: t('search_projects'),
+                      loading: t('loading'),
+                      noProjectsFound: t('no_projects_found'),
+                      noProjectsAvailable: t('no_projects_available'),
+                      assigned: t('assigned'),
+                      createNewProject: t('create_new_project'),
+                    }}
                   />
 
                   <DropdownMenuSeparator />
@@ -1320,6 +1361,10 @@ function TaskCardInner({
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
+                      translations={{
+                        move: t('move'),
+                        noOtherListsAvailable: t('no_other_lists_available'),
+                      }}
                     />
                   )}
 
@@ -1332,6 +1377,14 @@ function TaskCardInner({
                       assigneeSaving={assigneeSaving}
                       onToggleAssignee={onToggleAssignee}
                       onMenuItemSelect={handleMenuItemSelect}
+                      translations={{
+                        assignees: t('assignees'),
+                        searchMembers: t('search_members'),
+                        loading: t('loading'),
+                        noMembersFound: t('no_members_found'),
+                        noMembersAvailable: t('no_members_available'),
+                        assigned: t('assigned'),
+                      }}
                     />
                   )}
 
@@ -1341,14 +1394,14 @@ function TaskCardInner({
                     className="cursor-pointer"
                   >
                     <Copy className="h-4 w-4 text-foreground" />
-                    Duplicate task
+                    {t('duplicate_task')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={handleAddSubtask}
                     className="cursor-pointer"
                   >
                     <ListTree className="h-4 w-4 text-foreground" />
-                    Add sub-task
+                    {t('add_subtask')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -1361,7 +1414,7 @@ function TaskCardInner({
                     className="cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4 text-dynamic-red" />
-                    Delete task
+                    {t('delete_task')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1434,15 +1487,17 @@ function TaskCardInner({
               >
                 <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
-                  Completed{' '}
+                  {t('completed')}{' '}
                   {formatDistanceToNow(new Date(task.completed_at), {
                     addSuffix: true,
+                    locale: dateLocale,
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
                   {format(
                     new Date(task.completed_at),
-                    `MMM dd 'at' ${timePattern}`
+                    `MMM dd 'at' ${timePattern}`,
+                    { locale: dateLocale }
                   )}
                 </span>
               </div>
@@ -1456,15 +1511,17 @@ function TaskCardInner({
               >
                 <CircleSlash className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
-                  Closed{' '}
+                  {t('closed')}{' '}
                   {formatDistanceToNow(new Date(task.closed_at), {
                     addSuffix: true,
+                    locale: dateLocale,
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
                   {format(
                     new Date(task.closed_at),
-                    `MMM dd 'at' ${timePattern}`
+                    `MMM dd 'at' ${timePattern}`,
+                    { locale: dateLocale }
                   )}
                 </span>
               </div>

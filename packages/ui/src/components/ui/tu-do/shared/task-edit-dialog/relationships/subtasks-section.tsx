@@ -20,7 +20,9 @@ export function SubtasksSection({
 
   const excludeIds = React.useMemo(() => {
     const ids = taskId ? [taskId] : [];
-    childTasks.forEach((t) => ids.push(t.id));
+    for (const t of childTasks) {
+      ids.push(t.id);
+    }
     return ids;
   }, [taskId, childTasks]);
 

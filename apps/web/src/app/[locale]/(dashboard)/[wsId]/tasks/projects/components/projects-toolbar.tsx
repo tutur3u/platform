@@ -1,29 +1,31 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import {
+  Calendar,
+  ChevronDown,
+  Circle,
+  Filter,
+  Grid3x3,
+  List,
+  Plus,
+  X,
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
-import { Badge } from '@tuturuuu/ui/badge';
-import {
-  Calendar,
-  ChevronDown,
-  Filter,
-  Grid3x3,
-  List,
-  Plus,
-  X,
-  Circle,
-} from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import type { ViewMode, SortBy, SortOrder } from '../types';
+import { useTranslations } from 'next-intl';
+import type { SortBy, SortOrder, ViewMode } from '../types';
 
 interface ProjectsToolbarProps {
   viewMode: ViewMode;
@@ -250,25 +252,30 @@ export function ProjectsToolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSortBy('created_at')}>
-              <Calendar className="mr-2 h-4 w-4" />
-              {t('toolbar.sort_created_date')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy('name')}>
-              {t('toolbar.sort_name')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy('status')}>
-              {t('toolbar.sort_status')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy('priority')}>
-              {t('toolbar.sort_priority')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy('health_status')}>
-              {t('toolbar.sort_health_status')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy('tasks_count')}>
-              {t('toolbar.sort_task_count')}
-            </DropdownMenuItem>
+            <DropdownMenuRadioGroup
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as typeof sortBy)}
+            >
+              <DropdownMenuRadioItem value="created_at">
+                <Calendar className="mr-2 h-4 w-4" />
+                {t('toolbar.sort_created_date')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="name">
+                {t('toolbar.sort_name')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="status">
+                {t('toolbar.sort_status')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="priority">
+                {t('toolbar.sort_priority')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="health_status">
+                {t('toolbar.sort_health_status')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="tasks_count">
+                {t('toolbar.sort_task_count')}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {

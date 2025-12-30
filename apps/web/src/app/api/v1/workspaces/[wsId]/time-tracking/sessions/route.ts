@@ -45,8 +45,11 @@ export async function GET(
     const dateFrom = url.searchParams.get('dateFrom');
     const dateTo = url.searchParams.get('dateTo');
     const targetUserId = url.searchParams.get('userId'); // New parameter for viewing other users
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 50);
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '10', 10),
+      50
+    );
+    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
     // Determine which user's data to fetch (current user or specified user)
     const queryUserId = targetUserId || user.id;

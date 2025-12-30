@@ -1186,6 +1186,7 @@ export function TimerControls({
     isRunning,
     countdownState.sessionType,
     showNotification,
+    t,
   ]);
 
   // Update countdown timer (for pomodoro and traditional countdown modes)
@@ -1367,6 +1368,7 @@ export function TimerControls({
     playNotificationSound,
     checkBreakReminders,
     setIsRunning,
+    t,
   ]);
 
   // Fetch boards with lists
@@ -1858,6 +1860,7 @@ export function TimerControls({
     onSessionUpdate,
     formatDuration,
     t,
+    currentUserId,
   ]);
 
   // Pause timer - properly maintain session state
@@ -1963,6 +1966,8 @@ export function TimerControls({
       onSessionUpdate,
       t,
       sessionExceedsThreshold,
+      currentUserId,
+      queryClient.invalidateQueries,
     ]
   );
 

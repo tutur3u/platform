@@ -149,6 +149,7 @@ export function useTaskActions({
     updateTaskMutation,
     queryClient,
     boardId,
+    task,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -239,6 +240,7 @@ export function useTaskActions({
     selectedTasks,
     queryClient,
     boardId,
+    task,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -322,6 +324,7 @@ export function useTaskActions({
     selectedTasks,
     queryClient,
     boardId,
+    task,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -395,6 +398,7 @@ export function useTaskActions({
     selectedTasks,
     queryClient,
     boardId,
+    task,
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
@@ -447,6 +451,7 @@ export function useTaskActions({
     queryClient,
     setIsLoading,
     setMenuOpen,
+    task,
   ]);
 
   const handleRemoveAssignee = useCallback(
@@ -625,6 +630,7 @@ export function useTaskActions({
       selectedTasks,
       queryClient,
       boardId,
+      task,
     ]
   );
 
@@ -730,6 +736,7 @@ export function useTaskActions({
       selectedTasks,
       queryClient,
       boardId,
+      task,
     ]
   );
 
@@ -857,6 +864,7 @@ export function useTaskActions({
       selectedTasks,
       queryClient,
       boardId,
+      task,
     ]
   );
 
@@ -974,6 +982,7 @@ export function useTaskActions({
       selectedTasks,
       queryClient,
       boardId,
+      task,
     ]
   );
 
@@ -1043,8 +1052,8 @@ export function useTaskActions({
       setCustomDateDialogOpen,
       isMultiSelectMode,
       selectedTasks,
-      boardId,
       bulkUpdateCustomDueDate,
+      task,
     ]
   );
 

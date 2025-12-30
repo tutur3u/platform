@@ -121,7 +121,7 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
                     const numericValue = parseFloat(
                       e.target.value.replace(/[^0-9.]/g, '')
                     );
-                    if (!isNaN(numericValue)) {
+                    if (!Number.isNaN(numericValue)) {
                       field.onChange(numericValue);
                     } else {
                       // Handle case where the input is not a number (e.g., all non-numeric characters are deleted)

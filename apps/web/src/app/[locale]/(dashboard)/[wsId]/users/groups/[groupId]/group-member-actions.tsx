@@ -332,18 +332,11 @@ export default function GroupMemberActions({
                       const inMembers = memberIds.has(u.id);
                       const inManagers = managerIds.has(u.id);
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={u.id}
-                          className="flex items-center justify-between rounded-md px-2 py-2 hover:cursor-pointer hover:bg-foreground/5"
-                          role="button"
-                          tabIndex={0}
+                          className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left hover:cursor-pointer hover:bg-foreground/5"
                           onClick={() => toggleSelection(u.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              toggleSelection(u.id);
-                            }
-                          }}
                         >
                           <div className="flex items-center gap-3">
                             {u.avatar_url ? (
@@ -376,7 +369,7 @@ export default function GroupMemberActions({
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
                           />
-                        </div>
+                        </button>
                       );
                     })
                   )}

@@ -1,6 +1,14 @@
 'use client';
 
-import { useFormatter, useTranslations } from 'next-intl';
+import {
+  Calendar,
+  Edit3,
+  ExternalLink,
+  Link,
+  MoreVertical,
+  Target,
+  Trash2,
+} from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,22 +25,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Calendar,
-  Edit3,
-  ExternalLink,
-  Link,
-  MoreVertical,
-  Target,
-  Trash2,
-} from '@tuturuuu/icons';
 import NextLink from 'next/link';
+import { useFormatter, useTranslations } from 'next-intl';
+import type { TaskProject } from '../types';
 import {
   HealthStatusBadge,
   PriorityBadge,
   StatusBadge,
 } from './project-badges';
-import type { TaskProject } from '../types';
 
 interface ProjectGridCardProps {
   project: TaskProject;

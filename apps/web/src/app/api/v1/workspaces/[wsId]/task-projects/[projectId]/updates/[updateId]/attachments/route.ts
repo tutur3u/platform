@@ -1,5 +1,5 @@
+import { randomUUID } from 'node:crypto';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { randomUUID } from 'crypto';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 

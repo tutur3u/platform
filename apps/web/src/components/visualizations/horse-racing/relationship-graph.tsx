@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Horse {
   id: number;
@@ -17,6 +17,100 @@ interface RelationshipGraphProps {
   currentRaceIndex: number;
 }
 
+// Helper function to draw arrowhead (pure function, moved to module scope)
+const drawArrowhead = (
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  radius: number
+) => {
+  const angle = Math.atan2(toY - fromY, toX - fromX);
+
+  // Calculate the position for the arrowhead (slightly before the end point)
+  const arrowX = toX - 15 * Math.cos(angle);
+  const arrowY = toY - 15 * Math.sin(angle);
+
+  ctx.beginPath();
+  ctx.moveTo(arrowX, arrowY);
+  ctx.lineTo(
+    arrowX - radius * Math.cos(angle - Math.PI / 6),
+    arrowY - radius * Math.sin(angle - Math.PI / 6)
+  );
+  ctx.lineTo(
+    arrowX - radius * Math.cos(angle + Math.PI / 6),
+    arrowY - radius * Math.sin(angle + Math.PI / 6)
+  );
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
+  ctx.fill();
+};
+
+// Helper function to draw the legend (pure function, moved to module scope)
+const drawLegend = (
+  ctx: CanvasRenderingContext2D,
+  _: number,
+  height: number
+) => {
+  const legendX = 20;
+  const legendY = height - 60;
+  const lineLength = 25;
+
+  // Draw solid line legend
+  ctx.beginPath();
+  ctx.moveTo(legendX, legendY);
+  ctx.lineTo(legendX + lineLength, legendY);
+  ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = 'currentColor'; // Use the current text color
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Known relationship', legendX + lineLength + 5, legendY);
+
+  // Draw dashed line legend
+  ctx.beginPath();
+  ctx.moveTo(legendX, legendY + 15);
+  ctx.lineTo(legendX + lineLength, legendY + 15);
+  ctx.strokeStyle = 'rgba(99, 102, 241, 0.8)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([3, 3]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillText('Inferred relationship', legendX + lineLength + 5, legendY + 15);
+
+  // Draw node legend
+  ctx.beginPath();
+  ctx.arc(legendX + 8, legendY + 32, 8, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
+  ctx.fill();
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = 'currentColor';
+  ctx.fillText('Horse', legendX + lineLength + 5, legendY + 32);
+};
+
+// Helper function to determine text color based on background (pure function, moved to module scope)
+const getContrastingTextColor = (bgColor: string): string => {
+  // Simple implementation - more sophisticated contrast calculation could be used
+  if (!bgColor.startsWith('#')) return 'white';
+
+  const r = parseInt(bgColor.slice(1, 3), 16);
+  const g = parseInt(bgColor.slice(3, 5), 16);
+  const b = parseInt(bgColor.slice(5, 7), 16);
+
+  // Using relative luminance formula for contrast
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.5 ? 'black' : 'white';
+};
+
 export function RelationshipGraph({
   horses,
   fasterThanRelationships,
@@ -27,7 +121,7 @@ export function RelationshipGraph({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showAllRelationships, setShowAllRelationships] = useState(true);
   const [hoveredHorse, setHoveredHorse] = useState<number | null>(null);
-  const [graphSize, setGraphSize] = useState({ width: 0, height: 0 });
+  const [_graphSize, setGraphSize] = useState({ width: 0, height: 0 });
 
   // Current known positions based on finished races
   const knownPositions = finalRanking.slice(
@@ -35,49 +129,8 @@ export function RelationshipGraph({
     Math.min(currentRaceIndex + 1, finalRanking.length)
   );
 
-  // Calculate the positions of horses in a circular layout
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Get canvas context
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Get canvas dimensions
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === canvas) {
-          const { width, height } = entry.contentRect;
-          setGraphSize({ width, height });
-          canvas.width = width;
-          canvas.height = height;
-          drawGraph();
-        }
-      }
-    });
-
-    resizeObserver.observe(canvas);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  // Redraw the graph when data changes
-  useEffect(() => {
-    drawGraph();
-  }, [
-    horses,
-    fasterThanRelationships,
-    slowerThanRelationships,
-    knownPositions,
-    showAllRelationships,
-    hoveredHorse,
-    graphSize,
-  ]);
-
-  const drawGraph = () => {
+  // drawGraph function - defined as useCallback to be used in useEffect
+  const drawGraph = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -236,105 +289,47 @@ export function RelationshipGraph({
     canvas.onmouseleave = () => {
       setHoveredHorse(null);
     };
-  };
+  }, [
+    horses,
+    fasterThanRelationships,
+    showAllRelationships,
+    hoveredHorse,
+    knownPositions,
+  ]);
 
-  // Helper function to draw arrowhead
-  const drawArrowhead = (
-    ctx: CanvasRenderingContext2D,
-    fromX: number,
-    fromY: number,
-    toX: number,
-    toY: number,
-    radius: number
-  ) => {
-    const angle = Math.atan2(toY - fromY, toX - fromX);
+  // Calculate the positions of horses in a circular layout
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // Calculate the position for the arrowhead (slightly before the end point)
-    const arrowX = toX - 15 * Math.cos(angle);
-    const arrowY = toY - 15 * Math.sin(angle);
+    // Get canvas context
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    ctx.beginPath();
-    ctx.moveTo(arrowX, arrowY);
-    ctx.lineTo(
-      arrowX - radius * Math.cos(angle - Math.PI / 6),
-      arrowY - radius * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.lineTo(
-      arrowX - radius * Math.cos(angle + Math.PI / 6),
-      arrowY - radius * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
-    ctx.fill();
-  };
+    // Get canvas dimensions
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === canvas) {
+          const { width, height } = entry.contentRect;
+          setGraphSize({ width, height });
+          canvas.width = width;
+          canvas.height = height;
+          drawGraph();
+        }
+      }
+    });
 
-  // Helper function to draw the legend
-  const drawLegend = (
-    ctx: CanvasRenderingContext2D,
-    _: number,
-    height: number
-  ) => {
-    const legendX = 20;
-    const legendY = height - 60;
-    const lineLength = 25;
+    resizeObserver.observe(canvas);
 
-    // Draw solid line legend
-    ctx.beginPath();
-    ctx.moveTo(legendX, legendY);
-    ctx.lineTo(legendX + lineLength, legendY);
-    ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [drawGraph]);
 
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = 'currentColor'; // Use the current text color
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Known relationship', legendX + lineLength + 5, legendY);
-
-    // Draw dashed line legend
-    ctx.beginPath();
-    ctx.moveTo(legendX, legendY + 15);
-    ctx.lineTo(legendX + lineLength, legendY + 15);
-    ctx.strokeStyle = 'rgba(99, 102, 241, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([3, 3]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillText(
-      'Inferred relationship',
-      legendX + lineLength + 5,
-      legendY + 15
-    );
-
-    // Draw node legend
-    ctx.beginPath();
-    ctx.arc(legendX + 8, legendY + 32, 8, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
-    ctx.fill();
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = 'currentColor';
-    ctx.fillText('Horse', legendX + lineLength + 5, legendY + 32);
-  };
-
-  // Helper function to determine text color based on background
-  const getContrastingTextColor = (bgColor: string): string => {
-    // Simple implementation - more sophisticated contrast calculation could be used
-    if (!bgColor.startsWith('#')) return 'white';
-
-    const r = parseInt(bgColor.slice(1, 3), 16);
-    const g = parseInt(bgColor.slice(3, 5), 16);
-    const b = parseInt(bgColor.slice(5, 7), 16);
-
-    // Using relative luminance formula for contrast
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    return luminance > 0.5 ? 'black' : 'white';
-  };
+  // Redraw the graph when data changes
+  useEffect(() => {
+    drawGraph();
+  }, [drawGraph]);
 
   return (
     <Card>

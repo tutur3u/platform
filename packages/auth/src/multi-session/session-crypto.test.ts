@@ -17,7 +17,7 @@ import {
 const setupCryptoMock = () => {
   // Node.js 15+ has crypto.subtle built-in
   if (typeof globalThis.crypto === 'undefined') {
-    const { webcrypto } = require('crypto');
+    const { webcrypto } = require('node:crypto');
     globalThis.crypto = webcrypto;
   }
 
@@ -155,7 +155,7 @@ describe('Session Crypto', () => {
       const encrypted = await encryptSession(sessionData, testEncryptionKey);
 
       // Corrupt the encrypted data
-      const corrupted = encrypted.slice(0, -10) + 'CORRUPTED!';
+      const corrupted = `${encrypted.slice(0, -10)}CORRUPTED!`;
 
       await expect(
         decryptSession(corrupted, testEncryptionKey)
@@ -274,7 +274,7 @@ describe('Session Crypto', () => {
     it('should handle numeric values', async () => {
       const sessionData = {
         integer: 42,
-        float: 3.14159,
+        float: Math.PI,
         negative: -100,
         zero: 0,
         large: Number.MAX_SAFE_INTEGER,

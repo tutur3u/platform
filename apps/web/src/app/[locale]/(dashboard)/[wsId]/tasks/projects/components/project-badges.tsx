@@ -1,9 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { Circle, Target } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Target, Circle } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 
 export function HealthStatusBadge({ health }: { health: string | null }) {
   const t = useTranslations('task-projects.badges');

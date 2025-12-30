@@ -44,7 +44,7 @@ function getFirstDayOfWeekNumber(
     sundayFirstLocales.some(
       (l) =>
         normalizedLocale === l.toLowerCase() ||
-        normalizedLocale.startsWith(l.toLowerCase().split('-')[0] + '-')
+        normalizedLocale.startsWith(`${l.toLowerCase().split('-')[0]}-`)
     )
   ) {
     // Special case: only en-US and en-CA use Sunday, other en-* use Monday

@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { z } from 'zod';
-import type { TaskProject, TaskOption, LinkedTask } from '../types';
+import type { LinkedTask, TaskOption, TaskProject } from '../types';
 
 interface UseTaskProjectsParams {
   wsId: string;

@@ -9533,24 +9533,30 @@ export type Database = {
           birthday: string | null;
           default_workspace_id: string | null;
           email: string | null;
+          fade_completed_tasks: boolean | null;
           full_name: string | null;
           new_email: string | null;
+          task_auto_assign_to_self: boolean | null;
           user_id: string;
         };
         Insert: {
           birthday?: string | null;
           default_workspace_id?: string | null;
           email?: string | null;
+          fade_completed_tasks?: boolean | null;
           full_name?: string | null;
           new_email?: string | null;
+          task_auto_assign_to_self?: boolean | null;
           user_id: string;
         };
         Update: {
           birthday?: string | null;
           default_workspace_id?: string | null;
           email?: string | null;
+          fade_completed_tasks?: boolean | null;
           full_name?: string | null;
           new_email?: string | null;
+          task_auto_assign_to_self?: boolean | null;
           user_id?: string;
         };
         Relationships: [
@@ -9609,7 +9615,6 @@ export type Database = {
           handle: string | null;
           id: string;
           services: Database['public']['Enums']['platform_service'][];
-          task_auto_assign_to_self: boolean | null;
           time_format: string | null;
           timezone: string | null;
         };
@@ -9623,7 +9628,6 @@ export type Database = {
           handle?: string | null;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
-          task_auto_assign_to_self?: boolean | null;
           time_format?: string | null;
           timezone?: string | null;
         };
@@ -9637,7 +9641,6 @@ export type Database = {
           handle?: string | null;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
-          task_auto_assign_to_self?: boolean | null;
           time_format?: string | null;
           timezone?: string | null;
         };

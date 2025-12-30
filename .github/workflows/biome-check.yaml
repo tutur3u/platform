@@ -15,6 +15,9 @@ jobs:
     outputs:
       files_checked: ${{ steps.format-check.outputs.files_checked }}
       errors: ${{ steps.format-check.outputs.errors }}
+      warnings: ${{ steps.format-check.outputs.warnings }}
+      infos: ${{ steps.format-check.outputs.infos }}
+      total_issues: ${{ steps.format-check.outputs.total_issues }}
       has_issues: ${{ steps.format-check.outputs.has_issues }}
       exit_code: ${{ steps.format-check.outputs.exit_code }}
     steps:
@@ -47,16 +50,28 @@ jobs:
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
 
           files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
-          errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/' || echo "0")
+          errors=$(echo "$clean_output" | grep -E "Found [0-9]+ error" | sed 's/Found \([0-9]*\) error.*/\1/' || echo "0")
+          warnings=$(echo "$clean_output" | grep -E "Found [0-9]+ warning" | sed 's/Found \([0-9]*\) warning.*/\1/' || echo "0")
+          infos=$(echo "$clean_output" | grep -E "Found [0-9]+ info" | sed 's/Found \([0-9]*\) info.*/\1/' || echo "0")
+          total_issues=$((errors + warnings + infos))
 
           echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
+          echo "warnings=$warnings" >> $GITHUB_OUTPUT
+          echo "infos=$infos" >> $GITHUB_OUTPUT
+          echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
 
-          # Check if there are any issues
-          if [ "$biome_exit_code" -ne 0 ]; then
+          # Check if there are any issues (errors, warnings, or info)
+          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
             echo "has_issues=true" >> $GITHUB_OUTPUT
           else
             echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Fail if there are any issues
+          if [ "$total_issues" -gt 0 ]; then
+            echo "::error::Found $total_issues formatting issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+            exit 1
           fi
 
   lint:
@@ -70,6 +85,7 @@ jobs:
       files_checked: ${{ steps.lint-check.outputs.files_checked }}
       errors: ${{ steps.lint-check.outputs.errors }}
       warnings: ${{ steps.lint-check.outputs.warnings }}
+      infos: ${{ steps.lint-check.outputs.infos }}
       total_issues: ${{ steps.lint-check.outputs.total_issues }}
       has_issues: ${{ steps.lint-check.outputs.has_issues }}
       exit_code: ${{ steps.lint-check.outputs.exit_code }}
@@ -103,20 +119,28 @@ jobs:
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
 
           files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
-          errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/' || echo "0")
-          warnings=$(echo "$clean_output" | grep "Found [0-9]* warnings" | sed 's/Found \([0-9]*\) warnings.*/\1/' || echo "0")
-          total_issues=$((errors + warnings))
+          errors=$(echo "$clean_output" | grep -E "Found [0-9]+ error" | sed 's/Found \([0-9]*\) error.*/\1/' || echo "0")
+          warnings=$(echo "$clean_output" | grep -E "Found [0-9]+ warning" | sed 's/Found \([0-9]*\) warning.*/\1/' || echo "0")
+          infos=$(echo "$clean_output" | grep -E "Found [0-9]+ info" | sed 's/Found \([0-9]*\) info.*/\1/' || echo "0")
+          total_issues=$((errors + warnings + infos))
 
           echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
           echo "warnings=$warnings" >> $GITHUB_OUTPUT
+          echo "infos=$infos" >> $GITHUB_OUTPUT
           echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
 
-          # Check if there are any issues
-          if [ "$biome_exit_code" -ne 0 ]; then
+          # Check if there are any issues (errors, warnings, or info)
+          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
             echo "has_issues=true" >> $GITHUB_OUTPUT
           else
             echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Fail if there are any issues
+          if [ "$total_issues" -gt 0 ]; then
+            echo "::error::Found $total_issues lint issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+            exit 1
           fi
 
   apply-format:
@@ -299,20 +323,28 @@ jobs:
             // Get outputs from both jobs
             const formatFilesChecked = '${{ needs.format.outputs.files_checked }}';
             const formatErrors = '${{ needs.format.outputs.errors }}';
+            const formatWarnings = '${{ needs.format.outputs.warnings }}';
+            const formatInfos = '${{ needs.format.outputs.infos }}';
+            const formatTotalIssues = '${{ needs.format.outputs.total_issues }}';
             const formatHasIssues = '${{ needs.format.outputs.has_issues }}';
 
             const lintFilesChecked = '${{ needs.lint.outputs.files_checked }}';
             const lintErrors = '${{ needs.lint.outputs.errors }}';
             const lintWarnings = '${{ needs.lint.outputs.warnings }}';
+            const lintInfos = '${{ needs.lint.outputs.infos }}';
             const lintTotalIssues = '${{ needs.lint.outputs.total_issues }}';
             const lintHasIssues = '${{ needs.lint.outputs.has_issues }}';
 
             // Calculate overall status
             const formatErrorsCount = parseInt(formatErrors) || 0;
+            const formatWarningsCount = parseInt(formatWarnings) || 0;
+            const formatInfosCount = parseInt(formatInfos) || 0;
+            const formatIssueCount = parseInt(formatTotalIssues) || 0;
             const lintErrorsCount = parseInt(lintErrors) || 0;
             const lintWarningsCount = parseInt(lintWarnings) || 0;
+            const lintInfosCount = parseInt(lintInfos) || 0;
             const lintIssueCount = parseInt(lintTotalIssues) || 0;
-            const totalIssuesAcrossJobs = formatErrorsCount + lintIssueCount;
+            const totalIssuesAcrossJobs = formatIssueCount + lintIssueCount;
             const overallSuccess = formatHasIssues === 'false' && lintHasIssues === 'false';
 
             let body;
@@ -321,9 +353,13 @@ jobs:
 
             const issueIcon = totalIssuesAcrossJobs > 50 ? '🚨' : totalIssuesAcrossJobs > 20 ? '⚠️' : totalIssuesAcrossJobs > 10 ? '🔍' : '🔧';
 
-            const formatStatus = formatErrorsCount > 0 ? '🔴 Issues found' : '✅ Passed';
+            const formatErrorsStatus = formatErrorsCount > 0 ? '🔴 Needs fixing' : '✅ None';
+            const formatWarningsStatus = formatWarningsCount > 0 ? '🟡 Consider fixing' : '✅ None';
+            const formatInfosStatus = formatInfosCount > 0 ? '🔵 Review suggested' : '✅ None';
+            const formatStatus = formatIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
             const lintErrorsStatus = lintErrorsCount > 0 ? '🔴 Needs fixing' : '✅ None';
             const lintWarningsStatus = lintWarningsCount > 0 ? '🟡 Consider fixing' : '✅ None';
+            const lintInfosStatus = lintInfosCount > 0 ? '🔵 Review suggested' : '✅ None';
             const lintStatus = lintIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
 
             const nextSteps = overallSuccess ?
@@ -348,7 +384,10 @@ jobs:
             | Metric | Value | Status |
             |--------|-------|--------|
             | 📁 **Files Checked** | ${formatFilesChecked} | ✅ Complete |
-            | 🔧 **Format Errors** | ${formatErrorsCount} | ${formatStatus} |
+            | ❌ **Errors** | ${formatErrorsCount} | ${formatErrorsStatus} |
+            | ⚠️ **Warnings** | ${formatWarningsCount} | ${formatWarningsStatus} |
+            | ℹ️ **Info** | ${formatInfosCount} | ${formatInfosStatus} |
+            | 📝 **Total Issues** | ${formatIssueCount} | ${formatStatus} |
 
             ### 🔍 Lint Check Results
 
@@ -357,6 +396,7 @@ jobs:
             | 📁 **Files Checked** | ${lintFilesChecked} | ✅ Complete |
             | ❌ **Errors** | ${lintErrorsCount} | ${lintErrorsStatus} |
             | ⚠️ **Warnings** | ${lintWarningsCount} | ${lintWarningsStatus} |
+            | ℹ️ **Info** | ${lintInfosCount} | ${lintInfosStatus} |
             | 📝 **Total Issues** | ${lintIssueCount} | ${lintStatus} |
 
             ${nextSteps}

@@ -88,8 +88,8 @@ export async function GET(
     // Validate limit parameter
     let limit: number | undefined;
     if (limitParam) {
-      const parsedLimit = parseInt(limitParam);
-      if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+      const parsedLimit = parseInt(limitParam, 10);
+      if (Number.isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
         return NextResponse.json(
           { error: 'Invalid limit. Must be a number between 1 and 100' },
           { status: 400 }

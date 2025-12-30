@@ -22,7 +22,7 @@ interface PageProps {
 export default async function CalendarLabPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId, locale }) => {
+      {async ({ workspace, wsId }) => {
         const { withoutPermission } = await getPermissions({ wsId });
 
         const supabase = await createClient();

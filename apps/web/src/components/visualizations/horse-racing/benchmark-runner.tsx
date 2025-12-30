@@ -110,7 +110,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
         onBenchmarksUpdated(combined);
       }
     }
-  }, [userBenchmarks, onBenchmarksUpdated]);
+  }, [userBenchmarks, onBenchmarksUpdated, allBenchmarks]);
 
   // Run the standard benchmark suite
   const handleRunStandardBenchmarks = async () => {
@@ -597,7 +597,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                   type="number"
                   value={customHorses}
                   onChange={(e) =>
-                    setCustomHorses(parseInt(e.target.value) || 10)
+                    setCustomHorses(parseInt(e.target.value, 10) || 10)
                   }
                   min={2}
                   max={1000}
@@ -610,7 +610,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                   type="number"
                   value={customRaceSize}
                   onChange={(e) =>
-                    setCustomRaceSize(parseInt(e.target.value) || 2)
+                    setCustomRaceSize(parseInt(e.target.value, 10) || 2)
                   }
                   min={2}
                   max={Math.min(100, customHorses)}
@@ -628,7 +628,9 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
               <Label htmlFor="iterations">Iterations (for averaging)</Label>
               <Select
                 value={customIterations.toString()}
-                onValueChange={(value) => setCustomIterations(parseInt(value))}
+                onValueChange={(value) =>
+                  setCustomIterations(parseInt(value, 10))
+                }
               >
                 <SelectTrigger id="iterations">
                   <SelectValue placeholder="Select iterations" />

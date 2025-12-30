@@ -30,20 +30,20 @@
 
 /* Style month and weekday labels - SCOPED to this container only */
 .heatmapContainer :global(.mantine-Heatmap-monthLabel) {
-  fill: #6b7280 !important;
-  font-size: 11px !important;
-  font-weight: 500 !important;
+  fill: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
-  fill: #6b7280 !important;
-  font-size: 10px !important;
-  font-weight: 500 !important;
+  fill: #6b7280;
+  font-size: 10px;
+  font-weight: 500;
 }
 
 :global(.dark) .heatmapContainer :global(.mantine-Heatmap-monthLabel),
 :global(.dark) .heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
-  fill: #9ca3af !important;
+  fill: #9ca3af;
 }
 
 /* Ensure proper spacing and layout */
@@ -73,11 +73,11 @@
 /* Responsive adjustments for mobile */
 @media (max-width: 640px) {
   .heatmapContainer :global(.mantine-Heatmap-monthLabel) {
-    font-size: 9px !important;
+    font-size: 9px;
   }
 
   .heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
-    font-size: 8px !important;
+    font-size: 8px;
   }
 
   /* Enhanced scrolling for mobile - horizontal scroll */

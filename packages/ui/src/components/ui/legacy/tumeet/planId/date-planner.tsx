@@ -42,7 +42,7 @@ function DatePlanner({
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [dates]);
+  }, []);
 
   // Pagination logic
   const maxDatesPerPage = useMemo(() => (isMobile ? 4 : 7), [isMobile]);
@@ -201,6 +201,7 @@ function DatePlanner({
             {totalPages > 1 && (
               <div className="flex w-full items-center justify-center gap-4">
                 <button
+                  type="button"
                   onClick={handlePreviousPage}
                   disabled={!canGoPrevious}
                   className={cn(
@@ -218,6 +219,7 @@ function DatePlanner({
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleNextPage}
                   disabled={!canGoNext}
                   className={cn(

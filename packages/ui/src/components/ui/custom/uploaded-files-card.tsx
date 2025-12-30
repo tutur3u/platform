@@ -25,6 +25,7 @@ export function UploadedFilesCard({ uploadedFiles }: UploadedFilesCardProps) {
             <div className="flex w-max space-x-2.5">
               {uploadedFiles.map((file) => (
                 <div key={file.key} className="relative aspect-video w-64">
+                  {/* biome-ignore lint/performance/noImgElement: Dynamic file URL */}
                   <img
                     src={file.url}
                     alt={file.name}

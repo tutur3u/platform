@@ -31,8 +31,12 @@ export function DependenciesSection({
   const allExcludeIds = React.useMemo(() => {
     const ids = new Set<string>();
     if (taskId) ids.add(taskId);
-    blockingTasks.forEach((t) => ids.add(t.id));
-    blockedByTasks.forEach((t) => ids.add(t.id));
+    for (const t of blockingTasks) {
+      ids.add(t.id);
+    }
+    for (const t of blockedByTasks) {
+      ids.add(t.id);
+    }
     return Array.from(ids);
   }, [taskId, blockingTasks, blockedByTasks]);
 

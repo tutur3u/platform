@@ -40,12 +40,10 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PRIORITY_BADGE_COLORS } from '../../utils/taskConstants';
-import {
-  getPriorityIcon,
-  getPriorityLabel,
-} from '../../utils/taskPriorityUtils';
+import { getPriorityIcon } from '../../utils/taskPriorityUtils';
 import { ClearMenuItem } from '../clear-menu-item';
 import { EmptyStateCard } from '../empty-state-card';
 import {
@@ -128,40 +126,38 @@ interface TaskPropertiesSectionProps {
 }
 
 // Calendar hours type options
-const CALENDAR_HOURS_OPTIONS: {
-  value: CalendarHoursType;
-  label: string;
-  icon: typeof Briefcase;
-  description: string;
-}[] = [
+const getCalendarHoursOptions = (t: any) => [
   {
-    value: 'work_hours',
-    label: 'Work Hours',
+    value: 'work_hours' as CalendarHoursType,
+    label: t('ws-task-boards.dialog.work_hours'),
     icon: Briefcase,
-    description: 'Schedule during work hours',
+    description: t('ws-task-boards.dialog.schedule_during_work_hours'),
   },
   {
-    value: 'meeting_hours',
-    label: 'Meeting Hours',
+    value: 'meeting_hours' as CalendarHoursType,
+    label: t('ws-task-boards.dialog.meeting_hours'),
     icon: Calendar,
-    description: 'Schedule during meeting hours',
+    description: t('ws-task-boards.dialog.schedule_during_meeting_hours'),
   },
   {
-    value: 'personal_hours',
-    label: 'Personal Hours',
+    value: 'personal_hours' as CalendarHoursType,
+    label: t('ws-task-boards.dialog.personal_hours'),
     icon: User,
-    description: 'Schedule during personal hours',
+    description: t('ws-task-boards.dialog.schedule_during_personal_hours'),
   },
 ];
 
 // Format duration helper - rounds to avoid floating point issues
-function formatDuration(totalMinutes: number): string {
+function formatDuration(totalMinutes: number, t: any): string {
   const roundedTotal = Math.round(totalMinutes);
   const hours = Math.floor(roundedTotal / 60);
   const minutes = roundedTotal % 60;
-  if (hours === 0) return `${minutes}m`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}m`;
+  const h = t('ws-task-boards.dialog.h');
+  const m = t('ws-task-boards.dialog.m');
+
+  if (hours === 0) return `${minutes}${m}`;
+  if (minutes === 0) return `${hours}${h}`;
+  return `${hours}${h} ${minutes}${m}`;
 }
 
 // Custom duration input component with better UX
@@ -313,6 +309,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onSaveSchedulingSettings,
     schedulingSaving,
   } = props;
+
+  const t = useTranslations();
 
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
@@ -592,7 +590,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             )}
           />
           <span className="shrink-0 font-semibold text-foreground text-sm">
-            Properties
+            {t('ws-task-boards.dialog.properties')}
           </span>
 
           {/* Summary badges when collapsed */}
@@ -607,7 +605,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   )}
                 >
                   {getPriorityIcon(priority, 'h-2.5 w-2.5')}
-                  {getPriorityLabel(priority)}
+                  {t(`tasks.priority_${priority}`)}
                 </Badge>
               )}
               {selectedListId && (
@@ -617,7 +615,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 >
                   <ListTodo className="h-2.5 w-2.5" />
                   {availableLists?.find((l) => l.id === selectedListId)?.name ||
-                    'List'}
+                    t('ws-task-boards.dialog.field.list')}
                 </Badge>
               )}
               {(startDate || endDate) && (
@@ -627,8 +625,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 >
                   <Calendar className="h-2.5 w-2.5" />
                   {startDate || endDate
-                    ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
-                    : 'Dates'}
+                    ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.field.start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.field.end_date')}`
+                    : t('ws-task-boards.dialog.field.end_date')}
                 </Badge>
               )}
               {estimationPoints != null && (
@@ -642,7 +640,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         estimationPoints,
                         boardConfig.estimation_type
                       )
-                    : 'Est.'}
+                    : t('ws-task-boards.dialog.field.estimation')}
                 </Badge>
               )}
               {selectedLabels.length > 0 && (
@@ -653,7 +651,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Tag className="h-2.5 w-2.5" />
                   {selectedLabels.length === 1
                     ? selectedLabels[0]?.name
-                    : `${selectedLabels.length} labels`}
+                    : t('common.n_labels', { count: selectedLabels.length })}
                 </Badge>
               )}
               {selectedProjects.length > 0 && (
@@ -664,7 +662,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Box className="h-2.5 w-2.5" />
                   {selectedProjects.length === 1
                     ? selectedProjects[0]?.name
-                    : `${selectedProjects.length} projects`}
+                    : t('common.n_projects', {
+                        count: selectedProjects.length,
+                      })}
                 </Badge>
               )}
               {selectedAssignees.length > 0 && !isPersonalWorkspace && (
@@ -674,8 +674,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 >
                   <Users className="h-2.5 w-2.5" />
                   {selectedAssignees.length === 1
-                    ? selectedAssignees[0]?.display_name || 'Unknown'
-                    : `${selectedAssignees.length} assignees`}
+                    ? selectedAssignees[0]?.display_name ||
+                      t('ws-task-boards.dialog.unknown_user')
+                    : t('common.n_assignees', {
+                        count: selectedAssignees.length,
+                      })}
                 </Badge>
               )}
               {totalMinutes > 0 && (
@@ -693,9 +696,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   ) : (
                     <CalendarClock className="h-2.5 w-2.5" />
                   )}
-                  {formatDuration(totalMinutes)}
+                  {formatDuration(totalMinutes, t)}
                   {hasUnsavedSchedulingChanges && (
-                    <span className="text-[8px] opacity-75">unsaved</span>
+                    <span className="text-[8px] opacity-75">
+                      {t('ws-task-boards.dialog.unsaved')}
+                    </span>
                   )}
                 </Badge>
               )}
@@ -729,7 +734,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <Flag className="h-3.5 w-3.5" />
                   )}
                   <span>
-                    {priority ? getPriorityLabel(priority) : 'Priority'}
+                    {priority
+                      ? t(`tasks.priority_${priority}`)
+                      : t('common.priority')}
                   </span>
                 </button>
               </PopoverTrigger>
@@ -738,20 +745,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   {[
                     {
                       value: 'critical',
-                      label: 'Urgent',
+                      label: t('tasks.priority_critical'),
                       color: 'text-dynamic-red',
                     },
                     {
                       value: 'high',
-                      label: 'High',
+                      label: t('tasks.priority_high'),
                       color: 'text-dynamic-orange',
                     },
                     {
                       value: 'normal',
-                      label: 'Medium',
+                      label: t('tasks.priority_normal'),
                       color: 'text-dynamic-yellow',
                     },
-                    { value: 'low', label: 'Low', color: 'text-dynamic-blue' },
+                    {
+                      value: 'low',
+                      label: t('tasks.priority_low'),
+                      color: 'text-dynamic-blue',
+                    },
                   ].map((opt) => (
                     <button
                       key={opt.value}
@@ -777,7 +788,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   ))}
                   {priority && (
                     <ClearMenuItem
-                      label="Clear priority"
+                      label={t('ws-task-boards.dialog.clear_priority')}
                       onClick={() => {
                         onPriorityChange(null);
                         setIsPriorityPopoverOpen(false);
@@ -807,15 +818,15 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <span>
                     {selectedListId
                       ? availableLists?.find((l) => l.id === selectedListId)
-                          ?.name || 'List'
-                      : 'List'}
+                          ?.name || t('ws-task-boards.dialog.field.list')
+                      : t('ws-task-boards.dialog.field.list')}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-0">
                 {!availableLists || availableLists.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground text-sm">
-                    No lists found
+                    {t('ws-task-boards.dialog.no_lists_found')}
                   </div>
                 ) : (
                   <div
@@ -866,8 +877,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
                     {startDate || endDate
-                      ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
-                      : 'Dates'}
+                      ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
+                      : t('ws-task-boards.dialog.dates')}
                   </span>
                 </button>
               </PopoverTrigger>
@@ -877,7 +888,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     {/* Start Date */}
                     <div className="space-y-1.5">
                       <Label className="font-normal text-muted-foreground text-xs">
-                        Start Date
+                        {t('ws-task-boards.dialog.start_date')}
                       </Label>
                       <DateTimePicker
                         date={startDate}
@@ -893,7 +904,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     {/* Due Date */}
                     <div className="space-y-1.5">
                       <Label className="font-normal text-muted-foreground text-xs">
-                        Due Date
+                        {t('ws-task-boards.dialog.due_date')}
                       </Label>
                       <DateTimePicker
                         date={endDate}
@@ -910,7 +921,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
                           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
                           <span className="text-dynamic-orange">
-                            Start date is after due date
+                            {t(
+                              'ws-task-boards.dialog.start_date_after_due_date'
+                            )}
                           </span>
                         </div>
                       )}
@@ -918,7 +931,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       {/* Quick Due Date Actions */}
                       <div className="space-y-1.5 pt-2">
                         <Label className="font-normal text-muted-foreground text-xs">
-                          Quick Actions
+                          {t('ws-task-boards.dialog.quick_actions')}
                         </Label>
                         <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                           <Button
@@ -929,7 +942,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            Today
+                            {t('common.today')}
                           </Button>
                           <Button
                             type="button"
@@ -939,7 +952,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            Tomorrow
+                            {t('common.tomorrow')}
                           </Button>
                           <Button
                             type="button"
@@ -956,7 +969,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            This week
+                            {t('common.this_week')}
                           </Button>
                           <Button
                             type="button"
@@ -973,7 +986,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             disabled={isLoading}
                             className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
                           >
-                            Next week
+                            {t('common.next_week')}
                           </Button>
                         </div>
                       </div>
@@ -1006,17 +1019,19 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             estimationPoints,
                             boardConfig.estimation_type
                           )
-                        : 'Estimate'
-                      : 'Estimate'}
+                        : t('ws-task-boards.dialog.estimate')
+                      : t('ws-task-boards.dialog.estimate')}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-0">
                 {!boardConfig?.estimation_type ? (
                   <EmptyStateCard
-                    title="No estimation configured yet"
-                    description="Configure estimation for this board"
-                    actionLabel="Configure"
+                    title={t('ws-task-boards.dialog.no_estimation_configured')}
+                    description={t(
+                      'ws-task-boards.dialog.configure_estimation_description'
+                    )}
+                    actionLabel={t('common.configure')}
                     ActionIcon={Pen}
                     onAction={() => {
                       setIsEstimationPopoverOpen(false);
@@ -1052,7 +1067,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     ))}
                     {estimationPoints != null && (
                       <ClearMenuItem
-                        label="Clear estimate"
+                        label={t('ws-task-boards.dialog.clear_estimate')}
                         onClick={() => {
                           onEstimationChange(null);
                           setIsEstimationPopoverOpen(false);
@@ -1082,19 +1097,23 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Tag className="h-3.5 w-3.5" />
                   <span>
                     {selectedLabels.length === 0
-                      ? 'Labels'
+                      ? t('common.labels')
                       : selectedLabels.length === 1
                         ? selectedLabels[0]?.name
-                        : `${selectedLabels.length} labels`}
+                        : t('common.n_labels', {
+                            count: selectedLabels.length,
+                          })}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 p-0">
                 {availableLabels.length === 0 ? (
                   <EmptyStateCard
-                    title="No labels configured yet"
-                    description="Create labels to organize your tasks"
-                    actionLabel="Create Label"
+                    title={t('ws-task-boards.dialog.no_labels_configured')}
+                    description={t(
+                      'ws-task-boards.dialog.create_labels_description'
+                    )}
+                    actionLabel={t('ws-task-boards.dialog.create_label')}
                     ActionIcon={Plus}
                     onAction={() => {
                       setIsLabelsPopoverOpen(false);
@@ -1177,7 +1196,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="h-8 w-full justify-start"
                       >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Create New Label
+                        {t('ws-task-boards.dialog.create_new_label')}
                       </Button>
                     </div>
                   </>
@@ -1203,19 +1222,23 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <Box className="h-3.5 w-3.5" />
                   <span>
                     {selectedProjects.length === 0
-                      ? 'Projects'
+                      ? t('common.projects')
                       : selectedProjects.length === 1
                         ? selectedProjects[0]?.name
-                        : `${selectedProjects.length} projects`}
+                        : t('common.n_projects', {
+                            count: selectedProjects.length,
+                          })}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 p-0">
                 {taskProjects.length === 0 ? (
                   <EmptyStateCard
-                    title="No projects configured yet"
-                    description="Create projects to coordinate tasks across boards"
-                    actionLabel="Create Project"
+                    title={t('ws-task-boards.dialog.no_projects_configured')}
+                    description={t(
+                      'ws-task-boards.dialog.create_projects_description'
+                    )}
+                    actionLabel={t('ws-task-boards.dialog.create_project')}
                     ActionIcon={Plus}
                     onAction={() => {
                       setIsProjectsPopoverOpen(false);
@@ -1279,7 +1302,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="h-8 w-full justify-start"
                       >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Create New Project
+                        {t('ws-task-boards.dialog.create_new_project')}
                       </Button>
                     </div>
                   </>
@@ -1306,17 +1329,20 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <Users className="h-3.5 w-3.5" />
                     <span>
                       {selectedAssignees.length === 0
-                        ? 'Assignees'
+                        ? t('common.assignees')
                         : selectedAssignees.length === 1
-                          ? selectedAssignees[0]?.display_name || 'Unknown'
-                          : `${selectedAssignees.length} assignees`}
+                          ? selectedAssignees[0]?.display_name ||
+                            t('ws-task-boards.dialog.unknown_user')
+                          : t('common.n_assignees', {
+                              count: selectedAssignees.length,
+                            })}
                     </span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-72 p-0">
                   {workspaceMembers.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
-                      No members found
+                      {t('ws-task-boards.dialog.no_members_found')}
                     </div>
                   ) : (
                     <>
@@ -1335,7 +1361,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                 onClick={() => onAssigneeToggle(assignee)}
                               >
                                 <UserAvatar user={assignee} size="xs" />
-                                {assignee.display_name || 'Unknown'}
+                                {assignee.display_name ||
+                                  t('ws-task-boards.dialog.unknown_user')}
                                 <X className="h-2.5 w-2.5" />
                               </Badge>
                             ))}
@@ -1372,7 +1399,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   className="shrink-0 border"
                                 />
                                 <span className="flex-1">
-                                  {member.display_name || 'Unknown'}
+                                  {member.display_name ||
+                                    t('ws-task-boards.dialog.unknown_user')}
                                 </span>
                                 <Plus className="h-4 w-4 shrink-0" />
                               </button>
@@ -1409,11 +1437,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   )}
                   <span>
                     {totalMinutes > 0
-                      ? formatDuration(totalMinutes)
-                      : 'Schedule'}
+                      ? formatDuration(totalMinutes, t)
+                      : t('ws-task-boards.dialog.schedule')}
                   </span>
                   {hasUnsavedSchedulingChanges && (
-                    <span className="text-[10px] opacity-75">unsaved</span>
+                    <span className="text-[10px] opacity-75">
+                      {t('ws-task-boards.dialog.unsaved')}
+                    </span>
                   )}
                 </button>
               </PopoverTrigger>
@@ -1424,7 +1454,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
                         <Clock className="h-3.5 w-3.5" />
-                        Estimated Duration
+                        {t('ws-task-boards.dialog.estimated_duration')}
                         <span className="text-dynamic-red">*</span>
                       </Label>
                       <div className="flex items-center gap-3">
@@ -1434,7 +1464,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           min={0}
                           max={999}
                           disabled={isLoading}
-                          label="h"
+                          label={t('ws-task-boards.dialog.h')}
                         />
                         <DurationInput
                           value={durationMinutes}
@@ -1443,7 +1473,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           max={45}
                           step={15}
                           disabled={isLoading}
-                          label="m"
+                          label={t('ws-task-boards.dialog.m')}
                           allowRollover={true}
                           canDecrement={
                             durationHours > 0 || durationMinutes > 0
@@ -1459,7 +1489,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
                       >
                         <Scissors className="h-3.5 w-3.5" />
-                        Splittable
+                        {t('ws-task-boards.dialog.splittable')}
                       </Label>
                       <Switch
                         id="splittable"
@@ -1474,7 +1504,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="font-normal text-muted-foreground text-xs">
-                            Min split
+                            {t('ws-task-boards.dialog.min_split')}
                           </Label>
                           <DurationInput
                             value={minSplitDurationMinutes ?? 30}
@@ -1485,12 +1515,12 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             max={maxSplitDurationMinutes ?? 480}
                             step={15}
                             disabled={isLoading}
-                            label="min"
+                            label={t('ws-task-boards.dialog.min')}
                           />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="font-normal text-muted-foreground text-xs">
-                            Max split
+                            {t('ws-task-boards.dialog.max_split')}
                           </Label>
                           <DurationInput
                             value={maxSplitDurationMinutes ?? 120}
@@ -1501,7 +1531,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             max={480}
                             step={15}
                             disabled={isLoading}
-                            label="min"
+                            label={t('ws-task-boards.dialog.min')}
                           />
                         </div>
                       </div>
@@ -1511,7 +1541,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
                         <Briefcase className="h-3.5 w-3.5" />
-                        Hour Type
+                        {t('ws-task-boards.dialog.hour_type')}
                         <span className="text-dynamic-red">*</span>
                       </Label>
                       <div
@@ -1524,7 +1554,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             : 'border-border'
                         )}
                       >
-                        {CALENDAR_HOURS_OPTIONS.map((option) => {
+                        {getCalendarHoursOptions(t).map((option) => {
                           const Icon = option.icon;
                           const isSelected = calendarHours === option.value;
                           return (
@@ -1559,7 +1589,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
                       >
                         <Zap className="h-3.5 w-3.5" />
-                        Auto-schedule (for me)
+                        {t('ws-task-boards.dialog.auto_schedule')}
                       </Label>
                       <Switch
                         id="auto-schedule"
@@ -1602,8 +1632,15 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   <span className="text-muted-foreground">
                                     {scheduledEvents &&
                                     scheduledEvents.length > 0
-                                      ? `${scheduledEvents.length} event${scheduledEvents.length > 1 ? 's' : ''}`
-                                      : 'Not scheduled'}
+                                      ? t(
+                                          'ws-task-boards.dialog.events_scheduled',
+                                          {
+                                            count: scheduledEvents.length,
+                                          }
+                                        )
+                                      : t(
+                                          'ws-task-boards.dialog.not_scheduled'
+                                        )}
                                   </span>
                                   <span
                                     className={cn(
@@ -1613,8 +1650,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                         : 'text-foreground'
                                     )}
                                   >
-                                    {formatDuration(scheduledMinutes)} /{' '}
-                                    {formatDuration(totalMinutes)}
+                                    {formatDuration(scheduledMinutes, t)} /{' '}
+                                    {formatDuration(totalMinutes, t)}
                                   </span>
                                 </div>
                                 <Progress
@@ -1633,8 +1670,15 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
                                   <span className="text-dynamic-orange">
                                     {eventsAfterDeadline.length === 1
-                                      ? '1 event scheduled after deadline'
-                                      : `${eventsAfterDeadline.length} events scheduled after deadline`}
+                                      ? t(
+                                          'ws-task-boards.dialog.event_after_deadline_singular'
+                                        )
+                                      : t(
+                                          'ws-task-boards.dialog.event_after_deadline_plural',
+                                          {
+                                            count: eventsAfterDeadline.length,
+                                          }
+                                        )}
                                   </span>
                                 </div>
                               )}
@@ -1658,7 +1702,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                                 ? 'bg-dynamic-orange/10 text-dynamic-orange'
                                                 : 'bg-muted text-muted-foreground'
                                           )}
-                                          title={`${dayjs(event.start_at).format('MMM D, h:mm A')} - ${formatDuration(event.scheduled_minutes)}${isAfterDeadline ? ' (after deadline)' : ''}`}
+                                          title={`${dayjs(event.start_at).format('MMM D, h:mm A')} - ${formatDuration(event.scheduled_minutes, t)}${isAfterDeadline ? ` (${t('ws-task-boards.dialog.after_deadline', { defaultValue: 'after deadline' })})` : ''}`}
                                         >
                                           {event.completed ? (
                                             <CheckCircle className="h-2.5 w-2.5" />
@@ -1698,7 +1742,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           ) : (
                             <>
                               <Save className="mr-1.5 h-3.5 w-3.5" />
-                              Save
+                              {t('common.save')}
                             </>
                           )}
                         </Button>
@@ -1721,7 +1765,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       totalDuration !== null &&
                       totalDuration > 0 && (
                         <ClearMenuItem
-                          label="Clear duration"
+                          label={t('ws-task-boards.dialog.clear_duration')}
                           onClick={() => {
                             onTotalDurationChange(null);
                             setIsSchedulingPopoverOpen(false);

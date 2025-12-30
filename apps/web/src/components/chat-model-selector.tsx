@@ -113,7 +113,7 @@ export function ChatModelSelector({
           <Separator className="my-2" />
           <div className="p-2 pt-0">
             <div className="text-sm">{previewModel?.description}</div>
-            {previewModel?.context != undefined && (
+            {previewModel?.context !== undefined && (
               <>
                 <Separator className="my-2" />
                 <div className="rounded bg-foreground px-2 py-0.5 text-center font-semibold text-background text-sm">

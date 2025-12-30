@@ -17,7 +17,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
 

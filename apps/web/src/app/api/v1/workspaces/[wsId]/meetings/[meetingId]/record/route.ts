@@ -2,7 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {

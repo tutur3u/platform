@@ -5,6 +5,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import type { TaskFilters } from '../boards/boardId/task-filter';
@@ -32,6 +33,8 @@ export function BoardViews({
   lists,
   currentUserId,
 }: Props) {
+  const t = useTranslations('common');
+  const tBoards = useTranslations('ws-task-boards');
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [filters, setFilters] = useState<TaskFilters>({
     labels: [],
@@ -50,6 +53,7 @@ export function BoardViews({
     Record<string, Partial<Task>>
   >({});
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const { createTask } = useTaskDialog();
 
   // Semantic search hook
@@ -394,6 +398,8 @@ export function BoardViews({
             disableSort={!!filters.sortBy}
             listStatusFilter={listStatusFilter}
             filters={filters}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         );
       case 'list':
@@ -425,6 +431,8 @@ export function BoardViews({
             disableSort={!!filters.sortBy}
             listStatusFilter={listStatusFilter}
             filters={filters}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
           />
         );
     }
@@ -446,6 +454,8 @@ export function BoardViews({
         lists={lists}
         onUpdate={handleUpdate}
         onRecycleBinOpen={() => setRecycleBinOpen(true)}
+        isMultiSelectMode={isMultiSelectMode}
+        setIsMultiSelectMode={setIsMultiSelectMode}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
 
@@ -454,6 +464,44 @@ export function BoardViews({
         onOpenChange={setRecycleBinOpen}
         boardId={board.id}
         lists={lists}
+        translations={{
+          recycleBin: t('recycle_bin'),
+          recycleBinDescription: t('recycle_bin_description'),
+          noDeletedTasks: t('no_deleted_tasks'),
+          deletedTasksWillAppearHere: t('deleted_tasks_will_appear_here'),
+          selectedOfTotal: t('selected_of_total', {
+            selected: '{selected}',
+            total: '{total}',
+          }),
+          deletedTasksCount: t('deleted_tasks_count', { count: '{count}' }),
+          restore: t('restore'),
+          delete: t('delete'),
+          restoreTasksTitle: t('restore_tasks_title', { count: '{count}' }),
+          restoreTasksDescription: t('restore_tasks_description'),
+          cancel: t('cancel'),
+          restoring: t('restoring'),
+          permanentlyDeleteTitle: t('permanently_delete_title', {
+            count: '{count}',
+          }),
+          permanentlyDeleteDescription: t('permanently_delete_description'),
+          deleting: t('deleting'),
+          deletePermanently: t('delete_permanently'),
+          noListsAvailable: t('no_lists_available'),
+          restoredTasks: t('restored_tasks', { count: '{count}' }),
+          failedToRestore: t('failed_to_restore'),
+          permanentlyDeleted: t('permanently_deleted', { count: '{count}' }),
+          failedToDelete: t('failed_to_delete'),
+          deletedAgo: t('deleted_ago', { time: '{time}' }),
+          fromList: t('from_list', { list: '{list}' }),
+          nProjects: t('n_projects', { count: '{count}' }),
+          selectAllTasks: t('select_all_tasks'),
+          selectTask: t('select_task', { name: '{name}' }),
+          critical: tBoards('dialog.priority.critical'),
+          high: tBoards('dialog.priority.high'),
+          normal: tBoards('dialog.priority.normal'),
+          low: tBoards('dialog.priority.low'),
+          unknownList: t('unknown_list'),
+        }}
       />
     </div>
   );

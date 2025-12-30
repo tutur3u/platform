@@ -55,9 +55,9 @@ export async function POST(
     // Get the form data
     const formData = await request.formData();
     const audioBlob = formData.get('audio') as Blob;
-    const chunkOrder = parseInt(formData.get('chunkOrder') as string);
+    const chunkOrder = parseInt(formData.get('chunkOrder') as string, 10);
 
-    if (!audioBlob || isNaN(chunkOrder)) {
+    if (!audioBlob || Number.isNaN(chunkOrder)) {
       return NextResponse.json(
         { error: 'Invalid audio data or chunk order' },
         { status: 400 }

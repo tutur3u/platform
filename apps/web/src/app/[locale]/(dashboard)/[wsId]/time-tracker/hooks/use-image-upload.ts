@@ -162,7 +162,7 @@ export function useImageUpload(
         }
       }
     },
-    [images, totalImageCount, maxImages, maxSizeBytes]
+    [images, totalImageCount, maxImages, maxSizeBytes, imageError]
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {

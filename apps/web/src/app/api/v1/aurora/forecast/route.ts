@@ -30,7 +30,7 @@ export async function GET() {
         date: new Date(item.date).toISOString().split('T')[0],
       })),
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { message: 'Error fetching forecast data' },
       { status: 500 }

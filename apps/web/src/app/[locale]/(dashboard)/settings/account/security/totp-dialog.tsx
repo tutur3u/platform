@@ -25,7 +25,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface TOTPFactor {
   id: string;
@@ -60,7 +60,7 @@ export default function TOTPDialog() {
   const [isVerifying, setIsVerifying] = useState(false);
 
   // Fetch existing factors
-  const fetchFactors = async () => {
+  const fetchFactors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/auth/mfa/totp/factors');
@@ -74,7 +74,7 @@ export default function TOTPDialog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Create new TOTP factor
   const createFactor = async () => {
@@ -176,7 +176,7 @@ export default function TOTPDialog() {
       setFriendlyName('');
       setVerificationCode('');
     }
-  }, [isOpen]);
+  }, [isOpen, fetchFactors]);
 
   const renderFactorsList = () => (
     <div className="space-y-4">

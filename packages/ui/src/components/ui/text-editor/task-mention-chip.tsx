@@ -83,7 +83,7 @@ export function TaskMentionChip({
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
-  const dropdownTriggerRef = useRef<HTMLDivElement>(null);
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
@@ -600,17 +600,6 @@ export function TaskMentionChip({
     );
   }, [currentTaskList, task?.priority]);
 
-  // Priority text color classes for applying priority color to task name
-  const priorityTextColorClasses: Record<
-    NonNullable<Task['priority']>,
-    string
-  > = {
-    critical: 'text-dynamic-red',
-    high: 'text-dynamic-orange',
-    normal: 'text-dynamic-yellow',
-    low: 'text-dynamic-blue',
-  };
-
   const chipContent = (
     <span
       data-mention="true"
@@ -633,15 +622,13 @@ export function TaskMentionChip({
         e.stopPropagation();
         (e as any).stopImmediatePropagation?.();
         e.preventDefault();
-        // Right-click: close popover and open dropdown menu directly
+        // Right-click: close popover and open dropdown menu after delay
         setPopoverOpen(false);
-        setMenuOpen(true);
-        setMenuGuardUntil(Date.now() + 300);
-      }}
-      onAuxClick={(e) => {
-        e.stopPropagation();
-        (e as any).stopImmediatePropagation?.();
-        e.preventDefault();
+        // Delay to let popover close animation complete before opening menu
+        setTimeout(() => {
+          setMenuOpen(true);
+          setMenuGuardUntil(Date.now() + 300);
+        }, 50);
       }}
       className={cn(
         'inline-flex cursor-pointer items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 font-medium text-[12px] leading-normal transition-colors',
@@ -676,12 +663,7 @@ export function TaskMentionChip({
 
       {/* Task Name - use derived value for legacy mention support, with priority color */}
       {actualTaskName && (
-        <span
-          className={cn(
-            'max-w-50 truncate font-medium',
-            task?.priority && priorityTextColorClasses[task.priority]
-          )}
-        >
+        <span className={cn('max-w-50 truncate font-medium')}>
           {actualTaskName}
         </span>
       )}
@@ -997,16 +979,21 @@ export function TaskMentionChip({
         }}
       >
         <DropdownMenuTrigger asChild>
-          <div
+          <button
             ref={dropdownTriggerRef}
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
             style={{
               position: 'absolute',
               top: '100%',
               left: 0,
-              pointerEvents: 'none',
               opacity: 0,
               width: '1px',
               height: '1px',
+              border: 'none',
+              padding: 0,
+              background: 'transparent',
             }}
           />
         </DropdownMenuTrigger>
@@ -1016,6 +1003,11 @@ export function TaskMentionChip({
           side="bottom"
           sideOffset={8}
           onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+          onCloseAutoFocus={(e) => {
+            // Prevent focus from moving to an element that might be outside the parent dialog
+            // This fixes the issue where closing the dropdown causes the parent dialog to close
+            e.preventDefault();
+          }}
         >
           {taskLoading ? (
             <div className="flex items-center justify-center p-4">

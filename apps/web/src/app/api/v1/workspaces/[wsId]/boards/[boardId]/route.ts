@@ -131,7 +131,7 @@ export async function PATCH(
 
 // PUT handler for soft deletion (moving to trash)
 export async function PUT(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {

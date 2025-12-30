@@ -47,8 +47,8 @@ export async function GET(req: NextRequest, { params }: Params) {
     .select('row_id, cells')
     .eq('dataset_id', datasetId);
 
-  if (from && to) query.range(parseInt(from), parseInt(to));
-  if (limit) query.limit(parseInt(limit));
+  if (from && to) query.range(parseInt(from, 10), parseInt(to, 10));
+  if (limit) query.limit(parseInt(limit, 10));
 
   const { data, error } = await query;
 

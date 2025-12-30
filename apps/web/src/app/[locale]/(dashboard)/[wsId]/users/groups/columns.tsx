@@ -12,7 +12,7 @@ import { UserGroupRowActions } from './row-actions';
 export const getUserGroupColumns = (
   t: any,
   namespace: string | undefined,
-  extraColumns?: any[],
+  _extraColumns?: any[],
   extraData?: {
     canDeleteUserGroups?: boolean;
     canUpdateUserGroups?: boolean;

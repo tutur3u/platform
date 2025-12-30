@@ -28,8 +28,7 @@ import UserForm from './form';
 interface UserRowActionsProps {
   row: Row<WorkspaceUser>;
   href?: string;
-  // biome-ignore lint/suspicious/noExplicitAny: <extra data can be anything>
-  extraData?: any;
+  extraData?: Record<string, unknown>;
 }
 
 export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
@@ -110,7 +109,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {href && (extraData?.hasPublicInfo || extraData?.hasPrivateInfo) && (
+      {href && !!(extraData?.hasPublicInfo || extraData?.hasPrivateInfo) && (
         <Link href={href}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
@@ -152,8 +151,8 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
-            {extraData?.canUpdateUsers && (
+          <DropdownMenuContent align="end" className="w-40">
+            {!!extraData?.canUpdateUsers && (
               <DropdownMenuItem onClick={() => setOpen(true)}>
                 {t('common.edit')}
               </DropdownMenuItem>
@@ -161,7 +160,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
             <DropdownMenuSeparator />
             {pathname.includes('/users/database') &&
-              extraData?.canDeleteUsers && (
+              !!extraData?.canDeleteUsers && (
                 <DropdownMenuItem
                   onClick={deleteUser}
                   disabled={!user.id || !user.ws_id}
@@ -169,12 +168,12 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                   {t('common.delete')}
                 </DropdownMenuItem>
               )}
-            {extraData?.wsId && extraData?.groupId && (
+            {!!(extraData?.wsId && extraData?.groupId) && (
               <DropdownMenuItem
                 onClick={() =>
                   removeUserFromGroup({
-                    wsId: extraData.wsId,
-                    groupId: extraData.groupId,
+                    wsId: extraData.wsId as string,
+                    groupId: extraData.groupId as string,
                     userId: user.id,
                   })
                 }

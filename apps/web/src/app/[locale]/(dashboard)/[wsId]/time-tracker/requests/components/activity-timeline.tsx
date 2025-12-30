@@ -79,7 +79,6 @@ const getStatusBadgeVariant = (status: string | null) => {
       return 'destructive';
     case 'NEEDS_INFO':
       return 'warning';
-    case 'PENDING':
     default:
       return 'secondary';
   }

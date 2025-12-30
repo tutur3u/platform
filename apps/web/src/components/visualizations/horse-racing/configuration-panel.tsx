@@ -95,7 +95,9 @@ export function ConfigurationPanel({
                   min="2"
                   max="100"
                   value={numHorses}
-                  onChange={(e) => setNumHorses(parseInt(e.target.value) || 10)}
+                  onChange={(e) =>
+                    setNumHorses(parseInt(e.target.value, 10) || 10)
+                  }
                   className="w-20"
                 />
               </div>
@@ -137,7 +139,9 @@ export function ConfigurationPanel({
                   min="2"
                   max={numHorses}
                   value={raceSize}
-                  onChange={(e) => setRaceSize(parseInt(e.target.value) || 2)}
+                  onChange={(e) =>
+                    setRaceSize(parseInt(e.target.value, 10) || 2)
+                  }
                   className="w-20"
                 />
               </div>
