@@ -921,7 +921,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
                           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
                           <span className="text-dynamic-orange">
-                            {t('ws-task-boards.dialog.start_date_after_due_date')}
+                            {t(
+                              'ws-task-boards.dialog.start_date_after_due_date'
+                            )}
                           </span>
                         </div>
                       )}
