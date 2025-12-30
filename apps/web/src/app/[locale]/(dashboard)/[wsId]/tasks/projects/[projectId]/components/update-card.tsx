@@ -1,6 +1,6 @@
 'use client';
 
-import { Edit2, Loader2, MoreVertical, Trash2 } from '@tuturuuu/icons';
+import { Edit2, Loader2, MoreVertical, Trash2, Check, X } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,9 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { Check, X } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useFormatter } from 'next-intl';
 import type { UpdateCardProps } from '../types';
 
 export function UpdateCard({
@@ -32,6 +31,7 @@ export function UpdateCard({
 }: UpdateCardProps) {
   const t = useTranslations('task_project_detail.update_card');
   const isOwnUpdate = update.creator_id === currentUserId;
+  const { dateTime } = useFormatter();
 
   return (
     <motion.div {...fadeInVariant}>
@@ -50,8 +50,10 @@ export function UpdateCard({
                   {update.creator?.display_name || t('unknown_user')}
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {new Date(update.created_at).toLocaleDateString()}{' '}
-                  {new Date(update.created_at).toLocaleTimeString([], {
+                  {dateTime(new Date(update.created_at), {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit',
                   })}

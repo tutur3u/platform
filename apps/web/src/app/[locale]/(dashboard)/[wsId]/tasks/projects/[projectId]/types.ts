@@ -1,4 +1,8 @@
-import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types';
+import type {
+  TaskProjectWithRelations,
+  Workspace,
+  ProjectUpdate,
+} from '@tuturuuu/types';
 import type { Database } from '@tuturuuu/types/supabase';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -8,25 +12,12 @@ import type { MotionProps } from 'framer-motion';
 // Re-export WorkspaceMember for convenience
 export type { WorkspaceMember };
 
+// Re-export ProjectUpdate from centralized types
+export type { ProjectUpdate };
+
 export type TaskPriority = Database['public']['Enums']['task_priority'];
 export type HealthStatus = 'on_track' | 'at_risk' | 'off_track';
 export type ActiveTab = 'overview' | 'updates' | 'tasks';
-
-export interface ProjectUpdate {
-  id: string;
-  content: string;
-  creator_id: string;
-  created_at: string | Date;
-  updated_at?: string | Date;
-  creator?: {
-    display_name?: string;
-    avatar_url?: string;
-  };
-  reactionGroups?: Array<{
-    emoji: string;
-    count: number;
-  }>;
-}
 
 export interface TaskProjectDetailProps {
   workspace: Workspace;

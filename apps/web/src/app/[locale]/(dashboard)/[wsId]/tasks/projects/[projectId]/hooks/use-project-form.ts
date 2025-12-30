@@ -3,6 +3,7 @@
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useMutation } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import type { HealthStatus, TaskPriority } from '../types';
@@ -14,21 +15,23 @@ interface UseProjectFormOptions {
 
 function formatDateToInput(dateString: string | null | undefined): string {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const date = dayjs(dateString);
+  if (!date.isValid()) return '';
+  return date.format('YYYY-MM-DD');
 }
 
 function formatInputToISO(dateString: string): string | null {
   if (!dateString) return null;
-  const [year, month, day] = dateString.split('-').map(Number) as [
-    number,
-    number,
-    number,
-  ];
-  return new Date(Date.UTC(year, month - 1, day)).toISOString();
+  
+  // Use dayjs to parse and validate the date string
+  const date = dayjs(dateString, 'YYYY-MM-DD', true); // strict parsing
+  
+  if (!date.isValid()) {
+    console.error(`Invalid date format: expected YYYY-MM-DD, got "${dateString}"`);
+    return null;
+  }
+  
+  return date.toISOString();
 }
 
 interface UpdateProjectData {
@@ -73,8 +76,8 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     project.archived ?? false
   );
 
-  // Sync form state when project prop changes
-  useEffect(() => {
+  // Helper function to reset form fields from project data
+  const resetFormFromProject = useCallback(() => {
     setEditedName(project.name);
     setEditedDescription(project.description || '');
     setEditedPriority(project.priority);
@@ -85,6 +88,11 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     setEditedEndDate(formatDateToInput(project.end_date));
     setEditedArchived(project.archived ?? false);
   }, [project]);
+
+  // Sync form state when project prop changes
+  useEffect(() => {
+    resetFormFromProject();
+  }, [resetFormFromProject]);
 
   const hasUnsavedChanges =
     editedName !== project.name ||
@@ -159,20 +167,12 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   ]);
 
   const cancelEdits = useCallback(() => {
-    setEditedName(project.name);
-    setEditedDescription(project.description || '');
-    setEditedPriority(project.priority);
-    setEditedHealthStatus(project.health_status as HealthStatus | null);
-    setEditedStatus(project.status);
-    setEditedLeadId(project.lead_id);
-    setEditedStartDate(formatDateToInput(project.start_date));
-    setEditedEndDate(formatDateToInput(project.end_date));
-    setEditedArchived(project.archived ?? false);
+    resetFormFromProject();
     setIsEditingName(false);
     setIsEditingDescription(false);
     setShowLeadSelector(false);
     setShowTimelineEditor(false);
-  }, [project]);
+  }, [resetFormFromProject]);
 
   return {
     // UI state
@@ -198,9 +198,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
       value: TaskPriority | null
     ) => void,
     editedHealthStatus,
-    setEditedHealthStatus: setEditedHealthStatus as (
-      value: HealthStatus | null
-    ) => void,
+    setEditedHealthStatus,
     editedStatus,
     setEditedStatus,
     editedLeadId,

@@ -1,10 +1,7 @@
 'use client';
 
 import { Calendar, Edit2, Target, User } from '@tuturuuu/icons';
-import type { TaskProjectWithRelations } from '@tuturuuu/types';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -12,42 +9,27 @@ import { Label } from '@tuturuuu/ui/label';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ProjectLeadSelector } from './project-lead-selector';
+import { useProjectOverview } from './project-overview-context';
 
-interface ProjectSidebarProps {
-  project: TaskProjectWithRelations;
-  tasks: Task[];
-  editedLeadId: string | null;
-  setEditedLeadId: (value: string | null) => void;
-  showLeadSelector: boolean;
-  setShowLeadSelector: (value: boolean) => void;
-  editedStartDate: string;
-  setEditedStartDate: (value: string) => void;
-  editedEndDate: string;
-  setEditedEndDate: (value: string) => void;
-  showTimelineEditor: boolean;
-  setShowTimelineEditor: (value: boolean) => void;
-  workspaceMembers: WorkspaceMember[];
-  isLoadingMembers: boolean;
-  fadeInViewVariant: (delay?: number) => object;
-}
+export function ProjectSidebar() {
+  const {
+    project,
+    tasks,
+    editedLeadId,
+    setEditedLeadId,
+    showLeadSelector,
+    setShowLeadSelector,
+    editedStartDate,
+    setEditedStartDate,
+    editedEndDate,
+    setEditedEndDate,
+    showTimelineEditor,
+    setShowTimelineEditor,
+    workspaceMembers,
+    isLoadingMembers,
+    fadeInViewVariant,
+  } = useProjectOverview();
 
-export function ProjectSidebar({
-  project,
-  tasks,
-  editedLeadId,
-  setEditedLeadId,
-  showLeadSelector,
-  setShowLeadSelector,
-  editedStartDate,
-  setEditedStartDate,
-  editedEndDate,
-  setEditedEndDate,
-  showTimelineEditor,
-  setShowTimelineEditor,
-  workspaceMembers,
-  isLoadingMembers,
-  fadeInViewVariant,
-}: ProjectSidebarProps) {
   const t = useTranslations('task_project_detail.sidebar');
   return (
     <div className="space-y-4">

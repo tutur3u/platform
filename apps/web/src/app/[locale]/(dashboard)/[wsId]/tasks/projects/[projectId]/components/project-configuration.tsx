@@ -1,6 +1,4 @@
 'use client';
-
-import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -16,46 +14,30 @@ import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ProjectLeadSelector } from './project-lead-selector';
 import type { HealthStatus, TaskPriority } from '../types';
+import { Circle } from '@tuturuuu/icons';
+import { useProjectOverview } from './project-overview-context';
 
-interface ProjectConfigurationProps {
-  show: boolean;
-  editedStatus: string | null;
-  setEditedStatus: (value: string) => void;
-  editedPriority: TaskPriority | null;
-  setEditedPriority: (value: TaskPriority | null) => void;
-  editedHealthStatus: HealthStatus | null;
-  setEditedHealthStatus: (value: HealthStatus | null) => void;
-  editedLeadId: string | null;
-  setEditedLeadId: (value: string | null) => void;
-  editedStartDate: string;
-  setEditedStartDate: (value: string) => void;
-  editedEndDate: string;
-  setEditedEndDate: (value: string) => void;
-  editedArchived: boolean;
-  setEditedArchived: (value: boolean) => void;
-  workspaceMembers: WorkspaceMember[];
-  isLoadingMembers: boolean;
-}
+export function ProjectConfiguration() {
+  const {
+    showConfiguration: show,
+    editedStatus,
+    setEditedStatus,
+    editedPriority,
+    setEditedPriority,
+    editedHealthStatus,
+    setEditedHealthStatus,
+    editedLeadId,
+    setEditedLeadId,
+    editedStartDate,
+    setEditedStartDate,
+    editedEndDate,
+    setEditedEndDate,
+    editedArchived,
+    setEditedArchived,
+    workspaceMembers,
+    isLoadingMembers,
+  } = useProjectOverview();
 
-export function ProjectConfiguration({
-  show,
-  editedStatus,
-  setEditedStatus,
-  editedPriority,
-  setEditedPriority,
-  editedHealthStatus,
-  setEditedHealthStatus,
-  editedLeadId,
-  setEditedLeadId,
-  editedStartDate,
-  setEditedStartDate,
-  editedEndDate,
-  setEditedEndDate,
-  editedArchived,
-  setEditedArchived,
-  workspaceMembers,
-  isLoadingMembers,
-}: ProjectConfigurationProps) {
   const t = useTranslations('task_project_detail.configuration');
   if (!show) return null;
 
@@ -168,17 +150,20 @@ export function ProjectConfiguration({
               <SelectContent>
                 <SelectItem value="on_track">
                   <span className="flex items-center gap-2">
-                    🟢 {t('health_status.on_track')}
+                    <Circle className="h-2 w-2 rounded-full text-dynamic-green" />
+                     {t('health_status.on_track')}
                   </span>
                 </SelectItem>
                 <SelectItem value="at_risk">
                   <span className="flex items-center gap-2">
-                    🟡 {t('health_status.at_risk')}
+                    <Circle className="h-2 w-2 rounded-full text-dynamic-yellow" />
+                    {t('health_status.at_risk')}
                   </span>
                 </SelectItem>
                 <SelectItem value="off_track">
                   <span className="flex items-center gap-2">
-                    🔴 {t('health_status.off_track')}
+                    <Circle className="h-2 w-2 rounded-full text-dynamic-red" />
+                    {t('health_status.off_track')}
                   </span>
                 </SelectItem>
               </SelectContent>

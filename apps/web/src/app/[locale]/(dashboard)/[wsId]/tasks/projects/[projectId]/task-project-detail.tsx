@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 import { OverviewTab, ProjectHeader, TasksTab, UpdatesTab } from './components';
+import { ProjectOverviewProvider } from './components/project-overview-context';
 import { LinkTaskDialog } from './dialogs';
 import {
   useAnimationVariants,
@@ -228,41 +229,45 @@ export function TaskProjectDetail({
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-0 flex-1 overflow-auto">
-            <OverviewTab
-              project={project}
-              tasks={tasks}
-              recentUpdates={projectUpdates.recentUpdates}
-              isLoadingUpdates={projectUpdates.isLoadingUpdates}
-              setActiveTab={setActiveTab}
-              setShowLinkTaskDialog={taskLinking.setShowLinkTaskDialog}
-              editedDescription={projectForm.editedDescription}
-              setEditedDescription={projectForm.setEditedDescription}
-              isEditingDescription={projectForm.isEditingDescription}
-              setIsEditingDescription={projectForm.setIsEditingDescription}
-              showConfiguration={projectForm.showConfiguration}
-              setShowConfiguration={projectForm.setShowConfiguration}
-              editedStatus={projectForm.editedStatus}
-              setEditedStatus={projectForm.setEditedStatus}
-              editedPriority={projectForm.editedPriority}
-              setEditedPriority={projectForm.setEditedPriority}
-              editedHealthStatus={projectForm.editedHealthStatus}
-              setEditedHealthStatus={projectForm.setEditedHealthStatus}
-              editedLeadId={projectForm.editedLeadId}
-              setEditedLeadId={projectForm.setEditedLeadId}
-              editedStartDate={projectForm.editedStartDate}
-              setEditedStartDate={projectForm.setEditedStartDate}
-              editedEndDate={projectForm.editedEndDate}
-              setEditedEndDate={projectForm.setEditedEndDate}
-              editedArchived={projectForm.editedArchived}
-              setEditedArchived={projectForm.setEditedArchived}
-              showLeadSelector={projectForm.showLeadSelector}
-              setShowLeadSelector={projectForm.setShowLeadSelector}
-              showTimelineEditor={projectForm.showTimelineEditor}
-              setShowTimelineEditor={projectForm.setShowTimelineEditor}
-              workspaceMembers={workspaceMembers}
-              isLoadingMembers={isLoadingMembers}
-              fadeInViewVariant={fadeInViewVariant}
-            />
+            <ProjectOverviewProvider
+              value={{
+                project,
+                tasks,
+                recentUpdates: projectUpdates.recentUpdates,
+                isLoadingUpdates: projectUpdates.isLoadingUpdates,
+                setActiveTab,
+                setShowLinkTaskDialog: taskLinking.setShowLinkTaskDialog,
+                editedDescription: projectForm.editedDescription,
+                setEditedDescription: projectForm.setEditedDescription,
+                isEditingDescription: projectForm.isEditingDescription,
+                setIsEditingDescription: projectForm.setIsEditingDescription,
+                showConfiguration: projectForm.showConfiguration,
+                setShowConfiguration: projectForm.setShowConfiguration,
+                editedStatus: projectForm.editedStatus,
+                setEditedStatus: projectForm.setEditedStatus,
+                editedPriority: projectForm.editedPriority,
+                setEditedPriority: projectForm.setEditedPriority,
+                editedHealthStatus: projectForm.editedHealthStatus,
+                setEditedHealthStatus: projectForm.setEditedHealthStatus,
+                editedLeadId: projectForm.editedLeadId,
+                setEditedLeadId: projectForm.setEditedLeadId,
+                editedStartDate: projectForm.editedStartDate,
+                setEditedStartDate: projectForm.setEditedStartDate,
+                editedEndDate: projectForm.editedEndDate,
+                setEditedEndDate: projectForm.setEditedEndDate,
+                editedArchived: projectForm.editedArchived,
+                setEditedArchived: projectForm.setEditedArchived,
+                showLeadSelector: projectForm.showLeadSelector,
+                setShowLeadSelector: projectForm.setShowLeadSelector,
+                showTimelineEditor: projectForm.showTimelineEditor,
+                setShowTimelineEditor: projectForm.setShowTimelineEditor,
+                workspaceMembers,
+                isLoadingMembers,
+                fadeInViewVariant,
+              }}
+            >
+              <OverviewTab />
+            </ProjectOverviewProvider>
           </TabsContent>
 
           {/* Updates Tab */}
