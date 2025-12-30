@@ -42,6 +42,13 @@ function getNestedValue(obj, keyPath) {
 }
 
 /**
+ * Check if a key is unsafe for object assignment preventing prototype pollution
+ */
+function isUnsafeKey(key) {
+  return key === '__proto__' || key === 'constructor' || key === 'prototype';
+}
+
+/**
  * Set a nested value in an object using a dot-separated path
  */
 function setNestedValue(obj, keyPath, value) {
@@ -50,13 +57,27 @@ function setNestedValue(obj, keyPath, value) {
 
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    if (!(key in current) || typeof current[key] !== 'object') {
+
+    if (isUnsafeKey(key)) {
+      return;
+    }
+
+    if (
+      !(key in current) ||
+      typeof current[key] !== 'object' ||
+      current[key] === null
+    ) {
       current[key] = {};
     }
     current = current[key];
   }
 
-  current[keys[keys.length - 1]] = value;
+  const lastKey = keys[keys.length - 1];
+  if (isUnsafeKey(lastKey)) {
+    return;
+  }
+
+  current[lastKey] = value;
 }
 
 /**
