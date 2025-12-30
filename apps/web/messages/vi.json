@@ -416,6 +416,44 @@
     "partners-description": "Khám phá cơ hội hợp tác với Tuturuuu.",
     "deleting": "Đang xóa"
   },
+  "ws-tasks-labels": {
+    "header": "Nhãn công việc",
+    "description": "Tổ chức và phân loại các công việc của bạn với các nhãn tùy chỉnh",
+    "count_labels": "{count} nhãn",
+    "search_placeholder": "Tìm kiếm nhãn...",
+    "create_label": "Tạo nhãn",
+    "edit_label": "Sửa nhãn",
+    "delete_label": "Xóa nhãn",
+    "create_description": "Tạo một nhãn mới để tổ chức và phân loại các công việc của bạn",
+    "edit_description": "Cập nhật tên và màu sắc của nhãn",
+    "delete_confirmation": "Bạn có chắc chắn muốn xóa nhãn <nameTag>{name}</nameTag>? Hành động này không thể hoàn tác.",
+    "label_name": "Tên nhãn",
+    "name_placeholder": "ví dụ: Lỗi, Tính năng, Ưu tiên",
+    "color": "Màu sắc",
+    "select_color": "Chọn màu {color}",
+    "custom_color": "Trình chọn màu tùy chỉnh",
+    "preview": "Xem trước",
+    "preview_text": "Xem trước nhãn",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "creating": "Đang tạo...",
+    "updating": "Đang cập nhật...",
+    "success_create": "Đã tạo nhãn thành công",
+    "success_update": "Đã cập nhật nhãn thành công",
+    "success_delete": "Đã xóa nhãn thành công",
+    "error_create": "Không thể tạo nhãn",
+    "error_update": "Không thể cập nhật nhãn",
+    "error_delete": "Không thể xóa nhãn",
+    "no_labels": "Chưa có nhãn nào",
+    "no_labels_description": "Tạo nhãn đầu tiên của bạn để bắt đầu tổ chức và phân loại các công việc một cách hiệu quả",
+    "create_first_label": "Tạo nhãn đầu tiên của bạn",
+    "no_results": "Không tìm thấy nhãn nào",
+    "no_results_description": "Không có nhãn nào khớp với từ khóa tìm kiếm \"{query}\"",
+    "clear_search": "Xóa tìm kiếm",
+    "open_menu": "Mở rộng",
+    "edit": "Sửa",
+    "update_label": "Cập nhật nhãn"
+  },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
     "time-unit-placeholder": "Chọn đơn vị thời gian",
@@ -9076,5 +9114,10 @@
       "linking": "Đang liên kết...",
       "link_task": "Liên Kết Nhiệm Vụ"
     }
+  },
+  "ws-tasks": {
+    "overdue": "Quá hạn",
+    "due_today": "Đến hạn hôm nay",
+    "upcoming": "Sắp tới"
   }
 }

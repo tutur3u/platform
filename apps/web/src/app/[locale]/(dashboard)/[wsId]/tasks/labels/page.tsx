@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import TaskLabelsClient from './client';
 
 export const metadata: Metadata = {
@@ -39,14 +40,14 @@ export default async function TaskLabelsPage({ params }: Props) {
   // Fetch labels data
   const { labels } = await getTaskLabels(wsId);
 
+  const t = await getTranslations('ws-tasks-labels');
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="font-bold text-2xl tracking-tight">Task Labels</h1>
-        <p className="text-muted-foreground">
-          Organize and categorize your tasks with custom labels
-        </p>
+        <h1 className="font-bold text-2xl tracking-tight">{t('header')}</h1>
+        <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
       {/* Labels Management */}
