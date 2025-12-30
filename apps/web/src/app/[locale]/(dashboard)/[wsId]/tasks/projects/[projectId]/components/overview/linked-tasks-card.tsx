@@ -11,13 +11,9 @@ import { useProjectOverview } from '../project-overview-context';
 
 export function OverviewLinkedTasks() {
   const t = useTranslations('task_project_detail.overview');
-  const {
-    tasks,
-    setActiveTab,
-    setShowLinkTaskDialog,
-    fadeInViewVariant,
-  } = useProjectOverview();
-  
+  const { tasks, setActiveTab, setShowLinkTaskDialog, fadeInViewVariant } =
+    useProjectOverview();
+
   const recentTasks = tasks.slice(0, 5);
 
   return (

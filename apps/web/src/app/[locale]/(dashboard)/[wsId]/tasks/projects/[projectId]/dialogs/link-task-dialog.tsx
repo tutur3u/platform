@@ -76,7 +76,9 @@ export function LinkTaskDialog({
                           </p>
                         )}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {task.priority && <PriorityBadge priority={task.priority} />}
+                          {task.priority && (
+                            <PriorityBadge priority={task.priority} />
+                          )}
                         </div>
                       </div>
                       <Button

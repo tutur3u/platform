@@ -10,12 +10,8 @@ import { useProjectOverview } from '../project-overview-context';
 
 export function OverviewUpdates() {
   const t = useTranslations('task_project_detail.overview');
-  const {
-    recentUpdates,
-    isLoadingUpdates,
-    setActiveTab,
-    fadeInViewVariant,
-  } = useProjectOverview();
+  const { recentUpdates, isLoadingUpdates, setActiveTab, fadeInViewVariant } =
+    useProjectOverview();
 
   return (
     <motion.div {...fadeInViewVariant(0.2)}>
@@ -53,8 +49,7 @@ export function OverviewUpdates() {
                       src={update.creator?.avatar_url || undefined}
                     />
                     <AvatarFallback className="text-xs">
-                      {update.creator?.display_name?.[0]?.toUpperCase() ||
-                        'U'}
+                      {update.creator?.display_name?.[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="font-medium text-sm">

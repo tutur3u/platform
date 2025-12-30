@@ -151,7 +151,7 @@ export function ProjectConfiguration() {
                 <SelectItem value="on_track">
                   <span className="flex items-center gap-2">
                     <Circle className="h-2 w-2 rounded-full text-dynamic-green" />
-                     {t('health_status.on_track')}
+                    {t('health_status.on_track')}
                   </span>
                 </SelectItem>
                 <SelectItem value="at_risk">
