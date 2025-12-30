@@ -1,5 +1,6 @@
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import type { TaskLabel } from '../types';
 
 interface UseTaskLabelsProps {
@@ -8,105 +9,160 @@ interface UseTaskLabelsProps {
 }
 
 export function useTaskLabels({ wsId, initialLabels }: UseTaskLabelsProps) {
-  const router = useRouter();
-  const [labels, setLabels] = useState<TaskLabel[]>(initialLabels);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const t = useTranslations('ws-tasks-labels');
+  const queryClient = useQueryClient();
+  const queryKey = ['task-labels', wsId];
 
-  const createLabel = async (data: { name: string; color: string }) => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name.trim(),
-          color: data.color,
-        }),
-      });
+  const { data: labels = initialLabels } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`);
+      if (!response.ok) throw new Error('Failed to fetch labels');
+      return response.json() as Promise<TaskLabel[]>;
+    },
+    initialData: initialLabels,
+  });
 
-      if (!response.ok) {
-        throw new Error('Failed to create label');
-      }
-
-      const newLabel = await response.json();
-      setLabels((prev) => [newLabel, ...prev]);
-      router.refresh();
-      return { success: true };
-    } catch (error) {
-      console.error('Error creating label:', error);
-      return { success: false, error };
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const updateLabel = async (
-    labelId: string,
-    data: { name: string; color: string }
-  ) => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/labels/${labelId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+  const { mutateAsync: createLabelMutation, isPending: isCreating } =
+    useMutation({
+      mutationFn: async (data: { name: string; color: string }) => {
+        const response = await fetch(`/api/v1/workspaces/${wsId}/labels`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: data.name.trim(),
             color: data.color,
           }),
+        });
+
+        if (!response.ok) throw new Error('Failed to create label');
+        return response.json() as Promise<TaskLabel>;
+      },
+      onMutate: async (newLabel) => {
+        await queryClient.cancelQueries({ queryKey });
+        const previousLabels = queryClient.getQueryData<TaskLabel[]>(queryKey);
+
+        const optimisticLabel: TaskLabel = {
+          id: `temp-${Date.now()}`,
+          name: newLabel.name.trim(),
+          color: newLabel.color,
+          ws_id: wsId,
+          created_at: new Date().toISOString(),
+          creator_id: null,
+        };
+
+        queryClient.setQueryData<TaskLabel[]>(queryKey, (old) => [
+          optimisticLabel,
+          ...(old || []),
+        ]);
+
+        return { previousLabels };
+      },
+      onError: (_err, _newLabel, context) => {
+        if (context?.previousLabels) {
+          queryClient.setQueryData(queryKey, context.previousLabels);
         }
-      );
+        toast.error(t('error_create'));
+      },
+      onSuccess: () => {
+        toast.success(t('success_create'));
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to update label');
-      }
+  const { mutateAsync: updateLabelMutation, isPending: isUpdating } =
+    useMutation({
+      mutationFn: async ({
+        id,
+        ...data
+      }: { id: string; name: string; color: string }) => {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/labels/${id}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: data.name.trim(),
+              color: data.color,
+            }),
+          }
+        );
 
-      const updatedLabel = await response.json();
-      setLabels((prev) =>
-        prev.map((label) => (label.id === labelId ? updatedLabel : label))
-      );
-      router.refresh();
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating label:', error);
-      return { success: false, error };
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        if (!response.ok) throw new Error('Failed to update label');
+        return response.json() as Promise<TaskLabel>;
+      },
+      onMutate: async ({ id, ...data }) => {
+        await queryClient.cancelQueries({ queryKey });
+        const previousLabels = queryClient.getQueryData<TaskLabel[]>(queryKey);
 
-  const deleteLabel = async (labelId: string) => {
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/labels/${labelId}`,
-        {
-          method: 'DELETE',
+        queryClient.setQueryData<TaskLabel[]>(queryKey, (old) =>
+          (old || []).map((label) =>
+            label.id === id
+              ? { ...label, name: data.name.trim(), color: data.color }
+              : label
+          )
+        );
+
+        return { previousLabels };
+      },
+      onError: (_err, _variables, context) => {
+        if (context?.previousLabels) {
+          queryClient.setQueryData(queryKey, context.previousLabels);
         }
-      );
+        toast.error(t('error_update'));
+      },
+      onSuccess: () => {
+        toast.success(t('success_update'));
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete label');
-      }
+  const { mutateAsync: deleteLabelMutation, isPending: isDeleting } =
+    useMutation({
+      mutationFn: async (labelId: string) => {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/labels/${labelId}`,
+          {
+            method: 'DELETE',
+          }
+        );
 
-      setLabels((prev) => prev.filter((label) => label.id !== labelId));
-      router.refresh();
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting label:', error);
-      return { success: false, error };
-    }
-  };
+        if (!response.ok) throw new Error('Failed to delete label');
+      },
+      onMutate: async (labelId) => {
+        await queryClient.cancelQueries({ queryKey });
+        const previousLabels = queryClient.getQueryData<TaskLabel[]>(queryKey);
+
+        queryClient.setQueryData<TaskLabel[]>(queryKey, (old) =>
+          (old || []).filter((label) => label.id !== labelId)
+        );
+
+        return { previousLabels };
+      },
+      onError: (_err, _labelId, context) => {
+        if (context?.previousLabels) {
+          queryClient.setQueryData(queryKey, context.previousLabels);
+        }
+        toast.error(t('error_delete'));
+      },
+      onSuccess: () => {
+        toast.success(t('success_delete'));
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
 
   return {
     labels,
-    isSubmitting,
-    createLabel,
-    updateLabel,
-    deleteLabel,
+    isSubmitting: isCreating || isUpdating || isDeleting,
+    createLabel: createLabelMutation,
+    updateLabel: (labelId: string, data: { name: string; color: string }) =>
+      updateLabelMutation({ id: labelId, ...data }),
+    deleteLabel: deleteLabelMutation,
   };
 }

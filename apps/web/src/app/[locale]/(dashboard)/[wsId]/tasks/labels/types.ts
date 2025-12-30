@@ -1,10 +1,6 @@
-export interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-  creator_id: string | null;
-}
+import type { TaskLabel } from '@tuturuuu/types/db';
+
+export type { TaskLabel };
 
 export const colorPresets = [
   '#EF4444', // red

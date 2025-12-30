@@ -1,9 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { type TaskLabel } from './types';
 import TaskLabelsClient from './client';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Labels',
@@ -16,21 +18,11 @@ interface Props {
   }>;
 }
 
-interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-  creator_id: string | null;
-}
-
 export default async function TaskLabelsPage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
-
-  // Check permissions
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+          // Check permissions
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -54,6 +46,9 @@ export default async function TaskLabelsPage({ params }: Props) {
       <TaskLabelsClient wsId={wsId} initialLabels={labels} />
     </div>
   );
+      }}
+    </WorkspaceWrapper>
+  )
 }
 
 async function getTaskLabels(wsId: string): Promise<{ labels: TaskLabel[] }> {

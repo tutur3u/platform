@@ -22,6 +22,7 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
 export type WorkspaceTask = Tables<'tasks'>;
+export type TaskLabel = Tables<'workspace_task_labels'>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskCalendarEvent = Tables<'task_calendar_events'>;
 export type WorkspaceHabit = Tables<'workspace_habits'>;

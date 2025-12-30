@@ -3,7 +3,7 @@
 import { Plus, Tag } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
-import { toast } from '@tuturuuu/ui/sonner';
+
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { DeleteLabelDialog } from './components/delete-label-dialog';
@@ -37,27 +37,26 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
     name: string;
     color: string;
   }) => {
-    const result = editingLabel
-      ? await updateLabel(editingLabel.id, data)
-      : await createLabel(data);
-
-    if (result.success) {
-      toast.success(editingLabel ? t('success_update') : t('success_create'));
+    try {
+      if (editingLabel) {
+        await updateLabel(editingLabel.id, data);
+      } else {
+        await createLabel(data);
+      }
       setIsLabelDialogOpen(false);
       setEditingLabel(null);
-    } else {
-      toast.error(editingLabel ? t('error_update') : t('error_create'));
+    } catch (error) {
+      // Error handled by hook
     }
   };
 
   const handleDeleteConfirm = async () => {
     if (!deletingLabel) return;
-    const result = await deleteLabel(deletingLabel.id);
-    if (result.success) {
-      toast.success(t('success_delete'));
+    try {
+      await deleteLabel(deletingLabel.id);
       setDeletingLabel(null);
-    } else {
-      toast.error(t('error_delete'));
+    } catch (error) {
+      // Error handled by hook
     }
   };
 
