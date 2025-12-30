@@ -132,7 +132,9 @@ export function LabelDialog({
               </div>
             </div>
             <div className="rounded-lg border bg-muted/50 p-3">
-              <p className="mb-2 text-muted-foreground text-xs">{t('preview')}</p>
+              <p className="mb-2 text-muted-foreground text-xs">
+                {t('preview')}
+              </p>
               <Badge
                 variant="outline"
                 style={(() => {

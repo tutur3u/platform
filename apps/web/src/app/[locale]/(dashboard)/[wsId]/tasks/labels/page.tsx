@@ -22,33 +22,35 @@ export default async function TaskLabelsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-          // Check permissions
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
+        // Check permissions
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
 
-  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+        if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  // Fetch labels data
-  const { labels } = await getTaskLabels(wsId);
+        // Fetch labels data
+        const { labels } = await getTaskLabels(wsId);
 
-  const t = await getTranslations('ws-tasks-labels');
+        const t = await getTranslations('ws-tasks-labels');
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="font-bold text-2xl tracking-tight">{t('header')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
+        return (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="space-y-2">
+              <h1 className="font-bold text-2xl tracking-tight">
+                {t('header')}
+              </h1>
+              <p className="text-muted-foreground">{t('description')}</p>
+            </div>
 
-      {/* Labels Management */}
-      <TaskLabelsClient wsId={wsId} initialLabels={labels} />
-    </div>
-  );
+            {/* Labels Management */}
+            <TaskLabelsClient wsId={wsId} initialLabels={labels} />
+          </div>
+        );
       }}
     </WorkspaceWrapper>
-  )
+  );
 }
 
 async function getTaskLabels(wsId: string): Promise<{ labels: TaskLabel[] }> {

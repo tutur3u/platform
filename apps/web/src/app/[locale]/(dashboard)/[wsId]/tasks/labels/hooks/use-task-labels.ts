@@ -77,7 +77,11 @@ export function useTaskLabels({ wsId, initialLabels }: UseTaskLabelsProps) {
       mutationFn: async ({
         id,
         ...data
-      }: { id: string; name: string; color: string }) => {
+      }: {
+        id: string;
+        name: string;
+        color: string;
+      }) => {
         const response = await fetch(
           `/api/v1/workspaces/${wsId}/labels/${id}`,
           {

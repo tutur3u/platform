@@ -60,7 +60,10 @@ export function LabelCard({ label, onEdit, onDelete }: LabelCardProps) {
                 <span className="sr-only">{t('open_menu')}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+            >
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
