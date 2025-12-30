@@ -168,6 +168,7 @@
     "current-plan": "Gói đăng kí hiện tại",
     "current-plan-details": "Chi tiết gói hiện tại của bạn",
     "hide-upgrade": "Ân nâng cấp",
+    "loading": "Loading payment details...",
     "next-billing": "Ngày gia hạn",
     "order-history": "Lịch sử thanh toán",
     "order-history-desc": "Không có lịch sử đăng ký nào.",
@@ -478,6 +479,9 @@
     "show-all": "Hiển thị tất cả",
     "sidebar": "Thanh bên",
     "sign_in": "Đăng nhập",
+    "sign_in_with_github": "Sign in with Github",
+    "sign_in_with_google": "Sign in with Google",
+    "sign_in_with_microsoft": "Sign in with Microsoft",
     "solutions": "Giải pháp",
     "standard": "Tiêu chuẩn",
     "start": "Bắt đầu",
@@ -1010,6 +1014,32 @@
     "enterprise": "Doanh nghiệp",
     "everything_in_pro": "Mọi thứ trong gói chuyên nghiệp",
     "everything_works_together": "Mọi thứ hoạt động cùng nhau",
+    "faq": {
+      "items": [
+        {
+          "question": "What is Tuturuuu?",
+          "answer": "Tuturuuu is an all-in-one workspace platform that combines AI-powered productivity tools, team collaboration features, and business management solutions."
+        },
+        {
+          "question": "How does the pricing work?",
+          "answer": "We offer flexible pricing plans starting from free. Our Pro plan is priced per user, and Enterprise plans are customized to your needs."
+        },
+        {
+          "question": "Can I try before I buy?",
+          "answer": "Yes! You can start with our free plan or request a demo of our Pro features."
+        },
+        {
+          "question": "How secure is my data?",
+          "answer": "We use enterprise-grade encryption and follow industry best practices to ensure your data is always secure."
+        },
+        {
+          "question": "Do you offer customer support?",
+          "answer": "Yes, we provide customer support through various channels depending on your plan, from community support to 24/7 dedicated assistance."
+        }
+      ],
+      "subtitle": "Find answers to common questions about Tuturuuu",
+      "title": "Frequently Asked Questions"
+    },
     "feature": "Tính năng",
     "features": {
       "ai_powered": {
@@ -1222,6 +1252,55 @@
     "prepare": "Chuẩn bị",
     "prepare_for_team_meeting": "Chuẩn bị cho cuộc họp nhóm",
     "prevent_burnout_through_workload_balancing": "Ngăn ngừa kiệt sức thông qua cân bằng khối lượng công việc",
+    "pricing": {
+      "monthly": "Monthly",
+      "plans": {
+        "enterprise": {
+          "description": "For large organizations",
+          "features": [
+            "Everything in Pro",
+            "Unlimited storage",
+            "24/7 dedicated support",
+            "Custom AI models",
+            "Advanced security",
+            "SLA guarantee"
+          ],
+          "period": "",
+          "price": "Custom",
+          "title": "Enterprise"
+        },
+        "free": {
+          "description": "Perfect for individuals and small teams",
+          "features": [
+            "Up to 3 team members",
+            "Basic AI features",
+            "2GB storage",
+            "Community support"
+          ],
+          "period": "/month",
+          "price": "$0",
+          "title": "Free"
+        },
+        "pro": {
+          "description": "Great for growing teams",
+          "features": [
+            "Unlimited team members",
+            "Advanced AI features",
+            "20GB storage per user",
+            "Priority support",
+            "Advanced analytics",
+            "Custom integrations"
+          ],
+          "period": "/user/month",
+          "price": "$12",
+          "title": "Pro"
+        }
+      },
+      "save_percent": "Save 20%",
+      "subtitle": "Choose the plan that's right for you",
+      "title": "Simple, Transparent Pricing",
+      "yearly": "Yearly"
+    },
     "prioritizes_emails_based_on_urgency_and_importance": "Ưu tiên các email dựa trên sự cấp bách và tầm quan trọng",
     "priority_support": "Hỗ trợ ưu tiên",
     "pro": "Chuyên nghiệp",
@@ -2246,6 +2325,12 @@
     "available": "Có sẵn",
     "available-accounts": "Tài khoản có sẵn để liên kết",
     "avatar": "Ảnh đại diện",
+    "avatar_remove_error": "There was an error removing your avatar. Please try again.",
+    "avatar_removed": "Avatar removed",
+    "avatar_removed_description": "Your avatar has been successfully removed.",
+    "avatar_update_error": "There was an error updating your avatar. Please try again.",
+    "avatar_updated": "Avatar updated",
+    "avatar_updated_description": "Your avatar has been successfully updated.",
     "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
     "avoid-public-wifi-tip": "Tránh truy cập thông tin nhạy cảm trên WiFi công cộng",
     "billing-address": "Địa chỉ hóa đơn",
@@ -2270,6 +2355,9 @@
     "connected-on": "Đã kết nối vào {date}",
     "contact-information": "Thông tin liên hệ",
     "contact-information-description": "Quản lý địa chỉ email và tùy chọn giao tiếp của bạn",
+    "crop_avatar": "Crop Avatar",
+    "crop_failed": "Crop failed",
+    "crop_failed_description": "There was an error cropping your image. Please try again.",
     "current-email": "Email hiện tại",
     "current-plan": "Gói hiện tại",
     "current-plan-description": "Chi tiết đăng ký của bạn",
@@ -2368,6 +2456,7 @@
     "recovery-codes-description": "Mã dự phòng sử dụng một lần để khôi phục tài khoản",
     "regular-logout-tip": "Đăng xuất khỏi các thiết bị bạn không còn sử dụng",
     "remove_avatar": "Xóa hình đại diện",
+    "remove_failed": "Remove failed",
     "reset-password": "Đặt lại mật khẩu",
     "revert_changes": "Hoàn tác thay đổi",
     "save_avatar": "Lưu hình đại diện",
@@ -2398,6 +2487,7 @@
     "unlink-confirmation": "Bạn có chắc chắn muốn hủy liên kết tài khoản {provider} của mình không? Bạn sẽ không thể đăng nhập bằng tài khoản này nữa.",
     "unlinking": "Đang hủy liên kết",
     "unverified": "Chưa xác minh",
+    "update_failed": "Update failed",
     "update-address": "Cập nhật địa chỉ",
     "upgrade-plan": "Nâng cấp gói",
     "upload_avatar": "Hình đại diện mới",
@@ -3072,6 +3162,7 @@
     "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
     "name": "Tên khóa học",
     "no_courses_found": "Chưa có khóa học nào",
+    "no_courses_found_description": "No courses found in your workspace. Create a new course to get started.",
     "no_description_provided": "Không có mô tả",
     "plural": "Khóa học",
     "select_certificate_template": "Chọn một mẫu thiết kế chứng chỉ",

@@ -815,6 +815,32 @@
       "subtitle": "Tham gia cùng hàng nghìn đội nhóm đang sử dụng Tuturuuu",
       "title": "Sẵn Sàng Bắt Đầu?"
     },
+    "faq": {
+      "items": [
+        {
+          "question": "What is Tuturuuu?",
+          "answer": "Tuturuuu is an all-in-one workspace platform that combines AI-powered productivity tools, team collaboration features, and business management solutions."
+        },
+        {
+          "question": "How does the pricing work?",
+          "answer": "We offer flexible pricing plans starting from free. Our Pro plan is priced per user, and Enterprise plans are customized to your needs."
+        },
+        {
+          "question": "Can I try before I buy?",
+          "answer": "Yes! You can start with our free plan or request a demo of our Pro features."
+        },
+        {
+          "question": "How secure is my data?",
+          "answer": "We use enterprise-grade encryption and follow industry best practices to ensure your data is always secure."
+        },
+        {
+          "question": "Do you offer customer support?",
+          "answer": "Yes, we provide customer support through various channels depending on your plan, from community support to 24/7 dedicated assistance."
+        }
+      ],
+      "subtitle": "Find answers to common questions about Tuturuuu",
+      "title": "Frequently Asked Questions"
+    },
     "features": {
       "ai_powered": {
         "description": "Phát triển và tổ chức ý tưởng của bạn với tốc độ tư duy, với các công cụ thông minh được hỗ trợ bởi AI",
@@ -865,6 +891,55 @@
       },
       "subtitle": "Bắt đầu với Tuturuuu chỉ trong vài bước đơn giản",
       "title": "Cách Hoạt động"
+    },
+    "pricing": {
+      "monthly": "Monthly",
+      "plans": {
+        "enterprise": {
+          "description": "For large organizations",
+          "features": [
+            "Everything in Pro",
+            "Unlimited storage",
+            "24/7 dedicated support",
+            "Custom AI models",
+            "Advanced security",
+            "SLA guarantee"
+          ],
+          "period": "",
+          "price": "Custom",
+          "title": "Enterprise"
+        },
+        "free": {
+          "description": "Perfect for individuals and small teams",
+          "features": [
+            "Up to 3 team members",
+            "Basic AI features",
+            "2GB storage",
+            "Community support"
+          ],
+          "period": "/month",
+          "price": "$0",
+          "title": "Free"
+        },
+        "pro": {
+          "description": "Great for growing teams",
+          "features": [
+            "Unlimited team members",
+            "Advanced AI features",
+            "20GB storage per user",
+            "Priority support",
+            "Advanced analytics",
+            "Custom integrations"
+          ],
+          "period": "/user/month",
+          "price": "$12",
+          "title": "Pro"
+        }
+      },
+      "save_percent": "Save 20%",
+      "subtitle": "Choose the plan that's right for you",
+      "title": "Simple, Transparent Pricing",
+      "yearly": "Yearly"
     },
     "products": {
       "ai_assistant": {

@@ -1927,8 +1927,10 @@
         "master-description": "Cày xong 5 bài khác nhau, không đùa đâu nha!",
         "prompt-master": "Bậc Thầy Nhập Lệnh",
         "prompt-master-description": "Chơi prompt đỉnh quá trời, toàn điểm tuyệt đối!",
+        "title": "Achievements",
         "top-rank": "Top Xếp Hạng",
-        "top-rank-description": "Lọt top 10, đỉnh của chóp!"
+        "top-rank-description": "Lọt top 10, đỉnh của chóp!",
+        "unlocked": "unlocked"
       },
       "achievements-tab": {
         "description": "Huy hiệu và thành tựu đã đạt được",
