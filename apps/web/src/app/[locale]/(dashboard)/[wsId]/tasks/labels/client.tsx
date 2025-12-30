@@ -128,4 +128,3 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
     </div>
   );
 }
-
