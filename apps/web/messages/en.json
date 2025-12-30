@@ -9473,5 +9473,113 @@
         "unknown": "Updated a field"
       }
     }
+  },
+  "task-projects": {
+    "toolbar": {
+      "all_projects": "All Projects",
+      "project_count": "{count} of {total} project",
+      "project_count_plural": "{count} of {total} projects",
+      "search_placeholder": "Search projects...",
+      "filters": "Filters",
+      "filter_status": "Status",
+      "filter_priority": "Priority",
+      "filter_health": "Health",
+      "clear_all_filters": "Clear all filters",
+      "sort": "Sort",
+      "sort_created_date": "Created Date",
+      "sort_name": "Name",
+      "sort_status": "Status",
+      "sort_priority": "Priority",
+      "sort_health_status": "Health Status",
+      "sort_task_count": "Task Count",
+      "sort_ascending": "Ascending",
+      "sort_descending": "Descending",
+      "new_project": "New Project"
+    },
+    "badges": {
+      "on_track": "On Track",
+      "at_risk": "At Risk",
+      "off_track": "Off Track",
+      "critical": "Critical",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "status": {
+      "backlog": "BACKLOG",
+      "planned": "PLANNED",
+      "in_progress": "IN PROGRESS",
+      "in_review": "IN REVIEW",
+      "completed": "COMPLETED",
+      "cancelled": "CANCELLED",
+      "active": "ACTIVE",
+      "on_hold": "ON HOLD"
+    },
+    "empty_state": {
+      "no_projects_found": "No projects found",
+      "no_projects_yet": "No projects yet",
+      "adjust_filters": "Try adjusting your search or filters",
+      "create_first_project": "Create your first project to start organizing tasks across boards.",
+      "create_project": "Create Project"
+    },
+    "project_card": {
+      "complete": "Complete",
+      "edit": "Edit",
+      "delete": "Delete",
+      "project_lead": "Project Lead",
+      "unknown": "Unknown",
+      "tasks": "Tasks",
+      "timeline": "Timeline",
+      "linked": "Linked",
+      "task": "task",
+      "tasks_plural": "tasks",
+      "more": "more",
+      "manage": "Manage",
+      "task_progress": "Task Progress",
+      "completed": "completed",
+      "linked_tasks": "Linked Tasks",
+      "view_details": "View Details",
+      "manage_tasks": "Manage Tasks"
+    },
+    "create_dialog": {
+      "title": "Create New Project",
+      "description": "Create a new task project to organize tasks across multiple boards.",
+      "project_name": "Project Name",
+      "project_name_placeholder": "Enter project name",
+      "description_label": "Description (Optional)",
+      "description_placeholder": "Enter project description",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "create_project": "Create Project"
+    },
+    "edit_dialog": {
+      "title": "Edit Project",
+      "description": "Update the project details.",
+      "project_name": "Project Name",
+      "project_name_placeholder": "Enter project name",
+      "description_label": "Description (Optional)",
+      "description_placeholder": "Enter project description",
+      "cancel": "Cancel",
+      "updating": "Updating...",
+      "update_project": "Update Project"
+    },
+    "manage_tasks_dialog": {
+      "title": "Manage Linked Tasks",
+      "description": "Link existing tasks to this project or remove them.",
+      "linked_tasks": "Linked Tasks",
+      "task": "task",
+      "tasks_plural": "tasks",
+      "remove": "Remove",
+      "no_tasks_linked": "No tasks linked yet.",
+      "link_a_task": "Link a Task",
+      "select_task_placeholder": "Select task to link",
+      "loading_tasks": "Loading tasks...",
+      "no_available_tasks": "No available tasks",
+      "unassigned_list": "Unassigned list",
+      "all_tasks_linked": "All workspace tasks are already linked to this project.",
+      "close": "Close",
+      "linking": "Linking...",
+      "link_task": "Link Task"
+    }
   }
 }
