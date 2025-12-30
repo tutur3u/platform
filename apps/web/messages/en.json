@@ -389,6 +389,8 @@
     "name_updated": "Name updated successfully",
     "error_updating_name": "Error updating name",
     "error_deleting": "Error deleting document",
+    "visibility_updated": "Visibility updated successfully",
+    "error_updating_visibility": "Error updating visibility",
     "domain_added": "Domain added",
     "error_adding_domain": "Failed to add domain",
     "rewise-description": "Access a wide-range of enterprise AI-powered tools.",
