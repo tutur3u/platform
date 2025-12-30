@@ -14,6 +14,7 @@ import {
   CopyCheck,
   Flag,
   Gauge,
+  KanbanSquare,
   LayoutGrid,
   List,
   Loader2,
@@ -357,7 +358,7 @@ export function BoardHeader({
 
   const viewConfig = {
     kanban: {
-      icon: LayoutGrid,
+      icon: KanbanSquare,
       label: t('ws-task-boards.views.kanban'),
       description: t('ws-task-boards.views.kanban_description'),
     },
@@ -486,7 +487,7 @@ export function BoardHeader({
             <SelectContent>
               <SelectItem value="all">
                 <div className="flex items-center gap-2">
-                  <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground" />
+                  <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
                   <span>{t('common.all')}</span>
                 </div>
               </SelectItem>
