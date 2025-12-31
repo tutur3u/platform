@@ -198,9 +198,8 @@ export function WorkspaceSelect({
   const personalWorkspace = workspaces?.find((ws) => ws?.personal === true);
   const rootWorkspace = workspaces?.find((ws) => ws?.id === ROOT_WORKSPACE_ID);
   const nonPersonalWorkspaces =
-    workspaces?.filter(
-      (ws) => !ws?.personal && ws?.id !== ROOT_WORKSPACE_ID
-    ) || [];
+    workspaces?.filter((ws) => !ws?.personal && ws?.id !== ROOT_WORKSPACE_ID) ||
+    [];
 
   const groups = [
     rootWorkspace && {
