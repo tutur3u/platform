@@ -170,8 +170,7 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
                     <span>Common examples:</span>
                     <span className="text-xs text-muted-foreground">
                       • "0 0 * * *" - At midnight, every day
-                      <br />
-                      • "*/15 * * * *" - Every 15 minutes
+                      <br />• "*/15 * * * *" - Every 15 minutes
                       <br />• "0 9 * * 1-5" - At 9 AM, Monday through Friday
                     </span>
                     {field.value && (

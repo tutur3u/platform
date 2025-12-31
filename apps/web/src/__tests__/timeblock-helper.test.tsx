@@ -105,14 +105,15 @@ describe('getDateStrings', () => {
 });
 
 describe('datesToTimeMatrix', () => {
-  test.each([[[]], [null], [undefined]])(
-    'returns null for soonest and latest when given invalid input %s',
-    (invalidInput) => {
-      expect(() => {
-        datesToTimeMatrix(invalidInput);
-      }).toThrow();
-    }
-  );
+  test.each([
+    [[]],
+    [null],
+    [undefined],
+  ])('returns null for soonest and latest when given invalid input %s', (invalidInput) => {
+    expect(() => {
+      datesToTimeMatrix(invalidInput);
+    }).toThrow();
+  });
 
   test('return the same time for soonest and latest when given a single date', () => {
     const dates = [new Date(2023, 4, 1, 12, 0)];
@@ -213,14 +214,15 @@ describe('datesToTimeMatrix', () => {
 });
 
 describe('datesToDateMatrix', () => {
-  test.each([[[]], [null], [undefined]])(
-    'returns null for soonest and latest when given invalid input %s',
-    (invalidInput) => {
-      expect(() => {
-        datesToDateMatrix(invalidInput);
-      }).toThrow();
-    }
-  );
+  test.each([
+    [[]],
+    [null],
+    [undefined],
+  ])('returns null for soonest and latest when given invalid input %s', (invalidInput) => {
+    expect(() => {
+      datesToDateMatrix(invalidInput);
+    }).toThrow();
+  });
 
   test('handles dates with the same day but different times correctly', () => {
     const dates = [

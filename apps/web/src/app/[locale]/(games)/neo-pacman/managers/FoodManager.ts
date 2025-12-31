@@ -132,7 +132,10 @@ export class FoodManager {
     }
 
     // Try to spawn strawberry (only if there are still empty tiles)
-    if (emptyTiles.length > 0 && Math.random() < GAME_CONFIG.STRAWBERRY_SPAWN_RATE) {
+    if (
+      emptyTiles.length > 0 &&
+      Math.random() < GAME_CONFIG.STRAWBERRY_SPAWN_RATE
+    ) {
       const randomIndex = Math.floor(Math.random() * emptyTiles.length);
       const tile = emptyTiles[randomIndex];
       if (tile) {
