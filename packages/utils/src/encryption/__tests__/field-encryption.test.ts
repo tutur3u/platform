@@ -79,12 +79,9 @@ describe('encryption-service', () => {
 
       // Tamper with a byte in the middle of the ciphertext
       const midIndex = Math.floor(ciphertext.length / 2);
-      const tamperedChar =
-        ciphertext[midIndex] === 'A'
-          ? 'B'
-          : ciphertext[midIndex] === 'a'
-            ? 'b'
-            : 'X';
+      const originalChar = ciphertext[midIndex];
+      // Guarantee the new char is different from the original
+      const tamperedChar = originalChar === 'A' ? 'B' : 'A';
       const tamperedCiphertext =
         ciphertext.slice(0, midIndex) +
         tamperedChar +

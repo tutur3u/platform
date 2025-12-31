@@ -100,6 +100,7 @@ describe('useTaskActions', () => {
       from: vi.fn(() => mockSupabase),
       update: vi.fn(() => mockSupabase),
       delete: vi.fn(() => mockSupabase),
+      insert: vi.fn(() => mockSupabase),
       select: vi.fn(() => mockSupabase),
       eq: vi.fn(() => mockSupabase),
       in: vi.fn(() => mockSupabase),
