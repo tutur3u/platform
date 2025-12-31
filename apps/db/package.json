@@ -15,7 +15,7 @@
     "sb:diff": "bun supabase db diff -f new_migration",
     "sb:new": "bun supabase migration new new_migration",
     "sb:up": "bun supabase migration up",
-    "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && node ./scripts/sort-types.js && prettier --write ../../packages/types/src/supabase.ts"
+    "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && biome format --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
     "supabase": "^2.70.5",

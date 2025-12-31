@@ -1,0 +1,445 @@
+name: Biome Check
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  format:
+    name: Biome Format Check
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      files_checked: ${{ steps.format-check.outputs.files_checked }}
+      errors: ${{ steps.format-check.outputs.errors }}
+      warnings: ${{ steps.format-check.outputs.warnings }}
+      infos: ${{ steps.format-check.outputs.infos }}
+      total_issues: ${{ steps.format-check.outputs.total_issues }}
+      has_issues: ${{ steps.format-check.outputs.has_issues }}
+      exit_code: ${{ steps.format-check.outputs.exit_code }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: Check Biome formatting
+        id: format-check
+        run: |
+          # Capture biome format output and exit code
+          set +e
+          biome_output=$(biome format . 2>&1)
+          biome_exit_code=$?
+          set -e
+
+          echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
+
+          # Save output to file for debugging
+          echo "$biome_output" > format_output.txt
+
+          # Parse biome output for statistics
+          # Strip ANSI color codes first, then parse
+          clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
+
+          files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
+          errors=$(echo "$clean_output" | grep -E "Found [0-9]+ error" | sed 's/Found \([0-9]*\) error.*/\1/' || echo "0")
+          warnings=$(echo "$clean_output" | grep -E "Found [0-9]+ warning" | sed 's/Found \([0-9]*\) warning.*/\1/' || echo "0")
+          infos=$(echo "$clean_output" | grep -E "Found [0-9]+ info" | sed 's/Found \([0-9]*\) info.*/\1/' || echo "0")
+          total_issues=$((errors + warnings + infos))
+
+          echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
+          echo "errors=$errors" >> $GITHUB_OUTPUT
+          echo "warnings=$warnings" >> $GITHUB_OUTPUT
+          echo "infos=$infos" >> $GITHUB_OUTPUT
+          echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
+
+          # Check if there are any issues (errors, warnings, or info)
+          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Fail if there are any issues
+          if [ "$total_issues" -gt 0 ]; then
+            echo "::error::Found $total_issues formatting issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+            exit 1
+          fi
+
+  lint:
+    name: Biome Lint Check
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      files_checked: ${{ steps.lint-check.outputs.files_checked }}
+      errors: ${{ steps.lint-check.outputs.errors }}
+      warnings: ${{ steps.lint-check.outputs.warnings }}
+      infos: ${{ steps.lint-check.outputs.infos }}
+      total_issues: ${{ steps.lint-check.outputs.total_issues }}
+      has_issues: ${{ steps.lint-check.outputs.has_issues }}
+      exit_code: ${{ steps.lint-check.outputs.exit_code }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: Check Biome linting
+        id: lint-check
+        run: |
+          # Capture biome lint output and exit code
+          set +e
+          biome_output=$(biome lint . 2>&1)
+          biome_exit_code=$?
+          set -e
+
+          echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
+
+          # Save output to file for debugging
+          echo "$biome_output" > lint_output.txt
+
+          # Parse biome output for statistics
+          # Strip ANSI color codes first, then parse
+          clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
+
+          files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
+          errors=$(echo "$clean_output" | grep -E "Found [0-9]+ error" | sed 's/Found \([0-9]*\) error.*/\1/' || echo "0")
+          warnings=$(echo "$clean_output" | grep -E "Found [0-9]+ warning" | sed 's/Found \([0-9]*\) warning.*/\1/' || echo "0")
+          infos=$(echo "$clean_output" | grep -E "Found [0-9]+ info" | sed 's/Found \([0-9]*\) info.*/\1/' || echo "0")
+          total_issues=$((errors + warnings + infos))
+
+          echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
+          echo "errors=$errors" >> $GITHUB_OUTPUT
+          echo "warnings=$warnings" >> $GITHUB_OUTPUT
+          echo "infos=$infos" >> $GITHUB_OUTPUT
+          echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
+
+          # Check if there are any issues (errors, warnings, or info)
+          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Fail if there are any issues
+          if [ "$total_issues" -gt 0 ]; then
+            echo "::error::Found $total_issues lint issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+            exit 1
+          fi
+
+  apply-format:
+    name: Apply Format
+    runs-on: ubuntu-latest
+    needs: [format]
+    if: ${{ needs.format.outputs.has_issues == 'true' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: Apply Biome format
+        run: biome format --write
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Git
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "style: apply biome formatting"
+          title: "style: apply biome formatting for ${{ github.ref_name }}"
+          body: |
+            This PR fixes code formatting issues using Biome.
+
+            Auto-generated by the Biome Format Check workflow.
+          branch: fix/biome-formatting-${{ github.ref_name }}
+          base: ${{ github.ref_name }}
+          delete-branch: true
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
+
+      - name: Fail Workflow After Creating PR
+        if: steps.create-pr.outputs.pull-request-url != ''
+        run: |
+          echo "Biome formatting issues were found and a PR has been created."
+          echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
+          exit 1
+
+  close-outdated-format-pr:
+    name: Close Outdated Format PR
+    runs-on: ubuntu-latest
+    needs: [format]
+    if: ${{ needs.format.outputs.has_issues == 'false' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Close and delete outdated formatting PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const branchName = context.ref.replace('refs/heads/', '');
+            const formattingBranchName = `fix/biome-formatting-${branchName}`;
+
+            console.log(`Looking for PRs from branch: ${formattingBranchName}`);
+
+            try {
+              // Find PRs with the formatting branch name
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${context.repo.owner}:${formattingBranchName}`,
+                state: 'open'
+              });
+
+              if (prs.length === 0) {
+                console.log('No outdated formatting PRs found.');
+                return;
+              }
+
+              // Close each PR found
+              for (const pr of prs) {
+                console.log(`Closing outdated formatting PR #${pr.number}: ${pr.title}`);
+
+                // Add a comment explaining why it's being closed
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: '✅ This PR is being automatically closed because the base branch now has up-to-date formatting. No changes are needed anymore.'
+                });
+
+                // Close the PR
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed'
+                });
+
+                // Delete the branch
+                try {
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: `heads/${formattingBranchName}`
+                  });
+                  console.log(`Deleted branch: ${formattingBranchName}`);
+                } catch (error) {
+                  console.log(`Could not delete branch ${formattingBranchName}: ${error.message}`);
+                }
+
+                console.log(`Successfully closed PR #${pr.number} and cleaned up.`);
+              }
+            } catch (error) {
+              console.log('Error while closing outdated formatting PRs:', error.message);
+            }
+
+  comment:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: [format, lint]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Comment on PR with progress
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // Get PR number from context or search for PR associated with this branch
+            let prNumber = null;
+
+            if (context.issue && context.issue.number) {
+              prNumber = context.issue.number;
+            } else {
+              // For push events, find PR associated with this branch
+              try {
+                const { data: prs } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
+                  state: 'open'
+                });
+                
+                if (prs.length > 0) {
+                  prNumber = prs[0].number;
+                }
+              } catch (error) {
+                console.log('No PR found for this branch or error occurred:', error.message);
+                return; // Exit if no PR is found
+              }
+            }
+
+            if (!prNumber) {
+              console.log('No PR found to comment on');
+              return;
+            }
+
+            // Get outputs from both jobs
+            const formatFilesChecked = '${{ needs.format.outputs.files_checked }}';
+            const formatErrors = '${{ needs.format.outputs.errors }}';
+            const formatWarnings = '${{ needs.format.outputs.warnings }}';
+            const formatInfos = '${{ needs.format.outputs.infos }}';
+            const formatTotalIssues = '${{ needs.format.outputs.total_issues }}';
+            const formatHasIssues = '${{ needs.format.outputs.has_issues }}';
+
+            const lintFilesChecked = '${{ needs.lint.outputs.files_checked }}';
+            const lintErrors = '${{ needs.lint.outputs.errors }}';
+            const lintWarnings = '${{ needs.lint.outputs.warnings }}';
+            const lintInfos = '${{ needs.lint.outputs.infos }}';
+            const lintTotalIssues = '${{ needs.lint.outputs.total_issues }}';
+            const lintHasIssues = '${{ needs.lint.outputs.has_issues }}';
+
+            // Calculate overall status
+            const formatErrorsCount = parseInt(formatErrors) || 0;
+            const formatWarningsCount = parseInt(formatWarnings) || 0;
+            const formatInfosCount = parseInt(formatInfos) || 0;
+            const formatIssueCount = parseInt(formatTotalIssues) || 0;
+            const lintErrorsCount = parseInt(lintErrors) || 0;
+            const lintWarningsCount = parseInt(lintWarnings) || 0;
+            const lintInfosCount = parseInt(lintInfos) || 0;
+            const lintIssueCount = parseInt(lintTotalIssues) || 0;
+            const totalIssuesAcrossJobs = formatIssueCount + lintIssueCount;
+            const overallSuccess = formatHasIssues === 'false' && lintHasIssues === 'false';
+
+            let body;
+
+            const timestamp = new Date().toLocaleString();
+
+            const issueIcon = totalIssuesAcrossJobs > 50 ? '🚨' : totalIssuesAcrossJobs > 20 ? '⚠️' : totalIssuesAcrossJobs > 10 ? '🔍' : '🔧';
+
+            const formatErrorsStatus = formatErrorsCount > 0 ? '🔴 Needs fixing' : '✅ None';
+            const formatWarningsStatus = formatWarningsCount > 0 ? '🟡 Consider fixing' : '✅ None';
+            const formatInfosStatus = formatInfosCount > 0 ? '🔵 Review suggested' : '✅ None';
+            const formatStatus = formatIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
+            const lintErrorsStatus = lintErrorsCount > 0 ? '🔴 Needs fixing' : '✅ None';
+            const lintWarningsStatus = lintWarningsCount > 0 ? '🟡 Consider fixing' : '✅ None';
+            const lintInfosStatus = lintInfosCount > 0 ? '🔵 Review suggested' : '✅ None';
+            const lintStatus = lintIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
+
+            const nextSteps = overallSuccess ?
+              '### 🎉 All Issues Resolved!\n\nYour code is now **100% clean**! Great job! 🏆' :
+              '### 📋 Next Steps\n' +
+              (formatHasIssues === 'true' ?
+                '\nRun the following command to fix format issues:\n```bash\nbiome format --write\n```' : '') +
+              (lintHasIssues === 'true' ?
+                '\nRun the following command to fix lint issues:\n```bash\nbiome lint --write\n```' : '');
+
+            body = `
+            ## ${issueIcon} Biome Check Report
+
+            <div align="center">
+
+            ### Total Issues Found: **${totalIssuesAcrossJobs}**
+
+            </div>
+
+            ### 🔧 Format Check Results
+
+            | Metric | Value | Status |
+            |--------|-------|--------|
+            | 📁 **Files Checked** | ${formatFilesChecked} | ✅ Complete |
+            | ❌ **Errors** | ${formatErrorsCount} | ${formatErrorsStatus} |
+            | ⚠️ **Warnings** | ${formatWarningsCount} | ${formatWarningsStatus} |
+            | ℹ️ **Info** | ${formatInfosCount} | ${formatInfosStatus} |
+            | 📝 **Total Issues** | ${formatIssueCount} | ${formatStatus} |
+
+            ### 🔍 Lint Check Results
+
+            | Metric | Value | Status |
+            |--------|-------|--------|
+            | 📁 **Files Checked** | ${lintFilesChecked} | ✅ Complete |
+            | ❌ **Errors** | ${lintErrorsCount} | ${lintErrorsStatus} |
+            | ⚠️ **Warnings** | ${lintWarningsCount} | ${lintWarningsStatus} |
+            | ℹ️ **Info** | ${lintInfosCount} | ${lintInfosStatus} |
+            | 📝 **Total Issues** | ${lintIssueCount} | ${lintStatus} |
+
+            ${nextSteps}
+
+            <div align="center">
+            <sub>🤖 Auto-generated by <strong>Biome Check</strong> workflow • Last updated: ${timestamp}</sub>
+            </div>
+            `;
+
+            // Find existing Biome Check comment and update it, or create new one
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+
+              // Look for existing Biome Check comment with more specific markers
+              const existingComment = comments.find(comment => 
+                comment.user.login === 'github-actions[bot]' && 
+                comment.body.includes('<!-- biome-check-comment -->')
+              );
+
+              // Add a unique marker to identify our comments
+              const bodyWithMarker = '<!-- biome-check-comment -->\n' + body;
+
+              if (existingComment) {
+                console.log(`Updating existing comment ${existingComment.id} on PR ${prNumber}`);
+                await github.rest.issues.updateComment({
+                  comment_id: existingComment.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: bodyWithMarker
+                });
+              } else {
+                console.log(`Creating new comment on PR ${prNumber}`);
+                await github.rest.issues.createComment({
+                  issue_number: prNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: bodyWithMarker
+                });
+              }
+            } catch (error) {
+              console.log('Error managing PR comment:', error.message);
+            }
