@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "install": "node script.js install",
     "dev": "node script.js dev",
     "start": "node script.js start",
     "run": "node script.js run",
