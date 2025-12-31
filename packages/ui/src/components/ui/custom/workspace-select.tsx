@@ -62,6 +62,41 @@ const FormSchema = z.object({
   plan: z.string(),
 });
 
+function WorkspaceIcon({
+  name,
+  avatarUrl,
+  className,
+}: {
+  name?: string | null;
+  avatarUrl?: string | null;
+  className?: string;
+}) {
+  return (
+    <Avatar
+      className={cn(
+        'h-5 w-5 flex-none',
+        avatarUrl ? 'rounded-xs' : 'rounded-sm',
+        className
+      )}
+    >
+      <AvatarImage
+        src={
+          avatarUrl ||
+          (name ? `https://avatar.vercel.sh/${name}.png` : undefined)
+        }
+        alt={name || 'Workspace'}
+        className={avatarUrl ? 'rounded-xs' : 'rounded-sm'}
+      />
+      <AvatarFallback
+        className={cn('text-xs', avatarUrl ? 'rounded-xs' : 'rounded-sm')}
+      >
+        <AvatarImage src="/media/logos/transparent.png" />
+        {name ? getInitials(name) : '?'}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
 export function WorkspaceSelect({
   t,
   wsId,
@@ -161,9 +196,30 @@ export function WorkspaceSelect({
   }
 
   const personalWorkspace = workspaces?.find((ws) => ws?.personal === true);
-  const nonPersonalWorkspaces = workspaces?.filter((ws) => !ws?.personal) || [];
+  const rootWorkspace = workspaces?.find((ws) => ws?.id === ROOT_WORKSPACE_ID);
+  const nonPersonalWorkspaces =
+    workspaces?.filter(
+      (ws) => !ws?.personal && ws?.id !== ROOT_WORKSPACE_ID
+    ) || [];
 
   const groups = [
+    rootWorkspace && {
+      id: 'root',
+      label: t('common.system'),
+      teams: [
+        {
+          label: rootWorkspace.name || t('common.root'),
+          value: ROOT_WORKSPACE_ID,
+          avatarUrl: rootWorkspace.avatar_url || '/media/logos/transparent.png',
+          tier: (rootWorkspace as any)?.tier as
+            | 'FREE'
+            | 'PLUS'
+            | 'PRO'
+            | 'ENTERPRISE'
+            | null,
+        },
+      ],
+    },
     personalWorkspace && {
       id: 'personal',
       label: t('common.personal_account'),
@@ -213,6 +269,7 @@ export function WorkspaceSelect({
       isCreator?: boolean;
       avatarUrl?: string | null;
       tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
+      isRoot?: boolean;
     }[];
   }[];
 
@@ -263,33 +320,15 @@ export function WorkspaceSelect({
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
-              <Avatar
-                className={cn(
-                  'h-5 w-5 flex-none',
-                  workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
-                )}
-              >
-                <AvatarImage
-                  src={
-                    workspace?.avatar_url ||
-                    (workspace?.name
-                      ? `https://avatar.vercel.sh/${workspace.name}.png`
-                      : undefined)
-                  }
-                  alt={workspace?.name || 'Workspace'}
-                  className={
-                    workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
-                  }
-                />
-                <AvatarFallback
-                  className={cn(
-                    'text-xs',
-                    workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
-                  )}
-                >
-                  {workspace?.name ? getInitials(workspace.name) : '?'}
-                </AvatarFallback>
-              </Avatar>
+              <WorkspaceIcon
+                name={workspace?.name}
+                avatarUrl={
+                  workspace?.avatar_url ||
+                  (workspace?.id === ROOT_WORKSPACE_ID
+                    ? '/media/logos/transparent.png'
+                    : undefined)
+                }
+              />
               <div
                 className={cn(
                   hideLeading
@@ -339,6 +378,7 @@ export function WorkspaceSelect({
                         isCreator?: boolean;
                         avatarUrl?: string | null;
                         tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
+                        isRoot?: boolean;
                       }) => (
                         <CommandItem
                           key={team.value}
@@ -354,31 +394,10 @@ export function WorkspaceSelect({
                           )}
                           disabled={!team}
                         >
-                          <Avatar
-                            className={cn(
-                              'h-5 w-5',
-                              team.avatarUrl ? 'rounded-xs' : 'rounded-sm'
-                            )}
-                          >
-                            <AvatarImage
-                              src={
-                                team.avatarUrl ||
-                                `https://avatar.vercel.sh/${team.label}.png`
-                              }
-                              alt={team.label}
-                              className={
-                                team.avatarUrl ? 'rounded-xs' : 'rounded-sm'
-                              }
-                            />
-                            <AvatarFallback
-                              className={cn(
-                                'text-xs',
-                                team.avatarUrl ? '' : 'rounded-sm'
-                              )}
-                            >
-                              {getInitials(team.label)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <WorkspaceIcon
+                            name={team.label}
+                            avatarUrl={team.avatarUrl}
+                          />
                           <span className="line-clamp-1 text-xs">
                             {team.label}
                           </span>
@@ -525,99 +544,6 @@ export function WorkspaceSelect({
           </Form>
         </DialogContent>
       </Dialog>
-
-      {/* <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            aria-label="Online users"
-            className="flex flex-none items-center gap-1 px-2"
-            disabled={!onlineUsers}
-          >
-            {user?.id || (onlineUsers && (onlineUsers?.length || 0) > 0) ? (
-              (onlineUsers ? onlineUsers : user?.id ? [user] : [])
-                .slice(0, 3)
-                .map((user) => (
-                  <div
-                    key={user.id}
-                    className="hidden items-center gap-2 md:flex"
-                  >
-                    <Avatar className="border-background relative h-6 w-6 overflow-visible border">
-                      <AvatarImage
-                        src={user?.avatar_url || undefined}
-                        alt={
-                          user.display_name || user.handle || user.email || '?'
-                        }
-                        className="overflow-clip rounded-full"
-                      />
-                      <AvatarFallback className="text-xs font-semibold">
-                        {getInitials(
-                          user?.display_name ||
-                            user?.handle ||
-                            user.email ||
-                            '?'
-                        )}
-                      </AvatarFallback>
-                      <UserPresenceIndicator />
-                    </Avatar>
-                  </div>
-                ))
-            ) : (
-              <LoadingIndicator className="h-6 w-6" />
-            )}
-
-            {onlineUsers && (
-              <div className="flex items-center gap-2 font-semibold md:hidden">
-                <div>{onlineUsers.length || 0}</div>
-                <div className="relative flex items-center">
-                  <UserPresenceIndicator className="relative h-2.5 w-2.5" />
-                  <UserPresenceIndicator className="h-2.5 w-2.5 animate-ping" />
-                </div>
-              </div>
-            )}
-
-            {(onlineUsers?.length || 0) > 3 && (
-              <span className="text-foreground/70 hidden text-xs font-semibold md:block">
-                +{(onlineUsers?.length || 0) - 3}
-              </span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="mx-2 my-1 md:m-0">
-          <div className="grid gap-2">
-            <div className="font-semibold">
-              {t('common.currently_online')} ({onlineUsers?.length || 0})
-            </div>
-            <Separator className="mb-1" />
-            {onlineUsers?.map((user) => (
-              <div key={user.id} className="flex items-center gap-2">
-                <Avatar className="relative h-8 w-8 overflow-visible">
-                  <AvatarImage
-                    src={user?.avatar_url || undefined}
-                    alt={user.display_name || user.handle || user.email || '?'}
-                    className="overflow-clip rounded-full"
-                  />
-                  <AvatarFallback className="text-sm font-semibold">
-                    {getInitials(
-                      user?.display_name || user?.handle || user.email || '?'
-                    )}
-                  </AvatarFallback>
-                  <div className="absolute bottom-0 right-0 flex items-center">
-                    <UserPresenceIndicator className="relative h-2.5 w-2.5" />
-                    <UserPresenceIndicator className="h-2.5 w-2.5 animate-ping" />
-                  </div>
-                </Avatar>
-                <span className="line-clamp-1">
-                  {user.display_name ||
-                    user.handle ||
-                    user.email ||
-                    t('common.unknown')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover> */}
     </>
   );
 }
