@@ -1,0 +1,37 @@
+{
+  "name": "@tuturuuu/offline",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsgo --build"
+  },
+  "dependencies": {
+    "@serwist/next": "^9.4.2",
+    "serwist": "^9.4.2"
+  },
+  "peerDependencies": {
+    "next": ">=16.1.1",
+    "react": ">=19.2.3"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "next": "^16.1.1",
+    "react": "^19.2.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "exports": {
+    "./worker": "./src/worker/index.ts",
+    "./config": "./src/config/index.ts",
+    "./manifest": "./src/manifest/index.ts",
+    "./components": "./src/components/index.tsx"
+  },
+  "packageManager": "bun@1.3.5"
+}

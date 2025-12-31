@@ -81,7 +81,7 @@
     "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "zod": "^4.2.1"
+    "zod": "^4.3.2"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

@@ -19,7 +19,7 @@
     "@tiptap/react": "^3.14.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "zod": "^4.2.1"
+    "zod": "^4.3.2"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

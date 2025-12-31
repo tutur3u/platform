@@ -1,3 +1,7 @@
 # Sentry Auth Token
 .sentryclirc
 certificates
+
+# Serwist (PWA service worker)
+public/sw*
+public/swe-worker*

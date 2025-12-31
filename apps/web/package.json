@@ -26,7 +26,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.1",
+    "@ai-sdk/google": "^3.0.2",
     "@deepgram/sdk": "^4.11.3",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -45,7 +45,7 @@
     "@octokit/auth-app": "^8.1.2",
     "@octokit/rest": "^22.0.1",
     "@react-email/render": "^2.0.1",
-    "@tanstack/react-query": "^5.90.15",
+    "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@tiptap/extension-highlight": "^3.14.0",
@@ -69,6 +69,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/microsoft": "workspace:*",
+    "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
@@ -79,7 +80,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.36.0",
-    "ai": "^6.0.3",
+    "ai": "^6.0.5",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
@@ -117,7 +118,7 @@
     "react-hook-form": "^7.69.0",
     "react-intersection-observer": "^10.0.0",
     "react-papaparse": "^4.4.0",
-    "react-pdf": "^10.2.0",
+    "react-pdf": "^10.3.0",
     "react-quizlet-flashcard": "^4.0.22",
     "react-textarea-autosize": "^8.5.9",
     "react-use": "^17.6.0",
@@ -134,7 +135,7 @@
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
     "vega-embed": "^7.1.0",
-    "zod": "^4.2.1",
+    "zod": "^4.3.2",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
