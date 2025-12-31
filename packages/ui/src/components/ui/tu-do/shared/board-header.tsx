@@ -384,7 +384,7 @@ export function BoardHeader({
   }, [filters, listStatusFilter]);
 
   return (
-    <div className="-mt-2 border-b p-1.5 md:px-4 md:py-2">
+    <div className="-mt-2 border-b p-2">
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
         {/* Board Info */}
         <div className="flex min-w-0 items-center gap-2">

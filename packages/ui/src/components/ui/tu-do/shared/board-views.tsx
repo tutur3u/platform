@@ -376,17 +376,6 @@ export function BoardViews({
 
   const renderView = () => {
     switch (currentView) {
-      // case 'status-grouped':
-      //   return (
-      //     <StatusGroupedBoard
-      //       lists={filteredLists}
-      //       tasks={effectiveTasks}
-      //       boardId={board.id}
-      //       onUpdate={handleUpdate}
-      //       hideTasksMode={true}
-      //       isPersonalWorkspace={workspace.personal}
-      //     />
-      //   );
       case 'kanban':
         return (
           <KanbanBoard
@@ -439,7 +428,7 @@ export function BoardViews({
   };
 
   return (
-    <div className="-m-2 flex h-[calc(100vh-1rem)] flex-1 flex-col md:-mx-4">
+    <div className="-m-2 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
       <BoardHeader
         board={board}
         currentUserId={currentUserId}

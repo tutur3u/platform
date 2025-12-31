@@ -2637,13 +2637,13 @@ export function KanbanBoard({
           >
             <div
               ref={scrollContainerRef}
-              className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto"
+              className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-2 overflow-x-auto"
             >
               <SortableContext
                 items={columnsId}
                 strategy={horizontalListSortingStrategy}
               >
-                <div ref={boardRef} className="flex h-full gap-4 p-2 md:px-4">
+                <div ref={boardRef} className="flex h-full gap-2 p-2">
                   {[...columns]
                     .sort((a, b) => {
                       // First sort by status priority, then by position within status
