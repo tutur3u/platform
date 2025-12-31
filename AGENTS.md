@@ -45,7 +45,7 @@ Mandatory guardrails:
 9. Testing After Features: ALWAYS add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test`. Testing is encouraged and expected from agents.
 10. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
 11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
-12. Verification: The following commands MUST all pass at the end of your work: `bun type-check`, `bun run test`, `bun format-and-lint`, `bun i18n:check`, and `bun i18n:sort:check`. This is a mandatory requirement.
+12. Verification: Run `bun check` at the end of your work. This unified command runs formatting, tests, type-checking, and i18n checks (`bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check`). All checks MUST pass. This is a mandatory requirement.
 
 Prohibited actions (HARD STOP - agents must NEVER do these):
 
@@ -1390,6 +1390,7 @@ Agent Responsibilities:
 | Update app theme colors       | Edit `packages/ui/src/globals.css`                                | **MUST** update all `*-theme-override.css` files            |
 | Edge runtime                  | `export const runtime = 'edge'`                                   | Only if required                                            |
 | Type check                    | `bun type-check`                                                  | REQUIRED; do NOT use `npx tsgo`                             |
+| Verify all checks             | `bun check`                                                       | REQUIRED; runs ff, test, type-check, i18n checks            |
 | Supabase admin client         | Import from `@tuturuuu/supabase`                                  | Avoid direct REST calls                                     |
 | Escape hatch escalation       | Open issue `policy-gap`                                           | Provide context & proposal                                  |
 | (DO NOT auto run build/dev)   | (Requires explicit user request)                                  | Build commands are USER-ONLY unless explicitly requested    |

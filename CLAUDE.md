@@ -213,7 +213,7 @@ bun trigger:deploy
 14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
 15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
 16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
-17. **Always** ensure the following commands pass at the end of your work: `bun type-check`, `bun run test`, `bun format-and-lint`, `bun i18n:check`, and `bun i18n:sort:check` - this is a mandatory verification requirement
+17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
 
 ### Escalate When
 
@@ -733,6 +733,7 @@ Steps:
 | Lint                     | `bun lint`                                    | USER-ONLY; agent suggests fixes      |
 | Format                   | `bun format`                                  | USER-ONLY; agent suggests fixes      |
 | Type check               | `bun type-check`                              | REQUIRED; do NOT use `npx tsgo`      |
+| Verify all checks        | `bun check`                                   | REQUIRED; runs ff, test, tc, i18n    |
 | New migration            | `bun sb:new`                                  | Edit generated SQL file              |
 | Apply migrations locally | `bun sb:up`                                   | Safe for agents                      |
 | Apply migrations remote  | `bun sb:push`                                 | USER-ONLY; NEVER agents              |
