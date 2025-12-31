@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useTranslations } from 'next-intl';
 
 interface TaskDeleteDialogProps {
   task: Task;
@@ -25,14 +26,15 @@ export function TaskDeleteDialog({
   onOpenChange,
   onConfirm,
 }: TaskDeleteDialogProps) {
+  const t = useTranslations('common');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Delete Task</DialogTitle>
+          <DialogTitle>{t('delete_task')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to move &quot;{task.name}&quot; to the recycle
-            bin?
+            {t('delete_task_confirmation', { name: task.name })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -42,7 +44,7 @@ export function TaskDeleteDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             type="button"
@@ -53,10 +55,10 @@ export function TaskDeleteDialog({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Deleting...
+                {t('deleting')}
               </>
             ) : (
-              'Delete task'
+              t('delete_task')
             )}
           </Button>
         </DialogFooter>

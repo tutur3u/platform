@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 
 interface Member {
@@ -40,6 +41,7 @@ export interface AssigneeSelectHandle {
 export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
   ({ taskId, assignees = [] }, ref) => {
     const [open, setOpen] = useState(false);
+    const t = useTranslations('common');
 
     // Expose open/close methods via ref
     useImperativeHandle(ref, () => ({
@@ -92,7 +94,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       const errorMessage =
         membersError instanceof Error
           ? membersError.message
-          : 'Failed to get workspace members';
+          : t('no_members_available');
       toast.error(errorMessage);
     }
 
@@ -116,7 +118,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
           if (error) {
             console.error('Remove assignee error:', error);
-            throw new Error(error.message || 'Failed to remove assignee');
+            throw new Error(error.message || t('please_try_again_later'));
           }
         } else {
           const { error } = await supabase.from('task_assignees').upsert(
@@ -132,7 +134,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
           if (error) {
             console.error('Add assignee error:', error);
-            throw new Error(error.message || 'Failed to add assignee');
+            throw new Error(error.message || t('please_try_again_later'));
           }
         }
 
@@ -187,11 +189,9 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         }
 
         const errorMessage =
-          err instanceof Error ? err.message : 'Unknown error occurred';
+          err instanceof Error ? err.message : t('please_try_again_later');
         console.error('Failed to update task assignees:', err);
-        toast('Error', {
-          description: `Failed to update assignees: ${errorMessage}`,
-        });
+        toast.error(t('failed_to_update_assignees', { error: errorMessage }));
       },
       // Note: Removed onSettled invalidation to prevent flicker
       // Optimistic updates handle immediate UI feedback
@@ -315,7 +315,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search members..."
+                placeholder={t('search_members')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
@@ -331,7 +331,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
               {uniqueAssignedMembers.length > 0 && (
                 <div className="space-y-1.5">
                   <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                    Assigned ({uniqueAssignedMembers.length})
+                    {t('assigned')} ({uniqueAssignedMembers.length})
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {uniqueAssignedMembers.map((member) => (
@@ -365,7 +365,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                       className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
                     >
                       <UserMinus className="mr-1 h-3 w-3" />
-                      Remove all
+                      {t('remove_all')}
                     </Button>
                   )}
                 </div>
@@ -390,19 +390,19 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                       <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
                         <UserPlus className="h-4 w-4 text-muted-foreground/40" />
                         <p className="text-center text-muted-foreground text-xs">
-                          No members found
+                          {t('no_members_found')}
                         </p>
                       </div>
                     ) : uniqueAssignedMembers.length > 0 ? (
                       <div className="rounded-lg bg-muted/30 py-3 text-center">
                         <p className="text-muted-foreground text-xs">
-                          All members assigned
+                          {t('all_members_assigned')}
                         </p>
                       </div>
                     ) : (
                       <div className="rounded-lg bg-muted/30 py-3 text-center">
                         <p className="text-muted-foreground text-xs">
-                          No members available
+                          {t('no_members_available')}
                         </p>
                       </div>
                     );
@@ -411,7 +411,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                   return (
                     <>
                       <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                        Available ({filteredMembers.length})
+                        {t('available')} ({filteredMembers.length})
                       </p>
                       <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
                         {filteredMembers.map((member) => (

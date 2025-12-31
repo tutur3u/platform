@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useTranslations } from 'next-intl';
 
 interface TaskCustomDateDialogProps {
   open: boolean;
@@ -30,16 +31,16 @@ export function TaskCustomDateDialog({
   onDateChange,
   onClear,
 }: TaskCustomDateDialogProps) {
+  const t = useTranslations('common');
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Set Custom Due Date</DialogTitle>
+          <DialogTitle>{t('set_custom_due_date')}</DialogTitle>
           <DialogDescription>
-            Choose a specific date and time for when this task should be
-            completed.
+            {t('custom_due_date_description')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -59,7 +60,7 @@ export function TaskCustomDateDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           {endDate && (
             <Button
@@ -73,7 +74,7 @@ export function TaskCustomDateDialog({
               className="text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
-              Remove Due Date
+              {t('remove_due_date')}
             </Button>
           )}
         </DialogFooter>

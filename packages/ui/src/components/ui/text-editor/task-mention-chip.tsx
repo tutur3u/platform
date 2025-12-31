@@ -859,6 +859,14 @@ export function TaskMentionChip({
             isSaving={relationshipSaving}
             onSetParent={setParentTask}
             onRemoveParent={removeParentTask}
+            translations={{
+              parent_task: 'Parent Task',
+              search_tasks: 'Search tasks...',
+              error_loading_tasks: 'Error loading tasks',
+              no_matching_tasks: 'No matching tasks',
+              no_available_tasks: 'No available tasks',
+              n_set: '1',
+            }}
           />
 
           <TaskBlockingMenu
@@ -872,6 +880,21 @@ export function TaskMentionChip({
             onRemoveBlocking={removeBlockingTask}
             onAddBlockedBy={addBlockedByTask}
             onRemoveBlockedBy={removeBlockedByTask}
+            translations={{
+              dependencies: 'Dependencies',
+              blocks: 'Blocks',
+              blocked_by: 'Blocked By',
+              search_tasks_to_block: 'Search tasks...',
+              search_blocking_tasks: 'Search tasks...',
+              error_loading_tasks: 'Error loading tasks',
+              no_matching_tasks: 'No matching tasks',
+              no_available_tasks: 'No available tasks',
+              remove_dependency: 'Remove',
+              tasks_that_cannot_start:
+                'Tasks that cannot start until this one is done',
+              tasks_that_must_complete:
+                'Tasks that must complete before this one can start',
+            }}
           />
 
           <TaskRelatedMenu
@@ -882,6 +905,15 @@ export function TaskMentionChip({
             savingTaskId={relationshipSavingTaskId}
             onAddRelated={addRelatedTask}
             onRemoveRelated={removeRelatedTask}
+            translations={{
+              related_tasks: 'Related Tasks',
+              currently_related: 'Currently Related',
+              search_tasks_to_link: 'Search tasks to link...',
+              no_matching_tasks: 'No matching tasks',
+              no_available_tasks: 'No available tasks',
+              related_tasks_help:
+                'Link tasks that share context or are related to each other',
+            }}
           />
 
           <DropdownMenuSeparator />

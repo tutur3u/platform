@@ -45,6 +45,7 @@ Mandatory guardrails:
 9. Testing After Features: ALWAYS add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test`. Testing is encouraged and expected from agents.
 10. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
 11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
+12. Verification: The following commands MUST all pass at the end of your work: `bun type-check`, `bun run test`, and `bun format-and-lint`. This is a mandatory requirement.
 
 Prohibited actions (HARD STOP - agents must NEVER do these):
 
@@ -187,19 +188,16 @@ Use Biome (user-run only; agent must not execute commands directly).
 2. For fixes, agent proposes code edits; user optionally runs `bun lint:fix` / `bun format:fix`.
 3. Agent re-checks file content post-user action to confirm resolution.
 
-**Type Checking with tsgo (RECOMMENDED):**
+**Type Checking:**
 
-Use `tsgo` (`@typescript/native-preview`) for type checking instead of `tsc`. It is nearly **10x faster** than the standard TypeScript compiler.
+Always use the exact command `bun type-check` for type checking. Do NOT use `npx tsgo`, `bunx tsgo`, or other alternatives.
 
 ```bash
-# Type check a specific package (RECOMMENDED - ~10x faster)
-npx tsgo --project packages/utils/tsconfig.json
-
-# Type check the entire monorepo
-npx tsgo
+# Type check the entire monorepo (REQUIRED command)
+bun type-check
 ```
 
-Agents CAN run `tsgo` for type checking as it completes quickly. Prefer `tsgo` over `tsc` or `bun --filter @tuturuuu/<pkg> run type-check` for faster feedback.
+Agents MUST run `bun type-check` to verify type correctness. This is the only accepted type checking command.
 
 ### 4.7 Testing
 
@@ -1391,7 +1389,7 @@ Agent Responsibilities:
 | Integrate 3rd-party UI lib    | See 5.21 workflow                                                 | Route-scoped CSS + theme override + sync docs               |
 | Update app theme colors       | Edit `packages/ui/src/globals.css`                                | **MUST** update all `*-theme-override.css` files            |
 | Edge runtime                  | `export const runtime = 'edge'`                                   | Only if required                                            |
-| Type check (fast)             | `npx tsgo`                                                        | ~10x faster than tsc; agents CAN run                        |
+| Type check                    | `bun type-check`                                                  | REQUIRED; do NOT use `npx tsgo`                             |
 | Supabase admin client         | Import from `@tuturuuu/supabase`                                  | Avoid direct REST calls                                     |
 | Escape hatch escalation       | Open issue `policy-gap`                                           | Provide context & proposal                                  |
 | (DO NOT auto run build/dev)   | (Requires explicit user request)                                  | Build commands are USER-ONLY unless explicitly requested    |

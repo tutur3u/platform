@@ -21,6 +21,20 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 
+interface TaskBlockingMenuTranslations {
+  dependencies: string;
+  blocks: string;
+  blocked_by: string;
+  search_tasks_to_block: string;
+  search_blocking_tasks: string;
+  error_loading_tasks: string;
+  no_matching_tasks: string;
+  no_available_tasks: string;
+  remove_dependency: string;
+  tasks_that_cannot_start: string;
+  tasks_that_must_complete: string;
+}
+
 interface TaskBlockingMenuProps {
   /** Current workspace ID */
   wsId: string;
@@ -42,6 +56,8 @@ interface TaskBlockingMenuProps {
   onAddBlockedBy: (task: RelatedTaskInfo) => void;
   /** Called when removing a task that blocks this task */
   onRemoveBlockedBy: (taskId: string) => void;
+  /** Translations for the menu */
+  translations: TaskBlockingMenuTranslations;
 }
 
 export function TaskBlockingMenu({
@@ -55,6 +71,7 @@ export function TaskBlockingMenu({
   onRemoveBlocking,
   onAddBlockedBy,
   onRemoveBlockedBy,
+  translations,
 }: TaskBlockingMenuProps) {
   const [activeTab, setActiveTab] = React.useState<'blocks' | 'blocked-by'>(
     'blocks'
@@ -100,7 +117,7 @@ export function TaskBlockingMenu({
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <Ban className="h-4 w-4 text-dynamic-red" />
-        Dependencies
+        {translations.dependencies}
         {totalCount > 0 && (
           <span className="ml-auto text-muted-foreground text-xs">
             {totalCount}
@@ -120,7 +137,7 @@ export function TaskBlockingMenu({
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Blocks ({blockingTasks.length})
+            {translations.blocks} ({blockingTasks.length})
           </button>
           <button
             type="button"
@@ -132,7 +149,7 @@ export function TaskBlockingMenu({
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Blocked By ({blockedByTasks.length})
+            {translations.blocked_by} ({blockedByTasks.length})
           </button>
         </div>
 
@@ -165,7 +182,7 @@ export function TaskBlockingMenu({
                       type="button"
                       onClick={() => handleRemove(task.id)}
                       disabled={isSaving && savingTaskId === task.id}
-                      aria-label="Remove dependency"
+                      aria-label={translations.remove_dependency}
                       className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     >
                       {isSaving && savingTaskId === task.id ? (
@@ -186,8 +203,8 @@ export function TaskBlockingMenu({
           <CommandInput
             placeholder={
               activeTab === 'blocks'
-                ? 'Search tasks to block...'
-                : 'Search blocking tasks...'
+                ? translations.search_tasks_to_block
+                : translations.search_blocking_tasks
             }
             value={searchQuery}
             onValueChange={setSearchQuery}
@@ -200,17 +217,17 @@ export function TaskBlockingMenu({
               </div>
             ) : tasksError ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
-                Error loading tasks
+                {translations.error_loading_tasks}
               </CommandEmpty>
             ) : tasks.length === 0 ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {searchQuery ? (
                   <>
                     <Search className="mx-auto mb-1 h-4 w-4 opacity-50" />
-                    No matching tasks
+                    {translations.no_matching_tasks}
                   </>
                 ) : (
-                  'No available tasks'
+                  translations.no_available_tasks
                 )}
               </CommandEmpty>
             ) : (
@@ -248,12 +265,11 @@ export function TaskBlockingMenu({
           </CommandList>
         </Command>
 
-        {/* Help Text */}
         <div className="border-t bg-muted/30 px-2 py-1.5">
           <p className="text-center text-muted-foreground text-xs">
             {activeTab === 'blocks'
-              ? 'Tasks that cannot start until this one is done'
-              : 'Tasks that must complete before this one can start'}
+              ? translations.tasks_that_cannot_start
+              : translations.tasks_that_must_complete}
           </p>
         </div>
       </DropdownMenuSubContent>

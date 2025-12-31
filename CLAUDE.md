@@ -152,12 +152,11 @@ bun format-and-lint:fix
 ### Type Checking (Agent-Safe)
 
 ```bash
-# Type check with tsgo (~10x faster than tsc) - RECOMMENDED
-npx tsgo                                    # Check entire monorepo
-npx tsgo --project packages/utils/tsconfig.json  # Check specific package
+# Type check the entire monorepo (REQUIRED command)
+bun type-check
 ```
 
-**CRITICAL for Agents**: Use `tsgo` (`@typescript/native-preview`) for type checking instead of `tsc`. It is nearly **10x faster** and agents CAN run it for quick feedback.
+**CRITICAL for Agents**: Always use the exact command `bun type-check` for type checking. Do NOT use `npx tsgo`, `bunx tsgo`, or other alternatives. This is the only accepted type checking command.
 
 ### UI Components
 
@@ -214,6 +213,7 @@ bun trigger:deploy
 14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
 15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
 16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
+17. **Always** ensure the following commands pass at the end of your work: `bun type-check`, `bun run test`, and `bun format-and-lint` - this is a mandatory verification requirement
 
 ### Escalate When
 
@@ -732,7 +732,7 @@ Steps:
 | Scoped test              | `bun --filter @tuturuuu/ui test`              | Add `...` for dependents             |
 | Lint                     | `bun lint`                                    | USER-ONLY; agent suggests fixes      |
 | Format                   | `bun format`                                  | USER-ONLY; agent suggests fixes      |
-| Type check (fast)        | `npx tsgo`                                    | ~10x faster than tsc; agents CAN run |
+| Type check               | `bun type-check`                              | REQUIRED; do NOT use `npx tsgo`      |
 | New migration            | `bun sb:new`                                  | Edit generated SQL file              |
 | Apply migrations locally | `bun sb:up`                                   | Safe for agents                      |
 | Apply migrations remote  | `bun sb:push`                                 | USER-ONLY; NEVER agents              |

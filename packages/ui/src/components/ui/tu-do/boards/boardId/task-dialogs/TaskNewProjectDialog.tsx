@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { useTranslations } from 'next-intl';
 
 interface TaskNewProjectDialogProps {
   open: boolean;
@@ -28,19 +29,20 @@ export function TaskNewProjectDialog({
   onNameChange,
   onConfirm,
 }: TaskNewProjectDialogProps) {
+  const t = useTranslations('common');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>{t('create_new_project')}</DialogTitle>
           <DialogDescription>
-            Add a new project to coordinate tasks across multiple boards. Give
-            it a descriptive name.
+            {t('create_new_project_description')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label>Project Name</Label>
+            <Label>{t('project_name')}</Label>
             <Input
               value={newProjectName}
               onChange={(e) => onNameChange(e.target.value)}
@@ -66,7 +68,7 @@ export function TaskNewProjectDialog({
             onClick={() => onOpenChange(false)}
             disabled={creatingProject}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             type="button"
@@ -76,10 +78,10 @@ export function TaskNewProjectDialog({
             {creatingProject ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Creating...
+                {t('creating')}
               </>
             ) : (
-              'Create Project'
+              t('create_project')
             )}
           </Button>
         </DialogFooter>

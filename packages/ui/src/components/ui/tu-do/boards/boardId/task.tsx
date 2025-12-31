@@ -568,14 +568,10 @@ function TaskCardInner({
       );
 
       const taskCount = duplicatedTasks.length;
-      toast.success(
-        taskCount > 1
-          ? `${taskCount} tasks duplicated successfully`
-          : 'Task duplicated successfully'
-      );
+      toast.success(t('tasks_duplicated_successfully', { count: taskCount }));
     } catch (error: any) {
       console.error('Error duplicating task(s):', error);
-      toast.error(error.message || 'Please try again later');
+      toast.error(error.message || t('please_try_again_later'));
     } finally {
       setIsLoading(false);
     }
@@ -624,7 +620,10 @@ function TaskCardInner({
                 ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
-            title={`${descriptionMeta.checkedCheckboxes} of ${descriptionMeta.totalCheckboxes} sub-tasks completed`}
+            title={t('n_subtasks_completed', {
+              checked: descriptionMeta.checkedCheckboxes,
+              total: descriptionMeta.totalCheckboxes,
+            })}
             ref={(el) => {
               if (el) badgeRefs.current.set('subtasks', el as any);
             }}
@@ -659,7 +658,7 @@ function TaskCardInner({
               <Box className="h-2.5 w-2.5" />
               {task.projects.length === 1
                 ? task.projects[0]?.name
-                : `${task.projects.length} projects`}
+                : t('n_projects', { count: task.projects.length })}
             </Badge>
           </div>
         ),
@@ -721,7 +720,7 @@ function TaskCardInner({
             key="parent"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 text-[10px] text-dynamic-purple"
-            title={`Sub-task of: ${parentTask.name}`}
+            title={t('subtask_of', { name: parentTask.name })}
             ref={(el) => {
               if (el) badgeRefs.current.set('parent', el as any);
             }}
@@ -748,7 +747,10 @@ function TaskCardInner({
                 ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
-            title={`${completedCount} of ${childTasks.length} sub-tasks completed`}
+            title={t('n_subtasks_completed', {
+              checked: completedCount,
+              total: childTasks.length,
+            })}
             ref={(el) => {
               if (el) badgeRefs.current.set('children', el as any);
             }}
@@ -769,13 +771,13 @@ function TaskCardInner({
             key="blocked"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-red/30 bg-dynamic-red/10 px-2 text-[10px] text-dynamic-red"
-            title={`Blocked by ${blockedByTasks.length} task${blockedByTasks.length > 1 ? 's' : ''}`}
+            title={t('blocked_by_n_tasks', { count: blockedByTasks.length })}
             ref={(el) => {
               if (el) badgeRefs.current.set('blocked', el as any);
             }}
           >
             <Ban className="h-2.5 w-2.5" />
-            Blocked
+            {t('blocked')}
           </Badge>
         ),
       });
@@ -790,7 +792,7 @@ function TaskCardInner({
             key="blocking"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
-            title={`Blocking ${blockingTasks.length} task${blockingTasks.length > 1 ? 's' : ''}`}
+            title={t('blocking_n_tasks', { count: blockingTasks.length })}
             ref={(el) => {
               if (el) badgeRefs.current.set('blocking', el as any);
             }}
@@ -811,7 +813,7 @@ function TaskCardInner({
             key="related"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
-            title={`${relatedTasks.length} related task${relatedTasks.length > 1 ? 's' : ''}`}
+            title={t('n_related_tasks', { count: relatedTasks.length })}
             ref={(el) => {
               if (el) badgeRefs.current.set('related', el as any);
             }}
@@ -839,6 +841,7 @@ function TaskCardInner({
     blockingTasks,
     blockedByTasks,
     relatedTasks,
+    t,
   ]);
 
   // Calculate visible badges based on available width
@@ -1088,7 +1091,12 @@ function TaskCardInner({
                     'w-fit px-1 py-0 font-mono text-[10px]',
                     getTicketBadgeColorClasses(taskList, task.priority)
                   )}
-                  title={`Ticket ID: ${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)}`}
+                  title={t('ticket_id_label', {
+                    id: getTicketIdentifier(
+                      boardConfig?.ticket_prefix,
+                      task.display_number
+                    ),
+                  })}
                 >
                   {getTicketIdentifier(
                     boardConfig?.ticket_prefix,
@@ -1106,8 +1114,8 @@ function TaskCardInner({
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
-                aria-label={`Edit task: ${task.name}`}
-                title="Click to edit task"
+                aria-label={t('edit_task_aria', { name: task.name })}
+                title={t('click_to_edit_task')}
               >
                 {task.name}
               </button>
@@ -1322,6 +1330,14 @@ function TaskCardInner({
                         isSaving={relationshipSaving}
                         onSetParent={setParentTask}
                         onRemoveParent={removeParentTask}
+                        translations={{
+                          parent_task: t('parent_task'),
+                          search_tasks: t('search_tasks'),
+                          error_loading_tasks: t('error'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          n_set: '1',
+                        }}
                       />
 
                       {/* Blocking/Blocked By Menu */}
@@ -1336,6 +1352,19 @@ function TaskCardInner({
                         onRemoveBlocking={removeBlockingTask}
                         onAddBlockedBy={addBlockedByTask}
                         onRemoveBlockedBy={removeBlockedByTask}
+                        translations={{
+                          dependencies: t('dependencies'),
+                          blocks: t('blocks'),
+                          blocked_by: t('blocked_by'),
+                          search_tasks_to_block: t('search_tasks'),
+                          search_blocking_tasks: t('search_tasks'),
+                          error_loading_tasks: t('error'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          remove_dependency: t('remove'),
+                          tasks_that_cannot_start: t('blocks_help'),
+                          tasks_that_must_complete: t('blocked_by_help'),
+                        }}
                       />
 
                       {/* Related Tasks Menu */}
@@ -1347,6 +1376,14 @@ function TaskCardInner({
                         savingTaskId={relationshipSavingTaskId}
                         onAddRelated={addRelatedTask}
                         onRemoveRelated={removeRelatedTask}
+                        translations={{
+                          related_tasks: t('related_tasks'),
+                          currently_related: t('currently_related'),
+                          search_tasks_to_link: t('search_tasks'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          related_tasks_help: t('related_tasks_help'),
+                        }}
                       />
 
                       <DropdownMenuSeparator />
@@ -1442,7 +1479,17 @@ function TaskCardInner({
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
-                    Starts {formatSmartDate(startDate)}
+                    {t('starts_at', {
+                      date: formatSmartDate(
+                        startDate,
+                        {
+                          today: t('today'),
+                          tomorrow: t('tomorrow'),
+                          yesterday: t('yesterday'),
+                        },
+                        dateLocale
+                      ),
+                    })}
                   </span>
                 </div>
               )}
@@ -1457,15 +1504,27 @@ function TaskCardInner({
                 >
                   <Calendar className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
-                    Due {formatSmartDate(endDate)}
+                    {t('due_at', {
+                      date: formatSmartDate(
+                        endDate,
+                        {
+                          today: t('today'),
+                          tomorrow: t('tomorrow'),
+                          yesterday: t('yesterday'),
+                        },
+                        dateLocale
+                      ),
+                    })}
                   </span>
                   {isOverdue && !task.closed_at ? (
                     <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                      OVERDUE
+                      {t('overdue')}
                     </Badge>
                   ) : (
                     <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                      {format(endDate, `MMM dd 'at' ${timePattern}`)}
+                      {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+                        locale: dateLocale,
+                      })}
                     </span>
                   )}
                 </div>
@@ -1496,7 +1555,7 @@ function TaskCardInner({
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
                   {format(
                     new Date(task.completed_at),
-                    `MMM dd 'at' ${timePattern}`,
+                    `MMM dd '${t('at')}' ${timePattern}`,
                     { locale: dateLocale }
                   )}
                 </span>
@@ -1520,7 +1579,7 @@ function TaskCardInner({
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
                   {format(
                     new Date(task.closed_at),
-                    `MMM dd 'at' ${timePattern}`,
+                    `MMM dd '${t('at')}' ${timePattern}`,
                     { locale: dateLocale }
                   )}
                 </span>
@@ -1562,7 +1621,7 @@ function TaskCardInner({
                     className="flex w-auto max-w-xs flex-col gap-2 p-2"
                   >
                     <div className="text-center font-semibold text-sm">
-                      Other properties
+                      {t('other_properties')}
                     </div>
                     <div className="border" />
                     <div className="flex flex-col gap-2">
@@ -1583,7 +1642,7 @@ function TaskCardInner({
                   {descriptionMeta.hasText && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title="Has description"
+                      title={t('has_description')}
                     >
                       <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
@@ -1591,7 +1650,9 @@ function TaskCardInner({
                   {descriptionMeta.hasImages && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
+                      title={t('n_images', {
+                        count: descriptionMeta.imageCount,
+                      })}
                     >
                       <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
                       {descriptionMeta.imageCount > 1 && (
@@ -1604,7 +1665,9 @@ function TaskCardInner({
                   {descriptionMeta.hasVideos && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
+                      title={t('n_videos', {
+                        count: descriptionMeta.videoCount,
+                      })}
                     >
                       <Play className="h-3.5 w-3.5 text-muted-foreground" />
                       {descriptionMeta.videoCount > 1 && (
@@ -1617,7 +1680,7 @@ function TaskCardInner({
                   {descriptionMeta.hasLinks && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
-                      title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
+                      title={t('n_links', { count: descriptionMeta.linkCount })}
                     >
                       <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
                       {descriptionMeta.linkCount > 1 && (

@@ -4,6 +4,7 @@ import { Tag } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 
@@ -29,6 +30,7 @@ export function TaskLabelsDisplay({
   size = 'sm',
   showIcon = true,
 }: TaskLabelsDisplayProps) {
+  const t = useTranslations('common');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -91,7 +93,7 @@ export function TaskLabelsDisplay({
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
             <div className="space-y-1">
-              <p className="font-medium text-xs">Hidden labels:</p>
+              <p className="font-medium text-xs">{t('hidden_labels')}</p>
               {labels.slice(maxDisplay).map((label) => (
                 <div key={label.id} className="text-xs">
                   {label.name}
