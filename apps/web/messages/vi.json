@@ -1466,6 +1466,7 @@
     "create_new_project": "Tạo dự án mới",
     "create_new_project_description": "Thêm dự án mới để phối hợp công việc giữa nhiều bảng. Hãy đặt cho nó một cái tên mô tả.",
     "create_new_workspace": "Tạo không gian mới",
+    "create_project": "Tạo dự án",
     "create_workspace": "Tạo không gian làm việc",
     "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
     "created": "Đã tạo",

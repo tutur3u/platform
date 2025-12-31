@@ -1449,6 +1449,7 @@
     "create_new_project": "Create New Project",
     "create_new_project_description": "Add a new project to coordinate tasks across multiple boards. Give it a descriptive name.",
     "create_new_workspace": "Create New Workspace",
+    "create_project": "Create Project",
     "create_workspace": "Create Workspace",
     "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
     "created": "Created",
