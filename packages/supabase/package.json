@@ -16,7 +16,7 @@
     "@supabase/supabase-js": "^2.89.0",
     "@ncthub/types": "workspace:*",
     "eslint": "^9.39.2",
-    "next": "16.0.1",
+    "next": "16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "zod": "^3.25.76"

@@ -13,6 +13,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "type-check": "NODE_OPTIONS='--max-old-space-size=4096' tsc --noEmit",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",

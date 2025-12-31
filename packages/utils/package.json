@@ -13,7 +13,7 @@
     "@ncthub/supabase": "workspace:*",
     "clsx": "^2.1.1",
     "eslint": "^9.39.2",
-    "next": "16.0.1",
+    "next": "16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "tailwind-merge": "^3.4.0",
