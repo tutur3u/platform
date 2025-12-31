@@ -39,7 +39,7 @@ jobs:
           biome_output=$(biome format . 2>&1)
           biome_exit_code=$?
           set -e
-
+          echo "biome_exit_code=$biome_exit_code"
           echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
 
           # Save output to file for debugging
