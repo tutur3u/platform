@@ -16,7 +16,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
@@ -46,6 +46,10 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
     },
   });
 
+  useEffect(() => {
+    form.reset({ email: oldEmail || '' });
+  }, [oldEmail, form]);
+
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
 
@@ -70,6 +74,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
       });
 
       router.refresh();
+      form.reset({ email: data.email });
     } else {
       toast({
         title: 'An error occurred',
@@ -77,11 +82,10 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
       });
     }
 
-    form.reset();
     setSaving(false);
   }
 
-  const email = form.watch('email');
+  const { isDirty } = form.formState;
 
   return (
     <Form {...form}>
@@ -98,7 +102,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
                     placeholder="example@tuturuuu.com"
                     label={
                       newEmail
-                        ? oldEmail === email
+                        ? !isDirty
                           ? currentEmailLabel
                           : newEmailLabel
                         : undefined
@@ -116,8 +120,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
           <Button
             type="submit"
             size="icon"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={!oldEmail || oldEmail === email || saving || disabled}
+            disabled={!isDirty || saving || disabled}
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
