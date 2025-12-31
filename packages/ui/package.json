@@ -91,7 +91,7 @@
     "@ncthub/types": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.21",
-    "@types/node": "^22.19.3",
+    "@types/node": "^25.0.3",
     "@types/react": "^19.2.7",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
