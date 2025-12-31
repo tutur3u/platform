@@ -19,7 +19,6 @@ jobs:
       infos: ${{ steps.format-check.outputs.infos }}
       total_issues: ${{ steps.format-check.outputs.total_issues }}
       has_issues: ${{ steps.format-check.outputs.has_issues }}
-      exit_code: ${{ steps.format-check.outputs.exit_code }}
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -34,12 +33,10 @@ jobs:
       - name: Check Biome formatting
         id: format-check
         run: |
-          # Capture biome format output and exit code
+          # Capture biome format output
           set +e
           biome_output=$(biome format . 2>&1)
-          biome_exit_code=$?
           set -e
-          echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
 
           # Save output to file for debugging
           echo "$biome_output" > format_output.txt
@@ -60,18 +57,14 @@ jobs:
           echo "infos=$infos" >> $GITHUB_OUTPUT
           echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
 
+          echo "::error::Found $total_issues formatting issue(s): $errors error(s), $warnings warning(s), $infos infos"
+
           # Check if there are any issues (errors, warnings, or info)
-          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
-            echo "a"
+          if [ "$total_issues" -gt 0 ]; then
             echo "has_issues=true" >> $GITHUB_OUTPUT
+            exit 1
           else
             echo "has_issues=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Fail if there are any issues
-          if [ "$total_issues" -gt 0 ]; then
-            echo "::error::Found $total_issues formatting issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
-            exit 1
           fi
 
   lint:
@@ -88,7 +81,6 @@ jobs:
       infos: ${{ steps.lint-check.outputs.infos }}
       total_issues: ${{ steps.lint-check.outputs.total_issues }}
       has_issues: ${{ steps.lint-check.outputs.has_issues }}
-      exit_code: ${{ steps.lint-check.outputs.exit_code }}
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -103,13 +95,10 @@ jobs:
       - name: Check Biome linting
         id: lint-check
         run: |
-          # Capture biome lint output and exit code
+          # Capture biome lint output
           set +e
           biome_output=$(biome lint . 2>&1)
-          biome_exit_code=$?
           set -e
-
-          echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
 
           # Save output to file for debugging
           echo "$biome_output" > lint_output.txt
@@ -130,24 +119,21 @@ jobs:
           echo "infos=$infos" >> $GITHUB_OUTPUT
           echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
 
+          echo "::error::Found $total_issues lint issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+
           # Check if there are any issues (errors, warnings, or info)
-          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
+          if [ "$total_issues" -gt 0 ]; then
             echo "has_issues=true" >> $GITHUB_OUTPUT
+            exit 1
           else
             echo "has_issues=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Fail if there are any issues
-          if [ "$total_issues" -gt 0 ]; then
-            echo "::error::Found $total_issues lint issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
-            exit 1
           fi
 
   apply-format:
     name: Apply Format
     runs-on: ubuntu-latest
     needs: [format]
-    if: ${{ needs.format.outputs.has_issues == 'true' }}
+    if: ${{ always() && needs.format.outputs.has_issues == 'true' }}
     permissions:
       contents: write
       pull-requests: write
@@ -204,13 +190,12 @@ jobs:
         run: |
           echo "Biome formatting issues were found and a PR has been created."
           echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
-          exit 1
 
   close-outdated-format-pr:
     name: Close Outdated Format PR
     runs-on: ubuntu-latest
     needs: [format]
-    if: ${{ needs.format.outputs.has_issues == 'false' }}
+    if: ${{ always() && needs.format.outputs.has_issues == 'false' }}
     permissions:
       contents: write
       pull-requests: write
@@ -283,6 +268,7 @@ jobs:
     name: Comment on PR
     runs-on: ubuntu-latest
     needs: [format, lint]
+    if: always()
     permissions:
       contents: write
       pull-requests: write
