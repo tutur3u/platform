@@ -88,7 +88,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Determinism:** Generated artifacts (like types) must come from scripts, not manual edits.
 - **Security:** Never output or commit secrets. Reference environment variables by name only.
 - **User Intent:** Do not run long-running commands (`bun dev`) or build commands (`bun build`, `bun run build`, `bun run buildx`) unless the user **explicitly asks**. The user is responsible for running commands like `bun sb:push`, `bun lint`, and `bun format`.
-- **Verification:** The following commands MUST all pass at the end of your work: `bun type-check`, `bun run test`, and `bun format-and-lint`. This is a mandatory requirement.
+- **Verification:** The following commands MUST all pass at the end of your work: `bun type-check`, `bun run test`, `bun format-and-lint`, `bun i18n:check`, and `bun i18n:sort:check`. This is a mandatory requirement.
 - **Testing After Features:** Always add test cases after implementing new features and run them to verify functionality. Tests CAN and SHOULD be run by agents.
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 

@@ -45,7 +45,7 @@ Mandatory guardrails:
 9. Testing After Features: ALWAYS add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test`. Testing is encouraged and expected from agents.
 10. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
 11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
-12. Verification: The following commands MUST all pass at the end of your work: `bun type-check`, `bun run test`, and `bun format-and-lint`. This is a mandatory requirement.
+12. Verification: The following commands MUST all pass at the end of your work: `bun type-check`, `bun run test`, `bun format-and-lint`, `bun i18n:check`, and `bun i18n:sort:check`. This is a mandatory requirement.
 
 Prohibited actions (HARD STOP - agents must NEVER do these):
 
