@@ -4,7 +4,7 @@
     "@biomejs/biome": "^2.3.10",
     "@lingual/i18n-check": "^0.8.16",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20251230.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260101.1",
     "@vitest/coverage-v8": "^4.0.16",
     "turbo": "^2.7.2",
     "typescript": "^5.9.3",
