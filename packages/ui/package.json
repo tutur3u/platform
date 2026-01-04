@@ -101,7 +101,7 @@
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.3",
     "react-dropzone": "^14.3.8",
-    "react-hook-form": "^7.69.0",
+    "react-hook-form": "^7.70.0",
     "react-markdown": "^10.1.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.3.0",
@@ -117,8 +117,8 @@
     "vaul": "^1.1.2",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "y-protocols": "^1.0.7",
-    "yjs": "^13.6.28",
-    "zod": "^4.3.4"
+    "yjs": "^13.6.29",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
