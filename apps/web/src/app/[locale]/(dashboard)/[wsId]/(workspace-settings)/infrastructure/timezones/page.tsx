@@ -36,7 +36,12 @@ async function getData({
   q,
   page = '1',
   pageSize = '10',
-}: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}) {
+}: {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  retry?: boolean;
+} = {}) {
   const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
