@@ -19,14 +19,14 @@
     "@ncthub/types": "workspace:*",
     "@ncthub/ui": "workspace:*",
     "@ncthub/utils": "workspace:*",
-    "next": "16.0.1",
-    "react": "^19.2.0"
+    "next": "16.1.1",
+    "react": "^19.2.3"
   },
   "devDependencies": {
-    "@types/node": "^22.19.1",
+    "@types/node": "^25.0.3",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "typescript": "^5.9.3"
   }
 }
