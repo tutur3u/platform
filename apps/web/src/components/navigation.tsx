@@ -24,6 +24,10 @@ export interface NavLink {
   onClick?: () => void;
   children?: (NavLink | null)[];
   aliases?: string[];
+  requiredWorkspaceTier?: {
+    requiredTier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+    alwaysShow?: boolean;
+  };
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
   disableOnProduction?: boolean;
