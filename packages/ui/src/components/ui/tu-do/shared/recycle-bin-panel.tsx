@@ -139,7 +139,7 @@ export function RecycleBinPanel({
 
   const { data: deletedTasks = [], isLoading } = useDeletedTasks(boardId, {
     enabled: open,
-    staleTime: 0,
+    staleTime: 60000,
   });
   const restoreMutation = useRestoreTasks(boardId);
   const deleteMutation = usePermanentlyDeleteTasks(boardId);
