@@ -428,7 +428,7 @@ export function BoardViews({
   };
 
   return (
-    <div className="-m-2 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
+    <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
       <BoardHeader
         board={board}
         currentUserId={currentUserId}
