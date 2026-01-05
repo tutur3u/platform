@@ -7582,13 +7582,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'task_projects_lead_workspace_member_fkey';
-            columns: ['ws_id', 'lead_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_members';
-            referencedColumns: ['ws_id', 'user_id'];
-          },
-          {
             foreignKeyName: 'task_projects_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
