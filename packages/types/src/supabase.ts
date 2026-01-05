@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
+    PostgrestVersion: '14.1';
   };
   public: {
     Tables: {
@@ -7580,13 +7580,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_projects_lead_workspace_member_fkey';
-            columns: ['ws_id', 'lead_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_members';
-            referencedColumns: ['ws_id', 'user_id'];
           },
           {
             foreignKeyName: 'task_projects_ws_id_fkey';

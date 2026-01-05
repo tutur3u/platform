@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
@@ -30,9 +30,9 @@ import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
 
-interface MailProps {
+interface StructureProps {
   wsId: string;
-  workspace: Workspace | null;
+  workspace: (Workspace & { tier?: WorkspaceProductTier | null }) | null;
   defaultCollapsed: boolean;
   user: WorkspaceUser | null;
   links: (NavLink | null)[];
@@ -46,12 +46,13 @@ export function Structure({
   wsId,
   defaultCollapsed = false,
   user,
+  workspace,
   links,
   actions,
   userPopover,
   children,
   disableCreateNewWorkspace = false,
-}: MailProps) {
+}: StructureProps) {
   const t = useTranslations();
   const pathname = usePathname();
 
@@ -353,6 +354,10 @@ export function Structure({
   const getFilteredLinks = (
     linksToFilter: (NavLink | null)[] | undefined
   ): (NavLink | null)[] => {
+    const tiers: WorkspaceProductTier[] = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
+
+    const getTierIndex = (tier: WorkspaceProductTier) => tiers.indexOf(tier);
+
     const filtered = (linksToFilter || []).flatMap((link) => {
       // Preserve null separators
       if (!link) return [null];
@@ -363,6 +368,26 @@ export function Structure({
         return [];
 
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
+
+      // Check tier requirement
+      if (link.requiredWorkspaceTier) {
+        const currentTier = workspace?.tier || 'FREE';
+        const requiredTier = link.requiredWorkspaceTier.requiredTier;
+
+        if (getTierIndex(currentTier) < getTierIndex(requiredTier)) {
+          if (link.requiredWorkspaceTier.alwaysShow) {
+            return [
+              {
+                ...link,
+                tempDisabled: true,
+              },
+            ];
+          } else {
+            // Hide it
+            return [];
+          }
+        }
+      }
 
       if (link.children && link.children.length > 1) {
         const filteredChildren = getFilteredLinks(link.children);

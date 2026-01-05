@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronRight } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -61,6 +62,22 @@ export function NavLink({
         >
           {title}
         </span>
+        {!isCollapsed && link.requiredWorkspaceTier && (
+          <Badge
+            variant="outline"
+            className={cn(
+              'ml-auto h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+              link.requiredWorkspaceTier.requiredTier === 'PLUS' &&
+                'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+              link.requiredWorkspaceTier.requiredTier === 'PRO' &&
+                'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+              link.requiredWorkspaceTier.requiredTier === 'ENTERPRISE' &&
+                'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+            )}
+          >
+            {link.requiredWorkspaceTier.requiredTier}
+          </Badge>
+        )}
       </div>
       {hasChildren && !isCollapsed && (
         <ChevronRight
@@ -71,17 +88,19 @@ export function NavLink({
     </>
   );
 
+  const isDisabled = link.disabled || link.tempDisabled;
   const commonProps = {
     className: cn(
       'group/navlink flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',
-      link.tempDisabled
-        ? 'cursor-default opacity-50'
+      isDisabled
+        ? 'cursor-not-allowed opacity-50'
         : 'hover:bg-accent hover:text-accent-foreground'
     ),
     onClick: () => {
+      if (isDisabled) return;
       if (onLinkClick) {
         onLinkClick();
       } else if (hasChildren) {
@@ -92,13 +111,14 @@ export function NavLink({
     },
   };
 
-  const linkElement = href ? (
-    <Link href={href} {...commonProps} target={newTab ? '_blank' : '_self'}>
-      {content}
-    </Link>
-  ) : (
-    <div {...commonProps}>{content}</div>
-  );
+  const linkElement =
+    href && !isDisabled ? (
+      <Link href={href} {...commonProps} target={newTab ? '_blank' : '_self'}>
+        {content}
+      </Link>
+    ) : (
+      <div {...commonProps}>{content}</div>
+    );
 
   if (isCollapsed) {
     return (
