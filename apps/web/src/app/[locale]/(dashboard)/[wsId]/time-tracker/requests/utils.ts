@@ -23,6 +23,19 @@ export const STATUS_COLORS: Record<
   NEEDS_INFO: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
 };
 
+export const CATEGORY_COLORS: Record<string, string> = {
+  RED: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20',
+  BLUE: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
+  GREEN: 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20',
+  YELLOW: 'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20',
+  ORANGE: 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20',
+  PURPLE: 'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
+  PINK: 'bg-dynamic-pink/10 text-dynamic-pink border-dynamic-pink/20',
+  INDIGO: 'bg-dynamic-indigo/10 text-dynamic-indigo border-dynamic-indigo/20',
+  CYAN: 'bg-dynamic-cyan/10 text-dynamic-cyan border-dynamic-cyan/20',
+  GRAY: 'bg-dynamic-gray/10 text-dynamic-gray border-dynamic-gray/20',
+};
+
 export const calculateDuration = (startTime: string, endTime: string) => {
   if (!startTime || !endTime) return '0h 0m';
   const start = dayjs(startTime);
