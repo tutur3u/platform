@@ -72,11 +72,11 @@ export default async function TaskProjectPage({ params }: Props) {
               display_name,
               avatar_url
             ),
-            lead:workspace_members(...users(
+            lead:users!task_projects_lead_id_fkey(
               id,
               display_name,
               avatar_url
-            ))
+            )
           `
           )
           .eq('id', projectId)
