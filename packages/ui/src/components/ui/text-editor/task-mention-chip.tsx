@@ -111,7 +111,7 @@ const removeTaskMentionsFromEditor = (
 const cleanupTaskMentionsGlobally = async (
   deletedTaskId: string,
   wsId: string,
-  queryClient: ReturnType<typeof useQueryClient>
+  _queryClient: ReturnType<typeof useQueryClient>
 ): Promise<void> => {
   const supabase = createClient();
 
@@ -209,7 +209,6 @@ const cleanupTaskMentionsGlobally = async (
             `Failed to clean mentions from task ${task.id}:`,
             updateError
           );
-          continue;
         }
       } catch (parseError) {
         console.error(
@@ -605,8 +604,8 @@ export function TaskMentionChip({
     await baseHandleDelete();
 
     // Phase 1: Clean up mentions from current editor (immediate)
-    const editor = editorProp; 
-    
+    const editor = editorProp;
+
     if (editor) {
       const removedCount = removeTaskMentionsFromEditor(editor, taskId);
       if (removedCount > 0) {
