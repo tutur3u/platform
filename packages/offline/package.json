@@ -11,8 +11,8 @@
     "type-check": "tsgo --build"
   },
   "dependencies": {
-    "@serwist/next": "^9.4.2",
-    "serwist": "^9.4.2"
+    "@serwist/next": "^9.4.4",
+    "serwist": "^9.4.4"
   },
   "peerDependencies": {
     "next": ">=16.1.1",
