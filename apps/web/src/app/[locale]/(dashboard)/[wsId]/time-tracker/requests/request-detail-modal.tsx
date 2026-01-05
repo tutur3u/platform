@@ -27,7 +27,7 @@ import { useRequestActions } from './hooks/use-request-actions';
 import { useRequestEditMode } from './hooks/use-request-edit-mode';
 import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
-import { STATUS_COLORS, type STATUS_LABELS, CATEGORY_COLORS } from './utils';
+import { getStatusColorClasses, type STATUS_LABELS, getCategoryColorClasses } from './utils';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -152,7 +152,7 @@ export function RequestDetailModal({
                     variant="outline"
                     className={cn(
                       'border font-medium text-xs',
-                      STATUS_COLORS[request.approval_status]
+                      getStatusColorClasses(request.approval_status)
                     )}
                   >
                     {t(
@@ -164,7 +164,7 @@ export function RequestDetailModal({
                       variant="outline"
                       className={cn(
                         'border font-medium text-xs',
-                        CATEGORY_COLORS[request.category.color || 'GRAY']
+                        getCategoryColorClasses(request.category.color)
                       )}
                     >
                       {request.category.name}

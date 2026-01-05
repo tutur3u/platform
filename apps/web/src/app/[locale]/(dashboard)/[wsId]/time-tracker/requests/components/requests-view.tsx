@@ -44,9 +44,9 @@ import { useAvailableUsers, useRequests } from '../hooks/use-requests';
 import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
 import type { RequestsViewProps } from '../utils';
 import {
-  CATEGORY_COLORS,
+  getCategoryColorClasses,
   calculateDuration,
-  STATUS_COLORS,
+  getStatusColorClasses,
   STATUS_LABELS,
 } from '../utils';
 
@@ -392,7 +392,7 @@ export function RequestsView({
                         variant="outline"
                         className={cn(
                           'border font-medium text-xs',
-                          STATUS_COLORS[request.approval_status]
+                          getStatusColorClasses(request.approval_status)
                         )}
                       >
                         {t(
@@ -404,7 +404,7 @@ export function RequestsView({
                           variant="outline"
                           className={cn(
                             'border font-medium text-xs',
-                            CATEGORY_COLORS[request.category.color || 'GRAY']
+                            getCategoryColorClasses(request.category.color)
                           )}
                         >
                           {request.category.name}
