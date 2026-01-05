@@ -137,7 +137,10 @@ export function RecycleBinPanel({
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const { data: deletedTasks = [], isLoading } = useDeletedTasks(boardId);
+  const { data: deletedTasks = [], isLoading } = useDeletedTasks(boardId, {
+    enabled: open,
+    staleTime: 0,
+  });
   const restoreMutation = useRestoreTasks(boardId);
   const deleteMutation = usePermanentlyDeleteTasks(boardId);
 
