@@ -346,7 +346,7 @@ export const Mention = Node.create({
   },
 
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, editor }) => {
       let currentDisplayName =
         (node.attrs.displayName as string | null)?.trim() || 'Member';
       let currentAvatarUrl = node.attrs.avatarUrl as string | null;
@@ -379,6 +379,7 @@ export const Mention = Node.create({
                   avatarUrl={currentAvatarUrl}
                   subtitle={currentSubtitle}
                   translations={this.options.translations}
+                  editor={editor}
                 />
               </QueryClientProvider>
             </ThemeProvider>

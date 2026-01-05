@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Editor } from '@tiptap/react';
 import {
   AlertCircle,
   Ban,
@@ -59,6 +60,174 @@ import {
 import { getPriorityIcon } from '../tu-do/utils/taskPriorityUtils';
 import { TaskSummaryPopover } from './task-summary-popover';
 
+/**
+ * Remove all mention nodes for a specific task from the editor
+ * @param editor - The Tiptap editor instance
+ * @param taskId - The ID of the task to remove mentions for
+ * @returns Number of mentions removed
+ */
+const removeTaskMentionsFromEditor = (
+  editor: Editor,
+  taskId: string
+): number => {
+  let removedCount = 0;
+
+  // Use a single transaction to delete all mentions
+  editor.commands.command(({ tr, state }) => {
+    const nodesToDelete: Array<{ from: number; to: number }> = [];
+
+    // Find all mention nodes for this task
+    state.doc.descendants((node, pos) => {
+      if (
+        node.type.name === 'mention' &&
+        node.attrs.entityType === 'task' &&
+        node.attrs.entityId === taskId
+      ) {
+        nodesToDelete.push({ from: pos, to: pos + node.nodeSize });
+      }
+    });
+
+    // Delete in reverse order to maintain correct positions
+    // When deleting from end to start, earlier positions remain valid
+    nodesToDelete
+      .sort((a, b) => b.from - a.from) // Sort by position descending
+      .forEach(({ from, to }) => {
+        tr.delete(from, to);
+        removedCount++;
+      });
+
+    return true;
+  });
+
+  return removedCount;
+};
+
+/**
+ * Clean up task mentions from all other tasks in the workspace (non-blocking background operation)
+ * @param deletedTaskId - The ID of the deleted task
+ * @param wsId - The workspace ID
+ * @param queryClient - The React Query client for cache invalidation
+ */
+const cleanupTaskMentionsGlobally = async (
+  deletedTaskId: string,
+  wsId: string,
+  queryClient: ReturnType<typeof useQueryClient>
+): Promise<void> => {
+  const supabase = createClient();
+
+  try {
+    // Query all tasks in workspace using a single join query
+    // tasks -> workspace_boards (via board_id) -> filter by ws_id
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id, 
+        description, 
+        board_id,
+        workspace_boards!inner(ws_id)
+      `
+      )
+      .eq('workspace_boards.ws_id', wsId)
+      .is('deleted_at', null); // Only non-deleted tasks
+
+    if (error) {
+      console.error('Failed to fetch tasks for mention cleanup:', error);
+      return;
+    }
+
+    if (!tasks || tasks.length === 0) {
+      console.log('No tasks found for mention cleanup');
+      return;
+    }
+
+    console.log(
+      `Scanning ${tasks.length} tasks for mentions of deleted task ${deletedTaskId}`
+    );
+
+    // Process each task's description
+    for (const task of tasks) {
+      if (!task.description) continue;
+
+      try {
+        // Parse description JSON (Tiptap format)
+        const content = JSON.parse(task.description);
+
+        // Check if it contains mentions of the deleted task
+        let hasMention = false;
+        const checkForMention = (node: any): void => {
+          if (
+            node.type === 'mention' &&
+            node.attrs?.entityType === 'task' &&
+            node.attrs?.entityId === deletedTaskId
+          ) {
+            hasMention = true;
+          }
+          if (node.content && Array.isArray(node.content)) {
+            node.content.forEach(checkForMention);
+          }
+        };
+        checkForMention(content);
+
+        if (!hasMention) continue;
+
+        // Remove mentions by filtering the content tree
+        const removeMentions = (node: any): any => {
+          if (
+            node.type === 'mention' &&
+            node.attrs?.entityType === 'task' &&
+            node.attrs?.entityId === deletedTaskId
+          ) {
+            return null; // Remove this node
+          }
+
+          if (node.content && Array.isArray(node.content)) {
+            return {
+              ...node,
+              content: node.content
+                .map(removeMentions)
+                .filter((n: any) => n !== null),
+            };
+          }
+
+          return node;
+        };
+
+        const cleanedContent = removeMentions(content);
+
+        // Update task with cleaned description
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update({ description: JSON.stringify(cleanedContent) })
+          .eq('id', task.id);
+
+        if (updateError) {
+          console.error(
+            `Failed to clean mentions from task ${task.id}:`,
+            updateError
+          );
+          continue;
+        }
+
+        // Invalidate cache for this task
+        queryClient.invalidateQueries({ queryKey: ['task', task.id] });
+        if (task.board_id) {
+          queryClient.invalidateQueries({
+            queryKey: ['tasks', task.board_id],
+          });
+        }
+      } catch (parseError) {
+        console.error(
+          `Failed to parse description for task ${task.id}:`,
+          parseError
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Failed to clean up task mentions globally:', error);
+  }
+};
+
 // Extended Task type that includes board_id (denormalized field in database)
 interface TaskWithBoardId extends Task {
   board_id: string;
@@ -70,6 +239,7 @@ interface TaskMentionChipProps {
   avatarUrl?: string | null;
   subtitle?: string | null;
   className?: string;
+  editor?: Editor | null;
   /** Optional translations for dialogs (for use in isolated React roots) */
   translations?: {
     // TaskDeleteDialog
@@ -103,6 +273,7 @@ export function TaskMentionChip({
   avatarUrl,
   subtitle,
   className,
+  editor: editorProp,
   translations,
 }: TaskMentionChipProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -134,6 +305,9 @@ export function TaskMentionChip({
         .select(
           `
           *,
+          task_lists:task_lists(
+            board_id
+          ),
           assignees:task_assignees(
             user_id,
             user:users!inner(
@@ -169,6 +343,7 @@ export function TaskMentionChip({
       // Transform the data to match TaskWithBoardId type
       return {
         ...data,
+        board_id: data.task_lists?.board_id || '',
         assignees: data.assignees?.map((a: any) => ({
           id: a.user.id,
           user_id: a.user_id,
@@ -427,8 +602,37 @@ export function TaskMentionChip({
   }, [baseHandleMoveToClose, syncTaskCache, targetClosedList]);
 
   const handleDelete = useCallback(async () => {
-    return baseHandleDelete();
-  }, [baseHandleDelete]);
+    if (!task) return;
+
+    const taskId = task.id;
+    const taskBoardId = task.board_id;
+
+    // Perform deletion
+    await baseHandleDelete();
+
+    // Phase 1: Clean up mentions from current editor (immediate)
+    const editor =
+      editorProp ||
+      queryClient.getQueryData<Editor>(['editor-instance', taskBoardId]);
+    if (editor) {
+      const removedCount = removeTaskMentionsFromEditor(editor, taskId);
+      if (removedCount > 0) {
+        console.log(
+          `Removed ${removedCount} mention(s) of task ${taskId} from current editor`
+        );
+      }
+    }
+
+    // Phase 2: Clean up mentions from all other tasks (non-blocking background operation)
+    if (boardConfig?.ws_id) {
+      cleanupTaskMentionsGlobally(taskId, boardConfig.ws_id, queryClient).catch(
+        (error) => {
+          console.error('Failed to clean up task mentions globally:', error);
+          // Don't show error to user - this is background cleanup
+        }
+      );
+    }
+  }, [baseHandleDelete, task, queryClient, boardConfig, editorProp]);
 
   const handleMoveToList = useCallback(
     async (targetListId: string) => {
