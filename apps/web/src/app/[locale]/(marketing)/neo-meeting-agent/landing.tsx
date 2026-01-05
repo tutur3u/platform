@@ -8,7 +8,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from '@ncthub/ui/dropzone';
-import { UploadIcon } from 'lucide-react';
+import { UploadIcon } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -33,21 +33,21 @@ export default function NeoMeetingAgentLanding() {
           minSize={1024}
           src={files}
           onDrop={handleDrop}
-          className="h-64 border-2 border-dashed transition-colors duration-300 hover:bg-muted/25"
+          className="hover:bg-muted/25 h-64 border-2 border-dashed transition-colors duration-300"
         >
           <DropzoneContent />
           <DropzoneEmptyState>
             <div className="flex flex-col items-center justify-center text-center">
               <div className="rounded-full border border-dashed p-3">
                 <UploadIcon
-                  className="size-7 text-muted-foreground"
+                  className="text-muted-foreground size-7"
                   aria-hidden="true"
                 />
               </div>
-              <p className="mt-4 font-medium text-muted-foreground">
+              <p className="text-muted-foreground mt-4 font-medium">
                 {t('dropzone.title')}
               </p>
-              <p className="mt-2 text-sm text-muted-foreground/70">
+              <p className="text-muted-foreground/70 mt-2 text-sm">
                 {t('dropzone.caption', { size: 50 })}
               </p>
             </div>
@@ -56,7 +56,7 @@ export default function NeoMeetingAgentLanding() {
 
         <div className="grid w-full grid-cols-2 items-center gap-4">
           <LanguageSelect onValueChange={setLanguage} defaultValue={language} />
-          <Button className="bg-gradient-to-r from-orange-500 to-yellow-400 bg-[length:200%_auto] text-base font-bold text-white transition-all duration-500 ease-in-out hover:bg-[position:100%_0%]">
+          <Button className="bg-linear-to-r bg-size-[200%_auto] hover:bg-position-[100%_0%] from-orange-500 to-yellow-400 text-base font-bold text-white transition-all duration-500 ease-in-out">
             {t('actions.generate')}
           </Button>
         </div>

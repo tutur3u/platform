@@ -100,6 +100,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       description: 'Play the classic game of chess with a modern twist.',
       icon: <Gamepad2 />,
     },
+    {
+      href: '/neo-pacman',
+      label: 'Neo Pacman',
+      description: 'Navigate the maze and eat all the ghosts to win.',
+      icon: <Gamepad2 />,
+    },
   ] as NavItem[];
 
   return {

@@ -3,7 +3,7 @@
 import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 import { type Message } from '@ncthub/ai/types';
 import { Button } from '@ncthub/ui/button';
-import { IconCheck, IconCopy } from '@ncthub/ui/icons';
+import { CheckIcon, CopyIcon } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import React from 'react';
 
@@ -32,7 +32,7 @@ export function ChatMessageActions({
   return (
     <div className={cn('flex items-center justify-end', className)} {...props}>
       <Button variant="outline" size="icon" onClick={onCopy}>
-        {isCopied ? <IconCheck /> : <IconCopy />}
+        {isCopied ? <CheckIcon /> : <CopyIcon />}
         <span className="sr-only">Copy message</span>
       </Button>
     </div>

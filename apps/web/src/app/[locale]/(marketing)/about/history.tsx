@@ -122,7 +122,7 @@ export default function History() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
-          className="text-4xl leading-tight font-extrabold md:text-5xl lg:text-6xl"
+          className="text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl"
         >
           NEO Culture Tech{' '}
           <span className="relative">
@@ -130,7 +130,7 @@ export default function History() {
               History
             </span>
             <motion.div
-              className="absolute -top-2 -right-2"
+              className="absolute -right-2 -top-2"
               animate={{
                 rotate: [0, 10, -10, 0],
                 scale: [1, 1.1, 1],
@@ -152,13 +152,13 @@ export default function History() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
           viewport={{ once: true }}
-          className="mx-auto max-w-3xl text-lg font-medium text-muted-foreground md:text-xl"
+          className="text-muted-foreground mx-auto max-w-3xl text-lg font-medium md:text-xl"
         >
           A journey of innovation, community, and passion for technology.{' '}
           <span className="relative font-semibold text-[#5FC6E5]">
             Step through our history
             <motion.span
-              className="absolute right-0 -bottom-1 left-0 h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
+              className="bg-linear-to-r absolute -bottom-1 left-0 right-0 h-0.5 from-[#5FC6E5] to-[#FBC721]"
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               transition={{ duration: 1, delay: 1 }}

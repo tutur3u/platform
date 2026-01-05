@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge } from '@ncthub/ui/badge';
 import { Button } from '@ncthub/ui/button';
 import {
@@ -9,10 +8,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
 import { GraduationCap, Hash, Plus, User } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { cn } from '@ncthub/utils/format';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const studentFormSchema = z.object({
@@ -131,7 +131,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
           disabled={isSubmitting}
           className={cn(
             'h-14 w-full text-base font-medium transition-all duration-200',
-            'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700',
+            'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700',
             'shadow-lg hover:shadow-xl'
           )}
         >

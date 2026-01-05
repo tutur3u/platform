@@ -1,10 +1,8 @@
 import { createPOST } from '@ncthub/ai/chat/google/new/route';
 
-export const config = {
-  maxDuration: 90,
-  preferredRegion: 'sin1',
-  runtime: 'edge',
-};
+export const runtime = 'edge';
+export const maxDuration = 60;
+export const preferredRegion = 'sin1';
 
 const POST = createPOST({
   serverAPIKeyFallback: true,

@@ -1,7 +1,7 @@
-fastapi[standard]
-modal
-numpy
-opencv-python
-paddleocr==3.1.0
-paddlepaddle==3.0.0
-setuptools
+fastapi[standard]==0.116.1
+modal==1.1.2
+numpy==2.2.6
+opencv-python==4.12.0.88
+paddleocr==3.3.0
+paddlepaddle==3.2.0
+setuptools==80.9.0

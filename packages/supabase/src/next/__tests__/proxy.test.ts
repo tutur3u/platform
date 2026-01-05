@@ -1,4 +1,4 @@
-import { updateSession } from '../middleware';
+import { updateSession } from '../proxy';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

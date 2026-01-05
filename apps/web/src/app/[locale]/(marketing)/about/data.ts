@@ -101,16 +101,16 @@ export const members: {
     },
   },
   {
-    name: 'Phung Khanh Minh',
+    name: 'Vo Tran Minh Nhat',
     role: 'Head of Marcom',
     departments: ['Executive Board', 'Marketing'],
-    image: '/members/gen7/minh.png',
-    bio: 'Creative storyteller and brand strategist who amplifies our voice in the tech community. Minh crafts compelling narratives that showcase our impact and attract like-minded innovators.',
+    image: '/members/gen7/nhat.png',
+    bio: 'Creative storyteller and brand strategist who amplifies our voice in the tech community. Nhat crafts compelling narratives that showcase our impact and attract like-minded innovators.',
     quote: 'Strive not to be a success, but rather to be of value.',
     generation: 7,
     socials: {
-      facebook: 'https://www.facebook.com/share/12MY7CjvZmb/?mibextid=wwXIfr',
-      linkedin: undefined,
+      facebook: 'https://www.facebook.com/votrnminhn',
+      linkedin: 'https://www.linkedin.com/in/sun-vo/',
     },
   },
   {

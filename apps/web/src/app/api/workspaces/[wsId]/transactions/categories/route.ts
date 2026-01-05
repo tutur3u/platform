@@ -12,7 +12,9 @@ export async function GET(_: Request, { params }: Params) {
   const { wsId } = await params;
 
   const { data, error } = await supabase
-    .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
+    .rpc('get_transaction_categories_with_amount', undefined, {
+      count: 'exact',
+    })
     .eq('ws_id', wsId)
     .order('name', { ascending: true });
 

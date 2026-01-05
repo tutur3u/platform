@@ -9,7 +9,6 @@ interface Params {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { planId, timeblockId: id } = await params;
 
   const data = await req.json();
@@ -18,6 +17,8 @@ export async function DELETE(req: Request, { params }: Params) {
   const userType = passwordHash ? 'guest' : 'user';
 
   if (userType === 'user') {
+    const supabase = await createClient();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();

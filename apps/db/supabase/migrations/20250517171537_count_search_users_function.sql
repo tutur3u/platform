@@ -9,7 +9,7 @@ BEGIN
   JOIN user_private_details ud ON u.id = ud.user_id
   WHERE 
     u.display_name ILIKE '%' || search_query || '%' OR
-    ud.email ILIKE '%' || search_query || '%' 
+    ud.email ILIKE '%' || search_query || '%';
     
   RETURN total_count;
 END;

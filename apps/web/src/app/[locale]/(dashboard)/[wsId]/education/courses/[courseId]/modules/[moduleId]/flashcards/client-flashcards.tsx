@@ -34,17 +34,14 @@ export default function ClientFlashcards({
         id: string;
         front: string;
         back: string;
-        frontHTML: string | React.JSX.Element;
-        backHTML: string | React.JSX.Element;
+        frontHTML: React.JSX.Element;
+        backHTML: React.JSX.Element;
         frontCardStyle?: React.CSSProperties;
-        frontContentStyle?: React.CSSProperties;
         backCardStyle?: React.CSSProperties;
-        backContentStyle?: React.CSSProperties;
         className?: string;
         height?: string;
         width?: string;
         borderRadius?: string;
-        style?: React.CSSProperties;
       }
     | undefined
   >;
@@ -104,17 +101,20 @@ export default function ClientFlashcards({
             <>
               {card && (
                 <Flashcard
-                  frontHTML={card.frontHTML}
-                  backHTML={card.backHTML}
-                  frontCardStyle={card.frontCardStyle}
-                  frontContentStyle={card.frontContentStyle}
-                  backCardStyle={card.backCardStyle}
-                  backContentStyle={card.backContentStyle}
+                  front={{
+                    html: card.frontHTML,
+                    style: card.frontCardStyle,
+                  }}
+                  back={{
+                    html: card.backHTML,
+                    style: card.backCardStyle,
+                  }}
                   className={card.className}
-                  height={card.height}
-                  width={card.width}
-                  borderRadius={card.borderRadius}
-                  style={card.style}
+                  style={{
+                    width: card.width,
+                    height: card.height,
+                    borderRadius: card.borderRadius,
+                  }}
                 />
               )}
               {previewMode || (

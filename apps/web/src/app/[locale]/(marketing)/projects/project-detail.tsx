@@ -1,6 +1,5 @@
 import { GLBViewerCanvas } from './3d-model';
 import { Project } from './data';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   Calendar,
   Code,
@@ -9,7 +8,8 @@ import {
   Github,
   Play,
   X,
-} from 'lucide-react';
+} from '@ncthub/ui/icons';
+import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -92,7 +92,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
       onClick={handleBackdropClick}
     >
       <motion.div
-        className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-border bg-background/95 shadow-2xl backdrop-blur-lg"
+        className="border-border bg-background/95 relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border shadow-2xl backdrop-blur-lg"
         variants={MODAL_VARIANTS}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={handleModalClick}
@@ -101,7 +101,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         <div className="relative p-8">
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 z-10 rounded-full bg-muted/50 p-2 text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
+            className="bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground absolute right-6 top-6 z-10 rounded-full p-2 transition-all duration-200"
           >
             <X size={20} />
           </button>
@@ -115,29 +115,29 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-            <div className="absolute top-4 left-4 flex gap-2">
+            <div className="absolute left-4 top-4 flex gap-2">
               <div
-                className={`rounded-full px-3 py-1 text-sm font-medium text-primary-foreground ${STATUS_CONFIG[status].color}`}
+                className={`text-primary-foreground rounded-full px-3 py-1 text-sm font-medium ${STATUS_CONFIG[status].color}`}
               >
                 {STATUS_CONFIG[status].label}
               </div>
-              <div className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-foreground">
+              <div className="border-border bg-muted text-foreground rounded-full border px-3 py-1 text-sm font-medium">
                 {TYPE_LABELS[type]}
               </div>
-              <div className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-foreground">
+              <div className="border-border bg-muted text-foreground rounded-full border px-3 py-1 text-sm font-medium">
                 {semester}
               </div>
             </div>
           </div>
 
           <div className="text-center">
-            <h1 className="mb-2 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text py-2 text-4xl leading-tight font-bold text-transparent md:text-5xl md:leading-tight">
+            <h1 className="mb-2 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text py-2 text-4xl font-bold leading-tight text-transparent md:text-5xl md:leading-tight">
               {name}
             </h1>
             {manager && (
-              <p className="text-xl text-muted-foreground">
+              <p className="text-muted-foreground text-xl">
                 Project Lead:{' '}
-                <span className="font-semibold text-foreground">{manager}</span>
+                <span className="text-foreground font-semibold">{manager}</span>
               </p>
             )}
 
@@ -151,7 +151,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/80 px-6 py-3 text-foreground backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-muted"
+                    className="border-border bg-muted/80 text-foreground hover:border-border hover:bg-muted flex items-center gap-2 rounded-xl border px-6 py-3 backdrop-blur-sm transition-all duration-200"
                   >
                     <Github size={20} />
                     <span className="font-medium">View Code</span>
@@ -164,7 +164,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 font-medium text-background transition-all duration-200 hover:bg-foreground/90"
+                    className="bg-foreground text-background hover:bg-foreground/90 flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition-all duration-200"
                   >
                     <Play size={20} />
                     <span>View Demo</span>
@@ -245,44 +245,44 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="rounded-xl border border-border bg-muted/50 p-4 text-center"
+                className="border-border bg-muted/50 rounded-xl border p-4 text-center"
               >
                 <div className="mb-2 flex justify-center">
                   <stat.icon className="h-6 w-6 text-[#1AF4E6]" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-foreground text-2xl font-bold">
                   {stat.value}
                 </p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-muted-foreground text-sm">{stat.label}</p>
               </motion.div>
             ))}
           </div>
           {/* Description */}
           {description && (
-            <div className="rounded-2xl border border-border bg-muted/50 p-6">
-              <h2 className="mb-4 text-2xl font-semibold text-foreground">
+            <div className="border-border bg-muted/50 rounded-2xl border p-6">
+              <h2 className="text-foreground mb-4 text-2xl font-semibold">
                 About
               </h2>
-              <p className="text-lg leading-relaxed text-muted-foreground">
+              <p className="text-muted-foreground text-lg leading-relaxed">
                 {description}
               </p>
             </div>
           )}
           {/* Purpose */}
           {purpose && (
-            <div className="rounded-2xl border border-border bg-muted/50 p-6">
-              <h2 className="mb-4 text-2xl font-semibold text-foreground">
+            <div className="border-border bg-muted/50 rounded-2xl border p-6">
+              <h2 className="text-foreground mb-4 text-2xl font-semibold">
                 Purpose
               </h2>
-              <p className="text-lg leading-relaxed text-muted-foreground">
+              <p className="text-muted-foreground text-lg leading-relaxed">
                 {purpose}
               </p>
             </div>
           )}
           {/* Tech Stack */}
           {techStack && techStack.length > 0 && (
-            <div className="rounded-2xl border border-border bg-muted/50 p-6">
-              <h2 className="mb-6 text-2xl font-semibold text-foreground">
+            <div className="border-border bg-muted/50 rounded-2xl border p-6">
+              <h2 className="text-foreground mb-6 text-2xl font-semibold">
                 Technologies
               </h2>
               <div className="flex flex-wrap gap-3">
@@ -292,9 +292,9 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className="rounded-xl border border-border bg-muted px-4 py-2 backdrop-blur-sm"
+                    className="border-border bg-muted rounded-xl border px-4 py-2 backdrop-blur-sm"
                   >
-                    <span className="font-medium text-foreground">{tech}</span>
+                    <span className="text-foreground font-medium">{tech}</span>
                   </motion.div>
                 ))}
               </div>
@@ -302,8 +302,8 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           )}
           {/* Team Members */}
           {members && members.length > 0 && (
-            <div className="rounded-2xl border border-border bg-muted/50 p-6">
-              <h2 className="mb-6 text-2xl font-semibold text-foreground">
+            <div className="border-border bg-muted/50 rounded-2xl border p-6">
+              <h2 className="text-foreground mb-6 text-2xl font-semibold">
                 Team Members
               </h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -313,10 +313,10 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 p-4 transition-colors hover:bg-muted"
+                    className="border-border bg-muted/50 hover:bg-muted group flex items-center justify-between rounded-xl border p-4 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground font-bold text-background">
+                      <div className="bg-foreground text-background flex h-10 w-10 items-center justify-center rounded-full font-bold">
                         {person.name
                           .split(' ')
                           .map((n) => n[0])
@@ -324,10 +324,10 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                           .slice(0, 2)}
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground transition-colors group-hover:text-foreground">
+                        <p className="text-foreground group-hover:text-foreground font-semibold transition-colors">
                           {person.name}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {person.role || 'Team Member'}
                         </p>
                       </div>
@@ -359,7 +359,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               onClick={onClose}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="rounded-2xl bg-foreground px-8 py-3 font-semibold text-background transition-all duration-200 hover:bg-foreground/90"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded-2xl px-8 py-3 font-semibold transition-all duration-200"
             >
               Close
             </motion.button>

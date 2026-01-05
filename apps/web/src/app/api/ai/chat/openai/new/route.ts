@@ -1,9 +1,7 @@
 import { POST } from '@ncthub/ai/chat/openai/new/route';
 
-export const config = {
-  maxDuration: 90,
-  preferredRegion: 'sin1',
-  runtime: 'edge',
-};
+export const runtime = 'edge';
+export const maxDuration = 60;
+export const preferredRegion = 'sin1';
 
 export { POST };

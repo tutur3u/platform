@@ -68,7 +68,9 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
+    .rpc('get_transaction_categories_with_amount', undefined, {
+      count: 'exact',
+    })
     .eq('ws_id', wsId)
     .order('name', { ascending: true });
 
