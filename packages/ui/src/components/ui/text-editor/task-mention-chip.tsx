@@ -151,7 +151,10 @@ const cleanupTaskMentionsGlobally = async (
 
       try {
         // Parse description JSON (Tiptap format)
-        const content = typeof task.description === 'string' ? JSON.parse(task.description) : task.description;
+        const content =
+          typeof task.description === 'string'
+            ? JSON.parse(task.description)
+            : task.description;
 
         // Check if it contains mentions of the deleted task
         let hasMention = false;
