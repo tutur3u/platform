@@ -1421,6 +1421,9 @@ function TaskCardInner({
                         noMembersFound: t('no_members_found'),
                         noMembersAvailable: t('no_members_available'),
                         assigned: t('assigned'),
+                        memberNoLongerInWorkspace: t(
+                          'member_no_longer_in_workspace'
+                        ),
                       }}
                     />
                   )}
@@ -1736,6 +1739,14 @@ function TaskCardInner({
             : dialogActions.closeDeleteDialog()
         }
         onConfirm={handleDelete}
+        translations={{
+          delete_task: t('delete_task'),
+          delete_task_confirmation: t('delete_task_confirmation', {
+            name: task.name ?? '',
+          }),
+          cancel: t('cancel'),
+          deleting: t('deleting'),
+        }}
       />
       <TaskNewLabelDialog
         open={dialogState.newLabelDialogOpen}
@@ -1750,6 +1761,16 @@ function TaskCardInner({
             : dialogActions.closeNewLabelDialog()
         }
         onConfirm={createNewLabel}
+        translations={{
+          create_new_label: t('create_new_label'),
+          create_new_label_description: t('create_new_label_description'),
+          label_name: t('label_name'),
+          color: t('color'),
+          preview: t('preview'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_label: t('create_label'),
+        }}
       />
 
       <TaskNewProjectDialog
@@ -1763,6 +1784,14 @@ function TaskCardInner({
             : dialogActions.closeNewProjectDialog()
         }
         onConfirm={createNewProject}
+        translations={{
+          create_new_project: t('create_new_project'),
+          create_new_project_description: t('create_new_project_description'),
+          project_name: t('project_name'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_project: t('create_project'),
+        }}
       />
 
       <TaskCustomDateDialog
@@ -1778,6 +1807,12 @@ function TaskCardInner({
         onClear={() => {
           handleDueDateChange(null);
           dialogActions.closeCustomDateDialog();
+        }}
+        translations={{
+          set_custom_due_date: t('set_custom_due_date'),
+          custom_due_date_description: t('custom_due_date_description'),
+          cancel: t('cancel'),
+          remove_due_date: t('remove_due_date'),
         }}
       />
 

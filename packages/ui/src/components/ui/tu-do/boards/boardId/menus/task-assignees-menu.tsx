@@ -1,4 +1,4 @@
-import { Check, Loader2, Search, UserStar } from '@tuturuuu/icons';
+import { Check, Loader2, Search, UserStar, UserX } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenuItem,
@@ -8,7 +8,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface Member {
   id: string;
@@ -31,6 +31,7 @@ interface TaskAssigneesMenuProps {
     noMembersFound?: string;
     noMembersAvailable?: string;
     assigned?: string;
+    memberNoLongerInWorkspace?: string;
   };
 }
 
@@ -52,12 +53,42 @@ export function TaskAssigneesMenu({
     noMembersAvailable:
       translations?.noMembersAvailable ?? 'No workspace members available',
     assigned: translations?.assigned ?? 'assigned',
+    memberNoLongerInWorkspace:
+      translations?.memberNoLongerInWorkspace ??
+      'Member no longer in workspace',
   };
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Merge availableMembers with taskAssignees to include removed members
+  // Removed members are those in taskAssignees but not in availableMembers
+  const { allMembers, removedMemberIds } = useMemo(() => {
+    const memberMap = new Map<string, Member>();
+
+    // Add all available workspace members
+    for (const member of availableMembers) {
+      if (member.id) {
+        memberMap.set(member.id, member);
+      }
+    }
+
+    // Find and add removed members (in taskAssignees but not in availableMembers)
+    const removedIds = new Set<string>();
+    for (const assignee of taskAssignees) {
+      if (assignee.id && !memberMap.has(assignee.id)) {
+        memberMap.set(assignee.id, assignee);
+        removedIds.add(assignee.id);
+      }
+    }
+
+    return {
+      allMembers: Array.from(memberMap.values()),
+      removedMemberIds: removedIds,
+    };
+  }, [availableMembers, taskAssignees]);
+
   // Filter members based on search
-  const filteredMembers = availableMembers.filter(
+  const filteredMembers = allMembers.filter(
     (member) =>
       !searchQuery ||
       member.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -99,6 +130,7 @@ export function TaskAssigneesMenu({
             <div className="flex flex-col gap-1 p-1">
               {filteredMembers.map((member) => {
                 const active = taskAssignees.some((a) => a.id === member.id);
+                const isRemovedMember = removedMemberIds.has(member.id);
                 return (
                   <DropdownMenuItem
                     key={member.id}
@@ -108,14 +140,21 @@ export function TaskAssigneesMenu({
                       )
                     }
                     disabled={assigneeSaving === member.id}
+                    title={
+                      isRemovedMember ? t.memberNoLongerInWorkspace : undefined
+                    }
                     className={cn(
                       'flex cursor-pointer items-center justify-between gap-2',
-                      active && 'bg-dynamic-yellow/10 text-dynamic-yellow'
+                      isRemovedMember
+                        ? 'bg-dynamic-red/10 text-dynamic-red'
+                        : active && 'bg-dynamic-yellow/10 text-dynamic-yellow'
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       {assigneeSaving === member.id ? (
                         <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                      ) : isRemovedMember ? (
+                        <UserX className="h-4 w-4 shrink-0 text-dynamic-red" />
                       ) : (
                         <Avatar className="h-4 w-4 shrink-0">
                           <AvatarImage src={member.avatar_url} />

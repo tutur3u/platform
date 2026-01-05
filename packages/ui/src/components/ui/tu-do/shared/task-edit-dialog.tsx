@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   checkStorageQuota,
@@ -131,6 +132,7 @@ export function TaskEditDialog({
   const pathname = usePathname();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const t = useTranslations('common');
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -1268,6 +1270,33 @@ export function TaskEditDialog({
                   yjsProvider={provider}
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
+                  mentionTranslations={{
+                    delete_task: t('delete_task'),
+                    delete_task_confirmation: (name: string) =>
+                      t('delete_task_confirmation', { name }),
+                    cancel: t('cancel'),
+                    deleting: t('deleting'),
+                    set_custom_due_date: t('set_custom_due_date'),
+                    custom_due_date_description: t(
+                      'custom_due_date_description'
+                    ),
+                    remove_due_date: t('remove_due_date'),
+                    create_new_label: t('create_new_label'),
+                    create_new_label_description: t(
+                      'create_new_label_description'
+                    ),
+                    label_name: t('label_name'),
+                    color: t('color'),
+                    preview: t('preview'),
+                    creating: t('creating'),
+                    create_label: t('create_label'),
+                    create_new_project: t('create_new_project'),
+                    create_new_project_description: t(
+                      'create_new_project_description'
+                    ),
+                    project_name: t('project_name'),
+                    create_project: t('create_project'),
+                  }}
                 />
 
                 {!isCreateMode && localCalendarEvents && (
@@ -1354,6 +1383,16 @@ export function TaskEditDialog({
         onNameChange={setNewLabelName}
         onColorChange={setNewLabelColor}
         onConfirm={handleCreateLabel}
+        translations={{
+          create_new_label: t('create_new_label'),
+          create_new_label_description: t('create_new_label_description'),
+          label_name: t('label_name'),
+          color: t('color'),
+          preview: t('preview'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_label: t('create_label'),
+        }}
       />
 
       <TaskNewProjectDialog
@@ -1363,6 +1402,14 @@ export function TaskEditDialog({
         onOpenChange={setShowNewProjectDialog}
         onNameChange={setNewProjectName}
         onConfirm={handleCreateProject}
+        translations={{
+          create_new_project: t('create_new_project'),
+          create_new_project_description: t('create_new_project_description'),
+          project_name: t('project_name'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_project: t('create_project'),
+        }}
       />
 
       {boardConfig && wsId && (

@@ -173,11 +173,11 @@ async function updateProject(
       .eq('ws_id', wsId)
       .select(`
         *,
-        lead:workspace_members(...users(
+        lead:users!task_projects_lead_id_fkey(
           id,
           display_name,
           avatar_url
-        )),
+        ),
         task_project_tasks(
           task:tasks(
             id,

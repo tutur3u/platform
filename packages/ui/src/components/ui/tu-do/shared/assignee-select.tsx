@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, UserCircle, UserMinus, UserPlus, X } from '@tuturuuu/icons';
+import {
+  Search,
+  UserCircle,
+  UserMinus,
+  UserPlus,
+  UserX,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -220,10 +227,18 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     };
 
     // Filter assigned and unassigned members with additional safety checks
-    const assignedMembers = members.filter(
+    // Include assigned members who are still in the workspace
+    const assignedMembersInWorkspace = members.filter(
       (member) =>
         member?.id &&
         uniqueAssignees.some((assignee) => assignee?.id === member.id)
+    );
+
+    // Also include assigned members who are NO LONGER in the workspace (removed members)
+    // These need to be shown so they can be unassigned
+    const assignedMembersNotInWorkspace = uniqueAssignees.filter(
+      (assignee) =>
+        assignee?.id && !members.some((member) => member?.id === assignee.id)
     );
 
     const unassignedMembers = members.filter(
@@ -232,9 +247,20 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         !uniqueAssignees.some((assignee) => assignee?.id === member.id)
     );
 
+    // Combine assigned members from workspace and removed members
+    const allAssignedMembers = [
+      ...assignedMembersInWorkspace,
+      ...assignedMembersNotInWorkspace,
+    ];
+
+    // Create a Set of IDs for removed members for quick lookup
+    const removedMemberIds = new Set(
+      assignedMembersNotInWorkspace.map((m) => m.id)
+    );
+
     // Additional deduplication using O(n) Map approach
     const uniqueAssignedMembers = Array.from(
-      assignedMembers
+      allAssignedMembers
         .reduce((map: Map<string, Member>, member: Member) => {
           if (member.id) {
             map.set(member.id, member);
@@ -334,27 +360,48 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                     {t('assigned')} ({uniqueAssignedMembers.length})
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {uniqueAssignedMembers.map((member) => (
-                      <Button
-                        key={member.id}
-                        type="button"
-                        variant="default"
-                        size="xs"
-                        onClick={() => handleSelect(member.id)}
-                        className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                      >
-                        <Avatar className="h-4 w-4">
-                          <AvatarImage src={member.avatar_url} />
-                          <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                            {member.display_name?.[0] ||
-                              member.email?.[0] ||
-                              '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        {member.display_name || member.email}
-                        <X className="h-3 w-3 opacity-70" />
-                      </Button>
-                    ))}
+                    {uniqueAssignedMembers.map((member) => {
+                      const isRemovedMember = removedMemberIds.has(member.id);
+                      return (
+                        <Button
+                          key={member.id}
+                          type="button"
+                          variant="default"
+                          size="xs"
+                          onClick={() => handleSelect(member.id)}
+                          title={
+                            isRemovedMember
+                              ? t('member_no_longer_in_workspace')
+                              : undefined
+                          }
+                          className={cn(
+                            'h-7 gap-1.5 rounded-full border px-3 font-medium text-xs shadow-sm transition-all',
+                            isRemovedMember
+                              ? 'border-dynamic-red/30 bg-dynamic-red/15 text-dynamic-red hover:border-dynamic-red/50 hover:bg-dynamic-red/25'
+                              : 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25'
+                          )}
+                        >
+                          {isRemovedMember && <UserX className="h-3 w-3" />}
+                          <Avatar className="h-4 w-4">
+                            <AvatarImage src={member.avatar_url} />
+                            <AvatarFallback
+                              className={cn(
+                                'font-bold text-[9px]',
+                                isRemovedMember
+                                  ? 'bg-dynamic-red/20'
+                                  : 'bg-dynamic-orange/20'
+                              )}
+                            >
+                              {member.display_name?.[0] ||
+                                member.email?.[0] ||
+                                '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {member.display_name || member.email}
+                          <X className="h-3 w-3 opacity-70" />
+                        </Button>
+                      );
+                    })}
                   </div>
                   {uniqueAssignedMembers.length > 1 && (
                     <Button

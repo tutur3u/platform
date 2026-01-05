@@ -36,6 +36,27 @@ interface EditorExtensionsOptions {
   provider?: SupabaseProvider | null;
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
+  /** Translations for mention chip dialogs */
+  mentionTranslations?: {
+    delete_task?: string;
+    delete_task_confirmation?: string | ((name: string) => string);
+    cancel?: string;
+    deleting?: string;
+    set_custom_due_date?: string;
+    custom_due_date_description?: string;
+    remove_due_date?: string;
+    create_new_label?: string;
+    create_new_label_description?: string;
+    label_name?: string;
+    color?: string;
+    preview?: string;
+    creating?: string;
+    create_label?: string;
+    create_new_project?: string;
+    create_new_project_description?: string;
+    project_name?: string;
+    create_project?: string;
+  };
 }
 
 export function getEditorExtensions({
@@ -45,6 +66,7 @@ export function getEditorExtensions({
   provider = null,
   onImageUpload,
   onVideoUpload,
+  mentionTranslations,
 }: EditorExtensionsOptions = {}): Extensions {
   return [
     ...(doc
@@ -139,7 +161,9 @@ export function getEditorExtensions({
     Strike,
     Subscript,
     Superscript,
-    Mention,
+    Mention.configure({
+      translations: mentionTranslations,
+    }),
     DraggableListItem,
     DraggableTaskItem.configure({
       nested: true,

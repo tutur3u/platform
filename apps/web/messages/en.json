@@ -1616,6 +1616,7 @@
     "media-optional": "Media Files (Optional)",
     "meet-together": "Meet Together",
     "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
+    "member_no_longer_in_workspace": "Member no longer in workspace",
     "member-since": "Member since {date}",
     "members": "Members",
     "minimize": "minimize",
