@@ -368,7 +368,9 @@ export function useTaskActions({
           ['deleted-tasks', boardId],
           (old: Task[] | undefined) => {
             const existingIds = new Set(old?.map((t) => t.id) ?? []);
-            const toAdd = deletedTaskRecords.filter((t) => !existingIds.has(t.id));
+            const toAdd = deletedTaskRecords.filter(
+              (t) => !existingIds.has(t.id)
+            );
             if (!old) return toAdd;
             return [...toAdd, ...old];
           }
@@ -408,7 +410,10 @@ export function useTaskActions({
         queryClient.setQueryData(['tasks', boardId], previousTasks);
       }
       if (previousDeletedTasks) {
-        queryClient.setQueryData(['deleted-tasks', boardId], previousDeletedTasks);
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          previousDeletedTasks
+        );
       }
       console.error('Failed to delete task(s):', error);
       toast.error('Error', {

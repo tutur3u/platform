@@ -1104,7 +1104,10 @@ type UseDeletedTasksOptions = {
   staleTime?: number;
 };
 
-export function useDeletedTasks(boardId: string, options?: UseDeletedTasksOptions) {
+export function useDeletedTasks(
+  boardId: string,
+  options?: UseDeletedTasksOptions
+) {
   return useQuery({
     queryKey: ['deleted-tasks', boardId],
     queryFn: async () => {
