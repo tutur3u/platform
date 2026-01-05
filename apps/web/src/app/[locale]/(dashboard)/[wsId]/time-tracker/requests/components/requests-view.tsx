@@ -44,8 +44,8 @@ import { useAvailableUsers, useRequests } from '../hooks/use-requests';
 import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
 import type { RequestsViewProps } from '../utils';
 import {
-  getCategoryColorClasses,
   calculateDuration,
+  getCategoryColorClasses,
   getStatusColorClasses,
   STATUS_LABELS,
 } from '../utils';

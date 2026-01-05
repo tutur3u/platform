@@ -1421,6 +1421,9 @@ function TaskCardInner({
                         noMembersFound: t('no_members_found'),
                         noMembersAvailable: t('no_members_available'),
                         assigned: t('assigned'),
+                        memberNoLongerInWorkspace: t(
+                          'member_no_longer_in_workspace'
+                        ),
                       }}
                     />
                   )}

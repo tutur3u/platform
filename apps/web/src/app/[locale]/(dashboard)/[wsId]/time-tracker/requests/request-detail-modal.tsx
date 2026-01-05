@@ -28,9 +28,9 @@ import { useRequestEditMode } from './hooks/use-request-edit-mode';
 import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
 import {
+  getCategoryColorClasses,
   getStatusColorClasses,
   type STATUS_LABELS,
-  getCategoryColorClasses,
 } from './utils';
 
 interface RequestDetailModalProps {
