@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Editor } from '@tiptap/react';
 import {
   AlertCircle,
   Ban,
@@ -59,6 +60,168 @@ import {
 import { getPriorityIcon } from '../tu-do/utils/taskPriorityUtils';
 import { TaskSummaryPopover } from './task-summary-popover';
 
+/**
+ * Remove all mention nodes for a specific task from the editor
+ * @param editor - The Tiptap editor instance
+ * @param taskId - The ID of the task to remove mentions for
+ * @returns Number of mentions removed
+ */
+const removeTaskMentionsFromEditor = (
+  editor: Editor,
+  taskId: string
+): number => {
+  let removedCount = 0;
+
+  // Use a single transaction to delete all mentions
+  editor.commands.command(({ tr, state }) => {
+    const nodesToDelete: Array<{ from: number; to: number }> = [];
+
+    // Find all mention nodes for this task
+    state.doc.descendants((node, pos) => {
+      if (
+        node.type.name === 'mention' &&
+        node.attrs.entityType === 'task' &&
+        node.attrs.entityId === taskId
+      ) {
+        nodesToDelete.push({ from: pos, to: pos + node.nodeSize });
+      }
+    });
+
+    // Delete in reverse order to maintain correct positions
+    // When deleting from end to start, earlier positions remain valid
+    nodesToDelete
+      .sort((a, b) => b.from - a.from) // Sort by position descending
+      .forEach(({ from, to }) => {
+        tr.delete(from, to);
+        removedCount++;
+      });
+
+    return true;
+  });
+
+  return removedCount;
+};
+
+/**
+ * Clean up task mentions from all other tasks in the workspace (non-blocking background operation)
+ * @param deletedTaskId - The ID of the deleted task
+ * @param wsId - The workspace ID
+ * @param queryClient - The React Query client for cache invalidation
+ */
+const cleanupTaskMentionsGlobally = async (
+  deletedTaskId: string,
+  wsId: string,
+  _queryClient: ReturnType<typeof useQueryClient>
+): Promise<void> => {
+  const supabase = createClient();
+
+  try {
+    // Query all tasks in workspace using a single join query
+    // tasks -> workspace_boards (via board_id) -> filter by ws_id
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id, 
+        description, 
+        board_id,
+        workspace_boards!inner(ws_id)
+      `
+      )
+      .eq('workspace_boards.ws_id', wsId)
+      .is('deleted_at', null); // Only non-deleted tasks
+
+    if (error) {
+      console.error('Failed to fetch tasks for mention cleanup:', error);
+      return;
+    }
+
+    if (!tasks || tasks.length === 0) {
+      console.log('No tasks found for mention cleanup');
+      return;
+    }
+
+    console.log(
+      `Scanning ${tasks.length} tasks for mentions of deleted task ${deletedTaskId}`
+    );
+
+    // Process each task's description
+    for (const task of tasks) {
+      if (!task.description) continue;
+
+      try {
+        // Parse description JSON (Tiptap format)
+        const content =
+          typeof task.description === 'string'
+            ? JSON.parse(task.description)
+            : task.description;
+
+        // Check if it contains mentions of the deleted task
+        let hasMention = false;
+        const checkForMention = (node: any): void => {
+          if (
+            node.type === 'mention' &&
+            node.attrs?.entityType === 'task' &&
+            node.attrs?.entityId === deletedTaskId
+          ) {
+            hasMention = true;
+          }
+          if (node.content && Array.isArray(node.content)) {
+            node.content.forEach(checkForMention);
+          }
+        };
+        checkForMention(content);
+
+        if (!hasMention) continue;
+
+        // Remove mentions by filtering the content tree
+        const removeMentions = (node: any): any => {
+          if (
+            node.type === 'mention' &&
+            node.attrs?.entityType === 'task' &&
+            node.attrs?.entityId === deletedTaskId
+          ) {
+            return null; // Remove this node
+          }
+
+          if (node.content && Array.isArray(node.content)) {
+            return {
+              ...node,
+              content: node.content
+                .map(removeMentions)
+                .filter((n: any) => n !== null),
+            };
+          }
+
+          return node;
+        };
+
+        const cleanedContent = removeMentions(content);
+
+        // Update task with cleaned description
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update({ description: JSON.stringify(cleanedContent) })
+          .eq('id', task.id);
+
+        if (updateError) {
+          console.error(
+            `Failed to clean mentions from task ${task.id}:`,
+            updateError
+          );
+        }
+      } catch (parseError) {
+        console.error(
+          `Failed to parse description for task ${task.id}:`,
+          parseError
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Failed to clean up task mentions globally:', error);
+  }
+};
+
 // Extended Task type that includes board_id (denormalized field in database)
 interface TaskWithBoardId extends Task {
   board_id: string;
@@ -70,6 +233,32 @@ interface TaskMentionChipProps {
   avatarUrl?: string | null;
   subtitle?: string | null;
   className?: string;
+  editor?: Editor | null;
+  /** Optional translations for dialogs (for use in isolated React roots) */
+  translations?: {
+    // TaskDeleteDialog
+    delete_task?: string;
+    delete_task_confirmation?: string | ((name: string) => string);
+    cancel?: string;
+    deleting?: string;
+    // TaskCustomDateDialog
+    set_custom_due_date?: string;
+    custom_due_date_description?: string;
+    remove_due_date?: string;
+    // TaskNewLabelDialog
+    create_new_label?: string;
+    create_new_label_description?: string;
+    label_name?: string;
+    color?: string;
+    preview?: string;
+    creating?: string;
+    create_label?: string;
+    // TaskNewProjectDialog
+    create_new_project?: string;
+    create_new_project_description?: string;
+    project_name?: string;
+    create_project?: string;
+  };
 }
 
 export function TaskMentionChip({
@@ -78,6 +267,8 @@ export function TaskMentionChip({
   avatarUrl,
   subtitle,
   className,
+  editor: editorProp,
+  translations,
 }: TaskMentionChipProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -108,6 +299,9 @@ export function TaskMentionChip({
         .select(
           `
           *,
+          task_lists:task_lists(
+            board_id
+          ),
           assignees:task_assignees(
             user_id,
             user:users!inner(
@@ -143,6 +337,7 @@ export function TaskMentionChip({
       // Transform the data to match TaskWithBoardId type
       return {
         ...data,
+        board_id: data.task_lists?.board_id || '',
         assignees: data.assignees?.map((a: any) => ({
           id: a.user.id,
           user_id: a.user_id,
@@ -401,8 +596,35 @@ export function TaskMentionChip({
   }, [baseHandleMoveToClose, syncTaskCache, targetClosedList]);
 
   const handleDelete = useCallback(async () => {
-    return baseHandleDelete();
-  }, [baseHandleDelete]);
+    if (!task) return;
+
+    const taskId = task.id;
+
+    // Perform deletion
+    await baseHandleDelete();
+
+    // Phase 1: Clean up mentions from current editor (immediate)
+    const editor = editorProp;
+
+    if (editor) {
+      const removedCount = removeTaskMentionsFromEditor(editor, taskId);
+      if (removedCount > 0) {
+        console.log(
+          `Removed ${removedCount} mention(s) of task ${taskId} from current editor`
+        );
+      }
+    }
+
+    // Phase 2: Clean up mentions from all other tasks (non-blocking background operation)
+    if (boardConfig?.ws_id) {
+      cleanupTaskMentionsGlobally(taskId, boardConfig.ws_id, queryClient).catch(
+        (error) => {
+          console.error('Failed to clean up task mentions globally:', error);
+          // Don't show error to user - this is background cleanup
+        }
+      );
+    }
+  }, [baseHandleDelete, task, queryClient, boardConfig, editorProp]);
 
   const handleMoveToList = useCallback(
     async (targetListId: string) => {
@@ -1070,6 +1292,17 @@ export function TaskMentionChip({
             isLoading={isLoading}
             onOpenChange={setShowDeleteDialog}
             onConfirm={handleDelete}
+            translations={
+              translations
+                ? {
+                    delete_task: translations.delete_task,
+                    delete_task_confirmation:
+                      translations.delete_task_confirmation,
+                    cancel: translations.cancel,
+                    deleting: translations.deleting,
+                  }
+                : undefined
+            }
           />
 
           <TaskCustomDateDialog
@@ -1082,6 +1315,17 @@ export function TaskMentionChip({
               handleDueDateChange(null);
               setShowCustomDateDialog(false);
             }}
+            translations={
+              translations
+                ? {
+                    set_custom_due_date: translations.set_custom_due_date,
+                    custom_due_date_description:
+                      translations.custom_due_date_description,
+                    cancel: translations.cancel,
+                    remove_due_date: translations.remove_due_date,
+                  }
+                : undefined
+            }
           />
 
           <TaskNewLabelDialog
@@ -1093,6 +1337,21 @@ export function TaskMentionChip({
             onColorChange={setNewLabelColor}
             onOpenChange={setShowNewLabelDialog}
             onConfirm={createNewLabel}
+            translations={
+              translations
+                ? {
+                    create_new_label: translations.create_new_label,
+                    create_new_label_description:
+                      translations.create_new_label_description,
+                    label_name: translations.label_name,
+                    color: translations.color,
+                    preview: translations.preview,
+                    cancel: translations.cancel,
+                    creating: translations.creating,
+                    create_label: translations.create_label,
+                  }
+                : undefined
+            }
           />
 
           <TaskNewProjectDialog
@@ -1102,6 +1361,19 @@ export function TaskMentionChip({
             onNameChange={setNewProjectName}
             onOpenChange={setShowNewProjectDialog}
             onConfirm={createNewProject}
+            translations={
+              translations
+                ? {
+                    create_new_project: translations.create_new_project,
+                    create_new_project_description:
+                      translations.create_new_project_description,
+                    project_name: translations.project_name,
+                    cancel: translations.cancel,
+                    creating: translations.creating,
+                    create_project: translations.create_project,
+                  }
+                : undefined
+            }
           />
         </>
       )}

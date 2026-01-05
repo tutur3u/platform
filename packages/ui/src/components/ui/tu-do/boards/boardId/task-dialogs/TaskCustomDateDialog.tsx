@@ -12,7 +12,14 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { useTranslations } from 'next-intl';
+
+// Default translations for when component is rendered outside NextIntlClientProvider
+const defaultTranslations = {
+  set_custom_due_date: 'Set Custom Due Date',
+  custom_due_date_description: 'Select a specific date and time for this task.',
+  cancel: 'Cancel',
+  remove_due_date: 'Remove Due Date',
+};
 
 interface TaskCustomDateDialogProps {
   open: boolean;
@@ -21,6 +28,13 @@ interface TaskCustomDateDialogProps {
   onOpenChange: (open: boolean) => void;
   onDateChange: (date: Date | undefined) => void;
   onClear: () => void;
+  /** Optional translations override for use in isolated React roots */
+  translations?: {
+    set_custom_due_date?: string;
+    custom_due_date_description?: string;
+    cancel?: string;
+    remove_due_date?: string;
+  };
 }
 
 export function TaskCustomDateDialog({
@@ -30,18 +44,29 @@ export function TaskCustomDateDialog({
   onOpenChange,
   onDateChange,
   onClear,
+  translations,
 }: TaskCustomDateDialogProps) {
-  const t = useTranslations('common');
+  // Use provided translations or defaults
+  const t = {
+    set_custom_due_date:
+      translations?.set_custom_due_date ??
+      defaultTranslations.set_custom_due_date,
+    custom_due_date_description:
+      translations?.custom_due_date_description ??
+      defaultTranslations.custom_due_date_description,
+    cancel: translations?.cancel ?? defaultTranslations.cancel,
+    remove_due_date:
+      translations?.remove_due_date ?? defaultTranslations.remove_due_date,
+  };
+
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('set_custom_due_date')}</DialogTitle>
-          <DialogDescription>
-            {t('custom_due_date_description')}
-          </DialogDescription>
+          <DialogTitle>{t.set_custom_due_date}</DialogTitle>
+          <DialogDescription>{t.custom_due_date_description}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <DateTimePicker
@@ -60,7 +85,7 @@ export function TaskCustomDateDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            {t('cancel')}
+            {t.cancel}
           </Button>
           {endDate && (
             <Button
@@ -74,7 +99,7 @@ export function TaskCustomDateDialog({
               className="text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
-              {t('remove_due_date')}
+              {t.remove_due_date}
             </Button>
           )}
         </DialogFooter>

@@ -341,14 +341,42 @@ export function useTaskActions({
       ? Array.from(selectedTasks)
       : [task.id];
 
+    const now = new Date().toISOString();
+
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+    const previousDeletedTasks = queryClient.getQueryData<Task[]>([
+      'deleted-tasks',
+      boardId,
+    ]);
 
     // Optimistic update: remove tasks from cache
     queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
       if (!old) return old;
       return old.filter((t) => !tasksToDelete.includes(t.id));
     });
+
+    // Optimistic update: add tasks to recycle bin cache
+    if (previousTasks?.length) {
+      const deletedTaskRecords = tasksToDelete
+        .map((id) => previousTasks.find((t) => t.id === id))
+        .filter((t): t is Task => Boolean(t))
+        .map((t) => ({ ...t, deleted_at: now }));
+
+      if (deletedTaskRecords.length) {
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          (old: Task[] | undefined) => {
+            const existingIds = new Set(old?.map((t) => t.id) ?? []);
+            const toAdd = deletedTaskRecords.filter(
+              (t) => !existingIds.has(t.id)
+            );
+            if (!old) return toAdd;
+            return [...toAdd, ...old];
+          }
+        );
+      }
+    }
 
     const supabase = createClient();
     try {
@@ -376,12 +404,16 @@ export function useTaskActions({
       });
 
       setDeleteDialogOpen?.(false);
-
-      queryClient.invalidateQueries({ queryKey: ['deleted-tasks', boardId] });
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
         queryClient.setQueryData(['tasks', boardId], previousTasks);
+      }
+      if (previousDeletedTasks) {
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          previousDeletedTasks
+        );
       }
       console.error('Failed to delete task(s):', error);
       toast.error('Error', {
