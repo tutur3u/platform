@@ -211,14 +211,6 @@ const cleanupTaskMentionsGlobally = async (
           );
           continue;
         }
-
-        // Invalidate cache for this task
-        queryClient.invalidateQueries({ queryKey: ['task', task.id] });
-        if (task.board_id) {
-          queryClient.invalidateQueries({
-            queryKey: ['tasks', task.board_id],
-          });
-        }
       } catch (parseError) {
         console.error(
           `Failed to parse description for task ${task.id}:`,
@@ -608,15 +600,13 @@ export function TaskMentionChip({
     if (!task) return;
 
     const taskId = task.id;
-    const taskBoardId = task.board_id;
 
     // Perform deletion
     await baseHandleDelete();
 
     // Phase 1: Clean up mentions from current editor (immediate)
-    const editor =
-      editorProp ||
-      queryClient.getQueryData<Editor>(['editor-instance', taskBoardId]);
+    const editor = editorProp; 
+    
     if (editor) {
       const removedCount = removeTaskMentionsFromEditor(editor, taskId);
       if (removedCount > 0) {
