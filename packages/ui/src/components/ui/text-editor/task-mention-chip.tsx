@@ -70,6 +70,31 @@ interface TaskMentionChipProps {
   avatarUrl?: string | null;
   subtitle?: string | null;
   className?: string;
+  /** Optional translations for dialogs (for use in isolated React roots) */
+  translations?: {
+    // TaskDeleteDialog
+    delete_task?: string;
+    delete_task_confirmation?: string | ((name: string) => string);
+    cancel?: string;
+    deleting?: string;
+    // TaskCustomDateDialog
+    set_custom_due_date?: string;
+    custom_due_date_description?: string;
+    remove_due_date?: string;
+    // TaskNewLabelDialog
+    create_new_label?: string;
+    create_new_label_description?: string;
+    label_name?: string;
+    color?: string;
+    preview?: string;
+    creating?: string;
+    create_label?: string;
+    // TaskNewProjectDialog
+    create_new_project?: string;
+    create_new_project_description?: string;
+    project_name?: string;
+    create_project?: string;
+  };
 }
 
 export function TaskMentionChip({
@@ -78,6 +103,7 @@ export function TaskMentionChip({
   avatarUrl,
   subtitle,
   className,
+  translations,
 }: TaskMentionChipProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -1070,6 +1096,17 @@ export function TaskMentionChip({
             isLoading={isLoading}
             onOpenChange={setShowDeleteDialog}
             onConfirm={handleDelete}
+            translations={
+              translations
+                ? {
+                    delete_task: translations.delete_task,
+                    delete_task_confirmation:
+                      translations.delete_task_confirmation,
+                    cancel: translations.cancel,
+                    deleting: translations.deleting,
+                  }
+                : undefined
+            }
           />
 
           <TaskCustomDateDialog
@@ -1082,6 +1119,17 @@ export function TaskMentionChip({
               handleDueDateChange(null);
               setShowCustomDateDialog(false);
             }}
+            translations={
+              translations
+                ? {
+                    set_custom_due_date: translations.set_custom_due_date,
+                    custom_due_date_description:
+                      translations.custom_due_date_description,
+                    cancel: translations.cancel,
+                    remove_due_date: translations.remove_due_date,
+                  }
+                : undefined
+            }
           />
 
           <TaskNewLabelDialog
@@ -1093,6 +1141,21 @@ export function TaskMentionChip({
             onColorChange={setNewLabelColor}
             onOpenChange={setShowNewLabelDialog}
             onConfirm={createNewLabel}
+            translations={
+              translations
+                ? {
+                    create_new_label: translations.create_new_label,
+                    create_new_label_description:
+                      translations.create_new_label_description,
+                    label_name: translations.label_name,
+                    color: translations.color,
+                    preview: translations.preview,
+                    cancel: translations.cancel,
+                    creating: translations.creating,
+                    create_label: translations.create_label,
+                  }
+                : undefined
+            }
           />
 
           <TaskNewProjectDialog
@@ -1102,6 +1165,19 @@ export function TaskMentionChip({
             onNameChange={setNewProjectName}
             onOpenChange={setShowNewProjectDialog}
             onConfirm={createNewProject}
+            translations={
+              translations
+                ? {
+                    create_new_project: translations.create_new_project,
+                    create_new_project_description:
+                      translations.create_new_project_description,
+                    project_name: translations.project_name,
+                    cancel: translations.cancel,
+                    creating: translations.creating,
+                    create_project: translations.create_project,
+                  }
+                : undefined
+            }
           />
         </>
       )}

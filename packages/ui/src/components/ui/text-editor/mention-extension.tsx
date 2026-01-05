@@ -164,6 +164,12 @@ export const Mention = Node.create({
   atom: true,
   selectable: false,
 
+  addOptions() {
+    return {
+      translations: undefined,
+    };
+  },
+
   addAttributes() {
     return {
       userId: {
@@ -372,6 +378,7 @@ export const Mention = Node.create({
                   displayNumber={currentDisplayName}
                   avatarUrl={currentAvatarUrl}
                   subtitle={currentSubtitle}
+                  translations={this.options.translations}
                 />
               </QueryClientProvider>
             </ThemeProvider>
