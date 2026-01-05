@@ -27,7 +27,11 @@ import { useRequestActions } from './hooks/use-request-actions';
 import { useRequestEditMode } from './hooks/use-request-edit-mode';
 import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
-import { getStatusColorClasses, type STATUS_LABELS, getCategoryColorClasses } from './utils';
+import {
+  getStatusColorClasses,
+  type STATUS_LABELS,
+  getCategoryColorClasses,
+} from './utils';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
