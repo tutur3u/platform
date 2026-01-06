@@ -1739,6 +1739,7 @@
     "pink": "Pink",
     "pitch": "Pitch Deck",
     "pitch-description": "Tuturuuu's business plan pitch deck.",
+    "plan": "Plan",
     "please_try_again_later": "Please try again later",
     "preview": "Preview",
     "previous": "Previous",
@@ -4106,6 +4107,12 @@
     "transactions": "Transactions",
     "wallet": "Wallet",
     "wallets": "Wallets"
+  },
+  "nav-upgrade-dialog": {
+    "contact_support": "If you require immediate access to this feature, please contact our support team.",
+    "description": "The {feature} feature requires a {tier} plan or higher.",
+    "rollout_notice": "Please note that paid subscriptions are slowly rolling out and are currently unavailable. We appreciate your patience as we work to make this available to everyone.",
+    "title": "{tier} Plan Required"
   },
   "notifications": {
     "accept": "Accept",

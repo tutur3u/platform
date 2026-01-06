@@ -372,9 +372,19 @@ export function Structure({
       // Check tier requirement
       if (link.requiredWorkspaceTier) {
         const currentTier = workspace?.tier || 'FREE';
-        const requiredTier = link.requiredWorkspaceTier.requiredTier;
+        const currentTierIndex = getTierIndex(currentTier);
+        const requiredTiers = Array.isArray(
+          link.requiredWorkspaceTier.requiredTier
+        )
+          ? link.requiredWorkspaceTier.requiredTier
+          : [link.requiredWorkspaceTier.requiredTier];
 
-        if (getTierIndex(currentTier) < getTierIndex(requiredTier)) {
+        // Check if current tier meets ANY of the required tiers
+        const meetsTierRequirement = requiredTiers.some(
+          (tier) => currentTierIndex >= getTierIndex(tier)
+        );
+
+        if (!meetsTierRequirement) {
           if (link.requiredWorkspaceTier.alwaysShow) {
             return [
               {
@@ -386,6 +396,14 @@ export function Structure({
             // Hide it
             return [];
           }
+        } else {
+          // Tier requirement is met - remove the badge
+          return [
+            {
+              ...link,
+              requiredWorkspaceTier: undefined,
+            },
+          ];
         }
       }
 

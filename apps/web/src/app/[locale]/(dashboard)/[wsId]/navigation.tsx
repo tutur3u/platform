@@ -260,6 +260,10 @@ export async function WorkspaceNavigationLinks({
         ENABLE_AI_ONLY ||
         !hasSecret('ENABLE_DOCS', 'true') ||
         withoutPermission('manage_documents'),
+      requiredWorkspaceTier: {
+        requiredTier: 'PLUS',
+        alwaysShow: true,
+      },
       experimental: 'beta',
     },
     {
@@ -275,20 +279,21 @@ export async function WorkspaceNavigationLinks({
       title: t('sidebar_tabs.chat'),
       href: `/${personalOrWsId}/chat`,
       icon: <MessageCircleIcon className="h-5 w-5" />,
+      requiredWorkspaceTier: {
+        requiredTier: 'PLUS',
+        alwaysShow: true,
+      },
       experimental: 'beta',
       requireRootMember: true,
       requireRootWorkspace: true,
     },
     {
-      title: t('sidebar_tabs.drive'),
-      href: `/${personalOrWsId}/drive`,
-      icon: <HardDrive className="h-5 w-5" />,
-      disabled: withoutPermission('manage_drive'),
-      experimental: 'beta',
-    },
-    {
       title: t('sidebar_tabs.track'),
       href: `/${personalOrWsId}/time-tracker`,
+      requiredWorkspaceTier: {
+        requiredTier: 'PLUS',
+        alwaysShow: true,
+      },
       children: [
         {
           title: t('sidebar_tabs.overview'),
@@ -350,6 +355,17 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker/requests`,
         `/${personalOrWsId}/time-tracker/settings`,
       ],
+    },
+    {
+      title: t('sidebar_tabs.drive'),
+      href: `/${personalOrWsId}/drive`,
+      icon: <HardDrive className="h-5 w-5" />,
+      requiredWorkspaceTier: {
+        requiredTier: 'PRO',
+        alwaysShow: true,
+      },
+      disabled: withoutPermission('manage_drive'),
+      experimental: 'beta',
     },
     null,
     {

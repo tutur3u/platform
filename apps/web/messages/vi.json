@@ -1760,6 +1760,7 @@
     "pink": "Hồng",
     "pitch": "Kế hoạch kinh doanh",
     "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
+    "plan": "Gói",
     "please_try_again_later": "Vui lòng thử lại sau",
     "preview": "Xem trước",
     "previous": "Trước đó",
@@ -4134,6 +4135,12 @@
     "transactions": "Giao dịch",
     "wallet": "Ví",
     "wallets": "Ví"
+  },
+  "nav-upgrade-dialog": {
+    "contact_support": "Nếu bạn cần truy cập ngay vào tính năng này, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.",
+    "description": "Tính năng {feature} yêu cầu gói {tier} hoặc cao hơn.",
+    "rollout_notice": "Xin lưu ý rằng các gói đăng ký trả phí đang được triển khai dần dần và hiện tại chưa khả dụng. Chúng tôi đánh giá cao sự kiên nhẫn của bạn khi chúng tôi làm việc để cung cấp tính năng này cho tất cả mọi người.",
+    "title": "Yêu cầu Gói {tier}"
   },
   "notifications": {
     "accept": "Chấp nhận",
