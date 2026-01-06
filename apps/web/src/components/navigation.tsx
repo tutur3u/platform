@@ -1,5 +1,6 @@
 'use client';
 
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
@@ -25,7 +26,7 @@ export interface NavLink {
   children?: (NavLink | null)[];
   aliases?: string[];
   requiredWorkspaceTier?: {
-    requiredTier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+    requiredTier: WorkspaceProductTier;
     alwaysShow?: boolean;
   };
   requireRootMember?: boolean;

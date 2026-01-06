@@ -81,13 +81,15 @@ export async function getWorkspace(id: string) {
     notFound();
   }
 
-  const workspaceJoined = !!data?.workspace_members[0]?.user_id;
+  const workspaceJoined = data.workspace_members.some(
+    (member) => member.user_id === user.id
+  );
 
   // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
   const activeSubscriptions = (data.workspace_subscriptions || [])
-    .filter((sub: any) => sub?.status === 'active')
+    .filter((sub) => sub?.status === 'active')
     .sort(
-      (a: any, b: any) =>
+      (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -136,9 +138,9 @@ export async function getWorkspaces() {
   return data.map((ws) => {
     // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
     const activeSubscriptions = (ws.workspace_subscriptions || [])
-      .filter((sub: any) => sub?.status === 'active')
+      .filter((sub) => sub?.status === 'active')
       .sort(
-        (a: any, b: any) =>
+        (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
