@@ -25,6 +25,7 @@ export interface TaskRelationshipActionButtonsProps {
   createNewLabel: string;
   addExistingLabel: string;
   emptyText?: string;
+  disabled?: boolean;
 }
 
 export function TaskRelationshipActionButtons({
@@ -39,6 +40,7 @@ export function TaskRelationshipActionButtons({
   createNewLabel,
   addExistingLabel,
   emptyText = 'No available tasks',
+  disabled = false,
 }: TaskRelationshipActionButtonsProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const hasBothOptions = onCreateNew && onAddExisting;
@@ -52,7 +54,7 @@ export function TaskRelationshipActionButtons({
             <Button
               variant="outline"
               className="w-full justify-between gap-2 text-muted-foreground"
-              disabled={isSaving}
+              disabled={isSaving || disabled}
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-dynamic-purple" />
@@ -65,7 +67,7 @@ export function TaskRelationshipActionButtons({
             {/* Create new - opens dialog */}
             <DropdownMenuItem
               onClick={onCreateNew}
-              disabled={isSaving}
+              disabled={isSaving || disabled}
               className="cursor-pointer"
             >
               <Sparkles className="mr-2 h-4 w-4 text-dynamic-purple" />
@@ -74,7 +76,7 @@ export function TaskRelationshipActionButtons({
             {/* Add existing - opens search popover */}
             <PopoverTrigger asChild>
               <DropdownMenuItem
-                disabled={isSaving}
+                disabled={isSaving || disabled}
                 className="cursor-pointer"
                 onSelect={(e) => e.preventDefault()}
               >
@@ -117,7 +119,7 @@ export function TaskRelationshipActionButtons({
         variant="outline"
         className="w-full justify-start gap-2 text-muted-foreground"
         onClick={onCreateNew}
-        disabled={isSaving}
+        disabled={isSaving || disabled}
       >
         <Sparkles className="h-4 w-4 text-dynamic-purple" />
         {createNewLabel}
@@ -133,7 +135,7 @@ export function TaskRelationshipActionButtons({
           <Button
             variant="outline"
             className="w-full justify-start gap-2 text-muted-foreground"
-            disabled={isSaving}
+            disabled={isSaving || disabled}
           >
             <Plus className="h-4 w-4 text-dynamic-green" />
             {addExistingLabel}

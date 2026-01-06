@@ -115,7 +115,7 @@ export function TaskShareDialog({
       }
     },
     onSuccess: async () => {
-      toast.success(t('transaction-data-table.task_sharing.share_created'));
+      toast.success(t('common.task_sharing.share_created'));
       setEmail('');
       await queryClient.invalidateQueries({ queryKey: sharesQueryKey });
     },
@@ -123,7 +123,7 @@ export function TaskShareDialog({
       toast.error(
         error instanceof Error
           ? error.message
-          : t('transaction-data-table.task_sharing.errors.create_share')
+          : t('common.task_sharing.errors.create_share')
       );
     },
   });
@@ -148,15 +148,11 @@ export function TaskShareDialog({
       if (!res.ok) throw new Error('Failed to update permission');
     },
     onSuccess: async () => {
-      toast.success(
-        t('transaction-data-table.task_sharing.permission_updated')
-      );
+      toast.success(t('common.task_sharing.permission_updated'));
       await queryClient.invalidateQueries({ queryKey: sharesQueryKey });
     },
     onError: () => {
-      toast.error(
-        t('transaction-data-table.task_sharing.errors.update_permission')
-      );
+      toast.error(t('common.task_sharing.errors.update_permission'));
     },
   });
 
@@ -170,11 +166,11 @@ export function TaskShareDialog({
       if (!res.ok) throw new Error('Failed to remove share');
     },
     onSuccess: async () => {
-      toast.success(t('transaction-data-table.task_sharing.share_removed'));
+      toast.success(t('common.task_sharing.share_removed'));
       await queryClient.invalidateQueries({ queryKey: sharesQueryKey });
     },
     onError: () => {
-      toast.error(t('transaction-data-table.task_sharing.errors.remove_share'));
+      toast.error(t('common.task_sharing.errors.remove_share'));
     },
   });
 
@@ -198,14 +194,14 @@ export function TaskShareDialog({
       }
     },
     onSuccess: async () => {
-      toast.success(t('transaction-data-table.task_sharing.link_updated'));
+      toast.success(t('common.task_sharing.link_updated'));
       await queryClient.invalidateQueries({ queryKey: shareLinksQueryKey });
     },
     onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : t('transaction-data-table.task_sharing.errors.update_link')
+          : t('common.task_sharing.errors.update_link')
       );
     },
   });
@@ -222,9 +218,7 @@ export function TaskShareDialog({
 
   const handleAddShare = async () => {
     if (!email.trim()) {
-      toast.error(
-        t('transaction-data-table.task_sharing.errors.invalid_email')
-      );
+      toast.error(t('common.task_sharing.errors.invalid_email'));
       return;
     }
 
@@ -245,7 +239,7 @@ export function TaskShareDialog({
   const handleCopyLink = (code: string) => {
     const url = `${window.location.origin}/shared/task/${code}`;
     navigator.clipboard.writeText(url);
-    toast.success(t('transaction-data-table.task_sharing.link_copied'));
+    toast.success(t('common.task_sharing.link_copied'));
   };
 
   const handleToggleInviteOnly = async (nextRequiresInvite: boolean) => {
@@ -265,7 +259,7 @@ export function TaskShareDialog({
       <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>
-            {t('transaction-data-table.task_sharing.share_task')} &quot;
+            {t('common.task_sharing.share_task')} &quot;
             {taskName}&quot;
           </DialogTitle>
         </DialogHeader>
@@ -273,12 +267,10 @@ export function TaskShareDialog({
         <div className="space-y-6">
           {/* Add people section */}
           <div className="space-y-2">
-            <Label>{t('transaction-data-table.task_sharing.add_people')}</Label>
+            <Label>{t('common.task_sharing.add_people')}</Label>
             <div className="flex gap-2">
               <Input
-                placeholder={t(
-                  'transaction-data-table.task_sharing.email_or_name'
-                )}
+                placeholder={t('common.task_sharing.email_or_name')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => {
@@ -307,9 +299,7 @@ export function TaskShareDialog({
             </div>
           ) : shares.length > 0 ? (
             <div className="space-y-2">
-              <Label>
-                {t('transaction-data-table.task_sharing.people_with_access')}
-              </Label>
+              <Label>{t('common.task_sharing.people_with_access')}</Label>
               <div className="space-y-2 rounded-lg border p-2">
                 {shares.map((share) => (
                   <div
@@ -340,10 +330,10 @@ export function TaskShareDialog({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="view">
-                            {t('transaction-data-table.task_sharing.viewer')}
+                            {t('common.task_sharing.viewer')}
                           </SelectItem>
                           <SelectItem value="edit">
-                            {t('transaction-data-table.task_sharing.editor')}
+                            {t('common.task_sharing.editor')}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -366,21 +356,17 @@ export function TaskShareDialog({
 
           {/* Copy link section */}
           <div className="space-y-3">
-            <Label>{t('transaction-data-table.task_sharing.copy_link')}</Label>
+            <Label>{t('common.task_sharing.copy_link')}</Label>
 
             {shareLink ? (
               <div className="space-y-2 rounded-lg border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Copy className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {shareLink.public_access === 'view'
-                        ? t(
-                            'transaction-data-table.task_sharing.anyone_with_link_can_view'
-                          )
-                        : t(
-                            'transaction-data-table.task_sharing.only_invited_people'
-                          )}
+                        ? t('common.task_sharing.anyone_with_link_can_view')
+                        : t('common.task_sharing.only_invited_people')}
                     </span>
                   </div>
                   <Button
@@ -389,7 +375,7 @@ export function TaskShareDialog({
                     onClick={() => handleCopyLink(shareLink.code)}
                     disabled={creating}
                   >
-                    {t('transaction-data-table.task_sharing.copy_link')}
+                    {t('common.task_sharing.copy_link')}
                   </Button>
                 </div>
 
@@ -416,7 +402,7 @@ export function TaskShareDialog({
                       disabled={creating}
                     />
                     <span className="text-sm">
-                      {t('transaction-data-table.task_sharing.invite_only')}
+                      {t('common.task_sharing.invite_only')}
                     </span>
                   </div>
                 </div>

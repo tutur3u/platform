@@ -43,6 +43,7 @@ interface TaskDialogActionsProps {
   onClearDraft: () => void;
   onNavigateBack?: () => void;
   onOpenShareDialog?: () => void;
+  disabled?: boolean;
 }
 
 export function TaskDialogActions({
@@ -58,6 +59,7 @@ export function TaskDialogActions({
   onClearDraft,
   onNavigateBack,
   onOpenShareDialog,
+  disabled = false,
 }: TaskDialogActionsProps) {
   const t = useTranslations();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -68,7 +70,7 @@ export function TaskDialogActions({
   return (
     <>
       {/* Share button - only in edit mode */}
-      {!isCreateMode && taskId && onOpenShareDialog && (
+      {!isCreateMode && taskId && onOpenShareDialog && !disabled && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -76,19 +78,19 @@ export function TaskDialogActions({
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
               onClick={onOpenShareDialog}
-              title={t('transaction-data-table.task_sharing.share_task')}
+              title={t('common.task_sharing.share_task')}
             >
               <Share2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {t('transaction-data-table.task_sharing.share_task')}
+            {t('common.task_sharing.share_task')}
           </TooltipContent>
         </Tooltip>
       )}
 
       {/* More options menu - only in edit mode */}
-      {!isCreateMode && taskId && (
+      {!isCreateMode && taskId && !disabled && (
         <DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button
@@ -170,15 +172,17 @@ export function TaskDialogActions({
       )}
 
       {/* Close button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-        onClick={onClose}
-        title={t('common.close')}
-      >
-        <X className="h-4 w-4" />
-      </Button>
+      {!disabled && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={onClose}
+          title={t('common.close')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
 
       {/* Discard draft button - only in create mode with draft */}
       {isCreateMode && hasDraft && (

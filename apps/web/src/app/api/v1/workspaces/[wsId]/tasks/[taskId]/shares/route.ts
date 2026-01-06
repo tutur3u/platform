@@ -200,12 +200,30 @@ export async function POST(
       );
     }
 
+    // Lowercase email if provided
+    let normalizedEmail = email?.toLowerCase() || null;
+    let normalizedUserId = userId || null;
+
+    // If email provided, try to resolve to userId
+    if (normalizedEmail && !normalizedUserId) {
+      const { data: userPrivateDetails } = await supabase
+        .from('user_private_details')
+        .select('user_id')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+
+      if (userPrivateDetails) {
+        normalizedUserId = userPrivateDetails.user_id;
+        normalizedEmail = null;
+      }
+    }
+
     // If userId provided, verify user exists
-    if (userId) {
+    if (normalizedUserId) {
       const { data: targetUser } = await supabase
         .from('users')
         .select('id')
-        .eq('id', userId)
+        .eq('id', normalizedUserId)
         .single();
 
       if (!targetUser) {
@@ -213,13 +231,61 @@ export async function POST(
       }
     }
 
-    // Create share
+    // Check for existing share to avoid duplicates and handle "updates" via POST
+    let existingShareQuery = supabase
+      .from('task_shares')
+      .select('id')
+      .eq('task_id', taskId);
+
+    if (normalizedUserId) {
+      existingShareQuery = existingShareQuery.eq(
+        'shared_with_user_id',
+        normalizedUserId
+      );
+    } else if (normalizedEmail) {
+      existingShareQuery = existingShareQuery.eq(
+        'shared_with_email',
+        normalizedEmail as string
+      );
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid share recipient' },
+        { status: 400 }
+      );
+    }
+
+    const { data: existingShare } = await existingShareQuery.maybeSingle();
+
+    if (existingShare) {
+      // Update existing share
+      const { data: share, error: updateError } = await supabase
+        .from('task_shares')
+        .update({
+          permission,
+          shared_by_user_id: user.id,
+        })
+        .eq('id', existingShare.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating existing share:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to update share' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ share }, { status: 200 });
+    }
+
+    // Create new share
     const { data: share, error: shareError } = await supabase
       .from('task_shares')
       .insert({
         task_id: taskId,
-        shared_with_user_id: userId || null,
-        shared_with_email: email || null,
+        shared_with_user_id: normalizedUserId,
+        shared_with_email: normalizedEmail,
         permission,
         shared_by_user_id: user.id,
       })

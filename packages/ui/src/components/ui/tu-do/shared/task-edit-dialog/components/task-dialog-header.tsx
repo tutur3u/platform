@@ -190,6 +190,8 @@ interface TaskDialogHeaderProps {
   isPersonalWorkspace?: boolean;
   /** Callback to open share dialog */
   onOpenShareDialog?: () => void;
+  /** Whether the dialog is in read-only mode */
+  disabled?: boolean;
 }
 
 export function TaskDialogHeader({
@@ -219,6 +221,7 @@ export function TaskDialogHeader({
   onNavigateBack,
   isPersonalWorkspace = false,
   onOpenShareDialog,
+  disabled = false,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
 
@@ -370,7 +373,9 @@ export function TaskDialogHeader({
         )}
 
         {/* Quick Settings */}
-        <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
+        {!disabled && (
+          <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
+        )}
 
         <TaskDialogActions
           isCreateMode={isCreateMode}
@@ -385,10 +390,11 @@ export function TaskDialogHeader({
           onClearDraft={clearDraftState}
           onNavigateBack={onNavigateBack}
           onOpenShareDialog={onOpenShareDialog}
+          disabled={disabled}
         />
 
         {/* Hide save button in edit mode when collaboration is enabled (realtime sync) */}
-        {(isCreateMode || !collaborationMode) && (
+        {!disabled && (isCreateMode || !collaborationMode) && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

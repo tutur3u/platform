@@ -29,7 +29,9 @@ export interface UseTaskRealtimeSyncProps {
   ) => void;
   setSelectedAssignees: (value: any[] | ((prev: any[]) => any[])) => void;
   setSelectedProjects: (value: any[] | ((prev: any[]) => any[])) => void;
+  disabled?: boolean;
 }
+
 import { getDescriptionContent } from '../utils';
 
 const supabase = createClient();
@@ -61,6 +63,7 @@ export function useTaskRealtimeSync({
   setSelectedLabels,
   setSelectedAssignees,
   setSelectedProjects,
+  disabled = false,
 }: UseTaskRealtimeSyncProps): void {
   // Use refs to track current state values without triggering effect re-runs
   // This prevents subscription recreation on every state change
@@ -97,7 +100,7 @@ export function useTaskRealtimeSync({
 
   useEffect(() => {
     // Only subscribe in edit mode when dialog is open and we have a task ID
-    if (isCreateMode || !isOpen || !taskId) return;
+    if (isCreateMode || !isOpen || !taskId || disabled) return;
 
     console.log('🔄 Setting up realtime subscription for task:', taskId);
 
@@ -424,5 +427,6 @@ export function useTaskRealtimeSync({
     setSelectedListId,
     setSelectedProjects,
     setStartDate,
+    disabled,
   ]);
 }

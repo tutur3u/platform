@@ -15,6 +15,7 @@ export function SubtasksSection({
   onAddSubtask,
   onAddExistingAsSubtask,
   isSaving,
+  disabled,
 }: SubtasksSectionProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
 
@@ -52,6 +53,7 @@ export function SubtasksSection({
                 onNavigateToTask={onNavigateToTask}
                 isSaving={isSaving}
                 showRemove={false}
+                disabled={disabled}
               />
             ))}
           </div>
@@ -68,6 +70,7 @@ export function SubtasksSection({
           onAddSubtask={onAddSubtask}
           onAddExistingAsSubtask={onAddExistingAsSubtask}
           isSaving={isSaving}
+          disabled={disabled}
         />
       )}
     </div>

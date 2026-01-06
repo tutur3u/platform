@@ -67,6 +67,7 @@ export interface TaskDescriptionEditorProps {
     project_name?: string;
     create_project?: string;
   };
+  disabled?: boolean;
 }
 
 export function TaskDescriptionEditor({
@@ -92,6 +93,7 @@ export function TaskDescriptionEditor({
   onImageUpload,
   onEditorReady,
   mentionTranslations,
+  disabled = false,
 }: TaskDescriptionEditorProps) {
   const allowCollaboration = isOpen && !isCreateMode && collaborationMode;
   const supabase = createClient();
@@ -293,7 +295,7 @@ export function TaskDescriptionEditor({
           yjsDoc={allowCollaboration ? yjsDoc : null}
           yjsProvider={allowCollaboration ? yjsProvider : null}
           allowCollaboration={allowCollaboration}
-          editable={!isYjsSyncing}
+          readOnly={isYjsSyncing || disabled}
           mentionTranslations={mentionTranslations}
         />
 

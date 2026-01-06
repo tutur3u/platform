@@ -38,8 +38,7 @@ export async function GET(
     }
 
     // Look up share link (use admin client to bypass RLS)
-    const { data: shareLink, error: shareLinkError } = await 
-      adminClient
+    const { data: shareLink, error: shareLinkError } = await adminClient
       .from('task_share_links')
       .select(
         `
@@ -371,8 +370,7 @@ export async function PATCH(
     }
 
     // Look up share link and verify edit permission
-    const { data: shareLink, error: shareLinkError } = await 
-      adminClient
+    const { data: shareLink, error: shareLinkError } = await adminClient
       .from('task_share_links')
       .select('id, task_id, public_access, requires_invite')
       .eq('code', shareCode)

@@ -319,6 +319,8 @@ export function useTaskSave({
     flushEditorPendingRef,
     setIsLoading,
     setIsSaving,
+    shareCode,
+    sharedPermission,
   ]);
 
   // Keep ref updated

@@ -10,6 +10,7 @@ interface TaskNameInputProps {
   setName: (value: string) => void;
   updateName: (value: string) => void;
   flushNameUpdate: () => void;
+  disabled?: boolean;
 }
 
 export function TaskNameInput({
@@ -22,11 +23,13 @@ export function TaskNameInput({
   setName,
   updateName,
   flushNameUpdate,
+  disabled,
 }: TaskNameInputProps) {
   return (
     <div className="group">
       <Input
         ref={titleInputRef}
+        disabled={disabled}
         value={name}
         onChange={(e) => {
           setName(e.target.value);

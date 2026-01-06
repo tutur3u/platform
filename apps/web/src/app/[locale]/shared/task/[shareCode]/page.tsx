@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { API_URL } from '@/constants/common';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { API_URL } from '@/constants/common';
 import SharedTaskContent from './content';
 
 interface PageProps {

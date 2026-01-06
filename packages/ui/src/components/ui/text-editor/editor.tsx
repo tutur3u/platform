@@ -455,10 +455,10 @@ export function RichTextEditor({
     },
   });
 
-  // Update editor's editable state when readOnly prop changes
+  // Update editor's editable state when props change
   useEffect(() => {
-    if (editor) editor.setEditable(!readOnly);
-  }, [editor, readOnly]);
+    if (editor) editor.setEditable(editable && !readOnly);
+  }, [editor, editable, readOnly]);
 
   // Update editor content when the content prop changes externally
   useEffect(() => {

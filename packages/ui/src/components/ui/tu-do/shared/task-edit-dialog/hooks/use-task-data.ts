@@ -62,15 +62,14 @@ export function useTaskData({
   wsId,
   boardId,
   isOpen,
-  taskId,
-  isCreateMode = false,
+  taskId: _taskId,
+  isCreateMode: _isCreateMode = false,
   propAvailableLists,
   taskSearchQuery = '',
   sharedContext,
 }: UseTaskDataProps) {
   // If sharedContext is provided, use pre-loaded data and skip fetches
   const hasSharedContext = !!sharedContext;
-
 
   // Board configuration - fetch first to get real workspace ID
   const { data: fetchedBoardConfig } = useBoardConfig(

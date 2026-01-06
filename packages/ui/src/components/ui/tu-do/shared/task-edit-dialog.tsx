@@ -25,7 +25,6 @@ import {
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
-import { TaskShareDialog } from './task-share-dialog';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -38,8 +37,8 @@ import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands'
 import { useSuggestionMenus } from './task-edit-dialog/hooks/use-suggestion-menus';
 import { useTaskChangeDetection } from './task-edit-dialog/hooks/use-task-change-detection';
 import {
-  useTaskData,
   type SharedTaskContext,
+  useTaskData,
 } from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
@@ -51,23 +50,23 @@ import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
 import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
-
-// Re-export relationship types
-import type {
-  PendingRelationship,
-  PendingRelationshipType,
-} from './task-edit-dialog/types/pending-relationship';
 import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
+// Re-export relationship types
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from './task-edit-dialog/types/pending-relationship';
 import {
   clearDraft,
   getDraftStorageKey,
   saveYjsDescriptionToDatabase,
 } from './task-edit-dialog/utils';
+import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 
 export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
@@ -145,6 +144,12 @@ export function TaskEditDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const t = useTranslations('common');
+
+  // Disable editing if we are in a shared link with view-only permissions
+  // Defensively disable if shareCode is present but permission is not 'edit'
+  const disabled = shareCode
+    ? sharedPermission !== 'edit'
+    : sharedPermission === 'view';
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -587,6 +592,7 @@ export function TaskEditDialog({
     setSelectedLabels: formState.setSelectedLabels,
     setSelectedAssignees: formState.setSelectedAssignees,
     setSelectedProjects: formState.setSelectedProjects,
+    disabled: disabled || !!shareCode,
   });
 
   // Form reset
@@ -832,6 +838,8 @@ export function TaskEditDialog({
       avatar_url: user.avatar_url,
     };
   }, [user?.id, user?.display_name, user?.avatar_url]);
+  console.log('sharedPermission', sharedPermission);
+  console.log('shareCode', shareCode);
 
   const { handleSave, handleSaveRef } = useTaskSave({
     boardId,
@@ -1147,6 +1155,7 @@ export function TaskEditDialog({
               }
               isPersonalWorkspace={isPersonalWorkspace}
               onOpenShareDialog={() => setShowShareDialog(true)}
+              disabled={disabled}
             />
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -1161,6 +1170,7 @@ export function TaskEditDialog({
                   setName={formState.setName}
                   updateName={updateName}
                   flushNameUpdate={flushNameUpdate}
+                  disabled={disabled}
                 />
 
                 <TaskPropertiesSection
@@ -1235,6 +1245,7 @@ export function TaskEditDialog({
                   onSaveSchedulingSettings={saveSchedulingSettings}
                   schedulingSaving={schedulingSaving}
                   scheduledEvents={localCalendarEvents}
+                  disabled={disabled}
                 />
 
                 <TaskRelationshipsProperties
@@ -1268,6 +1279,7 @@ export function TaskEditDialog({
                   onAddExistingAsSubtask={addChildTask}
                   isSaving={!!savingRelationship}
                   savingTaskId={savingRelationship}
+                  disabled={disabled}
                 />
 
                 <TaskDescriptionEditor
@@ -1292,6 +1304,7 @@ export function TaskEditDialog({
                   yjsProvider={provider}
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
+                  disabled={disabled}
                   mentionTranslations={{
                     delete_task: t('delete_task'),
                     delete_task_confirmation: (name: string) =>
@@ -1374,6 +1387,7 @@ export function TaskEditDialog({
             isLoading={isLoading}
             canSave={canSave}
             handleSave={handleSave}
+            disabled={disabled}
           />
         </DialogContent>
       </Dialog>
