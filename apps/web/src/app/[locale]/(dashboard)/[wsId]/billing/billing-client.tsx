@@ -155,7 +155,7 @@ export function BillingClient({
                   )}
                 >
                   <CheckCircle className="mr-1 h-3 w-3" />
-                  Active
+                  {t('status-active')}
                 </Badge>
               </div>
 
@@ -166,7 +166,9 @@ export function BillingClient({
                 </span>
                 {currentPlan.billingCycle && (
                   <span className="text-lg text-muted-foreground">
-                    /{currentPlan.billingCycle}
+                    {currentPlan.billingCycle === 'month'
+                      ? t('per-month')
+                      : t('per-year')}
                   </span>
                 )}
               </div>

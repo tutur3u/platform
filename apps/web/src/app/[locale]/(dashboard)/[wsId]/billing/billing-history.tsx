@@ -19,7 +19,8 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { centToDollar } from '@/utils/price-helper';
 
 interface OrderItem {
@@ -27,6 +28,7 @@ interface OrderItem {
   createdAt: string;
   billingReason: string;
   totalAmount: number;
+  originalAmount: number;
   currency: string;
   status: string;
   productName: string;
@@ -42,6 +44,14 @@ function getSimpleProductName(name: string): string {
 
 export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
   const t = useTranslations('billing');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
+
+  const formatOrderDate = (date: string) =>
+    format(new Date(date), 'd MMM, yyyy', { locale: dateLocale });
+
+  const formatOrderTime = (date: string) =>
+    format(new Date(date), 'HH:mm', { locale: dateLocale });
 
   const getBillingReasonConfig = (billingReason: string) => {
     switch (billingReason) {
@@ -90,23 +100,32 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
           className:
             'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/30',
           icon: CheckCircle,
+          label: t('status-paid'),
         };
       case 'pending':
         return {
           className:
             'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/30',
           icon: Clock,
+          label: t('status-pending'),
         };
       case 'failed':
+        return {
+          className: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/30',
+          icon: XCircle,
+          label: t('status-failed'),
+        };
       case 'canceled':
         return {
           className: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/30',
           icon: XCircle,
+          label: t('status-canceled'),
         };
       default:
         return {
           className: 'bg-muted text-muted-foreground border-border',
           icon: FileText,
+          label: status.charAt(0).toUpperCase() + status.slice(1),
         };
     }
   };
@@ -168,6 +187,9 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                 const statusConfig = getStatusConfig(order.status);
                 const ReasonIcon = reasonConfig.icon;
                 const StatusIcon = statusConfig.icon;
+                const hasDiscount =
+                  order.originalAmount > 0 &&
+                  order.totalAmount < order.originalAmount;
 
                 return (
                   <TableRow
@@ -180,7 +202,10 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                     <TableCell className="whitespace-nowrap py-4">
                       <div className="flex flex-col">
                         <span className="font-medium">
-                          {format(new Date(order.createdAt), 'MMM d, yyyy')}
+                          {formatOrderDate(order.createdAt)}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {formatOrderTime(order.createdAt)}
                         </span>
                       </div>
                     </TableCell>
@@ -202,12 +227,29 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4 text-right">
-                      <span className="font-semibold">
-                        {order.currency === 'usd'
-                          ? '$'
-                          : order.currency.toUpperCase()}{' '}
-                        {centToDollar(order.totalAmount)}
-                      </span>
+                      {hasDiscount ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-muted-foreground text-xs line-through">
+                            {order.currency === 'usd'
+                              ? '$'
+                              : order.currency.toUpperCase()}{' '}
+                            {centToDollar(order.originalAmount)}
+                          </span>
+                          <span className="font-semibold text-dynamic-green">
+                            {order.currency === 'usd'
+                              ? '$'
+                              : order.currency.toUpperCase()}{' '}
+                            {centToDollar(order.totalAmount)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="font-semibold">
+                          {order.currency === 'usd'
+                            ? '$'
+                            : order.currency.toUpperCase()}{' '}
+                          {centToDollar(order.totalAmount)}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap py-4">
                       <Badge
@@ -218,8 +260,7 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                         )}
                       >
                         <StatusIcon className="h-3 w-3" />
-                        {order.status.charAt(0).toUpperCase() +
-                          order.status.slice(1)}
+                        {statusConfig.label}
                       </Badge>
                     </TableCell>
                   </TableRow>

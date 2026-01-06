@@ -3,6 +3,7 @@
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  Calendar,
   CheckCircle,
   Crown,
   Info,
@@ -21,6 +22,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import type { Plan } from './billing-client';
 import PurchaseLink from './purchase-link';
@@ -33,6 +35,8 @@ interface PlanListProps {
   onOpenChange: (open: boolean) => void;
 }
 
+type BillingCycleTab = 'month' | 'year';
+
 export function PlanList({
   currentPlan,
   products,
@@ -41,6 +45,11 @@ export function PlanList({
   onOpenChange,
 }: PlanListProps) {
   const t = useTranslations('billing');
+
+  // Default to yearly tab for better value proposition, unless current plan is monthly
+  const [selectedCycle, setSelectedCycle] = useState<BillingCycleTab>(
+    currentPlan.billingCycle === 'month' ? 'month' : 'year'
+  );
 
   // Helper to simplify plan names (remove "Tuturuuu Workspace" prefix and billing cycle suffix)
   const getSimplePlanName = (name: string): string => {
@@ -51,7 +60,7 @@ export function PlanList({
       .trim();
   };
 
-  const upgradePlans = products
+  const allPlans = products
     .map((product) => ({
       id: product.id,
       name: getSimplePlanName(product.name),
@@ -77,10 +86,14 @@ export function PlanList({
     }))
     .sort((a, b) => a.price - b.price);
 
+  // Filter plans by selected billing cycle (Free plan shown in both)
+  const filteredPlans = allPlans.filter(
+    (plan) => plan.isFree || plan.billingCycle === selectedCycle
+  );
+
   // Get plan styling based on tier
-  // NOTE: popular/bestValue badges don't show if it's the current plan
   const getPlanStyles = (
-    plan: (typeof upgradePlans)[0],
+    plan: (typeof allPlans)[0],
     isCurrentPlan: boolean
   ) => {
     if (plan.isPro) {
@@ -100,6 +113,9 @@ export function PlanList({
       };
     }
     if (plan.isPlus) {
+      const plusMonthlyIsCurrent =
+        currentPlan.name.toLowerCase().includes('plus') &&
+        currentPlan.billingCycle === 'month';
       return {
         gradient:
           'from-dynamic-blue/60 via-dynamic-cyan/40 to-dynamic-green/30',
@@ -111,7 +127,10 @@ export function PlanList({
         badgeClass:
           'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
         Icon: Zap,
-        popular: plan.billingCycle === 'month' && !isCurrentPlan,
+        popular:
+          plan.billingCycle === 'month' &&
+          !plusMonthlyIsCurrent &&
+          !isCurrentPlan,
         bestValue: false,
       };
     }
@@ -130,7 +149,7 @@ export function PlanList({
   };
 
   // Helper function to determine button state and text
-  const getPlanButtonConfig = (plan: (typeof upgradePlans)[0]) => {
+  const getPlanButtonConfig = (plan: (typeof allPlans)[0]) => {
     const isCurrentPlan = plan.id === currentPlan.productId;
 
     if (isCurrentPlan) {
@@ -142,7 +161,7 @@ export function PlanList({
       };
     }
 
-    const currentPlanData = upgradePlans.find(
+    const currentPlanData = allPlans.find(
       (p) => p.id === currentPlan.productId
     );
     const isDowngrade = currentPlanData && plan.price < currentPlanData.price;
@@ -166,7 +185,7 @@ export function PlanList({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-6xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-5xl">
         {/* Decorative Background */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
           <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/30 via-dynamic-purple/20 to-transparent blur-3xl" />
@@ -190,9 +209,47 @@ export function PlanList({
         </DialogHeader>
 
         <div className="relative z-10 mt-6 px-1">
+          {/* Billing Cycle Toggle */}
+          <div className="mb-6 flex justify-center">
+            <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-muted/50 p-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCycle('month')}
+                className={cn(
+                  'flex items-center gap-2 rounded-full px-4 py-2 font-medium text-sm transition-all',
+                  selectedCycle === 'month'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Calendar className="h-4 w-4" />
+                {t('monthly-plans')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCycle('year')}
+                className={cn(
+                  'flex items-center gap-2 rounded-full px-4 py-2 font-medium text-sm transition-all',
+                  selectedCycle === 'year'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Calendar className="h-4 w-4" />
+                {t('yearly-plans')}
+                <Badge
+                  variant="outline"
+                  className="ml-1 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0 text-[10px] text-dynamic-green"
+                >
+                  -17%
+                </Badge>
+              </button>
+            </div>
+          </div>
+
           {/* Pricing Cards Grid */}
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {upgradePlans.map((plan) => {
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {filteredPlans.map((plan) => {
               const isCurrentPlan = plan.id === currentPlan.productId;
               const styles = getPlanStyles(plan, isCurrentPlan);
               const PlanIcon = styles.Icon;
@@ -216,13 +273,13 @@ export function PlanList({
                     isCurrentPlan
                       ? 'border-2 border-primary/50 bg-primary/5'
                       : 'border border-border/50 bg-card hover:border-transparent hover:before:opacity-100',
-                    'hover:-translate-y-1 hover:shadow-2xl'
+                    'hover:-translate-y-1 hover:shadow-xl'
                   )}
                 >
                   {/* Inner Card */}
                   <div
                     className={cn(
-                      'relative h-full rounded-2xl bg-linear-to-br p-6',
+                      'relative h-full rounded-2xl bg-linear-to-br p-5',
                       styles.bgGradient
                     )}
                   >
@@ -249,23 +306,23 @@ export function PlanList({
                     </div>
 
                     {/* Plan Header */}
-                    <div className="mb-5">
-                      <div className="mb-3 flex items-center gap-2.5">
-                        <div className={cn('rounded-xl p-2.5', styles.iconBg)}>
+                    <div className="mb-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <div className={cn('rounded-lg p-2', styles.iconBg)}>
                           <PlanIcon
-                            className={cn('h-6 w-6', styles.iconColor)}
+                            className={cn('h-5 w-5', styles.iconColor)}
                           />
                         </div>
-                        <h3 className="font-black text-xl tracking-tight">
-                          {plan.name}
+                        <h3 className="font-bold text-lg tracking-tight">
+                          {plan.isFree ? t('free-tier') : plan.name}
                         </h3>
                       </div>
 
                       {/* Pricing */}
-                      <div className="flex items-baseline gap-1.5">
+                      <div className="flex items-baseline gap-1">
                         <span
                           className={cn(
-                            'font-black text-3xl',
+                            'font-black text-2xl',
                             plan.isFree
                               ? 'text-muted-foreground'
                               : styles.iconColor
@@ -274,43 +331,44 @@ export function PlanList({
                           ${centToDollar(plan.price)}
                         </span>
                         {plan.billingCycle && (
-                          <span className="text-muted-foreground">
-                            /{plan.billingCycle}
+                          <span className="text-muted-foreground text-sm">
+                            {plan.billingCycle === 'month'
+                              ? t('per-month')
+                              : t('per-year')}
                           </span>
                         )}
                       </div>
 
                       {/* Savings indicator for yearly plans */}
                       {plan.billingCycle === 'year' && (
-                        <p className="mt-1.5 font-medium text-dynamic-green text-sm">
+                        <p className="mt-1 font-medium text-dynamic-green text-xs">
                           {t('save-17-percent')}
                         </p>
                       )}
                     </div>
 
                     {/* Features List */}
-                    <ul className="mb-6 space-y-2.5">
-                      {plan.features.slice(0, 5).map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2.5">
+                    <ul className="mb-4 space-y-2">
+                      {plan.features.slice(0, 4).map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
                           <div
                             className={cn(
-                              'mt-0.5 rounded-full p-1 transition-colors',
-                              styles.iconBg,
-                              'group-hover:bg-opacity-100'
+                              'mt-0.5 rounded-full p-0.5 transition-colors',
+                              styles.iconBg
                             )}
                           >
                             <CheckCircle
-                              className={cn('h-3.5 w-3.5', styles.iconColor)}
+                              className={cn('h-3 w-3', styles.iconColor)}
                             />
                           </div>
-                          <span className="flex-1 text-muted-foreground text-sm leading-relaxed">
+                          <span className="flex-1 text-muted-foreground text-xs leading-relaxed">
                             {feature}
                           </span>
                         </li>
                       ))}
-                      {plan.features.length > 5 && (
-                        <li className="pl-7 text-muted-foreground/70 text-sm">
-                          +{plan.features.length - 5} {t('more-features')}
+                      {plan.features.length > 4 && (
+                        <li className="pl-5 text-muted-foreground/70 text-xs">
+                          +{plan.features.length - 4} {t('more-features')}
                         </li>
                       )}
                     </ul>
@@ -319,17 +377,14 @@ export function PlanList({
                     {plan.isEnterprise ? (
                       <div className="flex flex-col gap-2">
                         <Button
-                          className="w-full shadow-lg transition-all hover:scale-[1.02]"
+                          className="w-full transition-all hover:scale-[1.02]"
                           variant="outline"
                           disabled
-                          size="lg"
+                          size="sm"
                         >
-                          <Crown className="mr-2 h-5 w-5" />
+                          <Crown className="mr-2 h-4 w-4" />
                           {t('contact-sales')}
                         </Button>
-                        <p className="text-center text-muted-foreground text-xs">
-                          {t('contact-sales-desc')}
-                        </p>
                       </div>
                     ) : (
                       (() => {
@@ -340,36 +395,34 @@ export function PlanList({
                           <Button
                             variant={buttonConfig.variant}
                             className={cn(
-                              'w-full shadow-lg',
+                              'w-full',
                               isCurrentPlan &&
                                 'border-primary/30 bg-primary/5 text-primary'
                             )}
                             disabled
-                            size="lg"
+                            size="sm"
                           >
-                            <ButtonIcon className="mr-2 h-5 w-5" />
+                            <ButtonIcon className="mr-2 h-4 w-4" />
                             {buttonConfig.text}
                           </Button>
                         ) : (
                           <PurchaseLink
-                            subscriptionId={currentPlan.id}
-                            productId={plan.id}
                             wsId={wsId}
+                            productId={plan.id}
+                            subscriptionId={currentPlan.polarSubscriptionId}
                             className={cn(
-                              'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl',
-                              buttonConfig.variant === 'default'
-                                ? cn(
-                                    'bg-linear-to-r text-white',
-                                    plan.isPro
-                                      ? 'from-dynamic-purple to-dynamic-pink'
-                                      : plan.isPlus
-                                        ? 'from-dynamic-blue to-dynamic-cyan'
-                                        : 'from-primary to-primary/80'
-                                  )
-                                : 'border-2 border-muted-foreground/30 bg-transparent text-foreground hover:bg-muted/50'
+                              'w-full transition-all hover:scale-[1.02]',
+                              !plan.isFree &&
+                                buttonConfig.variant === 'default' &&
+                                plan.isPlus &&
+                                'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-blue-500/25 shadow-lg hover:shadow-blue-500/40',
+                              !plan.isFree &&
+                                buttonConfig.variant === 'default' &&
+                                plan.isPro &&
+                                'bg-linear-to-r from-purple-600 to-pink-500 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40'
                             )}
                           >
-                            <ButtonIcon className="h-5 w-5" />
+                            <ButtonIcon className="mr-2 h-4 w-4" />
                             {buttonConfig.text}
                           </PurchaseLink>
                         );
@@ -380,18 +433,16 @@ export function PlanList({
               );
             })}
           </div>
-        </div>
 
-        {/* Footer Note */}
-        <div className="relative z-10 mt-8 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-5 backdrop-blur-sm">
-          <div className="rounded-lg bg-primary/10 p-2">
-            <Info className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="font-medium text-sm">{t('plan-note-title')}</p>
-            <p className="mt-0.5 text-muted-foreground text-sm leading-relaxed">
-              {t('plan-desc')}
-            </p>
+          {/* Important Note */}
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+            <div>
+              <p className="font-semibold text-sm">{t('plan-note-title')}</p>
+              <p className="mt-0.5 text-muted-foreground text-xs">
+                {t('plan-desc')}
+              </p>
+            </div>
           </div>
         </div>
       </DialogContent>
