@@ -78,34 +78,40 @@ export function PlanList({
     .sort((a, b) => a.price - b.price);
 
   // Get plan styling based on tier
-  const getPlanStyles = (plan: (typeof upgradePlans)[0]) => {
+  // NOTE: popular/bestValue badges don't show if it's the current plan
+  const getPlanStyles = (
+    plan: (typeof upgradePlans)[0],
+    isCurrentPlan: boolean
+  ) => {
     if (plan.isPro) {
       return {
-        gradient: 'from-dynamic-purple via-dynamic-pink to-dynamic-orange',
+        gradient:
+          'from-dynamic-purple/60 via-dynamic-pink/40 to-dynamic-orange/30',
         bgGradient: 'from-dynamic-purple/5 via-transparent to-transparent',
         borderGradient:
-          'before:from-dynamic-purple before:via-dynamic-pink before:to-dynamic-orange',
+          'before:from-dynamic-purple/50 before:via-dynamic-pink/40 before:to-dynamic-orange/30',
         iconBg: 'bg-dynamic-purple/10',
         iconColor: 'text-dynamic-purple',
         badgeClass:
           'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
         Icon: Crown,
         popular: false,
-        bestValue: plan.billingCycle === 'year',
+        bestValue: plan.billingCycle === 'year' && !isCurrentPlan,
       };
     }
     if (plan.isPlus) {
       return {
-        gradient: 'from-dynamic-blue via-dynamic-cyan to-dynamic-green',
+        gradient:
+          'from-dynamic-blue/60 via-dynamic-cyan/40 to-dynamic-green/30',
         bgGradient: 'from-dynamic-blue/5 via-transparent to-transparent',
         borderGradient:
-          'before:from-dynamic-blue before:via-dynamic-cyan before:to-dynamic-green',
+          'before:from-dynamic-blue/50 before:via-dynamic-cyan/40 before:to-dynamic-green/30',
         iconBg: 'bg-dynamic-blue/10',
         iconColor: 'text-dynamic-blue',
         badgeClass:
           'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
         Icon: Zap,
-        popular: plan.billingCycle === 'month',
+        popular: plan.billingCycle === 'month' && !isCurrentPlan,
         bestValue: false,
       };
     }
@@ -187,9 +193,18 @@ export function PlanList({
           {/* Pricing Cards Grid */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {upgradePlans.map((plan) => {
-              const styles = getPlanStyles(plan);
-              const PlanIcon = styles.Icon;
               const isCurrentPlan = plan.id === currentPlan.productId;
+              const styles = getPlanStyles(plan, isCurrentPlan);
+              const PlanIcon = styles.Icon;
+
+              // Check if Pro Monthly should show Recommended (when Plus Monthly is current)
+              const plusMonthlyIsCurrent =
+                currentPlan.name.toLowerCase().includes('plus') &&
+                currentPlan.billingCycle === 'month';
+              const showRecommendedOnPro =
+                plan.isPro &&
+                plan.billingCycle === 'month' &&
+                plusMonthlyIsCurrent;
 
               return (
                 <div
@@ -213,7 +228,7 @@ export function PlanList({
                   >
                     {/* Badges */}
                     <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
-                      {styles.popular && (
+                      {(styles.popular || showRecommendedOnPro) && (
                         <Badge
                           variant="outline"
                           className="border-dynamic-blue/30 bg-linear-to-r from-dynamic-blue/20 to-dynamic-cyan/20 font-semibold text-dynamic-blue text-xs"
@@ -229,15 +244,6 @@ export function PlanList({
                         >
                           <Zap className="mr-1 h-3 w-3" />
                           {t('best-value')}
-                        </Badge>
-                      )}
-                      {isCurrentPlan && (
-                        <Badge
-                          variant="outline"
-                          className="border-primary/30 bg-primary/10 font-semibold text-primary text-xs"
-                        >
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          {t('current')}
                         </Badge>
                       )}
                     </div>
