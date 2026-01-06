@@ -27,6 +27,7 @@ import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
+import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
 
@@ -354,10 +355,6 @@ export function Structure({
   const getFilteredLinks = (
     linksToFilter: (NavLink | null)[] | undefined
   ): (NavLink | null)[] => {
-    const tiers: WorkspaceProductTier[] = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
-
-    const getTierIndex = (tier: WorkspaceProductTier) => tiers.indexOf(tier);
-
     const filtered = (linksToFilter || []).flatMap((link) => {
       // Preserve null separators
       if (!link) return [null];
@@ -372,19 +369,12 @@ export function Structure({
       // Check tier requirement
       if (link.requiredWorkspaceTier) {
         const currentTier = workspace?.tier || 'FREE';
-        const currentTierIndex = getTierIndex(currentTier);
-        const requiredTiers = Array.isArray(
+        const meetsTier = meetsAnyTierRequirement(
+          currentTier,
           link.requiredWorkspaceTier.requiredTier
-        )
-          ? link.requiredWorkspaceTier.requiredTier
-          : [link.requiredWorkspaceTier.requiredTier];
-
-        // Check if current tier meets ANY of the required tiers
-        const meetsTierRequirement = requiredTiers.some(
-          (tier) => currentTierIndex >= getTierIndex(tier)
         );
 
-        if (!meetsTierRequirement) {
+        if (!meetsTier) {
           if (link.requiredWorkspaceTier.alwaysShow) {
             return [
               {

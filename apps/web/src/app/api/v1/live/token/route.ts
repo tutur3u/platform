@@ -6,6 +6,11 @@ import {
 } from '@google/genai';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import {
+  getWorkspaceTier,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
+import { isFeatureAvailable } from '@/lib/feature-tiers';
 
 export const maxDuration = 30;
 
@@ -470,9 +475,20 @@ const ALL_TOOL_DECLARATIONS = [
   ...VISUALIZATION_TOOL_DECLARATIONS,
 ];
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    // 1. Authenticate user
+    // 1. Parse request body for workspace ID
+    const body = await request.json().catch(() => ({}));
+    const { wsId } = body as { wsId?: string };
+
+    if (!wsId) {
+      return Response.json(
+        { error: 'Missing wsId parameter' },
+        { status: 400 }
+      );
+    }
+
+    // 2. Authenticate user
     const supabase = await createClient();
     const {
       data: { user },
@@ -482,7 +498,7 @@ export async function POST() {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Validate Tuturuuu email
+    // 3. Validate Tuturuuu email
     if (!isValidTuturuuuEmail(user.email)) {
       return Response.json(
         { error: 'Only Tuturuuu emails are allowed' },
@@ -490,7 +506,37 @@ export async function POST() {
       );
     }
 
-    // 3. Generate ephemeral token with model constraints
+    // 4. Verify workspace membership
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+
+    // Check if user is a member of the workspace
+    const { error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (membershipError) {
+      return Response.json(
+        { error: 'You are not a member of this workspace' },
+        { status: 403 }
+      );
+    }
+
+    // 5. Check tier requirement for voice assistant (requires PRO tier)
+    const currentTier = await getWorkspaceTier(normalizedWsId, {
+      useAdmin: true,
+    });
+
+    if (!isFeatureAvailable('voice_assistant', currentTier)) {
+      return Response.json(
+        { error: 'Voice Assistant requires PRO tier or higher' },
+        { status: 403 }
+      );
+    }
+
+    // 4. Generate ephemeral token with model constraints
     // Use v1alpha API version for native audio features
     const client = new GoogleGenAI({
       apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
