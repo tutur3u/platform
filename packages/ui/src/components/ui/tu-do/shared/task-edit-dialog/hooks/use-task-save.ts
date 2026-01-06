@@ -23,6 +23,10 @@ export interface UseTaskSaveProps {
   isCreateMode: boolean;
   collaborationMode: boolean;
   isPersonalWorkspace: boolean;
+  /** Present when opened via /shared/task/[shareCode] */
+  shareCode?: string;
+  /** Permission returned from shared-task API */
+  sharedPermission?: 'view' | 'edit';
   parentTaskId?: string;
   pendingRelationship?: PendingRelationship;
   draftStorageKey: string;
@@ -116,6 +120,8 @@ export function useTaskSave({
   isCreateMode,
   collaborationMode,
   isPersonalWorkspace,
+  shareCode,
+  sharedPermission,
   parentTaskId,
   pendingRelationship,
   draftStorageKey,
@@ -162,6 +168,16 @@ export function useTaskSave({
 
   const handleSave = useCallback(async () => {
     if (!name?.trim()) return;
+
+    // Shared task links may be view-only.
+    if (!isCreateMode && shareCode && sharedPermission !== 'edit') {
+      toast({
+        title: 'Read-only access',
+        description: 'You do not have permission to edit this task.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Clear any pending name update
     if (nameUpdateTimerRef.current) {
@@ -249,6 +265,7 @@ export function useTaskSave({
       collaborationMode,
       flushEditorPendingRef,
       updateTaskMutation,
+      shareCode,
       toast,
       onUpdate,
       onClose,
@@ -673,6 +690,7 @@ async function handleUpdateTask({
   collaborationMode,
   flushEditorPendingRef,
   updateTaskMutation,
+  shareCode,
   toast,
   onUpdate,
   onClose,
@@ -692,6 +710,7 @@ async function handleUpdateTask({
     (() => JSONContent | null) | undefined
   >;
   updateTaskMutation: ReturnType<typeof useUpdateTask>;
+  shareCode?: string;
   toast: ReturnType<typeof useToast>['toast'];
   onUpdate: () => void;
   onClose: () => void;
@@ -719,7 +738,42 @@ async function handleUpdateTask({
   }
 
   if (taskId) {
+    // Shared task editing (no workspace membership required): use shared endpoint.
+    if (shareCode) {
+      try {
+        const response = await fetch(`/api/v1/shared/tasks/${shareCode}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(taskUpdates),
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => null);
+          throw new Error(error?.error || 'Failed to update task');
+        }
+
+        toast({
+          title: 'Task updated',
+          description: 'The task has been successfully updated.',
+        });
+        onUpdate();
+      } catch (error) {
+        console.error('Error updating shared task:', error);
+        toast({
+          title: 'Error updating task',
+          description:
+            error instanceof Error ? error.message : 'Please try again later',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+        setIsSaving(false);
+      }
+      return;
+    }
+
     onClose();
+
     updateTaskMutation.mutate(
       { taskId, updates: taskUpdates },
       {

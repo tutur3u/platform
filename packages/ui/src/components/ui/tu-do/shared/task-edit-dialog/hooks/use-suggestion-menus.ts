@@ -450,37 +450,55 @@ export function useSuggestionMenus({
     }
   }, [showCustomDatePicker, editorInstance]);
 
-  return {
-    // Slash command state
-    slashState,
-    setSlashState,
-    slashHighlightIndex,
-    setSlashHighlightIndex,
-    filteredSlashCommands,
-    slashListRef,
-    closeSlashMenu,
+  return useMemo(
+    () => ({
+      // Slash command state
+      slashState,
+      setSlashState,
+      slashHighlightIndex,
+      setSlashHighlightIndex,
+      filteredSlashCommands,
+      slashListRef,
+      closeSlashMenu,
 
-    // Mention state
-    mentionState,
-    setMentionState,
-    mentionHighlightIndex,
-    setMentionHighlightIndex,
-    filteredMentionOptions,
-    mentionListRef,
-    closeMentionMenu,
+      // Mention state
+      mentionState,
+      setMentionState,
+      mentionHighlightIndex,
+      setMentionHighlightIndex,
+      filteredMentionOptions,
+      mentionListRef,
+      closeMentionMenu,
 
-    // Custom date picker state
-    showCustomDatePicker,
-    setShowCustomDatePicker,
-    customDate,
-    setCustomDate,
-    includeTime,
-    setIncludeTime,
-    selectedHour,
-    setSelectedHour,
-    selectedMinute,
-    setSelectedMinute,
-    selectedPeriod,
-    setSelectedPeriod,
-  };
+      // Custom date picker state
+      showCustomDatePicker,
+      setShowCustomDatePicker,
+      customDate,
+      setCustomDate,
+      includeTime,
+      setIncludeTime,
+      selectedHour,
+      setSelectedHour,
+      selectedMinute,
+      setSelectedMinute,
+      selectedPeriod,
+      setSelectedPeriod,
+    }),
+    [
+      slashState,
+      slashHighlightIndex,
+      filteredSlashCommands,
+      closeSlashMenu,
+      mentionState,
+      mentionHighlightIndex,
+      filteredMentionOptions,
+      closeMentionMenu,
+      showCustomDatePicker,
+      customDate,
+      includeTime,
+      selectedHour,
+      selectedMinute,
+      selectedPeriod,
+    ]
+  );
 }

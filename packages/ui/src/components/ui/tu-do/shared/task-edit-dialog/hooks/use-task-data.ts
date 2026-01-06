@@ -8,12 +8,46 @@ import {
 
 const supabase = createClient();
 
+/**
+ * Pre-loaded data for shared task context.
+ * When provided, bypasses internal API fetches.
+ */
+export interface SharedTaskContext {
+  boardConfig?: {
+    id: string;
+    name?: string;
+    ws_id?: string;
+    ticket_prefix?: string;
+    estimation_type?: string;
+    extended_estimation?: boolean;
+    allow_zero_estimates?: boolean;
+  };
+  availableLists?: TaskList[];
+  workspaceLabels?: Array<{
+    id: string;
+    name: string;
+    color: string;
+    created_at: string;
+  }>;
+  workspaceMembers?: Array<{
+    id: string;
+    user_id: string;
+    display_name: string;
+    avatar_url?: string | null;
+  }>;
+  workspaceProjects?: Array<{ id: string; name: string; status: string }>;
+}
+
 interface UseTaskDataProps {
   wsId: string;
   boardId: string;
   isOpen: boolean;
+  taskId?: string;
+  isCreateMode?: boolean;
   propAvailableLists?: TaskList[];
   taskSearchQuery?: string;
+  /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
+  sharedContext?: SharedTaskContext;
 }
 
 // UUID validation regex
@@ -28,18 +62,28 @@ export function useTaskData({
   wsId,
   boardId,
   isOpen,
+  taskId,
+  isCreateMode = false,
   propAvailableLists,
   taskSearchQuery = '',
+  sharedContext,
 }: UseTaskDataProps) {
+  // If sharedContext is provided, use pre-loaded data and skip fetches
+  const hasSharedContext = !!sharedContext;
+
+
   // Board configuration - fetch first to get real workspace ID
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const { data: fetchedBoardConfig } = useBoardConfig(
+    hasSharedContext ? '' : boardId
+  );
+  const boardConfig = sharedContext?.boardConfig || fetchedBoardConfig;
 
   // Extract real workspace ID from boardConfig (not from URL param which might be "internal")
   const realWorkspaceId = (boardConfig as any)?.ws_id || wsId;
   const isValidWsId = isValidUUID(realWorkspaceId);
 
   // Available lists
-  const { data: availableLists = [] } = useQuery({
+  const { data: fetchedAvailableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,17 +97,23 @@ export function useTaskData({
       if (error) throw error;
       return data as TaskList[];
     },
-    enabled: !!boardId && isOpen && !propAvailableLists,
-    initialData: propAvailableLists,
+    enabled: !!boardId && isOpen && !propAvailableLists && !hasSharedContext,
+    initialData: propAvailableLists || sharedContext?.availableLists,
   });
+  const availableLists =
+    sharedContext?.availableLists ||
+    propAvailableLists ||
+    fetchedAvailableLists;
 
   // Workspace labels - use real workspace ID from boardConfig
-  const { data: workspaceLabelsData = [] } = useWorkspaceLabels(
-    isValidWsId ? realWorkspaceId : ''
+  const { data: fetchedWorkspaceLabels = [] } = useWorkspaceLabels(
+    hasSharedContext ? '' : isValidWsId ? realWorkspaceId : ''
   );
+  const workspaceLabels =
+    sharedContext?.workspaceLabels || fetchedWorkspaceLabels;
 
   // Workspace members
-  const { data: workspaceMembers = [] } = useQuery({
+  const { data: fetchedWorkspaceMembers = [] } = useQuery({
     queryKey: ['workspace-members', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
@@ -106,12 +156,14 @@ export function useTaskData({
         (a.display_name || '').localeCompare(b.display_name || '')
       );
     },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId,
+    enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  const workspaceMembers =
+    sharedContext?.workspaceMembers || fetchedWorkspaceMembers;
 
   // Task projects
-  const { data: taskProjects = [] } = useQuery({
+  const { data: fetchedTaskProjects = [] } = useQuery({
     queryKey: ['task-projects', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
@@ -135,9 +187,10 @@ export function useTaskData({
 
       return projects || [];
     },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId,
+    enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  const taskProjects = sharedContext?.workspaceProjects || fetchedTaskProjects;
 
   // Workspace tasks for mentions
   const { data: workspaceTasks = [], isLoading: workspaceTasksLoading } =
@@ -185,18 +238,18 @@ export function useTaskData({
         if (error) throw error;
         return data || [];
       },
-      enabled: !!realWorkspaceId && isOpen && isValidWsId,
+      enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
       staleTime: 2 * 60 * 1000, // 2 minutes
     });
 
   return {
     boardConfig,
     availableLists,
-    workspaceLabels: workspaceLabelsData,
+    workspaceLabels,
     workspaceMembers,
     taskProjects,
     workspaceTasks,
-    workspaceTasksLoading,
+    workspaceTasksLoading: hasSharedContext ? false : workspaceTasksLoading,
   };
 }
 

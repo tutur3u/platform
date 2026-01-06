@@ -8,6 +8,7 @@ export interface UseTaskRealtimeSyncProps {
   isCreateMode: boolean;
   isOpen: boolean;
   name: string;
+  description: any;
   priority: any;
   startDate: Date | undefined;
   endDate: Date | undefined;
@@ -15,6 +16,7 @@ export interface UseTaskRealtimeSyncProps {
   selectedListId?: string;
   pendingNameRef: React.MutableRefObject<string | null>;
   setName: (value: string) => void;
+  setDescription: (value: any) => void;
   setPriority: (value: any) => void;
   setStartDate: (value: Date | undefined) => void;
   setEndDate: (value: Date | undefined) => void;
@@ -28,6 +30,7 @@ export interface UseTaskRealtimeSyncProps {
   setSelectedAssignees: (value: any[] | ((prev: any[]) => any[])) => void;
   setSelectedProjects: (value: any[] | ((prev: any[]) => any[])) => void;
 }
+import { getDescriptionContent } from '../utils';
 
 const supabase = createClient();
 
@@ -41,6 +44,7 @@ export function useTaskRealtimeSync({
   isCreateMode,
   isOpen,
   name,
+  description,
   priority,
   startDate,
   endDate,
@@ -48,6 +52,7 @@ export function useTaskRealtimeSync({
   selectedListId,
   pendingNameRef,
   setName,
+  setDescription,
   setPriority,
   setStartDate,
   setEndDate,
@@ -60,6 +65,7 @@ export function useTaskRealtimeSync({
   // Use refs to track current state values without triggering effect re-runs
   // This prevents subscription recreation on every state change
   const nameRef = useRef(name);
+  const descriptionRef = useRef(description);
   const priorityRef = useRef(priority);
   const startDateRef = useRef(startDate);
   const endDateRef = useRef(endDate);
@@ -70,6 +76,9 @@ export function useTaskRealtimeSync({
   useEffect(() => {
     nameRef.current = name;
   }, [name]);
+  useEffect(() => {
+    descriptionRef.current = description;
+  }, [description]);
   useEffect(() => {
     priorityRef.current = priority;
   }, [priority]);
@@ -256,6 +265,18 @@ export function useTaskRealtimeSync({
             setName(updatedTask.name);
           }
 
+          // Update description if changed
+          // We need to compare stringified versions as descriptions are objects/JSON
+          // Only update if we're not in collaboration mode (handled by Yjs)
+          const currentDescStr = JSON.stringify(descriptionRef.current);
+          const newDescContent = getDescriptionContent(updatedTask.description);
+          const newDescStr = JSON.stringify(newDescContent);
+
+          if (currentDescStr !== newDescStr) {
+            console.log('📝 Updating description from realtime');
+            setDescription(newDescContent);
+          }
+
           // Update priority if changed
           if (updatedTask.priority !== priorityRef.current) {
             console.log(
@@ -396,6 +417,7 @@ export function useTaskRealtimeSync({
     setEndDate,
     setEstimationPoints,
     setName,
+    setDescription,
     setPriority,
     setSelectedAssignees,
     setSelectedLabels,

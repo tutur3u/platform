@@ -25,6 +25,7 @@ import {
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
+import { TaskShareDialog } from './task-share-dialog';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -36,12 +37,18 @@ import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
 import { useSuggestionMenus } from './task-edit-dialog/hooks/use-suggestion-menus';
 import { useTaskChangeDetection } from './task-edit-dialog/hooks/use-task-change-detection';
-import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
+import {
+  useTaskData,
+  type SharedTaskContext,
+} from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
 import { useTaskFormReset } from './task-edit-dialog/hooks/use-task-form-reset';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
+import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
+import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
+import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
 import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
 
@@ -50,17 +57,6 @@ import type {
   PendingRelationship,
   PendingRelationshipType,
 } from './task-edit-dialog/types/pending-relationship';
-
-export type { PendingRelationship, PendingRelationshipType };
-
-export {
-  type DialogHeaderInfo,
-  getTaskDialogHeaderInfo,
-} from './task-edit-dialog/components/task-dialog-header';
-
-import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
-import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
-import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
@@ -74,6 +70,13 @@ import {
 } from './task-edit-dialog/utils';
 import type { TaskFilters } from './types';
 
+export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
+
+export {
+  type DialogHeaderInfo,
+  getTaskDialogHeaderInfo,
+} from './task-edit-dialog/components/task-dialog-header';
+
 const supabase = createClient();
 
 export interface TaskEditDialogProps {
@@ -81,6 +84,10 @@ export interface TaskEditDialogProps {
   task?: Task;
   boardId: string;
   isOpen: boolean;
+  /** Present when opened via /shared/task/[shareCode] */
+  shareCode?: string;
+  /** Permission returned from shared-task API */
+  sharedPermission?: 'view' | 'edit';
   availableLists?: TaskList[];
   filters?: TaskFilters;
   mode?: 'edit' | 'create';
@@ -95,6 +102,8 @@ export interface TaskEditDialogProps {
     email?: string;
     avatar_url?: string;
   };
+  /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
+  sharedContext?: SharedTaskContext;
   onClose: () => void;
   onUpdate: () => void;
   onNavigateToTask?: (taskId: string) => Promise<void>;
@@ -110,6 +119,8 @@ export function TaskEditDialog({
   task,
   boardId,
   isOpen,
+  shareCode,
+  sharedPermission,
   availableLists: propAvailableLists,
   filters,
   mode = 'edit',
@@ -119,6 +130,7 @@ export function TaskEditDialog({
   parentTaskName,
   pendingRelationship,
   currentUser: propsCurrentUser,
+  sharedContext,
   onClose,
   onUpdate,
   onNavigateToTask,
@@ -258,8 +270,11 @@ export function TaskEditDialog({
     wsId,
     boardId,
     isOpen,
+    taskId: task?.id,
+    isCreateMode,
     propAvailableLists,
     taskSearchQuery,
+    sharedContext,
   });
 
   // Update browser tab title
@@ -305,6 +320,7 @@ export function TaskEditDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   // Calendar events state
   const [localCalendarEvents, setLocalCalendarEvents] = useState<
@@ -553,6 +569,7 @@ export function TaskEditDialog({
     isCreateMode,
     isOpen,
     name: formState.name,
+    description: formState.description,
     priority: formState.priority,
     startDate: formState.startDate,
     endDate: formState.endDate,
@@ -560,8 +577,10 @@ export function TaskEditDialog({
     selectedListId: formState.selectedListId,
     pendingNameRef,
     setName: formState.setName,
+    setDescription: formState.setDescription,
     setPriority: formState.setPriority,
     setStartDate: formState.setStartDate,
+
     setEndDate: formState.setEndDate,
     setEstimationPoints: formState.setEstimationPoints,
     setSelectedListId: formState.setSelectedListId,
@@ -820,6 +839,8 @@ export function TaskEditDialog({
     isCreateMode,
     collaborationMode,
     isPersonalWorkspace,
+    shareCode,
+    sharedPermission,
     parentTaskId,
     pendingRelationship,
     draftStorageKey,
@@ -1125,6 +1146,7 @@ export function TaskEditDialog({
                   : undefined
               }
               isPersonalWorkspace={isPersonalWorkspace}
+              onOpenShareDialog={() => setShowShareDialog(true)}
             />
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -1427,6 +1449,17 @@ export function TaskEditDialog({
           }
           onOpenChange={setShowEstimationConfigDialog}
           onSuccess={handleEstimationConfigSuccess}
+        />
+      )}
+
+      {/* Task Share Dialog */}
+      {!isCreateMode && task?.id && (
+        <TaskShareDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          taskId={task.id}
+          taskName={formState.name}
+          wsId={wsId}
         />
       )}
     </>

@@ -6,6 +6,7 @@ import {
   ExternalLink,
   ListTodo,
   MoreVertical,
+  Share2,
   Trash,
   X,
 } from '@tuturuuu/icons';
@@ -41,6 +42,7 @@ interface TaskDialogActionsProps {
   onShowDeleteDialog: () => void;
   onClearDraft: () => void;
   onNavigateBack?: () => void;
+  onOpenShareDialog?: () => void;
 }
 
 export function TaskDialogActions({
@@ -55,6 +57,7 @@ export function TaskDialogActions({
   onShowDeleteDialog,
   onClearDraft,
   onNavigateBack,
+  onOpenShareDialog,
 }: TaskDialogActionsProps) {
   const t = useTranslations();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -64,6 +67,26 @@ export function TaskDialogActions({
 
   return (
     <>
+      {/* Share button - only in edit mode */}
+      {!isCreateMode && taskId && onOpenShareDialog && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={onOpenShareDialog}
+              title={t('transaction-data-table.task_sharing.share_task')}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {t('transaction-data-table.task_sharing.share_task')}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
       {/* More options menu - only in edit mode */}
       {!isCreateMode && taskId && (
         <DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>

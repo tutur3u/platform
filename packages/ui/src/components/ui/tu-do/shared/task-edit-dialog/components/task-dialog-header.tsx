@@ -188,6 +188,8 @@ interface TaskDialogHeaderProps {
   onNavigateBack?: () => void;
   /** Whether the workspace is personal (affects auto-assign setting) */
   isPersonalWorkspace?: boolean;
+  /** Callback to open share dialog */
+  onOpenShareDialog?: () => void;
 }
 
 export function TaskDialogHeader({
@@ -216,6 +218,7 @@ export function TaskDialogHeader({
   handleSave,
   onNavigateBack,
   isPersonalWorkspace = false,
+  onOpenShareDialog,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
 
@@ -381,6 +384,7 @@ export function TaskDialogHeader({
           onShowDeleteDialog={() => setShowDeleteConfirm(true)}
           onClearDraft={clearDraftState}
           onNavigateBack={onNavigateBack}
+          onOpenShareDialog={onOpenShareDialog}
         />
 
         {/* Hide save button in edit mode when collaboration is enabled (realtime sync) */}
