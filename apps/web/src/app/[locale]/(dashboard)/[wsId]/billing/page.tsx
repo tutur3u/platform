@@ -1,7 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceSubscriptionWithProduct } from '@tuturuuu/types/db';
-import { Separator } from '@tuturuuu/ui/separator';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -59,6 +58,7 @@ const fetchSubscription = async (wsId: string) => {
   return {
     id: typedSub.id,
     status: typedSub.status,
+    createdAt: typedSub.created_at,
     currentPeriodStart: typedSub.current_period_start,
     currentPeriodEnd: typedSub.current_period_end,
     cancelAtPeriodEnd: typedSub.cancel_at_period_end,
@@ -147,11 +147,8 @@ export default async function BillingPage({
               name: subscription.product.name || 'No Plan',
               price: subscription.product.price ?? 0,
               billingCycle: subscription.product.recurring_interval,
-              startDate: subscription.currentPeriodStart
-                ? format(
-                    new Date(subscription.currentPeriodStart),
-                    'MMM d, yyyy'
-                  )
+              startDate: subscription.createdAt
+                ? format(new Date(subscription.createdAt), 'MMM d, yyyy')
                 : '-',
               nextBillingDate: subscription.currentPeriodEnd
                 ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')
@@ -185,8 +182,6 @@ export default async function BillingPage({
               wsId={wsId}
               isCreator={isCreator}
             />
-
-            <Separator className="my-8" />
 
             <BillingHistory orders={orders} />
           </div>
