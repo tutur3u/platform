@@ -1,4 +1,4 @@
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
@@ -15,7 +15,10 @@ interface WorkspaceWrapperProps<TParams extends BaseParams = BaseParams> {
   params: Promise<TParams>;
   children: (
     props: {
-      workspace: Workspace & { joined: boolean };
+      workspace: Workspace & {
+        joined: boolean;
+        tier: WorkspaceProductTier | null;
+      };
       wsId: string; // The validated UUID from workspace.id
       isPersonal: boolean;
       isRoot: boolean;

@@ -559,7 +559,7 @@ async function fetchWorkspaces() {
   const { data: workspaces, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions(workspace_subscription_products(tier))'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -602,16 +602,15 @@ async function fetchWorkspaces() {
 
   // For personal workspaces, override the name and avatar with the user's data
   return (workspaces || []).map((ws) => {
-    // Extract tier from workspace subscription
-    const subscriptions = (ws as any)?.workspace_subscriptions as
-      | Array<{
-          workspace_subscription_products: {
-            tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
-          } | null;
-        }>
-      | undefined;
+    // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
+    const activeSubscriptions = (ws.workspace_subscriptions || [])
+      .filter((sub: any) => sub?.status === 'active')
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     const tier =
-      subscriptions?.[0]?.workspace_subscription_products?.tier || null;
+      activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null;
 
     const base = ws?.personal
       ? {

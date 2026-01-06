@@ -10,6 +10,7 @@ import type {
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { notFound, redirect } from 'next/navigation';
+
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
@@ -37,9 +38,6 @@ const logWorkspaceError = (
  * Fetches a workspace by ID or the 'PERSONAL' keyword.
  *
  * @param id - Workspace ID (UUID) or 'PERSONAL' to fetch the current user's personal workspace.
- * @param options - Optional configuration object.
- * @param options.requireUserRole - If true, also verifies the current user is a member of the workspace.
- *                                   Defaults to false.
  *
  * @returns The workspace object with a `joined` boolean indicating membership status.
  *
@@ -47,14 +45,7 @@ const logWorkspaceError = (
  * @throws Calls `notFound()` (throws) if the workspace does not exist or access is denied.
  *         Callers should handle this in a try/catch or expect navigation to 404.
  */
-export async function getWorkspace(
-  id: string,
-  {
-    requireUserRole = false,
-  }: {
-    requireUserRole?: boolean;
-  } = {}
-) {
+export async function getWorkspace(id: string) {
   const supabase = await createClient();
 
   const {
@@ -66,7 +57,7 @@ export async function getWorkspace(
   const queryBuilder = supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(user_id)'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
     );
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);
@@ -74,7 +65,6 @@ export async function getWorkspace(
   if (id.toUpperCase() === 'PERSONAL') queryBuilder.eq('personal', true);
   else queryBuilder.eq('id', resolvedWorkspaceId);
 
-  if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
   const { data, error } = await queryBuilder.single();
 
   // If there's an error, log it for debugging with structured logging
@@ -82,7 +72,6 @@ export async function getWorkspace(
     logWorkspaceError('Failed to fetch workspace', error, {
       workspaceId: id,
       userId: user.id,
-      requireUserRole,
       errorCode: error.code,
       errorDetails: error.details,
     });
@@ -92,16 +81,32 @@ export async function getWorkspace(
     notFound();
   }
 
-  const workspaceJoined = !!data?.workspace_members[0]?.user_id;
-  const { workspace_members: _, ...rest } = data;
+  const workspaceJoined = data.workspace_members.some(
+    (member) => member.user_id === user.id
+  );
+
+  // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
+  const activeSubscriptions = (data.workspace_subscriptions || [])
+    .filter((sub) => sub?.status === 'active')
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+  const tier =
+    activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null;
+
+  const { workspace_members: _, workspace_subscriptions: __, ...rest } = data;
 
   const ws = {
     ...rest,
     joined: workspaceJoined,
+    tier,
   };
 
   return ws as Workspace & {
     joined: boolean;
+    tier: WorkspaceProductTier | null;
   };
 }
 
@@ -117,7 +122,7 @@ export async function getWorkspaces() {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -130,7 +135,25 @@ export async function getWorkspaces() {
     notFound();
   }
 
-  return data;
+  return data.map((ws) => {
+    // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
+    const activeSubscriptions = (ws.workspace_subscriptions || [])
+      .filter((sub) => sub?.status === 'active')
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+    const tier =
+      activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null;
+
+    const { workspace_subscriptions: _, ...rest } = ws;
+
+    return {
+      ...rest,
+      tier,
+    };
+  });
 }
 
 export async function getWorkspaceInvites() {
@@ -492,43 +515,6 @@ export async function isPersonalWorkspace(
   }
 
   return data?.personal === true;
-}
-
-/**
- * Get the subscription tier for a workspace
- * @param workspaceId - The workspace ID to get the tier for
- * @returns The workspace tier ('FREE', 'PLUS', 'PRO', 'ENTERPRISE') or null if no subscription exists
- */
-export async function getWorkspaceTier(
-  workspaceId: string
-): Promise<WorkspaceProductTier | null> {
-  const supabase = await createClient();
-
-  const resolvedWorkspaceId = resolveWorkspaceId(workspaceId);
-
-  const { data, error } = await supabase
-    .from('workspace_subscriptions')
-    .select('workspace_subscription_products(tier)')
-    .eq('ws_id', resolvedWorkspaceId)
-    .maybeSingle();
-
-  if (error) {
-    logWorkspaceError('Error fetching workspace tier', error, {
-      workspaceId,
-      resolvedWorkspaceId,
-    });
-    return null;
-  }
-
-  if (!data?.workspace_subscription_products) {
-    logWorkspaceError('No subscription found for workspace', null, {
-      workspaceId,
-      resolvedWorkspaceId,
-    });
-    return null;
-  }
-
-  return data.workspace_subscription_products.tier;
 }
 
 export async function normalizeWorkspaceId(wsId: string): Promise<string> {

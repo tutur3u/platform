@@ -266,6 +266,10 @@ export async function WorkspaceNavigationLinks({
       title: t('sidebar_tabs.whiteboards'),
       href: `/${personalOrWsId}/whiteboards`,
       icon: <PencilRuler className="h-5 w-5" />,
+      requiredWorkspaceTier: {
+        requiredTier: 'PLUS',
+        alwaysShow: true,
+      },
     },
     {
       title: t('sidebar_tabs.chat'),
