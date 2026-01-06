@@ -1,8 +1,15 @@
 'use client';
 
-import { ExternalLink } from '@tuturuuu/icons';
+import { Download, MoreHorizontal } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   Table,
   TableBody,
@@ -13,6 +20,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 
 interface OrderItem {
@@ -27,6 +35,9 @@ interface OrderItem {
 
 export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
   const t = useTranslations('billing');
+  const [generatingInvoice, setGeneratingInvoice] = useState<string | null>(
+    null
+  );
 
   const getBillingReasonColor = (billingReason: string) => {
     switch (billingReason) {
@@ -62,6 +73,43 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
     return 'outline';
   };
 
+  const handleDownloadInvoice = async (orderId: string) => {
+    setGeneratingInvoice(orderId);
+    try {
+      // 1. Generate Invoice (POST)
+      const generateRes = await fetch(
+        `/api/payment/orders/${orderId}/invoice`,
+        {
+          method: 'POST',
+        }
+      );
+
+      if (!generateRes.ok) {
+        throw new Error('Failed to generate invoice');
+      }
+
+      // 2. Get Invoice URL (GET)
+      const getRes = await fetch(`/api/payment/orders/${orderId}/invoice`);
+
+      if (!getRes.ok) {
+        throw new Error('Failed to get invoice URL');
+      }
+
+      const invoice = await getRes.json();
+
+      if (invoice?.url) {
+        window.open(invoice.url, '_blank');
+      } else {
+        throw new Error('Invoice URL not found');
+      }
+    } catch (error) {
+      toast.error('Failed to download invoice');
+      console.error(error);
+    } finally {
+      setGeneratingInvoice(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-6 shadow-sm dark:bg-card/80">
@@ -84,25 +132,25 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="w-[120px] uppercase tracking-wider">
+                  <TableHead className="w-30 uppercase tracking-wider">
                     Order ID
                   </TableHead>
-                  <TableHead className="w-[140px] uppercase tracking-wider">
+                  <TableHead className="w-35 uppercase tracking-wider">
                     Date
                   </TableHead>
-                  <TableHead className="min-w-[200px] uppercase tracking-wider">
+                  <TableHead className="min-w-50 uppercase tracking-wider">
                     Product
                   </TableHead>
-                  <TableHead className="w-[140px] uppercase tracking-wider">
+                  <TableHead className="w-35 uppercase tracking-wider">
                     Type
                   </TableHead>
-                  <TableHead className="w-[120px] text-right uppercase tracking-wider">
+                  <TableHead className="w-30 text-center uppercase tracking-wider">
                     Amount
                   </TableHead>
-                  <TableHead className="w-[120px] uppercase tracking-wider">
+                  <TableHead className="w-30 text-center uppercase tracking-wider">
                     Status
                   </TableHead>
-                  <TableHead className="w-[80px] text-center uppercase tracking-wider">
+                  <TableHead className="w-20 text-center uppercase tracking-wider">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -131,7 +179,7 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="max-w-[200px]">
+                      <div className="max-w-50">
                         <p className="truncate font-medium text-sm">
                           {order.productName}
                         </p>
@@ -145,7 +193,7 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                         {formatBillingReason(order.billingReason)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       <span className="font-semibold text-sm">
                         {order.currency === 'usd'
                           ? '$'
@@ -153,7 +201,7 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                         {centToDollar(order.totalAmount)}
                       </span>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap text-center">
                       <Badge
                         variant={getStatusBadgeVariant(order.status)}
                         className="text-xs"
@@ -163,14 +211,29 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        title="View Order Details"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center">
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadInvoice(order.id)}
+                            disabled={generatingInvoice === order.id}
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            {generatingInvoice === order.id
+                              ? 'Generating...'
+                              : 'Download Invoice'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -142,7 +142,6 @@ export default async function BillingPage({
         const currentPlan = subscription
           ? {
               id: subscription.id,
-              polarSubscriptionId: subscription.polarSubscriptionId,
               productId: subscription.product.id,
               name: subscription.product.name || 'No Plan',
               price: subscription.product.price ?? 0,
@@ -164,7 +163,6 @@ export default async function BillingPage({
             }
           : {
               id: '',
-              polarSubscriptionId: '',
               productId: '',
               name: 'Free Plan',
               price: 0,

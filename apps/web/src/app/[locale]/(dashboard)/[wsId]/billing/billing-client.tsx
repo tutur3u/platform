@@ -23,7 +23,6 @@ import { SubscriptionConfirmationDialog } from './subscription-confirmation-dial
 // Define types for the props we're passing from the server component
 export interface Plan {
   id: string;
-  polarSubscriptionId: string;
   productId: string;
   name: string;
   price: number;
