@@ -34,6 +34,40 @@ export async function GET(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  const {
+    data: hasManageSubscriptionPermission,
+    error: hasManageSubscriptionPermissionError,
+  } = await supabase.rpc('has_workspace_permission', {
+    p_user_id: user.id,
+    p_ws_id: order.ws_id,
+    p_permission: 'manage_subscription',
+  });
+
+  if (hasManageSubscriptionPermissionError) {
+    console.error(
+      'Error checking manage subscription permission:',
+      hasManageSubscriptionPermissionError
+    );
+    return NextResponse.json(
+      {
+        error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  if (!hasManageSubscriptionPermission) {
+    console.error(
+      `You are not authorized to get invoice for order: ${orderId}`
+    );
+    return NextResponse.json(
+      {
+        error: 'Unauthorized: You are not authorized to get invoice',
+      },
+      { status: 403 }
+    );
+  }
+
   try {
     const polar = createPolarClient();
     const invoice = await polar.orders.invoice({
@@ -83,6 +117,40 @@ export async function POST(
 
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  const {
+    data: hasManageSubscriptionPermission,
+    error: hasManageSubscriptionPermissionError,
+  } = await supabase.rpc('has_workspace_permission', {
+    p_user_id: user.id,
+    p_ws_id: order.ws_id,
+    p_permission: 'manage_subscription',
+  });
+
+  if (hasManageSubscriptionPermissionError) {
+    console.error(
+      'Error checking manage subscription permission:',
+      hasManageSubscriptionPermissionError
+    );
+    return NextResponse.json(
+      {
+        error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  if (!hasManageSubscriptionPermission) {
+    console.error(
+      `You are not authorized to create invoice for orderId: ${orderId}`
+    );
+    return NextResponse.json(
+      {
+        error: 'Unauthorized: You are not authorized to create invoice',
+      },
+      { status: 403 }
+    );
   }
 
   try {
