@@ -9,4 +9,7 @@ export interface UserGroup extends Entity {
   sessions?: string[];
   href?: string;
   description?: string;
+  starting_date?: string | null;
+  ending_date?: string | null;
+  notes?: string | null;
 }

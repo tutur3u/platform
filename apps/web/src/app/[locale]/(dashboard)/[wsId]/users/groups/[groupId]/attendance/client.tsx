@@ -51,6 +51,8 @@ export type InitialAttendanceProps = {
   initialDate?: string; // yyyy-MM-dd
   initialAttendance?: Record<string, AttendanceEntry>;
   canUpdateAttendance: boolean;
+  startingDate?: string | null;
+  endingDate?: string | null;
 };
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'NONE';
@@ -68,6 +70,8 @@ export default function GroupAttendanceClient({
   initialDate,
   initialAttendance = {},
   canUpdateAttendance,
+  startingDate,
+  endingDate,
 }: InitialAttendanceProps) {
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -398,6 +402,42 @@ export default function GroupAttendanceClient({
     date.getMonth() === calendarMonth.getMonth() &&
     date.getFullYear() === calendarMonth.getFullYear();
 
+  // Check if prev button should be disabled based on startingDate
+  const isPrevDisabled = useMemo(() => {
+    if (!startingDate) return false;
+
+    const start = new Date(startingDate);
+    const prevMonth = new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth() - 1,
+      1
+    );
+
+    return (
+      prevMonth.getFullYear() < start.getFullYear() ||
+      (prevMonth.getFullYear() === start.getFullYear() &&
+        prevMonth.getMonth() < start.getMonth())
+    );
+  }, [startingDate, calendarMonth]);
+
+  // Check if next button should be disabled based on endingDate
+  const isNextDisabled = useMemo(() => {
+    if (!endingDate) return false;
+
+    const end = new Date(endingDate);
+    const nextMonth = new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth() + 1,
+      1
+    );
+
+    return (
+      nextMonth.getFullYear() > end.getFullYear() ||
+      (nextMonth.getFullYear() === end.getFullYear() &&
+        nextMonth.getMonth() > end.getMonth())
+    );
+  }, [endingDate, calendarMonth]);
+
   const summary = useMemo(() => {
     const total = members.length;
     let present = 0;
@@ -464,6 +504,7 @@ export default function GroupAttendanceClient({
                   )
                 )
               }
+              disabled={isPrevDisabled}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -479,6 +520,7 @@ export default function GroupAttendanceClient({
                   )
                 )
               }
+              disabled={isNextDisabled}
             >
               <ChevronRight className="h-5 w-5" />
             </Button>

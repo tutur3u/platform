@@ -38,9 +38,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PostEmailStatus } from './post';
@@ -78,7 +79,7 @@ export default function UserGroupPosts({
   canViewPosts?: boolean;
 }) {
   const t = useTranslations();
-  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPost, setCurrentPost] = useState<UserGroupPost | undefined>();
@@ -112,46 +113,74 @@ export default function UserGroupPosts({
     }
   };
 
+  const upsertPostMutation = useMutation({
+    mutationFn: async (post: UserGroupPost) => {
+      if (!groupId) throw new Error('Missing groupId');
+      const supabase = createClient();
+      const payload = {
+        title: post.title,
+        content: post.content,
+        notes: post.notes,
+        group_id: groupId,
+      };
+
+      if (post.id) {
+        const { error } = await supabase
+          .from('user_group_posts')
+          .update(payload)
+          .eq('id', post.id)
+          .eq('group_id', groupId);
+        if (error) throw error;
+        return { kind: 'update' as const };
+      }
+
+      const { error } = await supabase.from('user_group_posts').insert(payload);
+      if (error) throw error;
+      return { kind: 'create' as const };
+    },
+    onSuccess: () => {
+      handleCloseDialog();
+      queryClient.invalidateQueries({
+        queryKey: ['group-posts', wsId, groupId],
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : t('common.error'));
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      if (!groupId) throw new Error('Missing groupId');
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('user_group_posts')
+        .delete()
+        .eq('id', postId)
+        .eq('group_id', groupId);
+      if (error) throw error;
+      return { postId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['group-posts', wsId, groupId],
+      });
+      toast.success(t('common.deleted'));
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : t('common.error'));
+    },
+  });
+
   const submitPost = async () => {
     if (!currentPost || !groupId) return;
-
-    const method = currentPost.id ? 'PUT' : 'POST';
-    const url = `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts${currentPost.id ? `/${currentPost.id}` : ''}`;
-
-    const res = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(currentPost),
-    });
-
-    if (res.ok) {
-      handleCloseDialog();
-      router.refresh();
-    } else {
-      const errorData = await res.json();
-      toast.error(errorData.message);
-    }
+    await upsertPostMutation.mutateAsync(currentPost);
   };
 
   const deletePost = async (postId: string) => {
     if (!groupId) return;
-
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${postId}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
-      handleCloseDialog();
-      router.refresh();
-    } else {
-      const errorData = await res.json();
-      toast.error(errorData.message);
-    }
+    await deletePostMutation.mutateAsync(postId);
   };
 
   return (
@@ -219,7 +248,7 @@ export default function UserGroupPosts({
       {canViewPosts && (
         <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
           <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-106.25">
               <DialogHeader>
                 <DialogTitle>
                   {currentPost?.id

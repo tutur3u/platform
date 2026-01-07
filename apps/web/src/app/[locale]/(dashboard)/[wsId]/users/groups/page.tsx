@@ -10,6 +10,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
+import { getUserGroupMemberships } from './utils';
 
 export const metadata: Metadata = {
   title: 'Groups',
@@ -122,34 +123,44 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_guest')
-    .select(
-      'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('name');
+    // Restrict visibility: users only see groups they're a member of.
+    const groupIds = await getUserGroupMemberships(wsId);
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+    if (groupIds.length === 0) {
+      return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+    }
 
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
+    const queryBuilder = supabase
+      .from('workspace_user_groups_with_guest')
+      .select(
+        'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
+        {
+          count: 'exact',
+        }
+      )
+      .eq('ws_id', wsId)
+      .in('id', groupIds)
+      .order('name');
 
-  const { data, error, count } = await queryBuilder;
-  if (error) {
+    if (q) queryBuilder.ilike('name', `%${q}%`);
+
+    if (page && pageSize) {
+      const parsedPage = parseInt(page, 10);
+      const parsedSize = parseInt(pageSize, 10);
+      const start = (parsedPage - 1) * parsedSize;
+      const end = start + parsedSize - 1;
+      queryBuilder.range(start, end);
+    }
+
+    const { data, error, count } = await queryBuilder;
+    if (error) throw error;
+
+    return { data, count } as { data: UserGroup[]; count: number };
+  } catch (error) {
     if (!retry) throw error;
     return getData(wsId, { q, pageSize, retry: false });
   }
-
-  return { data, count } as { data: UserGroup[]; count: number };
 }
