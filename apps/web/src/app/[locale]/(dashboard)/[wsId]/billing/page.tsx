@@ -153,6 +153,7 @@ export default async function BillingPage({
           ? {
               id: subscription.id,
               productId: subscription.product.id,
+              polarSubscriptionId: subscription.polarSubscriptionId || null,
               name: subscription.product.name || t('no-plan'),
               price: subscription.product.price ?? 0,
               billingCycle: subscription.product.recurring_interval,
@@ -171,6 +172,7 @@ export default async function BillingPage({
           : {
               id: '',
               productId: '',
+              polarSubscriptionId: null,
               name: t('free-plan'),
               price: 0,
               billingCycle: 'month',

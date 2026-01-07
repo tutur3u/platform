@@ -5,7 +5,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import * as React from 'react';
-import { DayPicker, type DateRange } from 'react-day-picker';
+import { type DateRange, DayPicker } from 'react-day-picker';
 import { useCalendarPreferences } from '../../hooks/use-calendar-preferences';
 import { buttonVariants } from './button';
 import {

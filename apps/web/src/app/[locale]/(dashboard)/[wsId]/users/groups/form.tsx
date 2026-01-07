@@ -1,7 +1,7 @@
 'use client';
 
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { CalendarIcon } from '@tuturuuu/icons';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
