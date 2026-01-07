@@ -7,6 +7,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
@@ -62,6 +63,7 @@ export function TaskShareDialog({
 }: TaskShareDialogProps) {
   const t = useTranslations();
   const [email, setEmail] = useState('');
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const queryClient = useQueryClient();
 
   const sharesQueryKey = useMemo(
@@ -250,6 +252,10 @@ export function TaskShareDialog({
   };
 
   const handleTogglePublicAccess = async (enabled: boolean) => {
+    if (wsId !== ROOT_WORKSPACE_ID) {
+      setShowComingSoon(true);
+      return;
+    }
     await updateLinkMutation.mutateAsync({
       publicAccess: enabled ? 'view' : 'none',
     });
@@ -414,6 +420,23 @@ export function TaskShareDialog({
           </div>
         </div>
       </DialogContent>
+
+      <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('common.coming_soon')}</DialogTitle>
+            <DialogDescription>
+              Public access for tasks is currently only available to internal
+              teams. This feature will be available to all workspaces soon!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowComingSoon(false)}>
+              {t('common.got_it')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
