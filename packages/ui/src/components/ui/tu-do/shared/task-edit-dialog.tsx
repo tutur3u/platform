@@ -592,7 +592,7 @@ export function TaskEditDialog({
     setSelectedLabels: formState.setSelectedLabels,
     setSelectedAssignees: formState.setSelectedAssignees,
     setSelectedProjects: formState.setSelectedProjects,
-    disabled: disabled || !!shareCode,
+    disabled,
   });
 
   // Form reset

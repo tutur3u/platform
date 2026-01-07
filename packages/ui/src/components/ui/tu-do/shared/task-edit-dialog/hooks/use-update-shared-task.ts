@@ -1,4 +1,8 @@
-import { type UseMutationResult, useMutation } from '@tanstack/react-query';
+import {
+  type UseMutationResult,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
 export interface TaskUpdatePayload {
@@ -19,6 +23,8 @@ export function useUpdateSharedTask(): UseMutationResult<
   Error,
   { shareCode: string; updates: TaskUpdatePayload }
 > {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
       shareCode,
@@ -40,11 +46,10 @@ export function useUpdateSharedTask(): UseMutationResult<
 
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidate shared task queries if needed, typically by shareCode
-      // But exact keys depend on how the shared page fetches data.
-      // Assuming 'shared-task' or similar. For now, general invalidation or none if the page reloads.
-      // The calling code handles toast and UI updates.
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['shared-task', variables.shareCode],
+      });
     },
   });
 }

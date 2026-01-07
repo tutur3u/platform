@@ -62,7 +62,7 @@ export async function GET(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -180,9 +180,36 @@ export async function GET(
       // but in that case we should probably just fetch and return the existing one.
       // However, the user request specifically asked to retry on 23505 for unique code generation.
       if (error.code === '23505') {
-        // If it's the task_id constraint, we should stop and fetch valid link (handled by checking conflict type, but DB error details are sometimes limited)
-        // For now, following instructions, we treat 23505 as a potential collision on code and retry.
-        // Ideally we would distinguish between task_id_unique and code_unique.
+        // Unique violation could be on 'code' OR 'task_id'.
+        // Check if a link already exists for this task.
+        const { data: existingLink } = await supabase
+          .from('task_share_links')
+          .select(
+            `
+            id,
+            task_id,
+            code,
+            public_access,
+            requires_invite,
+            created_by_user_id,
+            created_at,
+            users:created_by_user_id (
+              id,
+              display_name,
+              handle,
+              avatar_url
+            )
+          `
+          )
+          .eq('task_id', taskId)
+          .maybeSingle();
+
+        if (existingLink) {
+          shareLink = existingLink;
+          break;
+        }
+
+        // If no link exists for this task, it must be a code collision. Retry.
         attempts++;
         lastError = error;
         continue;
@@ -249,7 +276,7 @@ export async function PATCH(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -435,9 +462,18 @@ export async function DELETE(
     // Verify task belongs to workspace
     const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('id')
+      .select(
+        `
+        id,
+        task_lists!inner (
+          workspace_boards!inner (
+            workspace_id
+          )
+        )
+      `
+      )
       .eq('id', taskId)
-      .eq('workspace_id', normalizedWsId)
+      .eq('task_lists.workspace_boards.workspace_id', normalizedWsId)
       .single();
 
     if (taskError || !task) {

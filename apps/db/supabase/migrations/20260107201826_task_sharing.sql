@@ -294,6 +294,9 @@ AND (
   )
   OR
   -- Link-based access (if link exists)
+  -- NOTE: This is intentionally broad in this migration. It grants access if ANY share link exists.
+  -- The subsequent migration 20260107204000_task_share_links_single_link.sql will tighten this
+  -- by enforcing public_access = 'view'.
   EXISTS (
     SELECT 1 FROM task_share_links tsl
     WHERE tsl.task_id = _task_id

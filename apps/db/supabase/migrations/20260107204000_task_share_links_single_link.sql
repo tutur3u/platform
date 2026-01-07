@@ -24,6 +24,12 @@ ALTER TABLE public.task_share_links
   CHECK (NOT requires_invite OR public_access = 'none');
 
 -- Migrate existing data to exactly one link per task.
+-- IRREVERSIBLE DESTRUCTIVE MIGRATION:
+-- We explicitly delete duplicate rows from public.task_share_links because we must consolidate
+-- duplicates to enforce the new UNIQUE constraint on task_id.
+-- This logic uses CTEs (ranked_links, repoint_uses) to keep the most recent link and
+-- repoint any existing usage in public.task_share_link_uses to that kept link before
+-- deleting the others from public.task_share_links.
 -- Keep the most recently created link for each task and re-point uses to it.
 WITH ranked_links AS (
   SELECT

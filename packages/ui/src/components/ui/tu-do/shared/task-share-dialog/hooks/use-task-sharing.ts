@@ -5,6 +5,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { z } from 'zod';
 
 export interface TaskShare {
   id: string;
@@ -26,7 +27,41 @@ export interface TaskShareLink {
   requires_invite: boolean;
 }
 
-export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
+export interface UseTaskSharingResult {
+  shares: TaskShare[];
+  shareLink: TaskShareLink | undefined;
+  loading: boolean;
+  creating: boolean;
+  showComingSoon: boolean;
+  setShowComingSoon: (show: boolean) => void;
+  handleAddShare: (email: string) => Promise<boolean>;
+  handleUpdatePermission: (
+    shareId: string,
+    permission: 'view' | 'edit'
+  ) => Promise<void>;
+  handleRemoveShare: (shareId: string) => Promise<void>;
+  handleCopyLink: (code: string) => Promise<void>;
+  handleToggleInviteOnly: (nextRequiresInvite: boolean) => Promise<void>;
+  handleTogglePublicAccess: (enabled: boolean) => Promise<void>;
+}
+
+async function parseApiError(
+  res: Response,
+  fallbackMessage: string
+): Promise<string> {
+  try {
+    const error = await res.json();
+    return error?.error || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
+
+export function useTaskSharing(
+  wsId: string,
+  taskId: string,
+  open: boolean
+): UseTaskSharingResult {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const [showComingSoon, setShowComingSoon] = useState(false);
@@ -57,6 +92,7 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
   const shareLinksQuery = useQuery({
     queryKey: shareLinksQueryKey,
     enabled: open,
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<TaskShareLink> => {
       const res = await fetch(
         `/api/v1/workspaces/${wsId}/tasks/${taskId}/share-links`
@@ -79,8 +115,7 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
       );
 
       if (!res.ok) {
-        const error = await res.json().catch(() => null);
-        throw new Error(error?.error || 'Failed to create share');
+        throw new Error(await parseApiError(res, 'Failed to create share'));
       }
     },
     onSuccess: async () => {
@@ -113,14 +148,22 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
         }
       );
 
-      if (!res.ok) throw new Error('Failed to update permission');
+      if (!res.ok) {
+        throw new Error(
+          await parseApiError(res, 'Failed to update permission')
+        );
+      }
     },
     onSuccess: async () => {
       toast.success(t('common.task_sharing.permission_updated'));
       await queryClient.invalidateQueries({ queryKey: sharesQueryKey });
     },
-    onError: () => {
-      toast.error(t('common.task_sharing.errors.update_permission'));
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('common.task_sharing.errors.update_permission')
+      );
     },
   });
 
@@ -131,14 +174,20 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
         { method: 'DELETE' }
       );
 
-      if (!res.ok) throw new Error('Failed to remove share');
+      if (!res.ok) {
+        throw new Error(await parseApiError(res, 'Failed to remove share'));
+      }
     },
     onSuccess: async () => {
       toast.success(t('common.task_sharing.share_removed'));
       await queryClient.invalidateQueries({ queryKey: sharesQueryKey });
     },
-    onError: () => {
-      toast.error(t('common.task_sharing.errors.remove_share'));
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('common.task_sharing.errors.remove_share')
+      );
     },
   });
 
@@ -157,8 +206,9 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
       );
 
       if (!res.ok) {
-        const error = await res.json().catch(() => null);
-        throw new Error(error?.error || 'Failed to update share link');
+        throw new Error(
+          await parseApiError(res, 'Failed to update share link')
+        );
       }
     },
     onSuccess: async () => {
@@ -175,21 +225,15 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
   });
 
   const handleAddShare = async (email: string) => {
-    // Regex for email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const trimmedEmail = email.trim();
+    const emailSchema = z.string().trim().email();
+    const result = emailSchema.safeParse(email);
 
-    if (!trimmedEmail) {
+    if (!result.success) {
       toast.error(t('common.task_sharing.errors.invalid_email'));
       return false;
     }
 
-    if (!emailRegex.test(trimmedEmail)) {
-      toast.error(t('common.task_sharing.errors.invalid_email'));
-      return false;
-    }
-
-    await addShareMutation.mutateAsync({ email: trimmedEmail });
+    await addShareMutation.mutateAsync({ email: result.data });
     return true;
   };
 
