@@ -121,18 +121,49 @@ async function getData(
     page = '1',
     pageSize = '10',
     retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {},
+  hasManageUsers: boolean = false
 ) {
   try {
     const supabase = await createClient();
 
-    // Restrict visibility: users only see groups they're a member of.
-    const groupIds = await getUserGroupMemberships(wsId);
+    // Users with manage_users permission can see all groups.
+    // Otherwise, restrict visibility to groups they're a member of.
+    if (!hasManageUsers) {
+      const groupIds = await getUserGroupMemberships(wsId);
+      if (groupIds.length === 0) {
+        return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+      }
 
-    if (groupIds.length === 0) {
-      return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+      const queryBuilder = supabase
+        .from('workspace_user_groups_with_guest')
+        .select(
+          'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
+          {
+            count: 'exact',
+          }
+        )
+        .eq('ws_id', wsId)
+        .in('id', groupIds)
+        .order('name');
+
+      if (q) queryBuilder.ilike('name', `%${q}%`);
+
+      if (page && pageSize) {
+        const parsedPage = parseInt(page, 10);
+        const parsedSize = parseInt(pageSize, 10);
+        const start = (parsedPage - 1) * parsedSize;
+        const end = start + parsedSize - 1;
+        queryBuilder.range(start, end);
+      }
+
+      const { data, error, count } = await queryBuilder;
+      if (error) throw error;
+
+      return { data, count } as { data: UserGroup[]; count: number };
     }
 
+    // For users with manage_users permission, show all groups
     const queryBuilder = supabase
       .from('workspace_user_groups_with_guest')
       .select(
@@ -142,7 +173,6 @@ async function getData(
         }
       )
       .eq('ws_id', wsId)
-      .in('id', groupIds)
       .order('name');
 
     if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -161,6 +191,6 @@ async function getData(
     return { data, count } as { data: UserGroup[]; count: number };
   } catch (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, { q, pageSize, retry: false }, hasManageUsers);
   }
 }
