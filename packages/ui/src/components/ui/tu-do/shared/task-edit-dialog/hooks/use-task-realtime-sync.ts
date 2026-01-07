@@ -1,20 +1,25 @@
+import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useEffect, useRef } from 'react';
 import type { WorkspaceTaskLabel } from '../types';
+import { getDescriptionContent } from '../utils';
 
 export interface UseTaskRealtimeSyncProps {
   taskId?: string;
   isCreateMode: boolean;
   isOpen: boolean;
   name: string;
+  description: JSONContent | null;
   priority: any;
   startDate: Date | undefined;
   endDate: Date | undefined;
   estimationPoints: number | null | undefined;
   selectedListId?: string;
+  collaborationMode: boolean;
   pendingNameRef: React.MutableRefObject<string | null>;
   setName: (value: string) => void;
+  setDescription: React.Dispatch<React.SetStateAction<JSONContent | null>>;
   setPriority: (value: any) => void;
   setStartDate: (value: Date | undefined) => void;
   setEndDate: (value: Date | undefined) => void;
@@ -27,6 +32,7 @@ export interface UseTaskRealtimeSyncProps {
   ) => void;
   setSelectedAssignees: (value: any[] | ((prev: any[]) => any[])) => void;
   setSelectedProjects: (value: any[] | ((prev: any[]) => any[])) => void;
+  disabled?: boolean;
 }
 
 const supabase = createClient();
@@ -41,13 +47,16 @@ export function useTaskRealtimeSync({
   isCreateMode,
   isOpen,
   name,
+  description,
   priority,
   startDate,
   endDate,
   estimationPoints,
   selectedListId,
+  collaborationMode,
   pendingNameRef,
   setName,
+  setDescription,
   setPriority,
   setStartDate,
   setEndDate,
@@ -56,10 +65,12 @@ export function useTaskRealtimeSync({
   setSelectedLabels,
   setSelectedAssignees,
   setSelectedProjects,
+  disabled = false,
 }: UseTaskRealtimeSyncProps): void {
   // Use refs to track current state values without triggering effect re-runs
   // This prevents subscription recreation on every state change
   const nameRef = useRef(name);
+  const descriptionRef = useRef(description);
   const priorityRef = useRef(priority);
   const startDateRef = useRef(startDate);
   const endDateRef = useRef(endDate);
@@ -70,6 +81,9 @@ export function useTaskRealtimeSync({
   useEffect(() => {
     nameRef.current = name;
   }, [name]);
+  useEffect(() => {
+    descriptionRef.current = description;
+  }, [description]);
   useEffect(() => {
     priorityRef.current = priority;
   }, [priority]);
@@ -88,7 +102,7 @@ export function useTaskRealtimeSync({
 
   useEffect(() => {
     // Only subscribe in edit mode when dialog is open and we have a task ID
-    if (isCreateMode || !isOpen || !taskId) return;
+    if (isCreateMode || !isOpen || !taskId || disabled) return;
 
     console.log('🔄 Setting up realtime subscription for task:', taskId);
 
@@ -256,6 +270,22 @@ export function useTaskRealtimeSync({
             setName(updatedTask.name);
           }
 
+          // Update description if changed
+          // We need to compare stringified versions as descriptions are objects/JSON
+          // Only update if we're not in collaboration mode (handled by Yjs)
+          if (!collaborationMode) {
+            const currentDescStr = JSON.stringify(descriptionRef.current);
+            const newDescContent = getDescriptionContent(
+              updatedTask.description
+            );
+            const newDescStr = JSON.stringify(newDescContent);
+
+            if (currentDescStr !== newDescStr) {
+              console.log('📝 Updating description from realtime');
+              setDescription(newDescContent);
+            }
+          }
+
           // Update priority if changed
           if (updatedTask.priority !== priorityRef.current) {
             console.log(
@@ -393,14 +423,17 @@ export function useTaskRealtimeSync({
     isOpen,
     taskId,
     pendingNameRef.current,
+    collaborationMode,
     setEndDate,
     setEstimationPoints,
     setName,
+    setDescription,
     setPriority,
     setSelectedAssignees,
     setSelectedLabels,
     setSelectedListId,
     setSelectedProjects,
     setStartDate,
+    disabled,
   ]);
 }

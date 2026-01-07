@@ -136,9 +136,10 @@ export function DraggableListItemView({
     return allMentionedTasksCompleted;
   }, [manualOverride, node.attrs.checked, allMentionedTasksCompleted]);
 
-  // Handler for checkbox change - tracks manual override
   const handleCheckboxChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!editor.isEditable) return;
+
       const pos = getPos();
       if (typeof pos !== 'number') return;
 
@@ -154,6 +155,17 @@ export function DraggableListItemView({
       });
     },
     [editor, getPos, node.attrs]
+  );
+
+  // Prevent click events when read-only
+  const handleCheckboxClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (!editor.isEditable) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+    [editor]
   );
 
   const handleMouseEnter = (event: React.MouseEvent) => {
@@ -264,15 +276,20 @@ export function DraggableListItemView({
       {/* Task Item Checkbox (only for task items) */}
       {isTaskItem && (
         <label
-          className="mr-2 flex shrink-0 select-none pt-[0.453rem]"
+          className={cn(
+            'task-list-checkbox-label mr-2 flex shrink-0 select-none pt-[0.453rem]',
+            !editor.isEditable && 'pointer-events-none'
+          )}
           contentEditable={false}
         >
           <input
             type="checkbox"
             checked={isChecked}
+            disabled={!editor.isEditable}
             onChange={handleCheckboxChange}
+            onClick={handleCheckboxClick}
             className={cn(
-              'h-4.5 w-4.5 cursor-pointer appearance-none',
+              'task-list-checkbox h-4.5 w-4.5 cursor-pointer appearance-none',
               'rounded-lg border-2 bg-background',
               'transition-all duration-150',
               'checked:bg-center checked:bg-size-[14px_14px] checked:bg-no-repeat',

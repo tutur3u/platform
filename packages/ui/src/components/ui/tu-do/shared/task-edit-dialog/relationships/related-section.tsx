@@ -16,6 +16,7 @@ export function RelatedSection({
   onRemoveRelated,
   onNavigateToTask,
   onAddRelatedTaskDialog,
+  disabled,
 }: RelatedSectionProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
 
@@ -41,6 +42,7 @@ export function RelatedSection({
                 onRemove={() => onRemoveRelated(task.id)}
                 isSaving={isSaving}
                 isRemoving={isSaving && savingTaskId === task.id}
+                disabled={disabled}
               />
             ))}
           </div>
@@ -63,6 +65,7 @@ export function RelatedSection({
         createNewLabel="Create new related task"
         addExistingLabel="Add existing related task"
         emptyText="No available tasks"
+        disabled={disabled}
       />
 
       <p className="text-muted-foreground text-xs">

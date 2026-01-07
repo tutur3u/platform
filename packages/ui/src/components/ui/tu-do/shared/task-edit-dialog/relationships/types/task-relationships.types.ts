@@ -55,6 +55,7 @@ export interface TaskRelationshipsPropertiesProps {
   // Saving state
   isSaving: boolean;
   savingTaskId?: string | null;
+  disabled?: boolean;
 }
 
 // Props for TabButton component
@@ -75,6 +76,7 @@ export interface ClickableTaskItemProps {
   isSaving: boolean;
   isRemoving?: boolean;
   showRemove?: boolean;
+  disabled?: boolean;
 }
 
 // Props for TaskSearchPopoverContent component
@@ -89,6 +91,7 @@ export interface TaskSearchPopoverContentProps {
   isSaving: boolean;
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
+  disabled?: boolean;
 }
 
 // Props for TaskSearchPopover component (with trigger)
@@ -102,6 +105,7 @@ export interface TaskSearchPopoverProps {
   placeholder?: string;
   emptyText: string;
   isSaving: boolean;
+  disabled?: boolean;
 }
 
 // Props for ParentSection component
@@ -116,6 +120,7 @@ export interface ParentSectionProps {
   onRemoveParent: () => void;
   onNavigateToTask: (taskId: string) => void;
   onAddParentTask?: () => void; // Opens dialog to create new parent task
+  disabled?: boolean;
 }
 
 // Props for SubtasksSection component
@@ -129,6 +134,7 @@ export interface SubtasksSectionProps {
   onAddSubtask?: () => void;
   onAddExistingAsSubtask?: (task: RelatedTaskInfo) => Promise<void>;
   isSaving: boolean;
+  disabled?: boolean;
 }
 
 // Props for SubtaskActionButtons component
@@ -140,6 +146,7 @@ export interface SubtaskActionButtonsProps {
   onAddSubtask?: () => void;
   onAddExistingAsSubtask?: (task: RelatedTaskInfo) => Promise<void>;
   isSaving: boolean;
+  disabled?: boolean;
 }
 
 // Props for DependenciesSection component
@@ -157,6 +164,7 @@ export interface DependenciesSectionProps {
   onNavigateToTask: (taskId: string) => void;
   onAddBlockingTaskDialog?: () => void; // Opens dialog to create new blocking task
   onAddBlockedByTaskDialog?: () => void; // Opens dialog to create new blocked-by task
+  disabled?: boolean;
 }
 
 // Props for RelatedSection component
@@ -170,4 +178,5 @@ export interface RelatedSectionProps {
   onRemoveRelated: (taskId: string) => void;
   onNavigateToTask: (taskId: string) => void;
   onAddRelatedTaskDialog?: () => void; // Opens dialog to create new related task;
+  disabled?: boolean;
 }

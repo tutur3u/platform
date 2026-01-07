@@ -16,6 +16,7 @@ export function ParentSection({
   onRemoveParent,
   onNavigateToTask,
   onAddParentTask,
+  disabled,
 }: ParentSectionProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
 
@@ -33,6 +34,7 @@ export function ParentSection({
           onRemove={onRemoveParent}
           isSaving={isSaving}
           isRemoving={isSaving && savingTaskId === parentTask.id}
+          disabled={disabled}
         />
       ) : (
         <TaskRelationshipActionButtons
@@ -50,6 +52,7 @@ export function ParentSection({
           createNewLabel="Create new parent task"
           addExistingLabel="Add existing task as parent"
           emptyText="No available parent tasks"
+          disabled={disabled}
         />
       )}
 

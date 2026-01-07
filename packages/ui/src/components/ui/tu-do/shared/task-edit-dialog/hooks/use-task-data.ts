@@ -5,8 +5,84 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { useRef } from 'react';
+import { z } from 'zod';
+
+const SharedTaskContextSchema = z.object({
+  boardConfig: z
+    .object({
+      id: z.string(),
+      name: z.string().nullish(),
+      ws_id: z.string().nullish(),
+      ticket_prefix: z.string().nullish(),
+      estimation_type: z.string().nullish(),
+      extended_estimation: z.boolean().nullish(),
+      allow_zero_estimates: z.boolean().nullish(),
+    })
+    .optional(),
+  availableLists: z.array(z.any()).optional(), // Schemas for complex types can be added if needed, checking array is basic safety
+  workspaceLabels: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        color: z.string(),
+        created_at: z.string(),
+      })
+    )
+    .optional(),
+  workspaceMembers: z
+    .array(
+      z.object({
+        id: z.string(),
+        user_id: z.string(),
+        display_name: z.string(),
+        avatar_url: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
+  workspaceProjects: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        status: z.string(),
+      })
+    )
+    .optional(),
+});
 
 const supabase = createClient();
+
+/**
+ * Pre-loaded data for shared task context.
+ * When provided, bypasses internal API fetches.
+ */
+export interface SharedTaskContext {
+  boardConfig?: {
+    id: string;
+    name?: string;
+    ws_id?: string;
+    ticket_prefix?: string;
+    estimation_type?: string;
+    extended_estimation?: boolean;
+    allow_zero_estimates?: boolean;
+  };
+  availableLists?: TaskList[];
+  workspaceLabels?: Array<{
+    id: string;
+    name: string;
+    color: string;
+    created_at: string;
+  }>;
+  workspaceMembers?: Array<{
+    id: string;
+    user_id: string;
+    display_name: string;
+    avatar_url?: string | null;
+  }>;
+  workspaceProjects?: Array<{ id: string; name: string; status: string }>;
+}
 
 interface UseTaskDataProps {
   wsId: string;
@@ -14,6 +90,8 @@ interface UseTaskDataProps {
   isOpen: boolean;
   propAvailableLists?: TaskList[];
   taskSearchQuery?: string;
+  /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
+  sharedContext?: SharedTaskContext;
 }
 
 // UUID validation regex
@@ -30,16 +108,34 @@ export function useTaskData({
   isOpen,
   propAvailableLists,
   taskSearchQuery = '',
+  sharedContext,
 }: UseTaskDataProps) {
+  // If sharedContext is provided, use pre-loaded data and skip fetches
+  const hasSharedContext = !!sharedContext;
+
+  // Validate sharedContext only once when it changes (not every render)
+  // This is purely for debugging/logging purposes
+  const validationPerformed = useRef(false);
+  if (hasSharedContext && sharedContext && !validationPerformed.current) {
+    validationPerformed.current = true;
+    const validation = SharedTaskContextSchema.safeParse(sharedContext);
+    if (!validation.success) {
+      console.error('Invalid SharedTaskContext:', validation.error);
+    }
+  }
+
   // Board configuration - fetch first to get real workspace ID
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const { data: fetchedBoardConfig } = useBoardConfig(
+    hasSharedContext ? null : boardId
+  );
+  const boardConfig = sharedContext?.boardConfig || fetchedBoardConfig;
 
   // Extract real workspace ID from boardConfig (not from URL param which might be "internal")
-  const realWorkspaceId = (boardConfig as any)?.ws_id || wsId;
+  const realWorkspaceId = boardConfig?.ws_id || wsId;
   const isValidWsId = isValidUUID(realWorkspaceId);
 
   // Available lists
-  const { data: availableLists = [] } = useQuery({
+  const { data: fetchedAvailableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,17 +149,23 @@ export function useTaskData({
       if (error) throw error;
       return data as TaskList[];
     },
-    enabled: !!boardId && isOpen && !propAvailableLists,
-    initialData: propAvailableLists,
+    enabled: !!boardId && isOpen && !propAvailableLists && !hasSharedContext,
+    initialData: sharedContext?.availableLists || propAvailableLists,
   });
+  const availableLists =
+    sharedContext?.availableLists ||
+    propAvailableLists ||
+    fetchedAvailableLists;
 
   // Workspace labels - use real workspace ID from boardConfig
-  const { data: workspaceLabelsData = [] } = useWorkspaceLabels(
-    isValidWsId ? realWorkspaceId : ''
+  const { data: fetchedWorkspaceLabels = [] } = useWorkspaceLabels(
+    hasSharedContext ? '' : isValidWsId ? realWorkspaceId : ''
   );
+  const workspaceLabels =
+    sharedContext?.workspaceLabels || fetchedWorkspaceLabels;
 
   // Workspace members
-  const { data: workspaceMembers = [] } = useQuery({
+  const { data: fetchedWorkspaceMembers = [] } = useQuery({
     queryKey: ['workspace-members', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
@@ -106,12 +208,14 @@ export function useTaskData({
         (a.display_name || '').localeCompare(b.display_name || '')
       );
     },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId,
+    enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  const workspaceMembers =
+    sharedContext?.workspaceMembers || fetchedWorkspaceMembers;
 
   // Task projects
-  const { data: taskProjects = [] } = useQuery({
+  const { data: fetchedTaskProjects = [] } = useQuery({
     queryKey: ['task-projects', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
@@ -135,9 +239,10 @@ export function useTaskData({
 
       return projects || [];
     },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId,
+    enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  const taskProjects = sharedContext?.workspaceProjects || fetchedTaskProjects;
 
   // Workspace tasks for mentions
   const { data: workspaceTasks = [], isLoading: workspaceTasksLoading } =
@@ -185,18 +290,18 @@ export function useTaskData({
         if (error) throw error;
         return data || [];
       },
-      enabled: !!realWorkspaceId && isOpen && isValidWsId,
+      enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
       staleTime: 2 * 60 * 1000, // 2 minutes
     });
 
   return {
     boardConfig,
     availableLists,
-    workspaceLabels: workspaceLabelsData,
+    workspaceLabels,
     workspaceMembers,
     taskProjects,
     workspaceTasks,
-    workspaceTasksLoading,
+    workspaceTasksLoading: hasSharedContext ? false : workspaceTasksLoading,
   };
 }
 

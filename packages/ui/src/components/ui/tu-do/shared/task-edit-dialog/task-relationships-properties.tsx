@@ -51,6 +51,7 @@ export function TaskRelationshipsProperties({
   onAddExistingAsSubtask,
   isSaving,
   savingTaskId,
+  disabled,
 }: TaskRelationshipsPropertiesProps) {
   const t = useTranslations();
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -206,6 +207,7 @@ export function TaskRelationshipsProperties({
                 onRemoveParent={onRemoveParent}
                 onNavigateToTask={onNavigateToTask}
                 onAddParentTask={onAddParentTask}
+                disabled={disabled}
               />
             )}
 
@@ -220,6 +222,7 @@ export function TaskRelationshipsProperties({
                 onAddSubtask={onAddSubtask}
                 onAddExistingAsSubtask={onAddExistingAsSubtask}
                 isSaving={isSaving}
+                disabled={disabled}
               />
             )}
 
@@ -238,6 +241,7 @@ export function TaskRelationshipsProperties({
                 onNavigateToTask={onNavigateToTask}
                 onAddBlockingTaskDialog={onAddBlockingTaskDialog}
                 onAddBlockedByTaskDialog={onAddBlockedByTaskDialog}
+                disabled={disabled}
               />
             )}
 
@@ -252,6 +256,7 @@ export function TaskRelationshipsProperties({
                 onRemoveRelated={onRemoveRelatedTask}
                 onNavigateToTask={onNavigateToTask}
                 onAddRelatedTaskDialog={onAddRelatedTaskDialog}
+                disabled={disabled}
               />
             )}
           </div>

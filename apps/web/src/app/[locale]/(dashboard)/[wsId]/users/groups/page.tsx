@@ -57,7 +57,11 @@ export default async function WorkspaceUserGroupsPage({
           );
         }
 
-        const { data, count } = await getData(wsId, await searchParams);
+        const { data, count } = await getData(
+          wsId,
+          await searchParams,
+          containsPermission('manage_users')
+        );
 
         // Check permissions for the form and actions
         const canCreate = containsPermission('create_user_groups');

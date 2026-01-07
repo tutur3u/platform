@@ -5,8 +5,8 @@ import { Button } from '@tuturuuu/ui/button';
 import type { PropsWithChildren } from 'react';
 
 interface PurchaseLinkProps {
-  subscriptionId?: string;
-  productId: string;
+  subscriptionId: string | null;
+  productId: string | null;
   wsId: string;
   customerEmail?: string;
   theme?: 'light' | 'dark' | 'auto';
@@ -23,7 +23,7 @@ export default function PurchaseLink({
 }: PropsWithChildren<PurchaseLinkProps>) {
   const mutation = useMutation({
     mutationFn: async () => {
-      if (subscriptionId) {
+      if (subscriptionId !== null) {
         // For existing subscriptions, redirect to Customer Portal
         // where users can see proration and confirm plan changes
         const response = await fetch('/api/payment/customer-sessions', {

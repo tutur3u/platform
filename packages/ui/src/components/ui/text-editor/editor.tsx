@@ -154,7 +154,8 @@ export function RichTextEditor({
   const getEditorClasses = useMemo(() => {
     const baseClasses = [
       'border border-dynamic-border rounded-md bg-transparent',
-      'max-w-none overflow-y-auto pt-4',
+      'max-w-none overflow-y-auto',
+      readOnly ? 'pt-0' : 'pt-4',
       // Typography base
       'text-foreground leading-relaxed',
       // First child margin reset
@@ -194,7 +195,7 @@ export function RichTextEditor({
       `[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%2309090b%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
       // Dark mode checkmark (white)
       `dark:[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
-      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-center [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-no-repeat [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[length:14px_14px]',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:bg-[length:14px_14px]',
       // Nested task lists
       '[&_ul[data-type="taskList"]_ul[data-type="taskList"]]:my-0 [&_ul[data-type="taskList"]_ul[data-type="taskList"]]:ml-0',
       // Blockquotes
@@ -247,10 +248,16 @@ export function RichTextEditor({
       '[&_*:is(p,h1,h2,h3).is-empty::before]:float-left',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
+      // Read-only specific styles
+      readOnly
+        ? '[&_ul[data-type="taskList"]_input[type="checkbox"]]:!pointer-events-none [&_ul[data-type="taskList"]_input[type="checkbox"]]:!opacity-70 [&_ul[data-type="taskList"]_li>label]:!pointer-events-none [&_input[type="checkbox"]]:!pointer-events-none [&_.task-list-checkbox]:!pointer-events-none [&_.task-list-checkbox-label]:!pointer-events-none [&_li_div[draggable="true"]]:hidden [&_ul[data-type="taskList"]_li]:![-webkit-user-drag:none] [&_ul[data-type="taskList"]_li]:!user-drag-none'
+        : '',
+      // Hide drag handle in read-only mode (double safety, though conditional render should handle it)
+      readOnly ? '[&_.drag-handle]:hidden' : '',
       className,
     ].filter(Boolean);
     return baseClasses.join(' ');
-  }, [className]);
+  }, [className, readOnly]);
 
   const editor = useEditor({
     extensions: getEditorExtensions({
@@ -261,6 +268,7 @@ export function RichTextEditor({
       onImageUpload: onImageUploadRef.current,
       onVideoUpload: onImageUploadRef.current,
       mentionTranslations,
+      readOnly,
     }),
     content: allowCollaboration ? undefined : content,
     editable: editable && !readOnly,
@@ -455,10 +463,10 @@ export function RichTextEditor({
     },
   });
 
-  // Update editor's editable state when readOnly prop changes
+  // Update editor's editable state when props change
   useEffect(() => {
-    if (editor) editor.setEditable(!readOnly);
-  }, [editor, readOnly]);
+    if (editor) editor.setEditable(editable && !readOnly);
+  }, [editor, editable, readOnly]);
 
   // Update editor content when the content prop changes externally
   useEffect(() => {

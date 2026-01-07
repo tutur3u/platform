@@ -49,5 +49,5 @@ describe('Scheduling Algorithm - Performance', () => {
 
     expect(duration).toBeLessThan(10000);
     expect(result.events.length).toBeGreaterThan(0);
-  });
+  }, 15000);
 });

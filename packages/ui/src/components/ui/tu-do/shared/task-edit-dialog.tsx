@@ -6,9 +6,10 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
-import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
   getTicketIdentifier,
@@ -36,43 +37,45 @@ import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
 import { useSuggestionMenus } from './task-edit-dialog/hooks/use-suggestion-menus';
 import { useTaskChangeDetection } from './task-edit-dialog/hooks/use-task-change-detection';
-import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
+import {
+  type SharedTaskContext,
+  useTaskData,
+} from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
 import { useTaskFormReset } from './task-edit-dialog/hooks/use-task-form-reset';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
-import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
-import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
-
-// Re-export relationship types
-import type {
-  PendingRelationship,
-  PendingRelationshipType,
-} from './task-edit-dialog/types/pending-relationship';
-
-export type { PendingRelationship, PendingRelationshipType };
-
-export {
-  type DialogHeaderInfo,
-  getTaskDialogHeaderInfo,
-} from './task-edit-dialog/components/task-dialog-header';
-
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
+import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
+import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
 import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
+// Re-export relationship types
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from './task-edit-dialog/types/pending-relationship';
 import {
   clearDraft,
   getDraftStorageKey,
   saveYjsDescriptionToDatabase,
 } from './task-edit-dialog/utils';
+import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
+
+export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
+
+export {
+  type DialogHeaderInfo,
+  getTaskDialogHeaderInfo,
+} from './task-edit-dialog/components/task-dialog-header';
 
 const supabase = createClient();
 
@@ -81,6 +84,10 @@ export interface TaskEditDialogProps {
   task?: Task;
   boardId: string;
   isOpen: boolean;
+  /** Present when opened via /shared/task/[shareCode] */
+  shareCode?: string;
+  /** Permission returned from shared-task API */
+  sharedPermission?: 'view' | 'edit';
   availableLists?: TaskList[];
   filters?: TaskFilters;
   mode?: 'edit' | 'create';
@@ -95,6 +102,8 @@ export interface TaskEditDialogProps {
     email?: string;
     avatar_url?: string;
   };
+  /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
+  sharedContext?: SharedTaskContext;
   onClose: () => void;
   onUpdate: () => void;
   onNavigateToTask?: (taskId: string) => Promise<void>;
@@ -110,6 +119,8 @@ export function TaskEditDialog({
   task,
   boardId,
   isOpen,
+  shareCode,
+  sharedPermission,
   availableLists: propAvailableLists,
   filters,
   mode = 'edit',
@@ -119,6 +130,7 @@ export function TaskEditDialog({
   parentTaskName,
   pendingRelationship,
   currentUser: propsCurrentUser,
+  sharedContext,
   onClose,
   onUpdate,
   onNavigateToTask,
@@ -133,6 +145,10 @@ export function TaskEditDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const t = useTranslations('common');
+
+  // Disable editing if we are viewing via a shared link
+  // User requested: always disable editing for shared tasks, regardless of permission
+  const disabled = !!shareCode;
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -260,6 +276,7 @@ export function TaskEditDialog({
     isOpen,
     propAvailableLists,
     taskSearchQuery,
+    sharedContext,
   });
 
   // Update browser tab title
@@ -305,6 +322,7 @@ export function TaskEditDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   // Calendar events state
   const [localCalendarEvents, setLocalCalendarEvents] = useState<
@@ -553,6 +571,7 @@ export function TaskEditDialog({
     isCreateMode,
     isOpen,
     name: formState.name,
+    description: formState.description,
     priority: formState.priority,
     startDate: formState.startDate,
     endDate: formState.endDate,
@@ -560,14 +579,18 @@ export function TaskEditDialog({
     selectedListId: formState.selectedListId,
     pendingNameRef,
     setName: formState.setName,
+    setDescription: formState.setDescription,
     setPriority: formState.setPriority,
     setStartDate: formState.setStartDate,
+    collaborationMode,
+
     setEndDate: formState.setEndDate,
     setEstimationPoints: formState.setEstimationPoints,
     setSelectedListId: formState.setSelectedListId,
     setSelectedLabels: formState.setSelectedLabels,
     setSelectedAssignees: formState.setSelectedAssignees,
     setSelectedProjects: formState.setSelectedProjects,
+    disabled,
   });
 
   // Form reset
@@ -820,6 +843,8 @@ export function TaskEditDialog({
     isCreateMode,
     collaborationMode,
     isPersonalWorkspace,
+    shareCode,
+    sharedPermission,
     parentTaskId,
     pendingRelationship,
     draftStorageKey,
@@ -914,6 +939,7 @@ export function TaskEditDialog({
     canSave,
     isCreateMode,
     collaborationMode,
+    disabled,
     editorInstance,
     boardConfig,
     slashState: suggestionMenus.slashState,
@@ -1087,45 +1113,56 @@ export function TaskEditDialog({
           }}
         >
           <div className="flex min-w-0 flex-1 flex-col bg-background transition-all duration-300">
-            <TaskDialogHeader
-              isCreateMode={isCreateMode}
-              collaborationMode={collaborationMode}
-              isOpen={isOpen}
-              synced={synced}
-              connected={connected}
-              taskId={task?.id}
-              parentTaskId={parentTaskId}
-              parentTaskName={parentTaskName}
-              pendingRelationship={pendingRelationship}
-              user={
-                user
-                  ? {
-                      id: user.id || '',
-                      display_name: user.display_name ?? null,
-                      avatar_url: user.avatar_url ?? null,
-                      email: user.email ?? null,
-                    }
-                  : null
-              }
-              createMultiple={createMultiple}
-              hasDraft={formState.hasDraft}
-              wsId={wsId}
-              boardId={boardId}
-              pathname={pathname}
-              canSave={canSave}
-              isLoading={isLoading}
-              setCreateMultiple={setCreateMultiple}
-              handleClose={handleClose}
-              setShowDeleteConfirm={setShowDeleteConfirm}
-              clearDraftState={formState.clearDraftState}
-              handleSave={handleSave}
-              onNavigateBack={
-                isCreateMode && (pendingRelationship || parentTaskId)
-                  ? handleNavigateBack
-                  : undefined
-              }
-              isPersonalWorkspace={isPersonalWorkspace}
-            />
+            {disabled && (
+              <DialogTitle className="sr-only">Task Details</DialogTitle>
+            )}
+            {!disabled && (
+              <TaskDialogHeader
+                isCreateMode={isCreateMode}
+                collaborationMode={collaborationMode}
+                isOpen={isOpen}
+                synced={synced}
+                connected={connected}
+                taskId={task?.id}
+                parentTaskId={parentTaskId}
+                parentTaskName={parentTaskName}
+                pendingRelationship={pendingRelationship}
+                user={
+                  user
+                    ? {
+                        id: user.id || '',
+                        display_name: user.display_name ?? null,
+                        avatar_url: user.avatar_url ?? null,
+                        email: user.email ?? null,
+                      }
+                    : null
+                }
+                createMultiple={createMultiple}
+                hasDraft={formState.hasDraft}
+                wsId={wsId}
+                boardId={boardId}
+                pathname={pathname}
+                canSave={canSave}
+                isLoading={isLoading}
+                setCreateMultiple={setCreateMultiple}
+                handleClose={handleClose}
+                setShowDeleteConfirm={setShowDeleteConfirm}
+                clearDraftState={formState.clearDraftState}
+                handleSave={handleSave}
+                onNavigateBack={
+                  isCreateMode && (pendingRelationship || parentTaskId)
+                    ? handleNavigateBack
+                    : undefined
+                }
+                isPersonalWorkspace={isPersonalWorkspace}
+                onOpenShareDialog={
+                  wsId === ROOT_WORKSPACE_ID
+                    ? () => setShowShareDialog(true)
+                    : undefined
+                }
+                disabled={disabled}
+              />
+            )}
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
               <div className="flex flex-col">
@@ -1139,114 +1176,121 @@ export function TaskEditDialog({
                   setName={formState.setName}
                   updateName={updateName}
                   flushNameUpdate={flushNameUpdate}
+                  disabled={disabled}
                 />
 
-                <TaskPropertiesSection
-                  wsId={wsId}
-                  taskId={task?.id}
-                  priority={formState.priority}
-                  startDate={formState.startDate}
-                  endDate={formState.endDate}
-                  estimationPoints={formState.estimationPoints}
-                  selectedLabels={formState.selectedLabels}
-                  selectedProjects={formState.selectedProjects}
-                  selectedListId={formState.selectedListId}
-                  selectedAssignees={formState.selectedAssignees}
-                  isLoading={isLoading}
-                  isPersonalWorkspace={isPersonalWorkspace}
-                  totalDuration={formState.totalDuration}
-                  isSplittable={formState.isSplittable}
-                  minSplitDurationMinutes={formState.minSplitDurationMinutes}
-                  maxSplitDurationMinutes={formState.maxSplitDurationMinutes}
-                  calendarHours={formState.calendarHours}
-                  autoSchedule={formState.autoSchedule}
-                  availableLists={availableLists}
-                  availableLabels={availableLabels}
-                  taskProjects={taskProjects}
-                  workspaceMembers={workspaceMembers}
-                  boardConfig={boardConfig}
-                  onPriorityChange={updatePriority}
-                  onStartDateChange={updateStartDate}
-                  onEndDateChange={updateEndDate}
-                  onEstimationChange={updateEstimation}
-                  onLabelToggle={toggleLabel}
-                  onProjectToggle={toggleProject}
-                  onListChange={updateList}
-                  onAssigneeToggle={toggleAssignee}
-                  onQuickDueDate={handleQuickDueDate}
-                  onShowNewLabelDialog={() => setShowNewLabelDialog(true)}
-                  onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
-                  onShowEstimationConfigDialog={() =>
-                    setShowEstimationConfigDialog(true)
-                  }
-                  onTotalDurationChange={formState.setTotalDuration}
-                  onIsSplittableChange={formState.setIsSplittable}
-                  onMinSplitDurationChange={
-                    formState.setMinSplitDurationMinutes
-                  }
-                  onMaxSplitDurationChange={
-                    formState.setMaxSplitDurationMinutes
-                  }
-                  onCalendarHoursChange={formState.setCalendarHours}
-                  onAutoScheduleChange={formState.setAutoSchedule}
-                  isCreateMode={isCreateMode}
-                  savedSchedulingSettings={
-                    personalScheduleData?.task
-                      ? {
-                          totalDuration:
-                            personalScheduleData.task.total_duration ?? null,
-                          isSplittable:
-                            !!personalScheduleData.task.is_splittable,
-                          minSplitDurationMinutes:
-                            personalScheduleData.task
-                              .min_split_duration_minutes ?? null,
-                          maxSplitDurationMinutes:
-                            personalScheduleData.task
-                              .max_split_duration_minutes ?? null,
-                          calendarHours:
-                            personalScheduleData.task.calendar_hours ?? null,
-                          autoSchedule:
-                            !!personalScheduleData.task.auto_schedule,
-                        }
-                      : undefined
-                  }
-                  onSaveSchedulingSettings={saveSchedulingSettings}
-                  schedulingSaving={schedulingSaving}
-                  scheduledEvents={localCalendarEvents}
-                />
+                {!disabled && (
+                  <TaskPropertiesSection
+                    wsId={wsId}
+                    taskId={task?.id}
+                    priority={formState.priority}
+                    startDate={formState.startDate}
+                    endDate={formState.endDate}
+                    estimationPoints={formState.estimationPoints}
+                    selectedLabels={formState.selectedLabels}
+                    selectedProjects={formState.selectedProjects}
+                    selectedListId={formState.selectedListId}
+                    selectedAssignees={formState.selectedAssignees}
+                    isLoading={isLoading}
+                    isPersonalWorkspace={isPersonalWorkspace}
+                    totalDuration={formState.totalDuration}
+                    isSplittable={formState.isSplittable}
+                    minSplitDurationMinutes={formState.minSplitDurationMinutes}
+                    maxSplitDurationMinutes={formState.maxSplitDurationMinutes}
+                    calendarHours={formState.calendarHours}
+                    autoSchedule={formState.autoSchedule}
+                    availableLists={availableLists}
+                    availableLabels={availableLabels}
+                    taskProjects={taskProjects}
+                    workspaceMembers={workspaceMembers}
+                    boardConfig={boardConfig}
+                    onPriorityChange={updatePriority}
+                    onStartDateChange={updateStartDate}
+                    onEndDateChange={updateEndDate}
+                    onEstimationChange={updateEstimation}
+                    onLabelToggle={toggleLabel}
+                    onProjectToggle={toggleProject}
+                    onListChange={updateList}
+                    onAssigneeToggle={toggleAssignee}
+                    onQuickDueDate={handleQuickDueDate}
+                    onShowNewLabelDialog={() => setShowNewLabelDialog(true)}
+                    onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
+                    onShowEstimationConfigDialog={() =>
+                      setShowEstimationConfigDialog(true)
+                    }
+                    onTotalDurationChange={formState.setTotalDuration}
+                    onIsSplittableChange={formState.setIsSplittable}
+                    onMinSplitDurationChange={
+                      formState.setMinSplitDurationMinutes
+                    }
+                    onMaxSplitDurationChange={
+                      formState.setMaxSplitDurationMinutes
+                    }
+                    onCalendarHoursChange={formState.setCalendarHours}
+                    onAutoScheduleChange={formState.setAutoSchedule}
+                    isCreateMode={isCreateMode}
+                    savedSchedulingSettings={
+                      personalScheduleData?.task
+                        ? {
+                            totalDuration:
+                              personalScheduleData.task.total_duration ?? null,
+                            isSplittable:
+                              !!personalScheduleData.task.is_splittable,
+                            minSplitDurationMinutes:
+                              personalScheduleData.task
+                                .min_split_duration_minutes ?? null,
+                            maxSplitDurationMinutes:
+                              personalScheduleData.task
+                                .max_split_duration_minutes ?? null,
+                            calendarHours:
+                              personalScheduleData.task.calendar_hours ?? null,
+                            autoSchedule:
+                              !!personalScheduleData.task.auto_schedule,
+                          }
+                        : undefined
+                    }
+                    onSaveSchedulingSettings={saveSchedulingSettings}
+                    schedulingSaving={schedulingSaving}
+                    scheduledEvents={localCalendarEvents}
+                    disabled={disabled}
+                  />
+                )}
 
-                <TaskRelationshipsProperties
-                  wsId={wsId}
-                  taskId={task?.id}
-                  boardId={boardId}
-                  listId={task?.list_id}
-                  isCreateMode={isCreateMode}
-                  parentTask={parentTask}
-                  childTasks={childTasks}
-                  blockingTasks={blockingTasks}
-                  blockedByTasks={blockedByTasks}
-                  relatedTasks={relatedTasks}
-                  isLoading={dependenciesLoading}
-                  onSetParent={setParentTask}
-                  onRemoveParent={() => setParentTask(null)}
-                  onAddBlockingTask={addBlockingTask}
-                  onRemoveBlockingTask={removeBlockingTask}
-                  onAddBlockedByTask={addBlockedByTask}
-                  onRemoveBlockedByTask={removeBlockedByTask}
-                  onAddRelatedTask={addRelatedTask}
-                  onRemoveRelatedTask={removeRelatedTask}
-                  onNavigateToTask={async (taskId) => {
-                    if (onNavigateToTask) await onNavigateToTask(taskId);
-                  }}
-                  onAddSubtask={onAddSubtask}
-                  onAddParentTask={onAddParentTask}
-                  onAddBlockingTaskDialog={onAddBlockingTask}
-                  onAddBlockedByTaskDialog={onAddBlockedByTask}
-                  onAddRelatedTaskDialog={onAddRelatedTask}
-                  onAddExistingAsSubtask={addChildTask}
-                  isSaving={!!savingRelationship}
-                  savingTaskId={savingRelationship}
-                />
+                {!disabled && (
+                  <TaskRelationshipsProperties
+                    wsId={wsId}
+                    taskId={task?.id}
+                    boardId={boardId}
+                    listId={task?.list_id}
+                    isCreateMode={isCreateMode}
+                    parentTask={parentTask}
+                    childTasks={childTasks}
+                    blockingTasks={blockingTasks}
+                    blockedByTasks={blockedByTasks}
+                    relatedTasks={relatedTasks}
+                    isLoading={dependenciesLoading}
+                    onSetParent={setParentTask}
+                    onRemoveParent={() => setParentTask(null)}
+                    onAddBlockingTask={addBlockingTask}
+                    onRemoveBlockingTask={removeBlockingTask}
+                    onAddBlockedByTask={addBlockedByTask}
+                    onRemoveBlockedByTask={removeBlockedByTask}
+                    onAddRelatedTask={addRelatedTask}
+                    onRemoveRelatedTask={removeRelatedTask}
+                    onNavigateToTask={async (taskId) => {
+                      if (onNavigateToTask) await onNavigateToTask(taskId);
+                    }}
+                    onAddSubtask={onAddSubtask}
+                    onAddParentTask={onAddParentTask}
+                    onAddBlockingTaskDialog={onAddBlockingTask}
+                    onAddBlockedByTaskDialog={onAddBlockedByTask}
+                    onAddRelatedTaskDialog={onAddRelatedTask}
+                    onAddExistingAsSubtask={addChildTask}
+                    isSaving={!!savingRelationship}
+                    savingTaskId={savingRelationship}
+                    disabled={disabled}
+                  />
+                )}
 
                 <TaskDescriptionEditor
                   description={formState.description}
@@ -1270,6 +1314,7 @@ export function TaskEditDialog({
                   yjsProvider={provider}
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
+                  disabled={disabled}
                   mentionTranslations={{
                     delete_task: t('delete_task'),
                     delete_task_confirmation: (name: string) =>
@@ -1309,7 +1354,7 @@ export function TaskEditDialog({
                   />
                 )}
 
-                {!isCreateMode && task && (
+                {!disabled && !isCreateMode && task && (
                   <TaskActivitySection
                     wsId={wsId}
                     taskId={task.id}
@@ -1352,6 +1397,7 @@ export function TaskEditDialog({
             isLoading={isLoading}
             canSave={canSave}
             handleSave={handleSave}
+            disabled={disabled}
           />
         </DialogContent>
       </Dialog>
@@ -1427,6 +1473,17 @@ export function TaskEditDialog({
           }
           onOpenChange={setShowEstimationConfigDialog}
           onSuccess={handleEstimationConfigSuccess}
+        />
+      )}
+
+      {/* Task Share Dialog */}
+      {!isCreateMode && task?.id && wsId === ROOT_WORKSPACE_ID && (
+        <TaskShareDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          taskId={task.id}
+          taskName={formState.name}
+          wsId={wsId}
         />
       )}
     </>
