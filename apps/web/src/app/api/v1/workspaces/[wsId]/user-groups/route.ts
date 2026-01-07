@@ -77,7 +77,7 @@ export async function POST(req: Request, { params }: Params) {
 
   if (!data.success) {
     return NextResponse.json(
-      { message: 'Invalid data', errors: data.error.errors },
+      { message: 'Invalid data', errors: data.error.issues },
       { status: 400 }
     );
   }

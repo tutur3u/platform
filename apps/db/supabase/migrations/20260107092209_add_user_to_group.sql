@@ -1,4 +1,4 @@
--- Add creator_id and color to workspace_user_groups
+-- Add creator_id to workspace_user_groups
 ALTER TABLE public.workspace_user_groups
 ADD COLUMN creator_id UUID REFERENCES public.users(id) DEFAULT auth.uid();
 

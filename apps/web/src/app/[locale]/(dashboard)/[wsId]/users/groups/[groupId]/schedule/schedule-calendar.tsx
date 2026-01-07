@@ -77,7 +77,6 @@ export default function ScheduleCalendar({
   // Mutation for updating schedule
   const mutation = useMutation({
     mutationFn: async (newSessions: string[]) => {
-
       const supabase = createClient();
       const { error } = await supabase
         .from('workspace_user_groups')
@@ -196,10 +195,10 @@ export default function ScheduleCalendar({
 
   // Submit changes
   const handleSubmit = useCallback(() => {
-          if (pendingChanges.size === 0) {
-        toast.info(t('common.no_changes_to_save'));
-        return;
-      }
+    if (pendingChanges.size === 0) {
+      toast.info(t('common.no_changes_to_save'));
+      return;
+    }
     mutation.mutate(Array.from(currentSessions));
   }, [mutation, currentSessions, pendingChanges.size, t]);
 
