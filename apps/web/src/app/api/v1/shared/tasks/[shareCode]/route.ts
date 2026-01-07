@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface SharedTaskParams {
   shareCode: string;
@@ -121,20 +122,17 @@ export async function GET(
     let sharesQuery = adminClient
       .from('task_shares')
       .select('permission')
-      .eq('task_id', shareLink.task_id)
-      .eq('shared_with_user_id', user.id)
-      .maybeSingle();
+      .eq('task_id', shareLink.task_id);
 
     if (email) {
-      sharesQuery = adminClient
-        .from('task_shares')
-        .select('permission')
-        .eq('task_id', shareLink.task_id)
-        .or(`shared_with_user_id.eq.${user.id},shared_with_email.eq.${email}`)
-        .maybeSingle();
+      sharesQuery = sharesQuery.or(
+        `shared_with_user_id.eq.${user.id},shared_with_email.eq.${email}`
+      );
+    } else {
+      sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
     }
 
-    const { data: shareRow } = await sharesQuery;
+    const { data: shareRow } = await sharesQuery.maybeSingle();
     recipientPermission = shareRow?.permission ?? null;
 
     const hasPublicAccess = shareLink.public_access === 'view';
@@ -454,44 +452,30 @@ export async function PATCH(
       }
     }
 
-    const body: unknown = await request.json().catch(() => null);
-    const payload =
-      body && typeof body === 'object' && !Array.isArray(body)
-        ? (body as Record<string, unknown>)
-        : null;
+    const taskUpdateSchema = z.object({
+      name: z.string().optional(),
+      description: z.string().nullable().optional(),
+      priority: z
+        .enum(['critical', 'high', 'normal', 'low'])
+        .nullable()
+        .optional(),
+      start_date: z.string().nullable().optional(),
+      end_date: z.string().nullable().optional(),
+      list_id: z.string().optional(),
+      estimation_points: z.number().nullable().optional(),
+    });
 
-    if (!payload) {
+    const body = await request.json().catch(() => null);
+    const validation = taskUpdateSchema.safeParse(body);
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid request body' },
+        { error: 'Invalid request body', details: validation.error.issues },
         { status: 400 }
       );
     }
 
-    const updates: Record<string, unknown> = {};
-
-    if (typeof payload.name === 'string') updates.name = payload.name;
-    if (typeof payload.description === 'string' || payload.description === null)
-      updates.description = payload.description;
-
-    if (
-      payload.priority === 'critical' ||
-      payload.priority === 'high' ||
-      payload.priority === 'low' ||
-      payload.priority === 'normal' ||
-      payload.priority === null
-    ) {
-      updates.priority = payload.priority;
-    }
-
-    if (typeof payload.start_date === 'string' || payload.start_date === null)
-      updates.start_date = payload.start_date;
-    if (typeof payload.end_date === 'string' || payload.end_date === null)
-      updates.end_date = payload.end_date;
-
-    if (typeof payload.list_id === 'string') updates.list_id = payload.list_id;
-    if (typeof payload.estimation_points === 'number')
-      updates.estimation_points = payload.estimation_points;
-    if (payload.estimation_points === null) updates.estimation_points = null;
+    const updates = validation.data;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

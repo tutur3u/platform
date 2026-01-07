@@ -62,8 +62,6 @@ export function useTaskData({
   wsId,
   boardId,
   isOpen,
-  taskId: _taskId,
-  isCreateMode: _isCreateMode = false,
   propAvailableLists,
   taskSearchQuery = '',
   sharedContext,
@@ -78,7 +76,7 @@ export function useTaskData({
   const boardConfig = sharedContext?.boardConfig || fetchedBoardConfig;
 
   // Extract real workspace ID from boardConfig (not from URL param which might be "internal")
-  const realWorkspaceId = (boardConfig as any)?.ws_id || wsId;
+  const realWorkspaceId = boardConfig?.ws_id || wsId;
   const isValidWsId = isValidUUID(realWorkspaceId);
 
   // Available lists

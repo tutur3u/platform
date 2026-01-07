@@ -9,35 +9,14 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-interface WorkspaceMember {
-  id: string;
-  user_id: string;
-  display_name: string;
-  avatar_url?: string | null;
-}
-
-interface WorkspaceLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
-
-interface WorkspaceProject {
-  id: string;
-  name: string;
-  status: string;
-}
-
-interface BoardConfig {
-  id: string;
-  name?: string;
-  ws_id?: string;
-  ticket_prefix?: string;
-  estimation_type?: string;
-  extended_estimation?: boolean;
-  allow_zero_estimates?: boolean;
-}
+type BoardConfig = NonNullable<SharedTaskContext['boardConfig']>;
+type WorkspaceLabel = NonNullable<SharedTaskContext['workspaceLabels']>[number];
+type WorkspaceProject = NonNullable<
+  SharedTaskContext['workspaceProjects']
+>[number];
+type WorkspaceMember = NonNullable<
+  SharedTaskContext['workspaceMembers']
+>[number];
 
 interface SharedTaskContentProps {
   task: Task;

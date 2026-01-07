@@ -60,7 +60,24 @@ export default async function SharedTaskPage({ params }: PageProps) {
     );
   }
 
-  const data = await res.json();
+  let data: any;
+  try {
+    data = await res.json();
+  } catch (error) {
+    console.error('Failed to parse shared task data:', error);
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="mb-2 font-semibold text-2xl text-dynamic-red">
+            Error loading task
+          </h1>
+          <p className="text-muted-foreground">
+            Failed to load task data. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SharedTaskContent

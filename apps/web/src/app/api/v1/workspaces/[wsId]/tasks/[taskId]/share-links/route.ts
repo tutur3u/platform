@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -25,7 +26,7 @@ function generateShareCode(): string {
   const length = 12;
   let code = '';
   for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += chars.charAt(crypto.randomInt(0, chars.length));
   }
   return code;
 }

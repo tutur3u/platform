@@ -1,22 +1,25 @@
+import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useEffect, useRef } from 'react';
 import type { WorkspaceTaskLabel } from '../types';
+import { getDescriptionContent } from '../utils';
 
 export interface UseTaskRealtimeSyncProps {
   taskId?: string;
   isCreateMode: boolean;
   isOpen: boolean;
   name: string;
-  description: any;
+  description: JSONContent | null;
   priority: any;
   startDate: Date | undefined;
   endDate: Date | undefined;
   estimationPoints: number | null | undefined;
   selectedListId?: string;
+  collaborationMode: boolean;
   pendingNameRef: React.MutableRefObject<string | null>;
   setName: (value: string) => void;
-  setDescription: (value: any) => void;
+  setDescription: React.Dispatch<React.SetStateAction<JSONContent | null>>;
   setPriority: (value: any) => void;
   setStartDate: (value: Date | undefined) => void;
   setEndDate: (value: Date | undefined) => void;
@@ -31,8 +34,6 @@ export interface UseTaskRealtimeSyncProps {
   setSelectedProjects: (value: any[] | ((prev: any[]) => any[])) => void;
   disabled?: boolean;
 }
-
-import { getDescriptionContent } from '../utils';
 
 const supabase = createClient();
 
@@ -52,6 +53,7 @@ export function useTaskRealtimeSync({
   endDate,
   estimationPoints,
   selectedListId,
+  collaborationMode,
   pendingNameRef,
   setName,
   setDescription,
@@ -271,13 +273,17 @@ export function useTaskRealtimeSync({
           // Update description if changed
           // We need to compare stringified versions as descriptions are objects/JSON
           // Only update if we're not in collaboration mode (handled by Yjs)
-          const currentDescStr = JSON.stringify(descriptionRef.current);
-          const newDescContent = getDescriptionContent(updatedTask.description);
-          const newDescStr = JSON.stringify(newDescContent);
+          if (!collaborationMode) {
+            const currentDescStr = JSON.stringify(descriptionRef.current);
+            const newDescContent = getDescriptionContent(
+              updatedTask.description
+            );
+            const newDescStr = JSON.stringify(newDescContent);
 
-          if (currentDescStr !== newDescStr) {
-            console.log('📝 Updating description from realtime');
-            setDescription(newDescContent);
+            if (currentDescStr !== newDescStr) {
+              console.log('📝 Updating description from realtime');
+              setDescription(newDescContent);
+            }
           }
 
           // Update priority if changed
@@ -417,6 +423,7 @@ export function useTaskRealtimeSync({
     isOpen,
     taskId,
     pendingNameRef.current,
+    collaborationMode,
     setEndDate,
     setEstimationPoints,
     setName,

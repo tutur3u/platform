@@ -29,11 +29,11 @@ CREATE TABLE "public"."task_shares" (
     FOREIGN KEY (shared_by_user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT "task_shares_user_unique" 
     UNIQUE ("task_id", "shared_with_user_id"),
-  CONSTRAINT "task_shares_email_unique" 
-    UNIQUE ("task_id", "shared_with_email"),
   CONSTRAINT "task_shares_has_recipient" 
     CHECK (shared_with_user_id IS NOT NULL OR shared_with_email IS NOT NULL)
 );
+
+CREATE UNIQUE INDEX task_shares_email_unique_idx ON public.task_shares (task_id, LOWER(shared_with_email)) WHERE shared_with_email IS NOT NULL;
 
 -- ============================================================================
 -- TABLE: task_share_links
@@ -82,7 +82,6 @@ CREATE INDEX task_shares_task_id_idx ON task_shares(task_id);
 CREATE INDEX task_shares_shared_with_user_id_idx ON task_shares(shared_with_user_id);
 CREATE INDEX task_shares_shared_with_email_idx ON task_shares(shared_with_email) WHERE shared_with_email IS NOT NULL;
 CREATE INDEX task_share_links_task_id_idx ON task_share_links(task_id);
-CREATE INDEX task_share_links_code_idx ON task_share_links(code);
 CREATE INDEX task_share_link_uses_share_link_id_idx ON task_share_link_uses(share_link_id);
 
 -- ============================================================================
@@ -205,12 +204,13 @@ FOR SELECT
 TO authenticated
 USING (is_task_workspace_member(task_id));
 
--- SELECT: Anyone authenticated can look up a share link by code (for accessing shared tasks)
+-- SELECT: Workspace members can view share links for tasks in their workspace
+-- Note: External access via code lookup should be handled via secure functions or specific policies that don't allow enumeration
 CREATE POLICY "Allow authenticated users to lookup share links by code"
 ON "public"."task_share_links"
 FOR SELECT
 TO authenticated
-USING (true);  -- Code lookup is needed for shared access
+USING (is_task_workspace_member(task_id));  -- Restricted to members to prevent enumeration
 
 -- INSERT: Workspace members can create share links if sharing is enabled
 CREATE POLICY "Allow workspace members to create task share links"
@@ -268,6 +268,7 @@ WITH CHECK (user_id = auth.uid());
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.is_task_accessible(_task_id uuid)
 RETURNS boolean
+STABLE
 LANGUAGE sql
 SECURITY DEFINER
 AS $$
@@ -294,6 +295,12 @@ AND (
     SELECT 1 FROM task_shares ts
     JOIN user_private_details upd ON upd.user_id = auth.uid()
     WHERE ts.task_id = _task_id AND LOWER(ts.shared_with_email) = LOWER(upd.email)
+  )
+  OR
+  -- Link-based access (if link exists)
+  EXISTS (
+    SELECT 1 FROM task_share_links tsl
+    WHERE tsl.task_id = _task_id
   )
 );
 $$;
@@ -330,7 +337,7 @@ BEGIN
       WHERE ts.task_id = p_task_id 
       AND (
         ts.shared_with_user_id = auth.uid()
-        OR ts.shared_with_email = (SELECT email FROM user_private_details WHERE user_id = auth.uid())
+        OR LOWER(ts.shared_with_email) = LOWER((SELECT email FROM user_private_details WHERE user_id = auth.uid()))
       )
     );
   ELSIF p_permission = 'edit' THEN
@@ -339,7 +346,7 @@ BEGIN
       WHERE ts.task_id = p_task_id 
       AND (
         ts.shared_with_user_id = auth.uid()
-        OR ts.shared_with_email = (SELECT email FROM user_private_details WHERE user_id = auth.uid())
+        OR LOWER(ts.shared_with_email) = LOWER((SELECT email FROM user_private_details WHERE user_id = auth.uid()))
       )
       AND ts.permission = 'edit'
     );

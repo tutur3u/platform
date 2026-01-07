@@ -586,6 +586,7 @@ export function TaskEditDialog({
     setDescription: formState.setDescription,
     setPriority: formState.setPriority,
     setStartDate: formState.setStartDate,
+    collaborationMode,
 
     setEndDate: formState.setEndDate,
     setEstimationPoints: formState.setEstimationPoints,
@@ -839,8 +840,6 @@ export function TaskEditDialog({
       avatar_url: user.avatar_url,
     };
   }, [user?.id, user?.display_name, user?.avatar_url]);
-  console.log('sharedPermission', sharedPermission);
-  console.log('shareCode', shareCode);
 
   const { handleSave, handleSaveRef } = useTaskSave({
     boardId,

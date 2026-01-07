@@ -53,6 +53,14 @@ ALTER TABLE public.task_share_links
 ALTER TABLE public.task_share_links
   ADD CONSTRAINT task_share_links_task_id_unique UNIQUE (task_id);
 
+-- Optimize email lookup for RLS policies
+CREATE INDEX IF NOT EXISTS task_shares_task_id_lower_email_idx 
+  ON public.task_shares (task_id, LOWER(shared_with_email)) 
+  WHERE shared_with_email IS NOT NULL;
+
+-- Ensure user_private_details email lookup is fast (it might already be unique/indexed, but good to ensure)
+CREATE INDEX IF NOT EXISTS user_private_details_email_idx ON public.user_private_details(email);
+
 -- Tighten RLS: share-link rows are only visible to eligible authenticated users.
 -- (1) Workspace members
 -- (2) Public access enabled (view)

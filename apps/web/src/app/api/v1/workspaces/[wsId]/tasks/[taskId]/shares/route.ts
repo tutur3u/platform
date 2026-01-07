@@ -363,6 +363,30 @@ export async function DELETE(
       );
     }
 
+    // Verify task belongs to workspace
+    const { data: task } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id,
+        task_lists!inner (
+          id,
+          workspace_boards!inner (
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', taskId)
+      .single();
+
+    if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+      return NextResponse.json(
+        { error: 'Task not found in this workspace' },
+        { status: 404 }
+      );
+    }
+
     // Delete share (RLS will verify task belongs to workspace)
     const { error: deleteError } = await supabase
       .from('task_shares')
@@ -388,6 +412,11 @@ export async function DELETE(
   }
 }
 
+const updateShareSchema = z.object({
+  id: z.string().uuid(),
+  permission: z.enum(['view', 'edit']),
+});
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<ShareParams> }
@@ -412,20 +441,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { id: shareId, permission } = body;
-
-    if (!shareId || !validate(shareId)) {
-      return NextResponse.json({ error: 'Invalid share ID' }, { status: 400 });
-    }
-
-    if (!permission || !['view', 'edit'].includes(permission)) {
-      return NextResponse.json(
-        { error: 'Invalid permission. Must be view or edit' },
-        { status: 400 }
-      );
-    }
-
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
@@ -438,6 +453,42 @@ export async function PATCH(
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const validationResult = updateShareSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: validationResult.error },
+        { status: 400 }
+      );
+    }
+
+    const { id: shareId, permission } = validationResult.data;
+
+    // Verify task belongs to workspace
+    const { data: task } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id,
+        task_lists!inner (
+          id,
+          workspace_boards!inner (
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', taskId)
+      .single();
+
+    if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+      return NextResponse.json(
+        { error: 'Task not found in this workspace' },
+        { status: 404 }
       );
     }
 

@@ -13,6 +13,7 @@ import type React from 'react';
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
 import { clearDraft } from '../utils';
+import { useUpdateSharedTask } from './use-update-shared-task';
 
 const supabase = createClient();
 
@@ -164,6 +165,7 @@ export function useTaskSave({
 }: UseTaskSaveProps): UseTaskSaveReturn {
   const { toast } = useToast();
   const updateTaskMutation = useUpdateTask(boardId);
+  const updateSharedTaskMutation = useUpdateSharedTask();
   const handleSaveRef = useRef<() => void>(() => {});
 
   const handleSave = useCallback(async () => {
@@ -265,6 +267,7 @@ export function useTaskSave({
       collaborationMode,
       flushEditorPendingRef,
       updateTaskMutation,
+      updateSharedTaskMutation,
       shareCode,
       toast,
       onUpdate,
@@ -293,6 +296,7 @@ export function useTaskSave({
     onClose,
     taskId,
     updateTaskMutation,
+    updateSharedTaskMutation,
     collaborationMode,
     setName,
     setDescription,
@@ -692,6 +696,7 @@ async function handleUpdateTask({
   collaborationMode,
   flushEditorPendingRef,
   updateTaskMutation,
+  updateSharedTaskMutation,
   shareCode,
   toast,
   onUpdate,
@@ -712,6 +717,7 @@ async function handleUpdateTask({
     (() => JSONContent | null) | undefined
   >;
   updateTaskMutation: ReturnType<typeof useUpdateTask>;
+  updateSharedTaskMutation: ReturnType<typeof useUpdateSharedTask>;
   shareCode?: string;
   toast: ReturnType<typeof useToast>['toast'];
   onUpdate: () => void;
@@ -742,39 +748,33 @@ async function handleUpdateTask({
   if (taskId) {
     // Shared task editing (no workspace membership required): use shared endpoint.
     if (shareCode) {
-      try {
-        const response = await fetch(`/api/v1/shared/tasks/${shareCode}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(taskUpdates),
-        });
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => null);
-          throw new Error(error?.error || 'Failed to update task');
+      updateSharedTaskMutation.mutate(
+        { shareCode, updates: taskUpdates },
+        {
+          onSuccess: async () => {
+            toast({
+              title: 'Task updated',
+              description: 'The task has been successfully updated.',
+            });
+            onUpdate();
+            onClose();
+          },
+          onError: (error: Error) => {
+            console.error('Error updating shared task:', error);
+            toast({
+              title: 'Error updating task',
+              description: error.message || 'Please try again later',
+              variant: 'destructive',
+            });
+          },
+          onSettled: () => {
+            setIsLoading(false);
+            setIsSaving(false);
+          },
         }
-
-        toast({
-          title: 'Task updated',
-          description: 'The task has been successfully updated.',
-        });
-        onUpdate();
-      } catch (error) {
-        console.error('Error updating shared task:', error);
-        toast({
-          title: 'Error updating task',
-          description:
-            error instanceof Error ? error.message : 'Please try again later',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-        setIsSaving(false);
-      }
+      );
       return;
     }
-
-    onClose();
 
     updateTaskMutation.mutate(
       { taskId, updates: taskUpdates },
@@ -785,6 +785,7 @@ async function handleUpdateTask({
             description: 'The task has been successfully updated.',
           });
           onUpdate();
+          onClose();
         },
         onError: (error: Error) => {
           console.error('Error updating task:', error);
