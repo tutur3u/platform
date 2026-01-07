@@ -173,6 +173,8 @@ export default async function UserGroupAttendancePage({
               initialDate={effectiveDate}
               initialAttendance={attendanceMap}
               canUpdateAttendance={canUpdateAttendance}
+              startingDate={group.starting_date}
+              endingDate={group.ending_date}
             />
           </>
         );

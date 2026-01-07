@@ -1,8 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { CheckIcon, ChevronDown, PlusCircle } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -56,6 +55,7 @@ import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
+import { fetchWorkspaces } from './actions';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -100,14 +100,12 @@ function WorkspaceIcon({
 export function WorkspaceSelect({
   t,
   wsId,
-  localUseQuery,
   hideLeading,
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
   t: any;
   wsId: string;
-  localUseQuery: any;
   hideLeading?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
@@ -115,13 +113,11 @@ export function WorkspaceSelect({
   const router = useRouter();
   const pathname = usePathname();
 
-  const workspacesQuery = localUseQuery({
+  const { data: workspaces } = useQuery({
     queryKey: ['workspaces'],
     queryFn: fetchWorkspaces,
     enabled: !!wsId,
   });
-
-  const workspaces = (workspacesQuery?.data || []) as Workspace[];
 
   const resolvedWorkspaceId =
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
@@ -545,87 +541,4 @@ export function WorkspaceSelect({
       </Dialog>
     </>
   );
-}
-
-async function fetchWorkspaces() {
-  const supabase = createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return [];
-
-  const { data: workspaces, error } = await supabase
-    .from('workspaces')
-    .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions(workspace_subscription_products(tier))'
-    )
-    .eq('workspace_members.user_id', user.id);
-
-  if (error) return [];
-
-  // Resolve the display label and avatar for personal workspaces using the current user's profile
-  const [publicProfileRes, privateDetailsRes] = await Promise.all([
-    supabase
-      .from('users')
-      .select('display_name, handle, avatar_url')
-      .eq('id', user.id)
-      .maybeSingle(),
-    supabase
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-  ]);
-
-  const publicProfile = publicProfileRes?.data as
-    | {
-        display_name: string | null;
-        handle: string | null;
-        avatar_url: string | null;
-      }
-    | null
-    | undefined;
-  const privateDetails = privateDetailsRes?.data as
-    | { email: string | null }
-    | null
-    | undefined;
-
-  const displayLabel: string | undefined =
-    publicProfile?.display_name ||
-    publicProfile?.handle ||
-    privateDetails?.email ||
-    undefined;
-
-  const userAvatarUrl = publicProfile?.avatar_url || null;
-
-  // For personal workspaces, override the name and avatar with the user's data
-  return (workspaces || []).map((ws) => {
-    // Extract tier from workspace subscription
-    const subscriptions = (ws as any)?.workspace_subscriptions as
-      | Array<{
-          workspace_subscription_products: {
-            tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
-          } | null;
-        }>
-      | undefined;
-    const tier =
-      subscriptions?.[0]?.workspace_subscription_products?.tier || null;
-
-    const base = ws?.personal
-      ? {
-          ...ws,
-          name: displayLabel || ws.name || 'Personal',
-          avatar_url: userAvatarUrl || ws.avatar_url,
-        }
-      : ws;
-    return {
-      ...base,
-      // Mark if current user is the creator for downstream UI
-      created_by_me: base?.creator_id === user.id,
-      // Include tier information
-      tier,
-    };
-  });
 }

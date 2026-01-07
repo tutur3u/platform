@@ -5,7 +5,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import * as React from 'react';
-import { DayPicker } from 'react-day-picker';
+import { type DateRange, DayPicker } from 'react-day-picker';
 import { useCalendarPreferences } from '../../hooks/use-calendar-preferences';
 import { buttonVariants } from './button';
 import {
@@ -36,8 +36,28 @@ function Calendar({
   const contextPreferences = useCalendarPreferences();
   const preferences = preferencesProp ?? contextPreferences;
 
-  const defaultMonth = props.defaultMonth || new Date();
-  const [month, setMonth] = React.useState<Date>(defaultMonth);
+  const selected = 'selected' in props ? props.selected : undefined;
+
+  const initialMonth = React.useMemo(() => {
+    if (props.month) return props.month;
+    if (props.defaultMonth) return props.defaultMonth;
+
+    if (props.mode === 'single' && selected instanceof Date) return selected;
+
+    if (props.mode === 'range') {
+      const range = selected as DateRange | undefined;
+      if (range?.from instanceof Date) return range.from;
+    }
+
+    if (props.mode === 'multiple') {
+      const dates = selected as Date[] | undefined;
+      if (Array.isArray(dates) && dates[0] instanceof Date) return dates[0];
+    }
+
+    return new Date();
+  }, [props.month, props.defaultMonth, props.mode, selected]);
+
+  const [month, setMonth] = React.useState<Date>(initialMonth);
 
   const years = Array.from({ length: 200 }, (_, i) => {
     const year = new Date().getFullYear() - 100 + i;
@@ -114,7 +134,7 @@ function Calendar({
             >
               <SelectTrigger
                 className={cn(
-                  'h-8 w-[90px] transition-colors',
+                  'h-8 w-22.5 transition-colors',
                   isCurrentYear && 'font-medium text-primary',
                   className?.includes('bg-background/50') &&
                     'bg-background/50 hover:bg-background/80'
@@ -122,10 +142,7 @@ function Calendar({
               >
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
-              <SelectContent
-                position="popper"
-                className="h-[300px] overflow-y-auto"
-              >
+              <SelectContent position="popper" className="h-75 overflow-y-auto">
                 <div className="sticky top-0 -mx-1 flex items-center justify-center border-b bg-background py-1">
                   <div className="px-2 font-medium text-muted-foreground text-sm">
                     {currentYear}
@@ -160,7 +177,7 @@ function Calendar({
             >
               <SelectTrigger
                 className={cn(
-                  'h-8 w-[130px] transition-colors',
+                  'h-8 w-32.5 transition-colors',
                   isCurrentMonth && 'font-medium text-primary',
                   className?.includes('bg-background/50') &&
                     'bg-background/50 hover:bg-background/80'
@@ -205,7 +222,7 @@ function Calendar({
           {...props}
           month={month}
           onMonthChange={setMonth}
-          defaultMonth={defaultMonth}
+          defaultMonth={initialMonth}
           showOutsideDays={true}
           weekStartsOn={props.weekStartsOn ?? preferences.weekStartsOn}
           className={cn('', className)}

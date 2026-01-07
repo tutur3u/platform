@@ -1,6 +1,29 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const CreateUserGroupSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1),
+    is_guest: z.boolean().default(false),
+    starting_date: z.string().datetime().nullable().optional(),
+    ending_date: z.string().datetime().nullable().optional(),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.starting_date && data.ending_date) {
+        return new Date(data.ending_date) >= new Date(data.starting_date);
+      }
+      return true;
+    },
+    {
+      message: 'End date must be after or equal to start date',
+      path: ['ending_date'],
+    }
+  );
 
 interface Params {
   params: Promise<{
@@ -24,8 +47,7 @@ export async function GET(_: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('workspace_user_groups')
     .select('*')
-    .eq('ws_id', wsId)
-    .single();
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
@@ -51,18 +73,27 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const data = (await req.json()) as {
-    name: string;
-    color: string;
-    group_ids: string[];
-  };
+  const data = CreateUserGroupSchema.safeParse(await req.json());
 
-  const { group_ids, ...coreData } = data;
+  if (!data.success) {
+    return NextResponse.json(
+      { message: 'Invalid data', errors: data.error.issues },
+      { status: 400 }
+    );
+  }
 
-  const { error } = await supabase.from('workspace_user_groups').insert({
-    ...coreData,
-    ws_id: wsId,
-  });
+  const { error } = await supabase
+    .from('workspace_user_groups')
+    .insert({
+      name: data.data.name,
+      is_guest: data.data.is_guest,
+      starting_date: data.data.starting_date ?? null,
+      ending_date: data.data.ending_date ?? null,
+      notes: data.data.notes ?? null,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);

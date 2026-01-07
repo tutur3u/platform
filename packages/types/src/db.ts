@@ -343,3 +343,32 @@ export type WorkspaceProductTier =
   Database['public']['Enums']['workspace_product_tier'];
 export type SubscriptionStatus =
   Database['public']['Enums']['subscription_status'];
+
+// Workforce & Payroll types
+export type WorkforceContractType =
+  Database['public']['Enums']['workforce_contract_type'];
+export type WorkforceEmploymentStatus =
+  Database['public']['Enums']['workforce_employment_status'];
+export type WorkforcePaymentFrequency =
+  Database['public']['Enums']['workforce_payment_frequency'];
+export type WorkforceBenefitType =
+  Database['public']['Enums']['workforce_benefit_type'];
+export type PayrollRunStatus =
+  Database['public']['Enums']['payroll_run_status'];
+
+export type WorkforceContract = Tables<'workforce_contracts'>;
+export type WorkforceCompensation = Tables<'workforce_compensation'>;
+export type WorkforceBenefit = Tables<'workforce_benefits'>;
+export type PayrollRun = Tables<'payroll_runs'>;
+export type PayrollRunItem = Tables<'payroll_run_items'>;
+
+// Extended workforce types with relations
+export type WorkforceContractWithCompensation = WorkforceContract & {
+  compensation?: WorkforceCompensation[];
+  benefits?: WorkforceBenefit[];
+};
+
+export type WorkforceUserProfile = WorkspaceUser & {
+  contracts?: WorkforceContractWithCompensation[];
+  current_contract?: WorkforceContract | null;
+};

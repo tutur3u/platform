@@ -20,11 +20,10 @@ interface WhiteboardsPageProps {
 export default async function WhiteboardsPage({
   params,
 }: WhiteboardsPageProps) {
-  const t = await getTranslations('common');
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+        const t = await getTranslations('common');
         const whiteboards = await getWhiteboards(wsId);
 
         return (

@@ -18,13 +18,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.962.0",
+    "@aws-sdk/client-ses": "^3.964.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@upstash/redis": "^1.36.0",
     "isomorphic-dompurify": "^2.35.0",
-    "juice": "^11.0.3",
+    "juice": "^11.1.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {

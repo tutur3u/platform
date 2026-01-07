@@ -29,6 +29,7 @@ import {
   GalleryVerticalEnd,
   Goal,
   GraduationCap,
+  HandCoins,
   HardDrive,
   hexagons3,
   Icon,
@@ -58,6 +59,7 @@ import {
   RulerDimensionLine,
   ScanSearch,
   ScreenShare,
+  ScrollText,
   Send,
   Settings,
   ShieldAlert,
@@ -100,6 +102,7 @@ import {
 import { getTranslations } from 'next-intl/server';
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
+import { createTierRequirement } from '@/lib/feature-tiers';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -260,31 +263,36 @@ export async function WorkspaceNavigationLinks({
         ENABLE_AI_ONLY ||
         !hasSecret('ENABLE_DOCS', 'true') ||
         withoutPermission('manage_documents'),
+      requiredWorkspaceTier: createTierRequirement('documents', {
+        alwaysShow: true,
+      }),
       experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.whiteboards'),
       href: `/${personalOrWsId}/whiteboards`,
       icon: <PencilRuler className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('whiteboards', {
+        alwaysShow: true,
+      }),
     },
     {
       title: t('sidebar_tabs.chat'),
       href: `/${personalOrWsId}/chat`,
       icon: <MessageCircleIcon className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('chat', {
+        alwaysShow: true,
+      }),
       experimental: 'beta',
       requireRootMember: true,
       requireRootWorkspace: true,
     },
     {
-      title: t('sidebar_tabs.drive'),
-      href: `/${personalOrWsId}/drive`,
-      icon: <HardDrive className="h-5 w-5" />,
-      disabled: withoutPermission('manage_drive'),
-      experimental: 'beta',
-    },
-    {
       title: t('sidebar_tabs.track'),
       href: `/${personalOrWsId}/time-tracker`,
+      requiredWorkspaceTier: createTierRequirement('time_tracker', {
+        alwaysShow: true,
+      }),
       children: [
         {
           title: t('sidebar_tabs.overview'),
@@ -347,6 +355,60 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker/settings`,
       ],
     },
+    {
+      title: t('sidebar_tabs.workforce'),
+      href: `/${personalOrWsId}/workforce`,
+      icon: <BriefcaseBusiness className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('workforce', {
+        alwaysShow: true,
+      }),
+      children: [
+        {
+          title: t('workspace-workforce-tabs.directory'),
+          href: `/${personalOrWsId}/workforce`,
+          icon: <Users className="h-5 w-5" />,
+          matchExact: true,
+          disabled:
+            withoutPermission('view_workforce') &&
+            withoutPermission('manage_workforce'),
+        },
+        {
+          title: t('workspace-workforce-tabs.contracts'),
+          href: `/${personalOrWsId}/workforce/contracts`,
+          icon: <ScrollText className="h-5 w-5" />,
+          disabled: withoutPermission('manage_workforce'),
+        },
+        null,
+        {
+          title: t('workspace-workforce-tabs.payroll'),
+          href: `/${personalOrWsId}/workforce/payroll`,
+          icon: <HandCoins className="h-5 w-5" />,
+          disabled:
+            withoutPermission('view_payroll') &&
+            withoutPermission('manage_payroll'),
+        },
+      ],
+      aliases: [
+        `/${personalOrWsId}/workforce`,
+        `/${personalOrWsId}/workforce/contracts`,
+        `/${personalOrWsId}/workforce/payroll`,
+      ],
+      // disabled:
+      //   ENABLE_AI_ONLY ||
+      //   (withoutPermission('view_workforce') &&
+      //     withoutPermission('manage_workforce')),
+      tempDisabled: true, // coming soon
+    },
+    {
+      title: t('sidebar_tabs.drive'),
+      href: `/${personalOrWsId}/drive`,
+      icon: <HardDrive className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('drive', {
+        alwaysShow: true,
+      }),
+      disabled: withoutPermission('manage_drive'),
+      experimental: 'beta',
+    },
     null,
     {
       title: t('sidebar_tabs.qr_generator'),
@@ -369,6 +431,9 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/settings`,
       ],
       icon: <Banknote className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('finance', {
+        alwaysShow: true,
+      }),
       href: withoutPermission('manage_finance')
         ? undefined
         : `/${personalOrWsId}/finance`,
@@ -454,6 +519,9 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/users/structure`,
       ],
       icon: <Users className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('users', {
+        alwaysShow: true,
+      }),
       href: `/${personalOrWsId}/users/database`,
       children: [
         {
@@ -545,6 +613,9 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.inventory'),
       icon: <Archive className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('inventory', {
+        alwaysShow: true,
+      }),
       children: [
         {
           title: t('workspace-inventory-tabs.overview'),
@@ -611,6 +682,9 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.ai_lab'),
           icon: <Box className="h-5 w-5" />,
+          requiredWorkspaceTier: createTierRequirement('ai_lab', {
+            alwaysShow: true,
+          }),
           children: [
             {
               title: t('sidebar_tabs.spark'),

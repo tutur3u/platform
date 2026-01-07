@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
+    PostgrestVersion: '14.1';
   };
   public: {
     Tables: {
@@ -5380,6 +5380,300 @@ export type Database = {
           },
         ];
       };
+      payroll_run_items: {
+        Row: {
+          adjustments: Json | null;
+          base_pay: number | null;
+          benefits_total: number | null;
+          bonuses_total: number | null;
+          company_deductions: Json | null;
+          contract_id: string | null;
+          created_at: string | null;
+          deductions_total: number | null;
+          employee_deductions: Json | null;
+          gross_pay: number | null;
+          hourly_pay: number | null;
+          hourly_rate: number | null;
+          id: string;
+          insurance_salary: number | null;
+          net_pay: number | null;
+          notes: string | null;
+          overtime_hours: number | null;
+          overtime_pay: number | null;
+          regular_hours: number | null;
+          run_id: string;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          adjustments?: Json | null;
+          base_pay?: number | null;
+          benefits_total?: number | null;
+          bonuses_total?: number | null;
+          company_deductions?: Json | null;
+          contract_id?: string | null;
+          created_at?: string | null;
+          deductions_total?: number | null;
+          employee_deductions?: Json | null;
+          gross_pay?: number | null;
+          hourly_pay?: number | null;
+          hourly_rate?: number | null;
+          id?: string;
+          insurance_salary?: number | null;
+          net_pay?: number | null;
+          notes?: string | null;
+          overtime_hours?: number | null;
+          overtime_pay?: number | null;
+          regular_hours?: number | null;
+          run_id: string;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          adjustments?: Json | null;
+          base_pay?: number | null;
+          benefits_total?: number | null;
+          bonuses_total?: number | null;
+          company_deductions?: Json | null;
+          contract_id?: string | null;
+          created_at?: string | null;
+          deductions_total?: number | null;
+          employee_deductions?: Json | null;
+          gross_pay?: number | null;
+          hourly_pay?: number | null;
+          hourly_rate?: number | null;
+          id?: string;
+          insurance_salary?: number | null;
+          net_pay?: number | null;
+          notes?: string | null;
+          overtime_hours?: number | null;
+          overtime_pay?: number | null;
+          regular_hours?: number | null;
+          run_id?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payroll_run_items_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'workforce_contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'payroll_runs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payroll_runs: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          currency: string;
+          finalized_at: string | null;
+          finalized_by: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          period_end: string;
+          period_start: string;
+          status: Database['public']['Enums']['payroll_run_status'];
+          total_deductions: number | null;
+          total_gross_amount: number | null;
+          total_net_amount: number | null;
+          ws_id: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          currency?: string;
+          finalized_at?: string | null;
+          finalized_by?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          period_end: string;
+          period_start: string;
+          status?: Database['public']['Enums']['payroll_run_status'];
+          total_deductions?: number | null;
+          total_gross_amount?: number | null;
+          total_net_amount?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          currency?: string;
+          finalized_at?: string | null;
+          finalized_by?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          period_end?: string;
+          period_start?: string;
+          status?: Database['public']['Enums']['payroll_run_status'];
+          total_deductions?: number | null;
+          total_gross_amount?: number | null;
+          total_net_amount?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payroll_runs_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       personal_notes: {
         Row: {
           content: string | null;
@@ -10050,6 +10344,292 @@ export type Database = {
         };
         Relationships: [];
       };
+      workforce_benefits: {
+        Row: {
+          amount: number;
+          benefit_type: Database['public']['Enums']['workforce_benefit_type'];
+          contract_id: string;
+          created_at: string | null;
+          currency: string;
+          effective_from: string;
+          effective_until: string | null;
+          id: string;
+          is_recurring: boolean;
+          name: string;
+          notes: string | null;
+          recurrence_period:
+            | Database['public']['Enums']['workforce_payment_frequency']
+            | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          amount: number;
+          benefit_type: Database['public']['Enums']['workforce_benefit_type'];
+          contract_id: string;
+          created_at?: string | null;
+          currency?: string;
+          effective_from: string;
+          effective_until?: string | null;
+          id?: string;
+          is_recurring?: boolean;
+          name: string;
+          notes?: string | null;
+          recurrence_period?:
+            | Database['public']['Enums']['workforce_payment_frequency']
+            | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          amount?: number;
+          benefit_type?: Database['public']['Enums']['workforce_benefit_type'];
+          contract_id?: string;
+          created_at?: string | null;
+          currency?: string;
+          effective_from?: string;
+          effective_until?: string | null;
+          id?: string;
+          is_recurring?: boolean;
+          name?: string;
+          notes?: string | null;
+          recurrence_period?:
+            | Database['public']['Enums']['workforce_payment_frequency']
+            | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workforce_benefits_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'workforce_contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_benefits_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_benefits_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workforce_compensation: {
+        Row: {
+          base_hourly_rate: number | null;
+          base_salary_annual: number | null;
+          base_salary_monthly: number | null;
+          contract_id: string;
+          created_at: string | null;
+          currency: string;
+          effective_from: string;
+          effective_until: string | null;
+          id: string;
+          insurance_salary: number | null;
+          overtime_multiplier_daily: number | null;
+          overtime_multiplier_holiday: number | null;
+          overtime_multiplier_weekend: number | null;
+          overtime_threshold_daily_hours: number | null;
+          payment_frequency: Database['public']['Enums']['workforce_payment_frequency'];
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          base_hourly_rate?: number | null;
+          base_salary_annual?: number | null;
+          base_salary_monthly?: number | null;
+          contract_id: string;
+          created_at?: string | null;
+          currency?: string;
+          effective_from: string;
+          effective_until?: string | null;
+          id?: string;
+          insurance_salary?: number | null;
+          overtime_multiplier_daily?: number | null;
+          overtime_multiplier_holiday?: number | null;
+          overtime_multiplier_weekend?: number | null;
+          overtime_threshold_daily_hours?: number | null;
+          payment_frequency?: Database['public']['Enums']['workforce_payment_frequency'];
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          base_hourly_rate?: number | null;
+          base_salary_annual?: number | null;
+          base_salary_monthly?: number | null;
+          contract_id?: string;
+          created_at?: string | null;
+          currency?: string;
+          effective_from?: string;
+          effective_until?: string | null;
+          id?: string;
+          insurance_salary?: number | null;
+          overtime_multiplier_daily?: number | null;
+          overtime_multiplier_holiday?: number | null;
+          overtime_multiplier_weekend?: number | null;
+          overtime_threshold_daily_hours?: number | null;
+          payment_frequency?: Database['public']['Enums']['workforce_payment_frequency'];
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workforce_compensation_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'workforce_contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_compensation_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_compensation_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workforce_contracts: {
+        Row: {
+          contract_type: Database['public']['Enums']['workforce_contract_type'];
+          created_at: string | null;
+          created_by: string | null;
+          department: string | null;
+          employment_status: Database['public']['Enums']['workforce_employment_status'];
+          end_date: string | null;
+          file_url: string | null;
+          id: string;
+          job_title: string | null;
+          notes: string | null;
+          start_date: string;
+          updated_at: string | null;
+          user_id: string;
+          working_location: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          contract_type?: Database['public']['Enums']['workforce_contract_type'];
+          created_at?: string | null;
+          created_by?: string | null;
+          department?: string | null;
+          employment_status?: Database['public']['Enums']['workforce_employment_status'];
+          end_date?: string | null;
+          file_url?: string | null;
+          id?: string;
+          job_title?: string | null;
+          notes?: string | null;
+          start_date: string;
+          updated_at?: string | null;
+          user_id: string;
+          working_location?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          contract_type?: Database['public']['Enums']['workforce_contract_type'];
+          created_at?: string | null;
+          created_by?: string | null;
+          department?: string | null;
+          employment_status?: Database['public']['Enums']['workforce_employment_status'];
+          end_date?: string | null;
+          file_url?: string | null;
+          id?: string;
+          job_title?: string | null;
+          notes?: string | null;
+          start_date?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          working_location?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workforce_contracts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_ai_executions: {
         Row: {
           api_key_id: string;
@@ -13557,6 +14137,7 @@ export type Database = {
         Row: {
           archived: boolean;
           created_at: string | null;
+          creator_id: string | null;
           ending_date: string | null;
           id: string;
           is_guest: boolean | null;
@@ -13569,6 +14150,7 @@ export type Database = {
         Insert: {
           archived?: boolean;
           created_at?: string | null;
+          creator_id?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -13581,6 +14163,7 @@ export type Database = {
         Update: {
           archived?: boolean;
           created_at?: string | null;
+          creator_id?: string | null;
           ending_date?: string | null;
           id?: string;
           is_guest?: boolean | null;
@@ -13591,6 +14174,34 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_user_groups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_groups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_groups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_groups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_user_roles_ws_id_fkey';
             columns: ['ws_id'];
@@ -17488,6 +18099,12 @@ export type Database = {
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
       notification_scope: 'user' | 'workspace' | 'system';
       order_status: 'pending' | 'paid' | 'refunded' | 'partially_refunded';
+      payroll_run_status:
+        | 'draft'
+        | 'pending_approval'
+        | 'approved'
+        | 'finalized'
+        | 'cancelled';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       product:
         | 'web'
@@ -17543,6 +18160,49 @@ export type Database = {
         | 'APPROVED'
         | 'REJECTED'
         | 'NEEDS_INFO';
+      workforce_benefit_type:
+        | 'health_insurance'
+        | 'dental_insurance'
+        | 'vision_insurance'
+        | 'life_insurance'
+        | 'retirement_401k'
+        | 'stipend_transport'
+        | 'stipend_meal'
+        | 'stipend_phone'
+        | 'stipend_remote'
+        | 'bonus_performance'
+        | 'bonus_signing'
+        | 'bonus_holiday'
+        | 'leave_vacation'
+        | 'leave_sick'
+        | 'other'
+        | 'social_insurance'
+        | 'grab_for_business'
+        | 'google_workspace'
+        | 'software_license'
+        | 'training_education'
+        | 'gym_membership'
+        | 'allowance_responsibility'
+        | 'allowance_attendance'
+        | 'allowance_hazardous'
+        | 'allowance_housing'
+        | 'allowance_petrol';
+      workforce_contract_type:
+        | 'full_time'
+        | 'part_time'
+        | 'contractor'
+        | 'intern'
+        | 'temporary';
+      workforce_employment_status:
+        | 'active'
+        | 'on_leave'
+        | 'terminated'
+        | 'rehired';
+      workforce_payment_frequency:
+        | 'weekly'
+        | 'bi_weekly'
+        | 'monthly'
+        | 'annual';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
         | 'gemini-2.5-flash'
@@ -17899,7 +18559,11 @@ export type Database = {
         | 'bypass_time_tracking_request_approval'
         | 'manage_changelog'
         | 'manage_subscription'
-        | 'manage_e2ee';
+        | 'manage_e2ee'
+        | 'manage_workforce'
+        | 'manage_payroll'
+        | 'view_workforce'
+        | 'view_payroll';
     };
     CompositeTypes: {
       email_block_status: {
@@ -18081,6 +18745,13 @@ export const Constants = {
       notification_priority: ['low', 'medium', 'high', 'urgent'],
       notification_scope: ['user', 'workspace', 'system'],
       order_status: ['pending', 'paid', 'refunded', 'partially_refunded'],
+      payroll_run_status: [
+        'draft',
+        'pending_approval',
+        'approved',
+        'finalized',
+        'cancelled',
+      ],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       product: [
         'web',
@@ -18142,6 +18813,48 @@ export const Constants = {
         'REJECTED',
         'NEEDS_INFO',
       ],
+      workforce_benefit_type: [
+        'health_insurance',
+        'dental_insurance',
+        'vision_insurance',
+        'life_insurance',
+        'retirement_401k',
+        'stipend_transport',
+        'stipend_meal',
+        'stipend_phone',
+        'stipend_remote',
+        'bonus_performance',
+        'bonus_signing',
+        'bonus_holiday',
+        'leave_vacation',
+        'leave_sick',
+        'other',
+        'social_insurance',
+        'grab_for_business',
+        'google_workspace',
+        'software_license',
+        'training_education',
+        'gym_membership',
+        'allowance_responsibility',
+        'allowance_attendance',
+        'allowance_hazardous',
+        'allowance_housing',
+        'allowance_petrol',
+      ],
+      workforce_contract_type: [
+        'full_time',
+        'part_time',
+        'contractor',
+        'intern',
+        'temporary',
+      ],
+      workforce_employment_status: [
+        'active',
+        'on_leave',
+        'terminated',
+        'rehired',
+      ],
+      workforce_payment_frequency: ['weekly', 'bi_weekly', 'monthly', 'annual'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',
         'gemini-2.5-flash',
@@ -18501,6 +19214,10 @@ export const Constants = {
         'manage_changelog',
         'manage_subscription',
         'manage_e2ee',
+        'manage_workforce',
+        'manage_payroll',
+        'view_workforce',
+        'view_payroll',
       ],
     },
   },

@@ -41,7 +41,13 @@ export default function GroupSchedule({
     isPending,
     isError,
     data: queryData,
-  } = useQuery({
+  } = useQuery<{
+    data: {
+      sessions: string[] | null;
+      starting_date: string | null;
+      ending_date: string | null;
+    };
+  }>({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'schedule'],
     queryFn: () => getData(wsId, groupId),
     placeholderData: keepPreviousData,
@@ -60,6 +66,45 @@ export default function GroupSchedule({
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
     );
+
+  // Check if prev button should be disabled based on starting_date
+  const isPrevDisabled = useMemo(() => {
+    if (!data?.starting_date) return false;
+
+    const startingDate = new Date(data.starting_date);
+    const prevMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1
+    );
+
+    // Disable if prev month would be before the starting date's month
+    return (
+      prevMonth.getFullYear() < startingDate.getFullYear() ||
+      (prevMonth.getFullYear() === startingDate.getFullYear() &&
+        prevMonth.getMonth() < startingDate.getMonth())
+    );
+  }, [data?.starting_date, currentDate]);
+
+  // Check if next button should be disabled based on ending_date
+  const isNextDisabled = useMemo(() => {
+    if (!data?.ending_date) return false;
+
+    const endingDate = new Date(data.ending_date);
+    const nextMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      1
+    );
+
+    // Disable if next month would be after the ending date's month
+    return (
+      nextMonth.getFullYear() > endingDate.getFullYear() ||
+      (nextMonth.getFullYear() === endingDate.getFullYear() &&
+        nextMonth.getMonth() > endingDate.getMonth())
+    );
+  }, [data?.ending_date, currentDate]);
+
   const thisYear = currentDate.getFullYear();
   const thisMonth = currentDate.toLocaleString(locale, { month: '2-digit' });
 
@@ -111,11 +156,21 @@ export default function GroupSchedule({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Button size="xs" variant="secondary" onClick={handlePrev}>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={handlePrev}
+                  disabled={isPrevDisabled}
+                >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
 
-                <Button size="xs" variant="secondary" onClick={handleNext}>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={handleNext}
+                  disabled={isNextDisabled}
+                >
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>
@@ -174,7 +229,7 @@ async function getData(wsId: string, groupId: string) {
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
-    .select('sessions')
+    .select('sessions, starting_date, ending_date')
     .eq('id', groupId)
     .eq('ws_id', wsId);
 
