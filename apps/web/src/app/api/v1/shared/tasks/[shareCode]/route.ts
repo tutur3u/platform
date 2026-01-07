@@ -173,7 +173,7 @@ export async function GET(
       .select('id')
       .eq('share_link_id', shareLink.id)
       .eq('user_id', user.id)
-      .gte('created_at', oneHourAgo)
+      .gte('accessed_at', oneHourAgo)
       .maybeSingle();
 
     if (!recentUsage) {

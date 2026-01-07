@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { validate } from 'uuid';
 import { z } from 'zod';
 import { verifyTaskShareAccess } from '@/lib/task-perm-helper';
 
@@ -128,7 +129,7 @@ export async function POST(
       const { data: userPrivateDetails } = await supabase
         .from('user_private_details')
         .select('user_id')
-        .eq('email', normalizedEmail)
+        .ilike('email', normalizedEmail)
         .maybeSingle();
 
       if (userPrivateDetails) {
@@ -253,10 +254,7 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const shareId = searchParams.get('id');
 
-    // Simple validation for shareId format
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!shareId || !uuidRegex.test(shareId)) {
+    if (!shareId || !validate(shareId)) {
       return NextResponse.json({ error: 'Invalid share ID' }, { status: 400 });
     }
 

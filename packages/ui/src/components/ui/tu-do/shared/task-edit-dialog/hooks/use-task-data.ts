@@ -93,7 +93,7 @@ export function useTaskData({
       return data as TaskList[];
     },
     enabled: !!boardId && isOpen && !propAvailableLists && !hasSharedContext,
-    initialData: propAvailableLists || sharedContext?.availableLists,
+    initialData: sharedContext?.availableLists || propAvailableLists,
   });
   const availableLists =
     sharedContext?.availableLists ||

@@ -1,3 +1,4 @@
+import type { SupabaseClient, SupabaseUser } from '@tuturuuu/supabase';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -7,8 +8,8 @@ export type TaskShareAccessResult =
   | {
       success: true;
       data: {
-        supabase: any;
-        user: any;
+        supabase: SupabaseClient;
+        user: SupabaseUser | null;
         normalizedWsId: string;
         taskId: string;
       };
