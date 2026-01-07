@@ -5265,6 +5265,7 @@
     "usage": "Usage",
     "users": "Users",
     "whiteboards": "Whiteboards",
+    "workforce": "Workforce",
     "workouts": "Workouts",
     "x": "X"
   },
@@ -7763,6 +7764,11 @@
     "overview": "Overview",
     "reports": "Reports"
   },
+  "workspace-workforce-tabs": {
+    "contracts": "Contracts",
+    "directory": "Directory",
+    "payroll": "Payroll"
+  },
   "ws_post_details": {
     "check_all": "Check all",
     "completed": "Completed"
@@ -9025,6 +9031,8 @@
     "manage_inventory": "Manage Inventory",
     "manage_inventory_description": "Allows members to view, create, edit, and delete inventory items in the workspace.",
     "manage_members": "Manage members",
+    "manage_payroll": "Manage Payroll",
+    "manage_payroll_description": "Allows members to create, approve, and finalize payroll runs.",
     "manage_projects": "Manage Projects",
     "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
     "manage_time_tracking_requests": "Manage Time Tracking Requests",
@@ -9033,6 +9041,8 @@
     "manage_user_report_templates_description": "Allows members to edit user report templates.",
     "manage_users": "Manage Users",
     "manage_users_description": "Allows members to view, create, edit, and delete virtual user profiles in the workspace.",
+    "manage_workforce": "Manage Workforce",
+    "manage_workforce_description": "Allows members to create, edit, and manage employee contracts and compensation.",
     "manage_workspace_audit_logs": "Manage workspace audit logs",
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
     "manage_workspace_billing": "Manage workspace billing",
@@ -9128,6 +9138,8 @@
     "view_inventory_description": "Allows members to view inventory items in the workspace.",
     "view_invoices": "View Invoices",
     "view_invoices_description": "Allows members to view invoice details in the workspace.",
+    "view_payroll": "View Payroll",
+    "view_payroll_description": "Allows members to view payroll runs and payment information.",
     "view_transactions": "View Transactions",
     "view_transactions_description": "Allows members to view financial transaction details in the workspace.",
     "view_user_groups": "View User Groups",
@@ -9140,6 +9152,8 @@
     "view_users_private_info_description": "Allows members to view private information of users in the workspace.",
     "view_users_public_info": "View Users Public Info",
     "view_users_public_info_description": "Allows members to view public information of users in the workspace.",
+    "view_workforce": "View Workforce",
+    "view_workforce_description": "Allows members to view employee contracts and workforce information.",
     "without_roles": "Without Roles",
     "workspace": "Workspace",
     "workspace_description": "Core workspace management including members, roles, and settings"
