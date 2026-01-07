@@ -5,6 +5,51 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { z } from 'zod';
+
+const SharedTaskContextSchema = z.object({
+  boardConfig: z
+    .object({
+      id: z.string(),
+      name: z.string().optional(),
+      ws_id: z.string().optional(),
+      ticket_prefix: z.string().optional(),
+      estimation_type: z.string().optional(),
+      extended_estimation: z.boolean().optional(),
+      allow_zero_estimates: z.boolean().optional(),
+    })
+    .optional(),
+  availableLists: z.array(z.any()).optional(), // Schemas for complex types can be added if needed, checking array is basic safety
+  workspaceLabels: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        color: z.string(),
+        created_at: z.string(),
+      })
+    )
+    .optional(),
+  workspaceMembers: z
+    .array(
+      z.object({
+        id: z.string(),
+        user_id: z.string(),
+        display_name: z.string(),
+        avatar_url: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
+  workspaceProjects: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        status: z.string(),
+      })
+    )
+    .optional(),
+});
 
 const supabase = createClient();
 
@@ -66,6 +111,13 @@ export function useTaskData({
 }: UseTaskDataProps) {
   // If sharedContext is provided, use pre-loaded data and skip fetches
   const hasSharedContext = !!sharedContext;
+
+  if (hasSharedContext && sharedContext) {
+    const validation = SharedTaskContextSchema.safeParse(sharedContext);
+    if (!validation.success) {
+      console.error('Invalid SharedTaskContext:', validation.error);
+    }
+  }
 
   // Board configuration - fetch first to get real workspace ID
   const { data: fetchedBoardConfig } = useBoardConfig(

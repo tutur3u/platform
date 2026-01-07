@@ -12,7 +12,7 @@ interface SharedTaskParams {
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<SharedTaskParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { shareCode } = await params;
 
@@ -100,6 +100,13 @@ export async function GET(
     const wsId = shareLink.tasks?.task_lists?.workspace_boards?.ws_id;
     const boardId = shareLink.tasks?.task_lists?.workspace_boards?.id;
 
+    if (!wsId || !boardId) {
+      return NextResponse.json(
+        { error: 'Invalid task configuration' },
+        { status: 500 }
+      );
+    }
+
     if (wsId) {
       const { data: memberCheck } = await adminClient
         .from('workspace_members')
@@ -125,8 +132,9 @@ export async function GET(
       .eq('task_id', shareLink.task_id);
 
     if (email) {
+      // Use parameterized query structure provided by PostgREST syntax to handle emails safely
       sharesQuery = sharesQuery.or(
-        `shared_with_user_id.eq.${user.id},shared_with_email.ilike.${email}`
+        `shared_with_user_id.eq.${user.id},and(shared_with_email.ilike."${email}")`
       );
     } else {
       sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
@@ -232,7 +240,7 @@ export async function GET(
     // Get all lists for the board
     const { data: availableLists } = await adminClient
       .from('task_lists')
-      .select('*')
+      .select('id, name, position, board_id, created_at')
       .eq('board_id', boardId)
       .eq('deleted', false)
       .order('position')
@@ -352,7 +360,7 @@ export async function GET(
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<SharedTaskParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { shareCode } = await params;
 
@@ -405,7 +413,8 @@ export async function PATCH(
         task_lists!inner (
           id,
           workspace_boards!inner (
-            ws_id
+            ws_id,
+            id
           )
         )
       `
@@ -439,22 +448,17 @@ export async function PATCH(
       let sharesQuery = adminClient
         .from('task_shares')
         .select('permission')
-        .eq('task_id', shareLink.task_id)
-        .eq('shared_with_user_id', user.id)
-        .maybeSingle();
+        .eq('task_id', shareLink.task_id);
 
       if (email) {
-        sharesQuery = adminClient
-          .from('task_shares')
-          .select('permission')
-          .eq('task_id', shareLink.task_id)
-          .or(
-            `shared_with_user_id.eq.${user.id},shared_with_email.ilike.${email}`
-          )
-          .maybeSingle();
+        sharesQuery = sharesQuery.or(
+          `shared_with_user_id.eq.${user.id},and(shared_with_email.ilike."${email}")`
+        );
+      } else {
+        sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
       }
 
-      const { data: shareRow } = await sharesQuery;
+      const { data: shareRow } = await sharesQuery.maybeSingle();
       const recipientPermission = shareRow?.permission ?? null;
 
       if (recipientPermission !== 'edit') {
@@ -474,7 +478,7 @@ export async function PATCH(
         .optional(),
       start_date: z.string().nullable().optional(),
       end_date: z.string().nullable().optional(),
-      list_id: z.string().optional(),
+      list_id: z.string().uuid().optional(),
       estimation_points: z.number().nullable().optional(),
     });
 
@@ -495,6 +499,24 @@ export async function PATCH(
         { error: 'No valid fields to update' },
         { status: 400 }
       );
+    }
+
+    // Security check: If list_id is being updated, verify it belongs to the same board
+    if (updates.list_id) {
+      const taskBoardId = taskWs?.task_lists?.workspace_boards?.id; // taskWs is fetched above
+
+      const { data: targetList } = await adminClient
+        .from('task_lists')
+        .select('board_id')
+        .eq('id', updates.list_id)
+        .single();
+
+      if (!targetList || targetList.board_id !== taskBoardId) {
+        return NextResponse.json(
+          { error: 'Invalid list_id: Must belong to the same board' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update the task (use admin client to bypass RLS)

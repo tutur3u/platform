@@ -158,11 +158,26 @@ export async function POST(
       .eq('task_id', validatedTaskId);
 
     if (normalizedUserId) {
-      existingShareQuery = existingShareQuery.eq(
-        'shared_with_user_id',
-        normalizedUserId
-      );
+      // If a userId is provided, we want to check for an existing share
+      // either directly with that userId OR with the email (if provided)
+      // in case the user accepted an invite previously.
+      if (email) {
+        existingShareQuery = supabase
+          .from('task_shares')
+          .select('id')
+          .eq('task_id', validatedTaskId)
+          .or(
+            `shared_with_user_id.eq.${normalizedUserId},shared_with_email.ilike."${email}"`
+          );
+      } else {
+        // Only userId is provided, check for share with this userId
+        existingShareQuery = existingShareQuery.eq(
+          'shared_with_user_id',
+          normalizedUserId
+        );
+      }
     } else if (normalizedEmail) {
+      // Only email is provided, check for share with this email
       existingShareQuery = existingShareQuery.eq(
         'shared_with_email',
         normalizedEmail as string
@@ -259,9 +274,9 @@ export async function DELETE(
     }
 
     // Delete share (RLS will verify task belongs to workspace)
-    const { error: deleteError } = await supabase
+    const { count, error: deleteError } = await supabase
       .from('task_shares')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', shareId)
       .eq('task_id', validatedTaskId);
 
@@ -271,6 +286,10 @@ export async function DELETE(
         { error: 'Failed to delete share' },
         { status: 500 }
       );
+    }
+
+    if (count === 0) {
+      return NextResponse.json({ error: 'Share not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });
