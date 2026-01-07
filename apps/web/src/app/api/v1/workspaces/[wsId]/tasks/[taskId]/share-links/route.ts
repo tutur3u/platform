@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
@@ -294,6 +295,15 @@ export async function PATCH(
     }
 
     if (validationResult.data.requiresInvite !== undefined) {
+      if (wsId !== ROOT_WORKSPACE_ID) {
+        return NextResponse.json(
+          {
+            error:
+              'Invite-only tasks are currently restricted to internal workspace.',
+          },
+          { status: 403 }
+        );
+      }
       updatePayload.requires_invite = validationResult.data.requiresInvite;
       if (validationResult.data.requiresInvite === true) {
         // Enforce invariant at API level too

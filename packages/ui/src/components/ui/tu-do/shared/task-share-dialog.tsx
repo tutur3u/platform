@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -393,18 +394,20 @@ export function TaskShareDialog({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={shareLink.requires_invite}
-                      onCheckedChange={(checked) =>
-                        handleToggleInviteOnly(Boolean(checked))
-                      }
-                      disabled={creating}
-                    />
-                    <span className="text-sm">
-                      {t('common.task_sharing.invite_only')}
-                    </span>
-                  </div>
+                  {wsId === ROOT_WORKSPACE_ID && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={shareLink.requires_invite}
+                        onCheckedChange={(checked) =>
+                          handleToggleInviteOnly(Boolean(checked))
+                        }
+                        disabled={creating}
+                      />
+                      <span className="text-sm">
+                        {t('common.task_sharing.invite_only')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}
