@@ -126,7 +126,7 @@ export async function GET(
 
     if (email) {
       sharesQuery = sharesQuery.or(
-        `shared_with_user_id.eq.${user.id},shared_with_email.eq.${email}`
+        `shared_with_user_id.eq.${user.id},shared_with_email.ilike.${email}`
       );
     } else {
       sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
@@ -437,7 +437,9 @@ export async function PATCH(
           .from('task_shares')
           .select('permission')
           .eq('task_id', shareLink.task_id)
-          .or(`shared_with_user_id.eq.${user.id},shared_with_email.eq.${email}`)
+          .or(
+            `shared_with_user_id.eq.${user.id},shared_with_email.ilike.${email}`
+          )
           .maybeSingle();
       }
 

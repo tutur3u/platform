@@ -1469,7 +1469,7 @@ export function TaskEditDialog({
       )}
 
       {/* Task Share Dialog */}
-      {!isCreateMode && task?.id && (
+      {!isCreateMode && task?.id && wsId === ROOT_WORKSPACE_ID && (
         <TaskShareDialog
           open={showShareDialog}
           onOpenChange={setShowShareDialog}

@@ -467,13 +467,13 @@ export async function DELETE(
         id,
         task_lists!inner (
           workspace_boards!inner (
-            workspace_id
+            ws_id
           )
         )
       `
       )
       .eq('id', taskId)
-      .eq('task_lists.workspace_boards.workspace_id', normalizedWsId)
+      .eq('task_lists.workspace_boards.ws_id', normalizedWsId)
       .single();
 
     if (taskError || !task) {

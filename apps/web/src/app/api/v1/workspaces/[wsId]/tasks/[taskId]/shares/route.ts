@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface ShareParams {
   wsId: string;
@@ -20,8 +21,9 @@ export async function GET(
 ) {
   try {
     const { wsId, taskId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    if (!validate(wsId) || !validate(taskId)) {
+    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
@@ -42,7 +44,7 @@ export async function GET(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -70,7 +72,7 @@ export async function GET(
       .eq('id', taskId)
       .single();
 
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
       return NextResponse.json(
         { error: 'Task not found in this workspace' },
         { status: 404 }
@@ -124,8 +126,9 @@ export async function POST(
 ) {
   try {
     const { wsId, taskId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    if (!validate(wsId) || !validate(taskId)) {
+    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
@@ -146,7 +149,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -174,7 +177,7 @@ export async function POST(
       .eq('id', taskId)
       .single();
 
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
       return NextResponse.json(
         { error: 'Task not found in this workspace' },
         { status: 404 }
@@ -323,8 +326,9 @@ export async function DELETE(
 ) {
   try {
     const { wsId, taskId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    if (!validate(wsId) || !validate(taskId)) {
+    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
@@ -352,7 +356,7 @@ export async function DELETE(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -380,7 +384,7 @@ export async function DELETE(
       .eq('id', taskId)
       .single();
 
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
       return NextResponse.json(
         { error: 'Task not found in this workspace' },
         { status: 404 }
@@ -423,8 +427,9 @@ export async function PATCH(
 ) {
   try {
     const { wsId, taskId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    if (!validate(wsId) || !validate(taskId)) {
+    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
@@ -445,7 +450,7 @@ export async function PATCH(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -485,7 +490,7 @@ export async function PATCH(
       .eq('id', taskId)
       .single();
 
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
       return NextResponse.json(
         { error: 'Task not found in this workspace' },
         { status: 404 }
