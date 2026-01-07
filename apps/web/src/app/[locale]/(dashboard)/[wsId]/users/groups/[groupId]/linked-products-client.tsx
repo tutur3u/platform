@@ -72,8 +72,6 @@ interface WarehouseOption {
 interface LinkedProductsClientProps {
   wsId: string;
   groupId: string;
-  initialLinkedProducts: LinkedProduct[];
-  initialCount: number;
   canUpdateLinkedProducts: boolean;
 }
 
@@ -132,13 +130,37 @@ export const useWarehouses = (wsId: string) => {
 export default function LinkedProductsClient({
   wsId,
   groupId,
-  initialLinkedProducts,
-  initialCount,
   canUpdateLinkedProducts,
 }: LinkedProductsClientProps) {
   const t = useTranslations();
-  const [linkedProducts, setLinkedProducts] = useState(initialLinkedProducts);
-  const [count, setCount] = useState(initialCount);
+
+  const linkedProductsQueryKey = ['linked-products', wsId, groupId] as const;
+  const { data: linkedProductsData } = useQuery({
+    queryKey: linkedProductsQueryKey,
+    enabled: Boolean(wsId && groupId),
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error, count } = await supabase
+        .from('user_group_linked_products')
+        .select(
+          'warehouse_id, unit_id, ...workspace_products(id, name, description)',
+          { count: 'exact' }
+        )
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return {
+        items: (data ?? []) as LinkedProduct[],
+        count: count ?? 0,
+      };
+    },
+    staleTime: 30 * 1000,
+  });
+
+  const linkedProducts = linkedProductsData?.items ?? [];
+  const count = linkedProductsData?.count ?? 0;
+
   const { data: workspaceProducts } = useProducts(wsId);
   const { data: warehouses } = useWarehouses(wsId);
   const queryClient = useQueryClient();
@@ -188,8 +210,21 @@ export default function LinkedProductsClient({
       return newLinked;
     },
     onSuccess: (newLinked) => {
-      setLinkedProducts((prev) => [...prev, newLinked]);
-      setCount((c) => c + 1);
+      queryClient.setQueryData(
+        linkedProductsQueryKey,
+        (prev:
+          | {
+              items: LinkedProduct[];
+              count: number;
+            }
+          | undefined) => {
+          if (!prev) return { items: [newLinked], count: 1 };
+          return {
+            items: [...prev.items, newLinked],
+            count: prev.count + 1,
+          };
+        }
+      );
       setIsAddDialogOpen(false);
       setSelectedProduct('');
       setSelectedWarehouse('');
@@ -219,8 +254,21 @@ export default function LinkedProductsClient({
       return { productId };
     },
     onSuccess: ({ productId }) => {
-      setLinkedProducts((prev) => prev.filter((p) => p.id !== productId));
-      setCount((c) => Math.max(0, c - 1));
+      queryClient.setQueryData(
+        linkedProductsQueryKey,
+        (prev:
+          | {
+              items: LinkedProduct[];
+              count: number;
+            }
+          | undefined) => {
+          if (!prev) return prev;
+          return {
+            items: prev.items.filter((p) => p.id !== productId),
+            count: Math.max(0, prev.count - 1),
+          };
+        }
+      );
       setIsDeleteDialogOpen(false);
       setDeletingProduct(null);
       toast(t('ws-groups.linked_product_removed_successfully'));
@@ -258,12 +306,24 @@ export default function LinkedProductsClient({
       return { productId, warehouseId, unitId };
     },
     onSuccess: ({ productId, warehouseId, unitId }) => {
-      setLinkedProducts((prev) =>
-        prev.map((p) =>
-          p.id === productId
-            ? { ...p, warehouse_id: warehouseId, unit_id: unitId }
-            : p
-        )
+      queryClient.setQueryData(
+        linkedProductsQueryKey,
+        (prev:
+          | {
+              items: LinkedProduct[];
+              count: number;
+            }
+          | undefined) => {
+          if (!prev) return prev;
+          return {
+            items: prev.items.map((p) =>
+              p.id === productId
+                ? { ...p, warehouse_id: warehouseId, unit_id: unitId }
+                : p
+            ),
+            count: prev.count,
+          };
+        }
       );
       setIsEditDialogOpen(false);
       setEditingProduct(null);

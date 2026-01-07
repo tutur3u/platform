@@ -7,7 +7,6 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -43,22 +42,6 @@ interface Props {
     groupId: string;
   }>;
   searchParams: Promise<SearchParams>;
-}
-
-interface GroupMember extends WorkspaceUser {
-  role?: string | null;
-  isGuest?: boolean;
-}
-
-interface PermissionFlags {
-  canViewPersonalInfo: boolean;
-  canViewPublicInfo: boolean;
-  canCheckUserAttendance: boolean;
-}
-
-interface GroupUserQueryResult {
-  workspace_users: WorkspaceUser;
-  role: string | null;
 }
 
 export default async function UserGroupDetailsPage({
@@ -115,23 +98,7 @@ export default async function UserGroupDetailsPage({
           'delete_user_groups_posts'
         );
 
-        // Fetch group members data for the GroupMembers component
         const MEMBERS_PAGE_SIZE = 10;
-        const groupMembersData = await getGroupMembersData(
-          groupId,
-          MEMBERS_PAGE_SIZE,
-          {
-            canViewPersonalInfo,
-            canViewPublicInfo,
-            canCheckUserAttendance,
-          }
-        );
-
-        const { data: posts, count: postsCount } = canViewUserGroupsPosts
-          ? await getGroupPosts(groupId)
-          : { data: [], count: 0 };
-        const { data: linkedProducts, count: lpCount } =
-          await getLinkedProducts(groupId);
 
         return (
           <>
@@ -222,7 +189,6 @@ export default async function UserGroupDetailsPage({
               <GroupMembers
                 wsId={wsId}
                 groupId={groupId}
-                initialData={groupMembersData}
                 pageSize={MEMBERS_PAGE_SIZE}
                 canViewPersonalInfo={canViewPersonalInfo}
                 canViewPublicInfo={canViewPublicInfo}
@@ -252,8 +218,6 @@ export default async function UserGroupDetailsPage({
                   <PostsClient
                     wsId={wsId}
                     groupId={groupId}
-                    posts={posts}
-                    count={postsCount}
                     canUpdatePosts={canUpdateUserGroupsPosts}
                     canCreatePosts={canCreateUserGroupsPosts}
                     canDeletePosts={canDeleteUserGroupsPosts}
@@ -265,8 +229,6 @@ export default async function UserGroupDetailsPage({
               <LinkedProductsClient
                 wsId={wsId}
                 groupId={groupId}
-                initialLinkedProducts={linkedProducts}
-                initialCount={lpCount || 0}
                 canUpdateLinkedProducts={canUpdateUserGroups}
               />
             </div>
@@ -292,81 +254,6 @@ async function getData(wsId: string, groupId: string) {
   return data as UserGroup;
 }
 
-async function getGroupPosts(groupId: string) {
-  const supabase = await createClient();
-  const { data, error, count } = await supabase
-    .from('user_group_posts')
-    .select('*', { count: 'exact' })
-    .eq('group_id', groupId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return { data, count };
-}
-
-async function getLinkedProducts(groupId: string) {
-  const supabase = await createClient();
-  const { data, error, count } = await supabase
-    .from('user_group_linked_products')
-    .select(
-      'warehouse_id, unit_id, ...workspace_products(id, name, description)',
-      { count: 'exact' }
-    )
-    .eq('group_id', groupId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return { data: data || [], count };
-}
-
-async function getGroupMembersData(
-  groupId: string,
-  PAGE_SIZE: number,
-  permissions: PermissionFlags
-): Promise<GroupMember[]> {
-  const supabase = await createClient();
-
-  // Build dynamic select query based on permissions
-  const baseFields = 'id, display_name, full_name, avatar_url';
-  const publicFields = permissions.canViewPublicInfo
-    ? ', birthday, gender'
-    : '';
-  const personalFields = permissions.canViewPersonalInfo
-    ? ', email, phone'
-    : '';
-
-  // Build the complete select query string
-  const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
-
-  // Fetch all users in the group with their roles
-  const { data: groupUsers, error: groupError } = await supabase
-    .from('workspace_user_groups_users')
-    .select(selectQuery)
-    .eq('group_id', groupId)
-    .range(0, PAGE_SIZE - 1);
-
-  if (groupError) throw groupError;
-  if (!groupUsers || !Array.isArray(groupUsers)) return [];
-
-  // Check guest status for each user
-  const membersWithGuestStatus = await Promise.all(
-    groupUsers.map(async (user) => {
-      // Type assertion needed due to Supabase typing limitations
-      const typedUser = user as unknown as GroupUserQueryResult;
-      const { data: isGuest } = await supabase.rpc('is_user_guest', {
-        user_uuid: typedUser.workspace_users.id,
-      });
-
-      return {
-        ...typedUser.workspace_users,
-        role: typedUser.role,
-        isGuest: isGuest || false,
-      } as GroupMember;
-    })
-  );
-
-  return membersWithGuestStatus;
-}
 
 // async function getExcludedUserGroups(wsId: string, groupId: string) {
 //   const supabase = await createClient();
