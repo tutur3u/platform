@@ -5310,6 +5310,7 @@
     "usage": "Lưu lượng",
     "users": "Người dùng",
     "whiteboards": "Bảng trắng",
+    "workforce": "Nhân sự",
     "workouts": "Vận động thể chất",
     "x": "X"
   },
@@ -7855,6 +7856,11 @@
     "overview": "Tổng quan",
     "reports": "Báo cáo"
   },
+  "workspace-workforce-tabs": {
+    "contracts": "Hợp đồng",
+    "directory": "Danh bạ",
+    "payroll": "Bảng lương"
+  },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả",
     "completed": "Hoàn thành"
@@ -9127,6 +9133,8 @@
     "manage_inventory": "Quản lý kho",
     "manage_inventory_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa các mặt hàng trong kho không gian làm việc.",
     "manage_members": "Quản lý thành viên",
+    "manage_payroll": "Quản lý bảng lương",
+    "manage_payroll_description": "Cho phép thành viên tạo, phê duyệt và hoàn tất các đợt thanh toán lương.",
     "manage_projects": "Quản lý dự án",
     "manage_projects_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa dự án trong không gian làm việc.",
     "manage_time_tracking_requests": "Quản lý các yêu cầu theo dõi thời gian",
@@ -9135,6 +9143,8 @@
     "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
     "manage_users": "Quản lý người dùng",
     "manage_users_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa hồ sơ người dùng ảo trong không gian làm việc.",
+    "manage_workforce": "Quản lý nhân sự",
+    "manage_workforce_description": "Cho phép thành viên tạo, chỉnh sửa và quản lý hợp đồng lao động và lương thưởng.",
     "manage_workspace_audit_logs": "Quản lý nhật ký kiểm toán",
     "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
     "manage_workspace_billing": "Quản lý thanh toán",
@@ -9230,6 +9240,8 @@
     "view_inventory_description": "Cho phép thành viên xem mặt hàng kho trong không gian làm việc.",
     "view_invoices": "Xem hóa đơn",
     "view_invoices_description": "Cho phép thành viên xem chi tiết hóa đơn trong không gian làm việc.",
+    "view_payroll": "Xem bảng lương",
+    "view_payroll_description": "Cho phép thành viên xem các đợt thanh toán lương.",
     "view_transactions": "Xem giao dịch",
     "view_transactions_description": "Cho phép thành viên xem chi tiết giao dịch tài chính trong không gian làm việc.",
     "view_user_groups": "Xem nhóm người dùng",
@@ -9242,6 +9254,8 @@
     "view_users_private_info_description": "Cho phép thành viên xem thông tin riêng tư của người dùng trong không gian làm việc.",
     "view_users_public_info": "Xem thông tin công khai của người dùng",
     "view_users_public_info_description": "Cho phép thành viên xem thông tin công khai của người dùng trong không gian làm việc.",
+    "view_workforce": "Xem nhân sự",
+    "view_workforce_description": "Cho phép thành viên xem hợp đồng lao động và thông tin nhân sự.",
     "without_roles": "Không có Vai trò",
     "workspace": "Không gian làm việc",
     "workspace_description": "Quản lý không gian làm việc cốt lõi bao gồm thành viên, vai trò và cài đặt"
