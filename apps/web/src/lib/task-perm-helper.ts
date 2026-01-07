@@ -9,7 +9,7 @@ export type TaskShareAccessResult =
       success: true;
       data: {
         supabase: SupabaseClient;
-        user: SupabaseUser | null;
+        user: SupabaseUser;
         normalizedWsId: string;
         taskId: string;
       };
