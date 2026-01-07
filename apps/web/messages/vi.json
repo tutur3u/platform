@@ -9916,7 +9916,8 @@
     "set_recurring_schedule": "Đặt lịch trình định kỳ",
     "set_recurring_schedule_description": "Tạo nhiều phiên học cùng lúc dựa trên mô hình hàng tuần.",
     "start_date": "Ngày bắt đầu",
-    "start_date_help": "Ngày mà lịch trình định kỳ sẽ bắt đầu"
+    "start_date_help": "Ngày mà lịch trình định kỳ sẽ bắt đầu",
+    "notes": "Ghi chú"
   },
   "ws-user-group-tags": {
     "add_collaboration": "Thêm hợp tác",

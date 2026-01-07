@@ -9807,7 +9807,8 @@
     "set_recurring_schedule": "Set Recurring Schedule",
     "set_recurring_schedule_description": "Create multiple sessions at once based on a weekly pattern.",
     "start_date": "Start Date",
-    "start_date_help": "The date from which the recurring schedule will begin"
+    "start_date_help": "The date from which the recurring schedule will begin",
+    "notes": "Notes"
   },
   "ws-user-group-tags": {
     "add_group": "Add groups",

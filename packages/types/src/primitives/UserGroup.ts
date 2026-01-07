@@ -11,4 +11,5 @@ export interface UserGroup extends Entity {
   description?: string;
   starting_date?: string | null;
   ending_date?: string | null;
+  notes?: string | null;
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -42,6 +43,12 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
+  const workspaceUser = await getCurrentWorkspaceUser(wsId);
+
+  if (!workspaceUser) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });
   if (withoutPermission('create_user_groups')) {
@@ -59,10 +66,14 @@ export async function POST(req: Request, { params }: Params) {
 
   const { group_ids, ...coreData } = data;
 
-  const { error } = await supabase.from('workspace_user_groups').insert({
-    ...coreData,
-    ws_id: wsId,
-  });
+  const { data: group, error } = await supabase
+    .from('workspace_user_groups')
+    .insert({
+      ...coreData,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -70,6 +81,20 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Error creating workspace user group' },
       { status: 500 }
     );
+  }
+
+  if (group) {
+    const { error: memberError } = await supabase
+      .from('workspace_user_groups_users')
+      .insert({
+        group_id: group.id,
+        user_id: workspaceUser.virtual_user_id,
+        role: 'TEACHER'
+      });
+
+    if (memberError) {
+      console.log(memberError);
+    }
   }
 
   return NextResponse.json({ message: 'success' });
