@@ -3,12 +3,22 @@
 import {
   CheckCircle,
   Clock,
+  Download,
   FileText,
+  MoreHorizontal,
   Receipt,
   RefreshCw,
   XCircle,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   Table,
   TableBody,
@@ -21,6 +31,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 
 interface OrderItem {
@@ -44,6 +55,9 @@ function getSimpleProductName(name: string): string {
 
 export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
   const t = useTranslations('billing');
+  const [generatingInvoice, setGeneratingInvoice] = useState<string | null>(
+    null
+  );
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
 
@@ -130,6 +144,43 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
     }
   };
 
+  const handleDownloadInvoice = async (orderId: string) => {
+    setGeneratingInvoice(orderId);
+    try {
+      // 1. Generate Invoice (POST)
+      const generateRes = await fetch(
+        `/api/payment/orders/${orderId}/invoice`,
+        {
+          method: 'POST',
+        }
+      );
+
+      if (!generateRes.ok) {
+        throw new Error('Failed to generate invoice');
+      }
+
+      // 2. Get Invoice URL (GET)
+      const getRes = await fetch(`/api/payment/orders/${orderId}/invoice`);
+
+      if (!getRes.ok) {
+        throw new Error('Failed to get invoice URL');
+      }
+
+      const invoice = await getRes.json();
+
+      if (invoice?.url) {
+        window.open(invoice.url, '_blank');
+      } else {
+        throw new Error('Invoice URL not found');
+      }
+    } catch (error) {
+      toast.error('Failed to download invoice');
+      console.error(error);
+    } finally {
+      setGeneratingInvoice(null);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card">
       {/* Header */}
@@ -176,6 +227,9 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                 </TableHead>
                 <TableHead className="font-semibold text-xs uppercase tracking-wider">
                   {t('status')}
+                </TableHead>
+                <TableHead className="font-semibold text-xs uppercase tracking-wider">
+                  Actions
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -226,6 +280,7 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                         {reasonConfig.label}
                       </Badge>
                     </TableCell>
+
                     <TableCell className="py-4 text-right">
                       {hasDiscount ? (
                         <div className="flex flex-col items-end">
@@ -262,6 +317,31 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                         <StatusIcon className="h-3 w-3" />
                         {statusConfig.label}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center">
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadInvoice(order.id)}
+                            disabled={generatingInvoice === order.id}
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            {generatingInvoice === order.id
+                              ? 'Generating...'
+                              : 'Download Invoice'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );

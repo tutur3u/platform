@@ -24,8 +24,8 @@ import { SubscriptionConfirmationDialog } from './subscription-confirmation-dial
 
 export interface Plan {
   id: string;
-  polarSubscriptionId: string;
   productId: string;
+  polarSubscriptionId: string | null;
   name: string;
   price: number;
   billingCycle: string | null;
@@ -271,6 +271,7 @@ export function BillingClient({
         onOpenChange={setShowConfirmationDialog}
         currentPlan={{ ...currentPlan, name: simplePlanName }}
         onConfirm={async () => {
+          if (!currentPlan.polarSubscriptionId) return;
           if (currentPlan.cancelAtPeriodEnd) {
             await handleContinueSubscription(currentPlan.polarSubscriptionId);
           } else {

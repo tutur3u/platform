@@ -409,7 +409,9 @@ export function PlanList({
                           <PurchaseLink
                             wsId={wsId}
                             productId={plan.id}
-                            subscriptionId={currentPlan.polarSubscriptionId}
+                            subscriptionId={
+                              currentPlan.polarSubscriptionId || undefined
+                            }
                             className={cn(
                               'w-full transition-all hover:scale-[1.02]',
                               !plan.isFree &&
