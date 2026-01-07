@@ -281,7 +281,7 @@ export default function UserGroupForm({
                       within the workspace.
                     </p>
                     {field.value && (
-                      <div className="flex items-center space-x-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                      <div className="flex items-center space-x-2 rounded bg-dynamic-orange/10 px-2 py-1 text-xs text-dynamic-orange-">
                         <svg
                           className="h-3 w-3"
                           fill="currentColor"

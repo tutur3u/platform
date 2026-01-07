@@ -31,7 +31,7 @@ export function PostEmailStatus({
       sent: number | null;
       checked: number | null;
       failed: number | null;
-      tenative: number | null;
+      tentative: number | null;
       count: number | null;
     }> => {
       const supabase = createClient();
@@ -73,7 +73,7 @@ export function PostEmailStatus({
         failed: safeUsers.filter((user) =>
           user?.user_group_post_checks?.find((check) => !check?.is_completed)
         ).length,
-        tenative: safeUsers.filter((user) => !user?.id).length,
+        tentative: safeUsers.filter((user) => !user?.id).length,
         count,
       };
     },
@@ -108,7 +108,7 @@ export function PostEmailStatus({
           'flex w-fit items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 py-1 font-semibold text-dynamic-blue text-xs'
         )}
       >
-        {data?.tenative ?? '-'} <CircleHelp className="h-4 w-4" />
+        {data?.tentative ?? '-'} <CircleHelp className="h-4 w-4" />
       </div>
     </div>
   );

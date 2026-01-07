@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw, Save } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -37,60 +38,87 @@ export default function ScheduleCalendar({
   endingDate,
 }: ScheduleCalendarProps) {
   const t = useTranslations();
-  const [sessions, setSessions] = useState<Set<string>>(
-    new Set(initialSessions)
-  );
+  const queryClient = useQueryClient();
+
+  const { data: fetchedSessions } = useQuery({
+    queryKey: ['group-schedule', groupId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_user_groups')
+        .select('sessions')
+        .eq('ws_id', wsId)
+        .eq('id', groupId)
+        .single();
+
+      if (error) throw error;
+      return (data?.sessions as string[]) || [];
+    },
+    initialData: initialSessions,
+  });
+
   const [pendingChanges, setPendingChanges] = useState<Set<string>>(new Set());
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if a date is in the original sessions
-  const isOriginalSession = useCallback(
-    (date: string) => initialSessions.includes(date),
-    [initialSessions]
-  );
+  // Derive current sessions from fetched data + pending changes
+  // pendingChanges contains dates that are DIFFERENT from fetchedSessions
+  // (either added or removed)
+  const currentSessions = useMemo(() => {
+    const combined = new Set(fetchedSessions);
+    pendingChanges.forEach((date) => {
+      if (combined.has(date)) {
+        combined.delete(date);
+      } else {
+        combined.add(date);
+      }
+    });
+    return combined;
+  }, [fetchedSessions, pendingChanges]);
 
-  // Handle date click - add or remove from sessions
+  // Mutation for updating schedule
+  const mutation = useMutation({
+    mutationFn: async (newSessions: string[]) => {
+      if (pendingChanges.size === 0) {
+        toast.info(t('common.no_changes_to_save'));
+        return;
+      }
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('workspace_user_groups')
+        .update({ sessions: newSessions })
+        .eq('ws_id', wsId)
+        .eq('id', groupId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setPendingChanges(new Set());
+      queryClient.invalidateQueries({ queryKey: ['group-schedule', groupId] });
+      toast.success(t('common.success'));
+    },
+    onError: (error) => {
+      console.error('Error updating schedule:', error);
+      toast.error(t('common.error'));
+    },
+  });
+
+  // Handle date click - simply toggle the date in pendingChanges
   const handleDateClick = useCallback(
     (date: Date) => {
       if (!canUpdateSchedule) return;
 
       const dateStr = dayjs(date).format('YYYY-MM-DD');
 
-      setSessions((prev) => {
-        const newSessions = new Set(prev);
-        if (newSessions.has(dateStr)) {
-          newSessions.delete(dateStr);
-        } else {
-          newSessions.add(dateStr);
-        }
-        return newSessions;
-      });
-
       setPendingChanges((prev) => {
         const newPending = new Set(prev);
-        if (isOriginalSession(dateStr)) {
-          // If it was originally a session, toggling it creates a pending change
-          if (sessions.has(dateStr)) {
-            // Currently has it, will remove it -> pending removal
-            newPending.add(dateStr);
-          } else {
-            // Currently doesn't have it, will add it back -> no pending change
-            newPending.delete(dateStr);
-          }
+        if (newPending.has(dateStr)) {
+          newPending.delete(dateStr);
         } else {
-          // If it wasn't originally a session, toggling it creates a pending change
-          if (sessions.has(dateStr)) {
-            // Currently has it, will remove it -> no pending change
-            newPending.delete(dateStr);
-          } else {
-            // Currently doesn't have it, will add it -> pending addition
-            newPending.add(dateStr);
-          }
+          newPending.add(dateStr);
         }
         return newPending;
       });
     },
-    [sessions, isOriginalSession, canUpdateSchedule]
+    [canUpdateSchedule]
   );
 
   // Handle day header click - select/deselect all dates in that column for the month
@@ -126,89 +154,58 @@ export default function ScheduleCalendar({
       const dateStrings = datesInColumn.map((d) =>
         dayjs(d).format('YYYY-MM-DD')
       );
-      const allSelected = dateStrings.every((dateStr) => sessions.has(dateStr));
-
-      // Toggle all dates in the column
-      setSessions((prev) => {
-        const newSessions = new Set(prev);
-        dateStrings.forEach((dateStr) => {
-          if (allSelected) {
-            newSessions.delete(dateStr);
-          } else {
-            newSessions.add(dateStr);
-          }
-        });
-        return newSessions;
-      });
+      const allSelected = dateStrings.every((dateStr) =>
+        currentSessions.has(dateStr)
+      );
 
       // Update pending changes
       setPendingChanges((prev) => {
         const newPending = new Set(prev);
         dateStrings.forEach((dateStr) => {
-          if (isOriginalSession(dateStr)) {
-            if (allSelected) {
-              // Will remove it -> pending removal
-              newPending.add(dateStr);
-            } else {
-              // Will add it back -> no pending change
-              newPending.delete(dateStr);
+          const isCurrentlySelected = currentSessions.has(dateStr);
+
+          if (allSelected) {
+            // We want to deselect everything
+            // If it's currently selected, we need to toggle it
+            if (isCurrentlySelected) {
+              if (newPending.has(dateStr)) {
+                newPending.delete(dateStr);
+              } else {
+                newPending.add(dateStr);
+              }
             }
           } else {
-            if (allSelected) {
-              // Will remove it -> no pending change
-              newPending.delete(dateStr);
-            } else {
-              // Will add it -> pending addition
-              newPending.add(dateStr);
+            // We want to select everything
+            // If it's NOT currently selected, we need to toggle it
+            if (!isCurrentlySelected) {
+              if (newPending.has(dateStr)) {
+                newPending.delete(dateStr);
+              } else {
+                newPending.add(dateStr);
+              }
             }
           }
         });
         return newPending;
       });
     },
-    [sessions, isOriginalSession, canUpdateSchedule]
+    [currentSessions, canUpdateSchedule]
   );
 
   // Reset changes
   const handleReset = useCallback(() => {
-    setSessions(new Set(initialSessions));
     setPendingChanges(new Set());
-  }, [initialSessions]);
+  }, []);
 
   // Submit changes
-  const handleSubmit = useCallback(async () => {
-    if (pendingChanges.size === 0) {
-      toast.info(t('common.no_changes_to_save'));
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const supabase = createClient();
-
-      // Update the sessions array in the database
-      const { error } = await supabase
-        .from('workspace_user_groups')
-        .update({ sessions: Array.from(sessions) })
-        .eq('ws_id', wsId)
-        .eq('id', groupId);
-
-      if (error) throw error;
-
-      setPendingChanges(new Set());
-      toast.success(t('common.success'));
-    } catch (error) {
-      console.error('Error updating schedule:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [sessions, pendingChanges, wsId, groupId, t]);
+  const handleSubmit = useCallback(() => {
+    mutation.mutate(Array.from(currentSessions));
+  }, [mutation]);
 
   // Convert sessions to attendance data format
   const attendanceData = useMemo(
     () =>
-      Array.from(sessions).map((dateStr) => ({
+      Array.from(currentSessions).map((dateStr) => ({
         date: dateStr,
         status: 'PRESENT' as const,
         groups: [
@@ -218,7 +215,7 @@ export default function ScheduleCalendar({
           },
         ],
       })),
-    [sessions, locale]
+    [currentSessions, locale]
   );
 
   const hasChanges = pendingChanges.size > 0;
@@ -234,7 +231,7 @@ export default function ScheduleCalendar({
               size="sm"
               variant="outline"
               onClick={handleReset}
-              disabled={isSubmitting}
+              disabled={mutation.isPending}
             >
               <RotateCcw className="h-4 w-4" />
               {t('common.reset')}
@@ -242,13 +239,13 @@ export default function ScheduleCalendar({
             <Button
               size="sm"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={mutation.isPending}
               className={cn(
                 'border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
               )}
             >
               <Save className="h-4 w-4" />
-              {isSubmitting ? t('common.saving') : t('common.save')}
+              {mutation.isPending ? t('common.saving') : t('common.save')}
             </Button>
           </>
         }

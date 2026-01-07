@@ -5,34 +5,17 @@
 CREATE OR REPLACE FUNCTION clean_group_sessions_on_date_change()
 RETURNS TRIGGER AS $$
 DECLARE
-  session_date date;
-  session_text text;
-  new_sessions text[];
+  new_sessions date[];
 BEGIN
-  -- Initialize empty array for valid sessions
-  new_sessions := ARRAY[]::text[];
-  
-  -- Only process if sessions array is not null and dates are set
-  IF NEW.sessions IS NOT NULL AND array_length(NEW.sessions, 1) > 0 THEN
-    -- Iterate through each session
-    FOR i IN 1..array_length(NEW.sessions, 1) LOOP
-      -- Get the session as text
-      session_text := NEW.sessions[i];
-      
-      -- Parse the session date (format: 'YYYY-MM-DD')
-      session_date := session_text::date;
-      
-      -- Check if session falls within the date range
-      -- Include session if:
-      -- 1. It's after or equal to starting_date (if set)
-      -- 2. It's before or equal to ending_date (if set)
-      IF (NEW.starting_date IS NULL OR session_date >= NEW.starting_date::date) AND
-         (NEW.ending_date IS NULL OR session_date <= NEW.ending_date::date) THEN
-        new_sessions := array_append(new_sessions, session_text);
-      END IF;
-    END LOOP;
-  END IF;
-  
+  -- Use set-based approach with UNNEST and array_agg for better performance
+  -- We use WITH ORDINALITY to preserve the original order of sessions
+  SELECT COALESCE(array_agg(s ORDER BY ord), ARRAY[]::date[])
+  INTO new_sessions
+  FROM unnest(NEW.sessions) WITH ORDINALITY AS t(s, ord)
+  WHERE 
+    (NEW.starting_date IS NULL OR s >= NEW.starting_date::date)
+    AND (NEW.ending_date IS NULL OR s <= NEW.ending_date::date);
+
   -- Update the sessions array with only valid sessions
   NEW.sessions := new_sessions;
   

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarIcon, RotateCcw } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -62,8 +63,8 @@ export default function RecurringScheduleDialog({
 }: RecurringScheduleDialogProps) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -89,29 +90,50 @@ export default function RecurringScheduleDialog({
     endDate: Date,
     daysOfWeek: number[]
   ): string[] => {
-    const dates: string[] = [];
-    const currentDate = new Date(startDate);
-    const finalDate = new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-    while (currentDate <= finalDate) {
-      const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-      if (daysOfWeek.includes(dayOfWeek)) {
-        dates.push(dayjs(currentDate).format('YYYY-MM-DD'));
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+    if (start > end) return [];
+
+    // Hard caps to prevent pathological workloads (and overly large session arrays).
+    const MAX_RANGE_DAYS = 366 * 5;
+    const MAX_OCCURRENCES = 5000;
+    const rangeDays = dayjs(end).diff(dayjs(start), 'day');
+    if (rangeDays > MAX_RANGE_DAYS) {
+      throw new Error('Recurring date range too large');
     }
 
-    return dates;
+    const uniqueDays = [...new Set(daysOfWeek)];
+    const result = new Set<string>();
+
+    const startDay = start.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+    for (const targetDay of uniqueDays) {
+      const offset = (targetDay - startDay + 7) % 7;
+      let current = new Date(start);
+      current.setDate(current.getDate() + offset);
+
+      while (current <= end) {
+        result.add(dayjs(new Date(current)).format('YYYY-MM-DD'));
+        if (result.size > MAX_OCCURRENCES) {
+          throw new Error('Too many recurring dates generated');
+        }
+        const next = new Date(current);
+        next.setDate(next.getDate() + 7);
+        current = next;
+      }
+    }
+
+    return Array.from(result).sort();
   };
 
-  const onSubmit = async (values: FormValues) => {
-    if (!endingDate) {
-      toast.error(t('ws-user-group-schedule.no_end_date_set'));
-      return;
-    }
+  const mutation = useMutation({
+    mutationFn: async (values: FormValues) => {
+      if (!endingDate) {
+        throw new Error(t('ws-user-group-schedule.no_end_date_set'));
+      }
 
-    setIsSubmitting(true);
-    try {
       const supabase = createClient();
 
       // Generate all dates from start_date to ending_date for selected days of week
@@ -143,18 +165,27 @@ export default function RecurringScheduleDialog({
         .eq('id', groupId);
 
       if (error) throw error;
-
+    },
+    onSuccess: () => {
       toast.success(t('ws-user-group-schedule.recurring_schedule_created'));
       setOpen(false);
       form.reset();
+      queryClient.invalidateQueries({ queryKey: ['group-schedule', groupId] });
       router.refresh();
       onScheduleCreated?.();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating recurring schedule:', error);
       toast.error(t('ws-user-group-schedule.failed_to_create_schedule'));
-    } finally {
-      setIsSubmitting(false);
+    },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    if (!endingDate) {
+      toast.error(t('ws-user-group-schedule.no_end_date_set'));
+      return;
     }
+    mutation.mutate(values);
   };
 
   return (
@@ -319,12 +350,15 @@ export default function RecurringScheduleDialog({
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                disabled={isSubmitting}
+                disabled={mutation.isPending}
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={isSubmitting || !endingDate}>
-                {isSubmitting
+              <Button
+                type="submit"
+                disabled={mutation.isPending || !endingDate}
+              >
+                {mutation.isPending
                   ? t('common.creating')
                   : t('ws-user-group-schedule.create_schedule')}
               </Button>

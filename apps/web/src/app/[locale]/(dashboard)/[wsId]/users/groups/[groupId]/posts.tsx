@@ -161,7 +161,6 @@ export default function UserGroupPosts({
       return { postId };
     },
     onSuccess: () => {
-      handleCloseDialog();
       queryClient.invalidateQueries({ queryKey: ['group-posts', wsId, groupId] });
       toast.success(t('common.deleted'));
     },

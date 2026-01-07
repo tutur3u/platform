@@ -151,8 +151,8 @@ async function getData(
       const parsedPage = parseInt(page, 10);
       const parsedSize = parseInt(pageSize, 10);
       const start = (parsedPage - 1) * parsedSize;
-      const end = parsedPage * parsedSize;
-      queryBuilder.range(start, end).limit(parsedSize);
+      const end = start + parsedSize - 1;
+      queryBuilder.range(start, end);
     }
 
     const { data, error, count } = await queryBuilder;

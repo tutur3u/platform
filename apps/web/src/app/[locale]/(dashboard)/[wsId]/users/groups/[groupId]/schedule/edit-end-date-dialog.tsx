@@ -28,10 +28,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const formSchema = z
   .object({
@@ -65,9 +65,8 @@ export default function EditEndDateDialog({
   trigger,
 }: EditEndDateDialogProps) {
   const t = useTranslations();
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -77,9 +76,8 @@ export default function EditEndDateDialog({
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
-    try {
+  const updateDatesMutation = useMutation({
+    mutationFn: async (values: FormValues) => {
       const supabase = createClient();
 
       const formattedStartDate = dayjs(values.starting_date).format(
@@ -97,16 +95,22 @@ export default function EditEndDateDialog({
         .eq('id', groupId);
 
       if (error) throw error;
-
-      toast.success(t('ws-user-group-schedule.dates_updated'));
+    },
+    onSuccess: () => {
       setOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error('Error updating dates:', error);
+      queryClient.invalidateQueries({
+        queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'sessions'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['group-schedule', groupId] });
+      toast.success(t('ws-user-group-schedule.dates_updated'));
+    },
+    onError: () => {
       toast.error(t('ws-user-group-schedule.failed_to_update_dates'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const onSubmit: SubmitHandler<FormValues> = (values) => {
+    updateDatesMutation.mutate(values);
   };
 
   return (
@@ -231,12 +235,14 @@ export default function EditEndDateDialog({
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                disabled={isSubmitting}
+                disabled={updateDatesMutation.isPending}
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.saving') : t('common.save')}
+              <Button type="submit" disabled={updateDatesMutation.isPending}>
+                {updateDatesMutation.isPending
+                  ? t('common.saving')
+                  : t('common.save')}
               </Button>
             </DialogFooter>
           </form>

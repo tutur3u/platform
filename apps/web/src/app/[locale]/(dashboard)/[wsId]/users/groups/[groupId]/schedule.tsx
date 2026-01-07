@@ -3,7 +3,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { cn } from '@tuturuuu/utils/format';
@@ -42,7 +41,13 @@ export default function GroupSchedule({
     isPending,
     isError,
     data: queryData,
-  } = useQuery<{ data: UserGroup }>({
+  } = useQuery<{
+    data: {
+      sessions: string[] | null;
+      starting_date: string | null;
+      ending_date: string | null;
+    };
+  }>({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'schedule'],
     queryFn: () => getData(wsId, groupId),
     placeholderData: keepPreviousData,
