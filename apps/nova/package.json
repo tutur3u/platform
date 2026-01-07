@@ -47,7 +47,7 @@
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
-    "framer-motion": "12.24.8",
+    "framer-motion": "^12.24.10",
     "jotai": "^2.16.1",
     "juice": "^11.1.0",
     "lodash": "^4.17.21",

@@ -64,7 +64,6 @@ const fetchSubscription = async (wsId: string) => {
     currentPeriodStart: typedSub.current_period_start,
     currentPeriodEnd: typedSub.current_period_end,
     cancelAtPeriodEnd: typedSub.cancel_at_period_end,
-    polarSubscriptionId: typedSub.polar_subscription_id,
     product: typedSub.workspace_subscription_products,
   };
 };
@@ -153,7 +152,6 @@ export default async function BillingPage({
           ? {
               id: subscription.id,
               productId: subscription.product.id,
-              polarSubscriptionId: subscription.polarSubscriptionId || null,
               name: subscription.product.name || t('no-plan'),
               price: subscription.product.price ?? 0,
               billingCycle: subscription.product.recurring_interval,
@@ -170,9 +168,8 @@ export default async function BillingPage({
                 : [t('premium-features')],
             }
           : {
-              id: '',
-              productId: '',
-              polarSubscriptionId: null,
+              id: null,
+              productId: null,
               name: t('free-plan'),
               price: 0,
               billingCycle: 'month',
