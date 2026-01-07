@@ -29,6 +29,7 @@ import {
   GalleryVerticalEnd,
   Goal,
   GraduationCap,
+  HandCoins,
   HardDrive,
   hexagons3,
   Icon,
@@ -58,6 +59,7 @@ import {
   RulerDimensionLine,
   ScanSearch,
   ScreenShare,
+  ScrollText,
   Send,
   Settings,
   ShieldAlert,
@@ -352,6 +354,50 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker/requests`,
         `/${personalOrWsId}/time-tracker/settings`,
       ],
+    },
+    {
+      title: t('sidebar_tabs.workforce'),
+      href: `/${personalOrWsId}/workforce`,
+      icon: <BriefcaseBusiness className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('workforce', {
+        alwaysShow: true,
+      }),
+      children: [
+        {
+          title: t('workspace-workforce-tabs.directory'),
+          href: `/${personalOrWsId}/workforce`,
+          icon: <Users className="h-5 w-5" />,
+          matchExact: true,
+          disabled:
+            withoutPermission('view_workforce') &&
+            withoutPermission('manage_workforce'),
+        },
+        {
+          title: t('workspace-workforce-tabs.contracts'),
+          href: `/${personalOrWsId}/workforce/contracts`,
+          icon: <ScrollText className="h-5 w-5" />,
+          disabled: withoutPermission('manage_workforce'),
+        },
+        null,
+        {
+          title: t('workspace-workforce-tabs.payroll'),
+          href: `/${personalOrWsId}/workforce/payroll`,
+          icon: <HandCoins className="h-5 w-5" />,
+          disabled:
+            withoutPermission('view_payroll') &&
+            withoutPermission('manage_payroll'),
+        },
+      ],
+      aliases: [
+        `/${personalOrWsId}/workforce`,
+        `/${personalOrWsId}/workforce/contracts`,
+        `/${personalOrWsId}/workforce/payroll`,
+      ],
+      // disabled:
+      //   ENABLE_AI_ONLY ||
+      //   (withoutPermission('view_workforce') &&
+      //     withoutPermission('manage_workforce')),
+      tempDisabled: true, // coming soon
     },
     {
       title: t('sidebar_tabs.drive'),

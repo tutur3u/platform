@@ -1085,6 +1085,10 @@
     "@vercel/analytics",
     "supabase",
   ],
+  "overrides": {
+    "framer-motion": "12.24.8",
+    "motion-dom": "12.24.8",
+  },
   "packages": {
     "@acemir/cssom": ["@acemir/cssom@0.9.29", "", {}, "sha512-G90x0VW+9nW4dFajtjCoT+NM0scAfH9Mb08IcjgFHYbfiL/lU04dTF9JuVOi3/OH+DJCQdcIseSXkdCB9Ky6JA=="],
 

@@ -28,7 +28,8 @@ export type FeatureId =
   | 'drive'
   | 'inventory'
   | 'ai_lab'
-  | 'voice_assistant';
+  | 'voice_assistant'
+  | 'workforce';
 
 /**
  * Feature tier requirements configuration
@@ -49,6 +50,7 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
   whiteboards: 'PLUS',
   chat: 'PLUS',
   time_tracker: 'PLUS',
+  workforce: 'PLUS',
 
   // PRO tier features
   drive: 'PRO',
