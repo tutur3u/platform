@@ -42,8 +42,6 @@ interface UseTaskDataProps {
   wsId: string;
   boardId: string;
   isOpen: boolean;
-  taskId?: string;
-  isCreateMode?: boolean;
   propAvailableLists?: TaskList[];
   taskSearchQuery?: string;
   /** Pre-loaded data for shared task context - bypasses internal fetches when provided */

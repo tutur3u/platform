@@ -274,8 +274,6 @@ export function TaskEditDialog({
     wsId,
     boardId,
     isOpen,
-    taskId: task?.id,
-    isCreateMode,
     propAvailableLists,
     taskSearchQuery,
     sharedContext,

@@ -184,7 +184,20 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        {
+          error: 'Invalid JSON',
+          details:
+            parseError instanceof Error ? parseError.message : 'Parse error',
+        },
+        { status: 400 }
+      );
+    }
+
     const validationResult = createShareSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -461,7 +474,20 @@ export async function PATCH(
       );
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        {
+          error: 'Invalid JSON',
+          details:
+            parseError instanceof Error ? parseError.message : 'Parse error',
+        },
+        { status: 400 }
+      );
+    }
+
     const validationResult = updateShareSchema.safeParse(body);
 
     if (!validationResult.success) {

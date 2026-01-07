@@ -35,7 +35,7 @@ function generateShareCode(): string {
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<ShareLinkParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
 
@@ -249,7 +249,7 @@ export async function GET(
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<ShareLinkParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
 
@@ -343,6 +343,19 @@ export async function PATCH(
     const updatePayload: Record<string, unknown> = {};
 
     if (validationResult.data.publicAccess !== undefined) {
+      // Public access is restricted to internal workspace only
+      if (
+        validationResult.data.publicAccess !== 'none' &&
+        normalizedWsId !== ROOT_WORKSPACE_ID
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Public access is currently restricted to internal workspace.',
+          },
+          { status: 403 }
+        );
+      }
       updatePayload.public_access = validationResult.data.publicAccess;
     }
 
@@ -414,7 +427,7 @@ export async function PATCH(
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<ShareLinkParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
 

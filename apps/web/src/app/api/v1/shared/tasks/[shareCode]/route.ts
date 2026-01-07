@@ -166,11 +166,22 @@ export async function GET(
       return recipientPermission === 'edit' ? 'edit' : 'view';
     })();
 
-    // Record usage
-    await adminClient.from('task_share_link_uses').insert({
-      share_link_id: shareLink.id,
-      user_id: user.id,
-    });
+    // Record usage (only if no recent usage within the last hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentUsage } = await adminClient
+      .from('task_share_link_uses')
+      .select('id')
+      .eq('share_link_id', shareLink.id)
+      .eq('user_id', user.id)
+      .gte('created_at', oneHourAgo)
+      .maybeSingle();
+
+    if (!recentUsage) {
+      await adminClient.from('task_share_link_uses').insert({
+        share_link_id: shareLink.id,
+        user_id: user.id,
+      });
+    }
 
     // Get task assignees
     const { data: assignees } = await adminClient
