@@ -155,7 +155,9 @@ export default function RecurringScheduleDialog({
 
       // Merge with existing sessions (avoid duplicates)
       const existingSessions = new Set(groupData?.sessions || []);
-      recurringDates.forEach((date) => existingSessions.add(date));
+      recurringDates.forEach((date) => {
+        existingSessions.add(date);
+      });
 
       // Update the sessions
       const { error } = await supabase

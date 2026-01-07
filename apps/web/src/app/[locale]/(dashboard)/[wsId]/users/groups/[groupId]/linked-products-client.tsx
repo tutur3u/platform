@@ -212,12 +212,14 @@ export default function LinkedProductsClient({
     onSuccess: (newLinked) => {
       queryClient.setQueryData(
         linkedProductsQueryKey,
-        (prev:
-          | {
-              items: LinkedProduct[];
-              count: number;
-            }
-          | undefined) => {
+        (
+          prev:
+            | {
+                items: LinkedProduct[];
+                count: number;
+              }
+            | undefined
+        ) => {
           if (!prev) return { items: [newLinked], count: 1 };
           return {
             items: [...prev.items, newLinked],
@@ -256,12 +258,14 @@ export default function LinkedProductsClient({
     onSuccess: ({ productId }) => {
       queryClient.setQueryData(
         linkedProductsQueryKey,
-        (prev:
-          | {
-              items: LinkedProduct[];
-              count: number;
-            }
-          | undefined) => {
+        (
+          prev:
+            | {
+                items: LinkedProduct[];
+                count: number;
+              }
+            | undefined
+        ) => {
           if (!prev) return prev;
           return {
             items: prev.items.filter((p) => p.id !== productId),
@@ -308,12 +312,14 @@ export default function LinkedProductsClient({
     onSuccess: ({ productId, warehouseId, unitId }) => {
       queryClient.setQueryData(
         linkedProductsQueryKey,
-        (prev:
-          | {
-              items: LinkedProduct[];
-              count: number;
-            }
-          | undefined) => {
+        (
+          prev:
+            | {
+                items: LinkedProduct[];
+                count: number;
+              }
+            | undefined
+        ) => {
           if (!prev) return prev;
           return {
             items: prev.items.map((p) =>

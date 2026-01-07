@@ -9798,6 +9798,7 @@
     "failed_to_update_end_date": "Failed to update end date",
     "no_end_date_set": "No end date set for this group",
     "no_end_date_warning": "Please set an end date for the group before creating a recurring schedule.",
+    "notes": "Notes",
     "recurring_schedule_created": "Recurring schedule created successfully",
     "schedule_will_run_until": "Schedule will run until",
     "set_dates": "Set Dates",
@@ -9807,8 +9808,7 @@
     "set_recurring_schedule": "Set Recurring Schedule",
     "set_recurring_schedule_description": "Create multiple sessions at once based on a weekly pattern.",
     "start_date": "Start Date",
-    "start_date_help": "The date from which the recurring schedule will begin",
-    "notes": "Notes"
+    "start_date_help": "The date from which the recurring schedule will begin"
   },
   "ws-user-group-tags": {
     "add_group": "Add groups",

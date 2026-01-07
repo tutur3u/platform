@@ -200,7 +200,7 @@ export default function ScheduleCalendar({
   // Submit changes
   const handleSubmit = useCallback(() => {
     mutation.mutate(Array.from(currentSessions));
-  }, [mutation]);
+  }, [mutation, currentSessions]);
 
   // Convert sessions to attendance data format
   const attendanceData = useMemo(

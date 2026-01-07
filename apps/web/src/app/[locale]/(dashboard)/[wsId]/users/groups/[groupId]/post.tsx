@@ -5,12 +5,12 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { cn } from '@tuturuuu/utils/format';
 
 type UserGroupPostCheckRow = {
-    is_completed: boolean | null;
+  is_completed: boolean | null;
 };
 
 type UserRow = {
-    id: string | null;
-    user_group_post_checks?: UserGroupPostCheckRow[] | null;
+  id: string | null;
+  user_group_post_checks?: UserGroupPostCheckRow[] | null;
 };
 
 export function PostEmailStatus({
@@ -21,8 +21,6 @@ export function PostEmailStatus({
   postId: string;
 }) {
   const { ref, inViewport } = useInViewport();
-
-
 
   const { data } = useQuery({
     queryKey: ['user-group-post-email-status', groupId, postId],

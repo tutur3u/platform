@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -59,7 +58,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const { group_ids, ...coreData } = data;
 
-  const { data: group, error } = await supabase
+  const { error } = await supabase
     .from('workspace_user_groups')
     .insert({
       ...coreData,

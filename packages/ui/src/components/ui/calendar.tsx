@@ -36,9 +36,7 @@ function Calendar({
   const contextPreferences = useCalendarPreferences();
   const preferences = preferencesProp ?? contextPreferences;
 
-  const selected = React.useMemo(() => {
-    return 'selected' in props ? props.selected : undefined;
-  }, [props]);
+  const selected = 'selected' in props ? props.selected : undefined;
 
   const initialMonth = React.useMemo(() => {
     if (props.month) return props.month;
@@ -144,10 +142,7 @@ function Calendar({
               >
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
-              <SelectContent
-                position="popper"
-                className="h-75 overflow-y-auto"
-              >
+              <SelectContent position="popper" className="h-75 overflow-y-auto">
                 <div className="sticky top-0 -mx-1 flex items-center justify-center border-b bg-background py-1">
                   <div className="px-2 font-medium text-muted-foreground text-sm">
                     {currentYear}

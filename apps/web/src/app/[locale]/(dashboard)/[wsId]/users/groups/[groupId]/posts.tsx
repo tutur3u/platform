@@ -140,7 +140,9 @@ export default function UserGroupPosts({
     },
     onSuccess: () => {
       handleCloseDialog();
-      queryClient.invalidateQueries({ queryKey: ['group-posts', wsId, groupId] });
+      queryClient.invalidateQueries({
+        queryKey: ['group-posts', wsId, groupId],
+      });
       toast.success(t('common.saved'));
     },
     onError: (error: unknown) => {
@@ -161,7 +163,9 @@ export default function UserGroupPosts({
       return { postId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['group-posts', wsId, groupId] });
+      queryClient.invalidateQueries({
+        queryKey: ['group-posts', wsId, groupId],
+      });
       toast.success(t('common.deleted'));
     },
     onError: (error: unknown) => {
