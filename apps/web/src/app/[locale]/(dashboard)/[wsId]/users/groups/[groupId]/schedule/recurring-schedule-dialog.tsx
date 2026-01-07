@@ -262,7 +262,6 @@ export default function RecurringScheduleDialog({
                             date < today || (maxDate ? date > maxDate : false)
                           );
                         }}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>

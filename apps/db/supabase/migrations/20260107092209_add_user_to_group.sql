@@ -1,7 +1,6 @@
 -- Add creator_id and color to workspace_user_groups
 ALTER TABLE public.workspace_user_groups
-ADD COLUMN creator_id UUID REFERENCES public.users(id) DEFAULT auth.uid(),
-ADD COLUMN color TEXT;
+ADD COLUMN creator_id UUID REFERENCES public.users(id) DEFAULT auth.uid();
 
 -- Function to handle workspace user group creator assignment
 CREATE OR REPLACE FUNCTION public.handle_workspace_user_group_creator_assignment()
