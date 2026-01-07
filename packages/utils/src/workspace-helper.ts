@@ -141,8 +141,12 @@ export async function getWorkspaceTier(
  * @throws Calls `notFound()` (throws) if the workspace does not exist or access is denied.
  *         Callers should handle this in a try/catch or expect navigation to 404.
  */
-export async function getWorkspace(id: string) {
+export async function getWorkspace(
+  id: string,
+  options: { useAdmin?: boolean } = {}
+) {
   const supabase = await createClient();
+  const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
 
   const {
     data: { user },
@@ -150,16 +154,19 @@ export async function getWorkspace(id: string) {
 
   if (!user) redirect('/login');
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
     );
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);
 
-  if (id.toUpperCase() === 'PERSONAL') queryBuilder.eq('personal', true);
-  else queryBuilder.eq('id', resolvedWorkspaceId);
+  if (id.toUpperCase() === 'PERSONAL') {
+    queryBuilder.eq('personal', true).eq('workspace_members.user_id', user.id);
+  } else {
+    queryBuilder.eq('id', resolvedWorkspaceId);
+  }
 
   const { data, error } = await queryBuilder.single();
 
@@ -206,8 +213,9 @@ export async function getWorkspace(id: string) {
   };
 }
 
-export async function getWorkspaces() {
+export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
   const supabase = await createClient();
+  const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
 
   const {
     data: { user },
@@ -215,7 +223,7 @@ export async function getWorkspaces() {
 
   if (!user) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
