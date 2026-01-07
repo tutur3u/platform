@@ -16,6 +16,8 @@ interface YearCalendarProps {
   onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;
+  /** Maximum date - prevents navigating to years beyond this date */
+  maxDate?: Date;
 }
 
 export const YearCalendar: React.FC<YearCalendarProps> = ({
@@ -25,6 +27,7 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
   onDateClick,
   onDayHeaderClick,
   hideOutsideMonthDays = false,
+  maxDate,
 }) => {
   const [currentYear, setCurrentYear] = useState(
     initialDate?.getFullYear() || new Date().getFullYear()
@@ -32,6 +35,11 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
 
   const handlePrevYear = () => setCurrentYear(currentYear - 1);
   const handleNextYear = () => setCurrentYear(currentYear + 1);
+
+  // Determine if next year button should be disabled based on maxDate
+  const isNextYearDisabled = maxDate
+    ? currentYear >= maxDate.getFullYear()
+    : false;
 
   const months = Array.from(
     { length: 12 },
@@ -46,7 +54,12 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
           <Button size="xs" variant="secondary" onClick={handlePrevYear}>
             <ChevronLeft className="h-6 w-6" />
           </Button>
-          <Button size="xs" variant="secondary" onClick={handleNextYear}>
+          <Button
+            size="xs"
+            variant="secondary"
+            onClick={handleNextYear}
+            disabled={isNextYearDisabled}
+          >
             <ChevronRight className="h-6 w-6" />
           </Button>
         </div>

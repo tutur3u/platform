@@ -5,7 +5,6 @@ import {
   UserCheck,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -16,6 +15,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import EditEndDateDialog from './edit-end-date-dialog';
+import RecurringScheduleDialog from './recurring-schedule-dialog';
 import ScheduleCalendar from './schedule-calendar';
 
 export const metadata: Metadata = {
@@ -136,6 +137,18 @@ export default async function UserGroupDetailsPage({ params }: Props) {
               createDescription={t('ws-user-groups.add_user_description')}
             />
             <Separator className="my-4" />
+            <div className="mb-4 flex flex-wrap gap-2">
+              <EditEndDateDialog
+                wsId={wsId}
+                groupId={groupId}
+                currentEndDate={group.ending_date}
+              />
+              <RecurringScheduleDialog
+                wsId={wsId}
+                groupId={groupId}
+                endingDate={group.ending_date}
+              />
+            </div>
             <ScheduleCalendar
               locale={locale}
               wsId={wsId}
@@ -143,6 +156,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
               initialSessions={group.sessions || []}
               hideOutsideMonthDays={true}
               canUpdateSchedule={canUpdateUserGroups}
+              endingDate={group.ending_date}
             />
           </>
         );
@@ -164,5 +178,5 @@ async function getData(wsId: string, groupId: string) {
   if (error) throw error;
   if (!data) notFound();
 
-  return data as UserGroup;
+  return data;
 }

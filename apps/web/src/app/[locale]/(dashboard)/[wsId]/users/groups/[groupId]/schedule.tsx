@@ -60,6 +60,26 @@ export default function GroupSchedule({
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
     );
+
+  // Check if next button should be disabled based on ending_date
+  const isNextDisabled = useMemo(() => {
+    if (!data?.ending_date) return false;
+
+    const endingDate = new Date(data.ending_date);
+    const nextMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      1
+    );
+
+    // Disable if next month would be after the ending date's month
+    return (
+      nextMonth.getFullYear() > endingDate.getFullYear() ||
+      (nextMonth.getFullYear() === endingDate.getFullYear() &&
+        nextMonth.getMonth() > endingDate.getMonth())
+    );
+  }, [data?.ending_date, currentDate]);
+
   const thisYear = currentDate.getFullYear();
   const thisMonth = currentDate.toLocaleString(locale, { month: '2-digit' });
 
@@ -115,7 +135,12 @@ export default function GroupSchedule({
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
 
-                <Button size="xs" variant="secondary" onClick={handleNext}>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={handleNext}
+                  disabled={isNextDisabled}
+                >
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>
@@ -174,7 +199,7 @@ async function getData(wsId: string, groupId: string) {
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
-    .select('sessions')
+    .select('sessions, ending_date')
     .eq('id', groupId)
     .eq('ws_id', wsId);
 

@@ -20,6 +20,8 @@ interface ScheduleCalendarProps {
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;
   canUpdateSchedule?: boolean;
+  /** The ending date of the group - restricts calendar navigation beyond this date */
+  endingDate?: string | null;
 }
 
 export default function ScheduleCalendar({
@@ -29,6 +31,7 @@ export default function ScheduleCalendar({
   initialSessions,
   hideOutsideMonthDays = true,
   canUpdateSchedule = false,
+  endingDate,
 }: ScheduleCalendarProps) {
   const t = useTranslations();
   const [sessions, setSessions] = useState<Set<string>>(
@@ -254,6 +257,7 @@ export default function ScheduleCalendar({
         onDateClick={handleDateClick}
         onDayHeaderClick={handleDayHeaderClick}
         hideOutsideMonthDays={hideOutsideMonthDays}
+        maxDate={endingDate ? new Date(endingDate) : undefined}
       />
     </div>
   );
