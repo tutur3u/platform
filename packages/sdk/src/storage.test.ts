@@ -839,7 +839,7 @@ describe('StorageClient', () => {
     });
 
     it('should throw ValidationError for filename over 255 chars', async () => {
-      const longFilename = 'a'.repeat(256) + '.txt';
+      const longFilename = `${'a'.repeat(256)}.txt`;
       await expect(
         client.storage.createSignedUploadUrl({ filename: longFilename })
       ).rejects.toThrow(ValidationError);
@@ -856,7 +856,7 @@ describe('StorageClient', () => {
 
       mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
-      const filename = 'a'.repeat(251) + '.txt'; // exactly 255 chars
+      const filename = `${'a'.repeat(251)}.txt`; // exactly 255 chars
       const result = await client.storage.createSignedUploadUrl({ filename });
 
       expect(result).toEqual(mockResponse);

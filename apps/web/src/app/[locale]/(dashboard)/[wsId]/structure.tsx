@@ -1,12 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
-import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
@@ -27,12 +25,14 @@ import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
+import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
+import { WorkspaceSelect } from './workspace-select';
 
-interface MailProps {
+interface StructureProps {
   wsId: string;
-  workspace: Workspace | null;
+  workspace: (Workspace & { tier?: WorkspaceProductTier | null }) | null;
   defaultCollapsed: boolean;
   user: WorkspaceUser | null;
   links: (NavLink | null)[];
@@ -46,12 +46,13 @@ export function Structure({
   wsId,
   defaultCollapsed = false,
   user,
+  workspace,
   links,
   actions,
   userPopover,
   children,
   disableCreateNewWorkspace = false,
-}: MailProps) {
+}: StructureProps) {
   const t = useTranslations();
   const pathname = usePathname();
 
@@ -364,6 +365,37 @@ export function Structure({
 
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
 
+      // Check tier requirement
+      if (link.requiredWorkspaceTier) {
+        const currentTier = workspace?.tier || 'FREE';
+        const meetsTier = meetsAnyTierRequirement(
+          currentTier,
+          link.requiredWorkspaceTier.requiredTier
+        );
+
+        if (!meetsTier) {
+          if (link.requiredWorkspaceTier.alwaysShow) {
+            return [
+              {
+                ...link,
+                tempDisabled: true,
+              },
+            ];
+          } else {
+            // Hide it
+            return [];
+          }
+        } else {
+          // Tier requirement is met - remove the badge
+          return [
+            {
+              ...link,
+              requiredWorkspaceTier: undefined,
+            },
+          ];
+        }
+      }
+
       if (link.children && link.children.length > 1) {
         const filteredChildren = getFilteredLinks(link.children);
         // Count non-null items to determine if we have actual content
@@ -453,7 +485,6 @@ export function Structure({
           t={t}
           wsId={wsId}
           hideLeading={isCollapsed}
-          localUseQuery={useQuery}
           disableCreateNewWorkspace={disableCreateNewWorkspace}
         />
       </Suspense>

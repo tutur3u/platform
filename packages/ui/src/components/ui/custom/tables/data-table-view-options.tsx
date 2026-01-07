@@ -96,9 +96,9 @@ export function DataTableViewOptions<TData>({
             className="w-full"
             size="sm"
             onClick={() => {
-              table
-                .getAllColumns()
-                .forEach((column) => column.toggleVisibility(!isShowingAll));
+              for (const column of table.getAllColumns()) {
+                column.toggleVisibility(!isShowingAll);
+              }
             }}
           >
             {isShowingAll

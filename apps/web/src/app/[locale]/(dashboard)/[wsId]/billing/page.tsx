@@ -1,9 +1,10 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceSubscriptionWithProduct } from '@tuturuuu/types/db';
-import { Separator } from '@tuturuuu/ui/separator';
 import { format } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
+import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
@@ -59,6 +60,7 @@ const fetchSubscription = async (wsId: string) => {
   return {
     id: typedSub.id,
     status: typedSub.status,
+    createdAt: typedSub.created_at,
     currentPeriodStart: typedSub.current_period_start,
     currentPeriodEnd: typedSub.current_period_end,
     cancelAtPeriodEnd: typedSub.cancel_at_period_end,
@@ -72,7 +74,7 @@ const fetchWorkspaceOrders = async (wsId: string) => {
     const supabase = await createClient();
     const { data: orders, error } = await supabase
       .from('workspace_orders')
-      .select('*, workspace_subscription_products (name)')
+      .select('*, workspace_subscription_products (name, price)')
       .eq('ws_id', wsId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -87,6 +89,7 @@ const fetchWorkspaceOrders = async (wsId: string) => {
       createdAt: order.created_at,
       billingReason: order.billing_reason ?? 'unknown',
       totalAmount: order.total_amount ?? 0,
+      originalAmount: order.workspace_subscription_products?.price ?? 0,
       currency: order.currency ?? 'usd',
       status: order.status,
       productName: order.workspace_subscription_products?.name ?? 'N/A',
@@ -132,48 +135,52 @@ export default async function BillingPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const [products, subscription, orders, isCreator] = await Promise.all([
-          fetchProducts(),
-          fetchSubscription(wsId),
-          fetchWorkspaceOrders(wsId),
-          checkCreator(wsId),
-        ]);
+        const [products, subscription, orders, isCreator, locale, t] =
+          await Promise.all([
+            fetchProducts(),
+            fetchSubscription(wsId),
+            fetchWorkspaceOrders(wsId),
+            checkCreator(wsId),
+            getLocale(),
+            getTranslations('billing'),
+          ]);
+
+        const dateLocale = locale === 'vi' ? vi : enUS;
+        const formatDate = (date: string) =>
+          format(new Date(date), 'd MMM, yyyy', { locale: dateLocale });
 
         const currentPlan = subscription
           ? {
               id: subscription.id,
-              polarSubscriptionId: subscription.polarSubscriptionId,
               productId: subscription.product.id,
-              name: subscription.product.name || 'No Plan',
+              polarSubscriptionId: subscription.polarSubscriptionId || null,
+              name: subscription.product.name || t('no-plan'),
               price: subscription.product.price ?? 0,
               billingCycle: subscription.product.recurring_interval,
-              startDate: subscription.currentPeriodStart
-                ? format(
-                    new Date(subscription.currentPeriodStart),
-                    'MMM d, yyyy'
-                  )
+              startDate: subscription.createdAt
+                ? formatDate(subscription.createdAt)
                 : '-',
               nextBillingDate: subscription.currentPeriodEnd
-                ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')
+                ? formatDate(subscription.currentPeriodEnd)
                 : '-',
               cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
               status: subscription.status || 'unknown',
               features: subscription.product.description
                 ? [subscription.product.description]
-                : ['Premium features'],
+                : [t('premium-features')],
             }
           : {
               id: '',
-              polarSubscriptionId: '',
               productId: '',
-              name: 'Free Plan',
+              polarSubscriptionId: null,
+              name: t('free-plan'),
               price: 0,
               billingCycle: 'month',
               startDate: '-',
               nextBillingDate: '-',
               cancelAtPeriodEnd: false,
               status: 'active',
-              features: ['Basic features', 'Limited usage'],
+              features: [t('basic-features'), t('limited-usage')],
             };
 
         return (
@@ -185,8 +192,6 @@ export default async function BillingPage({
               wsId={wsId}
               isCreator={isCreator}
             />
-
-            <Separator className="my-8" />
 
             <BillingHistory orders={orders} />
           </div>

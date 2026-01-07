@@ -32,9 +32,7 @@ export interface DataTableProps<TData, TValue> {
   hidePagination?: boolean;
   columns?: ColumnDef<TData, TValue>[];
   filters?: ReactNode[] | ReactNode;
-  // biome-ignore lint/suspicious/noExplicitAny: <extraColumns type is not known ahead of time>
   extraColumns?: any[];
-  // biome-ignore lint/suspicious/noExplicitAny: <extraData type is not known ahead of time>
   extraData?: any;
   newObjectTitle?: string;
   editContent?: ReactNode;
@@ -68,15 +66,11 @@ export interface DataTableProps<TData, TValue> {
     sortOrder?: string;
   }) => void;
   resetParams?: () => void;
-  // biome-ignore lint/suspicious/noExplicitAny: <t type is not known ahead of time>
   t?: any;
   columnGenerator?: (
-    // biome-ignore lint/suspicious/noExplicitAny: <t type is not known ahead of time>
     t: any,
     namespace: string | undefined,
-    // biome-ignore lint/suspicious/noExplicitAny: <extraColumns type is not known ahead of time>
     extraColumns?: any[],
-    // biome-ignore lint/suspicious/noExplicitAny: <extraData type is not known ahead of time>
     extraData?: any
   ) => ColumnDef<TData, TValue>[];
   // Optional row wrapper for custom row rendering (e.g., context menu)

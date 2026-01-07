@@ -81,7 +81,7 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
 
   const handleDefaultDurationChange = (duration: string) => {
     const durationMinutes = parseInt(duration, 10);
-    if (!isNaN(durationMinutes) && durationMinutes > 0) {
+    if (!Number.isNaN(durationMinutes) && durationMinutes > 0) {
       onChange({
         ...value,
         defaultTaskDuration: durationMinutes,

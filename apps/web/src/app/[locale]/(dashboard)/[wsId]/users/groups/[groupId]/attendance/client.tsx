@@ -32,7 +32,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Member = {
   id: string;
@@ -51,6 +51,8 @@ export type InitialAttendanceProps = {
   initialDate?: string; // yyyy-MM-dd
   initialAttendance?: Record<string, AttendanceEntry>;
   canUpdateAttendance: boolean;
+  startingDate?: string | null;
+  endingDate?: string | null;
 };
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'NONE';
@@ -68,6 +70,8 @@ export default function GroupAttendanceClient({
   initialDate,
   initialAttendance = {},
   canUpdateAttendance,
+  startingDate,
+  endingDate,
 }: InitialAttendanceProps) {
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -90,7 +94,7 @@ export default function GroupAttendanceClient({
     if (format(next, 'yyyy-MM-dd') !== format(currentDate, 'yyyy-MM-dd')) {
       setCurrentDate(next);
     }
-  }, [dateParam, initialDateStr]);
+  }, [dateParam, initialDateStr, currentDate]);
 
   // Ensure URL contains date on first load (no refresh)
   useEffect(() => {
@@ -98,7 +102,7 @@ export default function GroupAttendanceClient({
       searchParams.set({ date: initialDateStr }, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateParam, initialDateStr, searchParams.set]);
 
   // Sessions query (client) with initial data from RSC
   const { data: sessions = [] } = useQuery({
@@ -207,17 +211,20 @@ export default function GroupAttendanceClient({
   );
   // Submitting state comes from mutation below
 
-  const getEffectiveEntry = (userId: string): AttendanceEntry => {
-    const base = attendance[userId] || {
-      status: 'NONE' as AttendanceStatus,
-      note: '',
-    };
-    const pending = pendingMap.get(userId);
-    return {
-      status: pending?.status ?? base.status,
-      note: (pending?.note ?? base.note) || '',
-    };
-  };
+  const getEffectiveEntry = useCallback(
+    (userId: string): AttendanceEntry => {
+      const base = attendance[userId] || {
+        status: 'NONE' as AttendanceStatus,
+        note: '',
+      };
+      const pending = pendingMap.get(userId);
+      return {
+        status: pending?.status ?? base.status,
+        note: (pending?.note ?? base.note) || '',
+      };
+    },
+    [attendance, pendingMap]
+  );
 
   const setLocalAttendance = (
     userId: string,
@@ -395,6 +402,42 @@ export default function GroupAttendanceClient({
     date.getMonth() === calendarMonth.getMonth() &&
     date.getFullYear() === calendarMonth.getFullYear();
 
+  // Check if prev button should be disabled based on startingDate
+  const isPrevDisabled = useMemo(() => {
+    if (!startingDate) return false;
+
+    const start = new Date(startingDate);
+    const prevMonth = new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth() - 1,
+      1
+    );
+
+    return (
+      prevMonth.getFullYear() < start.getFullYear() ||
+      (prevMonth.getFullYear() === start.getFullYear() &&
+        prevMonth.getMonth() < start.getMonth())
+    );
+  }, [startingDate, calendarMonth]);
+
+  // Check if next button should be disabled based on endingDate
+  const isNextDisabled = useMemo(() => {
+    if (!endingDate) return false;
+
+    const end = new Date(endingDate);
+    const nextMonth = new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth() + 1,
+      1
+    );
+
+    return (
+      nextMonth.getFullYear() > end.getFullYear() ||
+      (nextMonth.getFullYear() === end.getFullYear() &&
+        nextMonth.getMonth() > end.getMonth())
+    );
+  }, [endingDate, calendarMonth]);
+
   const summary = useMemo(() => {
     const total = members.length;
     let present = 0;
@@ -408,7 +451,7 @@ export default function GroupAttendanceClient({
     });
     const notAttended = total - present - absent - late;
     return { total, present, absent, late, notAttended };
-  }, [pendingMap, attendance, members]);
+  }, [members, getEffectiveEntry]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -461,6 +504,7 @@ export default function GroupAttendanceClient({
                   )
                 )
               }
+              disabled={isPrevDisabled}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -476,6 +520,7 @@ export default function GroupAttendanceClient({
                   )
                 )
               }
+              disabled={isNextDisabled}
             >
               <ChevronRight className="h-5 w-5" />
             </Button>

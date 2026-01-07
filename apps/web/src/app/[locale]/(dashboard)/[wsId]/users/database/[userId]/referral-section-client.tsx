@@ -45,30 +45,6 @@ export default function ReferralSectionClient({
 }: ReferralSectionClientProps) {
   const t = useTranslations('user-data-table');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  if (!workspaceSettings) {
-    return (
-      <div className="h-full rounded-lg border p-4">
-        <Alert className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red">
-          <div className="flex items-start gap-3">
-            <Settings className="mt-0.5 h-5 w-5" />
-            <div className="flex-1">
-              <AlertTitle>{t('referral_settings_title')}</AlertTitle>
-              <AlertDescription>{t('referral_settings_desc')}</AlertDescription>
-            </div>
-            <Link href={`/${wsId}/inventory/promotions`}>
-              <Button
-                size="xs"
-                className="border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
-              >
-                <ArrowRight className="h-4 w-4" />
-                {t('configure_in_promotions_cta')}
-              </Button>
-            </Link>
-          </div>
-        </Alert>
-      </div>
-    );
-  }
 
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -144,7 +120,7 @@ export default function ReferralSectionClient({
           user.email || user.phone ? `(${user.email || user.phone})` : ''
         }`,
       })),
-    [availableUsersQuery.data?.data]
+    [availableUsersQuery.data?.data, t]
   );
 
   // Keep selected option valid: if the selected user disappears from available list, reset selection
@@ -166,10 +142,6 @@ export default function ReferralSectionClient({
   }, [selectedUserId, availableUsersQuery.data?.data]);
 
   const currentReferralCount = currentReferralsQuery.data || 0;
-  const canReferMore =
-    currentReferralCount < workspaceSettings.referral_count_cap;
-  const remainingReferrals =
-    workspaceSettings.referral_count_cap - currentReferralCount;
 
   const referUserMutation = useMutation({
     mutationFn: async (referredUserId: string) => {
@@ -207,7 +179,7 @@ export default function ReferralSectionClient({
           if (creatorIdErr) throw creatorIdErr;
           creatorVirtualUserId = creatorRow?.virtual_user_id ?? null;
         }
-      } catch (error) {
+      } catch (_error) {
         // If we fail to resolve the virtual user id, proceed without it
         creatorVirtualUserId = null;
       }
@@ -337,7 +309,7 @@ export default function ReferralSectionClient({
           if (updaterIdErr) throw updaterIdErr;
           updaterVirtualUserId = updaterRow?.virtual_user_id ?? null;
         }
-      } catch (error) {
+      } catch (_error) {
         // If we fail to resolve the virtual user id, proceed without it
         updaterVirtualUserId = null;
       }
@@ -377,7 +349,7 @@ export default function ReferralSectionClient({
 
       return referredUserId;
     },
-    onSuccess: async (referredUserId) => {
+    onSuccess: async (_referredUserId) => {
       toast.success(t('unrefer_success'));
       setSelectedUserId('');
 
@@ -422,6 +394,36 @@ export default function ReferralSectionClient({
     if (unreferUserMutation.isPending) return;
     await unreferUserMutation.mutateAsync(referredUserId);
   };
+
+  if (!workspaceSettings) {
+    return (
+      <div className="h-full rounded-lg border p-4">
+        <Alert className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red">
+          <div className="flex items-start gap-3">
+            <Settings className="mt-0.5 h-5 w-5" />
+            <div className="flex-1">
+              <AlertTitle>{t('referral_settings_title')}</AlertTitle>
+              <AlertDescription>{t('referral_settings_desc')}</AlertDescription>
+            </div>
+            <Link href={`/${wsId}/inventory/promotions`}>
+              <Button
+                size="xs"
+                className="border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
+              >
+                <ArrowRight className="h-4 w-4" />
+                {t('configure_in_promotions_cta')}
+              </Button>
+            </Link>
+          </div>
+        </Alert>
+      </div>
+    );
+  }
+
+  const canReferMore =
+    currentReferralCount < workspaceSettings.referral_count_cap;
+  const remainingReferrals =
+    workspaceSettings.referral_count_cap - currentReferralCount;
 
   return (
     <div className="h-full rounded-lg border p-4">

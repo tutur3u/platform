@@ -508,4 +508,18 @@
       margin-top: 0.25rem;
     }
   }
+
+  /* Task content fade effect for completed tasks
+   * This is controlled via body[data-fade-completed="true"]
+   * The setting is stored in localStorage and applied by task-settings.tsx
+   * Default behavior (no attribute) = fade enabled */
+  body:not([data-fade-completed="false"]) .task-content-faded {
+    opacity: 0.5;
+    transition: opacity 150ms;
+  }
+
+  body:not([data-fade-completed="false"]) .task-content-faded:hover,
+  body:not([data-fade-completed="false"]) .task-content-faded:has(:hover) {
+    opacity: 1;
+  }
 }

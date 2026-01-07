@@ -4,15 +4,19 @@ import {
   Check,
   Copy,
   ExternalLink,
+  Eye,
+  EyeOff,
   Link as LinkIcon,
   Loader2,
+  Lock,
   Sparkles,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -32,6 +36,10 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ShortenedLinkResult | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordHint, setPasswordHint] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateUrl = (url: string) => {
     try {
@@ -52,15 +60,12 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast({
-        title: t('link-shortener.copied_to_clipboard'),
+      toast.success(t('link-shortener.copied_to_clipboard'), {
         description: t('link-shortener.copied_description'),
       });
     } catch (_err) {
-      toast({
-        title: t('link-shortener.copy_failed'),
+      toast.error(t('link-shortener.copy_failed'), {
         description: t('link-shortener.copy_failed_description'),
-        variant: 'destructive',
       });
     }
   };
@@ -69,20 +74,12 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
     e.preventDefault();
 
     if (!url.trim()) {
-      toast({
-        title: t('common.error'),
-        description: t('link-shortener.url_required'),
-        variant: 'destructive',
-      });
+      toast.error(t('link-shortener.url_required'));
       return;
     }
 
     if (!validateUrl(url)) {
-      toast({
-        title: t('common.error'),
-        description: t('link-shortener.invalid_url'),
-        variant: 'destructive',
-      });
+      toast.error(t('link-shortener.invalid_url'));
       return;
     }
 
@@ -98,6 +95,11 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
           url: url.trim(),
           customSlug: customSlug.trim() || undefined,
           wsId,
+          password: isPasswordProtected ? password : undefined,
+          passwordHint:
+            isPasswordProtected && passwordHint.trim()
+              ? passwordHint.trim()
+              : undefined,
         }),
       });
 
@@ -108,22 +110,16 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
       }
 
       setResult(data);
-      toast({
-        title: t('common.success'),
-        description: t('link-shortener.created_successfully'),
-      });
+      toast.success(t('link-shortener.created_successfully'));
 
       // Refresh the table data
       router.refresh();
     } catch (err) {
-      toast({
-        title: t('common.error'),
-        description:
-          err instanceof Error
-            ? err.message
-            : t('link-shortener.failed_to_create'),
-        variant: 'destructive',
-      });
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('link-shortener.failed_to_create')
+      );
     } finally {
       setLoading(false);
     }
@@ -134,6 +130,9 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
     setCustomSlug('');
     setResult(null);
     setShowAdvanced(false);
+    setIsPasswordProtected(false);
+    setPassword('');
+    setPasswordHint('');
   };
 
   return (
@@ -176,27 +175,110 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
             </div>
 
             {showAdvanced && (
-              <div className="space-y-3 rounded-lg border border-border/40 bg-muted/30 p-4">
-                <Label
-                  htmlFor="customSlug"
-                  className="font-semibold text-foreground text-sm"
-                >
-                  {t('link-shortener.custom_slug')}
-                </Label>
-                <Input
-                  id="customSlug"
-                  type="text"
-                  value={customSlug}
-                  onChange={(e) => setCustomSlug(e.target.value)}
-                  placeholder={t('link-shortener.custom_slug_placeholder')}
-                  pattern="[a-zA-Z0-9\-_]+"
-                  title="Only letters, numbers, hyphens, and underscores are allowed"
-                  disabled={loading}
-                  className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
-                />
-                <p className="text-muted-foreground text-xs">
-                  {t('link-shortener.custom_slug_description')}
-                </p>
+              <div className="space-y-4 rounded-lg border border-border/40 bg-muted/30 p-4">
+                <div className="space-y-3">
+                  <Label
+                    htmlFor="customSlug"
+                    className="font-semibold text-foreground text-sm"
+                  >
+                    {t('link-shortener.custom_slug')}
+                  </Label>
+                  <Input
+                    id="customSlug"
+                    type="text"
+                    value={customSlug}
+                    onChange={(e) => setCustomSlug(e.target.value)}
+                    placeholder={t('link-shortener.custom_slug_placeholder')}
+                    pattern="[a-zA-Z0-9\-_]+"
+                    title="Only letters, numbers, hyphens, and underscores are allowed"
+                    disabled={loading}
+                    className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    {t('link-shortener.custom_slug_description')}
+                  </p>
+                </div>
+
+                <div className="border-border/40 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                      <Label
+                        htmlFor="password-toggle"
+                        className="font-semibold text-foreground text-sm"
+                      >
+                        {t('link-shortener.password_protection')}
+                      </Label>
+                    </div>
+                    <Switch
+                      id="password-toggle"
+                      checked={isPasswordProtected}
+                      onCheckedChange={setIsPasswordProtected}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {isPasswordProtected && (
+                    <div className="mt-4 space-y-3">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="password"
+                          className="text-muted-foreground text-sm"
+                        >
+                          {t('link-shortener.password')} *
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder={t('link-shortener.enter_password')}
+                            disabled={loading}
+                            required={isPasswordProtected}
+                            minLength={4}
+                            maxLength={100}
+                            className="h-11 border-border/60 pr-10 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="passwordHint"
+                          className="text-muted-foreground text-sm"
+                        >
+                          {t('link-shortener.password_hint_optional')}
+                        </Label>
+                        <Input
+                          id="passwordHint"
+                          type="text"
+                          value={passwordHint}
+                          onChange={(e) => setPasswordHint(e.target.value)}
+                          placeholder={t(
+                            'link-shortener.password_hint_description'
+                          )}
+                          disabled={loading}
+                          maxLength={200}
+                          className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

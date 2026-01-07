@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, UserCircle, UserMinus, UserPlus, X } from '@tuturuuu/icons';
+import {
+  Search,
+  UserCircle,
+  UserMinus,
+  UserPlus,
+  UserX,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 
 interface Member {
@@ -40,6 +48,7 @@ export interface AssigneeSelectHandle {
 export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
   ({ taskId, assignees = [] }, ref) => {
     const [open, setOpen] = useState(false);
+    const t = useTranslations('common');
 
     // Expose open/close methods via ref
     useImperativeHandle(ref, () => ({
@@ -92,7 +101,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       const errorMessage =
         membersError instanceof Error
           ? membersError.message
-          : 'Failed to get workspace members';
+          : t('no_members_available');
       toast.error(errorMessage);
     }
 
@@ -116,7 +125,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
           if (error) {
             console.error('Remove assignee error:', error);
-            throw new Error(error.message || 'Failed to remove assignee');
+            throw new Error(error.message || t('please_try_again_later'));
           }
         } else {
           const { error } = await supabase.from('task_assignees').upsert(
@@ -132,7 +141,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
           if (error) {
             console.error('Add assignee error:', error);
-            throw new Error(error.message || 'Failed to add assignee');
+            throw new Error(error.message || t('please_try_again_later'));
           }
         }
 
@@ -187,11 +196,9 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         }
 
         const errorMessage =
-          err instanceof Error ? err.message : 'Unknown error occurred';
+          err instanceof Error ? err.message : t('please_try_again_later');
         console.error('Failed to update task assignees:', err);
-        toast('Error', {
-          description: `Failed to update assignees: ${errorMessage}`,
-        });
+        toast.error(t('failed_to_update_assignees', { error: errorMessage }));
       },
       // Note: Removed onSettled invalidation to prevent flicker
       // Optimistic updates handle immediate UI feedback
@@ -220,10 +227,18 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     };
 
     // Filter assigned and unassigned members with additional safety checks
-    const assignedMembers = members.filter(
+    // Include assigned members who are still in the workspace
+    const assignedMembersInWorkspace = members.filter(
       (member) =>
         member?.id &&
         uniqueAssignees.some((assignee) => assignee?.id === member.id)
+    );
+
+    // Also include assigned members who are NO LONGER in the workspace (removed members)
+    // These need to be shown so they can be unassigned
+    const assignedMembersNotInWorkspace = uniqueAssignees.filter(
+      (assignee) =>
+        assignee?.id && !members.some((member) => member?.id === assignee.id)
     );
 
     const unassignedMembers = members.filter(
@@ -232,9 +247,20 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         !uniqueAssignees.some((assignee) => assignee?.id === member.id)
     );
 
+    // Combine assigned members from workspace and removed members
+    const allAssignedMembers = [
+      ...assignedMembersInWorkspace,
+      ...assignedMembersNotInWorkspace,
+    ];
+
+    // Create a Set of IDs for removed members for quick lookup
+    const removedMemberIds = new Set(
+      assignedMembersNotInWorkspace.map((m) => m.id)
+    );
+
     // Additional deduplication using O(n) Map approach
     const uniqueAssignedMembers = Array.from(
-      assignedMembers
+      allAssignedMembers
         .reduce((map: Map<string, Member>, member: Member) => {
           if (member.id) {
             map.set(member.id, member);
@@ -315,7 +341,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search members..."
+                placeholder={t('search_members')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
@@ -331,30 +357,51 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
               {uniqueAssignedMembers.length > 0 && (
                 <div className="space-y-1.5">
                   <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                    Assigned ({uniqueAssignedMembers.length})
+                    {t('assigned')} ({uniqueAssignedMembers.length})
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {uniqueAssignedMembers.map((member) => (
-                      <Button
-                        key={member.id}
-                        type="button"
-                        variant="default"
-                        size="xs"
-                        onClick={() => handleSelect(member.id)}
-                        className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                      >
-                        <Avatar className="h-4 w-4">
-                          <AvatarImage src={member.avatar_url} />
-                          <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                            {member.display_name?.[0] ||
-                              member.email?.[0] ||
-                              '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        {member.display_name || member.email}
-                        <X className="h-3 w-3 opacity-70" />
-                      </Button>
-                    ))}
+                    {uniqueAssignedMembers.map((member) => {
+                      const isRemovedMember = removedMemberIds.has(member.id);
+                      return (
+                        <Button
+                          key={member.id}
+                          type="button"
+                          variant="default"
+                          size="xs"
+                          onClick={() => handleSelect(member.id)}
+                          title={
+                            isRemovedMember
+                              ? t('member_no_longer_in_workspace')
+                              : undefined
+                          }
+                          className={cn(
+                            'h-7 gap-1.5 rounded-full border px-3 font-medium text-xs shadow-sm transition-all',
+                            isRemovedMember
+                              ? 'border-dynamic-red/30 bg-dynamic-red/15 text-dynamic-red hover:border-dynamic-red/50 hover:bg-dynamic-red/25'
+                              : 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25'
+                          )}
+                        >
+                          {isRemovedMember && <UserX className="h-3 w-3" />}
+                          <Avatar className="h-4 w-4">
+                            <AvatarImage src={member.avatar_url} />
+                            <AvatarFallback
+                              className={cn(
+                                'font-bold text-[9px]',
+                                isRemovedMember
+                                  ? 'bg-dynamic-red/20'
+                                  : 'bg-dynamic-orange/20'
+                              )}
+                            >
+                              {member.display_name?.[0] ||
+                                member.email?.[0] ||
+                                '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {member.display_name || member.email}
+                          <X className="h-3 w-3 opacity-70" />
+                        </Button>
+                      );
+                    })}
                   </div>
                   {uniqueAssignedMembers.length > 1 && (
                     <Button
@@ -365,7 +412,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                       className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
                     >
                       <UserMinus className="mr-1 h-3 w-3" />
-                      Remove all
+                      {t('remove_all')}
                     </Button>
                   )}
                 </div>
@@ -390,19 +437,19 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                       <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
                         <UserPlus className="h-4 w-4 text-muted-foreground/40" />
                         <p className="text-center text-muted-foreground text-xs">
-                          No members found
+                          {t('no_members_found')}
                         </p>
                       </div>
                     ) : uniqueAssignedMembers.length > 0 ? (
                       <div className="rounded-lg bg-muted/30 py-3 text-center">
                         <p className="text-muted-foreground text-xs">
-                          All members assigned
+                          {t('all_members_assigned')}
                         </p>
                       </div>
                     ) : (
                       <div className="rounded-lg bg-muted/30 py-3 text-center">
                         <p className="text-muted-foreground text-xs">
-                          No members available
+                          {t('no_members_available')}
                         </p>
                       </div>
                     );
@@ -411,7 +458,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                   return (
                     <>
                       <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                        Available ({filteredMembers.length})
+                        {t('available')} ({filteredMembers.length})
                       </p>
                       <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
                         {filteredMembers.map((member) => (

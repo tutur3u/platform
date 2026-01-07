@@ -21,6 +21,15 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 
+interface TaskRelatedMenuTranslations {
+  related_tasks: string;
+  currently_related: string;
+  search_tasks_to_link: string;
+  no_matching_tasks: string;
+  no_available_tasks: string;
+  related_tasks_help: string;
+}
+
 interface TaskRelatedMenuProps {
   /** Current workspace ID */
   wsId: string;
@@ -36,6 +45,8 @@ interface TaskRelatedMenuProps {
   onAddRelated: (task: RelatedTaskInfo) => void;
   /** Called when removing a related task */
   onRemoveRelated: (taskId: string) => void;
+  /** Translations for the menu */
+  translations: TaskRelatedMenuTranslations;
 }
 
 export function TaskRelatedMenu({
@@ -46,6 +57,7 @@ export function TaskRelatedMenu({
   savingTaskId,
   onAddRelated,
   onRemoveRelated,
+  translations,
 }: TaskRelatedMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch] = useDebounce(searchQuery, 300);
@@ -76,7 +88,7 @@ export function TaskRelatedMenu({
     <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
       <DropdownMenuSubTrigger>
         <Link2 className="h-4 w-4 text-dynamic-blue" />
-        Related Tasks
+        {translations.related_tasks}
         {relatedTasks.length > 0 && (
           <span className="ml-auto text-muted-foreground text-xs">
             {relatedTasks.length}
@@ -89,10 +101,10 @@ export function TaskRelatedMenu({
           <div className="border-b">
             <div className="border-b bg-muted/30 px-2 py-1.5">
               <span className="font-medium text-muted-foreground text-xs">
-                Currently Related
+                {translations.currently_related}
               </span>
             </div>
-            <ScrollArea className="max-h-[180px]">
+            <ScrollArea className="max-h-45">
               <div className="space-y-1 p-2">
                 {relatedTasks.map((task) => (
                   <div
@@ -134,12 +146,12 @@ export function TaskRelatedMenu({
         {/* Search and Add */}
         <Command shouldFilter={false} className="rounded-none border-0">
           <CommandInput
-            placeholder="Search tasks to link..."
+            placeholder={translations.search_tasks_to_link}
             value={searchQuery}
             onValueChange={setSearchQuery}
             className="h-9"
           />
-          <CommandList className="max-h-[200px]">
+          <CommandList className="max-h-50">
             {tasksLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -149,10 +161,10 @@ export function TaskRelatedMenu({
                 {searchQuery ? (
                   <>
                     <Search className="mx-auto mb-1 h-4 w-4 opacity-50" />
-                    No matching tasks
+                    {translations.no_matching_tasks}
                   </>
                 ) : (
-                  'No available tasks'
+                  translations.no_available_tasks
                 )}
               </CommandEmpty>
             ) : (
@@ -191,7 +203,7 @@ export function TaskRelatedMenu({
         {/* Help Text */}
         <div className="border-t bg-muted/30 px-2 py-1.5">
           <p className="text-center text-muted-foreground text-xs">
-            Link tasks that share context or are related to each other
+            {translations.related_tasks_help}
           </p>
         </div>
       </DropdownMenuSubContent>

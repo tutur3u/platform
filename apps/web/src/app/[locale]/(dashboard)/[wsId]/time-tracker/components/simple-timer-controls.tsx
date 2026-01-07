@@ -11,8 +11,7 @@ import {
   Square,
   Timer,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
-
+import type { TimeTrackingCategory, Workspace } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -36,7 +35,6 @@ import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration, formatTime } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
-import type { Workspace } from '@tuturuuu/types';
 
 interface SimpleTimerControlsProps {
   wsId: string;
@@ -254,6 +252,8 @@ export function SimpleTimerControls({
     wsId,
     queryClient,
     t,
+    currentUserId, // Refresh server-side data to update overview page stats
+    router.refresh,
   ]);
 
   // Stop timer
@@ -352,7 +352,6 @@ export function SimpleTimerControls({
     wsId,
     queryClient,
     workCategory,
-    formatDuration,
     t,
     currentUserId,
     router,

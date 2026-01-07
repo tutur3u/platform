@@ -4,6 +4,7 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectDetail } from './task-project-detail';
 
@@ -52,6 +53,7 @@ export default async function TaskProjectPage({ params }: Props) {
         const supabase = await createClient();
 
         const user = await getCurrentSupabaseUser();
+        const t = await getTranslations('task_project_detail.common');
 
         // Check workspace permissions
         const { withoutPermission } = await getPermissions({ wsId });
@@ -70,11 +72,11 @@ export default async function TaskProjectPage({ params }: Props) {
               display_name,
               avatar_url
             ),
-            lead:workspace_members(...users(
+            lead:users!task_projects_lead_id_fkey(
               id,
               display_name,
               avatar_url
-            ))
+            )
           `
           )
           .eq('id', projectId)
@@ -193,7 +195,7 @@ export default async function TaskProjectPage({ params }: Props) {
             tasks={formattedTasks}
             lists={(lists ?? []).map((list) => ({
               ...list,
-              name: list.name ?? 'Untitled List',
+              name: list.name ?? t('untitled_list'),
               archived: list.archived ?? false,
               created_at: list.created_at ?? new Date().toISOString(),
               creator_id: list.creator_id ?? '',

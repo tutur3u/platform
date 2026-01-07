@@ -1,8 +1,10 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Editor } from '@tiptap/react';
 import {
   AlertCircle,
+  Ban,
   CheckCircle2,
   CircleSlash,
   Copy,
@@ -18,9 +20,11 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useCallback, useMemo, useState } from 'react';
+import { useTheme } from 'next-themes';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
+import { Badge } from '../badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +52,175 @@ import { TaskNewProjectDialog } from '../tu-do/boards/boardId/task-dialogs/TaskN
 import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationships';
 import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
+import { computeAccessibleLabelStyles } from '../tu-do/utils/label-colors';
+import {
+  getAssigneeInitials,
+  getTicketBadgeColorClasses,
+} from '../tu-do/utils/taskColorUtils';
+import { getPriorityIcon } from '../tu-do/utils/taskPriorityUtils';
+import { TaskSummaryPopover } from './task-summary-popover';
+
+/**
+ * Remove all mention nodes for a specific task from the editor
+ * @param editor - The Tiptap editor instance
+ * @param taskId - The ID of the task to remove mentions for
+ * @returns Number of mentions removed
+ */
+const removeTaskMentionsFromEditor = (
+  editor: Editor,
+  taskId: string
+): number => {
+  let removedCount = 0;
+
+  // Use a single transaction to delete all mentions
+  editor.commands.command(({ tr, state }) => {
+    const nodesToDelete: Array<{ from: number; to: number }> = [];
+
+    // Find all mention nodes for this task
+    state.doc.descendants((node, pos) => {
+      if (
+        node.type.name === 'mention' &&
+        node.attrs.entityType === 'task' &&
+        node.attrs.entityId === taskId
+      ) {
+        nodesToDelete.push({ from: pos, to: pos + node.nodeSize });
+      }
+    });
+
+    // Delete in reverse order to maintain correct positions
+    // When deleting from end to start, earlier positions remain valid
+    nodesToDelete
+      .sort((a, b) => b.from - a.from) // Sort by position descending
+      .forEach(({ from, to }) => {
+        tr.delete(from, to);
+        removedCount++;
+      });
+
+    return true;
+  });
+
+  return removedCount;
+};
+
+/**
+ * Clean up task mentions from all other tasks in the workspace (non-blocking background operation)
+ * @param deletedTaskId - The ID of the deleted task
+ * @param wsId - The workspace ID
+ * @param queryClient - The React Query client for cache invalidation
+ */
+const cleanupTaskMentionsGlobally = async (
+  deletedTaskId: string,
+  wsId: string,
+  _queryClient: ReturnType<typeof useQueryClient>
+): Promise<void> => {
+  const supabase = createClient();
+
+  try {
+    // Query all tasks in workspace using a single join query
+    // tasks -> workspace_boards (via board_id) -> filter by ws_id
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id, 
+        description, 
+        board_id,
+        workspace_boards!inner(ws_id)
+      `
+      )
+      .eq('workspace_boards.ws_id', wsId)
+      .is('deleted_at', null); // Only non-deleted tasks
+
+    if (error) {
+      console.error('Failed to fetch tasks for mention cleanup:', error);
+      return;
+    }
+
+    if (!tasks || tasks.length === 0) {
+      console.log('No tasks found for mention cleanup');
+      return;
+    }
+
+    console.log(
+      `Scanning ${tasks.length} tasks for mentions of deleted task ${deletedTaskId}`
+    );
+
+    // Process each task's description
+    for (const task of tasks) {
+      if (!task.description) continue;
+
+      try {
+        // Parse description JSON (Tiptap format)
+        const content =
+          typeof task.description === 'string'
+            ? JSON.parse(task.description)
+            : task.description;
+
+        // Check if it contains mentions of the deleted task
+        let hasMention = false;
+        const checkForMention = (node: any): void => {
+          if (
+            node.type === 'mention' &&
+            node.attrs?.entityType === 'task' &&
+            node.attrs?.entityId === deletedTaskId
+          ) {
+            hasMention = true;
+          }
+          if (node.content && Array.isArray(node.content)) {
+            node.content.forEach(checkForMention);
+          }
+        };
+        checkForMention(content);
+
+        if (!hasMention) continue;
+
+        // Remove mentions by filtering the content tree
+        const removeMentions = (node: any): any => {
+          if (
+            node.type === 'mention' &&
+            node.attrs?.entityType === 'task' &&
+            node.attrs?.entityId === deletedTaskId
+          ) {
+            return null; // Remove this node
+          }
+
+          if (node.content && Array.isArray(node.content)) {
+            return {
+              ...node,
+              content: node.content
+                .map(removeMentions)
+                .filter((n: any) => n !== null),
+            };
+          }
+
+          return node;
+        };
+
+        const cleanedContent = removeMentions(content);
+
+        // Update task with cleaned description
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update({ description: JSON.stringify(cleanedContent) })
+          .eq('id', task.id);
+
+        if (updateError) {
+          console.error(
+            `Failed to clean mentions from task ${task.id}:`,
+            updateError
+          );
+        }
+      } catch (parseError) {
+        console.error(
+          `Failed to parse description for task ${task.id}:`,
+          parseError
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Failed to clean up task mentions globally:', error);
+  }
+};
 
 // Extended Task type that includes board_id (denormalized field in database)
 interface TaskWithBoardId extends Task {
@@ -60,6 +233,32 @@ interface TaskMentionChipProps {
   avatarUrl?: string | null;
   subtitle?: string | null;
   className?: string;
+  editor?: Editor | null;
+  /** Optional translations for dialogs (for use in isolated React roots) */
+  translations?: {
+    // TaskDeleteDialog
+    delete_task?: string;
+    delete_task_confirmation?: string | ((name: string) => string);
+    cancel?: string;
+    deleting?: string;
+    // TaskCustomDateDialog
+    set_custom_due_date?: string;
+    custom_due_date_description?: string;
+    remove_due_date?: string;
+    // TaskNewLabelDialog
+    create_new_label?: string;
+    create_new_label_description?: string;
+    label_name?: string;
+    color?: string;
+    preview?: string;
+    creating?: string;
+    create_label?: string;
+    // TaskNewProjectDialog
+    create_new_project?: string;
+    create_new_project_description?: string;
+    project_name?: string;
+    create_project?: string;
+  };
 }
 
 export function TaskMentionChip({
@@ -68,12 +267,18 @@ export function TaskMentionChip({
   avatarUrl,
   subtitle,
   className,
+  editor: editorProp,
+  translations,
 }: TaskMentionChipProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -81,7 +286,7 @@ export function TaskMentionChip({
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
 
-  // Fetch full task data
+  // Fetch full task data - load immediately to show priority, assignees, and colors
   const {
     data: task,
     isLoading: taskLoading,
@@ -94,6 +299,9 @@ export function TaskMentionChip({
         .select(
           `
           *,
+          task_lists:task_lists(
+            board_id
+          ),
           assignees:task_assignees(
             user_id,
             user:users!inner(
@@ -129,6 +337,7 @@ export function TaskMentionChip({
       // Transform the data to match TaskWithBoardId type
       return {
         ...data,
+        board_id: data.task_lists?.board_id || '',
         assignees: data.assignees?.map((a: any) => ({
           id: a.user.id,
           user_id: a.user_id,
@@ -148,7 +357,7 @@ export function TaskMentionChip({
         })),
       } as TaskWithBoardId;
     },
-    enabled: menuOpen,
+    enabled: true, // Always load to show inline metadata
     staleTime: 30000,
     retry: false,
   });
@@ -184,10 +393,10 @@ export function TaskMentionChip({
   // Fetch workspace members
   const { data: workspaceMembers = [], isLoading: membersLoading } =
     useWorkspaceMembers(boardConfig?.ws_id, {
-      enabled: !!boardConfig?.ws_id && menuOpen,
+      enabled: !!boardConfig?.ws_id && menuOpen, // Only needed for editing
     });
 
-  // Fetch available task lists
+  // Fetch available task lists - enable when we have task data to get current list color
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', task?.board_id],
     queryFn: async () => {
@@ -203,9 +412,15 @@ export function TaskMentionChip({
       if (error) throw error;
       return data as TaskList[];
     },
-    enabled: !!task?.board_id && menuOpen,
+    enabled: !!task?.board_id, // Load when we have task data
     staleTime: 10 * 60 * 1000,
   });
+
+  // Get current task's list for color rendering
+  const currentTaskList = useMemo(() => {
+    if (!task || !availableLists.length) return null;
+    return availableLists.find((list) => list.id === task.list_id) || null;
+  }, [task, availableLists]);
 
   // Placeholder task for hooks when task is not loaded yet
   const placeholderTask: Task = useMemo(
@@ -381,8 +596,35 @@ export function TaskMentionChip({
   }, [baseHandleMoveToClose, syncTaskCache, targetClosedList]);
 
   const handleDelete = useCallback(async () => {
-    return baseHandleDelete();
-  }, [baseHandleDelete]);
+    if (!task) return;
+
+    const taskId = task.id;
+
+    // Perform deletion
+    await baseHandleDelete();
+
+    // Phase 1: Clean up mentions from current editor (immediate)
+    const editor = editorProp;
+
+    if (editor) {
+      const removedCount = removeTaskMentionsFromEditor(editor, taskId);
+      if (removedCount > 0) {
+        console.log(
+          `Removed ${removedCount} mention(s) of task ${taskId} from current editor`
+        );
+      }
+    }
+
+    // Phase 2: Clean up mentions from all other tasks (non-blocking background operation)
+    if (boardConfig?.ws_id) {
+      cleanupTaskMentionsGlobally(taskId, boardConfig.ws_id, queryClient).catch(
+        (error) => {
+          console.error('Failed to clean up task mentions globally:', error);
+          // Don't show error to user - this is background cleanup
+        }
+      );
+    }
+  }, [baseHandleDelete, task, queryClient, boardConfig, editorProp]);
 
   const handleMoveToList = useCallback(
     async (targetListId: string) => {
@@ -543,11 +785,42 @@ export function TaskMentionChip({
       toast.error('Failed to copy link');
     }
     setMenuOpen(false);
+    setPopoverOpen(false);
   };
 
-  const title = subtitle
-    ? `#${displayNumber} • ${subtitle}`
-    : `#${displayNumber}`;
+  // Derive actual display number - prefer fetched task data over props
+  // This fixes legacy mentions where task name was stored instead of display number
+  const actualDisplayNumber = useMemo(() => {
+    // If we have task data with a valid display_number, use it
+    if (task?.display_number !== undefined && task.display_number !== null) {
+      return String(task.display_number);
+    }
+    // Otherwise use the prop (for new mentions, this should be correct)
+    return displayNumber;
+  }, [task?.display_number, displayNumber]);
+
+  // Derive actual task name - prefer fetched task data over subtitle prop
+  const actualTaskName = useMemo(() => {
+    // If we have task data with a name, use it
+    if (task?.name) {
+      return task.name;
+    }
+    // For legacy mentions where displayNumber might be the task name
+    // and subtitle is also the task name, use subtitle
+    return subtitle || null;
+  }, [task?.name, subtitle]);
+
+  const title = actualTaskName
+    ? `#${actualDisplayNumber} • ${actualTaskName}`
+    : `#${actualDisplayNumber}`;
+
+  // Get styling based on task list color or priority
+  const chipColorClasses = useMemo(() => {
+    return getTicketBadgeColorClasses(
+      currentTaskList || undefined,
+      task?.priority || undefined
+    );
+  }, [currentTaskList, task?.priority]);
 
   const chipContent = (
     <span
@@ -557,41 +830,130 @@ export function TaskMentionChip({
       data-display-number={displayNumber}
       data-avatar-url={avatarUrl ?? ''}
       data-subtitle={subtitle ?? ''}
+      data-priority={task?.priority ?? ''}
+      data-list-color={currentTaskList?.color ?? ''}
       title={title}
       contentEditable={false}
+      onClick={(e) => {
+        e.stopPropagation();
+        (e as any).stopImmediatePropagation?.();
+        e.preventDefault();
+        setPopoverOpen((prev) => !prev);
+      }}
+      onContextMenu={(e) => {
+        e.stopPropagation();
+        (e as any).stopImmediatePropagation?.();
+        e.preventDefault();
+        // Right-click: close popover and open dropdown menu after delay
+        setPopoverOpen(false);
+        // Delay to let popover close animation complete before opening menu
+        setTimeout(() => {
+          setMenuOpen(true);
+          setMenuGuardUntil(Date.now() + 300);
+        }, 50);
+      }}
       className={cn(
-        'inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-medium text-[12px] leading-none transition-colors',
-        'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
-        'hover:border-dynamic-blue/60 hover:bg-dynamic-blue/20',
+        'inline-flex cursor-pointer items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 font-medium text-[12px] leading-normal transition-colors',
+        chipColorClasses,
+        'hover:opacity-80',
         className
       )}
     >
-      {/* Avatar/Icon */}
-      <Avatar className="-ml-0.5 h-4 w-4 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/20 text-dynamic-blue">
-        {avatarUrl ? (
-          <AvatarImage
-            src={avatarUrl}
-            alt={displayNumber}
-            referrerPolicy="no-referrer"
-          />
-        ) : null}
-        <AvatarFallback className="flex h-full w-full items-center justify-center bg-transparent font-semibold text-[10px]">
-          <CheckCircle2 className="h-3 w-3" />
-        </AvatarFallback>
-      </Avatar>
+      {/* Chip content - updated 2025-12-26 */}
+      {/* Task Number - use derived value for legacy mention support */}
+      <span className="font-semibold">#{actualDisplayNumber}</span>
 
-      {/* Label */}
-      <span className="flex items-center gap-1 text-current">
-        <span className="font-semibold">#{displayNumber}</span>
-        {(subtitle || task?.name) && (
-          <>
-            <span className="opacity-50">•</span>
-            <span className="max-w-[200px] truncate font-medium">
-              {subtitle || task?.name}
+      {/* Priority Icon */}
+      {task?.priority && (
+        <span className="flex items-center justify-center">
+          {getPriorityIcon(task.priority, 'h-3 w-3')}
+        </span>
+      )}
+
+      {/* Dot separator between priority and blocked icon */}
+      <span className="opacity-50">•</span>
+
+      {/* Blocked indicator - show if task has blocking tasks */}
+      {blockedByTasks.length > 0 && (
+        <span
+          className="flex items-center justify-center text-dynamic-red"
+          title={`Blocked by ${blockedByTasks.length} task${blockedByTasks.length > 1 ? 's' : ''}`}
+        >
+          <Ban className="h-3 w-3" />
+        </span>
+      )}
+
+      {/* Task Name - use derived value for legacy mention support, with priority color */}
+      {actualTaskName && (
+        <span className={cn('max-w-50 truncate font-medium')}>
+          {actualTaskName}
+        </span>
+      )}
+
+      {/* Assignee Avatars */}
+      {task?.assignees && task.assignees.length > 0 && (
+        <span className="ml-1 flex -space-x-1">
+          {task.assignees.slice(0, 3).map((assignee) => (
+            <Avatar
+              key={assignee.id}
+              className="h-4 w-4 border border-background"
+              title={assignee.display_name || 'Unknown'}
+            >
+              {assignee.avatar_url && (
+                <AvatarImage
+                  src={assignee.avatar_url}
+                  alt={assignee.display_name || 'User'}
+                  referrerPolicy="no-referrer"
+                />
+              )}
+              <AvatarFallback className="text-[8px]">
+                {getAssigneeInitials(assignee.display_name, null)}
+              </AvatarFallback>
+            </Avatar>
+          ))}
+          {task.assignees.length > 3 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-background bg-muted font-medium text-[8px]">
+              +{task.assignees.length - 3}
             </span>
-          </>
-        )}
-      </span>
+          )}
+        </span>
+      )}
+
+      {/* Labels with cross-theme accessible colors - using same strategy as TaskLabelsDisplay */}
+      {task?.labels && task.labels.length > 0 && (
+        <span className="flex items-center gap-0.5">
+          {task.labels.slice(0, 2).map((label) => {
+            const styles = computeAccessibleLabelStyles(label.color, isDark);
+            return (
+              <Badge
+                key={label.id}
+                variant="outline"
+                className="inline-flex h-4 max-w-16 items-center gap-0.5 truncate rounded-full border px-1 font-medium text-[8px] ring-0"
+                style={
+                  styles
+                    ? {
+                        backgroundColor: styles.bg,
+                        borderColor: styles.border,
+                        color: styles.text,
+                      }
+                    : undefined
+                }
+                title={label.name}
+              >
+                <span className="truncate">{label.name}</span>
+              </Badge>
+            );
+          })}
+          {task.labels.length > 2 && (
+            <Badge
+              variant="outline"
+              className="inline-flex h-4 items-center border-dashed px-1 font-medium text-[8px] opacity-80"
+            >
+              +{task.labels.length - 2}
+            </Badge>
+          )}
+        </span>
+      )}
     </span>
   );
 
@@ -719,6 +1081,14 @@ export function TaskMentionChip({
             isSaving={relationshipSaving}
             onSetParent={setParentTask}
             onRemoveParent={removeParentTask}
+            translations={{
+              parent_task: 'Parent Task',
+              search_tasks: 'Search tasks...',
+              error_loading_tasks: 'Error loading tasks',
+              no_matching_tasks: 'No matching tasks',
+              no_available_tasks: 'No available tasks',
+              n_set: '1',
+            }}
           />
 
           <TaskBlockingMenu
@@ -732,6 +1102,21 @@ export function TaskMentionChip({
             onRemoveBlocking={removeBlockingTask}
             onAddBlockedBy={addBlockedByTask}
             onRemoveBlockedBy={removeBlockedByTask}
+            translations={{
+              dependencies: 'Dependencies',
+              blocks: 'Blocks',
+              blocked_by: 'Blocked By',
+              search_tasks_to_block: 'Search tasks...',
+              search_blocking_tasks: 'Search tasks...',
+              error_loading_tasks: 'Error loading tasks',
+              no_matching_tasks: 'No matching tasks',
+              no_available_tasks: 'No available tasks',
+              remove_dependency: 'Remove',
+              tasks_that_cannot_start:
+                'Tasks that cannot start until this one is done',
+              tasks_that_must_complete:
+                'Tasks that must complete before this one can start',
+            }}
           />
 
           <TaskRelatedMenu
@@ -742,6 +1127,15 @@ export function TaskMentionChip({
             savingTaskId={relationshipSavingTaskId}
             onAddRelated={addRelatedTask}
             onRemoveRelated={removeRelatedTask}
+            translations={{
+              related_tasks: 'Related Tasks',
+              currently_related: 'Currently Related',
+              search_tasks_to_link: 'Search tasks to link...',
+              no_matching_tasks: 'No matching tasks',
+              no_available_tasks: 'No available tasks',
+              related_tasks_help:
+                'Link tasks that share context or are related to each other',
+            }}
           />
 
           <DropdownMenuSeparator />
@@ -808,9 +1202,27 @@ export function TaskMentionChip({
     </>
   );
 
-  // Use DropdownMenu (click to toggle) - required for sub-menu components to work
+  // Render chip that opens popover, and a separate dropdown menu for editing
   return (
-    <>
+    <div style={{ display: 'inline-flex', position: 'relative' }}>
+      <TaskSummaryPopover
+        task={task || null}
+        taskList={currentTaskList}
+        isLoading={taskLoading}
+        onEdit={() => {
+          setPopoverOpen(false);
+          setTimeout(() => setMenuOpen(true), 100);
+        }}
+        onGoToTask={handleGoToTask}
+        open={popoverOpen}
+        onOpenChange={setPopoverOpen}
+        blockedBy={blockedByTasks as Task[]}
+        workspaceId={boardConfig?.ws_id}
+      >
+        {chipContent}
+      </TaskSummaryPopover>
+
+      {/* Dropdown menu for editing */}
       <DropdownMenu
         open={menuOpen}
         onOpenChange={(open) => {
@@ -820,12 +1232,36 @@ export function TaskMentionChip({
           }
         }}
       >
-        <DropdownMenuTrigger asChild>{chipContent}</DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
+          <button
+            ref={dropdownTriggerRef}
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              opacity: 0,
+              width: '1px',
+              height: '1px',
+              border: 'none',
+              padding: 0,
+              background: 'transparent',
+            }}
+          />
+        </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          sideOffset={4}
           className="w-56"
-          onClick={(e) => e.stopPropagation()}
+          side="bottom"
+          sideOffset={8}
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+          onCloseAutoFocus={(e) => {
+            // Prevent focus from moving to an element that might be outside the parent dialog
+            // This fixes the issue where closing the dropdown causes the parent dialog to close
+            e.preventDefault();
+          }}
         >
           {taskLoading ? (
             <div className="flex items-center justify-center p-4">
@@ -856,6 +1292,17 @@ export function TaskMentionChip({
             isLoading={isLoading}
             onOpenChange={setShowDeleteDialog}
             onConfirm={handleDelete}
+            translations={
+              translations
+                ? {
+                    delete_task: translations.delete_task,
+                    delete_task_confirmation:
+                      translations.delete_task_confirmation,
+                    cancel: translations.cancel,
+                    deleting: translations.deleting,
+                  }
+                : undefined
+            }
           />
 
           <TaskCustomDateDialog
@@ -868,6 +1315,17 @@ export function TaskMentionChip({
               handleDueDateChange(null);
               setShowCustomDateDialog(false);
             }}
+            translations={
+              translations
+                ? {
+                    set_custom_due_date: translations.set_custom_due_date,
+                    custom_due_date_description:
+                      translations.custom_due_date_description,
+                    cancel: translations.cancel,
+                    remove_due_date: translations.remove_due_date,
+                  }
+                : undefined
+            }
           />
 
           <TaskNewLabelDialog
@@ -879,6 +1337,21 @@ export function TaskMentionChip({
             onColorChange={setNewLabelColor}
             onOpenChange={setShowNewLabelDialog}
             onConfirm={createNewLabel}
+            translations={
+              translations
+                ? {
+                    create_new_label: translations.create_new_label,
+                    create_new_label_description:
+                      translations.create_new_label_description,
+                    label_name: translations.label_name,
+                    color: translations.color,
+                    preview: translations.preview,
+                    cancel: translations.cancel,
+                    creating: translations.creating,
+                    create_label: translations.create_label,
+                  }
+                : undefined
+            }
           />
 
           <TaskNewProjectDialog
@@ -888,9 +1361,22 @@ export function TaskMentionChip({
             onNameChange={setNewProjectName}
             onOpenChange={setShowNewProjectDialog}
             onConfirm={createNewProject}
+            translations={
+              translations
+                ? {
+                    create_new_project: translations.create_new_project,
+                    create_new_project_description:
+                      translations.create_new_project_description,
+                    project_name: translations.project_name,
+                    cancel: translations.cancel,
+                    creating: translations.creating,
+                    create_project: translations.create_project,
+                  }
+                : undefined
+            }
           />
         </>
       )}
-    </>
+    </div>
   );
 }

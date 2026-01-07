@@ -1,7 +1,9 @@
+import { createSerwistConfig } from '@tuturuuu/offline/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
+const withSerwist = createSerwistConfig();
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -20,6 +22,7 @@ const nextConfig: NextConfig = {
     '@tuturuuu/supabase',
     '@tuturuuu/microsoft',
     '@tuturuuu/google',
+    '@tuturuuu/offline',
   ],
   images: {
     remotePatterns: [
@@ -43,4 +46,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSerwist(withNextIntl(nextConfig));

@@ -158,21 +158,21 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
   // Get all region group names (excluding 'Auto & UTC')
   const regionGroupNames = React.useMemo(
     () => Object.keys(timezoneGroups).filter((g) => g !== 'Auto & UTC'),
-    [timezoneGroups]
+    []
   );
 
   React.useEffect(() => {
     setActiveIndex(
       flatFilteredTimezones.findIndex((tz) => tz.value === value.timezone)
     );
-  }, [primaryOpen, searchQuery]);
+  }, [flatFilteredTimezones, value.timezone]);
   React.useEffect(() => {
     setActiveSecondaryIndex(
       flatFilteredSecondaryTimezones.findIndex(
         (tz) => tz.value === value.secondaryTimezone
       )
     );
-  }, [secondaryOpen, secondarySearchQuery]);
+  }, [flatFilteredSecondaryTimezones, value.secondaryTimezone]);
 
   // Detect user's timezone on mount
   React.useEffect(() => {
@@ -189,7 +189,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     } catch (error) {
       console.error('Failed to detect timezone:', error);
     }
-  }, []);
+  }, [onChange, value]);
 
   const handleTimezoneChange = (timezone: string) => {
     // Update recent timezones
@@ -322,6 +322,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     const isActive = activeIdx === itemIdx;
                     return (
                       <button
+                        type="button"
                         key={tz.value}
                         role="option"
                         aria-selected={isSelected}
@@ -397,7 +398,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
                 onKeyDown={handleKeyDown}
               />
               <div className="mb-1 flex flex-wrap gap-1">
@@ -416,8 +416,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               </div>
             </div>
             <div
-              className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
-              tabIndex={0}
+              className="pointer-events-auto max-h-80 overflow-y-auto rounded-b-lg"
               onKeyDown={handleKeyDown}
               role="presentation"
               style={{ touchAction: 'pan-y' }}
@@ -438,6 +437,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     const isActive = activeIndex === idx;
                     return (
                       <button
+                        type="button"
                         key={tz}
                         role="option"
                         aria-selected={isSelected}
@@ -483,6 +483,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                         const isActive = activeIndex === idx; // This may need to be adjusted for flat index
                         return (
                           <button
+                            type="button"
                             key={tz.value}
                             role="option"
                             aria-selected={isSelected}
@@ -550,13 +551,11 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={secondarySearchQuery}
                   onChange={(e) => setSecondarySearchQuery(e.target.value)}
-                  autoFocus
                   onKeyDown={handleSecondaryKeyDown}
                 />
               </div>
               <div
-                className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
-                tabIndex={0}
+                className="pointer-events-auto max-h-80 overflow-y-auto rounded-b-lg"
                 onKeyDown={handleSecondaryKeyDown}
                 role="presentation"
                 style={{ touchAction: 'pan-y' }}

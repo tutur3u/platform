@@ -117,7 +117,8 @@ function Carousel({
         canScrollNext,
       }}
     >
-      <div
+      {/* biome-ignore lint/a11y/useSemanticElements: role="region" with aria-roledescription is standard WAI-ARIA carousel pattern */}
+      <section
         onKeyDownCapture={handleKeyDown}
         className={cn('relative', className)}
         role="region"
@@ -126,7 +127,7 @@ function Carousel({
         {...props}
       >
         {children}
-      </div>
+      </section>
     </CarouselContext.Provider>
   );
 }
@@ -156,6 +157,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   const { orientation } = useCarousel();
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: role="group" with aria-roledescription="slide" is intentional WAI-ARIA carousel pattern
     <div
       role="group"
       aria-roledescription="slide"

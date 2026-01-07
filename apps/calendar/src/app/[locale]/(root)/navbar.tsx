@@ -1,7 +1,6 @@
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
 import { Suspense } from 'react';
-import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
 import NavbarCalendarWrapper from './navbar-calendar-wrapper';
 import NavbarSeparator from './navbar-separator';
@@ -34,15 +33,6 @@ export default async function Navbar({
     <SharedNavbar
       logo="/media/logos/transparent.png"
       title={<LogoTitle />}
-      afterTitle={
-        <Suspense
-          fallback={
-            <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-          }
-        >
-          <LocalWorkspaceSelect />
-        </Suspense>
-      }
       navigationMenu={
         <Suspense
           fallback={

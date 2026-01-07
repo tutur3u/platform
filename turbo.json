@@ -62,7 +62,8 @@
       "cache": false
     },
     "type-check": {
-      "dependsOn": ["^type-check"],
+      "dependsOn": ["^build", "^type-check"],
+      "inputs": ["$TURBO_DEFAULT$", "**/messages/*.json"],
       "outputs": [
         "tsconfig.tsbuildinfo",
         "tsconfig.build.tsbuildinfo",
@@ -70,6 +71,17 @@
         ".turbo/tsconfig.tsbuildinfo",
         ".next/cache/.tsbuildinfo"
       ]
+    },
+    "i18n:check": {
+      "inputs": [
+        "apps/*/messages/**/*.json",
+        "apps/*/src/**/*.{ts,tsx,js,jsx}"
+      ],
+      "outputs": []
+    },
+    "i18n:sort:check": {
+      "inputs": ["apps/*/messages/**/*.json", "scripts/i18n-sort.js"],
+      "outputs": []
     }
   }
 }

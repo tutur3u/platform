@@ -13,9 +13,10 @@ import {
 } from 'vitest';
 
 // Use vi.hoisted to properly hoist the storage variables
+type TaskRunFn = (...args: any[]) => any;
 const { taskRunFunctions, scheduledTaskRunFunctions } = vi.hoisted(() => ({
-  taskRunFunctions: {} as Record<string, Function>,
-  scheduledTaskRunFunctions: {} as Record<string, Function>,
+  taskRunFunctions: {} as Record<string, TaskRunFn>,
+  scheduledTaskRunFunctions: {} as Record<string, TaskRunFn>,
 }));
 
 // Mock dependencies
@@ -46,16 +47,9 @@ vi.mock('../src/unified-schedule-helper', () => ({
   unifiedScheduleHelper: vi.fn(),
 }));
 
-// Import after mock setup - some imports are only used to trigger side effects
-// @ts-expect-error - imported for mock setup
-import { schedules, task } from '@trigger.dev/sdk/v3';
 import { getWorkspacesForSync } from '../src/google-calendar-sync';
 // Import module to trigger task registration (some variables may appear unused)
-import {
-  unifiedScheduleManualTrigger as _unifiedScheduleManualTrigger,
-  unifiedScheduleTrigger as _unifiedScheduleTrigger,
-  unifiedScheduleTask,
-} from '../src/unified-schedule';
+import { unifiedScheduleTask } from '../src/unified-schedule';
 import { unifiedScheduleHelper } from '../src/unified-schedule-helper';
 
 describe('Unified Schedule', () => {

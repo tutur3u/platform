@@ -1,12 +1,12 @@
 'use client';
 import { ChevronLeftIcon, ChevronRightIcon } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 
 interface ImagePreviewDialogProps {
@@ -63,6 +63,7 @@ export function ImagePreviewDialog({
         {imageUrls[selectedImageIndex] && (
           <div className="space-y-4">
             <div className="flex items-center justify-center overflow-hidden rounded-lg bg-muted/10">
+              {/* biome-ignore lint/performance/noImgElement: Dynamic blob URL from Supabase storage */}
               <img
                 src={imageUrls[selectedImageIndex]}
                 alt={`Full view - Attachment ${selectedImageIndex + 1}`}

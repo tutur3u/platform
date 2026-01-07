@@ -179,7 +179,13 @@ export function EditSessionDialog({
     }
 
     setValidationErrors(errors);
-  }, [formState.startTime, formState.endTime, session, isOlderThanThreshold]);
+  }, [
+    formState.startTime,
+    formState.endTime,
+    session,
+    isOlderThanThreshold,
+    getValidationErrorMessage,
+  ]);
 
   return (
     <Dialog open={!!session} onOpenChange={() => onClose()}>

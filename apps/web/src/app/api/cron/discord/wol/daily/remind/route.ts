@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   let data: unknown;
   try {
     data = await res.json();
-  } catch (error) {
+  } catch (_error) {
     data = { ok: false, error: 'Invalid JSON from Discord app' };
   }
   return NextResponse.json(data, { status: res.status });

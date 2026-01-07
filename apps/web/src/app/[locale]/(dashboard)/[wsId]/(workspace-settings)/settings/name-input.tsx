@@ -16,7 +16,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
@@ -42,11 +42,15 @@ export default function NameInput({
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: defaultValue ?? undefined,
+      name: defaultValue || '',
     },
   });
 
-  const name = form.watch('name');
+  useEffect(() => {
+    form.reset({ name: defaultValue || '' });
+  }, [defaultValue, form]);
+
+  const { isDirty } = form.formState;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
@@ -63,6 +67,7 @@ export default function NameInput({
       });
 
       router.refresh();
+      form.reset({ name: data.name });
     } else {
       toast({
         title: 'An error occurred',
@@ -99,8 +104,7 @@ export default function NameInput({
           <Button
             type="submit"
             size="icon"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={!name || name === defaultValue || saving}
+            disabled={!isDirty || saving || disabled}
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />

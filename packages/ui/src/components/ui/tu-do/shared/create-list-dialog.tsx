@@ -42,6 +42,25 @@ interface CreateListDialogProps {
   wsId?: string;
   initialName?: string;
   onSuccess?: (listId: string) => void;
+  translations?: {
+    createNewList?: string;
+    addListDescription?: string;
+    listName?: string;
+    listNamePlaceholder?: string;
+    statusCategory?: string;
+    color?: string;
+    cancel?: string;
+    creating?: string;
+    createList?: string;
+    listCreatedSuccessfully?: string;
+    failedToCreateList?: string;
+    // Status labels
+    backlog?: string;
+    active?: string;
+    doneStatus?: string;
+    closed?: string;
+    documents?: string;
+  };
 }
 
 const statusConfig = {
@@ -101,7 +120,41 @@ export function CreateListDialog({
   wsId,
   initialName = '',
   onSuccess,
+  translations,
 }: CreateListDialogProps) {
+  const t = {
+    createNewList: translations?.createNewList ?? 'Create New List',
+    addListDescription:
+      translations?.addListDescription ??
+      'Add a new list to organize your tasks.',
+    listName: translations?.listName ?? 'List Name',
+    listNamePlaceholder:
+      translations?.listNamePlaceholder ??
+      'e.g., In Review, Testing, Ready for Deploy',
+    statusCategory: translations?.statusCategory ?? 'Status Category',
+    color: translations?.color ?? 'Color',
+    cancel: translations?.cancel ?? 'Cancel',
+    creating: translations?.creating ?? 'Creating...',
+    createList: translations?.createList ?? 'Create List',
+    listCreatedSuccessfully:
+      translations?.listCreatedSuccessfully ?? 'List created successfully',
+    failedToCreateList:
+      translations?.failedToCreateList ?? 'Failed to create list',
+    // Status labels
+    backlog: translations?.backlog ?? 'Backlog',
+    active: translations?.active ?? 'Active',
+    doneStatus: translations?.doneStatus ?? 'Done',
+    closed: translations?.closed ?? 'Closed',
+    documents: translations?.documents ?? 'Documents',
+  };
+
+  const statusLabels: Record<TaskBoardStatus, string> = {
+    not_started: t.backlog,
+    active: t.active,
+    done: t.doneStatus,
+    closed: t.closed,
+    documents: t.documents,
+  };
   const queryClient = useQueryClient();
   const supabase = createClient();
 
@@ -160,7 +213,7 @@ export function CreateListDialog({
       return data;
     },
     onSuccess: async (data) => {
-      toast.success('List created successfully');
+      toast.success(t.listCreatedSuccessfully);
 
       // Use setQueryData for immediate UI update without flicker
       // Realtime subscription handles cross-user sync
@@ -192,7 +245,7 @@ export function CreateListDialog({
       resetForm();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to create list');
+      toast.error(error.message || t.failedToCreateList);
     },
   });
 
@@ -215,19 +268,17 @@ export function CreateListDialog({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New List</DialogTitle>
-          <DialogDescription>
-            Add a new list to organize your tasks.
-          </DialogDescription>
+          <DialogTitle>{t.createNewList}</DialogTitle>
+          <DialogDescription>{t.addListDescription}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="new-list-name">List Name</Label>
+            <Label htmlFor="new-list-name">{t.listName}</Label>
             <Input
               id="new-list-name"
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}
-              placeholder="e.g., In Review, Testing, Ready for Deploy"
+              placeholder={t.listNamePlaceholder}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newListName.trim()) {
                   e.preventDefault();
@@ -238,7 +289,7 @@ export function CreateListDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-list-status">Status Category</Label>
+            <Label htmlFor="new-list-status">{t.statusCategory}</Label>
             <Select
               value={newListStatus}
               onValueChange={(value) =>
@@ -257,7 +308,7 @@ export function CreateListDialog({
                         <Icon
                           className={cn('h-4 w-4', statusConfig[status].color)}
                         />
-                        {statusConfig[status].label}
+                        {statusLabels[status]}
                       </div>
                     </SelectItem>
                   );
@@ -266,7 +317,7 @@ export function CreateListDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Color</Label>
+            <Label>{t.color}</Label>
             <div className="grid grid-cols-5 gap-2">
               {colorOptions.map((color) => (
                 <button
@@ -294,7 +345,7 @@ export function CreateListDialog({
             }}
             disabled={createListMutation.isPending}
           >
-            Cancel
+            {t.cancel}
           </Button>
           <Button
             onClick={handleCreateList}
@@ -303,10 +354,10 @@ export function CreateListDialog({
             {createListMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Creating...
+                {t.creating}
               </>
             ) : (
-              'Create List'
+              t.createList
             )}
           </Button>
         </DialogFooter>

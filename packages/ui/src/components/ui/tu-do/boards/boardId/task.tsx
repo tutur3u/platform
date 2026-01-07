@@ -56,8 +56,10 @@ import {
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, formatDistanceToNow } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import React, {
   useCallback,
   useEffect,
@@ -138,6 +140,9 @@ function TaskCardInner({
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
+  const t = useTranslations('common');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
   const { weekStartsOn, timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
 
@@ -563,14 +568,10 @@ function TaskCardInner({
       );
 
       const taskCount = duplicatedTasks.length;
-      toast.success(
-        taskCount > 1
-          ? `${taskCount} tasks duplicated successfully`
-          : 'Task duplicated successfully'
-      );
+      toast.success(t('tasks_duplicated_successfully', { count: taskCount }));
     } catch (error: any) {
       console.error('Error duplicating task(s):', error);
-      toast.error(error.message || 'Please try again later');
+      toast.error(error.message || t('please_try_again_later'));
     } finally {
       setIsLoading(false);
     }
@@ -619,7 +620,10 @@ function TaskCardInner({
                 ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
-            title={`${descriptionMeta.checkedCheckboxes} of ${descriptionMeta.totalCheckboxes} sub-tasks completed`}
+            title={t('n_subtasks_completed', {
+              checked: descriptionMeta.checkedCheckboxes,
+              total: descriptionMeta.totalCheckboxes,
+            })}
             ref={(el) => {
               if (el) badgeRefs.current.set('subtasks', el as any);
             }}
@@ -654,7 +658,7 @@ function TaskCardInner({
               <Box className="h-2.5 w-2.5" />
               {task.projects.length === 1
                 ? task.projects[0]?.name
-                : `${task.projects.length} projects`}
+                : t('n_projects', { count: task.projects.length })}
             </Badge>
           </div>
         ),
@@ -716,7 +720,7 @@ function TaskCardInner({
             key="parent"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 text-[10px] text-dynamic-purple"
-            title={`Sub-task of: ${parentTask.name}`}
+            title={t('subtask_of', { name: parentTask.name })}
             ref={(el) => {
               if (el) badgeRefs.current.set('parent', el as any);
             }}
@@ -743,7 +747,10 @@ function TaskCardInner({
                 ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
-            title={`${completedCount} of ${childTasks.length} sub-tasks completed`}
+            title={t('n_subtasks_completed', {
+              checked: completedCount,
+              total: childTasks.length,
+            })}
             ref={(el) => {
               if (el) badgeRefs.current.set('children', el as any);
             }}
@@ -764,13 +771,13 @@ function TaskCardInner({
             key="blocked"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-red/30 bg-dynamic-red/10 px-2 text-[10px] text-dynamic-red"
-            title={`Blocked by ${blockedByTasks.length} task${blockedByTasks.length > 1 ? 's' : ''}`}
+            title={t('blocked_by_n_tasks', { count: blockedByTasks.length })}
             ref={(el) => {
               if (el) badgeRefs.current.set('blocked', el as any);
             }}
           >
             <Ban className="h-2.5 w-2.5" />
-            Blocked
+            {t('blocked')}
           </Badge>
         ),
       });
@@ -785,7 +792,7 @@ function TaskCardInner({
             key="blocking"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
-            title={`Blocking ${blockingTasks.length} task${blockingTasks.length > 1 ? 's' : ''}`}
+            title={t('blocking_n_tasks', { count: blockingTasks.length })}
             ref={(el) => {
               if (el) badgeRefs.current.set('blocking', el as any);
             }}
@@ -806,7 +813,7 @@ function TaskCardInner({
             key="related"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
-            title={`${relatedTasks.length} related task${relatedTasks.length > 1 ? 's' : ''}`}
+            title={t('n_related_tasks', { count: relatedTasks.length })}
             ref={(el) => {
               if (el) badgeRefs.current.set('related', el as any);
             }}
@@ -834,6 +841,7 @@ function TaskCardInner({
     blockingTasks,
     blockedByTasks,
     relatedTasks,
+    t,
   ]);
 
   // Calculate visible badges based on available width
@@ -1083,7 +1091,12 @@ function TaskCardInner({
                     'w-fit px-1 py-0 font-mono text-[10px]',
                     getTicketBadgeColorClasses(taskList, task.priority)
                   )}
-                  title={`Ticket ID: ${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)}`}
+                  title={t('ticket_id_label', {
+                    id: getTicketIdentifier(
+                      boardConfig?.ticket_prefix,
+                      task.display_number
+                    ),
+                  })}
                 >
                   {getTicketIdentifier(
                     boardConfig?.ticket_prefix,
@@ -1101,8 +1114,8 @@ function TaskCardInner({
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
-                aria-label={`Edit task: ${task.name}`}
-                title="Click to edit task"
+                aria-label={t('edit_task_aria', { name: task.name })}
+                title={t('click_to_edit_task')}
               >
                 {task.name}
               </button>
@@ -1149,7 +1162,7 @@ function TaskCardInner({
                         className="flex items-center gap-2"
                       >
                         <Timer className="h-4 w-4 text-dynamic-blue" />
-                        Start tracking time
+                        {t('start_tracking_time')}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -1169,10 +1182,9 @@ function TaskCardInner({
                       disabled={isLoading}
                     >
                       <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                      Mark as{' '}
                       {targetCompletionList?.status === 'done'
-                        ? 'Done'
-                        : 'Closed'}
+                        ? t('mark_as_done')
+                        : t('mark_as_closed')}
                     </DropdownMenuItem>
                   )}
 
@@ -1191,7 +1203,7 @@ function TaskCardInner({
                         disabled={isLoading}
                       >
                         <CircleSlash className="h-4 w-4 text-dynamic-purple" />
-                        Mark as Closed
+                        {t('mark_as_closed')}
                       </DropdownMenuItem>
                     )}
 
@@ -1207,6 +1219,14 @@ function TaskCardInner({
                     onPriorityChange={handlePriorityChange}
                     onMenuItemSelect={handleMenuItemSelect}
                     onClose={() => setMenuOpen(false)}
+                    translations={{
+                      priority: t('priority'),
+                      none: t('none'),
+                      urgent: t('priority_urgent'),
+                      high: t('priority_high'),
+                      medium: t('priority_medium'),
+                      low: t('priority_low'),
+                    }}
                   />
 
                   {/* Due Date Menu */}
@@ -1224,6 +1244,17 @@ function TaskCardInner({
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
                     onClose={() => setMenuOpen(false)}
+                    translations={{
+                      dueDate: t('due_date'),
+                      none: t('none'),
+                      today: t('today'),
+                      tomorrow: t('tomorrow'),
+                      yesterday: t('yesterday'),
+                      thisWeek: t('this_week'),
+                      nextWeek: t('next_week'),
+                      customDate: t('custom_date'),
+                      removeDueDate: t('remove_due_date'),
+                    }}
                   />
 
                   {/* Estimation Menu */}
@@ -1251,6 +1282,15 @@ function TaskCardInner({
                       setMenuOpen(false);
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
+                    translations={{
+                      labels: t('labels'),
+                      searchLabels: t('search_labels'),
+                      loading: t('loading'),
+                      noLabelsFound: t('no_labels_found'),
+                      noLabelsAvailable: t('no_labels_available'),
+                      applied: t('applied'),
+                      createNewLabel: t('create_new_label'),
+                    }}
                   />
 
                   {/* Projects Menu */}
@@ -1265,6 +1305,15 @@ function TaskCardInner({
                       setMenuOpen(false);
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
+                    translations={{
+                      projects: t('projects'),
+                      searchProjects: t('search_projects'),
+                      loading: t('loading'),
+                      noProjectsFound: t('no_projects_found'),
+                      noProjectsAvailable: t('no_projects_available'),
+                      assigned: t('assigned'),
+                      createNewProject: t('create_new_project'),
+                    }}
                   />
 
                   <DropdownMenuSeparator />
@@ -1281,6 +1330,14 @@ function TaskCardInner({
                         isSaving={relationshipSaving}
                         onSetParent={setParentTask}
                         onRemoveParent={removeParentTask}
+                        translations={{
+                          parent_task: t('parent_task'),
+                          search_tasks: t('search_tasks'),
+                          error_loading_tasks: t('error'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          n_set: '1',
+                        }}
                       />
 
                       {/* Blocking/Blocked By Menu */}
@@ -1295,6 +1352,19 @@ function TaskCardInner({
                         onRemoveBlocking={removeBlockingTask}
                         onAddBlockedBy={addBlockedByTask}
                         onRemoveBlockedBy={removeBlockedByTask}
+                        translations={{
+                          dependencies: t('dependencies'),
+                          blocks: t('blocks'),
+                          blocked_by: t('blocked_by'),
+                          search_tasks_to_block: t('search_tasks'),
+                          search_blocking_tasks: t('search_tasks'),
+                          error_loading_tasks: t('error'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          remove_dependency: t('remove'),
+                          tasks_that_cannot_start: t('blocks_help'),
+                          tasks_that_must_complete: t('blocked_by_help'),
+                        }}
                       />
 
                       {/* Related Tasks Menu */}
@@ -1306,6 +1376,14 @@ function TaskCardInner({
                         savingTaskId={relationshipSavingTaskId}
                         onAddRelated={addRelatedTask}
                         onRemoveRelated={removeRelatedTask}
+                        translations={{
+                          related_tasks: t('related_tasks'),
+                          currently_related: t('currently_related'),
+                          search_tasks_to_link: t('search_tasks'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          related_tasks_help: t('related_tasks_help'),
+                        }}
                       />
 
                       <DropdownMenuSeparator />
@@ -1320,6 +1398,10 @@ function TaskCardInner({
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
+                      translations={{
+                        move: t('move'),
+                        noOtherListsAvailable: t('no_other_lists_available'),
+                      }}
                     />
                   )}
 
@@ -1332,6 +1414,17 @@ function TaskCardInner({
                       assigneeSaving={assigneeSaving}
                       onToggleAssignee={onToggleAssignee}
                       onMenuItemSelect={handleMenuItemSelect}
+                      translations={{
+                        assignees: t('assignees'),
+                        searchMembers: t('search_members'),
+                        loading: t('loading'),
+                        noMembersFound: t('no_members_found'),
+                        noMembersAvailable: t('no_members_available'),
+                        assigned: t('assigned'),
+                        memberNoLongerInWorkspace: t(
+                          'member_no_longer_in_workspace'
+                        ),
+                      }}
                     />
                   )}
 
@@ -1341,14 +1434,14 @@ function TaskCardInner({
                     className="cursor-pointer"
                   >
                     <Copy className="h-4 w-4 text-foreground" />
-                    Duplicate task
+                    {t('duplicate_task')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={handleAddSubtask}
                     className="cursor-pointer"
                   >
                     <ListTree className="h-4 w-4 text-foreground" />
-                    Add sub-task
+                    {t('add_subtask')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -1361,7 +1454,7 @@ function TaskCardInner({
                     className="cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4 text-dynamic-red" />
-                    Delete task
+                    {t('delete_task')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1389,7 +1482,17 @@ function TaskCardInner({
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
-                    Starts {formatSmartDate(startDate)}
+                    {t('starts_at', {
+                      date: formatSmartDate(
+                        startDate,
+                        {
+                          today: t('today'),
+                          tomorrow: t('tomorrow'),
+                          yesterday: t('yesterday'),
+                        },
+                        dateLocale
+                      ),
+                    })}
                   </span>
                 </div>
               )}
@@ -1404,15 +1507,27 @@ function TaskCardInner({
                 >
                   <Calendar className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
-                    Due {formatSmartDate(endDate)}
+                    {t('due_at', {
+                      date: formatSmartDate(
+                        endDate,
+                        {
+                          today: t('today'),
+                          tomorrow: t('tomorrow'),
+                          yesterday: t('yesterday'),
+                        },
+                        dateLocale
+                      ),
+                    })}
                   </span>
                   {isOverdue && !task.closed_at ? (
                     <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                      OVERDUE
+                      {t('overdue')}
                     </Badge>
                   ) : (
                     <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                      {format(endDate, `MMM dd 'at' ${timePattern}`)}
+                      {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+                        locale: dateLocale,
+                      })}
                     </span>
                   )}
                 </div>
@@ -1434,15 +1549,17 @@ function TaskCardInner({
               >
                 <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
-                  Completed{' '}
+                  {t('completed')}{' '}
                   {formatDistanceToNow(new Date(task.completed_at), {
                     addSuffix: true,
+                    locale: dateLocale,
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
                   {format(
                     new Date(task.completed_at),
-                    `MMM dd 'at' ${timePattern}`
+                    `MMM dd '${t('at')}' ${timePattern}`,
+                    { locale: dateLocale }
                   )}
                 </span>
               </div>
@@ -1456,15 +1573,17 @@ function TaskCardInner({
               >
                 <CircleSlash className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
-                  Closed{' '}
+                  {t('closed')}{' '}
                   {formatDistanceToNow(new Date(task.closed_at), {
                     addSuffix: true,
+                    locale: dateLocale,
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
                   {format(
                     new Date(task.closed_at),
-                    `MMM dd 'at' ${timePattern}`
+                    `MMM dd '${t('at')}' ${timePattern}`,
+                    { locale: dateLocale }
                   )}
                 </span>
               </div>
@@ -1505,7 +1624,7 @@ function TaskCardInner({
                     className="flex w-auto max-w-xs flex-col gap-2 p-2"
                   >
                     <div className="text-center font-semibold text-sm">
-                      Other properties
+                      {t('other_properties')}
                     </div>
                     <div className="border" />
                     <div className="flex flex-col gap-2">
@@ -1526,7 +1645,7 @@ function TaskCardInner({
                   {descriptionMeta.hasText && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title="Has description"
+                      title={t('has_description')}
                     >
                       <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
@@ -1534,7 +1653,9 @@ function TaskCardInner({
                   {descriptionMeta.hasImages && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
+                      title={t('n_images', {
+                        count: descriptionMeta.imageCount,
+                      })}
                     >
                       <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
                       {descriptionMeta.imageCount > 1 && (
@@ -1547,7 +1668,9 @@ function TaskCardInner({
                   {descriptionMeta.hasVideos && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
+                      title={t('n_videos', {
+                        count: descriptionMeta.videoCount,
+                      })}
                     >
                       <Play className="h-3.5 w-3.5 text-muted-foreground" />
                       {descriptionMeta.videoCount > 1 && (
@@ -1560,7 +1683,7 @@ function TaskCardInner({
                   {descriptionMeta.hasLinks && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
-                      title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
+                      title={t('n_links', { count: descriptionMeta.linkCount })}
                     >
                       <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
                       {descriptionMeta.linkCount > 1 && (
@@ -1616,6 +1739,14 @@ function TaskCardInner({
             : dialogActions.closeDeleteDialog()
         }
         onConfirm={handleDelete}
+        translations={{
+          delete_task: t('delete_task'),
+          delete_task_confirmation: t('delete_task_confirmation', {
+            name: task.name ?? '',
+          }),
+          cancel: t('cancel'),
+          deleting: t('deleting'),
+        }}
       />
       <TaskNewLabelDialog
         open={dialogState.newLabelDialogOpen}
@@ -1630,6 +1761,16 @@ function TaskCardInner({
             : dialogActions.closeNewLabelDialog()
         }
         onConfirm={createNewLabel}
+        translations={{
+          create_new_label: t('create_new_label'),
+          create_new_label_description: t('create_new_label_description'),
+          label_name: t('label_name'),
+          color: t('color'),
+          preview: t('preview'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_label: t('create_label'),
+        }}
       />
 
       <TaskNewProjectDialog
@@ -1643,6 +1784,14 @@ function TaskCardInner({
             : dialogActions.closeNewProjectDialog()
         }
         onConfirm={createNewProject}
+        translations={{
+          create_new_project: t('create_new_project'),
+          create_new_project_description: t('create_new_project_description'),
+          project_name: t('project_name'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_project: t('create_project'),
+        }}
       />
 
       <TaskCustomDateDialog
@@ -1658,6 +1807,12 @@ function TaskCardInner({
         onClear={() => {
           handleDueDateChange(null);
           dialogActions.closeCustomDateDialog();
+        }}
+        translations={{
+          set_custom_due_date: t('set_custom_due_date'),
+          custom_due_date_description: t('custom_due_date_description'),
+          cancel: t('cancel'),
+          remove_due_date: t('remove_due_date'),
         }}
       />
 

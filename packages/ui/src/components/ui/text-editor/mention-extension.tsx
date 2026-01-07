@@ -8,6 +8,7 @@ import {
   User,
 } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { ThemeProvider } from 'next-themes';
 import { createRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { TaskMentionChip } from './task-mention-chip';
@@ -163,6 +164,12 @@ export const Mention = Node.create({
   atom: true,
   selectable: false,
 
+  addOptions() {
+    return {
+      translations: undefined,
+    };
+  },
+
   addAttributes() {
     return {
       userId: {
@@ -181,6 +188,16 @@ export const Mention = Node.create({
         default: null,
       },
       subtitle: {
+        default: null,
+      },
+      // Task-specific attributes (optional, for enhanced rendering)
+      priority: {
+        default: null,
+      },
+      listColor: {
+        default: null,
+      },
+      assignees: {
         default: null,
       },
     };
@@ -207,6 +224,10 @@ export const Mention = Node.create({
             displayName,
             avatarUrl: element.dataset.avatarUrl ?? null,
             subtitle: element.dataset.subtitle ?? null,
+            // Task-specific attributes (optional)
+            priority: element.dataset.priority ?? null,
+            listColor: element.dataset.listColor ?? null,
+            assignees: element.dataset.assignees ?? null,
           };
         },
       },
@@ -221,6 +242,9 @@ export const Mention = Node.create({
     const displayNameRaw = (attrs.displayName as string | null) ?? null;
     const avatarUrl = (attrs.avatarUrl as string | null) ?? null;
     const subtitle = (attrs.subtitle as string | null) ?? null;
+    const priority = (attrs.priority as string | null) ?? null;
+    const listColor = (attrs.listColor as string | null) ?? null;
+    const assignees = (attrs.assignees as string | null) ?? null;
 
     delete attrs.userId;
     delete attrs.entityId;
@@ -228,6 +252,9 @@ export const Mention = Node.create({
     delete attrs.displayName;
     delete attrs.avatarUrl;
     delete attrs.subtitle;
+    delete attrs.priority;
+    delete attrs.listColor;
+    delete attrs.assignees;
 
     const displayName = (displayNameRaw || 'Member').trim();
     const visuals = getMentionVisualMeta(entityType);
@@ -237,7 +264,7 @@ export const Mention = Node.create({
         ? initials
         : visuals.fallback;
 
-    const baseAttributes = {
+    const baseAttributes: any = {
       'data-mention': 'true',
       'data-user-id': userId ?? '',
       'data-entity-id': entityId ?? '',
@@ -248,6 +275,15 @@ export const Mention = Node.create({
       class: `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium leading-none transition-colors ${visuals.pillClass}`,
       ...attrs,
     };
+
+    // Add task-specific data attributes if present
+    if (entityType === 'task') {
+      if (priority) baseAttributes['data-priority'] = priority;
+      if (listColor) baseAttributes['data-list-color'] = listColor;
+      if (assignees) baseAttributes['data-assignees'] = assignees;
+      // Use display-number for tasks
+      baseAttributes['data-display-number'] = displayName;
+    }
 
     const avatarNode: any = avatarUrl
       ? [
@@ -280,6 +316,23 @@ export const Mention = Node.create({
             fallbackGlyph,
           ];
 
+    // For task mentions, render in a task-chip-like format: #number • taskName
+    if (entityType === 'task') {
+      const taskChildren: any[] = [
+        ['span', { class: 'font-semibold' }, `#${displayName}`],
+      ];
+      // Add separator and task name (subtitle) if available
+      if (subtitle) {
+        taskChildren.push(['span', { class: 'opacity-50' }, '•']);
+        taskChildren.push([
+          'span',
+          { class: 'max-w-[200px] truncate font-medium' },
+          subtitle,
+        ]);
+      }
+      return ['span', baseAttributes, ...taskChildren] as any;
+    }
+
     return [
       'span',
       baseAttributes,
@@ -293,7 +346,7 @@ export const Mention = Node.create({
   },
 
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, editor }) => {
       let currentDisplayName =
         (node.attrs.displayName as string | null)?.trim() || 'Member';
       let currentAvatarUrl = node.attrs.avatarUrl as string | null;
@@ -318,14 +371,18 @@ export const Mention = Node.create({
             reactRoot = createRoot(dom);
           }
           reactRoot.render(
-            <QueryClientProvider client={mentionQueryClient}>
-              <TaskMentionChip
-                entityId={currentEntityId ?? ''}
-                displayNumber={currentDisplayName}
-                avatarUrl={currentAvatarUrl}
-                subtitle={currentSubtitle}
-              />
-            </QueryClientProvider>
+            <ThemeProvider attribute="class" enableSystem>
+              <QueryClientProvider client={mentionQueryClient}>
+                <TaskMentionChip
+                  entityId={currentEntityId ?? ''}
+                  displayNumber={currentDisplayName}
+                  avatarUrl={currentAvatarUrl}
+                  subtitle={currentSubtitle}
+                  translations={this.options.translations}
+                  editor={editor}
+                />
+              </QueryClientProvider>
+            </ThemeProvider>
           );
         };
 

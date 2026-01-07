@@ -45,7 +45,9 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
@@ -88,6 +90,9 @@ export function ListView({
   isPersonalWorkspace = false,
   searchQuery,
 }: Props) {
+  const t = useTranslations('common');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
   const queryClient = useQueryClient();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -123,7 +128,6 @@ export function ListView({
   };
 
   const handleBulkDeleteConfirmed = async () => {
-    setShowBulkDeleteDialog(false);
     setIsLoading(true);
     try {
       const supabase = createClient();
@@ -146,6 +150,7 @@ export function ListView({
       setLocalTasks(updatedTasks);
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       setSelectedTasks(new Set());
+      setShowBulkDeleteDialog(false);
       toast({
         title: 'Tasks deleted',
         description: `${successCount} task${successCount !== 1 ? 's' : ''} deleted successfully.`,
@@ -328,14 +333,14 @@ export function ListView({
     const dateObj = new Date(date);
 
     if (isToday(dateObj)) {
-      return 'Today';
+      return t('today');
     }
 
     if (isTomorrow(dateObj)) {
-      return 'Tomorrow';
+      return t('tomorrow');
     }
 
-    return format(dateObj, 'MMM dd');
+    return format(dateObj, 'MMM dd', { locale: dateLocale });
   }
 
   function renderTaskStatus(task: Task) {
@@ -406,7 +411,7 @@ export function ListView({
       {sortedTasks.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <p className="text-muted-foreground text-sm">No tasks</p>
+            <p className="text-muted-foreground text-sm">{t('no_tasks')}</p>
           </div>
         </div>
       ) : (
@@ -429,12 +434,12 @@ export function ListView({
                   {columnVisibility.status && (
                     <TableHead className="h-9 w-10 px-2 text-center">
                       <span className="flex items-center justify-center font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Status
+                        {t('status')}
                       </span>
                     </TableHead>
                   )}
                   {columnVisibility.name && (
-                    <TableHead className="h-9 min-w-[250px] px-2">
+                    <TableHead className="h-9 min-w-62.5 px-2">
                       <Button
                         variant="ghost"
                         className={cn(
@@ -445,13 +450,13 @@ export function ListView({
                         )}
                         onClick={() => handleSort('name')}
                       >
-                        Task
+                        {t('task_header')}
                         {getSortIcon('name')}
                       </Button>
                     </TableHead>
                   )}
                   {columnVisibility.priority && (
-                    <TableHead className="h-9 w-[90px] px-2">
+                    <TableHead className="h-9 w-22.5 px-2">
                       <Button
                         variant="ghost"
                         className={cn(
@@ -462,13 +467,13 @@ export function ListView({
                         )}
                         onClick={() => handleSort('priority')}
                       >
-                        Priority
+                        {t('priority')}
                         {getSortIcon('priority')}
                       </Button>
                     </TableHead>
                   )}
                   {columnVisibility.end_date && (
-                    <TableHead className="h-9 w-[100px] px-2">
+                    <TableHead className="h-9 w-25 px-2">
                       <Button
                         variant="ghost"
                         className={cn(
@@ -479,7 +484,7 @@ export function ListView({
                         )}
                         onClick={() => handleSort('end_date')}
                       >
-                        Due
+                        {t('due')}
                         {getSortIcon('end_date')}
                       </Button>
                     </TableHead>
@@ -496,13 +501,13 @@ export function ListView({
                         )}
                         onClick={() => handleSort('assignees')}
                       >
-                        Assignee
+                        {t('assignee')}
                         {getSortIcon('assignees')}
                       </Button>
                     </TableHead>
                   )}
                   {columnVisibility.actions && (
-                    <TableHead className="h-9 w-[30px] px-2" />
+                    <TableHead className="h-9 w-7.5 px-2" />
                   )}
                 </TableRow>
               </TableHeader>
@@ -650,7 +655,7 @@ export function ListView({
                               !task.closed_at &&
                               !task.completed_at && (
                                 <Badge className="h-4 bg-dynamic-red px-1 text-[9px] text-white">
-                                  Overdue
+                                  {t('overdue')}
                                 </Badge>
                               )}
                           </div>
@@ -725,7 +730,7 @@ export function ListView({
               <div className="flex items-center gap-2.5 rounded-lg border bg-background px-4 py-2 shadow-sm">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <span className="font-medium text-muted-foreground text-xs">
-                  Loading more tasks...
+                  {t('loading_more_tasks')}
                 </span>
               </div>
             </div>
@@ -741,8 +746,8 @@ export function ListView({
               <CheckCircle2 className="h-4 w-4 text-primary" />
             </div>
             <span className="font-semibold text-sm">
-              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
-              selected
+              {selectedTasks.size} {t('task_header')}
+              {selectedTasks.size !== 1 ? 's' : ''} {t('selected')}
             </span>
           </div>
           <Separator orientation="vertical" className="h-6" />
@@ -754,7 +759,7 @@ export function ListView({
               className="h-8"
             >
               <X className="mr-1.5 h-3.5 w-3.5" />
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -763,7 +768,7 @@ export function ListView({
               className="h-8"
             >
               <X className="mr-1.5 h-3.5 w-3.5" />
-              Delete
+              {t('delete')}
             </Button>
           </div>
         </div>
@@ -776,24 +781,27 @@ export function ListView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete selected tasks?</AlertDialogTitle>
+            <AlertDialogTitle>{t('delete_selected_tasks')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedTasks.size} selected task
-              {selectedTasks.size !== 1 ? 's' : ''}? This action cannot be
-              undone.
+              {t('delete_selected_tasks_confirmation', {
+                count: selectedTasks.size,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t('cancel')}</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button
                 variant="destructive"
-                onClick={handleBulkDeleteConfirmed}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBulkDeleteConfirmed();
+                }}
                 disabled={isLoading}
               >
-                {isLoading ? 'Deleting...' : 'Delete'}
+                {t('delete')}
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>

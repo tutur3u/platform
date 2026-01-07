@@ -100,6 +100,7 @@ describe('useTaskActions', () => {
       from: vi.fn(() => mockSupabase),
       update: vi.fn(() => mockSupabase),
       delete: vi.fn(() => mockSupabase),
+      insert: vi.fn(() => mockSupabase),
       select: vi.fn(() => mockSupabase),
       eq: vi.fn(() => mockSupabase),
       in: vi.fn(() => mockSupabase),
@@ -422,6 +423,13 @@ describe('useTaskActions', () => {
         description: 'Task deleted successfully',
       });
       expect(setDeleteDialogOpen).toHaveBeenCalledWith(false);
+
+      const deletedTasks = queryClient.getQueryData<Task[]>([
+        'deleted-tasks',
+        'board-1',
+      ]);
+      expect(deletedTasks?.[0]).toMatchObject({ id: 'task-1' });
+      expect(deletedTasks?.[0]?.deleted_at).toEqual(expect.any(String));
     });
 
     it('should handle bulk delete of multiple tasks', async () => {
@@ -464,6 +472,14 @@ describe('useTaskActions', () => {
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: '2 tasks deleted',
       });
+
+      const deletedTasks = queryClient.getQueryData<Task[]>([
+        'deleted-tasks',
+        'board-1',
+      ]);
+      expect(deletedTasks?.map((t) => t.id)).toEqual(
+        expect.arrayContaining(['task-1', 'task-2'])
+      );
     });
   });
 

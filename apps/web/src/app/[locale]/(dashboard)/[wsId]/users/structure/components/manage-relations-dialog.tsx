@@ -151,10 +151,9 @@ export function ManageRelationsDialog({
                       id={`employee_${key}`}
                       value={s.employee_id}
                       onChange={(e) =>
-                        updateSupervisor(
-                          supervisors.findIndex((x) => x === s),
-                          { employee_id: e.target.value }
-                        )
+                        updateSupervisor(supervisors.indexOf(s), {
+                          employee_id: e.target.value,
+                        })
                       }
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                     >
@@ -177,10 +176,9 @@ export function ManageRelationsDialog({
                         id={`supervisor_${key}`}
                         value={s.supervisor_id}
                         onChange={(e) =>
-                          updateSupervisor(
-                            supervisors.findIndex((x) => x === s),
-                            { supervisor_id: e.target.value }
-                          )
+                          updateSupervisor(supervisors.indexOf(s), {
+                            supervisor_id: e.target.value,
+                          })
                         }
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                       >
@@ -192,11 +190,7 @@ export function ManageRelationsDialog({
                       </select>
                       <Button
                         variant="outline"
-                        onClick={() =>
-                          removeSupervisor(
-                            supervisors.findIndex((x) => x === s)
-                          )
-                        }
+                        onClick={() => removeSupervisor(supervisors.indexOf(s))}
                       >
                         {t('remove')}
                       </Button>
@@ -234,10 +228,9 @@ export function ManageRelationsDialog({
                       id={`internal_${key}`}
                       value={c.internal_id}
                       onChange={(e) =>
-                        updateCollaboration(
-                          collaborations.findIndex((x) => x === c),
-                          { internal_id: e.target.value }
-                        )
+                        updateCollaboration(collaborations.indexOf(c), {
+                          internal_id: e.target.value,
+                        })
                       }
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                     >
@@ -260,10 +253,9 @@ export function ManageRelationsDialog({
                         id={`external_${key}`}
                         value={c.external_id}
                         onChange={(e) =>
-                          updateCollaboration(
-                            collaborations.findIndex((x) => x === c),
-                            { external_id: e.target.value }
-                          )
+                          updateCollaboration(collaborations.indexOf(c), {
+                            external_id: e.target.value,
+                          })
                         }
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                       >
@@ -276,9 +268,7 @@ export function ManageRelationsDialog({
                       <Button
                         variant="outline"
                         onClick={() =>
-                          removeCollaboration(
-                            collaborations.findIndex((x) => x === c)
-                          )
+                          removeCollaboration(collaborations.indexOf(c))
                         }
                       >
                         {t('remove')}

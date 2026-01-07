@@ -248,47 +248,47 @@ export function groupNotificationsByDate(
     const createdAt = dayjs(firstNotification.created_at);
 
     if (createdAt.isAfter(today)) {
-      dateGroups['today']!.push(group);
+      dateGroups.today!.push(group);
     } else if (createdAt.isAfter(yesterday)) {
-      dateGroups['yesterday']!.push(group);
+      dateGroups.yesterday!.push(group);
     } else if (createdAt.isAfter(thisWeek)) {
-      dateGroups['thisWeek']!.push(group);
+      dateGroups.thisWeek!.push(group);
     } else {
-      dateGroups['earlier']!.push(group);
+      dateGroups.earlier!.push(group);
     }
   }
 
   const result: DateGroup[] = [];
 
-  if (dateGroups['today']!.length > 0) {
+  if (dateGroups.today!.length > 0) {
     result.push({
       label: t('date_today'),
       key: 'today',
-      notifications: dateGroups['today']!,
+      notifications: dateGroups.today!,
     });
   }
 
-  if (dateGroups['yesterday']!.length > 0) {
+  if (dateGroups.yesterday!.length > 0) {
     result.push({
       label: t('date_yesterday'),
       key: 'yesterday',
-      notifications: dateGroups['yesterday']!,
+      notifications: dateGroups.yesterday!,
     });
   }
 
-  if (dateGroups['thisWeek']!.length > 0) {
+  if (dateGroups.thisWeek!.length > 0) {
     result.push({
       label: t('date_this_week'),
       key: 'thisWeek',
-      notifications: dateGroups['thisWeek']!,
+      notifications: dateGroups.thisWeek!,
     });
   }
 
-  if (dateGroups['earlier']!.length > 0) {
+  if (dateGroups.earlier!.length > 0) {
     result.push({
       label: t('date_earlier'),
       key: 'earlier',
-      notifications: dateGroups['earlier']!,
+      notifications: dateGroups.earlier!,
     });
   }
 

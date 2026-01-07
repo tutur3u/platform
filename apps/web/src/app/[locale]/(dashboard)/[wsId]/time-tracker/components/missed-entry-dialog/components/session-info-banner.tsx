@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { formatDuration } from '@/lib/time-format';
-import { SessionWithRelations } from '../../../types';
+import type { SessionWithRelations } from '../../../types';
 
 interface SessionInfoBannerProps {
   session: SessionWithRelations;

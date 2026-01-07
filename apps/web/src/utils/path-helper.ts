@@ -79,12 +79,12 @@ export function popPath(path: string) {
   // Handle relative paths
   if (isRelative) {
     if (!result.startsWith('./') && !result.startsWith('../')) {
-      result = './' + result.replace(/^\/+/, '');
+      result = `./${result.replace(/^\/+/, '')}`;
     }
   } else {
     // Ensure leading slash for absolute paths and paths without protocol
     if (!result.includes('://') && !result.startsWith('/')) {
-      result = '/' + result;
+      result = `/${result}`;
     }
   }
 

@@ -1,9 +1,9 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { CheckIcon, ChevronDown, PlusCircle } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -55,23 +55,57 @@ import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
+import { fetchWorkspaces } from './actions';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
   plan: z.string(),
 });
 
+function WorkspaceIcon({
+  name,
+  avatarUrl,
+  className,
+}: {
+  name?: string | null;
+  avatarUrl?: string | null;
+  className?: string;
+}) {
+  return (
+    <Avatar
+      className={cn(
+        'h-5 w-5 flex-none',
+        avatarUrl ? 'rounded-xs' : 'rounded-sm',
+        className
+      )}
+    >
+      <AvatarImage
+        src={
+          avatarUrl ||
+          (name ? `https://avatar.vercel.sh/${name}.png` : undefined)
+        }
+        alt={name || 'Workspace'}
+        className={avatarUrl ? 'rounded-xs' : 'rounded-sm'}
+      />
+      <AvatarFallback
+        className={cn('text-xs', avatarUrl ? 'rounded-xs' : 'rounded-sm')}
+      >
+        <AvatarImage src="/media/logos/transparent.png" />
+        {name ? getInitials(name) : '?'}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
 export function WorkspaceSelect({
   t,
   wsId,
-  localUseQuery,
   hideLeading,
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
   t: any;
   wsId: string;
-  localUseQuery: any;
   hideLeading?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
@@ -79,13 +113,11 @@ export function WorkspaceSelect({
   const router = useRouter();
   const pathname = usePathname();
 
-  const workspacesQuery = localUseQuery({
+  const { data: workspaces } = useQuery({
     queryKey: ['workspaces'],
     queryFn: fetchWorkspaces,
     enabled: !!wsId,
   });
-
-  const workspaces = (workspacesQuery?.data || []) as Workspace[];
 
   const resolvedWorkspaceId =
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
@@ -160,9 +192,29 @@ export function WorkspaceSelect({
   }
 
   const personalWorkspace = workspaces?.find((ws) => ws?.personal === true);
-  const nonPersonalWorkspaces = workspaces?.filter((ws) => !ws?.personal) || [];
+  const rootWorkspace = workspaces?.find((ws) => ws?.id === ROOT_WORKSPACE_ID);
+  const nonPersonalWorkspaces =
+    workspaces?.filter((ws) => !ws?.personal && ws?.id !== ROOT_WORKSPACE_ID) ||
+    [];
 
   const groups = [
+    rootWorkspace && {
+      id: 'root',
+      label: t('common.system'),
+      teams: [
+        {
+          label: rootWorkspace.name || t('common.root'),
+          value: ROOT_WORKSPACE_ID,
+          avatarUrl: rootWorkspace.avatar_url || '/media/logos/transparent.png',
+          tier: (rootWorkspace as any)?.tier as
+            | 'FREE'
+            | 'PLUS'
+            | 'PRO'
+            | 'ENTERPRISE'
+            | null,
+        },
+      ],
+    },
     personalWorkspace && {
       id: 'personal',
       label: t('common.personal_account'),
@@ -171,6 +223,12 @@ export function WorkspaceSelect({
           label: personalWorkspace.name || 'Personal',
           value: PERSONAL_WORKSPACE_SLUG,
           avatarUrl: personalWorkspace.avatar_url,
+          tier: (personalWorkspace as any)?.tier as
+            | 'FREE'
+            | 'PLUS'
+            | 'PRO'
+            | 'ENTERPRISE'
+            | null,
         },
       ],
     },
@@ -184,6 +242,7 @@ export function WorkspaceSelect({
           created_by_me?: boolean;
           personal?: boolean;
           avatar_url?: string | null;
+          tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
         }) => ({
           label: workspace.name || 'Untitled',
           value: toWorkspaceSlug(workspace.id, {
@@ -192,6 +251,7 @@ export function WorkspaceSelect({
           // Signal creator-owned workspaces for UI
           isCreator: workspace?.created_by_me === true,
           avatarUrl: workspace.avatar_url,
+          tier: workspace.tier || null,
         })
       ),
     },
@@ -203,6 +263,8 @@ export function WorkspaceSelect({
       value: string | undefined;
       isCreator?: boolean;
       avatarUrl?: string | null;
+      tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
+      isRoot?: boolean;
     }[];
   }[];
 
@@ -253,37 +315,44 @@ export function WorkspaceSelect({
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
-              <Avatar
+              <WorkspaceIcon
+                name={workspace?.name}
+                avatarUrl={
+                  workspace?.avatar_url ||
+                  (workspace?.id === ROOT_WORKSPACE_ID
+                    ? '/media/logos/transparent.png'
+                    : undefined)
+                }
+              />
+              <div
                 className={cn(
-                  'h-5 w-5 flex-none',
-                  workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
+                  hideLeading
+                    ? 'hidden'
+                    : 'flex min-w-0 flex-1 items-center gap-1.5'
                 )}
               >
-                <AvatarImage
-                  src={
-                    workspace?.avatar_url ||
-                    (workspace?.name
-                      ? `https://avatar.vercel.sh/${workspace.name}.png`
-                      : undefined)
-                  }
-                  alt={workspace?.name || 'Workspace'}
-                  className={
-                    workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
-                  }
-                />
-                <AvatarFallback
-                  className={cn(
-                    'text-xs',
-                    workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
-                  )}
-                >
-                  {workspace?.name ? getInitials(workspace.name) : '?'}
-                </AvatarFallback>
-              </Avatar>
-              <div className={cn(hideLeading ? 'hidden' : 'w-full')}>
-                <span className="line-clamp-1 w-full break-all text-xs">
+                <span className="line-clamp-1 min-w-0 flex-1 break-all text-xs">
                   {workspace?.name || `${t('common.loading')}...`}
                 </span>
+                {(workspace as any)?.tier !== undefined && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+                      (!(workspace as any)?.tier ||
+                        (workspace as any)?.tier === 'FREE') &&
+                        'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
+                      (workspace as any)?.tier === 'PLUS' &&
+                        'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+                      (workspace as any)?.tier === 'PRO' &&
+                        'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+                      (workspace as any)?.tier === 'ENTERPRISE' &&
+                        'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                    )}
+                  >
+                    {(workspace as any)?.tier || 'FREE'}
+                  </Badge>
+                )}
               </div>
               {hideLeading || (
                 <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
@@ -303,6 +372,8 @@ export function WorkspaceSelect({
                         value: string | undefined;
                         isCreator?: boolean;
                         avatarUrl?: string | null;
+                        tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
+                        isRoot?: boolean;
                       }) => (
                         <CommandItem
                           key={team.value}
@@ -312,37 +383,35 @@ export function WorkspaceSelect({
                             onValueChange(team.value);
                             setOpen(false);
                           }}
-                          className="text-sm"
+                          className={cn(
+                            'text-sm',
+                            wsId === team.value && 'bg-accent'
+                          )}
                           disabled={!team}
                         >
-                          <Avatar
-                            className={cn(
-                              'h-5 w-5',
-                              team.avatarUrl ? 'rounded-xs' : 'rounded-sm'
-                            )}
-                          >
-                            <AvatarImage
-                              src={
-                                team.avatarUrl ||
-                                `https://avatar.vercel.sh/${team.label}.png`
-                              }
-                              alt={team.label}
-                              className={
-                                team.avatarUrl ? 'rounded-xs' : 'rounded-sm'
-                              }
-                            />
-                            <AvatarFallback
-                              className={cn(
-                                'text-xs',
-                                team.avatarUrl ? '' : 'rounded-sm'
-                              )}
-                            >
-                              {getInitials(team.label)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <WorkspaceIcon
+                            name={team.label}
+                            avatarUrl={team.avatarUrl}
+                          />
                           <span className="line-clamp-1 text-xs">
                             {team.label}
                           </span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+                              (!team.tier || team.tier === 'FREE') &&
+                                'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
+                              team.tier === 'PLUS' &&
+                                'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+                              team.tier === 'PRO' &&
+                                'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+                              team.tier === 'ENTERPRISE' &&
+                                'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                            )}
+                          >
+                            {team.tier || 'FREE'}
+                          </Badge>
                           <CheckIcon
                             className={cn(
                               'ml-auto h-4 w-4',
@@ -470,169 +539,6 @@ export function WorkspaceSelect({
           </Form>
         </DialogContent>
       </Dialog>
-
-      {/* <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            aria-label="Online users"
-            className="flex flex-none items-center gap-1 px-2"
-            disabled={!onlineUsers}
-          >
-            {user?.id || (onlineUsers && (onlineUsers?.length || 0) > 0) ? (
-              (onlineUsers ? onlineUsers : user?.id ? [user] : [])
-                .slice(0, 3)
-                .map((user) => (
-                  <div
-                    key={user.id}
-                    className="hidden items-center gap-2 md:flex"
-                  >
-                    <Avatar className="border-background relative h-6 w-6 overflow-visible border">
-                      <AvatarImage
-                        src={user?.avatar_url || undefined}
-                        alt={
-                          user.display_name || user.handle || user.email || '?'
-                        }
-                        className="overflow-clip rounded-full"
-                      />
-                      <AvatarFallback className="text-xs font-semibold">
-                        {getInitials(
-                          user?.display_name ||
-                            user?.handle ||
-                            user.email ||
-                            '?'
-                        )}
-                      </AvatarFallback>
-                      <UserPresenceIndicator />
-                    </Avatar>
-                  </div>
-                ))
-            ) : (
-              <LoadingIndicator className="h-6 w-6" />
-            )}
-
-            {onlineUsers && (
-              <div className="flex items-center gap-2 font-semibold md:hidden">
-                <div>{onlineUsers.length || 0}</div>
-                <div className="relative flex items-center">
-                  <UserPresenceIndicator className="relative h-2.5 w-2.5" />
-                  <UserPresenceIndicator className="h-2.5 w-2.5 animate-ping" />
-                </div>
-              </div>
-            )}
-
-            {(onlineUsers?.length || 0) > 3 && (
-              <span className="text-foreground/70 hidden text-xs font-semibold md:block">
-                +{(onlineUsers?.length || 0) - 3}
-              </span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="mx-2 my-1 md:m-0">
-          <div className="grid gap-2">
-            <div className="font-semibold">
-              {t('common.currently_online')} ({onlineUsers?.length || 0})
-            </div>
-            <Separator className="mb-1" />
-            {onlineUsers?.map((user) => (
-              <div key={user.id} className="flex items-center gap-2">
-                <Avatar className="relative h-8 w-8 overflow-visible">
-                  <AvatarImage
-                    src={user?.avatar_url || undefined}
-                    alt={user.display_name || user.handle || user.email || '?'}
-                    className="overflow-clip rounded-full"
-                  />
-                  <AvatarFallback className="text-sm font-semibold">
-                    {getInitials(
-                      user?.display_name || user?.handle || user.email || '?'
-                    )}
-                  </AvatarFallback>
-                  <div className="absolute bottom-0 right-0 flex items-center">
-                    <UserPresenceIndicator className="relative h-2.5 w-2.5" />
-                    <UserPresenceIndicator className="h-2.5 w-2.5 animate-ping" />
-                  </div>
-                </Avatar>
-                <span className="line-clamp-1">
-                  {user.display_name ||
-                    user.handle ||
-                    user.email ||
-                    t('common.unknown')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover> */}
     </>
   );
-}
-
-async function fetchWorkspaces() {
-  const supabase = createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return [];
-
-  const { data: workspaces, error } = await supabase
-    .from('workspaces')
-    .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id)'
-    )
-    .eq('workspace_members.user_id', user.id);
-
-  if (error) return [];
-
-  // Resolve the display label and avatar for personal workspaces using the current user's profile
-  const [publicProfileRes, privateDetailsRes] = await Promise.all([
-    supabase
-      .from('users')
-      .select('display_name, handle, avatar_url')
-      .eq('id', user.id)
-      .maybeSingle(),
-    supabase
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-  ]);
-
-  const publicProfile = publicProfileRes?.data as
-    | {
-        display_name: string | null;
-        handle: string | null;
-        avatar_url: string | null;
-      }
-    | null
-    | undefined;
-  const privateDetails = privateDetailsRes?.data as
-    | { email: string | null }
-    | null
-    | undefined;
-
-  const displayLabel: string | undefined =
-    publicProfile?.display_name ||
-    publicProfile?.handle ||
-    privateDetails?.email ||
-    undefined;
-
-  const userAvatarUrl = publicProfile?.avatar_url || null;
-
-  // For personal workspaces, override the name and avatar with the user's data
-  return (workspaces || []).map((ws) => {
-    const base = ws?.personal
-      ? {
-          ...ws,
-          name: displayLabel || ws.name || 'Personal',
-          avatar_url: userAvatarUrl || ws.avatar_url,
-        }
-      : ws;
-    return {
-      ...base,
-      // Mark if current user is the creator for downstream UI
-      created_by_me: base?.creator_id === user.id,
-    };
-  });
 }

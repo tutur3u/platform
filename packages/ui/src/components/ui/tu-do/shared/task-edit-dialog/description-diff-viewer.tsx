@@ -1652,7 +1652,7 @@ function MediaPreviewDialog({
 function formatAttrValue(value: unknown): string {
   if (value === null || value === undefined) return 'none';
   if (typeof value === 'string') {
-    return value.length > 20 ? value.slice(0, 17) + '...' : value;
+    return value.length > 20 ? `${value.slice(0, 17)}...` : value;
   }
   if (typeof value === 'number') {
     // Round to 2 decimal places if needed

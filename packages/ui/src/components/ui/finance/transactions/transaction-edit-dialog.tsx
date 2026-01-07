@@ -377,7 +377,6 @@ export function TransactionEditDialog({
     isAmountConfidential,
     isDescriptionConfidential,
     isCategoryConfidential,
-    toast,
     t,
     queryClient,
     onUpdate,
@@ -476,7 +475,7 @@ export function TransactionEditDialog({
       <Dialog open={isOpen} onOpenChange={handleClose} modal={true}>
         <DialogContent
           showCloseButton={false}
-          className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
+          className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0"
         >
           {/* Main content area */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
@@ -678,7 +677,7 @@ export function TransactionEditDialog({
                   placeholder="Add details about this transaction..."
                   disabled={isDisabled || !canUpdateTransactions}
                   className={cn(
-                    'min-h-[80px] resize-none',
+                    'min-h-20 resize-none',
                     (isDisabled || !canUpdateTransactions) &&
                       'cursor-not-allowed opacity-60'
                   )}

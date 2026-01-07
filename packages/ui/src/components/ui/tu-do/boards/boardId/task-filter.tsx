@@ -9,7 +9,9 @@ import {
   Hash,
   Tag,
   User,
+  UserStar,
   Users,
+  UserX,
   X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -34,6 +36,7 @@ import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type {
   SortOption,
@@ -139,11 +142,23 @@ function getColorStyles(color: string) {
   };
 }
 
-const PRIORITIES: { value: TaskPriority; label: string; color: string }[] = [
-  { value: 'critical', label: 'Critical', color: 'text-dynamic-red' },
-  { value: 'high', label: 'High', color: 'text-dynamic-orange' },
-  { value: 'normal', label: 'Normal', color: 'text-dynamic-blue' },
-  { value: 'low', label: 'Low', color: 'text-dynamic-gray' },
+const PRIORITIES: { value: TaskPriority; labelKey: string; color: string }[] = [
+  {
+    value: 'critical',
+    labelKey: 'tasks.priority_critical',
+    color: 'text-dynamic-red',
+  },
+  {
+    value: 'high',
+    labelKey: 'tasks.priority_high',
+    color: 'text-dynamic-orange',
+  },
+  {
+    value: 'normal',
+    labelKey: 'tasks.priority_normal',
+    color: 'text-dynamic-blue',
+  },
+  { value: 'low', labelKey: 'tasks.priority_low', color: 'text-dynamic-gray' },
 ];
 
 export function TaskFilter({
@@ -152,6 +167,7 @@ export function TaskFilter({
   filters,
   onFiltersChange,
 }: Props) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
 
   // Fetch available labels
@@ -313,7 +329,7 @@ export function TaskFilter({
             )}
           >
             <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span className="hidden sm:inline">Filters</span>
+            <span className="hidden sm:inline">{t('common.filters')}</span>
             {hasFilters && (
               <Badge
                 variant="secondary"
@@ -331,7 +347,7 @@ export function TaskFilter({
               <>
                 <DropdownMenuLabel className="flex items-center gap-2 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                   <User className="h-3.5 w-3.5" />
-                  Quick Filters
+                  {t('common.quick_filters')}
                 </DropdownMenuLabel>
                 <div className="space-y-1 px-2 pb-2">
                   <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
@@ -355,7 +371,8 @@ export function TaskFilter({
                         });
                       }}
                     />
-                    <span>Assigned to me</span>
+                    <UserStar className="h-4 w-4 text-dynamic-yellow" />
+                    <span>{t('common.assigned_to_me')}</span>
                   </label>
                   <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
                     <Checkbox
@@ -372,7 +389,8 @@ export function TaskFilter({
                         })
                       }
                     />
-                    <span>Unassigned</span>
+                    <UserX className="h-4 w-4 text-dynamic-red" />
+                    <span>{t('common.unassigned')}</span>
                   </label>
                 </div>
                 <DropdownMenuSeparator />
@@ -383,7 +401,7 @@ export function TaskFilter({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 py-2.5">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">Assignees</span>
+                <span className="flex-1">{t('common.assignees')}</span>
                 {filters.assignees.length > 0 && (
                   <Badge
                     variant="secondary"
@@ -396,7 +414,7 @@ export function TaskFilter({
               <DropdownMenuSubContent className="w-[260px] p-0">
                 {availableAssignees.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground text-sm">
-                    No members found
+                    {t('common.no_members_found')}
                   </div>
                 ) : (
                   <div className="max-h-[240px] overflow-y-auto">
@@ -445,7 +463,7 @@ export function TaskFilter({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 py-2.5">
                 <Tag className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">Labels</span>
+                <span className="flex-1">{t('common.labels')}</span>
                 {filters.labels.length > 0 && (
                   <Badge
                     variant="secondary"
@@ -458,7 +476,7 @@ export function TaskFilter({
               <DropdownMenuSubContent className="w-[240px] p-0">
                 {availableLabels.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground text-sm">
-                    No labels found
+                    {t('common.no_labels_found')}
                   </div>
                 ) : (
                   <div className="max-h-[240px] overflow-y-auto">
@@ -494,7 +512,7 @@ export function TaskFilter({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2 py-2.5">
                   <Hash className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1">Projects</span>
+                  <span className="flex-1">{t('common.projects')}</span>
                   {filters.projects.length > 0 && (
                     <Badge
                       variant="secondary"
@@ -534,7 +552,7 @@ export function TaskFilter({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 py-2.5">
                 <Flag className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">Priority</span>
+                <span className="flex-1">{t('common.priority')}</span>
                 {filters.priorities.length > 0 && (
                   <Badge
                     variant="secondary"
@@ -558,7 +576,7 @@ export function TaskFilter({
                       />
                       <Flag className={cn(priority.color, 'h-4 w-4')} />
                       <span className="font-medium text-sm">
-                        {priority.label}
+                        {t(priority.labelKey as any)}
                       </span>
                     </DropdownMenuItem>
                   ))}
@@ -570,7 +588,7 @@ export function TaskFilter({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 py-2.5">
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">Due Date</span>
+                <span className="flex-1">{t('common.due_date')}</span>
                 {filters.dueDateRange && (
                   <Check className="h-3.5 w-3.5 text-primary" />
                 )}
@@ -609,7 +627,7 @@ export function TaskFilter({
                   className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                 >
                   <X className="h-4 w-4" />
-                  Clear all filters
+                  {t('common.clear_all_filters')}
                 </DropdownMenuItem>
               </>
             )}

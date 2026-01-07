@@ -44,7 +44,10 @@ const useSearchParams = () => {
       const params = new URLSearchParams(searchParams);
 
       Object.entries(data).forEach(([key, value]) => {
-        if (value === undefined) return;
+        if (value === undefined) {
+          params.delete(key);
+          return;
+        }
         if (Array.isArray(value)) {
           params.delete(key);
           value

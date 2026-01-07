@@ -600,7 +600,7 @@ export const CalendarProvider = ({
 
       return {} as CalendarEvent;
     },
-    [ws, refresh, events]
+    [ws, refresh, events, readOnly]
   );
 
   const addEmptyEvent = useCallback(
@@ -842,7 +842,7 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws, queryClient, onTaskScheduled]);
+  }, [refresh, events, ws, queryClient, onTaskScheduled, readOnly]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -964,7 +964,7 @@ export const CalendarProvider = ({
         }, 250); // Reduced from 2000ms to 250ms for better responsiveness
       });
     },
-    [ws, processUpdateQueue, pendingNewEvent, addEvent, events]
+    [ws, processUpdateQueue, pendingNewEvent, addEvent, events, readOnly]
   );
 
   const deleteEvent = useCallback(
@@ -1085,6 +1085,7 @@ export const CalendarProvider = ({
       experimentalGoogleToken,
       queryClient,
       onTaskScheduled,
+      readOnly,
     ]
   );
 

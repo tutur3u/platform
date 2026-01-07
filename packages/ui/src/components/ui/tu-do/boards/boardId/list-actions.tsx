@@ -31,6 +31,7 @@ import {
   useMoveAllTasksFromList,
   useMoveTask,
 } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BoardSelector } from '../board-selector';
 
@@ -55,6 +56,7 @@ export function ListActions({
   onUpdate,
   onSelectAll,
 }: Props) {
+  const t = useTranslations('common');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
@@ -155,8 +157,8 @@ export function ListActions({
     } catch (error) {
       console.error('Failed to archive tasks:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to archive tasks. Please try again.',
+        title: t('error'),
+        description: t('failed_to_archive_tasks'),
         variant: 'destructive',
       });
     } finally {
@@ -169,8 +171,8 @@ export function ListActions({
   function handleMoveAllTasks() {
     if (tasks.length === 0) {
       toast({
-        title: 'No tasks to move',
-        description: 'This list is empty.',
+        title: t('no_tasks_to_move'),
+        description: t('this_list_is_empty'),
         variant: 'default',
       });
       return;
@@ -203,7 +205,7 @@ export function ListActions({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground">
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('open_menu')}</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -212,7 +214,7 @@ export function ListActions({
             <div className="h-4 w-4">
               <Pencil className="h-4 w-4" />
             </div>
-            Edit
+            {t('edit')}
           </DropdownMenuItem>
           {tasks.length > 0 && onSelectAll && (
             <>
@@ -221,7 +223,7 @@ export function ListActions({
                 <div className="h-4 w-4">
                   <CheckSquare className="h-4 w-4 text-dynamic-green" />
                 </div>
-                Select all tasks
+                {t('select_all_tasks')}
                 <span className="ml-auto text-muted-foreground text-xs">
                   ({tasks.length})
                 </span>
@@ -235,7 +237,7 @@ export function ListActions({
                 <div className="h-4 w-4">
                   <ArrowRightLeft className="h-4 w-4 text-dynamic-blue" />
                 </div>
-                Move all tasks
+                {t('move_all_tasks')}
                 <span className="ml-auto text-muted-foreground text-xs">
                   ({tasks.length})
                 </span>
@@ -249,7 +251,7 @@ export function ListActions({
                 <div className="h-4 w-4">
                   <Archive className="h-4 w-4 text-dynamic-purple" />
                 </div>
-                Archive all tasks
+                {t('archive_all_tasks')}
               </DropdownMenuItem>
             </>
           )}
@@ -258,7 +260,7 @@ export function ListActions({
             <div className="h-4 w-4">
               <Trash className="h-4 w-4 text-dynamic-red" />
             </div>
-            Delete
+            {t('delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -266,10 +268,9 @@ export function ListActions({
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete List</DialogTitle>
+            <DialogTitle>{t('delete_list')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this list? All tasks in this list
-              will be deleted. This action cannot be undone.
+              {t('delete_list_confirmation')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -277,10 +278,10 @@ export function ListActions({
               variant="ghost"
               onClick={() => setIsDeleteDialogOpen(false)}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {t('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -289,19 +290,19 @@ export function ListActions({
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit List</DialogTitle>
-            <DialogDescription>Change the name of this list.</DialogDescription>
+            <DialogTitle>{t('edit_list')}</DialogTitle>
+            <DialogDescription>{t('change_list_name')}</DialogDescription>
           </DialogHeader>
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="List name"
+            placeholder={t('list_name')}
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
-            <Button onClick={handleUpdate}>Save changes</Button>
+            <Button onClick={handleUpdate}>{t('save_changes')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -309,11 +310,9 @@ export function ListActions({
       <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Archive All Tasks</DialogTitle>
+            <DialogTitle>{t('archive_all_tasks')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to archive all {tasks.length} task
-              {tasks.length !== 1 ? 's' : ''} from this list? They will be moved
-              to the archive (closed status) and marked as completed.
+              {t('archive_tasks_confirmation', { count: tasks.length })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -322,14 +321,14 @@ export function ListActions({
               onClick={() => setIsArchiveDialogOpen(false)}
               disabled={isArchiving}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleArchiveAllTasks}
               disabled={isArchiving}
               className="bg-dynamic-purple hover:bg-dynamic-purple/90"
             >
-              {isArchiving ? 'Archiving...' : 'Archive Tasks'}
+              {isArchiving ? t('archiving') : t('archive_tasks')}
             </Button>
           </DialogFooter>
         </DialogContent>

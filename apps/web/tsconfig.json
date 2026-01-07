@@ -2,6 +2,8 @@
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
     "module": "ESNext",
+    "types": ["@serwist/next/typings"],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "plugins": [
       {
         "name": "next"
@@ -14,6 +16,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "include": ["src", ".next/types/**/*.ts", "src/app/sw.ts"],
+  "exclude": ["node_modules", "dist", ".turbo", "public/sw.js"]
 }

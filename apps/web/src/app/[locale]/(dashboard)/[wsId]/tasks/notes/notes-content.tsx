@@ -52,7 +52,7 @@ export default function NotesContent({ wsId }: NotesContentProps) {
           content: emptyContent,
         }),
       });
-      if (!response.ok) throw new Error('Failed to create note');
+      if (!response.ok) throw new Error(t('errors.create_note'));
       return response.json();
     },
     onSuccess: (data) => {

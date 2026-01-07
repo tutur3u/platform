@@ -9,6 +9,9 @@
     ".": "./src/core/index.ts",
     "./calendar": "./src/calendar/index.ts"
   },
+  "scripts": {
+    "type-check": "tsgo --build"
+  },
   "dependencies": {
     "@azure/msal-node": "^3.8.4",
     "@microsoft/microsoft-graph-client": "^3.0.7"

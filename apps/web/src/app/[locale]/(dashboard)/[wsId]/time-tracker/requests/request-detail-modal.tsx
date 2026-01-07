@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { EditIcon } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -14,20 +15,23 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { CommentList } from './components/comment-list';
+import { ActionButtons } from './components/action-buttons';
 import { ActivityTimeline } from './components/activity-timeline';
-import { UserInfoCard } from './components/user-info-card';
+import { ApprovalStatusCard } from './components/approval-status-card';
+import { CommentList } from './components/comment-list';
+import { ImagePreviewDialog } from './components/image-preview-dialog';
 import { RequestEditForm } from './components/request-edit-form';
 import { RequestViewMode } from './components/request-view-mode';
-import { ApprovalStatusCard } from './components/approval-status-card';
-import { ActionButtons } from './components/action-buttons';
-import { ImagePreviewDialog } from './components/image-preview-dialog';
-import { useRequestImages } from './hooks/use-request-images';
+import { UserInfoCard } from './components/user-info-card';
 import { useRequestActions } from './hooks/use-request-actions';
 import { useRequestEditMode } from './hooks/use-request-edit-mode';
+import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
-import { STATUS_COLORS, STATUS_LABELS } from './utils';
+import {
+  getCategoryColorClasses,
+  getStatusColorClasses,
+  type STATUS_LABELS,
+} from './utils';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -126,7 +130,7 @@ export function RequestDetailModal({
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent
-          className="max-h-[90vh] md:max-w-6xl overflow-y-auto"
+          className="max-h-[90vh] overflow-y-auto md:max-w-6xl"
           onPointerDownOutside={(e) => {
             if (editMode.hasUnsavedChanges) {
               e.preventDefault();
@@ -152,7 +156,7 @@ export function RequestDetailModal({
                     variant="outline"
                     className={cn(
                       'border font-medium text-xs',
-                      STATUS_COLORS[request.approval_status]
+                      getStatusColorClasses(request.approval_status)
                     )}
                   >
                     {t(
@@ -162,7 +166,10 @@ export function RequestDetailModal({
                   {request.category ? (
                     <Badge
                       variant="outline"
-                      className="border-dynamic-purple/20"
+                      className={cn(
+                        'border font-medium text-xs',
+                        getCategoryColorClasses(request.category.color)
+                      )}
                     >
                       {request.category.name}
                     </Badge>

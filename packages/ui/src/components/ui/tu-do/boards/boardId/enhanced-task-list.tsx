@@ -34,6 +34,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskCard } from './task';
@@ -94,12 +95,25 @@ export function EnhancedTaskList({
   isPersonalWorkspace = false,
   onAddTask,
 }: Props) {
+  const t = useTranslations('common');
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const supabase = createClient();
   const { createTask } = useTaskDialog();
+
+  // Helper to translate standard list names
+  const translateListName = (name: string): string => {
+    const normalized = name.toLowerCase().replace(/\s+/g, '');
+    const translations: Record<string, string> = {
+      todo: t('list_name_to_do'),
+      inprogress: t('list_name_in_progress'),
+      done: t('list_name_done'),
+      closed: t('list_name_closed'),
+    };
+    return translations[normalized] ?? name;
+  };
 
   // Draggable for the list itself
   const {
@@ -345,7 +359,7 @@ export function EnhancedTaskList({
               }}
               disabled={isClosed}
             >
-              {list.name}
+              {translateListName(list.name)}
               {isClosed && <Lock className="ml-1 inline h-3 w-3" />}
             </button>
           )}
@@ -448,7 +462,7 @@ export function EnhancedTaskList({
         ) : tasks.length === 0 ? (
           <div className="flex items-center justify-center py-6 text-muted-foreground">
             <p className="text-center text-xs">
-              {isClosed ? 'Closed list' : 'No tasks yet'}
+              {isClosed ? t('closed_list') : t('no_tasks_yet')}
             </p>
           </div>
         ) : (
@@ -481,14 +495,14 @@ export function EnhancedTaskList({
             }
             className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
           >
-            + Add task
+            + {t('add_task')}
           </Button>
         </div>
       )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle>Delete List</DialogTitle>
             <DialogDescription>

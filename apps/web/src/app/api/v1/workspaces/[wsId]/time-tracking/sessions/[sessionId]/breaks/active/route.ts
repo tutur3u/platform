@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
-  req: Request,
+  _req: Request,
   context: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   const { wsId, sessionId } = await context.params;

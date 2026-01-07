@@ -5,16 +5,25 @@ import {
   isToday,
   isTomorrow,
   isYesterday,
+  type Locale,
 } from 'date-fns';
 
 /**
  * Smart date formatting that uses relative dates for today/tomorrow/yesterday
  */
-export function formatSmartDate(date: Date): string {
-  if (isToday(date)) return 'Today';
-  if (isTomorrow(date)) return 'Tomorrow';
-  if (isYesterday(date)) return 'Yesterday';
-  return formatDistanceToNow(date, { addSuffix: true });
+export function formatSmartDate(
+  date: Date,
+  translations?: {
+    today?: string;
+    tomorrow?: string;
+    yesterday?: string;
+  },
+  locale?: Locale
+): string {
+  if (isToday(date)) return translations?.today ?? 'Today';
+  if (isTomorrow(date)) return translations?.tomorrow ?? 'Tomorrow';
+  if (isYesterday(date)) return translations?.yesterday ?? 'Yesterday';
+  return formatDistanceToNow(date, { addSuffix: true, locale });
 }
 
 /**

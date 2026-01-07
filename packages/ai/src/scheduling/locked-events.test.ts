@@ -17,6 +17,7 @@ describe('Scheduling Algorithm - Locked Events', () => {
         start: baseDate.hour(10).minute(0).second(0).millisecond(0),
         end: baseDate.hour(12).minute(0).second(0).millisecond(0),
       },
+      taskId: '',
       locked: true,
     };
 
@@ -71,6 +72,7 @@ describe('Scheduling Algorithm - Locked Events', () => {
         start: dayjs().hour(10).minute(0).second(0).millisecond(0),
         end: dayjs().hour(12).minute(0).second(0).millisecond(0),
       },
+      taskId: '',
       locked: true,
     };
 

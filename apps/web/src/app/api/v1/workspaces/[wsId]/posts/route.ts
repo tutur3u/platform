@@ -41,8 +41,8 @@ export async function GET(
     queryBuilder.eq('user_id', userId);
   }
   if (page && pageSize) {
-    const parsedPage = Number.parseInt(page);
-    const parsedSize = Number.parseInt(pageSize);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

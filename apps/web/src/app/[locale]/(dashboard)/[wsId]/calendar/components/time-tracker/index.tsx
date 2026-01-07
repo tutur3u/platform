@@ -39,7 +39,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -142,8 +142,17 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     }
   };
 
+  // Reset form
+  const resetForm = useCallback(() => {
+    setNewSessionTitle('');
+    setNewSessionDescription('');
+    setSelectedCategoryId('');
+    setSelectedTaskId('');
+    setShowTaskSuggestion(false);
+  }, []);
+
   // Start timer
-  const handleStartTimer = async () => {
+  const handleStartTimer = useCallback(async () => {
     if (sessionMode === 'task' && selectedTaskId) {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
@@ -170,7 +179,16 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
       taskId: selectedTaskId,
     });
     resetForm();
-  };
+  }, [
+    sessionMode,
+    selectedTaskId,
+    tasks,
+    tracker,
+    newSessionDescription,
+    selectedCategoryId,
+    newSessionTitle,
+    resetForm,
+  ]);
 
   // Create task
   const handleCreateTask = async () => {
@@ -222,14 +240,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     }
   };
 
-  const resetForm = () => {
-    setNewSessionTitle('');
-    setNewSessionDescription('');
-    setSelectedCategoryId('');
-    setSelectedTaskId('');
-    setShowTaskSuggestion(false);
-  };
-
   // Handle duplicate
   const handleDuplicate = (session: SessionWithRelations) => {
     const settings = sessions.duplicateSession(session);
@@ -270,7 +280,16 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [tracker.isOpen, tracker.isRunning, newSessionTitle, selectedTaskId]);
+  }, [
+    tracker.isOpen,
+    tracker.isRunning,
+    newSessionTitle,
+    selectedTaskId,
+    handleStartTimer,
+    tracker.pauseTimer,
+    tracker.setIsOpen,
+    tracker.stopTimer,
+  ]);
 
   return (
     <>
@@ -456,7 +475,7 @@ function NewSessionForm({
   sessionMode,
   onSessionModeChange,
   newSessionTitle,
-  setNewSessionTitle,
+  setNewSessionTitle: _setNewSessionTitle,
   newSessionDescription,
   setNewSessionDescription,
   selectedCategoryId,
@@ -551,7 +570,7 @@ function NewSessionForm({
               <SelectTrigger className="@lg:text-base text-sm transition-all duration-200">
                 <SelectValue placeholder="Choose a task or create new..." />
               </SelectTrigger>
-              <SelectContent className="w-[400px]">
+              <SelectContent className="w-100">
                 {tasks.map((task) => (
                   <SelectItem
                     key={task.id}

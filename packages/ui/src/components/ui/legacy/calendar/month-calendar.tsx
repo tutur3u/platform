@@ -556,8 +556,10 @@ export const MonthCalendar = ({
                           {event.description && (
                             <div
                               className="text-muted-foreground text-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary/80"
-                              dangerouslySetInnerHTML={{
-                                __html: event.description,
+                              {...{
+                                dangerouslySetInnerHTML: {
+                                  __html: event.description,
+                                },
                               }}
                             />
                           )}
@@ -707,8 +709,10 @@ export const MonthCalendar = ({
                                   {event.description && (
                                     <div
                                       className="text-muted-foreground text-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary/80"
-                                      dangerouslySetInnerHTML={{
-                                        __html: event.description,
+                                      {...{
+                                        dangerouslySetInnerHTML: {
+                                          __html: event.description,
+                                        },
                                       }}
                                     />
                                   )}
@@ -776,8 +780,10 @@ export const MonthCalendar = ({
                                   {event.description && (
                                     <div
                                       className="text-muted-foreground text-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary/80"
-                                      dangerouslySetInnerHTML={{
-                                        __html: event.description,
+                                      {...{
+                                        dangerouslySetInnerHTML: {
+                                          __html: event.description,
+                                        },
                                       }}
                                     />
                                   )}

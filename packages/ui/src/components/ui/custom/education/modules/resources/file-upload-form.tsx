@@ -309,7 +309,6 @@ export function StorageObjectForm({
                                     e.currentTarget.blur();
                                   }
                                 }}
-                                autoFocus
                               />
                             ) : (
                               <div

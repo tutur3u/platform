@@ -149,7 +149,7 @@ export function TaskBoardForm({
   };
 
   const formContent = (
-    <div className="w-full space-y-6 p-6">
+    <div className="w-full space-y-6 overflow-y-auto p-6">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           {isEditMode ? (
@@ -170,13 +170,15 @@ export function TaskBoardForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-4">
             <FormField
               control={form.control}
               name="icon"
               render={() => (
-                <FormItem className="w-10 shrink-0">
-                  <FormLabel>{t('ws-task-boards.icon_label')}</FormLabel>
+                <FormItem className="w-fit shrink-0">
+                  <FormLabel className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                    {t('ws-task-boards.icon_label')}
+                  </FormLabel>
                   <FormControl>
                     <IconPicker
                       value={form.watch('icon') ?? null}
@@ -201,13 +203,16 @@ export function TaskBoardForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('ws-task-boards.name')}</FormLabel>
+                    <FormLabel className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                      {t('ws-task-boards.name')}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Untitled board"
                         autoComplete="off"
                         autoFocus
                         {...field}
+                        className="h-10"
                       />
                     </FormControl>
                     <FormMessage />

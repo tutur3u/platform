@@ -11,13 +11,16 @@ import {
   Clock,
   Columns3Cog,
   Copy,
+  CopyCheck,
   Flag,
   Gauge,
+  KanbanSquare,
   LayoutGrid,
   List,
   Loader2,
   MoreHorizontal,
   Pencil,
+  Play,
   Search,
   Settings,
   Trash2,
@@ -57,6 +60,13 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -175,6 +185,8 @@ interface Props {
   lists?: TaskList[];
   onUpdate?: () => void;
   onRecycleBinOpen?: () => void;
+  isMultiSelectMode: boolean;
+  setIsMultiSelectMode: (enabled: boolean) => void;
 }
 
 export function BoardHeader({
@@ -193,6 +205,8 @@ export function BoardHeader({
   lists = [],
   onUpdate,
   onRecycleBinOpen,
+  isMultiSelectMode,
+  setIsMultiSelectMode,
 }: Props) {
   const t = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
@@ -344,19 +358,19 @@ export function BoardHeader({
 
   const viewConfig = {
     kanban: {
-      icon: LayoutGrid,
-      label: 'Kanban',
-      description: 'Traditional kanban board',
+      icon: KanbanSquare,
+      label: t('ws-task-boards.views.kanban'),
+      description: t('ws-task-boards.views.kanban_description'),
     },
     list: {
       icon: List,
-      label: 'List',
-      description: 'Simple list view',
+      label: t('ws-task-boards.views.list'),
+      description: t('ws-task-boards.views.list_description'),
     },
     timeline: {
       icon: CalendarDays,
-      label: 'Timeline',
-      description: 'Visual schedule of tasks',
+      label: t('ws-task-boards.views.timeline'),
+      description: t('ws-task-boards.views.timeline_description'),
     },
   };
 
@@ -370,7 +384,7 @@ export function BoardHeader({
   }, [filters, listStatusFilter]);
 
   return (
-    <div className="-mt-2 border-b p-1.5 md:px-4 md:py-2">
+    <div className="-mt-2 border-b p-2">
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
         {/* Board Info */}
         <div className="flex min-w-0 items-center gap-2">
@@ -382,7 +396,22 @@ export function BoardHeader({
               <ArrowLeft className="h-5 w-5" />
             </Link>
           )}
-          <BoardSwitcher board={board} />
+          <BoardSwitcher
+            board={board}
+            translations={{
+              loadingBoards: t('common.loading'),
+              noOtherBoards: t('common.no_other_boards'),
+              activeBoards: t('common.active_boards'),
+              archivedBoards: t('common.archived_boards'),
+              deletedBoards: t('common.deleted_boards'),
+              untitled: t('common.untitled'),
+              active: t('common.active'),
+              archived: t('common.archived'),
+              deleted: t('common.deleted'),
+              daysLeft: t('common.days_left', { count: '{count}' }),
+              tasks: t('common.tasks'),
+            }}
+          />
         </div>
 
         {/* Search Bar */}
@@ -394,7 +423,7 @@ export function BoardHeader({
           )}
           <Input
             type="text"
-            placeholder="Search tasks..."
+            placeholder={t('common.search_tasks')}
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
             className="placeholder:-translate-0.5 h-6 bg-background pr-8 pl-8 text-xs placeholder:text-xs sm:h-8 sm:text-sm"
@@ -404,7 +433,7 @@ export function BoardHeader({
               type="button"
               onClick={() => setLocalSearchQuery('')}
               className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Clear search"
+              aria-label={t('common.clear_search')}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -423,45 +452,59 @@ export function BoardHeader({
             />
           )}
 
-          {/* List Status Filter Tabs */}
-          <div className="flex items-center rounded-md border bg-background/80 p-0.75 backdrop-blur-sm">
-            <Button
-              variant="ghost"
-              size="xs"
+          {/* Multi-select Toggle */}
+          <Button
+            variant={isMultiSelectMode ? 'secondary' : 'outline'}
+            size="xs"
+            onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
+            className={cn(
+              'h-7 px-1.5 sm:h-8 sm:px-2',
+              isMultiSelectMode &&
+                'bg-primary/10 text-primary hover:bg-primary/20'
+            )}
+            title={t('common.choose_tasks')}
+          >
+            <CopyCheck
+              className={cn('h-3.5 w-3.5', isMultiSelectMode && 'text-primary')}
+            />
+          </Button>
+
+          {/* List Status Filter */}
+          <Select
+            value={listStatusFilter}
+            onValueChange={(value) =>
+              onListStatusFilterChange(value as ListStatusFilter)
+            }
+          >
+            <SelectTrigger
               className={cn(
-                'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
-                listStatusFilter === 'all' &&
-                  'bg-primary/10 text-primary shadow-sm'
+                'h-7 w-auto gap-1 bg-background px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs',
+                listStatusFilter !== 'all' && 'border-primary/50 bg-primary/5'
               )}
-              onClick={() => onListStatusFilterChange('all')}
             >
-              All
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              className={cn(
-                'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
-                listStatusFilter === 'active' &&
-                  'bg-primary/10 text-primary shadow-sm'
-              )}
-              onClick={() => onListStatusFilterChange('active')}
-            >
-              Active
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              className={cn(
-                'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
-                listStatusFilter === 'not_started' &&
-                  'bg-primary/10 text-primary shadow-sm'
-              )}
-              onClick={() => onListStatusFilterChange('not_started')}
-            >
-              Backlog
-            </Button>
-          </div>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
+                  <span>{t('common.all')}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="active">
+                <div className="flex items-center gap-2">
+                  <Play className="h-3.5 w-3.5 text-dynamic-green" />
+                  <span>{t('common.active')}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="not_started">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-dynamic-orange" />
+                  <span>{t('common.backlog')}</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* View Switcher Dropdown */}
           <DropdownMenu open={viewMenuOpen} onOpenChange={setViewMenuOpen}>
@@ -530,7 +573,7 @@ export function BoardHeader({
                 ) : (
                   <ArrowUpAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 )}
-                <span className="hidden sm:inline">Sort</span>
+                <span className="hidden sm:inline">{t('common.sort')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-50">
@@ -538,7 +581,9 @@ export function BoardHeader({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
                   <ArrowUpAZ className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1">Name</span>
+                  <span className="flex-1">
+                    {t('ws-task-boards.filters.sort.name')}
+                  </span>
                   {(filters.sortBy === 'name-asc' ||
                     filters.sortBy === 'name-desc') && (
                     <Check className="h-3.5 w-3.5 text-primary" />
@@ -554,7 +599,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-blue" />
-                    <span className="flex-1">A → Z</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_order.asc')}
+                    </span>
                     {filters.sortBy === 'name-asc' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -568,7 +615,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-purple" />
-                    <span className="flex-1">Z → A</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_order.desc')}
+                    </span>
                     {filters.sortBy === 'name-desc' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -580,7 +629,9 @@ export function BoardHeader({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
                   <Flag className="h-4 w-4 text-dynamic-red" />
-                  <span className="flex-1">Priority</span>
+                  <span className="flex-1">
+                    {t('ws-task-boards.filters.sort_options.priority')}
+                  </span>
                   {(filters.sortBy === 'priority-high' ||
                     filters.sortBy === 'priority-low') && (
                     <Check className="h-3.5 w-3.5 text-primary" />
@@ -598,7 +649,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-red" />
-                    <span className="flex-1">High → Low</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.high_to_low')}
+                    </span>
                     {filters.sortBy === 'priority-high' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -614,7 +667,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-gray" />
-                    <span className="flex-1">Low → High</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.low_to_high')}
+                    </span>
                     {filters.sortBy === 'priority-low' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -626,7 +681,9 @@ export function BoardHeader({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
                   <CalendarDays className="h-4 w-4 text-dynamic-orange" />
-                  <span className="flex-1">Due Date</span>
+                  <span className="flex-1">
+                    {t('ws-task-boards.filters.sort_options.due_date')}
+                  </span>
                   {(filters.sortBy === 'due-date-asc' ||
                     filters.sortBy === 'due-date-desc') && (
                     <Check className="h-3.5 w-3.5 text-primary" />
@@ -644,7 +701,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-orange" />
-                    <span className="flex-1">Soonest First</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.soonest_first')}
+                    </span>
                     {filters.sortBy === 'due-date-asc' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -660,7 +719,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-blue" />
-                    <span className="flex-1">Latest First</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.latest_first')}
+                    </span>
                     {filters.sortBy === 'due-date-desc' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -672,7 +733,9 @@ export function BoardHeader({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
                   <Clock className="h-4 w-4 text-dynamic-green" />
-                  <span className="flex-1">Created</span>
+                  <span className="flex-1">
+                    {t('ws-task-boards.filters.sort.created_at')}
+                  </span>
                   {(filters.sortBy === 'created-date-desc' ||
                     filters.sortBy === 'created-date-asc') && (
                     <Check className="h-3.5 w-3.5 text-primary" />
@@ -690,7 +753,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-green" />
-                    <span className="flex-1">Newest First</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.newest_first')}
+                    </span>
                     {filters.sortBy === 'created-date-desc' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -706,7 +771,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="flex-1">Oldest First</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.oldest_first')}
+                    </span>
                     {filters.sortBy === 'created-date-asc' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -718,7 +785,9 @@ export function BoardHeader({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2">
                   <Gauge className="h-4 w-4 text-dynamic-purple" />
-                  <span className="flex-1">Estimate</span>
+                  <span className="flex-1">
+                    {t('ws-task-boards.filters.sort_options.estimate')}
+                  </span>
                   {(filters.sortBy === 'estimation-high' ||
                     filters.sortBy === 'estimation-low') && (
                     <Check className="h-3.5 w-3.5 text-primary" />
@@ -736,7 +805,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-purple" />
-                    <span className="flex-1">Highest First</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.highest_first')}
+                    </span>
                     {filters.sortBy === 'estimation-high' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -752,7 +823,9 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-cyan" />
-                    <span className="flex-1">Lowest First</span>
+                    <span className="flex-1">
+                      {t('ws-task-boards.filters.sort_options.lowest_first')}
+                    </span>
                     {filters.sortBy === 'estimation-low' && (
                       <Check className="h-4 w-4 text-primary" />
                     )}
@@ -768,7 +841,9 @@ export function BoardHeader({
                     className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                   >
                     <X className="h-4 w-4" />
-                    <span>Clear sorting</span>
+                    <span>
+                      {t('ws-task-boards.filters.sort_options.clear_sorting')}
+                    </span>
                   </DropdownMenuItem>
                 </>
               )}
@@ -817,7 +892,7 @@ export function BoardHeader({
                   className="gap-2"
                 >
                   <Columns3Cog className="h-4 w-4" />
-                  Board Layout
+                  {t('ws-task-boards.actions.board_layout')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
@@ -828,7 +903,7 @@ export function BoardHeader({
                   className="gap-2"
                 >
                   <Settings className="h-4 w-4" />
-                  Board Settings
+                  {t('ws-task-boards.actions.board_settings')}
                 </DropdownMenuItem>
                 {onRecycleBinOpen && (
                   <DropdownMenuItem
@@ -839,7 +914,7 @@ export function BoardHeader({
                     className="gap-2"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Recycle Bin
+                    {t('ws-task-boards.actions.recycle_bin')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -850,28 +925,32 @@ export function BoardHeader({
                       className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                     >
                       <Trash2 className="h-4 w-4" />
-                      Delete board
+                      {t('ws-task-boards.actions.delete_board')}
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        {t('common.are_you_sure')}
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete the board &quot;{board.name}&quot; and all of its
-                        tasks and lists.
+                        {t('ws-task-boards.dialog.delete_board_confirmation', {
+                          name: board.name || '',
+                        })}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel disabled={isLoading}>
-                        Cancel
+                        {t('common.cancel')}
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
                         disabled={isLoading}
                         className="bg-dynamic-red/90 text-white hover:bg-dynamic-red"
                       >
-                        {isLoading ? 'Deleting...' : 'Delete Board'}
+                        {isLoading
+                          ? t('common.deleting')
+                          : t('ws-task-boards.actions.delete_board')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -928,6 +1007,76 @@ export function BoardHeader({
           boardId={board.id}
           lists={lists}
           onUpdate={onUpdate}
+          translations={{
+            boardLayoutSettings: t('ws-task-boards.layout_settings.title'),
+            boardLayoutSettingsDescription: t(
+              'ws-task-boards.layout_settings.description'
+            ),
+            addNewList: t('ws-task-boards.layout_settings.add_new_list'),
+            noListsInStatus: t('ws-task-boards.layout_settings.no_lists'),
+            done: t('common.done'),
+            editList: t('ws-task-boards.layout_settings.edit_list'),
+            updateListDescription: t(
+              'ws-task-boards.layout_settings.edit_list_description'
+            ),
+            listName: t('ws-task-boards.layout_settings.list_name'),
+            statusCategory: t('ws-task-boards.layout_settings.status_category'),
+            color: t('common.color'),
+            cancel: t('common.cancel'),
+            saving: t('common.saving'),
+            saveChanges: t('common.save_changes'),
+            deleteListTitle: t('ws-task-boards.layout_settings.delete_list'),
+            deleteListDescription: t(
+              'ws-task-boards.layout_settings.delete_list_description',
+              { name: '{name}' }
+            ),
+            deleteListConfirm: t('ws-task-boards.layout_settings.delete_list'),
+            listUpdatedSuccessfully: t(
+              'ws-task-boards.layout_settings.list_updated'
+            ),
+            failedToUpdateList: t(
+              'ws-task-boards.layout_settings.failed_to_update'
+            ),
+            colorUpdated: t('ws-task-boards.layout_settings.color_updated'),
+            failedToUpdateColor: t(
+              'ws-task-boards.layout_settings.failed_to_update_color'
+            ),
+            listDeletedSuccessfully: t(
+              'ws-task-boards.layout_settings.list_deleted'
+            ),
+            failedToDeleteList: t(
+              'ws-task-boards.layout_settings.failed_to_delete'
+            ),
+            cannotMoveToClosedStatus: t(
+              'ws-task-boards.layout_settings.cannot_move_to_closed'
+            ),
+            listsReordered: t('ws-task-boards.layout_settings.lists_reordered'),
+            failedToReorderLists: t(
+              'ws-task-boards.layout_settings.failed_to_reorder'
+            ),
+            task: t('common.task'),
+            tasks: t('common.tasks_plural'),
+            changeColor: t('ws-task-boards.layout_settings.change_color'),
+            backlog: t('ws-task-boards.layout_settings.backlog'),
+            active: t('ws-task-boards.layout_settings.active'),
+            doneStatus: t('ws-task-boards.layout_settings.done_status'),
+            closed: t('ws-task-boards.layout_settings.closed'),
+            documents: t('ws-task-boards.layout_settings.documents'),
+            gray: t('ws-task-boards.layout_settings.gray'),
+            red: t('ws-task-boards.layout_settings.red'),
+            blue: t('ws-task-boards.layout_settings.blue'),
+            green: t('ws-task-boards.layout_settings.green'),
+            yellow: t('ws-task-boards.layout_settings.yellow'),
+            orange: t('ws-task-boards.layout_settings.orange'),
+            purple: t('ws-task-boards.layout_settings.purple'),
+            pink: t('ws-task-boards.layout_settings.pink'),
+            indigo: t('ws-task-boards.layout_settings.indigo'),
+            cyan: t('ws-task-boards.layout_settings.cyan'),
+            movedToStatus: t('ws-task-boards.layout_settings.moved_to_status', {
+              status: '{status}',
+            }),
+            deleteList: t('ws-task-boards.layout_settings.delete_list'),
+          }}
         />
       )}
 
@@ -935,21 +1084,25 @@ export function BoardHeader({
       <Dialog open={boardSettingsOpen} onOpenChange={setBoardSettingsOpen}>
         <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
-            <DialogTitle>Board Settings</DialogTitle>
+            <DialogTitle>
+              {t('ws-task-boards.actions.board_settings')}
+            </DialogTitle>
             <DialogDescription>
-              Configure board-level settings for task management.
+              {t('ws-task-boards.settings.configure_description')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label htmlFor="ticketPrefix" className="font-medium text-sm">
-                Ticket Prefix
+                {t('ws-task-boards.settings.ticket_prefix')}
               </label>
               <Input
                 id="ticketPrefix"
                 value={ticketPrefix}
                 onChange={(e) => setTicketPrefix(e.target.value.toUpperCase())}
-                placeholder="e.g., DEV, BUG, TASK"
+                placeholder={t(
+                  'ws-task-boards.settings.ticket_prefix_placeholder'
+                )}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -960,8 +1113,7 @@ export function BoardHeader({
                 autoFocus
               />
               <p className="text-muted-foreground text-xs">
-                Custom prefix for task identifiers (e.g., DEV-1, BUG-42). Leave
-                empty to use default.
+                {t('ws-task-boards.settings.ticket_prefix_description')}
               </p>
             </div>
           </div>
@@ -971,11 +1123,11 @@ export function BoardHeader({
               onClick={() => setBoardSettingsOpen(false)}
               disabled={isLoading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSaveTicketPrefix} disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {t('common.save_changes')}
             </Button>
           </DialogFooter>
         </DialogContent>

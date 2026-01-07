@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
@@ -23,7 +24,6 @@ import { ValidationErrors } from './components/validation-errors';
 import { WorkspaceSelector } from './components/workspace-selector';
 import type { MissedEntryDialogProps } from './types';
 import { useMissedEntryForm } from './use-missed-entry-form';
-import dayjs from 'dayjs';
 
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const { open, categories, wsId, mode = 'normal' } = props;
@@ -182,7 +182,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           )}
         </DialogHeader>
 
-        <div className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-6 py-4">
+        <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-6 py-4">
           {/* Session chain timeline - chain mode only */}
           {isChainMode && chainSummary && (
             <ChainSummaryBanner chainSummary={chainSummary} />

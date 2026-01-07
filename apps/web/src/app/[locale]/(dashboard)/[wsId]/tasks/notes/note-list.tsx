@@ -41,7 +41,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import debounce from 'lodash/debounce';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { NoteEditDialog } from './note-edit-dialog';
 
@@ -97,6 +97,7 @@ const extractTextFromContent = (content: JSONContent): string => {
 
 export default function NoteList({ wsId }: { wsId: string }) {
   const t = useTranslations('dashboard.bucket_dump');
+  const locale = useLocale();
 
   const [isConversionDialogOpen, setIsConversionDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -444,8 +445,8 @@ export default function NoteList({ wsId }: { wsId: string }) {
             </h2>
             <p className="text-muted-foreground text-sm">
               {showArchived
-                ? 'View your archived notes'
-                : 'Your quick notes and ideas'}
+                ? t('archived_description')
+                : t('active_description')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -476,8 +477,8 @@ export default function NoteList({ wsId }: { wsId: string }) {
               </p>
               <p className="mt-2 text-center text-muted-foreground text-sm">
                 {showArchived
-                  ? 'Archived notes will appear here'
-                  : 'Use the command bar above to create your first note'}
+                  ? t('no_archived_notes_description')
+                  : t('no_notes_description')}
               </p>
             </CardContent>
           </Card>
@@ -503,7 +504,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
                           : 'text-foreground'
                       }`}
                     >
-                      {note.title || 'Untitled Note'}
+                      {note.title || t('untitled_note')}
                     </h3>
                     <div
                       className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100"
@@ -573,7 +574,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
 
                   <div className="mb-3 flex items-center gap-2">
                     <p className="text-muted-foreground text-xs">
-                      {new Date(note.created_at).toLocaleDateString('en-US', {
+                      {new Date(note.created_at).toLocaleDateString(locale, {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',

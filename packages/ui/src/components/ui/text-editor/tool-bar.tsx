@@ -502,6 +502,10 @@ export function ToolBar({
           id: newTask.id,
           name: newTask.name,
           display_number: newTask.display_number ?? undefined,
+          // Pass task list color and priority for mention node
+          priority: newTask.priority || undefined,
+          listColor: firstList.color || undefined,
+          entityType: 'task',
         };
       },
     });

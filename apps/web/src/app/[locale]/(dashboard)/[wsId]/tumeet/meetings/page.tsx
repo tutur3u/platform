@@ -50,8 +50,8 @@ export default async function MeetingsPage({
   }
 
   const resolvedSearchParams = await searchParams;
-  const page = parseInt(resolvedSearchParams?.page || '1');
-  const pageSize = parseInt(resolvedSearchParams?.pageSize || '10');
+  const page = parseInt(resolvedSearchParams?.page || '1', 10);
+  const pageSize = parseInt(resolvedSearchParams?.pageSize || '10', 10);
   const search = resolvedSearchParams?.search || '';
 
   return (

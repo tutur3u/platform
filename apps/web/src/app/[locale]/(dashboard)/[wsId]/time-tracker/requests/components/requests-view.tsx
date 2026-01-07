@@ -42,8 +42,13 @@ import { useCallback, useMemo } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { useAvailableUsers, useRequests } from '../hooks/use-requests';
 import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
-import { STATUS_COLORS, STATUS_LABELS, calculateDuration } from '../utils';
 import type { RequestsViewProps } from '../utils';
+import {
+  calculateDuration,
+  getCategoryColorClasses,
+  getStatusColorClasses,
+  STATUS_LABELS,
+} from '../utils';
 
 type ViewMode = 'all' | 'my';
 
@@ -314,19 +319,16 @@ export function RequestsView({
 
         <div className="flex items-center gap-2">
           {/* Threshold settings - only shown in 'all' mode */}
-          {isAllMode && (
-            <>
-              {thresholdLoading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <ThresholdSettingsDialog
-                  wsId={wsId}
-                  currentThreshold={thresholdData?.threshold}
-                  onUpdate={handleThresholdUpdate}
-                />
-              )}
-            </>
-          )}
+          {isAllMode &&
+            (thresholdLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <ThresholdSettingsDialog
+                wsId={wsId}
+                currentThreshold={thresholdData?.threshold}
+                onUpdate={handleThresholdUpdate}
+              />
+            ))}
           <span className="text-muted-foreground text-sm">
             {t('list.itemsPerPage')}:
           </span>
@@ -390,7 +392,7 @@ export function RequestsView({
                         variant="outline"
                         className={cn(
                           'border font-medium text-xs',
-                          STATUS_COLORS[request.approval_status]
+                          getStatusColorClasses(request.approval_status)
                         )}
                       >
                         {t(
@@ -400,7 +402,10 @@ export function RequestsView({
                       {request.category && (
                         <Badge
                           variant="outline"
-                          className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple"
+                          className={cn(
+                            'border font-medium text-xs',
+                            getCategoryColorClasses(request.category.color)
+                          )}
                         >
                           {request.category.name}
                         </Badge>

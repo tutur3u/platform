@@ -84,7 +84,7 @@ export function StandardInvoice({
       }
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams]
+    [searchParams, router.replace]
   );
 
   // Data queries
@@ -218,7 +218,7 @@ export function StandardInvoice({
         })
       );
     }
-  }, [selectedProducts]);
+  }, [selectedProducts, t]);
 
   // Auto-select user's best linked promotion based on current subtotal
   useEffect(() => {
@@ -273,7 +273,7 @@ export function StandardInvoice({
       }
     }
 
-    if (best && best.id) {
+    if (best?.id) {
       setSelectedPromotionId(best.id);
     }
   }, [

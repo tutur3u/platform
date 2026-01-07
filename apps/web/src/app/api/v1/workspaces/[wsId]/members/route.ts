@@ -57,8 +57,8 @@ async function getDataWithApiKey(
   console.log({ query, from, to, limit });
 
   if (query) mainQuery.textSearch('full_name', query);
-  if (from && to) mainQuery.range(parseInt(from), parseInt(to));
-  if (limit) mainQuery.limit(parseInt(limit));
+  if (from && to) mainQuery.range(parseInt(from, 10), parseInt(to, 10));
+  if (limit) mainQuery.limit(parseInt(limit, 10));
 
   const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
 
@@ -126,8 +126,8 @@ async function getDataFromSession(
   const limit = searchParams.get('limit');
 
   if (query) mainQuery.textSearch('full_name', query);
-  if (from && to) mainQuery.range(parseInt(from), parseInt(to));
-  if (limit) mainQuery.limit(parseInt(limit));
+  if (from && to) mainQuery.range(parseInt(from, 10), parseInt(to, 10));
+  if (limit) mainQuery.limit(parseInt(limit, 10));
 
   const { data, error } = await mainQuery;
 

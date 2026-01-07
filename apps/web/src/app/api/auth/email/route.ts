@@ -14,11 +14,13 @@ export async function PATCH(req: Request) {
   const { email } = await req.json();
   const { error } = await supabase.auth.updateUser({ email });
 
-  if (error)
+  if (error) {
+    console.error('Error updating email:', error);
     return NextResponse.json(
-      { message: 'Error updating user' },
+      { message: 'Error updating user', error: error.message },
       { status: 500 }
     );
+  }
 
   return NextResponse.json({ message: 'success' });
 }

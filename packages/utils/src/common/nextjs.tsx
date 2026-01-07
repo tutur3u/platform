@@ -32,6 +32,7 @@ export async function generateCommonMetadata({
     locale === 'vi' ? config.description.vi : config.description.en;
 
   return {
+    applicationName: config.name,
     title: {
       default: config.name,
       template: `${DEV_MODE ? '[DEV] ' : ''} %s | ${config.name}`,
@@ -45,6 +46,14 @@ export async function generateCommonMetadata({
       'TypeScript',
       'Biome',
     ],
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: config.name,
+    },
+    formatDetection: {
+      telephone: false,
+    },
     openGraph: {
       type: 'website',
       locale,
@@ -73,7 +82,7 @@ export async function generateCommonMetadata({
       shortcut: '/favicon-16x16.png',
       apple: '/apple-touch-icon.png',
     },
-    manifest: `/site.webmanifest`,
+    manifest: '/manifest.webmanifest',
   };
 }
 

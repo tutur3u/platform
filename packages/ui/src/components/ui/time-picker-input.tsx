@@ -77,7 +77,7 @@ const TimePickerInput = React.forwardRef<
       }
       if (e.key >= '0' && e.key <= '9') {
         const newValue = !flag
-          ? '0' + e.key
+          ? `0${e.key}`
           : calculatedValue.slice(1, 2) + e.key;
         if (flag) onRightFocus?.();
         setFlag((prev) => !prev);
@@ -92,7 +92,7 @@ const TimePickerInput = React.forwardRef<
         id={id || picker}
         name={name || picker}
         className={cn(
-          'w-[48px] text-center font-mono text-base tabular-nums caret-transparent focus:bg-accent focus:text-accent-foreground [&::-webkit-inner-spin-button]:appearance-none',
+          'w-12 text-center font-mono text-base tabular-nums caret-transparent focus:bg-accent focus:text-accent-foreground [&::-webkit-inner-spin-button]:appearance-none',
           className
         )}
         value={value || calculatedValue}

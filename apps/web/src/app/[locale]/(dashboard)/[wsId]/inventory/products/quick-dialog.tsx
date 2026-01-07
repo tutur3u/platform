@@ -61,7 +61,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 
 const InventorySchema = z.object({
@@ -108,8 +108,13 @@ export function ProductQuickDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
-  const computeUnlimitedStock = (p?: Product) =>
-    !p?.stock || p.stock.length === 0 || p.stock.some((s) => s.amount == null);
+  const computeUnlimitedStock = useCallback(
+    (p?: Product) =>
+      !p?.stock ||
+      p.stock.length === 0 ||
+      p.stock.some((s) => s.amount == null),
+    []
+  );
   const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
     computeUnlimitedStock(product)
   );
@@ -170,7 +175,7 @@ export function ProductQuickDialog({
               ],
       });
     }
-  }, [product, editForm]);
+  }, [product, editForm, computeUnlimitedStock]);
 
   function addStock() {
     append({
@@ -922,7 +927,7 @@ export function ProductQuickDialog({
                                   placeholder={t(
                                     'ws-inventory-products.placeholders.enter_product_description'
                                   )}
-                                  className="min-h-[80px]"
+                                  className="min-h-20"
                                   {...field}
                                 />
                               </FormControl>
@@ -945,7 +950,7 @@ export function ProductQuickDialog({
                                   placeholder={t(
                                     'ws-inventory-products.placeholders.enter_usage_instructions'
                                   )}
-                                  className="min-h-[80px]"
+                                  className="min-h-20"
                                   {...field}
                                 />
                               </FormControl>

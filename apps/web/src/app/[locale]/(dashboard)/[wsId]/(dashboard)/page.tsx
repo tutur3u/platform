@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { isFeatureAvailable } from '@/lib/feature-tiers';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import RecentChangelog from './changelog/recent-changelog';
 import Countdown from './countdown';
@@ -54,6 +55,14 @@ export default async function WorkspaceHomePage({ params }: Props) {
         const isInternalUser = isValidTuturuuuEmail(currentUser?.email);
         const disableCalendar = withoutPermission('manage_calendar');
 
+        // Check tier requirements for features
+        const currentTier = workspace.tier || 'FREE';
+        const hasTimeTracker = isFeatureAvailable('time_tracker', currentTier);
+        const hasVoiceAssistant = isFeatureAvailable(
+          'voice_assistant',
+          currentTier
+        );
+
         return (
           <div className="flex flex-col gap-4 pb-4 xl:flex-row">
             {/* Main content area - 2 column grid */}
@@ -85,19 +94,23 @@ export default async function WorkspaceHomePage({ params }: Props) {
             {/* Sidebar - smaller widgets */}
             {currentUser && (
               <div className="w-full shrink-0 space-y-4 xl:max-w-sm 2xl:max-w-md">
-                {isInternalUser && <VoiceAssistantCard wsId={wsId} />}
+                {isInternalUser && hasVoiceAssistant && (
+                  <VoiceAssistantCard wsId={wsId} />
+                )}
 
                 <Suspense fallback={<DashboardCardSkeleton />}>
                   <RecentChangelog />
                 </Suspense>
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <TimeTrackingMetrics
-                    wsId={wsId}
-                    userId={currentUser.id}
-                    isPersonal={workspace.personal}
-                  />
-                </Suspense>
+                {hasTimeTracker && (
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <TimeTrackingMetrics
+                      wsId={wsId}
+                      userId={currentUser.id}
+                      isPersonal={workspace.personal}
+                    />
+                  </Suspense>
+                )}
 
                 <Suspense fallback={<DashboardCardSkeleton />}>
                   <RecentTumeetPlans />

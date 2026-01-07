@@ -6,6 +6,8 @@ import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferen
 import { cn } from '@tuturuuu/utils/format';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { memo } from 'react';
 import {
   formatSmartDate,
@@ -22,6 +24,9 @@ export const TaskCardDates = memo(function TaskCardDates({
   task,
   taskList,
 }: TaskCardDatesProps) {
+  const t = useTranslations('common');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
   const { timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
   const startDate = task.start_date ? new Date(task.start_date) : null;
@@ -44,7 +49,19 @@ export const TaskCardDates = memo(function TaskCardDates({
       {startDate && isFutureDate(startDate) && (
         <div className="flex items-center gap-1 text-muted-foreground">
           <Clock className="h-2.5 w-2.5 shrink-0" />
-          <span className="truncate">Starts {formatSmartDate(startDate)}</span>
+          <span className="truncate">
+            {t('starts_at', {
+              date: formatSmartDate(
+                startDate,
+                {
+                  today: t('today'),
+                  tomorrow: t('tomorrow'),
+                  yesterday: t('yesterday'),
+                },
+                dateLocale
+              ),
+            })}
+          </span>
         </div>
       )}
       {endDate && (
@@ -57,14 +74,28 @@ export const TaskCardDates = memo(function TaskCardDates({
           )}
         >
           <Calendar className="h-2.5 w-2.5 shrink-0" />
-          <span className="truncate">Due {formatSmartDate(endDate)}</span>
+          <span className="truncate">
+            {t('due_at', {
+              date: formatSmartDate(
+                endDate,
+                {
+                  today: t('today'),
+                  tomorrow: t('tomorrow'),
+                  yesterday: t('yesterday'),
+                },
+                dateLocale
+              ),
+            })}
+          </span>
           {taskIsOverdue && !task.closed_at ? (
             <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-              OVERDUE
+              {t('overdue')}
             </Badge>
           ) : (
             <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-              {format(endDate, `MMM dd 'at' ${timePattern}`)}
+              {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+                locale: dateLocale,
+              })}
             </span>
           )}
         </div>

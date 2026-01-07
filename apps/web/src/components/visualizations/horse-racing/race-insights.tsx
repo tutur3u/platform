@@ -83,9 +83,8 @@ export function RaceInsights({
   const slowestHorse = race.result[race.result.length - 1];
 
   // Check if this race established a key ranking position
-  const establishedRanking = finalRanking.findIndex(
-    (id) => id === fastestHorse
-  );
+  const establishedRanking =
+    fastestHorse !== undefined ? finalRanking.indexOf(fastestHorse) : -1;
 
   // Determine if there were any upsets (horses with big speed differences finishing close)
   const upsets = speedDifferentials.filter(
@@ -264,7 +263,7 @@ export function RaceInsights({
                         />
                       </div>
                     </div>
-                    <div className="ml-2 min-w-[40px] text-right font-mono text-xs">
+                    <div className="ml-2 min-w-10 text-right font-mono text-xs">
                       {horse.speed.toFixed(2)}
                     </div>
                     {index < race.result.length - 1 && (

@@ -160,206 +160,205 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
   }, [safeData, searchQuery, sortBy, sortOrder, boardStatusFilter]);
 
   return (
-    <>
-      <div className="space-y-6">
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="flex-1">
+    <div className="space-y-6">
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="flex-1">
+            <div className="font-medium text-sm">
+              {t('ws-task-boards.filters.search_label')}
+            </div>
+            <Input
+              placeholder={t('ws-task-boards.filters.search_placeholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 lg:flex lg:items-end">
+            <div className="min-w-40">
               <div className="font-medium text-sm">
-                {t('ws-task-boards.filters.search_label')}
+                {t('ws-task-boards.filters.status_label')}
               </div>
-              <Input
-                placeholder={t('ws-task-boards.filters.search_placeholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="mt-1"
-              />
+              <Select
+                value={boardStatusFilter}
+                onValueChange={(value) =>
+                  setBoardStatusFilter(value as typeof boardStatusFilter)
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {t('ws-task-boards.filters.status.all')}
+                  </SelectItem>
+                  <SelectItem value="active">
+                    {t('ws-task-boards.filters.status.active')}
+                  </SelectItem>
+                  <SelectItem value="archived">
+                    {t('ws-task-boards.filters.status.archived')}
+                  </SelectItem>
+                  <SelectItem value="recently_deleted">
+                    {t('ws-task-boards.filters.status.recently_deleted')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 lg:flex lg:items-end">
-              <div className="min-w-[160px]">
-                <div className="font-medium text-sm">
-                  {t('ws-task-boards.filters.status_label')}
-                </div>
-                <Select
-                  value={boardStatusFilter}
-                  onValueChange={(value) =>
-                    setBoardStatusFilter(value as typeof boardStatusFilter)
-                  }
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">
-                      {t('ws-task-boards.filters.status.all')}
-                    </SelectItem>
-                    <SelectItem value="active">
-                      {t('ws-task-boards.filters.status.active')}
-                    </SelectItem>
-                    <SelectItem value="archived">
-                      {t('ws-task-boards.filters.status.archived')}
-                    </SelectItem>
-                    <SelectItem value="recently_deleted">
-                      {t('ws-task-boards.filters.status.recently_deleted')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="min-w-40">
+              <div className="font-medium text-sm">
+                {t('ws-task-boards.filters.sort_label')}
               </div>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => setSortBy(value)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">
+                    {t('ws-task-boards.filters.sort.name')}
+                  </SelectItem>
+                  <SelectItem value="created_at">
+                    {t('ws-task-boards.filters.sort.created_at')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="min-w-[160px]">
-                <div className="font-medium text-sm">
-                  {t('ws-task-boards.filters.sort_label')}
-                </div>
-                <Select
-                  value={sortBy}
-                  onValueChange={(value) => setSortBy(value)}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">
-                      {t('ws-task-boards.filters.sort.name')}
-                    </SelectItem>
-                    <SelectItem value="created_at">
-                      {t('ws-task-boards.filters.sort.created_at')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-                  }
-                >
-                  {sortOrder === 'asc'
-                    ? t('ws-task-boards.filters.sort_order.asc')
-                    : t('ws-task-boards.filters.sort_order.desc')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSortBy('name');
-                    setSortOrder('asc');
-                    setBoardStatusFilter('active');
-                  }}
-                >
-                  {t('common.clear')}
-                </Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+              >
+                {sortOrder === 'asc'
+                  ? t('ws-task-boards.filters.sort_order.asc')
+                  : t('ws-task-boards.filters.sort_order.desc')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSortBy('name');
+                  setSortOrder('asc');
+                  setBoardStatusFilter('active');
+                }}
+              >
+                {t('common.clear')}
+              </Button>
             </div>
           </div>
         </div>
-
-        <Tabs defaultValue="cards" className="mt-2">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="cards" className="flex items-center gap-2">
-                <LayoutGrid className="h-4 w-4" />
-                {t('ws-task-boards.views.cards')}
-              </TabsTrigger>
-              <TabsTrigger value="table" className="flex items-center gap-2">
-                <LayoutList className="h-4 w-4" />
-                {t('ws-task-boards.views.table')}
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="cards" className="mt-4">
-            {filteredData.length === 0 ? (
-              <div className="rounded-lg border border-dynamic-border bg-muted/30 p-10 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border bg-background">
-                  <LayoutGrid className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="font-semibold">
-                  {t('ws-task-boards.empty.title')}
-                </div>
-                <div className="mt-1 text-muted-foreground text-sm">
-                  {t('ws-task-boards.empty.description')}
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredData.map((board) => {
-                  const stats = viewStatsByBoardId.get(board.id);
-                  const totalTasks = stats?.totalTasks ?? 0;
-                  const totalLists = stats?.totalLists ?? 0;
-                  const BoardIcon =
-                    getIconComponentByKey(board.icon) ?? LayoutGrid;
-                  return (
-                    <div
-                      key={board.id}
-                      className="group rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <button
-                          type="button"
-                          onClick={() => navigateToBoard(board.id)}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <div className="flex items-center gap-2">
-                            <BoardIcon className="h-4 w-4 text-muted-foreground" />
-                            <div className="truncate font-semibold">
-                              {board.name || t('common.untitled')}
-                            </div>
-                          </div>
-                          <div className="mt-1 text-muted-foreground text-sm">
-                            {totalLists} {t('ws-task-boards.stats.lists')} •{' '}
-                            {totalTasks} {t('ws-task-boards.stats.tasks')}
-                          </div>
-                        </button>
-
-                        <TaskBoardForm wsId={wsId} data={board}>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="relative z-10 h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                            aria-label={t('common.edit')}
-                            onPointerDown={(e) => {
-                              e.stopPropagation();
-                              // Ensure pointerup/click stays captured by this button
-                              // so it can't fall through to the board navigation area.
-                              e.currentTarget.setPointerCapture?.(e.pointerId);
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TaskBoardForm>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="table" className="mt-4">
-            <CustomDataTable
-              columnGenerator={projectColumns}
-              namespace="basic-data-table"
-              data={filteredData}
-              count={hasActiveFilters ? filteredData.length : count}
-              hideToolbar={true}
-              defaultVisibility={{
-                id: false,
-                created_at: false,
-              }}
-            />
-          </TabsContent>
-        </Tabs>
       </div>
-    </>
+
+      <Tabs defaultValue="cards" className="mt-2">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="cards" className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              {t('ws-task-boards.views.cards')}
+            </TabsTrigger>
+            <TabsTrigger value="table" className="flex items-center gap-2">
+              <LayoutList className="h-4 w-4" />
+              {t('ws-task-boards.views.table')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="cards" className="mt-4">
+          {filteredData.length === 0 ? (
+            <div className="rounded-lg border border-dynamic-border bg-muted/30 p-10 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border bg-background">
+                <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="font-semibold">
+                {t('ws-task-boards.empty.title')}
+              </div>
+              <div className="mt-1 text-muted-foreground text-sm">
+                {t('ws-task-boards.empty.description')}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredData.map((board) => {
+                const stats = viewStatsByBoardId.get(board.id);
+                const totalTasks = stats?.totalTasks ?? 0;
+                const totalLists = stats?.totalLists ?? 0;
+                const BoardIcon =
+                  getIconComponentByKey(board.icon) ?? LayoutGrid;
+                return (
+                  <div
+                    key={board.id}
+                    className="group rounded-xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => navigateToBoard(board.id)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <BoardIcon className="h-4 w-4 text-muted-foreground" />
+                          <div className="truncate font-semibold">
+                            {board.name || t('common.untitled')}
+                          </div>
+                        </div>
+                        <div className="mt-1 text-muted-foreground text-sm">
+                          {totalLists} {t('ws-task-boards.stats.lists')} •{' '}
+                          {totalTasks} {t('ws-task-boards.stats.tasks')}
+                        </div>
+                      </button>
+
+                      <TaskBoardForm wsId={wsId} data={board}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="relative z-10 h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                          aria-label={t('common.edit')}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            // Ensure pointerup/click stays captured by this button
+                            // so it can't fall through to the board navigation area.
+                            e.currentTarget.setPointerCapture?.(e.pointerId);
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TaskBoardForm>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="table" className="mt-4">
+          <CustomDataTable
+            columnGenerator={projectColumns}
+            namespace="basic-data-table"
+            data={filteredData}
+            count={hasActiveFilters ? filteredData.length : count}
+            hideToolbar={true}
+            defaultVisibility={{
+              id: false,
+              created_at: false,
+            }}
+            onRowClick={(row) => navigateToBoard(row.id)}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

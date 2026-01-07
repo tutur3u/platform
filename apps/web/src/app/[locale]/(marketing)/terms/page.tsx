@@ -32,7 +32,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function TermsPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -183,7 +183,7 @@ Response Time: Within 2 business days
   }));
 
   // Track active section for better navigation
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const sectionElements = sections.map((section) => {
       const id = section.title.toLowerCase().replace(/\s+/g, '-');
       return {
@@ -203,7 +203,7 @@ Response Time: Within 2 business days
         }
       }
     }
-  };
+  }, []);
 
   // Add scroll event listener when component mounts
   useEffect(() => {
@@ -214,7 +214,7 @@ Response Time: Within 2 business days
       if (typeof window !== 'undefined')
         window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [handleScroll]);
 
   return (
     <main className="container relative space-y-16 py-24">

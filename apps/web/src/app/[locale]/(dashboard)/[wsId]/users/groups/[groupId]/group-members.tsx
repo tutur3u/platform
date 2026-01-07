@@ -55,7 +55,6 @@ interface GroupMember extends WorkspaceUser {
 interface GroupMembersProps {
   wsId: string;
   groupId: string;
-  initialData?: GroupMember[];
   pageSize: number;
   canViewPersonalInfo: boolean;
   canViewPublicInfo: boolean;
@@ -65,7 +64,6 @@ interface GroupMembersProps {
 export default function GroupMembers({
   wsId,
   groupId,
-  initialData,
   pageSize,
   canViewPersonalInfo,
   canViewPublicInfo,
@@ -85,18 +83,25 @@ export default function GroupMembers({
     fetchNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['group-members', wsId, groupId],
+    queryKey: [
+      'group-members',
+      wsId,
+      groupId,
+      { canViewPersonalInfo, canViewPublicInfo },
+    ],
     queryFn: async ({ pageParam }) => {
       const supabase = createClient();
       const from = typeof pageParam === 'number' ? pageParam : 0;
       const to = from + pageSize - 1;
 
+      const baseFields = 'id, display_name, full_name, avatar_url';
+      const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
+      const personalFields = canViewPersonalInfo ? ', email, phone' : '';
+      const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
+
       const { data: groupUsers, error: groupError } = await supabase
         .from('workspace_user_groups_users')
-        .select(`
-          workspace_users(*),
-          role
-        `)
+        .select(selectQuery)
         .eq('group_id', groupId)
         .range(from, to);
 
@@ -106,13 +111,18 @@ export default function GroupMembers({
 
       const membersWithGuestStatus = await Promise.all(
         groupUsers.map(async (user) => {
+          const typedUser = user as unknown as {
+            workspace_users: WorkspaceUser;
+            role: string | null;
+          };
+
           const { data: isGuest } = await supabase.rpc('is_user_guest', {
-            user_uuid: user.workspace_users.id,
+            user_uuid: typedUser.workspace_users.id,
           });
 
           return {
-            ...user.workspace_users,
-            role: user.role,
+            ...typedUser.workspace_users,
+            role: typedUser.role,
             isGuest: isGuest || false,
           } as GroupMember;
         })
@@ -126,17 +136,6 @@ export default function GroupMembers({
     },
     getNextPageParam: (lastPage) => lastPage.next,
     initialPageParam: 0,
-    initialData: initialData
-      ? {
-          pages: [
-            {
-              items: initialData,
-              next: initialData.length < pageSize ? undefined : pageSize,
-            },
-          ],
-          pageParams: [0],
-        }
-      : undefined,
     staleTime: 5 * 60 * 1000,
   });
 

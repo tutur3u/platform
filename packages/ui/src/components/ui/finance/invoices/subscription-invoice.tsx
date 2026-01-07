@@ -153,7 +153,7 @@ const getSessionsForMonth = (
   if (!Array.isArray(sessionsArray) || !month) return 0;
 
   try {
-    const startOfMonth = new Date(month + '-01');
+    const startOfMonth = new Date(`${month}-01`);
     const nextMonth = new Date(startOfMonth);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
@@ -239,7 +239,7 @@ export function SubscriptionInvoice({
       }
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams]
+    [searchParams, router.replace]
   );
 
   // Data queries
@@ -498,6 +498,7 @@ export function SubscriptionInvoice({
     groupProducts,
     products,
     t,
+    userAttendance,
   ]);
 
   // Calculate totals for manual product selection
@@ -656,6 +657,10 @@ export function SubscriptionInvoice({
     groupProducts?.length,
     userAttendance?.length,
     selectedMonth,
+    userAttendance,
+    groupProducts.map,
+    groupProducts,
+    userGroups.find,
   ]);
 
   // Reset subscription state when user changes
@@ -708,7 +713,14 @@ export function SubscriptionInvoice({
         updateSearchParam('group_id', firstGroup.workspace_user_groups.id);
       }
     }
-  }, [userGroups.length, selectedGroupId, userGroupsLoading, selectedUserId]);
+  }, [
+    userGroups.length,
+    selectedGroupId,
+    userGroupsLoading,
+    selectedUserId,
+    updateSearchParam,
+    userGroups[0],
+  ]);
 
   // Validate and reset selectedMonth when group changes
   useEffect(() => {
@@ -748,7 +760,13 @@ export function SubscriptionInvoice({
 
       updateSearchParam('month', defaultMonth.toISOString().slice(0, 7));
     }
-  }, [selectedGroupId, userGroups.length, selectedMonth]);
+  }, [
+    selectedGroupId,
+    userGroups.length,
+    selectedMonth,
+    updateSearchParam,
+    userGroups.find,
+  ]);
 
   // Auto-generate subscription invoice content
   useEffect(() => {
@@ -1103,22 +1121,15 @@ export function SubscriptionInvoice({
                     if (!group) return null;
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={group.id}
-                        role="button"
-                        tabIndex={0}
-                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                        className={`w-full cursor-pointer rounded-lg border p-4 text-left transition-colors ${
                           selectedGroupId === group.id
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted/50'
                         }`}
                         onClick={() => updateSearchParam('group_id', group.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            updateSearchParam('group_id', group.id);
-                          }
-                        }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
@@ -1154,7 +1165,7 @@ export function SubscriptionInvoice({
                             )}
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -1472,7 +1483,7 @@ export function SubscriptionInvoice({
                     placeholder={t(
                       'ws-invoices.subscription_invoice_content_placeholder'
                     )}
-                    className="min-h-[80px]"
+                    className="min-h-20"
                     value={invoiceContent}
                     onChange={(e) => setInvoiceContent(e.target.value)}
                   />
@@ -1485,7 +1496,7 @@ export function SubscriptionInvoice({
                   </Label>
                   <Textarea
                     placeholder={t('ws-invoices.additional_notes_placeholder')}
-                    className="min-h-[60px]"
+                    className="min-h-15"
                     value={invoiceNotes}
                     onChange={(e) => setInvoiceNotes(e.target.value)}
                   />

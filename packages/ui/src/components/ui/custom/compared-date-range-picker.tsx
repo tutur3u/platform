@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown, ChevronUp } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
@@ -87,6 +87,68 @@ const PRESETS: Preset[] = [
   { name: 'lastMonth', label: 'Last Month' },
 ];
 
+// Pure function to get date range for a preset (moved to module scope)
+const getPresetRange = (presetName: string): DateRange => {
+  const preset = PRESETS.find(({ name }) => name === presetName);
+  if (!preset) throw new Error(`Unknown date range preset: ${presetName}`);
+  const from = new Date();
+  const to = new Date();
+  const first = from.getDate() - from.getDay();
+
+  switch (preset.name) {
+    case 'today':
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'yesterday':
+      from.setDate(from.getDate() - 1);
+      from.setHours(0, 0, 0, 0);
+      to.setDate(to.getDate() - 1);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'last7':
+      from.setDate(from.getDate() - 6);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'last14':
+      from.setDate(from.getDate() - 13);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'last30':
+      from.setDate(from.getDate() - 29);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'thisWeek':
+      from.setDate(first);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'lastWeek':
+      from.setDate(from.getDate() - 7 - from.getDay());
+      to.setDate(to.getDate() - to.getDay() - 1);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'thisMonth':
+      from.setDate(1);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      break;
+    case 'lastMonth':
+      from.setMonth(from.getMonth() - 1);
+      from.setDate(1);
+      from.setHours(0, 0, 0, 0);
+      to.setDate(0);
+      to.setHours(23, 59, 59, 999);
+      break;
+  }
+
+  return { from, to };
+};
+
 /** The DateRangePicker component allows a user to select a range of dates */
 export const ComparedDateRangePicker = ({
   initialDateFrom = new Date(new Date().setHours(0, 0, 0, 0)),
@@ -137,72 +199,10 @@ export const ComparedDateRangePicker = ({
 
     window.addEventListener('resize', handleResize);
 
-    // Clean up event listener on unmount
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  const getPresetRange = (presetName: string): DateRange => {
-    const preset = PRESETS.find(({ name }) => name === presetName);
-    if (!preset) throw new Error(`Unknown date range preset: ${presetName}`);
-    const from = new Date();
-    const to = new Date();
-    const first = from.getDate() - from.getDay();
-
-    switch (preset.name) {
-      case 'today':
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'yesterday':
-        from.setDate(from.getDate() - 1);
-        from.setHours(0, 0, 0, 0);
-        to.setDate(to.getDate() - 1);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'last7':
-        from.setDate(from.getDate() - 6);
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'last14':
-        from.setDate(from.getDate() - 13);
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'last30':
-        from.setDate(from.getDate() - 29);
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'thisWeek':
-        from.setDate(first);
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'lastWeek':
-        from.setDate(from.getDate() - 7 - from.getDay());
-        to.setDate(to.getDate() - to.getDay() - 1);
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'thisMonth':
-        from.setDate(1);
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
-        break;
-      case 'lastMonth':
-        from.setMonth(from.getMonth() - 1);
-        from.setDate(1);
-        from.setHours(0, 0, 0, 0);
-        to.setDate(0);
-        to.setHours(23, 59, 59, 999);
-        break;
-    }
-
-    return { from, to };
-  };
 
   const setPreset = (preset: string): void => {
     const range = getPresetRange(preset);
@@ -226,7 +226,7 @@ export const ComparedDateRangePicker = ({
     }
   };
 
-  const checkPreset = (): void => {
+  const checkPreset = useCallback((): void => {
     for (const preset of PRESETS) {
       const presetRange = getPresetRange(preset.name);
 
@@ -252,7 +252,7 @@ export const ComparedDateRangePicker = ({
     }
 
     setSelectedPreset(undefined);
-  };
+  }, [range.from, range.to]);
 
   const resetValues = (): void => {
     setRange({
@@ -289,7 +289,7 @@ export const ComparedDateRangePicker = ({
 
   useEffect(() => {
     checkPreset();
-  }, [range]);
+  }, [checkPreset]);
 
   const PresetButton = ({
     preset,
@@ -307,12 +307,10 @@ export const ComparedDateRangePicker = ({
         setPreset(preset);
       }}
     >
-      <>
-        <span className={cn('pr-2 opacity-0', isSelected && 'opacity-70')}>
-          <Check width={18} height={18} />
-        </span>
-        {label}
-      </>
+      <span className={cn('pr-2 opacity-0', isSelected && 'opacity-70')}>
+        <Check width={18} height={18} />
+      </span>
+      {label}
     </Button>
   );
 
@@ -330,7 +328,7 @@ export const ComparedDateRangePicker = ({
       openedRangeRef.current = range;
       openedRangeCompareRef.current = rangeCompare;
     }
-  }, [isOpen]);
+  }, [isOpen, range, rangeCompare]);
 
   return (
     <Popover
@@ -348,17 +346,15 @@ export const ComparedDateRangePicker = ({
           <div className="text-right">
             <div className="py-1">
               <div>{`${formatDate(range.from, locale)}${
-                range.to != null ? ' - ' + formatDate(range.to, locale) : ''
+                range.to != null ? ` - ${formatDate(range.to, locale)}` : ''
               }`}</div>
             </div>
             {rangeCompare != null && (
               <div className="-mt-1 text-xs opacity-60">
-                <>
-                  vs. {formatDate(rangeCompare.from, locale)}
-                  {rangeCompare.to != null
-                    ? ` - ${formatDate(rangeCompare.to, locale)}`
-                    : ''}
-                </>
+                vs. {formatDate(rangeCompare.from, locale)}
+                {rangeCompare.to != null
+                  ? ` - ${formatDate(rangeCompare.to, locale)}`
+                  : ''}
               </div>
             )}
           </div>
@@ -465,7 +461,7 @@ export const ComparedDateRangePicker = ({
                       <DateInput
                         value={rangeCompare?.to}
                         onChange={(date) => {
-                          if (rangeCompare && rangeCompare.from) {
+                          if (rangeCompare?.from) {
                             const compareFromDate =
                               date < rangeCompare.from
                                 ? date
@@ -489,7 +485,7 @@ export const ComparedDateRangePicker = ({
                     setPreset(value);
                   }}
                 >
-                  <SelectTrigger className="mx-auto mb-2 w-[180px]">
+                  <SelectTrigger className="mx-auto mb-2 w-45">
                     <SelectValue placeholder="Select..." />
                   </SelectTrigger>
                   <SelectContent>

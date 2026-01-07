@@ -204,7 +204,7 @@ export async function logEmailAbuseEvent(
     // Hash email for privacy if provided
     let emailHash: string | null = null;
     if (options?.email) {
-      const { createHash } = await import('crypto');
+      const { createHash } = await import('node:crypto');
       emailHash = createHash('sha256')
         .update(options.email.toLowerCase())
         .digest('hex')

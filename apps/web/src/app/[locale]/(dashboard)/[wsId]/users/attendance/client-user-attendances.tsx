@@ -82,9 +82,11 @@ const ClientUserAttendances: FC<{
     <>
       <DataTablePagination
         t={t}
-        pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-        pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
+        pageCount={Math.ceil(
+          count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE, 10)
+        )}
+        pageIndex={parseInt(page ?? DEFAULT_PAGE, 10) - 1}
+        pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE, 10)}
         additionalSizes={[3, 6, 12, 24, 48]}
         count={count}
         setParams={(params) => searchParams.set(params)}
@@ -102,9 +104,11 @@ const ClientUserAttendances: FC<{
       {count > 0 && (
         <DataTablePagination
           t={t}
-          pageCount={Math.ceil(count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE))}
-          pageIndex={parseInt(page ?? DEFAULT_PAGE) - 1}
-          pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE)}
+          pageCount={Math.ceil(
+            count / parseInt(pageSize ?? DEFAULT_PAGE_SIZE, 10)
+          )}
+          pageIndex={parseInt(page ?? DEFAULT_PAGE, 10) - 1}
+          pageSize={parseInt(pageSize ?? DEFAULT_PAGE_SIZE, 10)}
           additionalSizes={[3, 6, 12, 24, 48]}
           count={count}
           setParams={(params) => searchParams.set(params)}

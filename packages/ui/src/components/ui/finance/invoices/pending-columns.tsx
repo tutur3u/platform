@@ -81,13 +81,13 @@ export const pendingInvoiceColumns = (
       // Format months array as range or single month
       const formattedMonths =
         monthsValue.length === 1
-          ? moment(monthsValue[0] + '-01').format('MMM YYYY')
+          ? moment(`${monthsValue[0]}-01`).format('MMM YYYY')
           : (() => {
-              const startMonth = moment(monthsValue[0] + '-01').format(
+              const startMonth = moment(`${monthsValue[0]}-01`).format(
                 'MMM YYYY'
               );
               const endMonth = moment(
-                monthsValue[monthsValue.length - 1] + '-01'
+                `${monthsValue[monthsValue.length - 1]}-01`
               ).format('MMM YYYY');
               return `${startMonth} → ${endMonth}`;
             })();

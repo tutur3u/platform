@@ -7,13 +7,24 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
+import { useEffect } from 'react';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
+  fade_completed_tasks: boolean;
 }
 
 interface TaskSettingsProps {
   workspace?: Workspace | null;
+}
+
+/**
+ * Helper function to update the body data attribute for CSS-based fade effect
+ */
+function updateBodyFadeAttribute(enabled: boolean) {
+  if (typeof document !== 'undefined') {
+    document.body.setAttribute('data-fade-completed', String(enabled));
+  }
 }
 
 export function TaskSettings({ workspace }: TaskSettingsProps) {
@@ -31,6 +42,13 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Update body attribute when settings are loaded/updated
+  useEffect(() => {
+    if (settings?.fade_completed_tasks !== undefined) {
+      updateBodyFadeAttribute(settings.fade_completed_tasks);
+    }
+  }, [settings?.fade_completed_tasks]);
+
   const updateSettings = useMutation({
     mutationFn: async (data: Partial<TaskSettingsData>) => {
       const res = await fetch('/api/v1/users/task-settings', {
@@ -39,10 +57,14 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error('Failed to update task settings');
-      return res.json();
+      return res.json() as Promise<TaskSettingsData>;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-task-settings'] });
+      // Update body attribute immediately on success
+      if (data.fade_completed_tasks !== undefined) {
+        updateBodyFadeAttribute(data.fade_completed_tasks);
+      }
       toast.success(t('settings_updated'));
     },
     onError: () => {
@@ -54,8 +76,14 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     updateSettings.mutate({ task_auto_assign_to_self: checked });
   };
 
+  const handleFadeCompletedToggle = (checked: boolean) => {
+    // Optimistically update body attribute for instant feedback
+    updateBodyFadeAttribute(checked);
+    updateSettings.mutate({ fade_completed_tasks: checked });
+  };
+
   // For personal workspaces, always show as ON (it's forced behavior)
-  const effectiveValue = isPersonalWorkspace
+  const effectiveAutoAssignValue = isPersonalWorkspace
     ? true
     : (settings?.task_auto_assign_to_self ?? false);
 
@@ -71,11 +99,22 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
           }
         >
           <Switch
-            checked={effectiveValue}
+            checked={effectiveAutoAssignValue}
             onCheckedChange={handleAutoAssignToggle}
             disabled={
               isLoading || updateSettings.isPending || isPersonalWorkspace
             }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('fade_completed_tasks')}
+          description={t('fade_completed_tasks_description')}
+        >
+          <Switch
+            checked={settings?.fade_completed_tasks ?? false}
+            onCheckedChange={handleFadeCompletedToggle}
+            disabled={isLoading || updateSettings.isPending}
           />
         </SettingItemTab>
         <Separator />

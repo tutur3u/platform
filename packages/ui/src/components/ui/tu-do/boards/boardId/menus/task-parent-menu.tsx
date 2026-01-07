@@ -20,6 +20,15 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 
+interface TaskParentMenuTranslations {
+  parent_task: string;
+  search_tasks: string;
+  error_loading_tasks: string;
+  no_matching_tasks: string;
+  no_available_tasks: string;
+  n_set: string;
+}
+
 interface TaskParentMenuProps {
   /** Current workspace ID */
   wsId: string;
@@ -35,6 +44,8 @@ interface TaskParentMenuProps {
   onSetParent: (task: RelatedTaskInfo) => void;
   /** Called when parent is removed */
   onRemoveParent: () => void;
+  /** Translations for the menu */
+  translations: TaskParentMenuTranslations;
 }
 
 export function TaskParentMenu({
@@ -45,6 +56,7 @@ export function TaskParentMenu({
   isSaving,
   onSetParent,
   onRemoveParent,
+  translations,
 }: TaskParentMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch] = useDebounce(searchQuery, 300);
@@ -80,9 +92,11 @@ export function TaskParentMenu({
     <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
       <DropdownMenuSubTrigger>
         <ArrowUpCircle className="h-4 w-4 text-dynamic-purple" />
-        Parent Task
+        {translations.parent_task}
         {parentTask && (
-          <span className="ml-auto text-muted-foreground text-xs">1 set</span>
+          <span className="ml-auto text-muted-foreground text-xs">
+            {translations.n_set}
+          </span>
         )}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-72 p-0">
@@ -115,29 +129,29 @@ export function TaskParentMenu({
         {/* Search and Select */}
         <Command shouldFilter={false} className="rounded-none border-0">
           <CommandInput
-            placeholder="Search tasks..."
+            placeholder={translations.search_tasks}
             value={searchQuery}
             onValueChange={setSearchQuery}
             className="h-9"
           />
-          <CommandList className="max-h-[250px]">
+          <CommandList className="max-h-62.5">
             {tasksLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             ) : tasksError ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
-                Error loading tasks
+                {translations.error_loading_tasks}
               </CommandEmpty>
             ) : tasks.length === 0 ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {searchQuery ? (
                   <>
                     <Search className="mx-auto mb-1 h-4 w-4 opacity-50" />
-                    No matching tasks
+                    {translations.no_matching_tasks}
                   </>
                 ) : (
-                  'No available tasks'
+                  translations.no_available_tasks
                 )}
               </CommandEmpty>
             ) : (

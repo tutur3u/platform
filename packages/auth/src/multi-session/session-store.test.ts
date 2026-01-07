@@ -34,7 +34,7 @@ const setupBrowserMocks = () => {
 
   // Setup crypto (Node.js webcrypto)
   if (typeof globalThis.crypto === 'undefined') {
-    const { webcrypto } = require('crypto');
+    const { webcrypto } = require('node:crypto');
     Object.defineProperty(globalThis, 'crypto', {
       value: webcrypto,
       writable: true,

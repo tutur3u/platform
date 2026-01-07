@@ -21,7 +21,9 @@ export function RelatedSection({
 
   const excludeIds = React.useMemo(() => {
     const ids = taskId ? [taskId] : [];
-    relatedTasks.forEach((t) => ids.push(t.id));
+    for (const t of relatedTasks) {
+      ids.push(t.id);
+    }
     return ids;
   }, [taskId, relatedTasks]);
 

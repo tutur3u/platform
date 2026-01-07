@@ -1,3 +1,5 @@
+'use client';
+
 import { Loader2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -15,6 +17,19 @@ import { Label } from '@tuturuuu/ui/label';
 import { useTheme } from 'next-themes';
 import { computeAccessibleLabelStyles } from '../../../utils/label-colors';
 
+// Default translations for when component is rendered outside NextIntlClientProvider
+const defaultTranslations = {
+  create_new_label: 'Create New Label',
+  create_new_label_description:
+    'Create a new label to categorize and organize your tasks.',
+  label_name: 'Label Name',
+  color: 'Color',
+  preview: 'Preview',
+  cancel: 'Cancel',
+  creating: 'Creating...',
+  create_label: 'Create Label',
+};
+
 interface TaskNewLabelDialogProps {
   open: boolean;
   newLabelName: string;
@@ -24,6 +39,17 @@ interface TaskNewLabelDialogProps {
   onNameChange: (name: string) => void;
   onColorChange: (color: string) => void;
   onConfirm: () => void;
+  /** Optional translations override for use in isolated React roots */
+  translations?: {
+    create_new_label?: string;
+    create_new_label_description?: string;
+    label_name?: string;
+    color?: string;
+    preview?: string;
+    cancel?: string;
+    creating?: string;
+    create_label?: string;
+  };
 }
 
 export function TaskNewLabelDialog({
@@ -35,7 +61,24 @@ export function TaskNewLabelDialog({
   onNameChange,
   onColorChange,
   onConfirm,
+  translations,
 }: TaskNewLabelDialogProps) {
+  // Use provided translations or defaults
+  const t = {
+    create_new_label:
+      translations?.create_new_label ?? defaultTranslations.create_new_label,
+    create_new_label_description:
+      translations?.create_new_label_description ??
+      defaultTranslations.create_new_label_description,
+    label_name: translations?.label_name ?? defaultTranslations.label_name,
+    color: translations?.color ?? defaultTranslations.color,
+    preview: translations?.preview ?? defaultTranslations.preview,
+    cancel: translations?.cancel ?? defaultTranslations.cancel,
+    creating: translations?.creating ?? defaultTranslations.creating,
+    create_label:
+      translations?.create_label ?? defaultTranslations.create_label,
+  };
+
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -43,15 +86,14 @@ export function TaskNewLabelDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Label</DialogTitle>
+          <DialogTitle>{t.create_new_label}</DialogTitle>
           <DialogDescription>
-            Add a new label to organize your tasks. Give it a descriptive name
-            and choose a color.
+            {t.create_new_label_description}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label>Label Name</Label>
+            <Label>{t.label_name}</Label>
             <Input
               value={newLabelName}
               onChange={(e) => onNameChange(e.target.value)}
@@ -64,7 +106,7 @@ export function TaskNewLabelDialog({
             />
           </div>
           <div className="grid gap-2">
-            <Label>Color</Label>
+            <Label>{t.color}</Label>
             <div className="flex items-center gap-3">
               <ColorPicker value={newLabelColor} onChange={onColorChange} />
               <Badge
@@ -83,7 +125,7 @@ export function TaskNewLabelDialog({
                 })()}
                 className="border"
               >
-                {newLabelName.trim() || 'Preview'}
+                {newLabelName.trim() || t.preview}
               </Badge>
             </div>
           </div>
@@ -95,7 +137,7 @@ export function TaskNewLabelDialog({
             onClick={() => onOpenChange(false)}
             disabled={creatingLabel}
           >
-            Cancel
+            {t.cancel}
           </Button>
           <Button
             type="button"
@@ -105,10 +147,10 @@ export function TaskNewLabelDialog({
             {creatingLabel ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Creating...
+                {t.creating}
               </>
             ) : (
-              'Create Label'
+              t.create_label
             )}
           </Button>
         </DialogFooter>

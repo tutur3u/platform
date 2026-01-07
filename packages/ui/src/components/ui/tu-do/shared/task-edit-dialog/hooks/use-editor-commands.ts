@@ -7,6 +7,39 @@ import type {
 } from '../../mention-system/types';
 import type { SlashCommandDefinition } from '../../slash-commands/definitions';
 
+/**
+ * Payload structure for task mentions inserted via the editor
+ */
+interface TaskPayload {
+  display_number?: number;
+  priority?: string;
+  list?: {
+    color?: string;
+  };
+  assignees?: Array<{
+    id: string;
+    display_name?: string;
+    avatar_url?: string;
+  }>;
+}
+
+/**
+ * Attributes structure for mention nodes in the editor
+ * Aligns with the Tiptap mention node schema
+ */
+interface MentionAttributes {
+  userId: string | null;
+  entityId: string;
+  entityType: string;
+  displayName: string;
+  avatarUrl: string | null;
+  subtitle: string | null;
+  // Task-specific attributes
+  priority?: string;
+  listColor?: string;
+  assignees?: string;
+}
+
 export interface UseEditorCommandsProps {
   editorInstance: Editor | null;
   slashState: SuggestionState;
@@ -143,18 +176,40 @@ export function useEditorCommands({
         chain.deleteRange(mentionState.range);
       }
 
+      const attributes: MentionAttributes = {
+        userId: option.type === 'user' ? option.id : null,
+        entityId: option.id,
+        entityType: option.type,
+        displayName: option.label,
+        avatarUrl: option.avatarUrl ?? null,
+        subtitle: option.subtitle ?? null,
+      };
+
+      // For tasks, we want to use the display number as the display name
+      // and populate additional attributes for the chip
+      if (option.type === 'task' && option.payload) {
+        const task = option.payload as TaskPayload;
+        if (task.display_number) {
+          attributes.displayName = String(task.display_number);
+        }
+        // Set subtitle to task name (option.label) for consistent chip display
+        attributes.subtitle = option.label;
+        if (task.priority) {
+          attributes.priority = task.priority;
+        }
+        if (task.list?.color) {
+          attributes.listColor = task.list.color;
+        }
+        if (task.assignees) {
+          attributes.assignees = JSON.stringify(task.assignees);
+        }
+      }
+
       chain
         .insertContent([
           {
             type: 'mention',
-            attrs: {
-              userId: option.type === 'user' ? option.id : null,
-              entityId: option.id,
-              entityType: option.type,
-              displayName: option.label,
-              avatarUrl: option.avatarUrl ?? null,
-              subtitle: option.subtitle ?? null,
-            },
+            attrs: attributes,
           },
           { type: 'text', text: ' ' },
         ])

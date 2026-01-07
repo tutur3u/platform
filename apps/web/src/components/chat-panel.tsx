@@ -511,7 +511,8 @@ export async function uploadFile(
         lastFileName.substring(
           lastFileName.lastIndexOf('(') + 1,
           lastFileName.lastIndexOf(')')
-        )
+        ),
+        10
       );
       newFileName = `${baseName}(${lastFileNameIndex + 1}).${fileExtension}`;
     } else {

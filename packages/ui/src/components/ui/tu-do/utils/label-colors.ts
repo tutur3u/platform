@@ -13,7 +13,7 @@ function normalizeHex(input: string): string | null {
   }
   if (c.length !== 6) return null;
   if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
-  return '#' + c.toLowerCase();
+  return `#${c.toLowerCase()}`;
 }
 
 function hexToRgb(hex: string) {
@@ -83,7 +83,7 @@ function adjust(hex: string, factor: number) {
   const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
   const g = Math.round(hue2rgb(p, q, h) * 255);
   const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
-  return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export interface AccessibleLabelStyles {
@@ -132,14 +132,14 @@ export function computeAccessibleLabelStyles(
   if (!rgb) return null;
   const lum = luminance(rgb);
   // 10% opacity = ~0x1A; 30% opacity = ~0x4D; 40% opacity = ~0x66; 60% opacity = ~0x99
-  const bg = baseHex + '1a';
+  const bg = `${baseHex}1a`;
   let border: string;
   let text = baseHex; // full opacity
 
   // Adjust text color based on theme and luminance
   if (isDark) {
     // Dark mode: lighten colors for better visibility
-    border = baseHex + '4d'; // 30% opacity in dark mode
+    border = `${baseHex}4d`; // 30% opacity in dark mode
     if (lum < 0.35) {
       // Lighten dark colors significantly
       text = adjust(baseHex, 1.5);
@@ -156,27 +156,27 @@ export function computeAccessibleLabelStyles(
     if (lum < 0.18) {
       // Very dark colors: lighten slightly
       text = adjust(baseHex, 1.4);
-      border = baseHex + '4d'; // 30% opacity for dark colors
+      border = `${baseHex}4d`; // 30% opacity for dark colors
     } else if (lum < 0.35) {
       // Dark colors: lighten a bit
       text = adjust(baseHex, 1.2);
-      border = baseHex + '66'; // 40% opacity
+      border = `${baseHex}66`; // 40% opacity
     } else if (lum < 0.55) {
       // Mid-tone colors: darken moderately
       text = adjust(baseHex, 0.65);
-      border = adjust(baseHex, 0.65) + '99'; // Use darkened color at 60% opacity
+      border = `${adjust(baseHex, 0.65)}99`; // Use darkened color at 60% opacity
     } else if (lum < 0.75) {
       // Bright colors: darken significantly
       text = adjust(baseHex, 0.5);
-      border = adjust(baseHex, 0.5) + '99'; // Use darkened color at 60% opacity
+      border = `${adjust(baseHex, 0.5)}99`; // Use darkened color at 60% opacity
     } else if (lum < 0.85) {
       // Very bright colors: darken heavily
       text = adjust(baseHex, 0.4);
-      border = adjust(baseHex, 0.4) + '99'; // Use darkened color at 60% opacity
+      border = `${adjust(baseHex, 0.4)}99`; // Use darkened color at 60% opacity
     } else {
       // Extremely bright colors (like bright yellows): darken extra heavily
       text = adjust(baseHex, 0.3);
-      border = adjust(baseHex, 0.3) + '99'; // Use heavily darkened color at 60% opacity
+      border = `${adjust(baseHex, 0.3)}99`; // Use heavily darkened color at 60% opacity
     }
   }
 

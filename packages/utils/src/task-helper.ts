@@ -1099,14 +1099,23 @@ export async function getDeletedTasks(
 /**
  * React Query hook for fetching deleted tasks
  */
-export function useDeletedTasks(boardId: string) {
+type UseDeletedTasksOptions = {
+  enabled?: boolean;
+  staleTime?: number;
+};
+
+export function useDeletedTasks(
+  boardId: string,
+  options?: UseDeletedTasksOptions
+) {
   return useQuery({
     queryKey: ['deleted-tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
       return getDeletedTasks(supabase, boardId);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled,
+    staleTime: options?.staleTime ?? 5 * 60 * 1000,
   });
 }
 

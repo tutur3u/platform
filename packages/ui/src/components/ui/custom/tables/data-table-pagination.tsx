@@ -71,7 +71,7 @@ export function DataTablePagination<TData>({
         className
       )}
     >
-      {count != undefined && count > 0 ? (
+      {count != null && count > 0 ? (
         <div className="flex-none text-muted-foreground text-sm">
           {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">
@@ -108,7 +108,7 @@ export function DataTablePagination<TData>({
               setParams?.({ page: 1, pageSize: value });
             }}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="h-8 w-17.5">
               <SelectValue
                 placeholder={
                   pageSize ?? table?.getState().pagination.pageSize ?? 0
