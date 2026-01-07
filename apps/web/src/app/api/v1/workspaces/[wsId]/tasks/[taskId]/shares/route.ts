@@ -1,8 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validate } from 'uuid';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { verifyTaskShareAccess } from '@/lib/task-perm-helper';
 
 interface ShareParams {
   wsId: string;
@@ -15,69 +13,24 @@ const createShareSchema = z.object({
   permission: z.enum(['view', 'edit']).default('view'),
 });
 
+const updateShareSchema = z.object({
+  id: z.string().uuid(),
+  permission: z.enum(['view', 'edit']),
+});
+
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<ShareParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const access = await verifyTaskShareAccess(wsId, taskId);
 
-    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or task ID' },
-        { status: 400 }
-      );
+    if (!access.success) {
+      return access.response;
     }
 
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    // Verify task belongs to workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(
-        `
-        id,
-        task_lists!inner (
-          id,
-          workspace_boards!inner (
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .single();
-
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
-      return NextResponse.json(
-        { error: 'Task not found in this workspace' },
-        { status: 404 }
-      );
-    }
+    const { supabase, taskId: validatedTaskId } = access.data;
 
     // Get all shares for this task
     const { data: shares, error: sharesError } = await supabase
@@ -99,7 +52,7 @@ export async function GET(
         )
       `
       )
-      .eq('task_id', taskId)
+      .eq('task_id', validatedTaskId)
       .order('created_at', { ascending: false });
 
     if (sharesError) {
@@ -123,66 +76,16 @@ export async function GET(
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<ShareParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const access = await verifyTaskShareAccess(wsId, taskId);
 
-    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or task ID' },
-        { status: 400 }
-      );
+    if (!access.success) {
+      return access.response;
     }
 
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    // Verify task belongs to workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(
-        `
-        id,
-        task_lists!inner (
-          id,
-          workspace_boards!inner (
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .single();
-
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
-      return NextResponse.json(
-        { error: 'Task not found in this workspace' },
-        { status: 404 }
-      );
-    }
+    const { supabase, user, taskId: validatedTaskId } = access.data;
 
     let body: unknown;
     try {
@@ -251,7 +154,7 @@ export async function POST(
     let existingShareQuery = supabase
       .from('task_shares')
       .select('id')
-      .eq('task_id', taskId);
+      .eq('task_id', validatedTaskId);
 
     if (normalizedUserId) {
       existingShareQuery = existingShareQuery.eq(
@@ -299,7 +202,7 @@ export async function POST(
     const { data: share, error: shareError } = await supabase
       .from('task_shares')
       .insert({
-        task_id: taskId,
+        task_id: validatedTaskId,
         shared_with_user_id: normalizedUserId,
         shared_with_email: normalizedEmail,
         permission,
@@ -336,72 +239,25 @@ export async function POST(
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<ShareParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const access = await verifyTaskShareAccess(wsId, taskId);
 
-    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or task ID' },
-        { status: 400 }
-      );
+    if (!access.success) {
+      return access.response;
     }
 
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { supabase, taskId: validatedTaskId } = access.data;
 
     const { searchParams } = new URL(request.url);
     const shareId = searchParams.get('id');
 
-    if (!shareId || !validate(shareId)) {
+    // Simple validation for shareId format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!shareId || !uuidRegex.test(shareId)) {
       return NextResponse.json({ error: 'Invalid share ID' }, { status: 400 });
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    // Verify task belongs to workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(
-        `
-        id,
-        task_lists!inner (
-          id,
-          workspace_boards!inner (
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .single();
-
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
-      return NextResponse.json(
-        { error: 'Task not found in this workspace' },
-        { status: 404 }
-      );
     }
 
     // Delete share (RLS will verify task belongs to workspace)
@@ -409,7 +265,7 @@ export async function DELETE(
       .from('task_shares')
       .delete()
       .eq('id', shareId)
-      .eq('task_id', taskId);
+      .eq('task_id', validatedTaskId);
 
     if (deleteError) {
       console.error('Error deleting share:', deleteError);
@@ -429,50 +285,19 @@ export async function DELETE(
   }
 }
 
-const updateShareSchema = z.object({
-  id: z.string().uuid(),
-  permission: z.enum(['view', 'edit']),
-});
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<ShareParams> }
-) {
+): Promise<NextResponse> {
   try {
     const { wsId, taskId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const access = await verifyTaskShareAccess(wsId, taskId);
 
-    if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or task ID' },
-        { status: 400 }
-      );
+    if (!access.success) {
+      return access.response;
     }
 
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
+    const { supabase, taskId: validatedTaskId } = access.data;
 
     let body: unknown;
     try {
@@ -499,36 +324,12 @@ export async function PATCH(
 
     const { id: shareId, permission } = validationResult.data;
 
-    // Verify task belongs to workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(
-        `
-        id,
-        task_lists!inner (
-          id,
-          workspace_boards!inner (
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .single();
-
-    if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
-      return NextResponse.json(
-        { error: 'Task not found in this workspace' },
-        { status: 404 }
-      );
-    }
-
     // Update share (RLS will verify task belongs to workspace)
     const { data: share, error: updateError } = await supabase
       .from('task_shares')
       .update({ permission })
       .eq('id', shareId)
-      .eq('task_id', taskId)
+      .eq('task_id', validatedTaskId)
       .select()
       .single();
 
