@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -122,34 +123,59 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_guest')
-    .select(
-      'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('name');
+    // Restrict visibility: users only see groups they're a member of.
+    // Membership is stored in workspace_user_groups_users(user_id -> workspace_users.id).
+    const workspaceUser = await getCurrentWorkspaceUser(wsId);
+    if (!workspaceUser?.virtual_user_id) {
+      return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+    }
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+    const { data: memberships, error: membershipError } = await supabase
+      .from('workspace_user_groups_users')
+      .select('group_id')
+      .eq('user_id', workspaceUser.virtual_user_id);
 
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
+    if (membershipError) throw membershipError;
 
-  const { data, error, count } = await queryBuilder;
-  if (error) {
+    const groupIds = Array.from(
+      new Set((memberships || []).map((m) => m.group_id).filter(Boolean))
+    );
+
+    if (groupIds.length === 0) {
+      return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+    }
+
+    const queryBuilder = supabase
+      .from('workspace_user_groups_with_guest')
+      .select(
+        'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
+        {
+          count: 'exact',
+        }
+      )
+      .eq('ws_id', wsId)
+      .in('id', groupIds)
+      .order('name');
+
+    if (q) queryBuilder.ilike('name', `%${q}%`);
+
+    if (page && pageSize) {
+      const parsedPage = parseInt(page, 10);
+      const parsedSize = parseInt(pageSize, 10);
+      const start = (parsedPage - 1) * parsedSize;
+      const end = parsedPage * parsedSize;
+      queryBuilder.range(start, end).limit(parsedSize);
+    }
+
+    const { data, error, count } = await queryBuilder;
+    if (error) throw error;
+
+    return { data, count } as { data: UserGroup[]; count: number };
+  } catch (error) {
     if (!retry) throw error;
     return getData(wsId, { q, pageSize, retry: false });
   }
-
-  return { data, count } as { data: UserGroup[]; count: number };
 }
