@@ -7891,6 +7891,118 @@ export type Database = {
           },
         ];
       };
+      task_rate_overrides: {
+        Row: {
+          board_id: string | null;
+          created_at: string | null;
+          currency: string;
+          effective_from: string;
+          effective_until: string | null;
+          hourly_rate: number;
+          id: string;
+          notes: string | null;
+          project_id: string | null;
+          task_id: string | null;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          effective_from: string;
+          effective_until?: string | null;
+          hourly_rate: number;
+          id?: string;
+          notes?: string | null;
+          project_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          effective_from?: string;
+          effective_until?: string | null;
+          hourly_rate?: number;
+          id?: string;
+          notes?: string | null;
+          project_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_rate_overrides_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_relationships: {
         Row: {
           created_at: string;
@@ -12329,6 +12441,60 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_habits_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_holidays: {
+        Row: {
+          country_code: string | null;
+          created_at: string | null;
+          holiday_date: string;
+          id: string;
+          is_recurring: boolean;
+          name: string;
+          notes: string | null;
+          overtime_multiplier: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          country_code?: string | null;
+          created_at?: string | null;
+          holiday_date: string;
+          id?: string;
+          is_recurring?: boolean;
+          name: string;
+          notes?: string | null;
+          overtime_multiplier?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          country_code?: string | null;
+          created_at?: string | null;
+          holiday_date?: string;
+          id?: string;
+          is_recurring?: boolean;
+          name?: string;
+          notes?: string | null;
+          overtime_multiplier?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_holidays_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_holidays_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -17665,6 +17831,10 @@ export type Database = {
           id: string;
           relevance: number;
         }[];
+      };
+      seed_default_vn_holidays: {
+        Args: { target_ws_id: string };
+        Returns: undefined;
       };
       set_default_break_type: {
         Args: { p_target_id: string; p_ws_id: string };
