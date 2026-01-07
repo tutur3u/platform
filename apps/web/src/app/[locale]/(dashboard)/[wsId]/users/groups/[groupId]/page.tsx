@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { verifyGroupAccess } from '../utils';
 import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
@@ -65,6 +66,7 @@ export default async function UserGroupDetailsPage({
         const canViewUserGroups = containsPermission('view_user_groups');
 
         if (!canViewUserGroups) {
+          console.error('User lacks permission to view user groups');
           notFound();
         }
         const group = await getData(wsId, groupId);
@@ -242,6 +244,10 @@ export default async function UserGroupDetailsPage({
 
 async function getData(wsId: string, groupId: string) {
   const supabase = await createClient();
+
+  // Restrict visibility: users only see groups they're a member of.
+  await verifyGroupAccess(wsId, groupId);
+
   const { data, error } = await supabase
     .from('workspace_user_groups')
     .select('*')
@@ -250,10 +256,12 @@ async function getData(wsId: string, groupId: string) {
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) notFound();
+  if (!data) {
+    console.error(`Group ${groupId} not found in workspace ${wsId}`);
+    notFound();
+  }
   return data as UserGroup;
 }
-
 
 // async function getExcludedUserGroups(wsId: string, groupId: string) {
 //   const supabase = await createClient();

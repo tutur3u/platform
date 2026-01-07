@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -11,6 +10,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
+import { getUserGroupMemberships } from './utils';
 
 export const metadata: Metadata = {
   title: 'Groups',
@@ -127,22 +127,7 @@ async function getData(
     const supabase = await createClient();
 
     // Restrict visibility: users only see groups they're a member of.
-    // Membership is stored in workspace_user_groups_users(user_id -> workspace_users.id).
-    const workspaceUser = await getCurrentWorkspaceUser(wsId);
-    if (!workspaceUser?.virtual_user_id) {
-      return { data: [], count: 0 } as { data: UserGroup[]; count: number };
-    }
-
-    const { data: memberships, error: membershipError } = await supabase
-      .from('workspace_user_groups_users')
-      .select('group_id')
-      .eq('user_id', workspaceUser.virtual_user_id);
-
-    if (membershipError) throw membershipError;
-
-    const groupIds = Array.from(
-      new Set((memberships || []).map((m) => m.group_id).filter(Boolean))
-    );
+    const groupIds = await getUserGroupMemberships(wsId);
 
     if (groupIds.length === 0) {
       return { data: [], count: 0 } as { data: UserGroup[]; count: number };
