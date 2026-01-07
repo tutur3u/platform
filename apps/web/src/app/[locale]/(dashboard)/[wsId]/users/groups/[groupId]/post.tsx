@@ -1,8 +1,17 @@
 import { useInViewport } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
 import { Check, CircleHelp, Send, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useState } from 'react';
+
+type UserGroupPostCheckRow = {
+  is_completed: boolean | null;
+};
+
+type UserRow = {
+  id: string | null;
+  user_group_post_checks?: UserGroupPostCheckRow[] | null;
+};
 
 export function PostEmailStatus({
   groupId,
@@ -11,25 +20,25 @@ export function PostEmailStatus({
   groupId: string;
   postId: string;
 }) {
-  const supabase = createClient();
-
   const { ref, inViewport } = useInViewport();
-  const [loading, setLoading] = useState(false);
 
-  const [data, setData] = useState<{
-    sent: number | null;
-    checked: number | null;
-    failed: number | null;
-    tenative: number | null;
-    count: number | null;
-  }>();
+  const { data } = useQuery({
+    queryKey: ['user-group-post-email-status', groupId, postId],
+    enabled: Boolean(inViewport && groupId && postId),
+    queryFn: async (): Promise<{
+      sent: number | null;
+      checked: number | null;
+      failed: number | null;
+      tentative: number | null;
+      count: number | null;
+    }> => {
+      const supabase = createClient();
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!inViewport || loading || data) return;
-      setLoading(true);
-
-      const { data: users, count } = await supabase
+      const {
+        data: users,
+        count,
+        error: usersError,
+      } = await supabase
         .from('workspace_user_groups_users')
         .select(
           '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
@@ -40,7 +49,9 @@ export function PostEmailStatus({
         .eq('group_id', groupId)
         .eq('workspace_users.user_group_post_checks.post_id', postId);
 
-      const { count: emailsCount } = await supabase
+      if (usersError) throw usersError;
+
+      const { count: emailsCount, error: emailsError } = await supabase
         .from('sent_emails')
         .select('*', {
           count: 'exact',
@@ -48,30 +59,28 @@ export function PostEmailStatus({
         })
         .eq('post_id', postId);
 
-      if (users) {
-        setData({
-          sent: emailsCount,
-          checked: users.filter((user) =>
-            user?.user_group_post_checks?.find((check) => check?.is_completed)
-          ).length,
-          failed: users.filter((user) =>
-            user?.user_group_post_checks?.find((check) => !check?.is_completed)
-          ).length,
-          tenative: users.filter((user) => !user.id).length,
-          count,
-        });
-      }
+      if (emailsError) throw emailsError;
 
-      setLoading(false);
-    }
+      const safeUsers = (users ?? []) as UserRow[];
 
-    fetchData();
-  }, [supabase, inViewport, postId, data, groupId, loading]);
+      return {
+        sent: emailsCount,
+        checked: safeUsers.filter((user) =>
+          user?.user_group_post_checks?.find((check) => check?.is_completed)
+        ).length,
+        failed: safeUsers.filter((user) =>
+          user?.user_group_post_checks?.find((check) => !check?.is_completed)
+        ).length,
+        tentative: safeUsers.filter((user) => !user?.id).length,
+        count,
+      };
+    },
+    staleTime: 30_000,
+  });
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div ref={ref} className="flex flex-wrap items-center gap-1">
       <div
-        ref={ref}
         className={cn(
           'flex w-fit items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 px-2 py-1 font-semibold text-dynamic-purple text-xs'
         )}
@@ -79,7 +88,6 @@ export function PostEmailStatus({
         {data?.sent ?? '-'}/{data?.count || 0} <Send className="h-4 w-4" />
       </div>
       <div
-        ref={ref}
         className={cn(
           'flex w-fit items-center gap-1 rounded border border-dynamic-green/15 bg-dynamic-green/15 px-2 py-1 font-semibold text-dynamic-green text-xs'
         )}
@@ -87,7 +95,6 @@ export function PostEmailStatus({
         {data?.checked ?? '-'} <Check className="h-4 w-4" />
       </div>
       <div
-        ref={ref}
         className={cn(
           'flex w-fit items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 px-2 py-1 font-semibold text-dynamic-red text-xs'
         )}
@@ -95,12 +102,11 @@ export function PostEmailStatus({
         {data?.failed ?? '-'} <X className="h-4 w-4" />
       </div>
       <div
-        ref={ref}
         className={cn(
           'flex w-fit items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 py-1 font-semibold text-dynamic-blue text-xs'
         )}
       >
-        {data?.tenative ?? '-'} <CircleHelp className="h-4 w-4" />
+        {data?.tentative ?? '-'} <CircleHelp className="h-4 w-4" />
       </div>
     </div>
   );
