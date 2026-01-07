@@ -10,6 +10,8 @@ export interface UseTaskDialogKeyboardShortcutsProps {
   canSave: boolean;
   isCreateMode: boolean;
   collaborationMode: boolean;
+  /** When true, disable save shortcuts (e.g., for read-only shared task view) */
+  disabled?: boolean;
   editorInstance: Editor | null;
   boardConfig: { estimation_type?: string | null } | null | undefined;
 
@@ -55,6 +57,7 @@ export function useTaskDialogKeyboardShortcuts({
   canSave,
   isCreateMode,
   collaborationMode,
+  disabled,
   editorInstance,
   boardConfig,
   slashState,
@@ -89,7 +92,8 @@ export function useTaskDialogKeyboardShortcuts({
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         // Don't allow save shortcut in edit mode with collaboration (realtime sync)
-        if (!isCreateMode && collaborationMode) {
+        // Also skip if the dialog is in disabled/read-only mode (shared tasks)
+        if ((!isCreateMode && collaborationMode) || disabled) {
           return;
         }
         if (canSave) {
@@ -111,6 +115,7 @@ export function useTaskDialogKeyboardShortcuts({
     handleSaveRef,
     handleCloseRef,
     hasUnsavedChangesRef,
+    disabled,
   ]);
 
   // Keyboard shortcuts for options (Alt-based)

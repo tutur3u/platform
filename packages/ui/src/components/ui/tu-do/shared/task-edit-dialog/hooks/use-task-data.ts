@@ -5,18 +5,19 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { useRef } from 'react';
 import { z } from 'zod';
 
 const SharedTaskContextSchema = z.object({
   boardConfig: z
     .object({
       id: z.string(),
-      name: z.string().optional(),
-      ws_id: z.string().optional(),
-      ticket_prefix: z.string().optional(),
-      estimation_type: z.string().optional(),
-      extended_estimation: z.boolean().optional(),
-      allow_zero_estimates: z.boolean().optional(),
+      name: z.string().nullish(),
+      ws_id: z.string().nullish(),
+      ticket_prefix: z.string().nullish(),
+      estimation_type: z.string().nullish(),
+      extended_estimation: z.boolean().nullish(),
+      allow_zero_estimates: z.boolean().nullish(),
     })
     .optional(),
   availableLists: z.array(z.any()).optional(), // Schemas for complex types can be added if needed, checking array is basic safety
@@ -112,7 +113,11 @@ export function useTaskData({
   // If sharedContext is provided, use pre-loaded data and skip fetches
   const hasSharedContext = !!sharedContext;
 
-  if (hasSharedContext && sharedContext) {
+  // Validate sharedContext only once when it changes (not every render)
+  // This is purely for debugging/logging purposes
+  const validationPerformed = useRef(false);
+  if (hasSharedContext && sharedContext && !validationPerformed.current) {
+    validationPerformed.current = true;
     const validation = SharedTaskContextSchema.safeParse(sharedContext);
     if (!validation.success) {
       console.error('Invalid SharedTaskContext:', validation.error);
