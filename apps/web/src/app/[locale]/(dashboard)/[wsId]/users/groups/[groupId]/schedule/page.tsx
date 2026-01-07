@@ -141,6 +141,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
               <EditEndDateDialog
                 wsId={wsId}
                 groupId={groupId}
+                currentStartDate={group.starting_date}
                 currentEndDate={group.ending_date}
               />
               <RecurringScheduleDialog
@@ -156,6 +157,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
               initialSessions={group.sessions || []}
               hideOutsideMonthDays={true}
               canUpdateSchedule={canUpdateUserGroups}
+              startingDate={group.starting_date}
               endingDate={group.ending_date}
             />
           </>

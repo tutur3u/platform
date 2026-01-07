@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { cn } from '@tuturuuu/utils/format';
@@ -41,7 +42,7 @@ export default function GroupSchedule({
     isPending,
     isError,
     data: queryData,
-  } = useQuery({
+  } = useQuery<{ data: UserGroup }>({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'schedule'],
     queryFn: () => getData(wsId, groupId),
     placeholderData: keepPreviousData,
@@ -60,6 +61,25 @@ export default function GroupSchedule({
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
     );
+
+  // Check if prev button should be disabled based on starting_date
+  const isPrevDisabled = useMemo(() => {
+    if (!data?.starting_date) return false;
+
+    const startingDate = new Date(data.starting_date);
+    const prevMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1
+    );
+
+    // Disable if prev month would be before the starting date's month
+    return (
+      prevMonth.getFullYear() < startingDate.getFullYear() ||
+      (prevMonth.getFullYear() === startingDate.getFullYear() &&
+        prevMonth.getMonth() < startingDate.getMonth())
+    );
+  }, [data?.starting_date, currentDate]);
 
   // Check if next button should be disabled based on ending_date
   const isNextDisabled = useMemo(() => {
@@ -131,7 +151,12 @@ export default function GroupSchedule({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Button size="xs" variant="secondary" onClick={handlePrev}>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={handlePrev}
+                  disabled={isPrevDisabled}
+                >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
 
@@ -199,7 +224,7 @@ async function getData(wsId: string, groupId: string) {
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
-    .select('sessions, ending_date')
+    .select('sessions, starting_date, ending_date')
     .eq('id', groupId)
     .eq('ws_id', wsId);
 

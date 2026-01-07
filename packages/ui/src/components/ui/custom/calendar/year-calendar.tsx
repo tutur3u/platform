@@ -18,6 +18,8 @@ interface YearCalendarProps {
   hideOutsideMonthDays?: boolean;
   /** Maximum date - prevents navigating to years beyond this date */
   maxDate?: Date;
+  /** Minimum date - prevents navigating to years before this date */
+  minDate?: Date;
 }
 
 export const YearCalendar: React.FC<YearCalendarProps> = ({
@@ -28,10 +30,18 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
   onDayHeaderClick,
   hideOutsideMonthDays = false,
   maxDate,
+  minDate,
 }) => {
-  const [currentYear, setCurrentYear] = useState(
-    initialDate?.getFullYear() || new Date().getFullYear()
-  );
+  const [currentYear, setCurrentYear] = useState(() => {
+    const year = initialDate?.getFullYear() || new Date().getFullYear();
+    if (minDate && year < minDate.getFullYear()) {
+      return minDate.getFullYear();
+    }
+    if (maxDate && year > maxDate.getFullYear()) {
+      return maxDate.getFullYear();
+    }
+    return year;
+  });
 
   const handlePrevYear = () => setCurrentYear(currentYear - 1);
   const handleNextYear = () => setCurrentYear(currentYear + 1);
@@ -39,6 +49,11 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
   // Determine if next year button should be disabled based on maxDate
   const isNextYearDisabled = maxDate
     ? currentYear >= maxDate.getFullYear()
+    : false;
+
+  // Determine if previous year button should be disabled based on minDate
+  const isPrevYearDisabled = minDate
+    ? currentYear <= minDate.getFullYear()
     : false;
 
   const months = Array.from(
@@ -51,7 +66,12 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border bg-foreground/5 p-4 font-bold text-xl md:text-2xl">
         <div className="flex items-center gap-1">{currentYear}</div>
         <div className="flex items-center gap-1">
-          <Button size="xs" variant="secondary" onClick={handlePrevYear}>
+          <Button
+            size="xs"
+            variant="secondary"
+            onClick={handlePrevYear}
+            disabled={isPrevYearDisabled}
+          >
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <Button

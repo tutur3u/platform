@@ -33,17 +33,26 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const formSchema = z.object({
-  ending_date: z.date({
-    message: 'End date is required',
-  }),
-});
+const formSchema = z
+  .object({
+    starting_date: z.date({
+      message: 'Start date is required',
+    }),
+    ending_date: z.date({
+      message: 'End date is required',
+    }),
+  })
+  .refine((data) => data.ending_date >= data.starting_date, {
+    message: 'End date must be after or equal to start date',
+    path: ['ending_date'],
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface EditEndDateDialogProps {
   wsId: string;
   groupId: string;
+  currentStartDate?: string | null;
   currentEndDate?: string | null;
   trigger?: React.ReactNode;
 }
@@ -51,6 +60,7 @@ interface EditEndDateDialogProps {
 export default function EditEndDateDialog({
   wsId,
   groupId,
+  currentStartDate,
   currentEndDate,
   trigger,
 }: EditEndDateDialogProps) {
@@ -62,6 +72,7 @@ export default function EditEndDateDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      starting_date: currentStartDate ? new Date(currentStartDate) : new Date(),
       ending_date: currentEndDate ? new Date(currentEndDate) : undefined,
     },
   });
@@ -71,22 +82,28 @@ export default function EditEndDateDialog({
     try {
       const supabase = createClient();
 
-      const formattedDate = dayjs(values.ending_date).format('YYYY-MM-DD');
+      const formattedStartDate = dayjs(values.starting_date).format(
+        'YYYY-MM-DD'
+      );
+      const formattedEndDate = dayjs(values.ending_date).format('YYYY-MM-DD');
 
       const { error } = await supabase
         .from('workspace_user_groups')
-        .update({ ending_date: formattedDate })
+        .update({
+          starting_date: formattedStartDate,
+          ending_date: formattedEndDate,
+        })
         .eq('ws_id', wsId)
         .eq('id', groupId);
 
       if (error) throw error;
 
-      toast.success(t('ws-user-group-schedule.end_date_updated'));
+      toast.success(t('ws-user-group-schedule.dates_updated'));
       setOpen(false);
       router.refresh();
     } catch (error) {
-      console.error('Error updating end date:', error);
-      toast.error(t('ws-user-group-schedule.failed_to_update_end_date'));
+      console.error('Error updating dates:', error);
+      toast.error(t('ws-user-group-schedule.failed_to_update_dates'));
     } finally {
       setIsSubmitting(false);
     }
@@ -105,20 +122,64 @@ export default function EditEndDateDialog({
             )}
           >
             <CalendarIcon className="h-5 w-5" />
-            {t('ws-user-group-schedule.set_end_date')}
+            {t('ws-user-group-schedule.set_dates')}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('ws-user-group-schedule.set_end_date')}</DialogTitle>
+          <DialogTitle>{t('ws-user-group-schedule.set_dates')}</DialogTitle>
           <DialogDescription>
-            {t('ws-user-group-schedule.set_end_date_description')}
+            {t('ws-user-group-schedule.set_dates_description')}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="starting_date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>
+                    {t('ws-user-group-schedule.start_date')}
+                  </FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value ? (
+                            dayjs(field.value).format('DD/MM/YYYY')
+                          ) : (
+                            <span>{t('common.pick_a_date')}</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    {t('ws-user-group-schedule.start_date_help')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="ending_date"
@@ -136,7 +197,7 @@ export default function EditEndDateDialog({
                           )}
                         >
                           {field.value ? (
-                            dayjs(field.value).format('DD MMMM YYYY')
+                            dayjs(field.value).format('DD/MM/YYYY')
                           ) : (
                             <span>{t('common.pick_a_date')}</span>
                           )}
@@ -150,7 +211,8 @@ export default function EditEndDateDialog({
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                          form.getValues('starting_date') &&
+                          date < form.getValues('starting_date')
                         }
                         initialFocus
                       />
