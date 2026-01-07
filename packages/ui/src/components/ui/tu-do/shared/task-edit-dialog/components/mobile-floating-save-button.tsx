@@ -7,6 +7,7 @@ interface MobileFloatingSaveButtonProps {
   isLoading: boolean;
   canSave: boolean;
   handleSave: () => void;
+  disabled?: boolean;
 }
 
 export function MobileFloatingSaveButton({
@@ -15,9 +16,10 @@ export function MobileFloatingSaveButton({
   isLoading,
   canSave,
   handleSave,
+  disabled = false,
 }: MobileFloatingSaveButtonProps) {
-  // Hidden in edit mode when collaboration is enabled
-  if (!isCreateMode && collaborationMode) {
+  // Hidden in edit mode when collaboration is enabled or in read-only mode
+  if ((!isCreateMode && collaborationMode) || disabled) {
     return null;
   }
 

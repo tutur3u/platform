@@ -13,6 +13,7 @@ import type React from 'react';
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
 import { clearDraft } from '../utils';
+import { useUpdateSharedTask } from './use-update-shared-task';
 
 const supabase = createClient();
 
@@ -23,6 +24,10 @@ export interface UseTaskSaveProps {
   isCreateMode: boolean;
   collaborationMode: boolean;
   isPersonalWorkspace: boolean;
+  /** Present when opened via /shared/task/[shareCode] */
+  shareCode?: string;
+  /** Permission returned from shared-task API */
+  sharedPermission?: 'view' | 'edit';
   parentTaskId?: string;
   pendingRelationship?: PendingRelationship;
   draftStorageKey: string;
@@ -116,6 +121,8 @@ export function useTaskSave({
   isCreateMode,
   collaborationMode,
   isPersonalWorkspace,
+  shareCode,
+  sharedPermission,
   parentTaskId,
   pendingRelationship,
   draftStorageKey,
@@ -158,10 +165,21 @@ export function useTaskSave({
 }: UseTaskSaveProps): UseTaskSaveReturn {
   const { toast } = useToast();
   const updateTaskMutation = useUpdateTask(boardId);
+  const updateSharedTaskMutation = useUpdateSharedTask();
   const handleSaveRef = useRef<() => void>(() => {});
 
   const handleSave = useCallback(async () => {
     if (!name?.trim()) return;
+
+    // Shared task links may be view-only.
+    if (!isCreateMode && shareCode && sharedPermission !== 'edit') {
+      toast({
+        title: 'Read-only access',
+        description: 'You do not have permission to edit this task.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Clear any pending name update
     if (nameUpdateTimerRef.current) {
@@ -249,6 +267,8 @@ export function useTaskSave({
       collaborationMode,
       flushEditorPendingRef,
       updateTaskMutation,
+      updateSharedTaskMutation,
+      shareCode,
       toast,
       onUpdate,
       onClose,
@@ -276,6 +296,7 @@ export function useTaskSave({
     onClose,
     taskId,
     updateTaskMutation,
+    updateSharedTaskMutation,
     collaborationMode,
     setName,
     setDescription,
@@ -302,6 +323,8 @@ export function useTaskSave({
     flushEditorPendingRef,
     setIsLoading,
     setIsSaving,
+    shareCode,
+    sharedPermission,
   ]);
 
   // Keep ref updated
@@ -673,6 +696,8 @@ async function handleUpdateTask({
   collaborationMode,
   flushEditorPendingRef,
   updateTaskMutation,
+  updateSharedTaskMutation,
+  shareCode,
   toast,
   onUpdate,
   onClose,
@@ -692,6 +717,8 @@ async function handleUpdateTask({
     (() => JSONContent | null) | undefined
   >;
   updateTaskMutation: ReturnType<typeof useUpdateTask>;
+  updateSharedTaskMutation: ReturnType<typeof useUpdateSharedTask>;
+  shareCode?: string;
   toast: ReturnType<typeof useToast>['toast'];
   onUpdate: () => void;
   onClose: () => void;
@@ -719,7 +746,36 @@ async function handleUpdateTask({
   }
 
   if (taskId) {
-    onClose();
+    // Shared task editing (no workspace membership required): use shared endpoint.
+    if (shareCode) {
+      updateSharedTaskMutation.mutate(
+        { shareCode, updates: taskUpdates },
+        {
+          onSuccess: async () => {
+            toast({
+              title: 'Task updated',
+              description: 'The task has been successfully updated.',
+            });
+            onUpdate();
+            onClose();
+          },
+          onError: (error: Error) => {
+            console.error('Error updating shared task:', error);
+            toast({
+              title: 'Error updating task',
+              description: error.message || 'Please try again later',
+              variant: 'destructive',
+            });
+          },
+          onSettled: () => {
+            setIsLoading(false);
+            setIsSaving(false);
+          },
+        }
+      );
+      return;
+    }
+
     updateTaskMutation.mutate(
       { taskId, updates: taskUpdates },
       {
@@ -729,6 +785,7 @@ async function handleUpdateTask({
             description: 'The task has been successfully updated.',
           });
           onUpdate();
+          onClose();
         },
         onError: (error: Error) => {
           console.error('Error updating task:', error);

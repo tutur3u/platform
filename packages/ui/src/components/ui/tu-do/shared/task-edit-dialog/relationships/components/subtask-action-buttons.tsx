@@ -24,6 +24,7 @@ export function SubtaskActionButtons({
   onAddSubtask,
   onAddExistingAsSubtask,
   isSaving,
+  disabled = false,
 }: SubtaskActionButtonsProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const hasBothOptions = onAddSubtask && onAddExistingAsSubtask;
@@ -37,7 +38,7 @@ export function SubtaskActionButtons({
             <Button
               variant="outline"
               className="w-full justify-between gap-2 text-muted-foreground"
-              disabled={isSaving}
+              disabled={isSaving || disabled}
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-dynamic-purple" />
@@ -49,7 +50,7 @@ export function SubtaskActionButtons({
           <DropdownMenuContent align="start" className="w-full">
             <DropdownMenuItem
               onClick={onAddSubtask}
-              disabled={isSaving}
+              disabled={isSaving || disabled}
               className="cursor-pointer"
             >
               <Sparkles className="mr-2 h-4 w-4 text-dynamic-purple" />
@@ -57,7 +58,7 @@ export function SubtaskActionButtons({
             </DropdownMenuItem>
             <PopoverTrigger asChild>
               <DropdownMenuItem
-                disabled={isSaving}
+                disabled={isSaving || disabled}
                 className="cursor-pointer"
                 onSelect={(e) => e.preventDefault()}
               >
@@ -100,7 +101,7 @@ export function SubtaskActionButtons({
         variant="outline"
         className="w-full justify-start gap-2 text-muted-foreground"
         onClick={onAddSubtask}
-        disabled={isSaving}
+        disabled={isSaving || disabled}
       >
         <Sparkles className="h-4 w-4 text-dynamic-purple" />
         Create new sub-task
@@ -123,6 +124,7 @@ export function SubtaskActionButtons({
         placeholder="Add existing task as sub-task..."
         emptyText="No available tasks"
         isSaving={isSaving}
+        disabled={disabled}
       />
     );
   }

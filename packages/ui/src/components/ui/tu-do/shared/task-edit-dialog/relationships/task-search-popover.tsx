@@ -31,6 +31,7 @@ export function TaskSearchPopoverContent({
   isSaving,
   searchQuery: externalSearchQuery,
   onSearchQueryChange,
+  disabled = false,
 }: TaskSearchPopoverContentProps) {
   const [internalSearchQuery, setInternalSearchQuery] = React.useState('');
   const [isCreating, setIsCreating] = React.useState(false);
@@ -79,6 +80,7 @@ export function TaskSearchPopoverContent({
         value={searchQuery}
         onValueChange={setSearchQuery}
         className="h-9"
+        disabled={disabled}
       />
       <CommandList className="max-h-[250px]">
         {tasksLoading ? (
@@ -93,7 +95,7 @@ export function TaskSearchPopoverContent({
                 <CommandItem
                   value="create-new"
                   onSelect={handleCreateNew}
-                  disabled={isSaving || isCreating}
+                  disabled={isSaving || isCreating || disabled}
                   className="flex cursor-pointer items-center gap-2 border-b"
                 >
                   {isCreating ? (
@@ -137,7 +139,7 @@ export function TaskSearchPopoverContent({
                     key={task.id}
                     value={task.id}
                     onSelect={() => onSelect(task)}
-                    disabled={isSaving}
+                    disabled={isSaving || disabled}
                     className="flex cursor-pointer items-center gap-2"
                   >
                     <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -178,6 +180,7 @@ export function TaskSearchPopover({
   placeholder = '',
   emptyText,
   isSaving,
+  disabled = false,
 }: TaskSearchPopoverProps) {
   return (
     <Popover open={open} onOpenChange={onOpenChange} modal>
@@ -188,7 +191,7 @@ export function TaskSearchPopover({
             'justify-start gap-2 text-muted-foreground',
             placeholder ? 'w-full' : ''
           )}
-          disabled={isSaving}
+          disabled={isSaving || disabled}
         >
           <Plus className="h-4 w-4" />
           {placeholder && <span>{placeholder}</span>}
@@ -208,6 +211,7 @@ export function TaskSearchPopover({
           onCreateNew={onCreateNew}
           emptyText={emptyText}
           isSaving={isSaving}
+          disabled={disabled}
         />
       </PopoverContent>
     </Popover>

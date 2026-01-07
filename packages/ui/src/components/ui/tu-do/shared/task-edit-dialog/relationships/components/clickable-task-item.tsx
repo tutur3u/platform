@@ -18,6 +18,7 @@ export function ClickableTaskItem({
   isSaving,
   isRemoving,
   showRemove = true,
+  disabled = false,
 }: ClickableTaskItemProps) {
   return (
     <div className="group flex items-center justify-between gap-2 rounded-lg border bg-background p-2.5 transition-colors hover:bg-muted/50">
@@ -58,7 +59,7 @@ export function ClickableTaskItem({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      {showRemove && onRemove && (
+      {showRemove && onRemove && !disabled && (
         <Button
           variant="ghost"
           size="icon"

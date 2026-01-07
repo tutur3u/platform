@@ -24,6 +24,7 @@ export function DependenciesSection({
   onNavigateToTask,
   onAddBlockingTaskDialog,
   onAddBlockedByTaskDialog,
+  disabled,
 }: DependenciesSectionProps) {
   const [subTab, setSubTab] = React.useState<DependencySubTab>('blocks');
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -81,6 +82,7 @@ export function DependenciesSection({
                 onRemove={() => handleRemove(task.id)}
                 isSaving={isSaving}
                 isRemoving={isSaving && savingTaskId === task.id}
+                disabled={disabled}
               />
             ))}
           </div>
@@ -113,6 +115,7 @@ export function DependenciesSection({
             : 'Add existing blocking task'
         }
         emptyText="No available tasks"
+        disabled={disabled}
       />
 
       <p className="text-muted-foreground text-xs">

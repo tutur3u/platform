@@ -123,6 +123,7 @@ interface TaskPropertiesSectionProps {
   onAutoScheduleChange: (autoSchedule: boolean) => void;
   onSaveSchedulingSettings: (settings: SchedulingSettings) => Promise<boolean>;
   schedulingSaving: boolean;
+  disabled?: boolean;
 }
 
 // Calendar hours type options
@@ -308,6 +309,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onAutoScheduleChange,
     onSaveSchedulingSettings,
     schedulingSaving,
+    disabled = false,
   } = props;
 
   const t = useTranslations();
@@ -686,18 +688,18 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   variant="secondary"
                   className={cn(
                     'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
-                    hasUnsavedSchedulingChanges
+                    !disabled && hasUnsavedSchedulingChanges
                       ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/15 text-dynamic-yellow'
                       : 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal'
                   )}
                 >
-                  {hasUnsavedSchedulingChanges ? (
+                  {!disabled && hasUnsavedSchedulingChanges ? (
                     <AlertCircle className="h-2.5 w-2.5" />
                   ) : (
                     <CalendarClock className="h-2.5 w-2.5" />
                   )}
                   {formatDuration(totalMinutes, t)}
-                  {hasUnsavedSchedulingChanges && (
+                  {!disabled && hasUnsavedSchedulingChanges && (
                     <span className="text-[8px] opacity-75">
                       {t('ws-task-boards.dialog.unsaved')}
                     </span>
@@ -721,11 +723,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     priority
                       ? PRIORITY_BADGE_COLORS[priority]
-                      : 'border-input bg-background text-foreground hover:bg-muted'
+                      : 'border-input bg-background text-foreground hover:bg-muted',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   {priority ? (
@@ -807,11 +811,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     selectedListId
                       ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:border-dynamic-green/50 hover:bg-dynamic-green/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   <ListTodo className="h-3.5 w-3.5" />
@@ -867,11 +873,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     startDate || endDate
                       ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   <Calendar className="h-3.5 w-3.5" />
@@ -1004,11 +1012,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     estimationPoints != null
                       ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:border-dynamic-purple/50 hover:bg-dynamic-purple/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   <Timer className="h-3.5 w-3.5" />
@@ -1087,11 +1097,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     selectedLabels.length > 0
                       ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:border-dynamic-indigo/50 hover:bg-dynamic-indigo/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   <Tag className="h-3.5 w-3.5" />
@@ -1133,7 +1145,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                               <Badge
                                 key={label.id}
                                 variant="secondary"
-                                className="h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80"
+                                className={cn(
+                                  'h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80',
+                                  disabled && 'pointer-events-none'
+                                )}
                                 style={
                                   styles
                                     ? {
@@ -1143,10 +1158,12 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                       }
                                     : undefined
                                 }
-                                onClick={() => onLabelToggle(label)}
+                                onClick={() =>
+                                  !disabled && onLabelToggle(label)
+                                }
                               >
                                 {label.name}
-                                <X className="h-2.5 w-2.5" />
+                                {!disabled && <X className="h-2.5 w-2.5" />}
                               </Badge>
                             );
                           })}
@@ -1212,11 +1229,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     selectedProjects.length > 0
                       ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:border-dynamic-sky/50 hover:bg-dynamic-sky/20'
-                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   <Box className="h-3.5 w-3.5" />
@@ -1254,13 +1273,20 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             <Badge
                               key={project.id}
                               variant="secondary"
-                              className="item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
-                              onClick={() => onProjectToggle(project)}
+                              className={cn(
+                                'item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80',
+                                disabled && 'pointer-events-none'
+                              )}
+                              onClick={() =>
+                                !disabled && onProjectToggle(project)
+                              }
                             >
                               <span className="wrap-break-word">
                                 {project.name}
                               </span>
-                              <X className="h-2.5 w-2.5 shrink-0" />
+                              {!disabled && (
+                                <X className="h-2.5 w-2.5 shrink-0" />
+                              )}
                             </Badge>
                           ))}
                         </div>
@@ -1319,11 +1345,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 <PopoverTrigger asChild>
                   <button
                     type="button"
+                    disabled={disabled}
                     className={cn(
                       'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                       selectedAssignees.length > 0
                         ? 'border-dynamic-cyan/30 bg-dynamic-cyan/15 text-dynamic-cyan hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/20'
-                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                      disabled && 'cursor-not-allowed opacity-50'
                     )}
                   >
                     <Users className="h-3.5 w-3.5" />
@@ -1357,13 +1385,18 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   `assignee-${index}`
                                 }
                                 variant="secondary"
-                                className="h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80"
-                                onClick={() => onAssigneeToggle(assignee)}
+                                className={cn(
+                                  'h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80',
+                                  disabled && 'pointer-events-none'
+                                )}
+                                onClick={() =>
+                                  !disabled && onAssigneeToggle(assignee)
+                                }
                               >
                                 <UserAvatar user={assignee} size="xs" />
                                 {assignee.display_name ||
                                   t('ws-task-boards.dialog.unknown_user')}
-                                <X className="h-2.5 w-2.5" />
+                                {!disabled && <X className="h-2.5 w-2.5" />}
                               </Badge>
                             ))}
                           </div>
@@ -1421,13 +1454,15 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                     hasUnsavedSchedulingChanges
                       ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/10 text-dynamic-yellow hover:border-dynamic-yellow/70 hover:bg-dynamic-yellow/15'
                       : totalDuration
                         ? 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal hover:border-dynamic-teal/50 hover:bg-dynamic-teal/20'
-                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+                    disabled && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   {hasUnsavedSchedulingChanges ? (
@@ -1440,7 +1475,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       ? formatDuration(totalMinutes, t)
                       : t('ws-task-boards.dialog.schedule')}
                   </span>
-                  {hasUnsavedSchedulingChanges && (
+                  {!disabled && hasUnsavedSchedulingChanges && (
                     <span className="text-[10px] opacity-75">
                       {t('ws-task-boards.dialog.unsaved')}
                     </span>

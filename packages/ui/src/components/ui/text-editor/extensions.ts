@@ -67,7 +67,8 @@ export function getEditorExtensions({
   onImageUpload,
   onVideoUpload,
   mentionTranslations,
-}: EditorExtensionsOptions = {}): Extensions {
+  readOnly = false,
+}: EditorExtensionsOptions & { readOnly?: boolean } = {}): Extensions {
   return [
     ...(doc
       ? [
@@ -164,17 +165,27 @@ export function getEditorExtensions({
     Mention.configure({
       translations: mentionTranslations,
     }),
-    DraggableListItem,
-    DraggableTaskItem.configure({
-      nested: true,
-    }),
+    readOnly
+      ? DraggableListItem.extend({
+          draggable: false,
+        })
+      : DraggableListItem,
+    readOnly
+      ? DraggableTaskItem.extend({
+          draggable: false,
+        }).configure({
+          nested: true,
+        })
+      : DraggableTaskItem.configure({
+          nested: true,
+        }),
     TaskList,
     ListConverter,
-    ListItemDrag,
+    ...(readOnly ? [] : [ListItemDrag]),
     Table.configure({
-      resizable: true,
-      lastColumnResizable: true,
-      allowTableNodeSelection: true,
+      resizable: !readOnly,
+      lastColumnResizable: !readOnly,
+      allowTableNodeSelection: !readOnly,
       HTMLAttributes: {
         class:
           'border-collapse my-6 w-full overflow-hidden rounded-lg border border-dynamic-border',
