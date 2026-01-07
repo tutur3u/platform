@@ -1,12 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from '@tuturuuu/icons';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
-import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
@@ -30,6 +28,7 @@ import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
+import { WorkspaceSelect } from './workspace-select';
 
 interface StructureProps {
   wsId: string;
@@ -486,7 +485,6 @@ export function Structure({
           t={t}
           wsId={wsId}
           hideLeading={isCollapsed}
-          localUseQuery={useQuery}
           disableCreateNewWorkspace={disableCreateNewWorkspace}
         />
       </Suspense>

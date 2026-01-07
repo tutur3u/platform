@@ -32,7 +32,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
   const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(id);
+  const workspace = await getWorkspace(id, { useAdmin: true });
   const wsId = workspace.id;
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
