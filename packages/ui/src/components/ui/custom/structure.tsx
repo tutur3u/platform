@@ -109,7 +109,7 @@ export function Structure({
             >
               <div
                 className={cn(
-                  'flex h-[52px] w-full items-center md:px-2',
+                  'flex h-13 w-full items-center md:px-2',
                   isCollapsed ? 'justify-center' : ''
                 )}
               >

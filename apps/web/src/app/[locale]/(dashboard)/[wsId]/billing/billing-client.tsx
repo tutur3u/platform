@@ -2,17 +2,19 @@
 
 import {
   AlertCircle,
-  ArrowUpCircle,
   Calendar,
   CheckCircle,
   Clock,
-  CreditCard,
+  Crown,
   Shield,
   Sparkles,
   X,
+  Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -20,7 +22,6 @@ import { centToDollar } from '@/utils/price-helper';
 import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
-// Define types for the props we're passing from the server component
 export interface Plan {
   id: string;
   productId: string;
@@ -42,6 +43,14 @@ interface BillingClientProps {
   isCreator: boolean;
 }
 
+function getSimplePlanName(name: string): string {
+  return name
+    .replace(/^Tuturuuu\s+Workspace\s+/i, '')
+    .replace(/^Tuturuuu\s+/i, '')
+    .replace(/\s+(Monthly|Yearly|Annual)$/i, '')
+    .trim();
+}
+
 export function BillingClient({
   currentPlan,
   products,
@@ -53,248 +62,201 @@ export function BillingClient({
   const t = useTranslations('billing');
   const router = useRouter();
 
+  const isPaidPlan = currentPlan.price > 0;
+  const isProPlan = currentPlan.name.toLowerCase().includes('pro');
+  const isPlusPlan = currentPlan.name.toLowerCase().includes('plus');
+  const simplePlanName = getSimplePlanName(currentPlan.name);
+
+  // Dynamic color configuration per tier
+  const tierConfig = isProPlan
+    ? {
+        icon: Crown,
+        color: 'text-dynamic-purple',
+        bgColor: 'bg-dynamic-purple/10',
+        borderColor: 'border-dynamic-purple/30',
+        gradient: 'from-dynamic-purple/20 via-dynamic-purple/5 to-transparent',
+      }
+    : isPlusPlan
+      ? {
+          icon: Zap,
+          color: 'text-dynamic-green',
+          bgColor: 'bg-dynamic-green/10',
+          borderColor: 'border-dynamic-green/30',
+          gradient: 'from-dynamic-green/20 via-dynamic-green/5 to-transparent',
+        }
+      : {
+          icon: Shield,
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted',
+          borderColor: 'border-border',
+          gradient: 'from-muted/50 via-muted/20 to-transparent',
+        };
+
+  const TierIcon = tierConfig.icon;
+
   const handleCancelSubscription = async (subscriptionId: string) => {
     if (!subscriptionId) return;
-
     const response = await fetch(
       `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }
     );
-
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Failed to cancel subscription');
     }
-
     router.refresh();
   };
 
   const handleContinueSubscription = async (subscriptionId: string) => {
     if (!subscriptionId) return;
-
     const response = await fetch(
       `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      { method: 'PATCH', headers: { 'Content-Type': 'application/json' } }
     );
-
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Failed to continue subscription');
     }
-
     router.refresh();
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      {/* Header Section with Gradient */}
-      <div className="mb-2 flex items-center gap-2">
-        <CreditCard className="h-6 w-6 text-dynamic-blue" />
-        <h1 className="font-bold text-2xl tracking-tight">{t('billing')}</h1>
-      </div>
-      <p className="text-muted-foreground">{t('billing-info')}</p>
-
-      {/* Current Plan Card */}
-      <div
-        className={
-          'rounded-2xl border-2 border-border bg-background shadow-xl transition-all duration-300'
-        }
-      >
-        <div className="p-8">
-          {/* Cancellation Warning Banner */}
-          {currentPlan.cancelAtPeriodEnd && (
-            <div className="mb-8 flex items-start gap-4 rounded-xl border-2 border-dynamic-orange bg-dynamic-orange/10 p-5 shadow-lg backdrop-blur-sm dark:bg-dynamic-orange/20">
-              <div className="rounded-full bg-dynamic-orange p-2">
-                <AlertCircle className="h-5 w-5 text-foreground" />
+    <>
+      {/* Hero Section */}
+      <div className="mb-8 overflow-hidden rounded-2xl border border-border/50 bg-card">
+        <div className={cn('bg-linear-to-r p-6 md:p-8', tierConfig.gradient)}>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            {/* Plan Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    'flex h-12 w-12 items-center justify-center rounded-xl',
+                    tierConfig.bgColor
+                  )}
+                >
+                  <TierIcon className={cn('h-6 w-6', tierConfig.color)} />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-sm">
+                    {t('current-plan')}
+                  </p>
+                  <h1 className="font-bold text-2xl tracking-tight">
+                    {simplePlanName}
+                  </h1>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'ml-2 border',
+                    tierConfig.borderColor,
+                    tierConfig.color
+                  )}
+                >
+                  <CheckCircle className="mr-1 h-3 w-3" />
+                  {t('status-active')}
+                </Badge>
               </div>
-              <div className="flex-1">
-                <h3 className="mb-1.5 font-bold text-dynamic-orange">
-                  Subscription Ending Soon
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Your subscription will end on{' '}
-                  <span className="font-semibold text-dynamic-orange">
-                    {currentPlan.nextBillingDate}
+
+              {/* Pricing */}
+              <div className="flex items-baseline gap-1">
+                <span className="font-black text-4xl tracking-tight">
+                  ${centToDollar(currentPlan.price)}
+                </span>
+                {currentPlan.billingCycle && (
+                  <span className="text-lg text-muted-foreground">
+                    {currentPlan.billingCycle === 'month'
+                      ? t('per-month')
+                      : t('per-year')}
                   </span>
-                  . You'll lose access to premium features after this date.
+                )}
+              </div>
+
+              {/* Features */}
+              {currentPlan.features && currentPlan.features.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {currentPlan.features.map((feature, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-1.5 rounded-full bg-background/50 px-3 py-1.5 text-sm backdrop-blur-sm"
+                    >
+                      <CheckCircle
+                        className={cn('h-3.5 w-3.5', tierConfig.color)}
+                      />
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button onClick={() => setShowUpgradeOptions(true)} size="lg">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {t('upgrade-plan')}
+                </Button>
+                {isPaidPlan && isCreator && (
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => setShowConfirmationDialog(true)}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    {currentPlan.cancelAtPeriodEnd
+                      ? t('continue-subscription')
+                      : t('cancel-subscription')}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Billing Stats */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:flex-col lg:gap-4">
+              <div className="rounded-xl border bg-background/80 p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="font-medium text-xs uppercase tracking-wider">
+                    {t('start-date')}
+                  </span>
+                </div>
+                <p className="mt-1 font-semibold text-lg">
+                  {currentPlan.startDate}
+                </p>
+              </div>
+
+              <div className="rounded-xl border bg-background/80 p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-medium text-xs uppercase tracking-wider">
+                    {t('next-billing')}
+                  </span>
+                </div>
+                <p className="mt-1 font-semibold text-lg">
+                  {currentPlan.nextBillingDate}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Cancellation Warning */}
+          {currentPlan.cancelAtPeriodEnd && (
+            <div className="mt-6 flex items-center gap-3 rounded-xl border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4">
+              <AlertCircle className="h-5 w-5 shrink-0 text-dynamic-yellow" />
+              <div>
+                <p className="font-semibold text-dynamic-yellow">
+                  {t('subscription-ending-soon')}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {t('subscription-ends-on')} {currentPlan.nextBillingDate}
                 </p>
               </div>
             </div>
           )}
-
-          {/* Header with Status Badge */}
-          <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex-1">
-              <div className="mb-2">
-                <h2 className="font-bold text-xl tracking-tight">
-                  {t('current-plan')}
-                </h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                {t('current-plan-details')}
-              </p>
-            </div>
-          </div>
-
-          {/* Plan Name and Pricing - Hero Style */}
-          <div className="mb-8 rounded-xl border border-border/50 bg-linear-to-br from-muted/50 to-background p-6 shadow-inner">
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
-                <p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                  Your Plan
-                </p>
-                <h3 className="mb-2 font-black text-2xl tracking-tight">
-                  {currentPlan.name}
-                </h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-black text-3xl text-primary">
-                    {`$${centToDollar(currentPlan.price)}`}
-                  </span>
-                  {currentPlan.billingCycle && (
-                    <span className="text-muted-foreground">
-                      /{currentPlan.billingCycle}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="rounded-full bg-primary/10 p-3">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </div>
-
-          {/* Billing Information Cards */}
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-muted/30 p-4 shadow-sm transition-all hover:border-border hover:shadow-md">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="rounded-lg bg-primary/10 p-1.5">
-                  <Calendar className="h-4 w-4 text-primary" />
-                </div>
-                <p className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                  {t('start-date')}
-                </p>
-              </div>
-              <p className="font-bold text-lg">{currentPlan.startDate}</p>
-            </div>
-
-            <div
-              className={`group relative overflow-hidden rounded-xl border p-4 shadow-sm transition-all ${
-                currentPlan.cancelAtPeriodEnd
-                  ? 'border-dynamic-orange/50 bg-dynamic-orange/10 hover:shadow-lg'
-                  : 'border-border/50 bg-muted/30 hover:border-border hover:shadow-md'
-              }`}
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <div
-                  className={`rounded-lg p-1.5 ${
-                    currentPlan.cancelAtPeriodEnd
-                      ? 'bg-dynamic-orange/20'
-                      : 'bg-primary/10'
-                  }`}
-                >
-                  <Clock
-                    className={`h-4 w-4 ${
-                      currentPlan.cancelAtPeriodEnd
-                        ? 'text-dynamic-orange'
-                        : 'text-primary'
-                    }`}
-                  />
-                </div>
-                <p
-                  className={`font-bold text-xs uppercase tracking-wider ${
-                    currentPlan.cancelAtPeriodEnd
-                      ? 'text-dynamic-orange'
-                      : 'text-muted-foreground'
-                  }`}
-                >
-                  {currentPlan.cancelAtPeriodEnd
-                    ? 'Ends on'
-                    : t('next-billing')}
-                </p>
-              </div>
-              <p
-                className={`font-bold text-lg ${
-                  currentPlan.cancelAtPeriodEnd ? 'text-dynamic-orange' : ''
-                }`}
-              >
-                {currentPlan.nextBillingDate}
-              </p>
-            </div>
-          </div>
-
-          {/* Plan Features */}
-          <div className="mb-8 rounded-xl border border-border/50 bg-muted/20 p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <h4 className="font-bold">Plan Features</h4>
-            </div>
-            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {currentPlan.features?.map((feature, index) => (
-                <li
-                  key={index}
-                  className="group flex items-start gap-2 rounded-lg p-2 transition-colors hover:bg-primary/5"
-                >
-                  <div className="rounded-full bg-primary/10 p-1 transition-colors group-hover:bg-primary/20">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
-                  </div>
-                  <span className="flex-1 text-sm leading-relaxed">
-                    {feature}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-4">
-            <Button
-              disabled={!isCreator}
-              onClick={() => setShowUpgradeOptions(true)}
-              className="flex-1 shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:flex-none"
-              size="lg"
-            >
-              <ArrowUpCircle className="mr-2 h-5 w-5" />
-              {t('upgrade-plan')}
-            </Button>
-            {currentPlan.id && (
-              <Button
-                variant="outline"
-                size="lg"
-                className={`border-2 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
-                  currentPlan.cancelAtPeriodEnd
-                    ? 'border-dynamic-green text-dynamic-green hover:bg-dynamic-green/10'
-                    : 'border-dynamic-red text-dynamic-red hover:bg-dynamic-red/10'
-                }`}
-                onClick={() => setShowConfirmationDialog(true)}
-              >
-                {currentPlan.cancelAtPeriodEnd ? (
-                  <>
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Continue Subscription
-                  </>
-                ) : (
-                  <>
-                    <X className="mr-2 h-5 w-5" />
-                    Cancel Subscription
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* Upgrade Options Dialog */}
+      {/* Dialogs */}
       <PlanList
         currentPlan={currentPlan}
         products={products}
@@ -303,19 +265,18 @@ export function BillingClient({
         onOpenChange={setShowUpgradeOptions}
       />
 
-      {/* Subscription Confirmation Dialog */}
-      {currentPlan.id && (
-        <SubscriptionConfirmationDialog
-          open={showConfirmationDialog}
-          onOpenChange={setShowConfirmationDialog}
-          currentPlan={currentPlan}
-          onConfirm={
-            currentPlan.cancelAtPeriodEnd
-              ? handleContinueSubscription
-              : handleCancelSubscription
+      <SubscriptionConfirmationDialog
+        open={showConfirmationDialog}
+        onOpenChange={setShowConfirmationDialog}
+        currentPlan={{ ...currentPlan, name: simplePlanName }}
+        onConfirm={async () => {
+          if (currentPlan.cancelAtPeriodEnd) {
+            await handleContinueSubscription(currentPlan.polarSubscriptionId);
+          } else {
+            await handleCancelSubscription(currentPlan.polarSubscriptionId);
           }
-        />
-      )}
-    </div>
+        }}
+      />
+    </>
   );
 }

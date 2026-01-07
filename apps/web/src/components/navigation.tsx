@@ -26,7 +26,7 @@ export interface NavLink {
   children?: (NavLink | null)[];
   aliases?: string[];
   requiredWorkspaceTier?: {
-    requiredTier: WorkspaceProductTier;
+    requiredTier: WorkspaceProductTier | WorkspaceProductTier[];
     alwaysShow?: boolean;
   };
   requireRootMember?: boolean;

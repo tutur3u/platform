@@ -35,6 +35,102 @@ const logWorkspaceError = (
 };
 
 /**
+ * Type for workspace subscription data from Supabase queries
+ */
+interface WorkspaceSubscriptionData {
+  created_at: string;
+  status?: string | null;
+  workspace_subscription_products?: {
+    tier?: WorkspaceProductTier | null;
+  } | null;
+}
+
+/**
+ * Extracts the tier from workspace subscription data.
+ * Filters for active subscriptions and returns the tier from the most recent one.
+ *
+ * @param subscriptions - Array of workspace subscription data from Supabase
+ * @returns The tier from the most recent active subscription, or null if none found
+ */
+export function extractTierFromSubscriptions(
+  subscriptions: (WorkspaceSubscriptionData | null)[] | null | undefined
+): WorkspaceProductTier | null {
+  if (!subscriptions) return null;
+
+  const activeSubscriptions = subscriptions
+    .filter(
+      (sub): sub is WorkspaceSubscriptionData =>
+        sub !== null && sub?.status === 'active'
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+  return (
+    activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null
+  );
+}
+
+/**
+ * Gets the workspace tier for a user by their creator ID.
+ * Useful for API routes to check tier requirements without full workspace context.
+ *
+ * @param creatorId - The user ID of the workspace creator
+ * @param options - Optional configuration
+ * @returns The workspace tier or 'FREE' as default
+ */
+export async function getWorkspaceTierByCreator(
+  creatorId: string,
+  options: { useAdmin?: boolean } = {}
+): Promise<WorkspaceProductTier> {
+  const supabase = await (options.useAdmin
+    ? createAdminClient()
+    : createClient());
+
+  const { data } = await supabase
+    .from('workspaces')
+    .select(
+      'id, workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
+    )
+    .eq('creator_id', creatorId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return extractTierFromSubscriptions(data?.workspace_subscriptions) || 'FREE';
+}
+
+/**
+ * Gets the workspace tier by workspace ID.
+ * Useful for API routes to check tier requirements.
+ *
+ * @param wsId - The workspace ID to check
+ * @param options - Optional configuration
+ * @returns The workspace tier or 'FREE' as default
+ */
+export async function getWorkspaceTier(
+  wsId: string,
+  options: { useAdmin?: boolean } = {}
+): Promise<WorkspaceProductTier> {
+  const supabase = await (options.useAdmin
+    ? createAdminClient()
+    : createClient());
+
+  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  const { data } = await supabase
+    .from('workspaces')
+    .select(
+      'id, workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
+    )
+    .eq('id', resolvedWorkspaceId)
+    .maybeSingle();
+
+  return extractTierFromSubscriptions(data?.workspace_subscriptions) || 'FREE';
+}
+
+/**
  * Fetches a workspace by ID or the 'PERSONAL' keyword.
  *
  * @param id - Workspace ID (UUID) or 'PERSONAL' to fetch the current user's personal workspace.

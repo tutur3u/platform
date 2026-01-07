@@ -5,7 +5,9 @@ import {
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
+import { isFeatureAvailable } from '@/lib/feature-tiers';
 
 export const maxDuration = 30;
 
@@ -134,7 +136,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Execute the tool based on function name
+    // 4. Check tier requirement for voice assistant capability
+    const currentTier = await getWorkspaceTier(normalizedWsId, {
+      useAdmin: true,
+    });
+
+    if (!isFeatureAvailable('voice_assistant', currentTier)) {
+      return Response.json(
+        { error: 'Voice Assistant requires PRO tier or higher' },
+        { status: 403 }
+      );
+    }
+
+    // 5. Execute the tool based on function name
     let result: unknown;
 
     switch (functionName) {
