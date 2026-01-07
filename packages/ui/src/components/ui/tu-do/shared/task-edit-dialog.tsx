@@ -148,9 +148,7 @@ export function TaskEditDialog({
 
   // Disable editing if we are in a shared link with view-only permissions
   // Defensively disable if shareCode is present but permission is not 'edit'
-  const disabled = shareCode
-    ? sharedPermission !== 'edit'
-    : sharedPermission === 'view';
+  const disabled = !!shareCode && sharedPermission !== 'edit';
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);

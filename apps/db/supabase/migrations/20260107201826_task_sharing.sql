@@ -164,7 +164,7 @@ FOR SELECT
 TO authenticated
 USING (
   shared_with_user_id = auth.uid()
-  OR shared_with_email = (SELECT email FROM user_private_details WHERE user_id = auth.uid())
+  OR LOWER(shared_with_email) = LOWER((SELECT email FROM user_private_details WHERE user_id = auth.uid()))
 );
 
 -- INSERT: Workspace members can create shares if sharing is enabled
@@ -206,11 +206,7 @@ USING (is_task_workspace_member(task_id));
 
 -- SELECT: Workspace members can view share links for tasks in their workspace
 -- Note: External access via code lookup should be handled via secure functions or specific policies that don't allow enumeration
-CREATE POLICY "Allow authenticated users to lookup share links by code"
-ON "public"."task_share_links"
-FOR SELECT
-TO authenticated
-USING (is_task_workspace_member(task_id));  -- Restricted to members to prevent enumeration
+
 
 -- INSERT: Workspace members can create share links if sharing is enabled
 CREATE POLICY "Allow workspace members to create task share links"
@@ -314,6 +310,7 @@ CREATE OR REPLACE FUNCTION public.has_task_permission(
   p_permission text  -- 'view' or 'edit'
 )
 RETURNS boolean
+STABLE
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$

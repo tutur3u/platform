@@ -93,6 +93,7 @@ USING (
 CREATE OR REPLACE FUNCTION public.is_task_accessible(_task_id uuid)
 RETURNS boolean
 LANGUAGE sql
+STABLE
 SECURITY DEFINER
 AS $$
 SELECT EXISTS (SELECT 1 FROM tasks WHERE id = _task_id)

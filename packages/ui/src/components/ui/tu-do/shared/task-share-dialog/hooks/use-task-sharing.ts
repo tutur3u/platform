@@ -51,6 +51,7 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
       const data = await res.json();
       return data.shares || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const shareLinksQuery = useQuery({
@@ -203,10 +204,10 @@ export function useTaskSharing(wsId: string, taskId: string, open: boolean) {
     await removeShareMutation.mutateAsync({ shareId });
   };
 
-  const handleCopyLink = (code: string) => {
+  const handleCopyLink = async (code: string) => {
     const url = `${window.location.origin}/shared/task/${code}`;
     try {
-      navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(url);
       toast.success(t('common.task_sharing.link_copied'));
     } catch (error) {
       console.error('Failed to copy link:', error);
