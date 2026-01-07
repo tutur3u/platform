@@ -124,9 +124,5 @@
     "supabase",
     "unrs-resolver"
   ],
-  "overrides": {
-    "framer-motion": "12.24.8",
-    "motion-dom": "12.24.8"
-  },
   "workspaces": ["apps/*", "packages/*"]
 }
