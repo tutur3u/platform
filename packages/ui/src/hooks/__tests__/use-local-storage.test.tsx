@@ -158,7 +158,7 @@ describe('useLocalStorage', () => {
     });
 
     it('should handle localStorage setItem errors', () => {
-      const mockSetItem = vi.spyOn(Storage.prototype, 'setItem');
+      const mockSetItem = vi.spyOn(window.localStorage, 'setItem');
       mockSetItem.mockImplementation(() => {
         throw new Error('Storage quota exceeded');
       });

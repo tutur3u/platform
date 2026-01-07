@@ -31,6 +31,11 @@ export function SubscriptionConfirmationDialog({
   const [error, setError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
+    if (!currentPlan.id) {
+      setError('Invalid plan ID');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
