@@ -5,7 +5,12 @@
       "Bash(bun format:fix:*)",
       "Bash(bun install:*)",
       "Bash(bun pm:*)",
-      "Bash(bun type-check:*)"
+      "Bash(bun type-check:*)",
+      "Bash(bun test:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(xargs cat:*)"
     ]
   }
 }
