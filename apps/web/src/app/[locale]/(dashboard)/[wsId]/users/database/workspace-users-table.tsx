@@ -44,7 +44,6 @@ export function WorkspaceUsersTable({
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
-
   // Use nuqs for URL state management (shallow: true for client-side only)
   const [q, setQ] = useQueryState(
     'q',
@@ -67,7 +66,6 @@ export function WorkspaceUsersTable({
       shallow: true,
     })
   );
-
 
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;
@@ -120,16 +118,6 @@ export function WorkspaceUsersTable({
     canCheckUserAttendance: permissions.canCheckUserAttendance,
   };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-destructive">
-          Error loading users. Please try again.
-        </p>
-      </div>
-    );
-  }
-
   // Handler for search - uses nuqs setQ
   const handleSearch = useCallback(
     (query: string) => {
@@ -161,6 +149,16 @@ export function WorkspaceUsersTable({
     router.push(pathname);
   }, [setQ, setPage, setPageSize, router, pathname]);
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-destructive">
+          Error loading users. Please try again.
+        </p>
+      </div>
+    );
+  }
+
   // Show loading overlay when fetching new data (but not on initial load)
   const showLoadingOverlay = isFetching && !isLoading;
 
@@ -168,10 +166,10 @@ export function WorkspaceUsersTable({
     <div className="relative">
       {/* Loading overlay on table when fetching */}
       {showLoadingOverlay && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg">
-          <div className="flex items-center gap-2 rounded-md bg-background/90 px-4 py-2 shadow-lg border">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
+          <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Loading...</span>
+            <span className="text-muted-foreground text-sm">Loading...</span>
           </div>
         </div>
       )}

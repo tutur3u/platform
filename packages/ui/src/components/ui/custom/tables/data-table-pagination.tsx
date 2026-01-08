@@ -45,8 +45,9 @@ export function DataTablePagination<TData>({
   // Use props if provided, otherwise fall back to table state
   // When setParams is provided, we're in server-side pagination mode
   const isServerSide = !!setParams;
-  
-  const pageIndex = pageIndexProp ?? table?.getState().pagination.pageIndex ?? 0;
+
+  const pageIndex =
+    pageIndexProp ?? table?.getState().pagination.pageIndex ?? 0;
   const pageSize = pageSizeProp ?? table?.getState().pagination.pageSize ?? 10;
   const pageCount = pageCountProp ?? table?.getPageCount() ?? 0;
 
@@ -137,9 +138,7 @@ export function DataTablePagination<TData>({
             <>
               {' '}
               {t?.('common.of') ?? 'of'}{' '}
-              <span className="font-semibold text-primary">
-                {pageCount}
-              </span>
+              <span className="font-semibold text-primary">{pageCount}</span>
             </>
           )}
         </div>
@@ -166,7 +165,6 @@ export function DataTablePagination<TData>({
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => {
-
                 if (isServerSide) {
                   // pageIndex is 0-based, page param is 1-based
                   const newPage = pageIndex; // pageIndex when on page 2 (index 1) -> sends page: 1
