@@ -153,6 +153,7 @@ export default async function BillingPage({
               id: subscription.id,
               productId: subscription.product.id,
               name: subscription.product.name || t('no-plan'),
+              tier: subscription.product.tier,
               price: subscription.product.price ?? 0,
               billingCycle: subscription.product.recurring_interval,
               startDate: subscription.createdAt
@@ -171,6 +172,7 @@ export default async function BillingPage({
               id: null,
               productId: null,
               name: t('free-plan'),
+              tier: null,
               price: 0,
               billingCycle: 'month',
               startDate: '-',
