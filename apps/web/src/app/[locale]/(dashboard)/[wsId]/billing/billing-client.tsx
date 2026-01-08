@@ -2,16 +2,17 @@
 
 import {
   AlertCircle,
+  Building2,
   Calendar,
   CheckCircle,
   Clock,
-  Crown,
-  Shield,
+  Package,
   Sparkles,
   X,
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
@@ -26,6 +27,7 @@ export interface Plan {
   id: string | null;
   productId: string | null;
   name: string;
+  tier: WorkspaceProductTier | null;
   price: number;
   billingCycle: string | null;
   startDate: string;
@@ -62,35 +64,52 @@ export function BillingClient({
   const t = useTranslations('billing');
   const router = useRouter();
 
-  const isPaidPlan = currentPlan.price > 0;
-  const isProPlan = currentPlan.name.toLowerCase().includes('pro');
-  const isPlusPlan = currentPlan.name.toLowerCase().includes('plus');
+  const isPaidPlan = currentPlan.tier !== null;
+  const isEnterprisePlan = currentPlan.tier === 'ENTERPRISE';
+  const isProPlan = currentPlan.tier === 'PRO';
+  const isPlusPlan = currentPlan.tier === 'PLUS';
   const simplePlanName = getSimplePlanName(currentPlan.name);
 
   // Dynamic color configuration per tier
-  const tierConfig = isProPlan
+  const tierConfig = isEnterprisePlan
     ? {
-        icon: Crown,
-        color: 'text-dynamic-purple',
-        bgColor: 'bg-dynamic-purple/10',
-        borderColor: 'border-dynamic-purple/30',
-        gradient: 'from-dynamic-purple/20 via-dynamic-purple/5 to-transparent',
+        icon: Building2,
+        color: 'text-dynamic-yellow',
+        bgColor: 'bg-dynamic-yellow/10',
+        borderColor: 'border-dynamic-yellow/50',
+        gradient:
+          'from-dynamic-yellow/20 via-dynamic-yellow/10 to-dynamic-yellow/20',
+        glowClass:
+          'shadow-2xl shadow-dynamic-orange/20 ring-2 ring-dynamic-yellow/30',
       }
-    : isPlusPlan
+    : isProPlan
       ? {
-          icon: Zap,
-          color: 'text-dynamic-green',
-          bgColor: 'bg-dynamic-green/10',
-          borderColor: 'border-dynamic-green/30',
-          gradient: 'from-dynamic-green/20 via-dynamic-green/5 to-transparent',
+          icon: Sparkles,
+          color: 'text-dynamic-purple',
+          bgColor: 'bg-dynamic-purple/10',
+          borderColor: 'border-dynamic-purple/30',
+          gradient:
+            'from-dynamic-purple/10 via-dynamic-purple/5 to-dynamic-purple/10',
+          glowClass: '',
         }
-      : {
-          icon: Shield,
-          color: 'text-muted-foreground',
-          bgColor: 'bg-muted',
-          borderColor: 'border-border',
-          gradient: 'from-muted/50 via-muted/20 to-transparent',
-        };
+      : isPlusPlan
+        ? {
+            icon: Zap,
+            color: 'text-dynamic-blue',
+            bgColor: 'bg-dynamic-blue/10',
+            borderColor: 'border-dynamic-blue/30',
+            gradient:
+              'from-dynamic-blue/10 via-dynamic-blue/5 to-dynamic-blue/10',
+            glowClass: '',
+          }
+        : {
+            icon: Package,
+            color: 'text-muted-foreground',
+            bgColor: 'bg-muted',
+            borderColor: 'border-border',
+            gradient: 'from-muted/50 via-muted/20 to-transparent',
+            glowClass: '',
+          };
 
   const TierIcon = tierConfig.icon;
 
@@ -123,7 +142,12 @@ export function BillingClient({
   return (
     <>
       {/* Hero Section */}
-      <div className="mb-8 overflow-hidden rounded-2xl border border-border/50 bg-card">
+      <div
+        className={cn(
+          'mb-8 overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300',
+          tierConfig.glowClass
+        )}
+      >
         <div className={cn('bg-linear-to-r p-6 md:p-8', tierConfig.gradient)}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             {/* Plan Info */}
@@ -192,7 +216,6 @@ export function BillingClient({
               {/* Actions */}
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button onClick={() => setShowUpgradeOptions(true)} size="lg">
-                  <Sparkles className="mr-2 h-4 w-4" />
                   {t('upgrade-plan')}
                 </Button>
                 {isPaidPlan && isCreator && (
