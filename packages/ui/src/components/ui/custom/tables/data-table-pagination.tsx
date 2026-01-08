@@ -35,13 +35,21 @@ export function DataTablePagination<TData>({
   table,
   count,
   className,
-  pageIndex,
-  pageCount,
-  pageSize,
+  pageIndex: pageIndexProp,
+  pageCount: pageCountProp,
+  pageSize: pageSizeProp,
   additionalSizes,
   t,
   setParams,
 }: DataTablePaginationProps<TData>) {
+  // Use props if provided, otherwise fall back to table state
+  // When setParams is provided, we're in server-side pagination mode
+  const isServerSide = !!setParams;
+  
+  const pageIndex = pageIndexProp ?? table?.getState().pagination.pageIndex ?? 0;
+  const pageSize = pageSizeProp ?? table?.getState().pagination.pageSize ?? 10;
+  const pageCount = pageCountProp ?? table?.getPageCount() ?? 0;
+
   // filter duplicate and sort sizes
   const sizes = [
     5,
@@ -52,17 +60,15 @@ export function DataTablePagination<TData>({
     200,
     500,
     1000,
-    pageSize ?? 10,
+    pageSize,
     ...(additionalSizes ?? []),
   ]
     .filter((value, index, self) => self.indexOf(value) === index)
     .sort((a, b) => a - b);
 
-  const isPageOutOfRange = table
-    ? table.getState().pagination.pageIndex + 1 > table.getPageCount()
-    : pageIndex !== undefined
-      ? pageIndex + 1 > (pageCount ?? 1)
-      : false;
+  const isPageOutOfRange = pageIndex + 1 > pageCount;
+  const canGoPrevious = pageIndex > 0;
+  const canGoNext = pageIndex < pageCount - 1;
 
   return (
     <div
@@ -98,27 +104,25 @@ export function DataTablePagination<TData>({
             {t?.('common.rows-per-page') ?? 'Rows per page'}
           </p>
           <Select
-            value={`${pageSize ?? table?.getState().pagination.pageSize ?? 0}`}
+            value={`${pageSize}`}
             onValueChange={(value) => {
-              if (table) {
+              if (isServerSide) {
+                // Server-side pagination: only update via setParams
+                setParams?.({ page: 1, pageSize: value });
+              } else if (table) {
+                // Client-side pagination: update table state
                 table.setPageIndex(0);
                 table.setPageSize(Number(value));
               }
-
-              setParams?.({ page: 1, pageSize: value });
             }}
           >
             <SelectTrigger className="h-8 w-17.5">
-              <SelectValue
-                placeholder={
-                  pageSize ?? table?.getState().pagination.pageSize ?? 0
-                }
-              />
+              <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {sizes.map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
+              {sizes.map((size) => (
+                <SelectItem key={size} value={`${size}`}>
+                  {size}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -127,39 +131,33 @@ export function DataTablePagination<TData>({
         <div className="w-fit text-muted-foreground text-sm">
           {t?.('common.page') ?? 'Page'}{' '}
           <span className="font-semibold text-primary">
-            {isPageOutOfRange
-              ? 1
-              : (pageIndex ?? table?.getState().pagination.pageIndex ?? 0) + 1}
+            {isPageOutOfRange ? 1 : pageIndex + 1}
           </span>
-          {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
+          {pageCount > 0 && (
             <>
               {' '}
               {t?.('common.of') ?? 'of'}{' '}
               <span className="font-semibold text-primary">
-                {pageCount ?? table?.getPageCount() ?? 1}
+                {pageCount}
               </span>
             </>
           )}
         </div>
 
-        {(pageCount ?? table?.getPageCount() ?? 0) > 0 && (
+        {pageCount > 0 && (
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
               onClick={() => {
-                if (table) {
+                if (isServerSide) {
+                  setParams?.({ page: 1 });
+                } else if (table) {
                   table.resetRowSelection();
                   table.setPageIndex(0);
                 }
-
-                setParams?.({ page: 1 });
               }}
-              disabled={
-                (pageIndex !== undefined
-                  ? pageIndex <= 0
-                  : table && !table.getCanPreviousPage()) || isPageOutOfRange
-              }
+              disabled={!canGoPrevious || isPageOutOfRange}
             >
               <span className="sr-only">Go to first page</span>
               <ArrowLeftToLine className="h-4 w-4" />
@@ -168,21 +166,17 @@ export function DataTablePagination<TData>({
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => {
-                if (table) {
+
+                if (isServerSide) {
+                  // pageIndex is 0-based, page param is 1-based
+                  const newPage = pageIndex; // pageIndex when on page 2 (index 1) -> sends page: 1
+                  setParams?.({ page: newPage });
+                } else if (table) {
                   table.resetRowSelection();
                   table.previousPage();
                 }
-
-                setParams?.({
-                  page:
-                    pageIndex ?? table?.getState().pagination.pageIndex ?? 0,
-                });
               }}
-              disabled={
-                (pageIndex !== undefined
-                  ? pageIndex <= 0
-                  : table && !table.getCanPreviousPage()) || isPageOutOfRange
-              }
+              disabled={!canGoPrevious || isPageOutOfRange}
             >
               <span className="sr-only">Go to previous page</span>
               <ChevronLeft className="h-4 w-4" />
@@ -191,24 +185,16 @@ export function DataTablePagination<TData>({
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => {
-                if (table) {
+                if (isServerSide) {
+                  // pageIndex is 0-based, page param is 1-based
+                  const newPage = isPageOutOfRange ? 2 : pageIndex + 2;
+                  setParams?.({ page: newPage });
+                } else if (table) {
                   table.resetRowSelection();
                   table.nextPage();
                 }
-
-                setParams?.({
-                  page: isPageOutOfRange
-                    ? 2
-                    : (pageIndex ??
-                        table?.getState().pagination.pageIndex ??
-                        0) + 2,
-                });
               }}
-              disabled={
-                (pageIndex !== undefined
-                  ? pageIndex >= (pageCount ?? 0) - 1
-                  : table && !table.getCanNextPage()) && !isPageOutOfRange
-              }
+              disabled={!canGoNext && !isPageOutOfRange}
             >
               <span className="sr-only">Go to next page</span>
               <ChevronRight className="h-4 w-4" />
@@ -217,20 +203,14 @@ export function DataTablePagination<TData>({
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
               onClick={() => {
-                if (table) {
+                if (isServerSide) {
+                  setParams?.({ page: pageCount });
+                } else if (table) {
                   table.resetRowSelection();
                   table.setPageIndex(table.getPageCount() - 1);
                 }
-
-                setParams?.({
-                  page: pageCount ?? table?.getPageCount() ?? 1,
-                });
               }}
-              disabled={
-                (pageIndex !== undefined
-                  ? pageIndex >= (pageCount ?? 0) - 1
-                  : table && !table.getCanNextPage()) && !isPageOutOfRange
-              }
+              disabled={!canGoNext && !isPageOutOfRange}
             >
               <span className="sr-only">Go to last page</span>
               <ArrowRightToLine className="h-4 w-4" />

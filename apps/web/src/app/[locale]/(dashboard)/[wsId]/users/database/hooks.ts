@@ -3,7 +3,7 @@
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 
 export interface WorkspaceUsersParams {
@@ -36,6 +36,7 @@ export function useWorkspaceUsers(
   }
 ) {
   const { q = '', page = 1, pageSize = 10, includedGroups = [], excludedGroups = [] } = params;
+
 
   return useQuery({
     queryKey: [
@@ -70,6 +71,8 @@ export function useWorkspaceUsers(
     },
     enabled: options?.enabled !== false,
     initialData: options?.initialData,
+    // Keep previous data while fetching new page - prevents UI from becoming unresponsive
+    placeholderData: keepPreviousData,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
   });

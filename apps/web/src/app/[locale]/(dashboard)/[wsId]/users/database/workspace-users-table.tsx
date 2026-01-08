@@ -2,14 +2,12 @@
 
 import { Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-  parseAsInteger,
-  parseAsString,
-  useQueryState,
-} from 'nuqs';
+import { useTranslations } from 'next-intl';
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
+import { useCallback } from 'react';
 import { ClientFilters } from './client-filters';
 import { getUserColumns } from './columns';
 import { useWorkspaceUsers, type WorkspaceUsersResponse } from './hooks';
@@ -40,16 +38,19 @@ export function WorkspaceUsersTable({
   toolbarImportContent,
   toolbarExportContent,
 }: Props) {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
+
+  // Use nuqs for URL state management (shallow: true for client-side only)
   const [q, setQ] = useQueryState(
     'q',
     parseAsString.withDefault('').withOptions({
       shallow: true,
-      throttleMs: 500,
+      throttleMs: 300,
     })
   );
 
@@ -67,7 +68,11 @@ export function WorkspaceUsersTable({
     })
   );
 
-  // Parse array params (keep using searchParams for array compatibility with Filters)
+
+  // Compute pageIndex from 1-based page
+  const pageIndex = page > 0 ? page - 1 : 0;
+
+  // Parse array params for filters (nuqs doesn't handle arrays well, use searchParams)
   const includedGroups = searchParams.getAll('includedGroups');
   const excludedGroups = searchParams.getAll('excludedGroups');
 
@@ -125,22 +130,63 @@ export function WorkspaceUsersTable({
     );
   }
 
+  // Handler for search - uses nuqs setQ
+  const handleSearch = useCallback(
+    (query: string) => {
+      setQ(query || null);
+      setPage(1); // Reset to first page on search
+    },
+    [setQ, setPage]
+  );
+
+  // Handler for pagination params - uses nuqs setters
+  const handleSetParams = useCallback(
+    (params: { page?: number; pageSize?: string }) => {
+      if (params.page !== undefined) {
+        setPage(params.page);
+      }
+      if (params.pageSize !== undefined) {
+        setPageSize(Number(params.pageSize));
+      }
+    },
+    [setPage, setPageSize]
+  );
+
+  // Handler for reset - clears all nuqs state
+  const handleResetParams = useCallback(() => {
+    setQ(null);
+    setPage(null);
+    setPageSize(null);
+    // Also clear filter params not managed by nuqs
+    router.push(pathname);
+  }, [setQ, setPage, setPageSize, router, pathname]);
+
+  // Show loading overlay when fetching new data (but not on initial load)
+  const showLoadingOverlay = isFetching && !isLoading;
+
   return (
     <div className="relative">
-      {/* Show subtle loading indicator when refetching */}
-      {isFetching && !isLoading && (
-        <div className="absolute top-0 right-0 z-10 p-2">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      {/* Loading overlay on table when fetching */}
+      {showLoadingOverlay && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg">
+          <div className="flex items-center gap-2 rounded-md bg-background/90 px-4 py-2 shadow-lg border">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Loading...</span>
+          </div>
         </div>
       )}
 
-      <CustomDataTable
+      <DataTable
+        t={t}
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
         extraData={extraData}
         count={data?.count ?? 0}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        defaultQuery={q}
         filters={
           <ClientFilters
             wsId={wsId}
@@ -150,23 +196,10 @@ export function WorkspaceUsersTable({
         }
         toolbarImportContent={toolbarImportContent}
         toolbarExportContent={toolbarExportContent}
-        onSearch={(query) => {
-          setQ(query ? query : null);
-          setPage(1);
-        }}
-        setParams={async (params) => {
-          if (params.page !== undefined) await setPage(params.page);
-          if (params.pageSize !== undefined)
-            await setPageSize(Number(params.pageSize));
-          // Handle sorting if needed in future
-        }}
-        resetParams={() => {
-          setQ(null);
-          setPage(null);
-          setPageSize(null);
-          // Note: This doesn't reset filters managed by external component
-          router.push(pathname);
-        }}
+        onSearch={handleSearch}
+        setParams={handleSetParams}
+        resetParams={handleResetParams}
+        isEmpty={searchParams.toString().length === 0}
         onRefresh={() => {
           queryClient.invalidateQueries({
             queryKey: ['workspace-users', wsId],
