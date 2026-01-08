@@ -113,7 +113,7 @@ export default function GroupIndicatorsSelector({
       if (!selectedGroupId) return null;
       const { data, error } = await supabase
         .from('workspace_user_groups_with_guest')
-        .select('*')
+        .select('name')
         .eq('id', selectedGroupId)
         .single();
       
