@@ -52,46 +52,8 @@ export async function GET(
 
   const canManageWorkforce = permissions.containsPermission('manage_workforce');
 
-  let query = supabase
-    .from('leave_requests')
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users!leave_requests_user_id_fkey(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      ),
-      approver:users!leave_requests_approved_by_fkey(id, display_name, avatar_url)
-    `
-    )
-    .eq('ws_id', normalizedWsId);
-
-  // If not a manager, only show own requests
-  if (!canManageWorkforce) {
-    const { data: workspaceUser } = await supabase
-      .from('workspace_users')
-      .select('id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', currentUser.id)
-      .single();
-
-    if (!workspaceUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    query = query.eq('user_id', workspaceUser.id);
-  }
-
-  if (userId) {
-    query = query.eq('user_id', userId);
-  }
-
-  if (leaveTypeId) {
-    query = query.eq('leave_type_id', leaveTypeId);
-  }
-
+  // Validate status if provided
+  let validatedStatus: string | undefined;
   if (status) {
     const validStatuses = [
       'approved',
@@ -101,25 +63,29 @@ export async function GET(
       'withdrawn',
     ] as const;
     if (validStatuses.includes(status as any)) {
-      query = query.eq('status', status as (typeof validStatuses)[number]);
+      validatedStatus = status;
     }
   }
 
-  if (year) {
-    query = query.gte('start_date', `${year}-01-01`);
-    query = query.lte('end_date', `${year}-12-31`);
-  }
-
-  query = query.order('start_date', { ascending: false });
-
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc(
+    'get_leave_requests_with_details',
+    {
+      p_ws_id: normalizedWsId,
+      p_user_id: currentUser.id,
+      p_filter_user_id: userId || undefined,
+      p_filter_leave_type_id: leaveTypeId || undefined,
+      p_filter_status: validatedStatus,
+      p_filter_year: year ? parseInt(year, 10) : undefined,
+      p_can_manage_workforce: canManageWorkforce,
+    }
+  );
 
   if (error) {
     console.error('Error fetching leave requests:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data || []);
 }
 
 export async function POST(
@@ -159,137 +125,23 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify that target user belongs to this workspace
-  const { data: targetWorkspaceUser } = await supabase
-    .from('workspace_users')
-    .select('id')
-    .eq('id', validation.data.user_id)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (!targetWorkspaceUser) {
-    return NextResponse.json(
-      { error: 'User not found in this workspace' },
-      { status: 404 }
-    );
-  }
-
-  // Check if current user can create requests for this user
-  const canManageWorkforce = permissions.containsPermission('manage_workforce');
-
-  if (!canManageWorkforce) {
-    // Get current user's workspace_user record
-    const { data: currentWorkspaceUser } = await supabase
-      .from('workspace_users')
-      .select('id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (
-      !currentWorkspaceUser ||
-      currentWorkspaceUser.id !== validation.data.user_id
-    ) {
-      return NextResponse.json(
-        { error: 'You can only create leave requests for yourself' },
-        { status: 403 }
-      );
-    }
-  }
-
-  // Verify that leave type belongs to this workspace and is active
-  const { data: leaveType } = await supabase
-    .from('leave_types')
-    .select('id, is_active, requires_approval')
-    .eq('id', validation.data.leave_type_id)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (!leaveType) {
-    return NextResponse.json(
-      { error: 'Leave type not found in this workspace' },
-      { status: 404 }
-    );
-  }
-
-  if (!leaveType.is_active) {
-    return NextResponse.json(
-      { error: 'This leave type is no longer active' },
-      { status: 400 }
-    );
-  }
-
-  // Validate date range
-  if (validation.data.start_date > validation.data.end_date) {
-    return NextResponse.json(
-      { error: 'Start date must be before or equal to end date' },
-      { status: 400 }
-    );
-  }
-
-  // Call database function to calculate duration
-  const { data: durationData, error: durationError } = await supabase.rpc(
-    'calculate_leave_duration',
+  // Call RPC to create leave request
+  const { data, error } = await supabase.rpc(
+    'create_leave_request_with_details',
     {
+      p_ws_id: normalizedWsId,
+      p_user_id: validation.data.user_id,
+      p_leave_type_id: validation.data.leave_type_id,
       p_start_date: validation.data.start_date,
       p_end_date: validation.data.end_date,
-      p_ws_id: normalizedWsId,
+      p_reason: validation.data.reason,
       p_is_half_day_start: validation.data.is_half_day_start,
       p_is_half_day_end: validation.data.is_half_day_end,
+      p_notes: validation.data.notes || undefined,
+      p_emergency_contact: validation.data.emergency_contact || undefined,
+      p_submitted_by: user.id,
     }
   );
-
-  if (durationError) {
-    console.error('Error calculating duration:', durationError);
-    return NextResponse.json(
-      { error: 'Failed to calculate leave duration' },
-      { status: 500 }
-    );
-  }
-
-  const duration = durationData as number;
-
-  if (duration <= 0) {
-    return NextResponse.json(
-      { error: 'Leave duration must be greater than 0' },
-      { status: 400 }
-    );
-  }
-
-  // Determine initial status based on approval requirement
-  const initialStatus: 'pending' | 'approved' = leaveType.requires_approval
-    ? 'pending'
-    : 'approved';
-
-  const { data, error } = await supabase
-    .from('leave_requests')
-    .insert({
-      ws_id: normalizedWsId,
-      user_id: validation.data.user_id,
-      leave_type_id: validation.data.leave_type_id,
-      start_date: validation.data.start_date,
-      end_date: validation.data.end_date,
-      is_half_day_start: validation.data.is_half_day_start,
-      is_half_day_end: validation.data.is_half_day_end,
-      duration_days: duration,
-      reason: validation.data.reason,
-      notes: validation.data.notes,
-      emergency_contact: validation.data.emergency_contact,
-      status: initialStatus,
-      submitted_by: user.id,
-    })
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users!leave_requests_user_id_fkey(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      )
-    `
-    )
-    .single();
 
   if (error) {
     console.error('Error creating leave request:', error);

@@ -39,44 +39,32 @@ export async function GET(
 
   const supabase = await createClient();
 
-  let query: any = supabase
-    .from('leave_balances')
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      )
-    `
-    )
-    .eq('ws_id', normalizedWsId);
+  // Get current user for RPC call
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (userId) {
-    query = query.eq('user_id', userId);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (leaveTypeId) {
-    query = query.eq('leave_type_id', leaveTypeId);
-  }
-
-  if (year) {
-    query = query.eq('balance_year', parseInt(year, 10));
-  }
-
-  query = query.order('balance_year', { ascending: false });
-  query = query.order('created_at', { ascending: false });
-
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc(
+    'get_leave_balances_with_details',
+    {
+      p_ws_id: normalizedWsId,
+      p_user_id: user.id,
+      p_filter_user_id: userId || undefined,
+      p_filter_leave_type_id: leaveTypeId || undefined,
+      p_filter_year: year ? parseInt(year, 10) : undefined,
+    }
+  );
 
   if (error) {
     console.error('Error fetching leave balances:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data || []);
 }
 
 export async function POST(
@@ -103,56 +91,6 @@ export async function POST(
 
   const supabase = await createClient();
 
-  // Verify that user belongs to this workspace
-  const { data: workspaceUser } = await supabase
-    .from('workspace_users')
-    .select('id')
-    .eq('id', validation.data.user_id)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (!workspaceUser) {
-    return NextResponse.json(
-      { error: 'User not found in this workspace' },
-      { status: 404 }
-    );
-  }
-
-  // Verify that leave type belongs to this workspace
-  const { data: leaveType } = await supabase
-    .from('leave_types')
-    .select('id')
-    .eq('id', validation.data.leave_type_id)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (!leaveType) {
-    return NextResponse.json(
-      { error: 'Leave type not found in this workspace' },
-      { status: 404 }
-    );
-  }
-
-  // Check for existing balance for same user, type, and year
-  const { data: existingBalance } = await supabase
-    .from('leave_balances')
-    .select('id')
-    .eq('user_id', validation.data.user_id)
-    .eq('leave_type_id', validation.data.leave_type_id)
-    .eq('balance_year', validation.data.balance_year)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (existingBalance) {
-    return NextResponse.json(
-      {
-        error:
-          'Leave balance already exists for this user, leave type, and year',
-      },
-      { status: 400 }
-    );
-  }
-
   // Get current user for created_by field
   const {
     data: { user },
@@ -162,25 +100,21 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from('leave_balances')
-    .insert({
-      ws_id: normalizedWsId,
-      created_by: user.id,
-      ...validation.data,
-    })
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      )
-    `
-    )
-    .single();
+  const { data, error } = await supabase.rpc(
+    'create_leave_balance_with_details',
+    {
+      p_ws_id: normalizedWsId,
+      p_user_id: validation.data.user_id,
+      p_leave_type_id: validation.data.leave_type_id,
+      p_balance_year: validation.data.balance_year,
+      p_accrued_days: validation.data.accrued_days,
+      p_used_days: validation.data.used_days,
+      p_carried_over_days: validation.data.carried_over_days,
+      p_adjusted_days: validation.data.adjusted_days,
+      p_notes: validation.data.notes || undefined,
+      p_created_by: user.id,
+    }
+  );
 
   if (error) {
     console.error('Error creating leave balance:', error);

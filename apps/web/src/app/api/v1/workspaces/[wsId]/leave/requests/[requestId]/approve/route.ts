@@ -47,80 +47,28 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get existing request
-  const { data: existingRequest, error: fetchError } = await supabase
-    .from('leave_requests')
-    .select('*')
-    .eq('id', requestId)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (fetchError || !existingRequest) {
-    console.error('Error fetching leave request:', fetchError);
-    return NextResponse.json(
-      { error: 'Leave request not found' },
-      { status: 404 }
-    );
-  }
-
-  // Check if request is pending
-  if (existingRequest.status !== 'pending') {
-    return NextResponse.json(
-      {
-        error: `Cannot ${validation.data.action} a request with status: ${existingRequest.status}`,
-      },
-      { status: 400 }
-    );
-  }
-
-  // Validate rejection reason if rejecting
-  if (
-    validation.data.action === 'reject' &&
-    !validation.data.rejection_reason
-  ) {
-    return NextResponse.json(
-      { error: 'Rejection reason is required when rejecting a request' },
-      { status: 400 }
-    );
-  }
-
-  const newStatus =
-    validation.data.action === 'approve' ? 'approved' : 'rejected';
-  const now = new Date().toISOString();
-
-  const updateData: any = {
-    status: newStatus,
-    approved_by: user.id,
-    approved_at: now,
-  };
-
-  if (validation.data.action === 'reject') {
-    updateData.rejection_reason = validation.data.rejection_reason;
-  }
-
-  // Update the request
-  const { data, error } = await supabase
-    .from('leave_requests')
-    .update(updateData)
-    .eq('id', requestId)
-    .eq('ws_id', normalizedWsId)
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users!leave_requests_user_id_fkey(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      ),
-      approver:users!leave_requests_approved_by_fkey(id, display_name, avatar_url)
-    `
-    )
-    .single();
+  // Call RPC to approve/reject leave request
+  const { data, error } = await supabase.rpc(
+    'approve_leave_request_with_details',
+    {
+      p_request_id: requestId,
+      p_ws_id: normalizedWsId,
+      p_action: validation.data.action,
+      p_user_id: user.id,
+      p_rejection_reason: validation.data.rejection_reason || undefined,
+    }
+  );
 
   if (error) {
     console.error('Error updating leave request:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { error: 'Leave request not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);

@@ -32,22 +32,20 @@ export async function GET(
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('leave_balances')
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      )
-    `
-    )
-    .eq('id', balanceId)
-    .eq('ws_id', normalizedWsId)
-    .single();
+  // Get current user for RPC call
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data, error } = await supabase.rpc('get_leave_balance_with_details', {
+    p_balance_id: balanceId,
+    p_ws_id: normalizedWsId,
+    p_user_id: user.id,
+  });
 
   if (error) {
     console.error('Error fetching leave balance:', error);
@@ -88,23 +86,24 @@ export async function PATCH(
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('leave_balances')
-    .update(validation.data)
-    .eq('id', balanceId)
-    .eq('ws_id', normalizedWsId)
-    .select(
-      `
-      *,
-      leave_type:leave_types(*),
-      user:workspace_users(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      )
-    `
-    )
-    .single();
+  // Get current user for RPC call
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data, error } = await supabase.rpc(
+    'update_leave_balance_with_details',
+    {
+      p_balance_id: balanceId,
+      p_ws_id: normalizedWsId,
+      p_updates: validation.data,
+      p_user_id: user.id,
+    }
+  );
 
   if (error) {
     console.error('Error updating leave balance:', error);

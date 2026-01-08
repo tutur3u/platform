@@ -46,54 +46,8 @@ export async function GET(
 
   const canManageWorkforce = permissions.containsPermission('manage_workforce');
 
-  let query = supabase
-    .from('leave_requests')
-    .select(
-      `
-      id,
-      user_id,
-      leave_type_id,
-      start_date,
-      end_date,
-      is_half_day_start,
-      is_half_day_end,
-      duration_days,
-      status,
-      leave_type:leave_types(id, name, code, color, icon),
-      user:workspace_users!leave_requests_user_id_fkey(
-        id,
-        display_name,
-        user:users(id, display_name, avatar_url)
-      )
-    `
-    )
-    .eq('ws_id', normalizedWsId);
-
-  // Date range filter - check for any overlap with requested range
-  query = query.or(`and(start_date.lte.${endDate},end_date.gte.${startDate})`);
-
-  // If not a manager, only show own requests
-  if (!canManageWorkforce) {
-    const { data: workspaceUser } = await supabase
-      .from('workspace_users')
-      .select('id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', currentUser.id)
-      .single();
-
-    if (!workspaceUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    query = query.eq('user_id', workspaceUser.id);
-  }
-
-  // Filter by user if specified
-  if (userId) {
-    query = query.eq('user_id', userId);
-  }
-
-  // Filter by status if specified
+  // Parse status filter
+  let statuses: string[] | null = null;
   if (includeStatuses) {
     const validStatuses = [
       'approved',
@@ -102,33 +56,69 @@ export async function GET(
       'rejected',
       'withdrawn',
     ] as const;
-    const statuses = includeStatuses
+    const parsedStatuses = includeStatuses
       .split(',')
       .map((s) => s.trim())
       .filter((s): s is (typeof validStatuses)[number] =>
         validStatuses.includes(s as any)
       );
-    if (statuses.length > 0) {
-      query = query.in('status', statuses);
+    if (parsedStatuses.length > 0) {
+      statuses = parsedStatuses;
     }
-  } else {
-    // Default: only show approved and pending requests
-    query = query.in('status', ['approved', 'pending'] as const);
   }
 
-  query = query.order('start_date', { ascending: true });
+  // userId parameter is already a workspace_user ID
+  const filterWorkspaceUserId = userId || undefined;
 
-  const { data, error } = await query;
+  // Call RPC function
+  const { data, error } = await supabase.rpc('get_leave_calendar_events', {
+    p_ws_id: normalizedWsId,
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_user_id: currentUser.id,
+    p_filter_user_id: filterWorkspaceUserId,
+    p_statuses: statuses || undefined,
+    p_can_manage_workforce: canManageWorkforce,
+  });
 
   if (error) {
     console.error('Error fetching calendar data:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Transform data for calendar format
-  const calendarEvents = data?.map((request: any) => {
-    const user = request.user as any;
-    const userDetails = Array.isArray(user?.user) ? user.user[0] : user?.user;
+  // Transform RPC result to calendar format
+  const requests =
+    (data as Array<{
+      id: string;
+      user_id: string;
+      leave_type_id: string;
+      start_date: string;
+      end_date: string;
+      is_half_day_start: boolean;
+      is_half_day_end: boolean;
+      duration_days: number;
+      status: string;
+      leave_type: {
+        id: string;
+        name: string;
+        code: string;
+        color: string;
+        icon: string;
+      };
+      user: {
+        id: string;
+        display_name: string;
+        user: {
+          id: string;
+          display_name: string;
+          avatar_url: string | null;
+        };
+      };
+    }>) || [];
+
+  const calendarEvents = requests.map((request) => {
+    const user = request.user;
+    const userDetails = user?.user;
 
     return {
       id: request.id,

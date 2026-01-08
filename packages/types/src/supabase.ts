@@ -16815,6 +16815,16 @@ export type Database = {
       };
     };
     Functions: {
+      approve_leave_request_with_details: {
+        Args: {
+          p_action: string;
+          p_rejection_reason?: string;
+          p_request_id: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -16866,6 +16876,15 @@ export type Database = {
       can_view_request_comments: {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
+      };
+      cancel_leave_request_with_details: {
+        Args: {
+          p_cancellation_reason?: string;
+          p_request_id: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       check_email_blocked: { Args: { p_email: string }; Returns: boolean };
       check_email_bounce_status: {
@@ -16925,6 +16944,37 @@ export type Database = {
           p_source_email: string;
           p_source_name: string;
           p_subject: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      create_leave_balance_with_details: {
+        Args: {
+          p_accrued_days?: number;
+          p_adjusted_days?: number;
+          p_balance_year: number;
+          p_carried_over_days?: number;
+          p_created_by?: string;
+          p_leave_type_id: string;
+          p_notes?: string;
+          p_used_days?: number;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      create_leave_request_with_details: {
+        Args: {
+          p_emergency_contact?: string;
+          p_end_date: string;
+          p_is_half_day_end?: boolean;
+          p_is_half_day_start?: boolean;
+          p_leave_type_id: string;
+          p_notes?: string;
+          p_reason: string;
+          p_start_date: string;
+          p_submitted_by?: string;
+          p_user_id: string;
           p_ws_id: string;
         };
         Returns: Json;
@@ -17421,6 +17471,44 @@ export type Database = {
       get_joined_workspace_count: {
         Args: { user_id: string };
         Returns: number;
+      };
+      get_leave_balance_with_details: {
+        Args: { p_balance_id: string; p_user_id?: string; p_ws_id: string };
+        Returns: Json;
+      };
+      get_leave_balances_with_details: {
+        Args: {
+          p_filter_leave_type_id?: string;
+          p_filter_user_id?: string;
+          p_filter_year?: number;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      get_leave_calendar_events: {
+        Args: {
+          p_can_manage_workforce?: boolean;
+          p_end_date: string;
+          p_filter_user_id?: string;
+          p_start_date: string;
+          p_statuses?: string[];
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      get_leave_requests_with_details: {
+        Args: {
+          p_can_manage_workforce?: boolean;
+          p_filter_leave_type_id?: string;
+          p_filter_status?: string;
+          p_filter_user_id?: string;
+          p_filter_year?: number;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       get_mau_count: { Args: never; Returns: number };
       get_monthly_income_expense:
@@ -18486,6 +18574,15 @@ export type Database = {
         Returns: boolean;
       };
       update_expired_sessions: { Args: never; Returns: undefined };
+      update_leave_balance_with_details: {
+        Args: {
+          p_balance_id: string;
+          p_updates: Json;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       update_many_tasks: { Args: { updates: Json }; Returns: number };
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
