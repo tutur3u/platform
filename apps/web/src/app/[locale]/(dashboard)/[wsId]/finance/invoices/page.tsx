@@ -3,6 +3,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { deleteInvoice } from './actions';
 
 export const metadata: Metadata = {
   title: 'Invoices',
@@ -42,6 +43,7 @@ export default async function WorkspaceInvoicesPage({
             searchParams={searchParams}
             canCreateInvoices={canCreateInvoices}
             canDeleteInvoices={canDeleteInvoices}
+            deleteInvoiceAction={deleteInvoice}
           />
         );
       }}

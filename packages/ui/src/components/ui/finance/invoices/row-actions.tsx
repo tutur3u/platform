@@ -3,6 +3,17 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -15,41 +26,56 @@ import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+type DeleteInvoiceAction = (
+  wsId: string,
+  invoiceId: string
+) => Promise<{ success: boolean; message?: string }>;
 
 interface InvoiceRowActionsProps {
   row: Row<Invoice>;
   href?: string;
   canDeleteInvoices?: boolean;
+  deleteInvoiceAction?: DeleteInvoiceAction;
 }
 
 export function InvoiceRowActions({
   row,
   href,
   canDeleteInvoices = false,
+  deleteInvoiceAction,
 }: InvoiceRowActionsProps) {
   const t = useTranslations();
-
   const router = useRouter();
   const data = row.original;
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const deleteInvoice = async () => {
-    if (!canDeleteInvoices) {
+  const handleDeleteInvoice = async () => {
+    if (!canDeleteInvoices || !deleteInvoiceAction) {
       toast.error(t('common.insufficient_permissions'));
       return;
     }
 
-    const res = await fetch(
-      `/api/workspaces/${data.ws_id}/invoices/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    if (!data.ws_id || !data.id) {
+      toast.error(t('ws-invoices.failed_delete_invoice'));
+      return;
+    }
 
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
-      toast.error(data.message || t('ws-invoices.failed_delete_invoice'));
+    setIsDeleting(true);
+    try {
+      const result = await deleteInvoiceAction(data.ws_id, data.id);
+
+      if (result.success) {
+        toast.success(t('ws-invoices.invoice_deleted'));
+        router.refresh();
+      } else {
+        toast.error(result.message || t('ws-invoices.failed_delete_invoice'));
+      }
+    } catch {
+      toast.error(t('ws-invoices.failed_delete_invoice'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -76,14 +102,38 @@ export function InvoiceRowActions({
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={deleteInvoice}
-            disabled={!canDeleteInvoices}
-          >
-            {t('common.delete')}
-          </DropdownMenuItem>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                disabled={!canDeleteInvoices || isDeleting}
+              >
+                {t('common.delete')}
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t('common.confirm_delete_title')}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t('ws-invoices.confirm_delete_invoice')}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteInvoice}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? t('common.deleting') : t('common.delete')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

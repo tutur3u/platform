@@ -32,8 +32,9 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {
@@ -220,31 +221,41 @@ export function SubscriptionInvoice({
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // Read from URL params
-  const selectedUserId = searchParams.get('user_id') || '';
-  const selectedGroupId = searchParams.get('group_id') || '';
-  const selectedMonth =
-    searchParams.get('month') || new Date().toISOString().slice(0, 7);
+  // URL state using nuqs - stable and prevents infinite re-renders
+  const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
+    defaultValue: '',
+    shallow: false,
+  });
+  const [selectedGroupId, setSelectedGroupId] = useQueryState('group_id', {
+    defaultValue: '',
+    shallow: false,
+  });
+  const [selectedMonth, setSelectedMonth] = useQueryState('month', {
+    defaultValue: new Date().toISOString().slice(0, 7),
+    shallow: false,
+  });
 
-  // Helper to update URL params
+  // Helper to update URL params (for backward compatibility with existing code)
   const updateSearchParam = useCallback(
     (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams);
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
+      if (key === 'user_id') {
+        setSelectedUserId(value || null);
+      } else if (key === 'group_id') {
+        setSelectedGroupId(value || null);
+      } else if (key === 'month') {
+        setSelectedMonth(value || null);
       }
-      router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams, router.replace]
+    [setSelectedUserId, setSelectedGroupId, setSelectedMonth]
   );
 
   // Data queries
-  const { data: users = [], isLoading: usersLoading } =
-    useUsersWithSelectableGroups(wsId);
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    error: usersError,
+  } = useUsersWithSelectableGroups(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
@@ -555,6 +566,34 @@ export function SubscriptionInvoice({
     setSubscriptionRoundedTotal(subscriptionTotalBeforeRounding);
   };
 
+  // Auto-select first wallet when wallets load (if no wallet selected)
+  useEffect(() => {
+    if (wallets.length > 0 && !selectedWalletId) {
+      const firstWallet = wallets[0];
+      if (firstWallet?.id) {
+        setSelectedWalletId(firstWallet.id);
+      }
+    }
+  }, [wallets, selectedWalletId]);
+
+  // Auto-select "Học phí" category when categories load (if no category selected)
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategoryId) {
+      // Try to find "Học phí" category (case-insensitive)
+      const hocPhiCategory = categories.find((cat) =>
+        cat.name?.toLowerCase().includes('học phí')
+      );
+      if (hocPhiCategory?.id) {
+        setSelectedCategoryId(hocPhiCategory.id);
+      }
+    }
+  }, [categories, selectedCategoryId]);
+
+  // Determine if rounding is applicable (total must not already be a multiple of 1000)
+  const canRound =
+    subscriptionTotalBeforeRounding > 0 &&
+    subscriptionTotalBeforeRounding % 1000 !== 0;
+
   // Auto-select user's best linked promotion based on current subscription subtotal
   useEffect(() => {
     if (
@@ -633,7 +672,8 @@ export function SubscriptionInvoice({
       groupProducts.length === 0 ||
       !userAttendance
     ) {
-      setSubscriptionProducts([]);
+      // Only clear if we previously had products to avoid infinite loop
+      setSubscriptionProducts((prev) => (prev.length > 0 ? [] : prev));
       return;
     }
 
@@ -654,13 +694,10 @@ export function SubscriptionInvoice({
     setSubscriptionProducts(calculatedProducts);
   }, [
     selectedGroupId,
-    groupProducts?.length,
-    userAttendance?.length,
     selectedMonth,
     userAttendance,
-    groupProducts.map,
     groupProducts,
-    userGroups.find,
+    userGroups,
   ]);
 
   // Reset subscription state when user changes
@@ -691,14 +728,11 @@ export function SubscriptionInvoice({
     // Reset prefill tracking when user manually changes
     initialPrefillUsedRef.current = false;
 
-    // Replace entire search params with only user_id, this will clear group_id and month
+    // Clear group_id and month using nuqs setters
     // The month will be auto-set when a new group is selected
-    if (selectedUserId) {
-      router.replace(`?user_id=${selectedUserId}`, { scroll: false });
-    } else {
-      router.replace('?', { scroll: false });
-    }
-  }, [selectedUserId, router]);
+    setSelectedGroupId(null);
+    setSelectedMonth(null);
+  }, [selectedUserId, setSelectedGroupId, setSelectedMonth]);
 
   // Auto-select the first group when userGroups are loaded
   useEffect(() => {
@@ -714,12 +748,11 @@ export function SubscriptionInvoice({
       }
     }
   }, [
-    userGroups.length,
+    userGroups,
     selectedGroupId,
     userGroupsLoading,
     selectedUserId,
     updateSearchParam,
-    userGroups[0],
   ]);
 
   // Validate and reset selectedMonth when group changes
@@ -765,7 +798,7 @@ export function SubscriptionInvoice({
     userGroups.length,
     selectedMonth,
     updateSearchParam,
-    userGroups.find,
+    userGroups,
   ]);
 
   // Auto-generate subscription invoice content
@@ -1067,6 +1100,21 @@ export function SubscriptionInvoice({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
+            {usersError && (
+              <div className="text-destructive text-sm">
+                Error loading customers: {usersError.message}
+              </div>
+            )}
+            {usersLoading && (
+              <div className="text-muted-foreground text-sm">
+                Loading customers...
+              </div>
+            )}
+            {!usersLoading && users.length === 0 && !usersError && (
+              <div className="text-muted-foreground text-sm">
+                No students found. Users must be in a group with STUDENT role.
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="customer-select">
                 {t('ws-invoices.customer')}
@@ -1732,43 +1780,45 @@ export function SubscriptionInvoice({
                         )}
                       </div>
 
-                      {/* Rounding Controls */}
-                      <div className="space-y-2">
-                        <Label>{t('ws-invoices.rounding_options')}</Label>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={roundUpSubscription}
-                            className="flex-1"
-                          >
-                            <ArrowUp className="mr-1 h-4 w-4" />
-                            {t('ws-invoices.round_up')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={roundDownSubscription}
-                            className="flex-1"
-                          >
-                            <ArrowDown className="mr-1 h-4 w-4" />
-                            {t('ws-invoices.round_down')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={resetRoundingSubscription}
-                            disabled={
-                              Math.abs(
-                                subscriptionRoundedTotal -
-                                  subscriptionTotalBeforeRounding
-                              ) < 0.01
-                            }
-                          >
-                            {t('ws-invoices.reset')}
-                          </Button>
+                      {/* Rounding Controls - only show if rounding is applicable */}
+                      {canRound && (
+                        <div className="space-y-2">
+                          <Label>{t('ws-invoices.rounding_options')}</Label>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={roundUpSubscription}
+                              className="flex-1"
+                            >
+                              <ArrowUp className="mr-1 h-4 w-4" />
+                              {t('ws-invoices.round_up')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={roundDownSubscription}
+                              className="flex-1"
+                            >
+                              <ArrowDown className="mr-1 h-4 w-4" />
+                              {t('ws-invoices.round_down')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={resetRoundingSubscription}
+                              disabled={
+                                Math.abs(
+                                  subscriptionRoundedTotal -
+                                    subscriptionTotalBeforeRounding
+                                ) < 0.01
+                              }
+                            >
+                              {t('ws-invoices.reset')}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </>
                 )}

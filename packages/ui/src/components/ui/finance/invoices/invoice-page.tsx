@@ -12,6 +12,11 @@ import { getTranslations } from 'next-intl/server';
 import { invoiceColumns } from './columns';
 import { PendingInvoicesTable } from './pending-invoices-table';
 
+type DeleteInvoiceAction = (
+  wsId: string,
+  invoiceId: string
+) => Promise<{ success: boolean; message?: string }>;
+
 interface Props {
   params: Promise<{
     wsId: string;
@@ -23,6 +28,7 @@ interface Props {
   }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
+  deleteInvoiceAction?: DeleteInvoiceAction;
 }
 
 export default async function InvoicesPage({
@@ -30,6 +36,7 @@ export default async function InvoicesPage({
   searchParams,
   canCreateInvoices = false,
   canDeleteInvoices = false,
+  deleteInvoiceAction,
 }: Props) {
   const t = await getTranslations();
   const { wsId: id } = await params;
@@ -81,6 +88,7 @@ export default async function InvoicesPage({
             count={count}
             extraData={{
               canDeleteInvoices,
+              deleteInvoiceAction,
             }}
             defaultVisibility={{
               id: false,
