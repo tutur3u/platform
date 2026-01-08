@@ -21,8 +21,9 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { XLSX } from '@tuturuuu/ui/xlsx';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 
 interface SearchParams {
@@ -36,12 +37,26 @@ interface SearchParams {
 export default function ExportDialogContent({
   wsId,
   exportType,
-  searchParams,
+  searchParams: searchParamsProp,
 }: {
   wsId: string;
   exportType: string;
-  searchParams: SearchParams;
+  searchParams?: SearchParams;
 }) {
+  // Read search params from URL if not provided as props
+  const urlSearchParams = useSearchParams();
+
+  const searchParams = useMemo((): SearchParams => {
+    // If props are provided, use them (backwards compatibility)
+    if (searchParamsProp) return searchParamsProp;
+
+    // Otherwise read from URL
+    return {
+      q: urlSearchParams.get('q') || undefined,
+      includedGroups: urlSearchParams.getAll('includedGroups'),
+      excludedGroups: urlSearchParams.getAll('excludedGroups'),
+    };
+  }, [searchParamsProp, urlSearchParams]);
   const t = useTranslations();
   const [filename, setFilename] = useState('');
   const [exportFileType, setExportFileType] = useState('excel');

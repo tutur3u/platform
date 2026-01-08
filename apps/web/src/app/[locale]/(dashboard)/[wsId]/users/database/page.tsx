@@ -8,50 +8,25 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { z } from 'zod';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { AuditLogTable } from './audit-log-table';
-import { getUserColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
-import Filters from './filters';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
+import { WorkspaceUsersTable } from './workspace-users-table';
 
 export const metadata: Metadata = {
   title: 'Database',
   description: 'Manage Database in the Users area of your Tuturuuu workspace.',
 };
 
-interface SearchParams {
-  q?: string;
-  page?: number;
-  pageSize?: number;
-  includedGroups?: string | string[];
-  excludedGroups?: string | string[];
-  tab?: string;
-}
-
-const SearchParamsSchema = z.object({
-  q: z.string().default(''),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
-  includedGroups: z
-    .union([z.string(), z.array(z.string())])
-    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
-    .default([]),
-  excludedGroups: z
-    .union([z.string(), z.array(z.string())])
-    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
-    .default([]),
-  tab: z.enum(['users', 'audit-log']).default('users'),
-});
-
 interface Props {
   params: Promise<{
     locale: string;
     wsId: string;
   }>;
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<{
+    tab?: string;
+  }>;
 }
 
 export default async function WorkspaceUsersPage({
@@ -60,6 +35,7 @@ export default async function WorkspaceUsersPage({
 }: Props) {
   const t = await getTranslations();
   const { locale, wsId: id } = await params;
+  const sp = await searchParams;
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
@@ -74,25 +50,36 @@ export default async function WorkspaceUsersPage({
   const canUpdateUsers = containsPermission('update_users');
   const canDeleteUsers = containsPermission('delete_users');
   const canCheckUserAttendance = containsPermission('check_user_attendance');
+  const canExportUsers = containsPermission('export_users_data');
 
   // User must have at least one permission to view users
   if (!hasPrivateInfo && !hasPublicInfo) {
     notFound();
   }
 
-  const sp = SearchParamsSchema.parse(await searchParams);
-  const { data, count } = await getData(wsId, sp, {
+  // Fetch initial data for hydration (first page only)
+  const { data: initialUsers, count } = await getInitialData(wsId, {
     hasPrivateInfo,
     hasPublicInfo,
     canCheckUserAttendance,
   });
+
   const { data: extraFields } = await getUserFields(wsId);
 
   // Add href for navigation
-  const users = data.map((u) => ({
+  const users = initialUsers.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
+
+  const permissions = {
+    hasPrivateInfo,
+    hasPublicInfo,
+    canCreateUsers,
+    canUpdateUsers,
+    canDeleteUsers,
+    canCheckUserAttendance,
+  };
 
   return (
     <>
@@ -119,78 +106,39 @@ export default async function WorkspaceUsersPage({
           <TabsTrigger value="audit-log">{t('ws-users.audit_log')}</TabsTrigger>
         </TabsList>
         <TabsContent value="users">
-          <CustomDataTable
-            data={users}
-            namespace="user-data-table"
-            columnGenerator={getUserColumns}
-            extraColumns={extraFields}
-            extraData={{
-              locale,
-              wsId,
-              hasPrivateInfo,
-              hasPublicInfo,
-              canCreateUsers,
-              canUpdateUsers,
-              canDeleteUsers,
-              canCheckUserAttendance,
+          <WorkspaceUsersTable
+            wsId={wsId}
+            locale={locale}
+            extraFields={extraFields}
+            permissions={permissions}
+            initialData={{
+              data: users,
+              count: count,
             }}
-            count={count}
-            filters={<Filters wsId={wsId} searchParams={sp} />}
             toolbarImportContent={
-              containsPermission('export_users_data') && (
-                <ImportDialogContent wsId={wsId} />
-              )
+              canExportUsers && <ImportDialogContent wsId={wsId} />
             }
             toolbarExportContent={
-              containsPermission('export_users_data') && (
-                <ExportDialogContent
-                  wsId={wsId}
-                  exportType="users"
-                  searchParams={sp}
-                />
+              canExportUsers && (
+                <ExportDialogContent wsId={wsId} exportType="users" />
               )
             }
-            defaultVisibility={{
-              id: false,
-              gender: false,
-              display_name: false,
-              ethnicity: false,
-              guardian: false,
-              address: false,
-              national_id: false,
-              note: false,
-              linked_users: false,
-              group_count: false,
-              created_at: false,
-              updated_at: false,
-              avatar_url: false,
-
-              // Extra columns
-              ...Object.fromEntries(
-                extraFields.map((field) => [field.id, false])
-              ),
-            }}
           />
         </TabsContent>
         <TabsContent value="audit-log">
-          <AuditLogTable wsId={wsId} page={sp.page} pageSize={sp.pageSize} />
+          <AuditLogTable wsId={wsId} />
         </TabsContent>
       </Tabs>
     </>
   );
 }
 
-async function getData(
+/**
+ * Fetches initial page of users for SSR hydration
+ */
+async function getInitialData(
   wsId: string,
-  {
-    q,
-    page = 1,
-    pageSize = 10,
-    includedGroups = [],
-    excludedGroups = [],
-    retry = true,
-  }: SearchParams & { retry?: boolean } = {},
-  permissions?: {
+  permissions: {
     hasPrivateInfo: boolean;
     hasPublicInfo: boolean;
     canCheckUserAttendance: boolean;
@@ -203,46 +151,27 @@ async function getData(
       'get_workspace_users',
       {
         _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
+        included_groups: [],
+        excluded_groups: [],
+        search_query: '',
       },
       {
         count: 'exact',
       }
     )
     .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
-
-  if (page && pageSize) {
-    const start = (page - 1) * pageSize;
-    const end = page * pageSize;
-    queryBuilder.range(start, end).limit(pageSize);
-  }
+    .order('full_name', { ascending: true, nullsFirst: false })
+    .range(0, 10)
+    .limit(10);
 
   const { data, error, count } = await queryBuilder;
 
   if (error) {
-    if (!retry) throw error;
-    return getData(
-      wsId,
-      {
-        q,
-        page,
-        pageSize,
-        includedGroups,
-        excludedGroups,
-        retry: false,
-      },
-      permissions
-    );
+    console.error('Error fetching initial users:', error);
+    return { data: [], count: 0 };
   }
 
-  // Enrich each user with guest status via RPC (page size is small, acceptable)
+  // Enrich each user with guest status
   const withGuest = await Promise.all(
     (data as unknown as WorkspaceUser[]).map(async (u) => {
       const { data: isGuest } = await supabase.rpc('is_user_guest', {
@@ -250,10 +179,13 @@ async function getData(
       });
 
       // Sanitize data based on permissions
-      const sanitized: any = { ...u, is_guest: Boolean(isGuest) };
+      const sanitized: Record<string, unknown> = {
+        ...u,
+        is_guest: Boolean(isGuest),
+      };
 
       // Remove private fields if user doesn't have permission
-      if (!permissions?.hasPrivateInfo) {
+      if (!permissions.hasPrivateInfo) {
         delete sanitized.email;
         delete sanitized.phone;
         delete sanitized.birthday;
@@ -266,7 +198,7 @@ async function getData(
       }
 
       // Remove public fields if user doesn't have permission
-      if (!permissions?.hasPublicInfo) {
+      if (!permissions.hasPublicInfo) {
         delete sanitized.avatar_url;
         delete sanitized.full_name;
         delete sanitized.display_name;
@@ -275,17 +207,18 @@ async function getData(
         delete sanitized.created_at;
         delete sanitized.updated_at;
       }
-      if (!permissions?.canCheckUserAttendance) {
+
+      if (!permissions.canCheckUserAttendance) {
         delete sanitized.attendance_count;
       }
 
-      return sanitized as WorkspaceUser & { is_guest?: boolean };
+      return sanitized as unknown as WorkspaceUser & { is_guest?: boolean };
     })
   );
 
   return {
-    data: withGuest as unknown as WorkspaceUser[],
-    count: count as number,
+    data: withGuest,
+    count: count ?? 0,
   };
 }
 

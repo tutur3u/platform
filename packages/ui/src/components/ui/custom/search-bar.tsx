@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Input } from '../input';
 
 interface Props {
@@ -16,15 +16,11 @@ interface Props {
 // Assuming the rest of your imports and Props interface are unchanged
 
 const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
-  // Memoize the updateQuery function to ensure debounce works correctly
-  const updateQuery = useCallback(
-    debounce((query: string) => {
-      if (onSearch) {
-        onSearch(query);
-      }
-    }, 300),
-    [] // Re-create the debounced function only if onSearch changes
-  );
+  const updateQuery = useMemo(() => {
+    return debounce((query: string) => {
+      onSearch?.(query);
+    }, 300);
+  }, [onSearch]);
 
   const searchPlaceholder = t('search.search-placeholder');
   const [value, setValue] = useState(defaultValue);
