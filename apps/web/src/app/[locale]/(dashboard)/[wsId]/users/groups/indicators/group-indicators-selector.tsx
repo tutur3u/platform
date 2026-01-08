@@ -78,22 +78,22 @@ export default function GroupIndicatorsSelector({
       if (hasManageUsers) {
         const { data, error } = await supabase
           .from('workspace_user_groups_with_guest')
-          .select(
-            'id,name, ws_id'
-          )
+          .select('id,name, ws_id')
           .eq('ws_id', wsId)
           .ilike('name', `%${debouncedQuery}%`)
           .order('name')
           .limit(20);
 
         if (error) throw error;
-        return (data || []);
+        return data || [];
       }
 
-      if (!workspaceUserId){
-        console.error('Cannot search groups without workspaceUserId when lacking manage_users permission');
+      if (!workspaceUserId) {
+        console.error(
+          'Cannot search groups without workspaceUserId when lacking manage_users permission'
+        );
         return [];
-      };
+      }
 
       const { data, error } = await supabase
         .from('workspace_user_groups_with_guest')
@@ -111,7 +111,7 @@ export default function GroupIndicatorsSelector({
       !!wsId &&
       (hasManageUsers || !!workspaceUserId) &&
       debouncedQuery.length > 0,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch selected group details (to display correct name even if not in search results)
