@@ -1732,6 +1732,7 @@
     "no_other_lists_available": "Không có danh sách khác",
     "no_projects_available": "Không có dự án nào",
     "no_projects_found": "Không tìm thấy dự án",
+    "no_results_found": "Không tìm thấy kết quả",
     "no_tasks": "Không có công việc",
     "no_tasks_to_move": "Không có công việc để di chuyển",
     "no_tasks_yet": "Chưa có công việc nào",
@@ -7890,6 +7891,7 @@
     "group_tags": "Gắn thẻ nhóm",
     "groups": "Nhóm",
     "guest_leads": "Khách hàng tiềm năng",
+    "metrics": "Số liệu",
     "overview": "Tổng quan",
     "reports": "Báo cáo"
   },
@@ -10020,6 +10022,7 @@
     "no_posts_to_show": "Không có bài viết nào để hiển thị.",
     "plural": "Nhóm người dùng",
     "posts": "Bài viết",
+    "search_group_placeholder": "Tìm kiếm nhóm...",
     "select_group": "Chọn nhóm người dùng",
     "select_group_description": "Chọn một nhóm để tiếp tục đến trang đích.",
     "select_group_placeholder": "Chọn một nhóm",

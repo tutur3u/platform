@@ -62,6 +62,8 @@ export default async function UserGroupDetailsPage({
         // Get permissions first to compute access flags
         const { containsPermission } = await getPermissions({ wsId });
 
+        const hasManageUsersPermission = containsPermission('manage_users');
+
         // Group-related permissions from migration
         const canViewUserGroups = containsPermission('view_user_groups');
 
@@ -69,7 +71,7 @@ export default async function UserGroupDetailsPage({
           console.error('User lacks permission to view user groups');
           notFound();
         }
-        const group = await getData(wsId, groupId);
+        const group = await getData(wsId, groupId, hasManageUsersPermission);
 
         // User Information Permissions
         const canViewPersonalInfo = containsPermission(
@@ -242,11 +244,17 @@ export default async function UserGroupDetailsPage({
   );
 }
 
-async function getData(wsId: string, groupId: string) {
+async function getData(
+  wsId: string,
+  groupId: string,
+  hasManageUsersPermission = false
+) {
   const supabase = await createClient();
 
   // Restrict visibility: users only see groups they're a member of.
-  await verifyGroupAccess(wsId, groupId);
+  if (!hasManageUsersPermission) {
+    await verifyGroupAccess(wsId, groupId);
+  }
 
   const { data, error } = await supabase
     .from('workspace_user_groups')

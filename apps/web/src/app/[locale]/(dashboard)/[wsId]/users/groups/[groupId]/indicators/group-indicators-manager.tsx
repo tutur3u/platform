@@ -823,13 +823,13 @@ export default function GroupIndicatorsManager({
                   <th className="sticky left-0 z-20 border-r bg-background px-4 py-2 text-center font-semibold">
                     #
                   </th>
-                  <th className="sticky left-12 z-20 min-w-[200px] border-r bg-background px-4 py-2 font-semibold">
+                  <th className="sticky left-12 z-20 min-w-50 border-r bg-background px-4 py-2 font-semibold">
                     {t('ws-users.full_name')}
                   </th>
                   {groupIndicators.map((indicator) => (
                     <th
                       key={indicator.id}
-                      className="min-w-[120px] border-r px-4 py-2 font-semibold"
+                      className="min-w-50 border-r px-4 py-2 font-semibold"
                     >
                       {canUpdateUserGroupsScores ? (
                         <button
@@ -848,7 +848,7 @@ export default function GroupIndicatorsManager({
                       )}
                     </th>
                   ))}
-                  <th className="sticky right-0 z-20 min-w-[100px] border-l bg-background px-4 py-2 font-semibold">
+                  <th className="sticky right-0 z-20 min-w-50 border-l bg-background px-4 py-2 font-semibold">
                     {t('common.average')}
                   </th>
                 </tr>

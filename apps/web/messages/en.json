@@ -1711,6 +1711,7 @@
     "no_other_lists_available": "No other lists available",
     "no_projects_available": "No projects available",
     "no_projects_found": "No projects found",
+    "no_results_found": "No results found",
     "no_tasks": "No tasks",
     "no_tasks_to_move": "No tasks to move",
     "no_tasks_yet": "No tasks yet",
@@ -7798,6 +7799,7 @@
     "group_tags": "Group Tags",
     "groups": "Groups",
     "guest_leads": "Guest Leads",
+    "metrics": "Metrics",
     "overview": "Overview",
     "reports": "Reports"
   },
@@ -9900,6 +9902,7 @@
     "no_posts_to_show": "No posts to show.",
     "plural": "User groups",
     "posts": "Posts",
+    "search_group_placeholder": "Search groups...",
     "select_group": "Select a user group",
     "select_group_description": "Choose a group to continue to your destination.",
     "select_group_placeholder": "Select a group",
