@@ -75,35 +75,25 @@ export default function GroupIndicatorsSelector({
     queryFn: async () => {
       if (!debouncedQuery) return [];
 
-      // if (hasManageUsers) {
-      //   const { data, error } = await supabase
-      //     .from('workspace_user_groups_with_guest')
-      //     .select(
-      //       'id,name, ws_id'
-      //     )
-      //     .eq('ws_id', wsId)
-      //     .ilike('name', `%${debouncedQuery}%`)
-      //     .order('name')
-      //     .limit(20);
+      if (hasManageUsers) {
+        const { data, error } = await supabase
+          .from('workspace_user_groups_with_guest')
+          .select(
+            'id,name, ws_id'
+          )
+          .eq('ws_id', wsId)
+          .ilike('name', `%${debouncedQuery}%`)
+          .order('name')
+          .limit(20);
 
-      //   if (error) throw error;
-      //   return (data || []);
-      // }
+        if (error) throw error;
+        return (data || []);
+      }
 
-      if (!workspaceUserId) return [];
-
-      // const { data: members, error: memberError } = await supabase
-      //   .from('workspace_user_groups_users')
-      //   .select('group_id')
-      //   .eq('user_id', workspaceUserId);
-
-      // if (memberError) throw memberError;
-
-      // const groupIds = members
-      //   ?.map((m) => m.group_id)
-      //   .filter(Boolean) as string[];
-
-      // if (!groupIds.length) return [];
+      if (!workspaceUserId){
+        console.error('Cannot search groups without workspaceUserId when lacking manage_users permission');
+        return [];
+      };
 
       const { data, error } = await supabase
         .from('workspace_user_groups_with_guest')
