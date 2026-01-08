@@ -66,6 +66,7 @@ export function UserGroupRowActions({
         toast.error(data.message);
       }
     } catch (error) {
+      console.error(error);
       toast.error(t('common.error'));
     } finally {
       setIsDeleting(false);
