@@ -579,8 +579,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/groups/indicators`,
           icon: <ChartColumn className="h-5 w-5" />,
           disabled: withoutPermission('manage_users'),
-        }
-        ,
+        },
         {
           title: t('sidebar_tabs.posts'),
           href: `/${personalOrWsId}/posts`,

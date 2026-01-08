@@ -244,14 +244,17 @@ export default async function UserGroupDetailsPage({
   );
 }
 
-async function getData(wsId: string, groupId: string, hasManageUsersPermission = false) {
+async function getData(
+  wsId: string,
+  groupId: string,
+  hasManageUsersPermission = false
+) {
   const supabase = await createClient();
 
   // Restrict visibility: users only see groups they're a member of.
-  if (!hasManageUsersPermission){
+  if (!hasManageUsersPermission) {
     await verifyGroupAccess(wsId, groupId);
   }
-
 
   const { data, error } = await supabase
     .from('workspace_user_groups')

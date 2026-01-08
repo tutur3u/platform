@@ -1986,10 +1986,7 @@
     "year_old": "year old",
     "years_old": "years old",
     "yellow": "Yellow",
-    "yesterday": "Yesterday",
-    "ws-user-groups": {
-      "search_group_placeholder": "Search for a group"
-    }
+    "yesterday": "Yesterday"
   },
   "confidential_mode": "Confidential mode",
   "contact": {
@@ -7802,9 +7799,9 @@
     "group_tags": "Group Tags",
     "groups": "Groups",
     "guest_leads": "Guest Leads",
+    "metrics": "Metrics",
     "overview": "Overview",
-    "reports": "Reports",
-    "metrics": "Metrics"
+    "reports": "Reports"
   },
   "workspace-workforce-tabs": {
     "contracts": "Contracts",
@@ -9905,13 +9902,13 @@
     "no_posts_to_show": "No posts to show.",
     "plural": "User groups",
     "posts": "Posts",
+    "search_group_placeholder": "Search groups...",
     "select_group": "Select a user group",
     "select_group_description": "Choose a group to continue to your destination.",
     "select_group_placeholder": "Select a group",
     "show_post_content": "Show post content",
     "show_post_status": "Show post status",
-    "singular": "User group",
-    "search_group_placeholder": "Search groups..."
+    "singular": "User group"
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Coupon",

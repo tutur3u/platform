@@ -14,11 +14,7 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tuturuuu/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Check, ChevronsUpDown } from '@tuturuuu/icons';
@@ -46,10 +42,10 @@ export default function GroupIndicatorsSelector({
 }: Props) {
   const t = useTranslations();
   const tc = useTranslations('common');
-  
+
   const [open, setOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  
+
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 300);
 
@@ -57,7 +53,13 @@ export default function GroupIndicatorsSelector({
 
   // Search groups (only active when searching)
   const searchGroupsQuery = useQuery<UserGroup[]>({
-    queryKey: ['user-groups-search', wsId, workspaceUserId, hasManageUsers, debouncedQuery],
+    queryKey: [
+      'user-groups-search',
+      wsId,
+      workspaceUserId,
+      hasManageUsers,
+      debouncedQuery,
+    ],
     queryFn: async () => {
       if (!debouncedQuery) return [];
 
@@ -74,19 +76,21 @@ export default function GroupIndicatorsSelector({
 
         if (error) throw error;
         return (data || []) as UserGroup[];
-      } 
-      
+      }
+
       if (!workspaceUserId) return [];
 
       const { data: members, error: memberError } = await supabase
         .from('workspace_user_groups_users')
         .select('group_id')
         .eq('user_id', workspaceUserId);
-        
+
       if (memberError) throw memberError;
-      
-      const groupIds = members?.map((m) => m.group_id).filter(Boolean) as string[];
-      
+
+      const groupIds = members
+        ?.map((m) => m.group_id)
+        .filter(Boolean) as string[];
+
       if (!groupIds.length) return [];
 
       const { data, error } = await supabase
@@ -103,7 +107,10 @@ export default function GroupIndicatorsSelector({
       if (error) throw error;
       return (data || []) as UserGroup[];
     },
-    enabled: !!wsId && (hasManageUsers || !!workspaceUserId) && debouncedQuery.length > 0,
+    enabled:
+      !!wsId &&
+      (hasManageUsers || !!workspaceUserId) &&
+      debouncedQuery.length > 0,
   });
 
   // Fetch selected group details (to display correct name even if not in search results)
@@ -116,7 +123,7 @@ export default function GroupIndicatorsSelector({
         .select('name')
         .eq('id', selectedGroupId)
         .single();
-      
+
       if (error) return null;
       return data as UserGroup;
     },
@@ -204,11 +211,13 @@ export default function GroupIndicatorsSelector({
             const id = (item as { id?: unknown }).id;
             if (typeof id !== 'string') return null;
 
-            const displayName = (item as { display_name?: unknown }).display_name;
+            const displayName = (item as { display_name?: unknown })
+              .display_name;
 
             return {
               id,
-              display_name: typeof displayName === 'string' ? displayName : null,
+              display_name:
+                typeof displayName === 'string' ? displayName : null,
             };
           })
           .filter(Boolean) as NonNullable<WorkspaceUser['linked_users']>;
@@ -250,14 +259,14 @@ export default function GroupIndicatorsSelector({
           </PopoverTrigger>
           <PopoverContent className="w-100 max-w-(--radix-popover-trigger-width) p-0">
             <Command shouldFilter={false}>
-              <CommandInput 
-                placeholder={t('ws-user-groups.select_group_placeholder')} 
+              <CommandInput
+                placeholder={t('ws-user-groups.select_group_placeholder')}
                 value={query}
                 onValueChange={setQuery}
               />
               <CommandList>
                 {searchGroupsQuery.isLoading ? (
-                   <div className="py-6 text-center text-sm text-muted-foreground">
+                  <div className="py-6 text-center text-muted-foreground text-sm">
                     {tc('loading')}
                   </div>
                 ) : groups.length > 0 ? (
@@ -285,7 +294,9 @@ export default function GroupIndicatorsSelector({
                   </CommandGroup>
                 ) : (
                   <CommandEmpty>
-                    {query ? tc('no_results_found') : t('ws-user-groups.search_group_placeholder')}
+                    {query
+                      ? tc('no_results_found')
+                      : t('ws-user-groups.search_group_placeholder')}
                   </CommandEmpty>
                 )}
               </CommandList>
