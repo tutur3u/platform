@@ -12,7 +12,7 @@ const updatePayrollRunSchema = z.object({
 });
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; runId: string }> }
 ) {
   const { wsId, runId } = await params;
@@ -114,7 +114,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; runId: string }> }
 ) {
   const { wsId, runId } = await params;

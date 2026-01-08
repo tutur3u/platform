@@ -6,25 +6,24 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const updateHolidaySchema = z.object({
-  name: z.string().min(1).optional(),
-  holiday_date: z.string().optional(),
-  is_recurring: z.boolean().optional(),
-  overtime_multiplier: z.number().min(1).max(10).optional(),
-  country_code: z.string().optional(),
+const updateLeaveBalanceSchema = z.object({
+  accrued_days: z.number().min(0).max(99999.99).optional(),
+  used_days: z.number().min(0).max(99999.99).optional(),
+  carried_over_days: z.number().min(0).max(99999.99).optional(),
+  adjusted_days: z.number().min(-99999.99).max(99999.99).optional(),
   notes: z.string().nullable().optional(),
 });
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ wsId: string; holidayId: string }> }
+  { params }: { params: Promise<{ wsId: string; balanceId: string }> }
 ) {
-  const { wsId, holidayId } = await params;
+  const { wsId, balanceId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
 
-  // All workspace members can view holidays - if they have any workspace permission, they're a member
+  // All workspace members can view leave balances
   const hasAnyPermission = permissions.permissions.length > 0;
 
   if (!hasAnyPermission) {
@@ -34,19 +33,32 @@ export async function GET(
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('workspace_holidays')
-    .select('*')
-    .eq('id', holidayId)
+    .from('leave_balances')
+    .select(
+      `
+      *,
+      leave_type:leave_types(*),
+      user:workspace_users(
+        id,
+        display_name,
+        user:users(id, display_name, avatar_url)
+      )
+    `
+    )
+    .eq('id', balanceId)
     .eq('ws_id', normalizedWsId)
     .single();
 
   if (error) {
-    console.error('Error fetching holiday:', error);
+    console.error('Error fetching leave balance:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   if (!data) {
-    return NextResponse.json({ error: 'Holiday not found' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Leave balance not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);
@@ -54,9 +66,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ wsId: string; holidayId: string }> }
+  { params }: { params: Promise<{ wsId: string; balanceId: string }> }
 ) {
-  const { wsId, holidayId } = await params;
+  const { wsId, balanceId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
@@ -65,7 +77,7 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const validation = updateHolidaySchema.safeParse(body);
+  const validation = updateLeaveBalanceSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(
@@ -77,20 +89,33 @@ export async function PATCH(
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('workspace_holidays')
+    .from('leave_balances')
     .update(validation.data)
-    .eq('id', holidayId)
+    .eq('id', balanceId)
     .eq('ws_id', normalizedWsId)
-    .select()
+    .select(
+      `
+      *,
+      leave_type:leave_types(*),
+      user:workspace_users(
+        id,
+        display_name,
+        user:users(id, display_name, avatar_url)
+      )
+    `
+    )
     .single();
 
   if (error) {
-    console.error('Error updating holiday:', error);
+    console.error('Error updating leave balance:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   if (!data) {
-    return NextResponse.json({ error: 'Holiday not found' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Leave balance not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);
@@ -98,9 +123,9 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ wsId: string; holidayId: string }> }
+  { params }: { params: Promise<{ wsId: string; balanceId: string }> }
 ) {
-  const { wsId, holidayId } = await params;
+  const { wsId, balanceId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
@@ -111,13 +136,13 @@ export async function DELETE(
   const supabase = await createClient();
 
   const { error } = await supabase
-    .from('workspace_holidays')
+    .from('leave_balances')
     .delete()
-    .eq('id', holidayId)
+    .eq('id', balanceId)
     .eq('ws_id', normalizedWsId);
 
   if (error) {
-    console.error('Error deleting holiday:', error);
+    console.error('Error deleting leave balance:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

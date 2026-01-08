@@ -182,8 +182,10 @@ function groupSessionsByDate(
 ): Record<string, TimeSession[]> {
   return sessions.reduce(
     (acc, session) => {
-      if (!acc[session.date]) acc[session.date] = [];
-      acc[session.date].push(session);
+      if (!acc[session.date]) {
+        acc[session.date] = [];
+      }
+      acc[session.date]!.push(session); // Non-null assertion safe after above check
       return acc;
     },
     {} as Record<string, TimeSession[]>
@@ -239,10 +241,10 @@ export function calculatePayroll(
     let overtimeMultiplier = 1.0;
 
     // Determine overtime classification
-    if (isHolidayDay) {
+    if (isHolidayDay && holiday) {
       // All hours on holidays count as overtime with holiday multiplier
       overtimeHours = dayTotalHours;
-      overtimeMultiplier = holiday!.overtime_multiplier;
+      overtimeMultiplier = holiday.overtime_multiplier;
     } else if (isWeekendDay) {
       // All hours on weekends count as overtime with weekend multiplier
       overtimeHours = dayTotalHours;
@@ -256,8 +258,11 @@ export function calculatePayroll(
 
     // Get applicable rate for this day's sessions
     // Note: Using first session's task for rate lookup (simplified)
+    const firstSession = daySessions[0];
+    if (!firstSession) continue; // Skip if no sessions (shouldn't happen)
+
     const hourlyRate = getApplicableRate(
-      daySessions[0],
+      firstSession,
       compensation.base_hourly_rate,
       rate_overrides,
       date
@@ -270,7 +275,7 @@ export function calculatePayroll(
       date,
       regular_hours: regularHours,
       overtime_hours: overtimeHours,
-      hourly_rate,
+      hourly_rate: hourlyRate,
       regular_pay: regularPay,
       overtime_pay: overtimePay,
       overtime_multiplier: overtimeMultiplier,

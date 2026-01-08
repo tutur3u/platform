@@ -6,13 +6,26 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const createHolidaySchema = z.object({
+const createLeaveTypeSchema = z.object({
   name: z.string().min(1),
-  holiday_date: z.string(),
-  is_recurring: z.boolean().default(false),
-  overtime_multiplier: z.number().min(1).max(10).default(3.0),
-  country_code: z.string().default('VN'),
-  notes: z.string().nullable().optional(),
+  code: z.string().min(1),
+  description: z.string().nullable().optional(),
+  color: z.string().default('#3b82f6'),
+  icon: z.string().default('calendar-days'),
+  is_paid: z.boolean().default(true),
+  requires_approval: z.boolean().default(true),
+  allow_half_days: z.boolean().default(true),
+  accrual_rate_days_per_month: z.number().min(0).max(99.99).default(0),
+  max_balance_days: z.number().min(0).max(9999.99).nullable().optional(),
+  max_carryover_days: z.number().min(0).max(9999.99).default(0),
+  is_tet_leave: z.boolean().default(false),
+  is_wedding_leave: z.boolean().default(false),
+  is_funeral_leave: z.boolean().default(false),
+  category: z
+    .enum(['standard', 'parental', 'special', 'custom'])
+    .default('custom'),
+  is_active: z.boolean().default(true),
+  display_order: z.number().int().default(0),
 });
 
 export async function GET(
@@ -22,12 +35,12 @@ export async function GET(
   const { wsId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
   const searchParams = req.nextUrl.searchParams;
-  const year = searchParams.get('year');
-  const countryCode = searchParams.get('countryCode');
+  const category = searchParams.get('category');
+  const isActive = searchParams.get('isActive');
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
 
-  // All workspace members can view holidays - if they have any workspace permission, they're a member
+  // All workspace members can view leave types
   const hasAnyPermission = permissions.permissions.length > 0;
 
   if (!hasAnyPermission) {
@@ -37,26 +50,31 @@ export async function GET(
   const supabase = await createClient();
 
   let query = supabase
-    .from('workspace_holidays')
+    .from('leave_types')
     .select('*')
     .eq('ws_id', normalizedWsId);
 
-  if (year) {
-    // Filter by year
-    query = query.gte('holiday_date', `${year}-01-01`);
-    query = query.lte('holiday_date', `${year}-12-31`);
+  if (
+    category &&
+    ['standard', 'parental', 'special', 'custom'].includes(category)
+  ) {
+    query = query.eq(
+      'category',
+      category as 'standard' | 'parental' | 'special' | 'custom'
+    );
   }
 
-  if (countryCode) {
-    query = query.eq('country_code', countryCode);
+  if (isActive !== null) {
+    query = query.eq('is_active', isActive === 'true');
   }
 
-  query = query.order('holiday_date', { ascending: true });
+  query = query.order('display_order', { ascending: true });
+  query = query.order('name', { ascending: true });
 
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching holidays:', error);
+    console.error('Error fetching leave types:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -76,7 +94,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const validation = createHolidaySchema.safeParse(body);
+  const validation = createLeaveTypeSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(
@@ -87,17 +105,27 @@ export async function POST(
 
   const supabase = await createClient();
 
+  // Get current user for created_by field
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { data, error } = await supabase
-    .from('workspace_holidays')
+    .from('leave_types')
     .insert({
       ws_id: normalizedWsId,
+      created_by: user.id,
       ...validation.data,
     })
     .select()
     .single();
 
   if (error) {
-    console.error('Error creating holiday:', error);
+    console.error('Error creating leave type:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

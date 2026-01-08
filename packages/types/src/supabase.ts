@@ -3822,6 +3822,360 @@ export type Database = {
           },
         ];
       };
+      leave_balances: {
+        Row: {
+          accrued_days: number;
+          adjusted_days: number;
+          balance_year: number;
+          carried_over_days: number | null;
+          created_at: string | null;
+          id: string;
+          last_accrual_date: string | null;
+          leave_type_id: string;
+          notes: string | null;
+          updated_at: string | null;
+          used_days: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          accrued_days?: number;
+          adjusted_days?: number;
+          balance_year: number;
+          carried_over_days?: number | null;
+          created_at?: string | null;
+          id?: string;
+          last_accrual_date?: string | null;
+          leave_type_id: string;
+          notes?: string | null;
+          updated_at?: string | null;
+          used_days?: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          accrued_days?: number;
+          adjusted_days?: number;
+          balance_year?: number;
+          carried_over_days?: number | null;
+          created_at?: string | null;
+          id?: string;
+          last_accrual_date?: string | null;
+          leave_type_id?: string;
+          notes?: string | null;
+          updated_at?: string | null;
+          used_days?: number;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'leave_balances_leave_type_id_fkey';
+            columns: ['leave_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'leave_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      leave_requests: {
+        Row: {
+          approver_id: string | null;
+          attachment_urls: string[] | null;
+          created_at: string | null;
+          duration_days: number;
+          end_date: string;
+          id: string;
+          is_half_day_end: boolean | null;
+          is_half_day_start: boolean | null;
+          leave_type_id: string;
+          reason: string | null;
+          reviewed_at: string | null;
+          reviewer_comments: string | null;
+          start_date: string;
+          status: Database['public']['Enums']['leave_request_status'];
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          approver_id?: string | null;
+          attachment_urls?: string[] | null;
+          created_at?: string | null;
+          duration_days: number;
+          end_date: string;
+          id?: string;
+          is_half_day_end?: boolean | null;
+          is_half_day_start?: boolean | null;
+          leave_type_id: string;
+          reason?: string | null;
+          reviewed_at?: string | null;
+          reviewer_comments?: string | null;
+          start_date: string;
+          status?: Database['public']['Enums']['leave_request_status'];
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          approver_id?: string | null;
+          attachment_urls?: string[] | null;
+          created_at?: string | null;
+          duration_days?: number;
+          end_date?: string;
+          id?: string;
+          is_half_day_end?: boolean | null;
+          is_half_day_start?: boolean | null;
+          leave_type_id?: string;
+          reason?: string | null;
+          reviewed_at?: string | null;
+          reviewer_comments?: string | null;
+          start_date?: string;
+          status?: Database['public']['Enums']['leave_request_status'];
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_leave_type_id_fkey';
+            columns: ['leave_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'leave_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      leave_types: {
+        Row: {
+          accrual_rate_days_per_month: number | null;
+          allow_half_days: boolean;
+          category: Database['public']['Enums']['leave_category'];
+          code: string;
+          color: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          display_order: number | null;
+          icon: string | null;
+          id: string;
+          is_active: boolean;
+          is_funeral_leave: boolean | null;
+          is_paid: boolean;
+          is_tet_leave: boolean | null;
+          is_wedding_leave: boolean | null;
+          max_balance_days: number | null;
+          max_carryover_days: number | null;
+          name: string;
+          requires_approval: boolean;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          accrual_rate_days_per_month?: number | null;
+          allow_half_days?: boolean;
+          category?: Database['public']['Enums']['leave_category'];
+          code: string;
+          color?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_funeral_leave?: boolean | null;
+          is_paid?: boolean;
+          is_tet_leave?: boolean | null;
+          is_wedding_leave?: boolean | null;
+          max_balance_days?: number | null;
+          max_carryover_days?: number | null;
+          name: string;
+          requires_approval?: boolean;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          accrual_rate_days_per_month?: number | null;
+          allow_half_days?: boolean;
+          category?: Database['public']['Enums']['leave_category'];
+          code?: string;
+          color?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_funeral_leave?: boolean | null;
+          is_paid?: boolean;
+          is_tet_leave?: boolean | null;
+          is_wedding_leave?: boolean | null;
+          max_balance_days?: number | null;
+          max_carryover_days?: number | null;
+          name?: string;
+          requires_approval?: boolean;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       link_analytics: {
         Row: {
           browser: string | null;
@@ -16479,6 +16833,16 @@ export type Database = {
           sync_token: string;
         }[];
       };
+      calculate_leave_duration: {
+        Args: {
+          p_end_date: string;
+          p_is_half_day_end: boolean;
+          p_is_half_day_start: boolean;
+          p_start_date: string;
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
       calculate_next_occurrence: {
         Args: {
           frequency: Database['public']['Enums']['recurring_frequency'];
@@ -18068,6 +18432,10 @@ export type Database = {
           relevance: number;
         }[];
       };
+      seed_default_leave_types: {
+        Args: { p_ws_id: string };
+        Returns: undefined;
+      };
       seed_default_vn_holidays: {
         Args: { target_ws_id: string };
         Returns: undefined;
@@ -18264,6 +18632,13 @@ export type Database = {
         | 'ENABLE_QUIZZES';
       habit_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
       ip_block_status: 'active' | 'expired' | 'manually_unblocked';
+      leave_category: 'standard' | 'parental' | 'special' | 'custom';
+      leave_request_status:
+        | 'pending'
+        | 'approved'
+        | 'rejected'
+        | 'cancelled'
+        | 'withdrawn';
       monthly_recurrence_type: 'day_of_month' | 'day_of_week';
       notification_delivery_mode: 'immediate' | 'batched';
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -18910,6 +19285,14 @@ export const Constants = {
       ],
       habit_frequency: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
       ip_block_status: ['active', 'expired', 'manually_unblocked'],
+      leave_category: ['standard', 'parental', 'special', 'custom'],
+      leave_request_status: [
+        'pending',
+        'approved',
+        'rejected',
+        'cancelled',
+        'withdrawn',
+      ],
       monthly_recurrence_type: ['day_of_month', 'day_of_week'],
       notification_delivery_mode: ['immediate', 'batched'],
       notification_priority: ['low', 'medium', 'high', 'urgent'],

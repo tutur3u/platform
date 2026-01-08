@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  type BreakRecord,
   calculatePayroll,
   type PayrollCalculationInput,
   type TimeSession,
-  type BreakRecord,
 } from '@tuturuuu/utils/payroll/calculation-engine';
 import {
   getPermissions,
@@ -12,7 +12,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; runId: string }> }
 ) {
   const { wsId, runId } = await params;
@@ -120,14 +120,17 @@ export async function POST(
       }
 
       // Transform sessions to the format expected by calculation engine
-      const timeSessions: TimeSession[] = sessions.map((s) => ({
-        id: s.id,
-        start_time: s.start_time,
-        end_time: s.end_time,
-        duration_seconds: s.duration_seconds || 0,
-        task_id: s.task_id,
-        date: new Date(s.start_time).toISOString().split('T')[0],
-      }));
+      // Filter out sessions without end_time (still running) and map to TimeSession format
+      const timeSessions: TimeSession[] = sessions
+        .filter((s) => s.end_time !== null)
+        .map((s) => ({
+          id: s.id,
+          start_time: s.start_time,
+          end_time: s.end_time!,
+          duration_seconds: s.duration_seconds || 0,
+          task_id: s.task_id,
+          date: new Date(s.start_time).toISOString().split('T')[0]!,
+        }));
 
       // 4b. Fetch breaks for these sessions
       const sessionIds = sessions.map((s) => s.id);
@@ -142,11 +145,12 @@ export async function POST(
 
       const breakRecords: BreakRecord[] = (breaks || []).map((b) => ({
         session_id: b.session_id,
-        break_duration_seconds: b.break_end && b.break_start
-          ? (new Date(b.break_end).getTime() -
-              new Date(b.break_start).getTime()) /
-            1000
-          : 0,
+        break_duration_seconds:
+          b.break_end && b.break_start
+            ? (new Date(b.break_end).getTime() -
+                new Date(b.break_start).getTime()) /
+              1000
+            : 0,
       }));
 
       // 4c. Fetch rate overrides for this user

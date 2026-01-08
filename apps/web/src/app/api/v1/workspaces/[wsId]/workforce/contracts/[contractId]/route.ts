@@ -23,7 +23,7 @@ const updateContractSchema = z.object({
 });
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; contractId: string }> }
 ) {
   const { wsId, contractId } = await params;
@@ -104,7 +104,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; contractId: string }> }
 ) {
   const { wsId, contractId } = await params;

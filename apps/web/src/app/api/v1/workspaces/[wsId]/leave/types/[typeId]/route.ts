@@ -6,25 +6,36 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const updateHolidaySchema = z.object({
+const updateLeaveTypeSchema = z.object({
   name: z.string().min(1).optional(),
-  holiday_date: z.string().optional(),
-  is_recurring: z.boolean().optional(),
-  overtime_multiplier: z.number().min(1).max(10).optional(),
-  country_code: z.string().optional(),
-  notes: z.string().nullable().optional(),
+  code: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  color: z.string().optional(),
+  icon: z.string().optional(),
+  is_paid: z.boolean().optional(),
+  requires_approval: z.boolean().optional(),
+  allow_half_days: z.boolean().optional(),
+  accrual_rate_days_per_month: z.number().min(0).max(99.99).optional(),
+  max_balance_days: z.number().min(0).max(9999.99).nullable().optional(),
+  max_carryover_days: z.number().min(0).max(9999.99).optional(),
+  is_tet_leave: z.boolean().optional(),
+  is_wedding_leave: z.boolean().optional(),
+  is_funeral_leave: z.boolean().optional(),
+  category: z.enum(['standard', 'parental', 'special', 'custom']).optional(),
+  is_active: z.boolean().optional(),
+  display_order: z.number().int().optional(),
 });
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ wsId: string; holidayId: string }> }
+  { params }: { params: Promise<{ wsId: string; typeId: string }> }
 ) {
-  const { wsId, holidayId } = await params;
+  const { wsId, typeId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
 
-  // All workspace members can view holidays - if they have any workspace permission, they're a member
+  // All workspace members can view leave types
   const hasAnyPermission = permissions.permissions.length > 0;
 
   if (!hasAnyPermission) {
@@ -34,19 +45,22 @@ export async function GET(
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('workspace_holidays')
+    .from('leave_types')
     .select('*')
-    .eq('id', holidayId)
+    .eq('id', typeId)
     .eq('ws_id', normalizedWsId)
     .single();
 
   if (error) {
-    console.error('Error fetching holiday:', error);
+    console.error('Error fetching leave type:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   if (!data) {
-    return NextResponse.json({ error: 'Holiday not found' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Leave type not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);
@@ -54,9 +68,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ wsId: string; holidayId: string }> }
+  { params }: { params: Promise<{ wsId: string; typeId: string }> }
 ) {
-  const { wsId, holidayId } = await params;
+  const { wsId, typeId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
@@ -65,7 +79,7 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const validation = updateHolidaySchema.safeParse(body);
+  const validation = updateLeaveTypeSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(
@@ -77,20 +91,23 @@ export async function PATCH(
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('workspace_holidays')
+    .from('leave_types')
     .update(validation.data)
-    .eq('id', holidayId)
+    .eq('id', typeId)
     .eq('ws_id', normalizedWsId)
     .select()
     .single();
 
   if (error) {
-    console.error('Error updating holiday:', error);
+    console.error('Error updating leave type:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   if (!data) {
-    return NextResponse.json({ error: 'Holiday not found' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Leave type not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);
@@ -98,9 +115,9 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ wsId: string; holidayId: string }> }
+  { params }: { params: Promise<{ wsId: string; typeId: string }> }
 ) {
-  const { wsId, holidayId } = await params;
+  const { wsId, typeId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const permissions = await getPermissions({ wsId: normalizedWsId });
@@ -110,14 +127,30 @@ export async function DELETE(
 
   const supabase = await createClient();
 
+  // Check if leave type has associated balances or requests
+  const { count: balanceCount } = await supabase
+    .from('leave_balances')
+    .select('*', { count: 'exact', head: true })
+    .eq('leave_type_id', typeId);
+
+  if (balanceCount && balanceCount > 0) {
+    return NextResponse.json(
+      {
+        error:
+          'Cannot delete leave type with existing balances. Please deactivate instead.',
+      },
+      { status: 400 }
+    );
+  }
+
   const { error } = await supabase
-    .from('workspace_holidays')
+    .from('leave_types')
     .delete()
-    .eq('id', holidayId)
+    .eq('id', typeId)
     .eq('ws_id', normalizedWsId);
 
   if (error) {
-    console.error('Error deleting holiday:', error);
+    console.error('Error deleting leave type:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

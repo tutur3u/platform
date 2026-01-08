@@ -14,29 +14,26 @@ const updateBenefitSchema = z.object({
       'vision_insurance',
       'life_insurance',
       'retirement_401k',
-      'pension',
-      'stock_options',
-      'meal_allowance',
-      'transport_allowance',
-      'phone_allowance',
-      'internet_allowance',
-      'performance_bonus',
-      'signing_bonus',
-      'annual_bonus',
-      'vacation_days',
-      'sick_leave',
-      'parental_leave',
+      'stipend_transport',
+      'stipend_meal',
+      'stipend_phone',
+      'stipend_remote',
+      'bonus_performance',
+      'bonus_signing',
+      'bonus_holiday',
+      'leave_vacation',
+      'leave_sick',
       'social_insurance',
-      'grab_allowance',
+      'grab_for_business',
       'google_workspace',
       'software_license',
-      'training_budget',
+      'training_education',
       'gym_membership',
-      'responsibility_allowance',
-      'attendance_allowance',
-      'hazardous_work_allowance',
-      'housing_allowance',
-      'petrol_allowance',
+      'allowance_responsibility',
+      'allowance_attendance',
+      'allowance_hazardous',
+      'allowance_housing',
+      'allowance_petrol',
       'other',
     ])
     .optional(),
@@ -45,7 +42,7 @@ const updateBenefitSchema = z.object({
   currency: z.string().optional(),
   is_recurring: z.boolean().optional(),
   recurrence_period: z
-    .enum(['monthly', 'quarterly', 'annually', 'one_time'])
+    .enum(['weekly', 'bi_weekly', 'monthly', 'annual'])
     .optional(),
   effective_from: z.string().optional(),
   effective_until: z.string().nullable().optional(),
@@ -53,7 +50,7 @@ const updateBenefitSchema = z.object({
 });
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; benefitId: string }> }
 ) {
   const { wsId, benefitId } = await params;
@@ -140,7 +137,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; benefitId: string }> }
 ) {
   const { wsId, benefitId } = await params;

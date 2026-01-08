@@ -6,7 +6,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; runId: string }> }
 ) {
   const { wsId, runId } = await params;

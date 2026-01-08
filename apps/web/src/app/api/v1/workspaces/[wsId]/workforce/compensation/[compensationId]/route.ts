@@ -13,7 +13,7 @@ const updateCompensationSchema = z.object({
   insurance_salary: z.number().nonnegative().optional(),
   currency: z.string().optional(),
   payment_frequency: z
-    .enum(['weekly', 'biweekly', 'monthly', 'quarterly', 'annually'])
+    .enum(['weekly', 'bi_weekly', 'monthly', 'annual'])
     .optional(),
   overtime_threshold_daily_hours: z.number().positive().optional(),
   overtime_multiplier_daily: z.number().min(1).optional(),
@@ -24,10 +24,8 @@ const updateCompensationSchema = z.object({
 });
 
 export async function GET(
-  req: NextRequest,
-  {
-    params,
-  }: { params: Promise<{ wsId: string; compensationId: string }> }
+  _req: NextRequest,
+  { params }: { params: Promise<{ wsId: string; compensationId: string }> }
 ) {
   const { wsId, compensationId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
@@ -67,9 +65,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  {
-    params,
-  }: { params: Promise<{ wsId: string; compensationId: string }> }
+  { params }: { params: Promise<{ wsId: string; compensationId: string }> }
 ) {
   const { wsId, compensationId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
@@ -115,10 +111,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
-  {
-    params,
-  }: { params: Promise<{ wsId: string; compensationId: string }> }
+  _req: NextRequest,
+  { params }: { params: Promise<{ wsId: string; compensationId: string }> }
 ) {
   const { wsId, compensationId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);

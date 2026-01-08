@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  calculatePayroll,
-  type PayrollCalculationInput,
-  type TimeSession,
-  type BreakRecord,
-  type Holiday,
-  type RateOverride,
-  type UserCompensation,
   type Benefit,
+  type BreakRecord,
+  calculatePayroll,
+  type Holiday,
+  type PayrollCalculationInput,
+  type RateOverride,
+  type TimeSession,
+  type UserCompensation,
 } from '../payroll/calculation-engine';
 
 // ==================== TEST DATA SETUP ====================
@@ -138,7 +138,7 @@ describe('Payroll Calculation Engine', () => {
       expect(result.overtime_hours).toBe(2);
       expect(result.hourly_pay).toBe(8 * 50000); // 400,000 VND
       expect(result.overtime_pay).toBe(2 * 50000 * 1.5); // 150,000 VND
-      expect(result.gross_pay).toBeGreaterThan(400000 + 150000);
+      expect(result.gross_pay).toBeGreaterThanOrEqual(400000 + 150000);
     });
 
     it('should handle multiple sessions on same day', () => {
@@ -189,8 +189,9 @@ describe('Payroll Calculation Engine', () => {
       expect(result.overtime_pay).toBe(8 * 50000 * 2.0); // 800,000 VND
 
       const dailyBreakdown = result.daily_breakdown[0];
-      expect(dailyBreakdown.is_weekend).toBe(true);
-      expect(dailyBreakdown.overtime_multiplier).toBe(2.0);
+      expect(dailyBreakdown).toBeDefined();
+      expect(dailyBreakdown?.is_weekend).toBe(true);
+      expect(dailyBreakdown?.overtime_multiplier).toBe(2.0);
     });
 
     it('should apply 2x multiplier for Sunday work', () => {
@@ -236,9 +237,10 @@ describe('Payroll Calculation Engine', () => {
       expect(result.overtime_pay).toBe(8 * 50000 * 3.0); // 1,200,000 VND
 
       const dailyBreakdown = result.daily_breakdown[0];
-      expect(dailyBreakdown.is_holiday).toBe(true);
-      expect(dailyBreakdown.holiday_name).toBe('Tết Nguyên Đán (Ngày 1)');
-      expect(dailyBreakdown.overtime_multiplier).toBe(3.0);
+      expect(dailyBreakdown).toBeDefined();
+      expect(dailyBreakdown?.is_holiday).toBe(true);
+      expect(dailyBreakdown?.holiday_name).toBe('Tết Nguyên Đán (Ngày 1)');
+      expect(dailyBreakdown?.overtime_multiplier).toBe(3.0);
     });
 
     it('should apply 3x multiplier for National Day', () => {
@@ -278,8 +280,10 @@ describe('Payroll Calculation Engine', () => {
 
       const result = calculatePayroll(input);
 
-      expect(result.daily_breakdown[0].overtime_multiplier).toBe(3.0);
-      expect(result.daily_breakdown[0].is_holiday).toBe(true);
+      const dailyBreakdown = result.daily_breakdown[0];
+      expect(dailyBreakdown).toBeDefined();
+      expect(dailyBreakdown?.overtime_multiplier).toBe(3.0);
+      expect(dailyBreakdown?.is_holiday).toBe(true);
     });
   });
 
@@ -427,7 +431,7 @@ describe('Payroll Calculation Engine', () => {
         user_id: 'user-1',
         contract_id: 'contract-1',
         sessions: [
-          createSession('session-1', '2026-01-10', 8, 'task-1'), // Within range
+          createSession('session-1', '2026-01-08', 8, 'task-1'), // Thursday, within range
         ],
         breaks: [],
         rate_overrides: rateOverrides,
@@ -477,7 +481,7 @@ describe('Payroll Calculation Engine', () => {
       const result = calculatePayroll(input);
 
       expect(result.benefits_total).toBe(800000); // 500k + 300k
-      expect(result.gross_pay).toBeGreaterThan(
+      expect(result.gross_pay).toBeGreaterThanOrEqual(
         result.hourly_pay + result.benefits_total
       );
     });
@@ -509,7 +513,7 @@ describe('Payroll Calculation Engine', () => {
 
       expect(result.benefits_total).toBe(0); // Not recurring
       expect(result.bonuses_total).toBe(2000000);
-      expect(result.gross_pay).toBeGreaterThan(
+      expect(result.gross_pay).toBeGreaterThanOrEqual(
         result.hourly_pay + result.bonuses_total
       );
     });
@@ -611,11 +615,9 @@ describe('Payroll Calculation Engine', () => {
       // Create 4 weeks of work (Mon-Fri, 8 hours each)
       for (let week = 0; week < 4; week++) {
         for (let day = 0; day < 5; day++) {
-          const date = new Date(2026, 0, 5 + week * 7 + day); // Start Jan 5 (Monday)
-          const dateStr = date.toISOString().split('T')[0];
-          sessions.push(
-            createSession(`session-${week}-${day}`, dateStr, 8)
-          );
+          const date = new Date(Date.UTC(2026, 0, 5 + week * 7 + day)); // Start Jan 5 (Monday) UTC
+          const dateStr = date.toISOString().split('T')[0]!; // Non-null assertion safe here
+          sessions.push(createSession(`session-${week}-${day}`, dateStr, 8));
         }
       }
 

@@ -6,7 +6,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; runId: string }> }
 ) {
   const { wsId, runId } = await params;
@@ -41,7 +41,10 @@ export async function POST(
     );
   }
 
-  if (existingRun.status === 'draft' || existingRun.status === 'pending_approval') {
+  if (
+    existingRun.status === 'draft' ||
+    existingRun.status === 'pending_approval'
+  ) {
     return NextResponse.json(
       { error: 'Payroll run must be approved before finalizing' },
       { status: 400 }

@@ -15,7 +15,7 @@ const updateRateOverrideSchema = z.object({
 });
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; overrideId: string }> }
 ) {
   const { wsId, overrideId } = await params;
@@ -102,7 +102,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ wsId: string; overrideId: string }> }
 ) {
   const { wsId, overrideId } = await params;

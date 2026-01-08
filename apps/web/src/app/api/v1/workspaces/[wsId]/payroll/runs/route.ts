@@ -40,7 +40,15 @@ export async function GET(
     .eq('ws_id', normalizedWsId);
 
   if (status) {
-    query = query.eq('status', status);
+    query = query.eq(
+      'status',
+      status as
+        | 'draft'
+        | 'pending_approval'
+        | 'approved'
+        | 'finalized'
+        | 'cancelled'
+    );
   }
 
   query = query.order('period_start', { ascending: false });
