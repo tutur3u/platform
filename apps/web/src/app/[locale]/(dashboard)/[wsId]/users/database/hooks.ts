@@ -6,6 +6,23 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 
+/**
+ * Shared helper to fetch all workspace user groups
+ * Used by both useWorkspaceUserGroups and useExcludedUserGroups
+ */
+async function fetchAllWorkspaceUserGroups(wsId: string): Promise<UserGroup[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_user_groups_with_amount')
+    .select('id, name, amount')
+    .eq('ws_id', wsId)
+    .order('name');
+
+  if (error) throw error;
+  return data as UserGroup[];
+}
+
 export interface WorkspaceUsersParams {
   q?: string;
   page?: number;
@@ -35,8 +52,13 @@ export function useWorkspaceUsers(
     initialData?: WorkspaceUsersResponse;
   }
 ) {
-  const { q = '', page = 1, pageSize = 10, includedGroups = [], excludedGroups = [] } = params;
-
+  const {
+    q = '',
+    page = 1,
+    pageSize = 10,
+    includedGroups = [],
+    excludedGroups = [],
+  } = params;
 
   return useQuery({
     queryKey: [
@@ -46,15 +68,15 @@ export function useWorkspaceUsers(
     ],
     queryFn: async (): Promise<WorkspaceUsersResponse> => {
       const searchParams = new URLSearchParams();
-      
+
       if (q) searchParams.set('q', q);
       searchParams.set('page', String(page));
       searchParams.set('pageSize', String(pageSize));
-      
+
       includedGroups.forEach((group) => {
         searchParams.append('includedGroups', group);
       });
-      
+
       excludedGroups.forEach((group) => {
         searchParams.append('excludedGroups', group);
       });
@@ -84,18 +106,7 @@ export function useWorkspaceUsers(
 export function useWorkspaceUserGroups(wsId: string) {
   return useQuery({
     queryKey: ['workspace-user-groups', wsId],
-    queryFn: async (): Promise<UserGroup[]> => {
-      const supabase = createClient();
-      
-      const { data, error } = await supabase
-        .from('workspace_user_groups_with_amount')
-        .select('id, name, amount')
-        .eq('ws_id', wsId)
-        .order('name');
-
-      if (error) throw error;
-      return data as UserGroup[];
-    },
+    queryFn: () => fetchAllWorkspaceUserGroups(wsId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -111,21 +122,13 @@ export function useExcludedUserGroups(
   return useQuery({
     queryKey: ['excluded-user-groups', wsId, includedGroups],
     queryFn: async (): Promise<UserGroup[]> => {
-      const supabase = createClient();
-
+      // If no included groups, return all groups
       if (includedGroups.length === 0) {
-        // If no included groups, return all groups
-        const { data, error } = await supabase
-          .from('workspace_user_groups_with_amount')
-          .select('id, name, amount')
-          .eq('ws_id', wsId)
-          .order('name');
-
-        if (error) throw error;
-        return data as UserGroup[];
+        return fetchAllWorkspaceUserGroups(wsId);
       }
 
       // Use RPC to get possible excluded groups
+      const supabase = createClient();
       const { data, error } = await supabase
         .rpc('get_possible_excluded_groups', {
           _ws_id: wsId,
@@ -150,7 +153,7 @@ export function useWorkspaceUserFields(wsId: string) {
     queryKey: ['workspace-user-fields', wsId],
     queryFn: async (): Promise<WorkspaceUserField[]> => {
       const supabase = createClient();
-      
+
       const { data, error } = await supabase
         .from('workspace_user_fields')
         .select('*')

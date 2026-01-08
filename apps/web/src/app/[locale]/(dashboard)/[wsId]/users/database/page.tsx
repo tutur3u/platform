@@ -161,8 +161,7 @@ async function getInitialData(
     )
     .select('*')
     .order('full_name', { ascending: true, nullsFirst: false })
-    .range(0, 10)
-    .limit(10);
+    .range(0, 9);
 
   const { data, error, count } = await queryBuilder;
 

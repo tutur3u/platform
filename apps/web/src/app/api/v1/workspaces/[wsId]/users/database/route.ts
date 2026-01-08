@@ -82,8 +82,8 @@ export async function GET(request: Request, { params }: Params) {
 
     // Apply pagination
     const start = (sp.page - 1) * sp.pageSize;
-    const end = sp.page * sp.pageSize;
-    queryBuilder.range(start, end).limit(sp.pageSize);
+    const end = sp.page * sp.pageSize - 1;
+    queryBuilder.range(start, end);
 
     const { data, error, count } = await queryBuilder;
 
