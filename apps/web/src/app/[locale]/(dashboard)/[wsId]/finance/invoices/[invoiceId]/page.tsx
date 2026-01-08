@@ -19,6 +19,8 @@ interface Props {
 }
 
 export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
+  const { invoiceId, locale } = await params;
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -30,7 +32,9 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
         const canUpdateInvoices = containsPermission('update_invoices');
         return (
           <InvoiceDetailsPage
-            params={params}
+            wsId={wsId}
+            locale={locale}
+            invoiceId={invoiceId}
             canUpdateInvoices={canUpdateInvoices}
           />
         );

@@ -424,7 +424,7 @@ export async function POST(req: Request, { params }: Params) {
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
       amount: -product.quantity, // Negative because it's being sold
-      creator_id: workspaceUserId || '',
+      creator_id: workspaceUserId || customer_id,
       beneficiary_id: customer_id,
     }));
 

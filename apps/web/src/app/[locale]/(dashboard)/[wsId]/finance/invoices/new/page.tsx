@@ -23,7 +23,7 @@ export default async function WorkspaceInvoicesPage({ params }: Props) {
           wsId,
         });
         if (withoutPermission('create_invoices')) notFound();
-        return <NewInvoicePage params={params} />;
+        return <NewInvoicePage wsId={wsId} />;
       }}
     </WorkspaceWrapper>
   );

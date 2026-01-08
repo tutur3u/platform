@@ -14,19 +14,15 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { use, useState } from 'react';
+import { useState } from 'react';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
 
 interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
+  wsId: string;
 }
 
-export default function NewInvoicePage({ params }: Props) {
-  const { wsId } = use(params);
-
+export default function NewInvoicePage({ wsId }: Props) {
   const t = useTranslations();
   const searchParams = useSearchParams();
 

@@ -21,20 +21,19 @@ import InvoiceCard from './invoice-card';
 import InvoiceEditForm from './invoice-edit-form';
 
 interface Props {
-  params: Promise<{
-    wsId: string;
-    locale: string;
-    invoiceId: string;
-  }>;
+  wsId: string;
+  locale: string;
+  invoiceId: string;
   canUpdateInvoices?: boolean;
 }
 
 export default async function InvoiceDetailsPage({
-  params,
+  wsId,
+  locale,
+  invoiceId,
   canUpdateInvoices = false,
 }: Props) {
   const t = await getTranslations();
-  const { locale, wsId, invoiceId } = await params;
 
   const invoice = await getInvoiceDetails(invoiceId);
   const products = await getProducts(invoiceId);

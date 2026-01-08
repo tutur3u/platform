@@ -12,12 +12,18 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import moment from 'moment';
 
+type DeleteInvoiceAction = (
+  wsId: string,
+  invoiceId: string
+) => Promise<{ success: boolean; message?: string }>;
+
 export const invoiceColumns = (
   t: any,
   namespace: string | undefined,
   _extraColumns?: any[],
   extraData?: {
     canDeleteInvoices?: boolean;
+    deleteInvoiceAction?: DeleteInvoiceAction;
   }
 ): ColumnDef<Invoice>[] => [
   // {
@@ -221,6 +227,7 @@ export const invoiceColumns = (
         row={row}
         href={row.original.href}
         canDeleteInvoices={extraData?.canDeleteInvoices}
+        deleteInvoiceAction={extraData?.deleteInvoiceAction}
       />
     ),
   },
