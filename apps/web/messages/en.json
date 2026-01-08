@@ -1711,6 +1711,7 @@
     "no_other_lists_available": "No other lists available",
     "no_projects_available": "No projects available",
     "no_projects_found": "No projects found",
+    "no_results_found": "No results found",
     "no_tasks": "No tasks",
     "no_tasks_to_move": "No tasks to move",
     "no_tasks_yet": "No tasks yet",
@@ -1985,7 +1986,10 @@
     "year_old": "year old",
     "years_old": "years old",
     "yellow": "Yellow",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "ws-user-groups": {
+      "search_group_placeholder": "Search for a group"
+    }
   },
   "confidential_mode": "Confidential mode",
   "contact": {
@@ -7799,7 +7803,8 @@
     "groups": "Groups",
     "guest_leads": "Guest Leads",
     "overview": "Overview",
-    "reports": "Reports"
+    "reports": "Reports",
+    "metrics": "Metrics"
   },
   "workspace-workforce-tabs": {
     "contracts": "Contracts",
@@ -9905,7 +9910,8 @@
     "select_group_placeholder": "Select a group",
     "show_post_content": "Show post content",
     "show_post_status": "Show post status",
-    "singular": "User group"
+    "singular": "User group",
+    "search_group_placeholder": "Search groups..."
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Coupon",

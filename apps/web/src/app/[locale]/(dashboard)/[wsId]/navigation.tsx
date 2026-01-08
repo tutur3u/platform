@@ -15,6 +15,7 @@ import {
   Cctv,
   ChartArea,
   ChartColumnStacked,
+  ChartColumn,
   ChartGantt,
   CheckCircle2,
   CircleDollarSign,
@@ -553,6 +554,7 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-users-tabs.groups'),
           href: `/${personalOrWsId}/users/groups`,
           icon: <Users className="h-5 w-5" />,
+          matchExact: true,
           disabled:
             withoutPermission('manage_users') &&
             withoutPermission('view_user_groups'),
@@ -572,6 +574,13 @@ export async function WorkspaceNavigationLinks({
           icon: <ClipboardList className="h-5 w-5" />,
           disabled: withoutPermission('manage_users'),
         },
+        {
+          title: t('workspace-users-tabs.metrics'),
+          href: `/${personalOrWsId}/users/groups/indicators`,
+          icon: <ChartColumn className="h-5 w-5" />,
+          disabled: withoutPermission('manage_users'),
+        }
+        ,
         {
           title: t('sidebar_tabs.posts'),
           href: `/${personalOrWsId}/posts`,
