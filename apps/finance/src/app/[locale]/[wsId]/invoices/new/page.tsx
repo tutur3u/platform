@@ -9,9 +9,11 @@ interface Props {
 }
 
 export default async function WorkspaceInvoicesPage({ params }: Props) {
+  const { wsId } = await params;
+
   return (
     <Suspense>
-      <NewInvoicePage params={params} />
+      <NewInvoicePage wsId={wsId} />
     </Suspense>
   );
 }

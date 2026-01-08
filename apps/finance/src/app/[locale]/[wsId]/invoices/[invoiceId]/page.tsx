@@ -10,9 +10,16 @@ interface Props {
 }
 
 export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
+  const { wsId, invoiceId, locale } = await params;
+
   return (
     <Suspense>
-      <InvoiceDetailsPage params={params} />
+      <InvoiceDetailsPage
+        wsId={wsId}
+        invoiceId={invoiceId}
+        locale={locale}
+        canUpdateInvoices
+      />
     </Suspense>
   );
 }
