@@ -111,6 +111,7 @@ export default function GroupIndicatorsSelector({
       !!wsId &&
       (hasManageUsers || !!workspaceUserId) &&
       debouncedQuery.length > 0,
+      staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch selected group details (to display correct name even if not in search results)
@@ -128,6 +129,7 @@ export default function GroupIndicatorsSelector({
       return data;
     },
     enabled: !!selectedGroupId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const groups = searchGroupsQuery.data ?? [];
@@ -150,6 +152,7 @@ export default function GroupIndicatorsSelector({
         return data || [];
       },
       enabled: !!selectedGroupId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
   // Fetch user indicators
@@ -179,6 +182,7 @@ export default function GroupIndicatorsSelector({
         }));
       },
       enabled: !!selectedGroupId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
   // Fetch users
@@ -209,6 +213,7 @@ export default function GroupIndicatorsSelector({
       });
     },
     enabled: !!selectedGroupId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const isLoadingData =
