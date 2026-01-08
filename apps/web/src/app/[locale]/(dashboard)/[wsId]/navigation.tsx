@@ -515,6 +515,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/users/attendance`,
         `/${personalOrWsId}/users/database`,
         `/${personalOrWsId}/users/groups`,
+        `/${personalOrWsId}/users/groups/indicators`,
         `/${personalOrWsId}/users/group-tags`,
         `/${personalOrWsId}/users/reports`,
         `/${personalOrWsId}/users/structure`,
@@ -578,7 +579,7 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-users-tabs.metrics'),
           href: `/${personalOrWsId}/users/groups/indicators`,
           icon: <ChartColumn className="h-5 w-5" />,
-          disabled: withoutPermission('manage_users'),
+          disabled: withoutPermission('view_user_groups_scores'),
         },
         {
           title: t('sidebar_tabs.posts'),

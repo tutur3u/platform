@@ -28,6 +28,11 @@ export default async function GroupIndicatorsPage({ params }: Props) {
         const t = await getTranslations();
         const user = await getCurrentWorkspaceUser(wsId);
 
+        if (!user) {
+          console.error('Failed to fetch current workspace user');
+          notFound();
+        }
+
         const { containsPermission } = await getPermissions({
           wsId,
         });

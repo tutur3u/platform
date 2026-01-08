@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,6 +21,14 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { cn } from '@tuturuuu/utils/format';
 import GroupIndicatorsManager from '../[groupId]/indicators/group-indicators-manager';
+import { z } from 'zod';
+
+const LinkedUserSchema = z.object({
+  id: z.string(),
+  display_name: z.string().nullable(),
+});
+
+const LinkedUsersSchema = z.array(LinkedUserSchema).optional();
 
 interface Props {
   wsId: string;
@@ -31,6 +38,11 @@ interface Props {
   canUpdateUserGroupsScores: boolean;
   canDeleteUserGroupsScores: boolean;
 }
+
+const normalizeLinkedUsers = (value: unknown) => {
+  const result = LinkedUsersSchema.safeParse(value);
+  return result.success ? result.data : undefined;
+};
 
 export default function GroupIndicatorsSelector({
   wsId,
@@ -52,7 +64,7 @@ export default function GroupIndicatorsSelector({
   const supabase = createClient();
 
   // Search groups (only active when searching)
-  const searchGroupsQuery = useQuery<UserGroup[]>({
+  const searchGroupsQuery = useQuery({
     queryKey: [
       'user-groups-search',
       wsId,
@@ -63,49 +75,47 @@ export default function GroupIndicatorsSelector({
     queryFn: async () => {
       if (!debouncedQuery) return [];
 
-      if (hasManageUsers) {
-        const { data, error } = await supabase
-          .from('workspace_user_groups_with_guest')
-          .select(
-            'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest, amount, created_at'
-          )
-          .eq('ws_id', wsId)
-          .ilike('name', `%${debouncedQuery}%`)
-          .order('name')
-          .limit(20);
+      // if (hasManageUsers) {
+      //   const { data, error } = await supabase
+      //     .from('workspace_user_groups_with_guest')
+      //     .select(
+      //       'id,name, ws_id'
+      //     )
+      //     .eq('ws_id', wsId)
+      //     .ilike('name', `%${debouncedQuery}%`)
+      //     .order('name')
+      //     .limit(20);
 
-        if (error) throw error;
-        return (data || []) as UserGroup[];
-      }
+      //   if (error) throw error;
+      //   return (data || []);
+      // }
 
       if (!workspaceUserId) return [];
 
-      const { data: members, error: memberError } = await supabase
-        .from('workspace_user_groups_users')
-        .select('group_id')
-        .eq('user_id', workspaceUserId);
+      // const { data: members, error: memberError } = await supabase
+      //   .from('workspace_user_groups_users')
+      //   .select('group_id')
+      //   .eq('user_id', workspaceUserId);
 
-      if (memberError) throw memberError;
+      // if (memberError) throw memberError;
 
-      const groupIds = members
-        ?.map((m) => m.group_id)
-        .filter(Boolean) as string[];
+      // const groupIds = members
+      //   ?.map((m) => m.group_id)
+      //   .filter(Boolean) as string[];
 
-      if (!groupIds.length) return [];
+      // if (!groupIds.length) return [];
 
       const { data, error } = await supabase
         .from('workspace_user_groups_with_guest')
-        .select(
-          'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest, amount, created_at'
-        )
+        .select('id, name, workspace_user_groups_users!inner(user_id)')
         .eq('ws_id', wsId)
-        .in('id', groupIds)
+        .eq('workspace_user_groups_users.user_id', workspaceUserId)
         .ilike('name', `%${debouncedQuery}%`)
         .order('name')
         .limit(20);
 
       if (error) throw error;
-      return (data || []) as UserGroup[];
+      return data || [];
     },
     enabled:
       !!wsId &&
@@ -125,7 +135,7 @@ export default function GroupIndicatorsSelector({
         .single();
 
       if (error) return null;
-      return data as UserGroup;
+      return data;
     },
     enabled: !!selectedGroupId,
   });
@@ -198,32 +208,6 @@ export default function GroupIndicatorsSelector({
         .order('full_name', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-
-      const normalizeLinkedUsers = (
-        value: unknown
-      ): WorkspaceUser['linked_users'] | undefined => {
-        if (!Array.isArray(value)) return undefined;
-
-        const parsed = value
-          .map((item) => {
-            if (!item || typeof item !== 'object') return null;
-
-            const id = (item as { id?: unknown }).id;
-            if (typeof id !== 'string') return null;
-
-            const displayName = (item as { display_name?: unknown })
-              .display_name;
-
-            return {
-              id,
-              display_name:
-                typeof displayName === 'string' ? displayName : null,
-            };
-          })
-          .filter(Boolean) as NonNullable<WorkspaceUser['linked_users']>;
-
-        return parsed;
-      };
 
       return (data ?? []).map((row) => {
         const record = row as Record<string, unknown>;
@@ -318,7 +302,7 @@ export default function GroupIndicatorsSelector({
             <GroupIndicatorsManager
               wsId={wsId}
               groupId={selectedGroupId}
-              groupName={selectedGroup.name}
+              groupName={selectedGroup.name || ''}
               users={users}
               initialGroupIndicators={groupIndicators}
               initialUserIndicators={userIndicators}
