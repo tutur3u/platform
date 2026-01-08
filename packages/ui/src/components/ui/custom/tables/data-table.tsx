@@ -279,6 +279,9 @@ export function DataTable<TData, TValue>({
               t={t}
               table={table}
               count={count}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              pageCount={Math.max(Math.ceil((count || 0) / pageSize), 1)}
               className="rounded-lg border bg-foreground/[0.025] px-4 py-2 backdrop-blur-xl dark:bg-foreground/5"
               setParams={setParams}
             />
