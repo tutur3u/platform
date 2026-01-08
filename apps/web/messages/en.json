@@ -9887,10 +9887,13 @@
     "add_user_description": "Add users to this group",
     "create": "Create group",
     "create_description": "Create a new user group",
+    "delete": "Delete group",
     "delete_cancel": "Cancel",
+    "delete_confirmation": "Are you sure you want to delete this group? This action cannot be undone.",
     "delete_continue": "Continue",
     "delete_post_confirmation_description": "This action cannot be undone. This will permanently delete your post and remove your data from our servers.",
     "delete_post_confirmation_title": "Are you absolutely sure?",
+    "delete_warning": "Warning: All monthly reports associated with this group will also be permanently deleted.",
     "description": "Organize users into groups to meet your needs.",
     "edit": "Edit group",
     "edit_description": "Edit an existing user group",
@@ -9908,7 +9911,8 @@
     "select_group_placeholder": "Select a group",
     "show_post_content": "Show post content",
     "show_post_status": "Show post status",
-    "singular": "User group"
+    "singular": "User group",
+    "delete_success": "User Group Deleted Succesfully"
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Coupon",

@@ -10007,10 +10007,13 @@
     "add_user_description": "Thêm người dùng vào nhóm",
     "create": "Tạo nhóm",
     "create_description": "Thêm nhóm mới",
+    "delete": "Xóa nhóm",
     "delete_cancel": "Hủy",
+    "delete_confirmation": "Bạn có chắc chắn muốn xóa nhóm này? Hành động này không thể hoàn tác.",
     "delete_continue": "Tiếp tục",
     "delete_post_confirmation_description": "Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn bài viết của bạn và loại bỏ dữ liệu của bạn khỏi máy chủ của chúng tôi.",
     "delete_post_confirmation_title": "Bạn có chắc chắn không?",
+    "delete_warning": "Cảnh báo: Tất cả báo cáo hàng tháng liên quan đến nhóm này cũng sẽ bị xóa vĩnh viễn.",
     "description": "Sắp xếp người dùng thành từng nhóm phù hợp với nhu cầu của bạn.",
     "edit": "Sửa nhóm",
     "edit_description": "Sửa nhóm hiện có",
@@ -10028,7 +10031,8 @@
     "select_group_placeholder": "Chọn một nhóm",
     "show_post_content": "Hiển thị nội dung bài viết",
     "show_post_status": "Hiển thị trạng thái bài viết",
-    "singular": "Nhóm người dùng"
+    "singular": "Nhóm người dùng",
+    "delete_success": "Nhóm người dùng đã được xóa thành công"
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Khuyến mãi",
