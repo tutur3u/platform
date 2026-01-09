@@ -1,4 +1,5 @@
 import { mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   getCurrentUser,
   getUserDefaultWorkspace,
@@ -15,6 +16,29 @@ export const metadata: Metadata = {
 
 interface OnboardingPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+/**
+ * Check if user has any non-personal workspaces
+ */
+async function hasNonPersonalWorkspaces(userId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Get all workspaces where user is a member
+  const { data: memberWorkspaces } = await supabase
+    .from('workspace_members')
+    .select('ws_id, workspaces!inner(id, personal)')
+    .eq('user_id', userId)
+    .eq('workspaces.personal', false);
+
+  if (!memberWorkspaces || memberWorkspaces.length === 0) {
+    return false;
+  }
+
+  // Check if any workspace is not personal
+  return memberWorkspaces.some(
+    (m) => m.workspaces && !(m.workspaces as { personal: boolean }).personal
+  );
 }
 
 export default async function OnboardingPage({
@@ -50,6 +74,9 @@ export default async function OnboardingPage({
   // Determine if user came from an internal app (for auto-team flow)
   const isFromInternalApp = returnUrl ? !!mapUrlToApp(returnUrl) : false;
 
+  // Check if user already has non-personal workspaces (skip use case step)
+  const hasTeamWorkspaces = await hasNonPersonalWorkspaces(user.id);
+
   return (
     <OnboardingFlow
       user={user}
@@ -57,6 +84,7 @@ export default async function OnboardingPage({
       returnUrl={returnUrl}
       nextUrl={nextUrl}
       isFromInternalApp={isFromInternalApp}
+      hasExistingTeamWorkspaces={hasTeamWorkspaces}
     />
   );
 }

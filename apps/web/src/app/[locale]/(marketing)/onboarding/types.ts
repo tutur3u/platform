@@ -30,12 +30,11 @@ export const FLOW_TYPES = {
 
 export type FlowType = (typeof FLOW_TYPES)[keyof typeof FLOW_TYPES];
 
-// Steps for each flow type
+// Steps for each flow type (PREFERENCES step removed for streamlined experience)
 export const PERSONAL_FLOW_STEPS: OnboardingStep[] = [
   ONBOARDING_STEPS.WELCOME,
   ONBOARDING_STEPS.USE_CASE,
   ONBOARDING_STEPS.PROFILE,
-  ONBOARDING_STEPS.PREFERENCES,
   ONBOARDING_STEPS.CELEBRATION,
 ];
 
@@ -45,7 +44,6 @@ export const TEAM_FLOW_STEPS: OnboardingStep[] = [
   ONBOARDING_STEPS.PROFILE,
   ONBOARDING_STEPS.TEAM_WORKSPACE,
   ONBOARDING_STEPS.TEAM_INVITE,
-  ONBOARDING_STEPS.PREFERENCES,
   ONBOARDING_STEPS.CELEBRATION,
 ];
 

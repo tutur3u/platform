@@ -43,6 +43,8 @@ interface OnboardingFlowProps {
   nextUrl?: string;
   /** Whether user came from an internal app link (auto-selects team flow) */
   isFromInternalApp?: boolean;
+  /** Whether user already has non-personal workspaces (skip use case step) */
+  hasExistingTeamWorkspaces?: boolean;
 }
 
 export default function OnboardingFlow({
@@ -51,18 +53,22 @@ export default function OnboardingFlow({
   returnUrl,
   nextUrl,
   isFromInternalApp = false,
+  hasExistingTeamWorkspaces = false,
 }: OnboardingFlowProps) {
   const t = useTranslations('onboarding');
   const router = useRouter();
 
   const supabase = createClient();
 
-  // State management - if coming from internal app, start with team flow
-  const initialFlowType = isFromInternalApp
+  // State management - determine initial flow type based on context
+  // Priority: 1) Internal app users get team flow, 2) Users with existing workspaces get team flow, 3) Use saved progress or default to personal
+  const shouldSkipUseCase = isFromInternalApp || hasExistingTeamWorkspaces;
+
+  const initialFlowType = shouldSkipUseCase
     ? FLOW_TYPES.TEAM
     : (initialProgress?.flow_type as FlowType) || FLOW_TYPES.PERSONAL;
 
-  const initialUseCase = isFromInternalApp
+  const initialUseCase = shouldSkipUseCase
     ? USE_CASE_OPTIONS.SMALL_TEAM
     : (initialProgress?.use_case as UseCase) || null;
 
@@ -183,9 +189,10 @@ export default function OnboardingFlow({
       const result = await response.json();
       setPersonalWorkspaceId(result.id);
 
-      // If coming from internal app, skip use case step and go directly to profile
-      // Auto-select "small_team" use case for collaborative context
-      if (isFromInternalApp) {
+      // Skip use case step if:
+      // 1) Coming from internal app, OR
+      // 2) User already has non-personal workspaces
+      if (shouldSkipUseCase) {
         await updateProgress({
           use_case: USE_CASE_OPTIONS.SMALL_TEAM,
           flow_type: FLOW_TYPES.TEAM,
@@ -260,10 +267,12 @@ export default function OnboardingFlow({
 
       setProfileData(data);
 
+      // For team flow, go to team workspace creation
+      // For personal flow, skip preferences and go directly to celebration
       const nextStep =
         flowType === FLOW_TYPES.TEAM
           ? ONBOARDING_STEPS.TEAM_WORKSPACE
-          : ONBOARDING_STEPS.PREFERENCES;
+          : ONBOARDING_STEPS.CELEBRATION;
 
       await updateProgress({
         profile_completed: true,
@@ -351,13 +360,14 @@ export default function OnboardingFlow({
 
       setInvitedEmails(emails);
 
+      // Skip preferences step - go directly to celebration
       await updateProgress({
         invited_emails: emails,
-        current_step: ONBOARDING_STEPS.PREFERENCES,
+        current_step: ONBOARDING_STEPS.CELEBRATION,
         completed_steps: [...completedSteps, ONBOARDING_STEPS.TEAM_INVITE],
       });
 
-      goToNextStep(ONBOARDING_STEPS.PREFERENCES);
+      goToNextStep(ONBOARDING_STEPS.CELEBRATION);
     } catch (error) {
       console.error('Error sending invites:', error);
       toast.error(t('errors.title'), {
@@ -399,13 +409,13 @@ export default function OnboardingFlow({
     goToNextStep(ONBOARDING_STEPS.CELEBRATION);
   };
 
-  // Handle team invite skip
+  // Handle team invite skip - go directly to celebration (skip preferences)
   const handleTeamInviteSkip = async () => {
     await updateProgress({
-      current_step: ONBOARDING_STEPS.PREFERENCES,
+      current_step: ONBOARDING_STEPS.CELEBRATION,
       completed_steps: [...completedSteps, ONBOARDING_STEPS.TEAM_INVITE],
     });
-    goToNextStep(ONBOARDING_STEPS.PREFERENCES);
+    goToNextStep(ONBOARDING_STEPS.CELEBRATION);
   };
 
   // Handle celebration complete - redirect to dashboard or external app
@@ -421,8 +431,9 @@ export default function OnboardingFlow({
       // If they created a team workspace, use that; otherwise use personal
       const defaultWorkspaceId = teamWorkspaceId || personalWorkspaceId;
 
-      // Set the default workspace preference
-      if (defaultWorkspaceId) {
+      // Only set default workspace preference if user doesn't have existing workspaces
+      // This preserves their existing default workspace choice
+      if (defaultWorkspaceId && !hasExistingTeamWorkspaces) {
         try {
           await fetch('/api/v1/users/me/default-workspace', {
             method: 'PATCH',
