@@ -48,7 +48,7 @@ import {
   useUserInvoices,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
-  useUsers,
+  useUsersWithSelectableGroups,
   useUserTransactions,
   useWallets,
 } from './hooks';
@@ -88,7 +88,8 @@ export function StandardInvoice({
   );
 
   // Data queries
-  const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
+  const { data: users = [], isLoading: usersLoading } =
+    useUsersWithSelectableGroups(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
@@ -642,7 +643,7 @@ export function StandardInvoice({
               <Textarea
                 id="invoice-content"
                 placeholder={t('ws-invoices.content_placeholder')}
-                className="min-h-[80px]"
+                className="min-h-20"
                 value={invoiceContent}
                 onChange={(e) => setInvoiceContent(e.target.value)}
               />
@@ -654,7 +655,7 @@ export function StandardInvoice({
               <Textarea
                 id="invoice-notes"
                 placeholder={t('ws-invoices.notes_placeholder')}
-                className="min-h-[60px]"
+                className="min-h-15"
                 value={invoiceNotes}
                 onChange={(e) => setInvoiceNotes(e.target.value)}
               />

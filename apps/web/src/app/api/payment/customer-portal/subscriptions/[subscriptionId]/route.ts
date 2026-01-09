@@ -1,8 +1,8 @@
-import { createCustomerSessionWithFallback } from '@/utils/customer-session';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { createCustomerSessionWithFallback } from '@/utils/customer-session';
 
 // PATCH: Reactivate subscription (cancel_at_period_end = false)
 export async function PATCH(
