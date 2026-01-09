@@ -198,17 +198,50 @@ function DetailItem({
 async function getInvoiceDetails(invoiceId: string) {
   const supabase = await createClient();
 
+  // Fetch invoice with both platform and workspace user data in a single query
   const { data: invoice, error: invoiceError } = await supabase
     .from('finance_invoices')
     .select(
-      '*, ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name), creator:workspace_users!creator_id(display_name, full_name), wallet:workspace_wallets(name)'
+      `*,
+      ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name),
+      legacy_creator:workspace_users!creator_id(display_name, full_name),
+      platform_creator:users!platform_creator_id(display_name, user_private_details(full_name)),
+      wallet:workspace_wallets(name)`
     )
     .eq('id', invoiceId)
     .single();
 
   if (invoiceError) throw invoiceError;
 
-  return invoice;
+  // Extract platform and legacy creator data
+  const platformCreator = invoice.platform_creator as {
+    display_name: string | null;
+    user_private_details: { full_name: string | null } | null;
+  } | null;
+
+  const legacyCreator = invoice.legacy_creator as {
+    display_name: string | null;
+    full_name: string | null;
+  } | null;
+
+  // Merge creator data, prioritizing platform user data
+  const creator = {
+    display_name:
+      platformCreator?.display_name ?? legacyCreator?.display_name ?? null,
+    full_name:
+      platformCreator?.user_private_details?.full_name ??
+      legacyCreator?.full_name ??
+      null,
+  };
+
+  // Return invoice with merged creator data
+  return {
+    ...invoice,
+    creator,
+    // Remove the intermediate fields to keep the response clean
+    legacy_creator: undefined,
+    platform_creator: undefined,
+  };
 }
 
 async function getProducts(invoiceId: string) {

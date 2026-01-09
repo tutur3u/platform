@@ -253,6 +253,7 @@ export async function POST(req: Request, { params }: Params) {
         Date.now() + 1000 * 60 * 60 * 24 * 30
       ).toISOString(),
       paid_amount: Math.round(total), // Convert to integer
+      platform_creator_id: user.id, // Store the platform user ID who created the invoice
     };
 
     // Only add optional fields if they have values
