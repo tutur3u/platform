@@ -1021,8 +1021,6 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/billing`,
           icon: <CircleDollarSign className="h-5 w-5" />,
           disabled: withoutPermission('manage_subscription'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
         },
         {
           title: t('sidebar_tabs.usage'),
