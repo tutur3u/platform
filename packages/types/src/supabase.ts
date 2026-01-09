@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -2624,6 +2624,7 @@ export type Database = {
           note: string | null;
           notice: string | null;
           paid_amount: number;
+          platform_creator_id: string | null;
           price: number;
           total_diff: number;
           transaction_id: string | null;
@@ -2642,6 +2643,7 @@ export type Database = {
           note?: string | null;
           notice?: string | null;
           paid_amount?: number;
+          platform_creator_id?: string | null;
           price: number;
           total_diff?: number;
           transaction_id?: string | null;
@@ -2660,6 +2662,7 @@ export type Database = {
           note?: string | null;
           notice?: string | null;
           paid_amount?: number;
+          platform_creator_id?: string | null;
           price?: number;
           total_diff?: number;
           transaction_id?: string | null;
@@ -2730,6 +2733,34 @@ export type Database = {
             columns: ['customer_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
