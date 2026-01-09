@@ -3075,7 +3075,14 @@
     "total": "Tổng cộng",
     "total-placeholder": "Nhập số tiền khách cần đưa",
     "unnamed-ws": "Không gian làm việc không tên",
-    "update-invoice": "Cập nhật hoá đơn"
+    "update-invoice": "Cập nhật hoá đơn",
+    "compact": "Gọn",
+    "full": "Đầy đủ",
+    "bill": "BIÊN LAI",
+    "billing_amount": "Số tiền thanh toán",
+    "billing_content": "Nội dung thanh toán",
+    "receiver": "Người nhận tiền",
+    "name": "Tên"
   },
   "landing": {
     "aiCore": {

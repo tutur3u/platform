@@ -3052,7 +3052,14 @@
     "total": "Total",
     "total-placeholder": "Enter the amount customer needs to pay",
     "unnamed-ws": "Untitled workspace",
-    "update-invoice": "Update invoice"
+    "update-invoice": "Update invoice",
+    "compact": "Compact",
+    "full": "Full",
+    "bill": "BILL",
+    "billing_amount": "Billing amount",
+    "billing_content": "Billing content",
+    "receiver": "Receiver",
+    "name": "Name"
   },
   "landing": {
     "aiCore": {
