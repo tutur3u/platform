@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 export const useLocalStorage = <T>(
   key: string,
   initialValue: T
-): [T, React.Dispatch<React.SetStateAction<T>>] => {
+): [T, React.Dispatch<React.SetStateAction<T>>, boolean] => {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     // Retrieve from localStorage
@@ -17,6 +18,7 @@ export const useLocalStorage = <T>(
         console.error(error);
       }
     }
+    setInitialized(true);
   }, [key]);
 
   const setValue = useCallback(
@@ -36,5 +38,5 @@ export const useLocalStorage = <T>(
     [key]
   );
 
-  return [storedValue, setValue];
+  return [storedValue, setValue, initialized];
 };

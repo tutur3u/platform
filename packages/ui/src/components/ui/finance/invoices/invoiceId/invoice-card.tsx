@@ -1,6 +1,13 @@
 'use client';
 
-import { Download, ImageIcon, Palette, Printer } from '@tuturuuu/icons';
+import {
+  Download,
+  Expand,
+  ImageIcon,
+  Minimize,
+  Palette,
+  Printer,
+} from '@tuturuuu/icons';
 import type {
   Invoice,
   InvoiceProduct,
@@ -14,19 +21,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Separator } from '@tuturuuu/ui/separator';
-import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-// Add this utility function at the top of the file
-const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
-    amount
-  );
-};
+import { useTranslations } from 'next-intl';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { CompactInvoiceTemplate } from './compact-invoice-template';
+import { FullInvoiceTemplate } from './full-invoice-template';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 
 export default function InvoiceCard({
+  lang,
   configs,
   invoice,
   products,
@@ -49,10 +52,13 @@ export default function InvoiceCard({
   promotions: InvoicePromotion[];
 }) {
   const t = useTranslations();
-  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
 
   const printableRef = useRef<HTMLDivElement>(null);
   const [isDarkPreview, setIsDarkPreview] = useState(false);
+  const [isCompact, setIsCompact, isCompactInitialized] = useLocalStorage(
+    'invoice-compact-view',
+    false
+  );
   const [isExporting, setIsExporting] = useState(false);
 
   const handlePrintExport = useCallback(() => {
@@ -184,20 +190,45 @@ export default function InvoiceCard({
     }
   }, [handlePrintExport]);
 
-  const subtotal = products.reduce((total, product) => {
-    return total + product.price * product.amount;
-  }, 0);
-
-  const discount_amount = promotions.reduce((total, promo) => {
-    if (promo.use_ratio) {
-      return total + (subtotal * promo.value) / 100;
-    }
-    return total + promo.value;
-  }, 0);
-
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div className="mb-4 flex justify-end gap-2 print:hidden">
+        {isCompactInitialized ? (
+          <Tabs
+            value={isCompact ? 'compact' : 'full'}
+            onValueChange={(value) => setIsCompact(value === 'compact')}
+          >
+            <TabsList>
+              <TabsTrigger value="full" className="gap-2">
+                <Expand className="h-4 w-4" />
+                {t('invoices.full')}
+              </TabsTrigger>
+              <TabsTrigger value="compact" className="gap-2">
+                <Minimize className="h-4 w-4" />
+                {t('invoices.compact')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <div className="h-10 w-50 animate-pulse rounded-md bg-muted" />
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Palette className="h-4 w-4" />
+              {t('common.theme')}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
+              {t('common.light')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
+              {t('common.dark')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2">
@@ -231,23 +262,6 @@ export default function InvoiceCard({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Palette className="h-4 w-4" />
-              {t('common.theme')}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
-              {t('common.light')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
-              {t('common.dark')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
       <div className="mx-auto h-fit w-full max-w-4xl flex-none rounded-xl shadow-lg dark:bg-foreground/10 print:bg-white print:text-black print:shadow-none">
         <div
@@ -255,246 +269,25 @@ export default function InvoiceCard({
           id="printable-area"
           className={`h-full rounded-lg border p-6 text-foreground md:p-12 ${isDarkPreview ? 'bg-foreground/10 text-foreground' : 'bg-white text-black'}`}
         >
-          {/* Header */}
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-8">
-            <div className="flex-1">
-              {getConfig('BRAND_LOGO_URL') && (
-                // biome-ignore lint/performance/noImgElement: <>
-                <img
-                  src={getConfig('BRAND_LOGO_URL')!}
-                  alt="logo"
-                  className="max-h-20 object-contain"
-                />
-              )}
+          {!isCompactInitialized ? (
+            <div className="flex h-full min-h-100 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
-            <div className="flex-1 text-right">
-              <h1
-                className={`mb-2 font-bold text-3xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {t('invoices.invoice')}
-              </h1>
-              <p
-                className={`text-xs print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                #{invoice.id}
-              </p>
-            </div>
-          </div>
-
-          {/* Company Info */}
-          <div className="mb-8 text-center">
-            {getConfig('BRAND_NAME') && (
-              <h2
-                className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {getConfig('BRAND_NAME')}
-              </h2>
-            )}
-            {getConfig('BRAND_LOCATION') && (
-              <p
-                className={`print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {getConfig('BRAND_LOCATION')}
-              </p>
-            )}
-            {getConfig('BRAND_PHONE_NUMBER') && (
-              <p
-                className={`print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {getConfig('BRAND_PHONE_NUMBER')}
-              </p>
-            )}
-          </div>
-
-          <Separator className="my-8" />
-
-          {/* Invoice Details */}
-          <div className="mb-8 flex justify-between">
-            <div>
-              <h3
-                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {t('invoices.bill_to')}:
-              </h3>
-              <p
-                className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {invoice.customer_full_name || invoice.customer_display_name}
-              </p>
-            </div>
-            <div className="text-right">
-              {invoice.created_at && (
-                <p
-                  className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                >
-                  <span
-                    className={`font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                  >
-                    {t('invoices.invoice_date')}:
-                  </span>{' '}
-                  {dayjs(invoice.created_at).format('DD/MM/YYYY')}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Invoice Content */}
-          <div className="mb-8">
-            <h3
-              className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-            >
-              {t('invoices.content')}:
-            </h3>
-            <p
-              className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'} wrap-break-word text-wrap`}
-            >
-              {invoice.notice}
-            </p>
-          </div>
-
-          {/* Products Table */}
-          <table className="mb-8 w-full">
-            <thead className="w-full">
-              <tr className="border-b">
-                <th
-                  className={`py-2 text-left ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                >
-                  {t('invoices.description')}
-                </th>
-                <th
-                  className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                >
-                  {t('invoices.quantity')}
-                </th>
-                <th
-                  className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                >
-                  {t('invoices.price')}
-                </th>
-                <th
-                  className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                >
-                  {t('invoices.total')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="w-full">
-              {products.map((product) => (
-                <tr key={product.product_id} className="border-b">
-                  <td
-                    className={`py-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                  >
-                    {product.product_name}
-                  </td>
-                  <td
-                    className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                  >
-                    {product.amount}
-                  </td>
-                  <td
-                    className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                  >
-                    {formatCurrency(product.price, 'VND')}
-                  </td>
-                  <td
-                    className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                  >
-                    {formatCurrency(product.amount * product.price, 'VND')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Promotions */}
-          {promotions.length > 0 && (
-            <div className="mb-8">
-              <h3
-                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {t('invoices.promotions')}:
-              </h3>
-              {promotions.map((promo) => (
-                <p
-                  key={promo.promo_id}
-                  className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-                >
-                  {promo.name || promo.code}:{' '}
-                  {promo.use_ratio
-                    ? `${promo.value}%`
-                    : formatCurrency(promo.value, 'VND')}
-                </p>
-              ))}
-            </div>
-          )}
-
-          <Separator className="my-2" />
-          {/* Total */}
-          <div className="text-right">
-            <p
-              className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-            >
-              <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-              {formatCurrency(subtotal, 'VND')}
-            </p>
-            {promotions.length > 0 && (
-              <p
-                className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                <span className="font-semibold">
-                  {t('invoices.discounts')}: {''}
-                </span>
-                {'-'}
-                {formatCurrency(discount_amount, 'VND')}
-              </p>
-            )}
-            <p
-              className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-            >
-              <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-              {formatCurrency(invoice.total_diff, 'VND')}
-            </p>
-            <Separator className="my-2" />
-            <p
-              className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-            >
-              <span className="font-bold">{t('invoices.total')}:</span>{' '}
-              <span className="font-semibold">
-                {formatCurrency(invoice.price + invoice.total_diff, 'VND')}
-              </span>
-            </p>
-          </div>
-
-          {/* Wallet */}
-          {invoice.wallet && (
-            <div className="mb-8">
-              <h3
-                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {t('ws-wallets.wallet')}:
-              </h3>
-              <p
-                className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {invoice.wallet.name}
-              </p>
-            </div>
-          )}
-
-          {/* Creator */}
-          {invoice.creator && (
-            <div className="mb-8">
-              <h3
-                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {t('ws-invoices.creator')}:
-              </h3>
-              <p
-                className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-              >
-                {invoice.creator.full_name || invoice.creator.display_name}
-              </p>
-            </div>
+          ) : isCompact ? (
+            <CompactInvoiceTemplate
+              invoice={invoice}
+              configs={configs}
+              isDarkPreview={isDarkPreview}
+              lang={lang}
+            />
+          ) : (
+            <FullInvoiceTemplate
+              invoice={invoice}
+              products={products}
+              promotions={promotions}
+              configs={configs}
+              isDarkPreview={isDarkPreview}
+            />
           )}
         </div>
       </div>
