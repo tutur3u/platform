@@ -25,6 +25,7 @@ import { useTranslations } from 'next-intl';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { CompactInvoiceTemplate } from './compact-invoice-template';
 import { FullInvoiceTemplate } from './full-invoice-template';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 
 export default function InvoiceCard({
   lang,
@@ -53,7 +54,10 @@ export default function InvoiceCard({
 
   const printableRef = useRef<HTMLDivElement>(null);
   const [isDarkPreview, setIsDarkPreview] = useState(false);
-  const [isCompact, setIsCompact] = useState(false);
+  const [isCompact, setIsCompact, isCompactInitialized] = useLocalStorage(
+    'invoice-compact-view',
+    false
+  );
   const [isExporting, setIsExporting] = useState(false);
 
   const handlePrintExport = useCallback(() => {
@@ -190,21 +194,25 @@ export default function InvoiceCard({
       <div className="mb-4 flex justify-end gap-2 print:hidden">
 
 
-        <Tabs
-          value={isCompact ? 'compact' : 'full'}
-          onValueChange={(value) => setIsCompact(value === 'compact')}
-        >
-          <TabsList>
-            <TabsTrigger value="full" className="gap-2">
-              <Layout className="h-4 w-4" />
-              {t('invoices.full')}
-            </TabsTrigger>
-            <TabsTrigger value="compact" className="gap-2">
-              <Layout className="h-4 w-4" />
-              {t('invoices.compact')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {isCompactInitialized ? (
+          <Tabs
+            value={isCompact ? 'compact' : 'full'}
+            onValueChange={(value) => setIsCompact(value === 'compact')}
+          >
+            <TabsList>
+              <TabsTrigger value="full" className="gap-2">
+                <Layout className="h-4 w-4" />
+                {t('invoices.full')}
+              </TabsTrigger>
+              <TabsTrigger value="compact" className="gap-2">
+                <Layout className="h-4 w-4" />
+                {t('invoices.compact')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <div className="h-10 w-[200px] animate-pulse rounded-md bg-muted" />
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -262,7 +270,11 @@ export default function InvoiceCard({
           id="printable-area"
           className={`h-full rounded-lg border p-6 text-foreground md:p-12 ${isDarkPreview ? 'bg-foreground/10 text-foreground' : 'bg-white text-black'}`}
         >
-          {isCompact ? (
+          {!isCompactInitialized ? (
+            <div className="flex h-full min-h-[400px] items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : isCompact ? (
             <CompactInvoiceTemplate
               invoice={invoice}
               configs={configs}
