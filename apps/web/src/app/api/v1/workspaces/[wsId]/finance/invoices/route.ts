@@ -231,7 +231,7 @@ export async function POST(req: Request, { params }: Params) {
     if (user) {
       const { data: workspaceUser } = await supabase
         .from('workspace_user_linked_users')
-        .select('virtual_user_id ')
+        .select('virtual_user_id')
         .eq('platform_user_id', user.id)
         .eq('ws_id', wsId)
         .single();

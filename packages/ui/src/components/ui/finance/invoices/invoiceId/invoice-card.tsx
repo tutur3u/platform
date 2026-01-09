@@ -1,6 +1,13 @@
 'use client';
 
-import { Download, ImageIcon, Layout, Palette, Printer } from '@tuturuuu/icons';
+import {
+  Download,
+  Expand,
+  ImageIcon,
+  Minimize,
+  Palette,
+  Printer,
+} from '@tuturuuu/icons';
 import type {
   Invoice,
   InvoiceProduct,
@@ -193,17 +200,17 @@ export default function InvoiceCard({
           >
             <TabsList>
               <TabsTrigger value="full" className="gap-2">
-                <Layout className="h-4 w-4" />
-                {t('invoices.full')}
+                <Expand className="h-4 w-4" />
+                {t('inoices.full')}
               </TabsTrigger>
               <TabsTrigger value="compact" className="gap-2">
-                <Layout className="h-4 w-4" />
+                <Minimize className="h-4 w-4" />
                 {t('invoices.compact')}
               </TabsTrigger>
             </TabsList>
           </Tabs>
         ) : (
-          <div className="h-10 w-[200px] animate-pulse rounded-md bg-muted" />
+          <div className="h-10 w-50 animate-pulse rounded-md bg-muted" />
         )}
 
         <DropdownMenu>
@@ -263,7 +270,7 @@ export default function InvoiceCard({
           className={`h-full rounded-lg border p-6 text-foreground md:p-12 ${isDarkPreview ? 'bg-foreground/10 text-foreground' : 'bg-white text-black'}`}
         >
           {!isCompactInitialized ? (
-            <div className="flex h-full min-h-[400px] items-center justify-center">
+            <div className="flex h-full min-h-100 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
           ) : isCompact ? (

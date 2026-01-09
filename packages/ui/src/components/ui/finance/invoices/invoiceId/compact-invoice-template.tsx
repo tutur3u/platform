@@ -3,12 +3,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-
-const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
-    amount
-  );
-};
+import { formatCurrency } from '@tuturuuu/utils/format';
 
 export function CompactInvoiceTemplate({
   invoice,
@@ -33,34 +28,37 @@ export function CompactInvoiceTemplate({
 }) {
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
+  const BRAND_LOGO_URL = getConfig('BRAND_LOGO_URL');
+  const BRAND_LOCATION = getConfig('BRAND_LOCATION');
+  const BRAND_PHONE_NUMBER = getConfig('BRAND_PHONE_NUMBER');
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-8">
         <div className="flex-1">
-          {getConfig('BRAND_LOGO_URL') && (
+          {BRAND_LOGO_URL && (
             // biome-ignore lint/performance/noImgElement: <>
             <img
-              src={getConfig('BRAND_LOGO_URL')!}
+              src={BRAND_LOGO_URL!}
               alt="logo"
               className="max-h-24 object-contain"
             />
           )}
         </div>
-        <div className="max-w-[300px] flex-1 text-center">
-          {getConfig('BRAND_LOCATION') && (
+        <div className="max-w-75 flex-1 text-center">
+          {BRAND_LOCATION && (
             <p
               className={`font-bold text-lg leading-snug print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
-              {getConfig('BRAND_LOCATION')}
+              {BRAND_LOCATION}
             </p>
           )}
-          {getConfig('BRAND_PHONE_NUMBER') && (
+          {BRAND_PHONE_NUMBER && (
             <p
               className={`font-bold text-lg print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
-              {getConfig('BRAND_PHONE_NUMBER')}
+              {BRAND_PHONE_NUMBER}
             </p>
           )}
         </div>
@@ -103,7 +101,12 @@ export function CompactInvoiceTemplate({
           <span
             className={`font-bold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {formatCurrency(invoice.price + invoice.total_diff, 'VND')}
+            {formatCurrency(
+              invoice.price + invoice.total_diff,
+              'vi-VN',
+              'VND',
+              { signDisplay: 'never' }
+            )}
           </span>
         </div>
 
@@ -125,21 +128,29 @@ export function CompactInvoiceTemplate({
 
       {/* Footer */}
       <div className="flex flex-col items-end gap-1">
-        <p
-          className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-        >
-          {dayjs(invoice.created_at).locale(lang).format('DD/MM/YYYY')}
-        </p>
-        <p
-          className={`font-bold text-muted-foreground ${isDarkPreview ? 'text-foreground/50' : 'text-muted-foreground'}`}
-        >
-          {t('invoices.receiver')}
-        </p>
-        <p
-          className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-        >
-          {invoice.creator?.full_name || invoice.creator?.display_name}
-        </p>
+        {invoice.created_at && (
+          <p
+            className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+          >
+            {dayjs(invoice.created_at).locale(lang).format('DD/MM/YYYY')}
+          </p>
+        )}
+        {(invoice.creator_id ||
+          invoice.creator?.full_name ||
+          invoice.creator?.display_name) && (
+          <>
+            <p
+              className={`font-bold text-muted-foreground ${isDarkPreview ? 'text-foreground/50' : 'text-muted-foreground'}`}
+            >
+              {t('invoices.receiver')}
+            </p>
+            <p
+              className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+            >
+              {invoice.creator?.full_name || invoice.creator?.display_name}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

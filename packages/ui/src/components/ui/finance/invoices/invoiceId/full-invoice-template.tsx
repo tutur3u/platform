@@ -7,12 +7,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-
-const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
-    amount
-  );
-};
+import { formatCurrency } from '@tuturuuu/utils/format';
 
 export function FullInvoiceTemplate({
   invoice,
@@ -192,12 +187,19 @@ export function FullInvoiceTemplate({
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(product.price, 'VND')}
+                {formatCurrency(product.price, 'vi-VN', 'VND', {
+                  signDisplay: 'never',
+                })}
               </td>
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(product.amount * product.price, 'VND')}
+                {formatCurrency(
+                  product.amount * product.price,
+                  'vi-VN',
+                  'VND',
+                  { signDisplay: 'never' }
+                )}
               </td>
             </tr>
           ))}
@@ -220,7 +222,9 @@ export function FullInvoiceTemplate({
               {promo.name || promo.code}:{' '}
               {promo.use_ratio
                 ? `${promo.value}%`
-                : formatCurrency(promo.value, 'VND')}
+                : formatCurrency(promo.value, 'vi-VN', 'VND', {
+                    signDisplay: 'never',
+                  })}
             </p>
           ))}
         </div>
@@ -233,7 +237,7 @@ export function FullInvoiceTemplate({
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-          {formatCurrency(subtotal, 'VND')}
+          {formatCurrency(subtotal, 'vi-VN', 'VND', { signDisplay: 'never' })}
         </p>
         {promotions.length > 0 && (
           <p
@@ -243,14 +247,18 @@ export function FullInvoiceTemplate({
               {t('invoices.discounts')}: {''}
             </span>
             {'-'}
-            {formatCurrency(discount_amount, 'VND')}
+            {formatCurrency(discount_amount, 'vi-VN', 'VND', {
+              signDisplay: 'never',
+            })}
           </p>
         )}
         <p
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-          {formatCurrency(invoice.total_diff, 'VND')}
+          {formatCurrency(invoice.total_diff, 'vi-VN', 'VND', {
+            signDisplay: 'never',
+          })}
         </p>
         <Separator className="my-2" />
         <p
@@ -258,7 +266,12 @@ export function FullInvoiceTemplate({
         >
           <span className="font-bold">{t('invoices.total')}:</span>{' '}
           <span className="font-semibold">
-            {formatCurrency(invoice.price + invoice.total_diff, 'VND')}
+            {formatCurrency(
+              invoice.price + invoice.total_diff,
+              'vi-VN',
+              'VND',
+              { signDisplay: 'never' }
+            )}
           </span>
         </p>
       </div>
@@ -280,7 +293,9 @@ export function FullInvoiceTemplate({
       )}
 
       {/* Creator */}
-      {invoice.creator && (
+      {(invoice.creator_id ||
+        invoice.creator?.full_name ||
+        invoice.creator?.display_name) && (
         <div className="mb-8">
           <h3
             className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
@@ -290,7 +305,7 @@ export function FullInvoiceTemplate({
           <p
             className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {invoice.creator.full_name || invoice.creator.display_name}
+            {invoice.creator?.full_name || invoice.creator?.display_name}
           </p>
         </div>
       )}
