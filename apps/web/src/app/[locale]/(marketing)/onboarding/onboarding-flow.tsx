@@ -267,10 +267,10 @@ export default function OnboardingFlow({
 
       setProfileData(data);
 
-      // For team flow, go to team workspace creation
+      // For team flow, go to team workspace creation (unless skipping)
       // For personal flow, skip preferences and go directly to celebration
       const nextStep =
-        flowType === FLOW_TYPES.TEAM
+        flowType === FLOW_TYPES.TEAM && !shouldSkipUseCase
           ? ONBOARDING_STEPS.TEAM_WORKSPACE
           : ONBOARDING_STEPS.CELEBRATION;
 
