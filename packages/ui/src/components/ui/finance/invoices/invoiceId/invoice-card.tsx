@@ -201,7 +201,7 @@ export default function InvoiceCard({
             <TabsList>
               <TabsTrigger value="full" className="gap-2">
                 <Expand className="h-4 w-4" />
-                {t('inoices.full')}
+                {t('invoices.full')}
               </TabsTrigger>
               <TabsTrigger value="compact" className="gap-2">
                 <Minimize className="h-4 w-4" />
