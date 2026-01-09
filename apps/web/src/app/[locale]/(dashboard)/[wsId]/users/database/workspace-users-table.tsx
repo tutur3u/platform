@@ -1,7 +1,7 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';

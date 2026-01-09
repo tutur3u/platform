@@ -1044,20 +1044,20 @@ export function SubscriptionInvoice({
         );
       }
 
-      // Reset form
-      setSubscriptionSelectedProducts([]);
-      setSelectedPromotionId('none');
-      setInvoiceContent('');
-      setInvoiceNotes('');
-      setSubscriptionRoundedTotal(0);
-      updateSearchParam('user_id', '');
-      setSelectedWalletId('');
-      setSelectedCategoryId('');
-      updateSearchParam('group_id', '');
-
       if (!createMultipleInvoices) {
         const query = printAfterCreate ? '?print=true' : '';
         router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
+      } else {
+        // Reset form
+        setSubscriptionSelectedProducts([]);
+        setSelectedPromotionId('none');
+        setInvoiceContent('');
+        setInvoiceNotes('');
+        setSubscriptionRoundedTotal(0);
+        updateSearchParam('user_id', '');
+        setSelectedWalletId('');
+        setSelectedCategoryId('');
+        updateSearchParam('group_id', '');
       }
     } catch (error) {
       console.error('Error creating subscription invoice:', error);

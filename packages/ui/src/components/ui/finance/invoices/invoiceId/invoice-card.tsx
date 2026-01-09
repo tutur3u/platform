@@ -177,6 +177,8 @@ export default function InvoiceCard({
 
   // Auto trigger print when URL contains ?print=true
   useEffect(() => {
+    if (!isCompactInitialized) return;
+
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get('print') === 'true') {
@@ -188,7 +190,7 @@ export default function InvoiceCard({
     } catch (_) {
       // no-op
     }
-  }, [handlePrintExport]);
+  }, [handlePrintExport, isCompactInitialized]);
 
   return (
     <div className="overflow-x-auto xl:flex-none">

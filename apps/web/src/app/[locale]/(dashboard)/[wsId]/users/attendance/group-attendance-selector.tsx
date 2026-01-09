@@ -1,7 +1,7 @@
 'use client';
 
-import { Check, ChevronsUpDown } from '@tuturuuu/icons';
 import { useQuery } from '@tanstack/react-query';
+import { Check, ChevronsUpDown } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
