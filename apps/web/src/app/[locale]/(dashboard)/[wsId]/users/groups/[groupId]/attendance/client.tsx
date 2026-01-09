@@ -116,7 +116,7 @@ export default function GroupAttendanceClient({
         .eq('ws_id', wsId)
         .single();
       if (error) throw error;
-      return (data?.sessions as string[]) || [];
+      return Array.isArray(data?.sessions) ? (data.sessions as string[]) : [];
     },
     initialData: initialSessions,
     staleTime: 60 * 1000,
@@ -160,7 +160,8 @@ export default function GroupAttendanceClient({
   ];
 
   const isDateAvailable = (sessionList: string[], d: Date) =>
-    sessionList?.some((s) => {
+    Array.isArray(sessionList) &&
+    sessionList.some((s) => {
       const sd = new Date(s);
       return (
         sd.getDate() === d.getDate() &&
@@ -747,12 +748,10 @@ export default function GroupAttendanceClient({
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-semibold text-base">
                                 {m.full_name
-                                      ? m.display_name
-                                        ? `${m.full_name} (${m.display_name})`
-                                        : m.full_name
-                                      : m.display_name ||
-                                          m.email ||
-                                          'Unknown'}
+                                  ? m.display_name
+                                    ? `${m.full_name} (${m.display_name})`
+                                    : m.full_name
+                                  : m.display_name || m.email || 'Unknown'}
                               </div>
                               <div className="truncate text-foreground/60 text-sm">
                                 {m.phone || tAtt('phone_fallback')}

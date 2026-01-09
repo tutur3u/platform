@@ -1,19 +1,12 @@
-import { MinusCircle, PlusCircle } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getLocale, getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
-import { CustomMonthPicker } from '@/components/custom-month-picker';
-import GeneralSearchBar from '@/components/general-search-bar';
+import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { Filter } from '../filters';
-import UserAttendances from './user-attendances';
-import UserAttendancesSkeleton from './user-attendances-skeleton';
+import GroupAttendanceSelector from './group-attendance-selector';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -21,32 +14,24 @@ export const metadata: Metadata = {
     'Manage Attendance in the Users area of your Tuturuuu workspace.',
 };
 
-interface SearchParams {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-  month?: string; // yyyy-MM
-
-  includedGroups?: string | string[];
-  excludedGroups?: string | string[];
-}
-
 interface Props {
   params: Promise<{
+    locale: string;
     wsId: string;
   }>;
-  searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceUserAttendancePage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceUserAttendancePage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const locale = await getLocale();
         const t = await getTranslations();
+        const user = await getCurrentWorkspaceUser(wsId);
+
+        if (!user) {
+          console.error('Failed to fetch current workspace user');
+          notFound();
+        }
 
         const { containsPermission } = await getPermissions({
           wsId,
@@ -55,16 +40,12 @@ export default async function WorkspaceUserAttendancePage({
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
-
         if (!canCheckUserAttendance) {
           notFound();
         }
 
-        const { data: userGroups } = await getUserGroups(wsId);
-        const { data: excludedUserGroups } = await getExcludedUserGroups(
-          wsId,
-          await searchParams
-        );
+        const hasManageUsers = containsPermission('manage_users');
+        const canUpdateAttendance = containsPermission('check_user_attendance');
 
         return (
           <>
@@ -72,100 +53,17 @@ export default async function WorkspaceUserAttendancePage({
               pluralTitle={t('ws-user-attendance.plural')}
               singularTitle={t('ws-user-attendance.singular')}
               description={t('ws-user-attendance.description')}
-              createTitle={t('ws-user-attendance.create')}
-              createDescription={t('ws-user-attendance.create_description')}
-              // form={<UserGroupForm wsId={wsId} />}
             />
             <Separator className="my-4" />
-            <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-              <GeneralSearchBar className="w-full md:max-w-xs" />
-              <CustomMonthPicker
-                lang={locale}
-                className="col-span-full md:col-span-1"
-              />
-              <Filter
-                key="included-user-groups-filter"
-                tag="includedGroups"
-                title={t('user-data-table.included_groups')}
-                icon={<PlusCircle className="mr-2 h-4 w-4" />}
-                options={userGroups.map((group) => ({
-                  label: group.name || 'No name',
-                  value: group.id,
-                  count: group.amount,
-                }))}
-              />
-              <Filter
-                key="excluded-user-groups-filter"
-                tag="excludedGroups"
-                title={t('user-data-table.excluded_groups')}
-                icon={<MinusCircle className="mr-2 h-4 w-4" />}
-                options={excludedUserGroups.map((group) => ({
-                  label: group.name || 'No name',
-                  value: group.id,
-                  count: group.amount,
-                }))}
-              />
-            </div>
-
-            <Suspense
-              fallback={
-                <UserAttendancesSkeleton searchParams={await searchParams} />
-              }
-            >
-              <UserAttendances wsId={wsId} searchParams={await searchParams} />
-            </Suspense>
+            <GroupAttendanceSelector
+              wsId={wsId}
+              workspaceUserId={user?.virtual_user_id}
+              hasManageUsers={hasManageUsers}
+              canUpdateAttendance={canUpdateAttendance}
+            />
           </>
         );
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getUserGroups(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
-}
-
-async function getExcludedUserGroups(
-  wsId: string,
-  { includedGroups }: SearchParams
-) {
-  const supabase = await createClient();
-
-  if (!includedGroups || includedGroups.length === 0) {
-    return getUserGroups(wsId);
-  }
-
-  const queryBuilder = supabase
-    .rpc(
-      'get_possible_excluded_groups',
-      {
-        _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('id, name, amount')
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
 }
