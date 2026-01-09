@@ -746,7 +746,13 @@ export default function GroupAttendanceClient({
                             </Avatar>
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-semibold text-base">
-                                {m.display_name || m.full_name || 'Unknown'}
+                                {m.full_name
+                                      ? m.display_name
+                                        ? `${m.full_name} (${m.display_name})`
+                                        : m.full_name
+                                      : m.display_name ||
+                                          m.email ||
+                                          'Unknown'}
                               </div>
                               <div className="truncate text-foreground/60 text-sm">
                                 {m.phone || tAtt('phone_fallback')}
