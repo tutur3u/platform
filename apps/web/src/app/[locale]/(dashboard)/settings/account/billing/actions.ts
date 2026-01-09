@@ -7,7 +7,9 @@ import type {
   CustomerPaymentMethod,
 } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { createCustomerSessionWithFallback } from '@/utils/customer-session';
 
 interface BillingData {
   customer: {
@@ -43,10 +45,13 @@ export async function getBillingData(): Promise<ActionResult<BillingData>> {
     }
 
     const polar = createPolarClient();
+    const supabase = await createClient();
 
     // Create a customer session to authenticate with customer portal
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
     // Fetch customer data using customer portal API
@@ -127,10 +132,13 @@ export async function updateBillingAddress(
     }
 
     const polar = createPolarClient();
+    const supabase = await createClient();
 
     // Create a customer session to authenticate with customer portal
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
     // Update customer billing address using customer portal API
@@ -176,10 +184,13 @@ export async function deletePaymentMethod(
     }
 
     const polar = createPolarClient();
+    const supabase = await createClient();
 
     // Create a customer session to authenticate with customer portal
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
     // Delete payment method using customer portal API
@@ -224,10 +235,13 @@ export async function getCustomerPortalUrl(): Promise<
     }
 
     const polar = createPolarClient();
+    const supabase = await createClient();
 
     // Create customer session to get portal URL
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
     return {
