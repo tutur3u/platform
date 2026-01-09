@@ -241,6 +241,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           const nextUrl = req.nextUrl.searchParams.get('nextUrl');
           if (nextUrl) {
             redirectUrl.searchParams.set('nextUrl', nextUrl);
+          } else {
+            // If no nextUrl param, use the current path + search params as nextUrl
+            // This ensures users who land on a deep link (e.g. /finance/invoices)
+            // get redirected back there after onboarding
+            const currentPath = req.nextUrl.pathname + req.nextUrl.search;
+            // Only set if we're not already on a root/home path to avoid infinite loops or redundancy
+            if (currentPath !== '/' && currentPath !== '/login') {
+              redirectUrl.searchParams.set('nextUrl', currentPath);
+            }
           }
 
           return NextResponse.redirect(redirectUrl);
