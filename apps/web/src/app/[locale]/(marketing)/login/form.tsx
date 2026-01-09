@@ -229,7 +229,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
       if (!returnApp) throw new Error('Invalid returnUrl');
 
-      if (returnApp === 'web') {
+      if (returnApp === 'web' || returnApp === 'platform') {
         // Normal redirect for single-account mode
         const redirectUrl = new URL(returnUrl, window.location.origin);
         console.log(

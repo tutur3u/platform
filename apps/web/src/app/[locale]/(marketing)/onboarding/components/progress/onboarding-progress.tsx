@@ -3,18 +3,14 @@
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { FlowType, OnboardingStep } from '../../types';
-import {
-  getFlowSteps,
-  getStepIndex,
-  getTotalSteps,
-  STEP_LABELS,
-} from '../../types';
+import { getFlowSteps, STEP_LABELS } from '../../types';
 import { StepIndicator } from './step-indicator';
 
 interface OnboardingProgressProps {
   currentStep: OnboardingStep;
   completedSteps: string[];
   flowType: FlowType;
+  steps?: OnboardingStep[];
   className?: string;
 }
 
@@ -22,12 +18,13 @@ export function OnboardingProgress({
   currentStep,
   completedSteps,
   flowType,
+  steps: customSteps,
   className,
 }: OnboardingProgressProps) {
   const t = useTranslations('onboarding.progress');
-  const steps = getFlowSteps(flowType);
-  const currentIndex = getStepIndex(currentStep, flowType);
-  const totalSteps = getTotalSteps(flowType);
+  const steps = customSteps || getFlowSteps(flowType);
+  const currentIndex = steps.indexOf(currentStep) + 1;
+  const totalSteps = steps.length;
 
   const getStepStatus = (
     step: OnboardingStep

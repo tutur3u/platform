@@ -27,6 +27,7 @@ import type {
 } from './types';
 import {
   FLOW_TYPES,
+  getFlowSteps,
   getFlowTypeFromUseCase,
   getPreviousStep,
   ONBOARDING_STEPS,
@@ -611,6 +612,18 @@ export default function OnboardingFlow({
                 currentStep={currentStep}
                 completedSteps={completedSteps}
                 flowType={flowType}
+                steps={getFlowSteps(flowType).filter((step) => {
+                  if (shouldSkipUseCase && step === ONBOARDING_STEPS.USE_CASE)
+                    return false;
+                  if (
+                    shouldSkipUseCase &&
+                    flowType === FLOW_TYPES.TEAM &&
+                    (step === ONBOARDING_STEPS.TEAM_WORKSPACE ||
+                      step === ONBOARDING_STEPS.TEAM_INVITE)
+                  )
+                    return false;
+                  return true;
+                })}
               />
             </div>
           </div>
