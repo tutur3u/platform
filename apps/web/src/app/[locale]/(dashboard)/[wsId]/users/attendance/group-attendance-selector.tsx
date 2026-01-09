@@ -173,7 +173,8 @@ export default function GroupAttendanceSelector({
       if (!selectedGroupId) return [];
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
-        .select('workspace_users(*)')
+        .select('workspace_users!inner(*)')
+        .eq('workspace_users.archived', false)
         .eq('group_id', selectedGroupId)
         .eq('role', 'STUDENT');
       if (error) throw error;
