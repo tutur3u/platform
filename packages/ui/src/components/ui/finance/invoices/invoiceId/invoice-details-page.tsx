@@ -230,7 +230,10 @@ async function getInvoiceDetails(invoiceId: string) {
   // Merge creator data, prioritizing platform user data
   const creator = {
     display_name:
-      platformCreator?.display_name ?? legacyCreator?.display_name ?? platformCreator?.user_private_details?.email ?? null,
+      platformCreator?.display_name ??
+      legacyCreator?.display_name ??
+      platformCreator?.user_private_details?.email ??
+      null,
     full_name:
       platformCreator?.user_private_details?.full_name ??
       legacyCreator?.full_name ??
