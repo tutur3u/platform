@@ -131,6 +131,7 @@ export async function POST(req: Request, { params }: Params) {
       completed_at: new Date().toISOString(),
       valid_until: validUntil.toISOString(),
       paid_amount: Math.round(total),
+      platform_creator_id: user.id,
     };
 
     if (workspaceUserId) {

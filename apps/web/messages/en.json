@@ -9987,6 +9987,7 @@
     "guardian_tooltip": "The guardian or parent information for this user.",
     "guest_user": "Guest user",
     "guest_user_tooltip": "If enabled, the user will be linked to the workspace's guest group.",
+    "include_archived": "Include archived users",
     "mark_as_archived": "Mark as archived",
     "mark_as_guest": "Mark as guest",
     "national_id": "National ID",

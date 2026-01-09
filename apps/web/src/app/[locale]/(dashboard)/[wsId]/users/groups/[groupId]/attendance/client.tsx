@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarIcon,
   CalendarX2,
@@ -22,7 +17,6 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { Label } from '@tuturuuu/ui/label';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -32,7 +26,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { parseAsString, useQueryState } from 'nuqs';
+import { useCallback, useMemo, useState } from 'react';
 
 type Member = {
   id: string;
@@ -75,52 +70,57 @@ export default function GroupAttendanceClient({
 }: InitialAttendanceProps) {
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
   const tCommon = useTranslations('common');
   const tAtt = useTranslations('ws-user-group-attendance');
   const tDetails = useTranslations('ws-user-group-details');
 
-  const dateParam = searchParams.getSingle('date');
-  const initialDateStr = initialDate || format(new Date(), 'yyyy-MM-dd');
-  const currentDateStr = dateParam || initialDateStr;
-  const [currentDate, setCurrentDate] = useState<Date>(() =>
-    parse(currentDateStr, 'yyyy-MM-dd', new Date())
+  const [dateStr, setDateStr] = useQueryState(
+    'date',
+    parseAsString.withDefault(initialDate || format(new Date(), 'yyyy-MM-dd'))
   );
 
-  // Sync local date when URL param changes
-  useEffect(() => {
-    const nextStr = dateParam || initialDateStr;
-    const next = parse(nextStr, 'yyyy-MM-dd', new Date());
-    if (format(next, 'yyyy-MM-dd') !== format(currentDate, 'yyyy-MM-dd')) {
-      setCurrentDate(next);
-    }
-  }, [dateParam, initialDateStr, currentDate]);
+  const currentDate = useMemo(
+    () => parse(dateStr, 'yyyy-MM-dd', new Date()),
+    [dateStr]
+  );
 
-  // Ensure URL contains date on first load (no refresh)
-  useEffect(() => {
-    if (!dateParam && initialDateStr) {
-      searchParams.set({ date: initialDateStr }, false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateParam, initialDateStr, searchParams.set]);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(
+    () => new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+  );
 
   // Sessions query (client) with initial data from RSC
-  const { data: sessions = [] } = useQuery({
+  const { data: sessionData } = useQuery({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'sessions'],
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_user_groups')
-        .select('sessions')
+        .select('sessions, starting_date, ending_date')
         .eq('id', groupId)
         .eq('ws_id', wsId)
         .single();
       if (error) throw error;
-      return (data?.sessions as string[]) || [];
+      return {
+        sessions: Array.isArray(data?.sessions)
+          ? (data.sessions as string[])
+          : [],
+        startingDate: data?.starting_date ?? null,
+        endingDate: data?.ending_date ?? null,
+      };
     },
-    initialData: initialSessions,
+    initialData: {
+      sessions: initialSessions,
+      startingDate: startingDate ?? null,
+      endingDate: endingDate ?? null,
+    },
     staleTime: 60 * 1000,
   });
+
+  const {
+    sessions,
+    startingDate: effectiveStartingDate,
+    endingDate: effectiveEndingDate,
+  } = sessionData;
 
   // Members query (client) with initial data from RSC
   const { data: members = [] } = useQuery<Member[]>({
@@ -129,12 +129,13 @@ export default function GroupAttendanceClient({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
-        .select('workspace_users(*)')
+        .select('workspace_users!inner(*)')
         .eq('group_id', groupId)
+        .eq('workspace_users.archived', false)
         .eq('role', 'STUDENT');
       if (error) throw error;
       return (
-        (data as any[])?.map((row) => ({
+        data?.map((row) => ({
           id: row.workspace_users?.id,
           display_name: row.workspace_users?.display_name,
           full_name: row.workspace_users?.full_name,
@@ -159,46 +160,39 @@ export default function GroupAttendanceClient({
     format(currentDate, 'yyyy-MM-dd'),
   ];
 
-  const isDateAvailable = (sessionList: string[], d: Date) =>
-    sessionList?.some((s) => {
-      const sd = new Date(s);
-      return (
-        sd.getDate() === d.getDate() &&
-        sd.getMonth() === d.getMonth() &&
-        sd.getFullYear() === d.getFullYear()
-      );
-    });
-
-  const {
-    data: attendance = {} as Record<string, AttendanceEntry>,
-    isLoading: isLoadingAttendance,
-  } = useQuery({
+  const { data: attendance = {}, isLoading: isLoadingAttendance } = useQuery({
     queryKey: attendanceKey,
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('user_group_attendance')
-        .select('user_id,status,notes')
+        .select('user_id, status, notes')
         .eq('group_id', groupId)
         .eq('date', format(currentDate, 'yyyy-MM-dd'));
+
       if (error) throw error;
-      const mapped: Record<string, AttendanceEntry> = {};
-      (data || []).forEach((row: any) => {
-        mapped[row.user_id] = {
+
+      const map: Record<string, AttendanceEntry> = {};
+      data?.forEach((row) => {
+        map[row.user_id] = {
           status: row.status as AttendanceStatus,
-          note: row.notes ?? '',
+          note: row.notes,
         };
       });
-      return mapped;
+      return map;
     },
     initialData:
-      format(currentDate, 'yyyy-MM-dd') === (initialDate || '')
+      initialDate && format(currentDate, 'yyyy-MM-dd') === initialDate
         ? initialAttendance
         : undefined,
-    placeholderData: keepPreviousData,
-    staleTime: 30 * 1000,
-    enabled: isDateAvailable(sessions, currentDate),
   });
+
+  const isDateAvailable = useCallback((sessionList: string[], d: Date) => {
+    const dStr = format(d, 'yyyy-MM-dd');
+    return (
+      Array.isArray(sessionList) && sessionList.some((s) => s.startsWith(dStr))
+    );
+  }, []);
 
   // Pending changes tracking for batch save
   type PendingAttendance = {
@@ -209,6 +203,17 @@ export default function GroupAttendanceClient({
   const [pendingMap, setPendingMap] = useState<Map<string, PendingAttendance>>(
     new Map()
   );
+
+  // Reset pending changes when date changes
+  const [prevDateStr, setPrevDateStr] = useState(dateStr);
+  if (dateStr !== prevDateStr) {
+    setPrevDateStr(dateStr);
+    setPendingMap(new Map());
+    setCalendarMonth(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    );
+  }
+
   // Submitting state comes from mutation below
 
   const getEffectiveEntry = useCallback(
@@ -362,15 +367,6 @@ export default function GroupAttendanceClient({
 
   // Calendar helpers (mimic schedule.tsx)
   const localeStr = useLocale();
-  const [calendarMonth, setCalendarMonth] = useState<Date>(
-    () => new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-  );
-
-  useEffect(() => {
-    setCalendarMonth(
-      new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    );
-  }, [currentDate]);
 
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -404,9 +400,9 @@ export default function GroupAttendanceClient({
 
   // Check if prev button should be disabled based on startingDate
   const isPrevDisabled = useMemo(() => {
-    if (!startingDate) return false;
+    if (!effectiveStartingDate) return false;
 
-    const start = new Date(startingDate);
+    const start = new Date(effectiveStartingDate);
     const prevMonth = new Date(
       calendarMonth.getFullYear(),
       calendarMonth.getMonth() - 1,
@@ -418,13 +414,13 @@ export default function GroupAttendanceClient({
       (prevMonth.getFullYear() === start.getFullYear() &&
         prevMonth.getMonth() < start.getMonth())
     );
-  }, [startingDate, calendarMonth]);
+  }, [effectiveStartingDate, calendarMonth]);
 
   // Check if next button should be disabled based on endingDate
   const isNextDisabled = useMemo(() => {
-    if (!endingDate) return false;
+    if (!effectiveEndingDate) return false;
 
-    const end = new Date(endingDate);
+    const end = new Date(effectiveEndingDate);
     const nextMonth = new Date(
       calendarMonth.getFullYear(),
       calendarMonth.getMonth() + 1,
@@ -436,7 +432,7 @@ export default function GroupAttendanceClient({
       (nextMonth.getFullYear() === end.getFullYear() &&
         nextMonth.getMonth() > end.getMonth())
     );
-  }, [endingDate, calendarMonth]);
+  }, [effectiveEndingDate, calendarMonth]);
 
   const summary = useMemo(() => {
     const total = members.length;
@@ -586,8 +582,7 @@ export default function GroupAttendanceClient({
                     type="button"
                     onClick={() => {
                       const ds = format(day, 'yyyy-MM-dd');
-                      searchParams.set({ date: ds }, false);
-                      setCurrentDate(day);
+                      setDateStr(ds);
                     }}
                     className={cn(
                       base,
@@ -746,7 +741,11 @@ export default function GroupAttendanceClient({
                             </Avatar>
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-semibold text-base">
-                                {m.display_name || m.full_name || 'Unknown'}
+                                {m.full_name
+                                  ? m.display_name
+                                    ? `${m.full_name} (${m.display_name})`
+                                    : m.full_name
+                                  : m.display_name || m.email || 'Unknown'}
                               </div>
                               <div className="truncate text-foreground/60 text-sm">
                                 {m.phone || tAtt('phone_fallback')}

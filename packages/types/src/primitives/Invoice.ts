@@ -6,6 +6,7 @@ export interface Invoice {
   notice?: string;
   customer_id?: string;
   creator_id?: string;
+  platform_creator_id?: string;
   ws_id?: string;
   completed_at?: string;
   transaction_id?: string;

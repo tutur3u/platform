@@ -136,6 +136,7 @@ export function CompactInvoiceTemplate({
           </p>
         )}
         {(invoice.creator_id ||
+          invoice.platform_creator_id ||
           invoice.creator?.full_name ||
           invoice.creator?.display_name) && (
           <>

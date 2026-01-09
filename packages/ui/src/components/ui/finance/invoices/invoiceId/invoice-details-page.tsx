@@ -205,7 +205,7 @@ async function getInvoiceDetails(invoiceId: string) {
       `*,
       ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name),
       legacy_creator:workspace_users!creator_id(display_name, full_name),
-      platform_creator:users!platform_creator_id(display_name, user_private_details(full_name)),
+      platform_creator:users!platform_creator_id(display_name, user_private_details(full_name, email)),
       wallet:workspace_wallets(name)`
     )
     .eq('id', invoiceId)
@@ -216,7 +216,10 @@ async function getInvoiceDetails(invoiceId: string) {
   // Extract platform and legacy creator data
   const platformCreator = invoice.platform_creator as {
     display_name: string | null;
-    user_private_details: { full_name: string | null } | null;
+    user_private_details: {
+      full_name: string | null;
+      email: string | null;
+    } | null;
   } | null;
 
   const legacyCreator = invoice.legacy_creator as {
@@ -227,7 +230,10 @@ async function getInvoiceDetails(invoiceId: string) {
   // Merge creator data, prioritizing platform user data
   const creator = {
     display_name:
-      platformCreator?.display_name ?? legacyCreator?.display_name ?? null,
+      platformCreator?.display_name ??
+      legacyCreator?.display_name ??
+      platformCreator?.user_private_details?.email ??
+      null,
     full_name:
       platformCreator?.user_private_details?.full_name ??
       legacyCreator?.full_name ??

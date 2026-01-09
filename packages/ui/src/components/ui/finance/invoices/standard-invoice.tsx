@@ -375,19 +375,19 @@ export function StandardInvoice({
         );
       }
 
-      // Reset form after successful creation
-      setSelectedProducts([]);
-      setSelectedPromotionId('none');
-      setInvoiceContent('');
-      setInvoiceNotes('');
-      setRoundedTotal(0);
-      updateSearchParam('user_id', '');
-      setSelectedWalletId('');
-      setSelectedCategoryId('');
-
       if (!createMultipleInvoices) {
         const query = printAfterCreate ? '?print=true' : '';
         router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
+      } else {
+        // Reset form after successful creation
+        setSelectedProducts([]);
+        setSelectedPromotionId('none');
+        setInvoiceContent('');
+        setInvoiceNotes('');
+        setRoundedTotal(0);
+        updateSearchParam('user_id', '');
+        setSelectedWalletId('');
+        setSelectedCategoryId('');
       }
     } catch (error) {
       console.error('Error creating invoice:', error);

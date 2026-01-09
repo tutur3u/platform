@@ -16,6 +16,10 @@ const SearchParamsSchema = z.object({
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
     .default([]),
+  includeArchived: z
+    .union([z.boolean(), z.string()])
+    .transform((val) => (typeof val === 'string' ? val === 'true' : val))
+    .default(false),
 });
 
 interface Params {
@@ -72,6 +76,7 @@ export async function GET(request: Request, { params }: Params) {
           included_groups: sp.includedGroups,
           excluded_groups: sp.excludedGroups,
           search_query: sp.q,
+          include_archived: sp.includeArchived,
         },
         {
           count: 'exact',
