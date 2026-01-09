@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Download,
-  ImageIcon,
-  Layout,
-  Palette,
-  Printer,
-} from '@tuturuuu/icons';
+import { Download, ImageIcon, Layout, Palette, Printer } from '@tuturuuu/icons';
 import type {
   Invoice,
   InvoiceProduct,
@@ -192,8 +186,6 @@ export default function InvoiceCard({
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div className="mb-4 flex justify-end gap-2 print:hidden">
-
-
         {isCompactInitialized ? (
           <Tabs
             value={isCompact ? 'compact' : 'full'}

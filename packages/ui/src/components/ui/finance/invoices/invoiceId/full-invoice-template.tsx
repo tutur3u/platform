@@ -114,13 +114,17 @@ export function FullInvoiceTemplate({
           >
             {t('invoices.bill_to')}:
           </h3>
-          <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+          <p
+            className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+          >
             {invoice.customer_full_name || invoice.customer_display_name}
           </p>
         </div>
         <div className="text-right">
           {invoice.created_at && (
-            <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+            <p
+              className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+            >
               <span
                 className={`font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
@@ -225,12 +229,16 @@ export function FullInvoiceTemplate({
       <Separator className="my-2" />
       {/* Total */}
       <div className="text-right">
-        <p className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+        <p
+          className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+        >
           <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
           {formatCurrency(subtotal, 'VND')}
         </p>
         {promotions.length > 0 && (
-          <p className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+          <p
+            className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+          >
             <span className="font-semibold">
               {t('invoices.discounts')}: {''}
             </span>
@@ -238,12 +246,16 @@ export function FullInvoiceTemplate({
             {formatCurrency(discount_amount, 'VND')}
           </p>
         )}
-        <p className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+        <p
+          className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+        >
           <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
           {formatCurrency(invoice.total_diff, 'VND')}
         </p>
         <Separator className="my-2" />
-        <p className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+        <p
+          className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+        >
           <span className="font-bold">{t('invoices.total')}:</span>{' '}
           <span className="font-semibold">
             {formatCurrency(invoice.price + invoice.total_diff, 'VND')}
@@ -259,7 +271,9 @@ export function FullInvoiceTemplate({
           >
             {t('ws-wallets.wallet')}:
           </h3>
-          <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+          <p
+            className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+          >
             {invoice.wallet.name}
           </p>
         </div>
@@ -273,7 +287,9 @@ export function FullInvoiceTemplate({
           >
             {t('ws-invoices.creator')}:
           </h3>
-          <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+          <p
+            className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+          >
             {invoice.creator.full_name || invoice.creator.display_name}
           </p>
         </div>

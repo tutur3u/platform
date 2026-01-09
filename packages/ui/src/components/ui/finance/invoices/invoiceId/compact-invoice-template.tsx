@@ -1,8 +1,4 @@
-import type {
-  Invoice,
-  InvoiceProduct,
-  InvoicePromotion,
-} from '@tuturuuu/types';
+import type { Invoice } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
@@ -41,7 +37,7 @@ export function CompactInvoiceTemplate({
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex justify-between gap-8 items-center">
+      <div className="flex items-center justify-between gap-8">
         <div className="flex-1">
           {getConfig('BRAND_LOGO_URL') && (
             // biome-ignore lint/performance/noImgElement: <>
@@ -52,7 +48,7 @@ export function CompactInvoiceTemplate({
             />
           )}
         </div>
-        <div className="flex-1 text-center max-w-[300px]">
+        <div className="max-w-[300px] flex-1 text-center">
           {getConfig('BRAND_LOCATION') && (
             <p
               className={`font-bold text-lg leading-snug print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
