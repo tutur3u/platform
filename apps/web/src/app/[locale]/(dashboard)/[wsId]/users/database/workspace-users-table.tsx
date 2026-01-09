@@ -1,10 +1,10 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
-import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { Label } from '@tuturuuu/ui/label';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -215,7 +215,7 @@ export function WorkspaceUsersTable({
               />
               <Label
                 htmlFor="include-archived"
-                className="cursor-pointer text-sm font-normal"
+                className="cursor-pointer font-normal text-sm"
               >
                 {t('ws-users.include_archived')}
               </Label>

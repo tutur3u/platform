@@ -1,5 +1,6 @@
 'use client';
 
+import { Check, ChevronsUpDown } from '@tuturuuu/icons';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -15,10 +16,9 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { Check, ChevronsUpDown } from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { cn } from '@tuturuuu/utils/format';
 import GroupAttendanceClient from '../groups/[groupId]/attendance/client';
 
 type Member = {

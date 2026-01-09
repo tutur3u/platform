@@ -362,15 +362,15 @@ export default function GroupMembers({
                             <div>
                               <div className="flex items-center gap-2">
                                 <div className="font-medium">
-                                    {person.full_name
-                                      ? person.display_name
-                                        ? `${person.full_name} (${person.display_name})`
-                                        : person.full_name
-                                      : person.display_name ||
-                                          person.email ||
-                                          (isManager
-                                            ? t('ws-user-group-details.managers')
-                                            : t('common.unknown'))}
+                                  {person.full_name
+                                    ? person.display_name
+                                      ? `${person.full_name} (${person.display_name})`
+                                      : person.full_name
+                                    : person.display_name ||
+                                      person.email ||
+                                      (isManager
+                                        ? t('ws-user-group-details.managers')
+                                        : t('common.unknown'))}
                                 </div>
                                 {isManager && (
                                   <Badge

@@ -27,7 +27,7 @@ import { format, parse } from 'date-fns';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type Member = {
   id: string;
@@ -82,6 +82,10 @@ export default function GroupAttendanceClient({
   const currentDate = useMemo(
     () => parse(dateStr, 'yyyy-MM-dd', new Date()),
     [dateStr]
+  );
+
+  const [calendarMonth, setCalendarMonth] = useState<Date>(
+    () => new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   );
 
   // Sessions query (client) with initial data from RSC
@@ -190,11 +194,6 @@ export default function GroupAttendanceClient({
     );
   }, []);
 
-  // Clear pending changes when date changes
-  useEffect(() => {
-    setPendingMap(new Map());
-  }, [dateStr]);
-
   // Pending changes tracking for batch save
   type PendingAttendance = {
     user_id: string;
@@ -204,6 +203,17 @@ export default function GroupAttendanceClient({
   const [pendingMap, setPendingMap] = useState<Map<string, PendingAttendance>>(
     new Map()
   );
+
+  // Reset pending changes when date changes
+  const [prevDateStr, setPrevDateStr] = useState(dateStr);
+  if (dateStr !== prevDateStr) {
+    setPrevDateStr(dateStr);
+    setPendingMap(new Map());
+    setCalendarMonth(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    );
+  }
+
   // Submitting state comes from mutation below
 
   const getEffectiveEntry = useCallback(
@@ -357,15 +367,6 @@ export default function GroupAttendanceClient({
 
   // Calendar helpers (mimic schedule.tsx)
   const localeStr = useLocale();
-  const [calendarMonth, setCalendarMonth] = useState<Date>(
-    () => new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-  );
-
-  useEffect(() => {
-    setCalendarMonth(
-      new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    );
-  }, [currentDate]);
 
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
