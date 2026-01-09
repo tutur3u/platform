@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Check, ChevronsUpDown } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,12 +17,11 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { Check, ChevronsUpDown } from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { cn } from '@tuturuuu/utils/format';
-import GroupIndicatorsManager from '../[groupId]/indicators/group-indicators-manager';
 import { z } from 'zod';
+import GroupIndicatorsManager from '../[groupId]/indicators/group-indicators-manager';
 
 const LinkedUserSchema = z.object({
   id: z.string(),

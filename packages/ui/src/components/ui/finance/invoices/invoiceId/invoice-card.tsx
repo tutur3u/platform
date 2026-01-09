@@ -21,12 +21,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CompactInvoiceTemplate } from './compact-invoice-template';
 import { FullInvoiceTemplate } from './full-invoice-template';
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 
 export default function InvoiceCard({
   lang,
