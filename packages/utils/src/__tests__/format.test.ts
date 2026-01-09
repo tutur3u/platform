@@ -250,8 +250,15 @@ describe('Format Utilities', () => {
       expect(result).toContain('50.000');
     });
 
-    it('formats positive amounts with sign', () => {
+    it('formats positive amounts without sign by default', () => {
       const result = formatCurrency(50000);
+      expect(result).not.toContain('+');
+    });
+
+    it('formats positive amounts with sign when specified', () => {
+      const result = formatCurrency(50000, 'vi-VN', 'VND', {
+        signDisplay: 'always',
+      });
       expect(result).toContain('+');
     });
 

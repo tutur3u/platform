@@ -99,12 +99,13 @@ export function formatCurrency(
   currency = 'VND',
   options?: Partial<Intl.NumberFormatOptions>
 ): string {
+  const { signDisplay = 'auto', ...rest } = options || {};
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-    signDisplay: 'always',
-    ...options,
+    signDisplay,
+    ...rest,
   }).format(amount);
 }

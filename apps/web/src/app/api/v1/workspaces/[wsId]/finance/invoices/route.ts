@@ -231,7 +231,7 @@ export async function POST(req: Request, { params }: Params) {
     if (user) {
       const { data: workspaceUser } = await supabase
         .from('workspace_user_linked_users')
-        .select('virtual_user_id ')
+        .select('virtual_user_id')
         .eq('platform_user_id', user.id)
         .eq('ws_id', wsId)
         .single();
@@ -253,6 +253,7 @@ export async function POST(req: Request, { params }: Params) {
         Date.now() + 1000 * 60 * 60 * 24 * 30
       ).toISOString(),
       paid_amount: Math.round(total), // Convert to integer
+      platform_creator_id: user.id, // Store the platform user ID who created the invoice
     };
 
     // Only add optional fields if they have values
