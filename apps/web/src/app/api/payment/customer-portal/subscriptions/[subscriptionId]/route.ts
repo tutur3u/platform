@@ -1,3 +1,4 @@
+import { createCustomerSessionWithFallback } from '@/utils/customer-session';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
@@ -75,8 +76,10 @@ export async function PATCH(
   try {
     const polar = createPolarClient();
 
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
     // Only allow reactivation (cancel_at_period_end = false)
@@ -178,8 +181,10 @@ export async function DELETE(
   try {
     const polar = createPolarClient();
 
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
     const result = await polar.customerPortal.subscriptions.cancel(

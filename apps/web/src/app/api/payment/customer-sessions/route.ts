@@ -1,6 +1,8 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { createCustomerSessionWithFallback } from '@/utils/customer-session';
 
 export async function POST(_req: NextRequest) {
   const user = await getCurrentSupabaseUser();
@@ -11,13 +13,14 @@ export async function POST(_req: NextRequest) {
 
   try {
     const polar = createPolarClient();
+    const supabase = await createClient();
 
-    // Create customer session to get portal URL
-    const session = await polar.customerSessions.create({
-      externalCustomerId: user.id,
+    const session = await createCustomerSessionWithFallback({
+      polar,
+      supabase,
+      userId: user.id,
     });
 
-    // Return the customer portal URL
     return NextResponse.json({
       success: true,
       customerPortalUrl: session.customerPortalUrl,
