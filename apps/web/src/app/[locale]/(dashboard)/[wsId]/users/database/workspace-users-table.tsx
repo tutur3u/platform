@@ -1,9 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
-import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';

@@ -1,9 +1,9 @@
 import type { Invoice } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Separator } from '@tuturuuu/ui/separator';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { formatCurrency } from '@tuturuuu/utils/format';
 
 export function CompactInvoiceTemplate({
   invoice,

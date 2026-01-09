@@ -22,7 +22,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@upstash/redis": "^1.36.0",
+    "@upstash/redis": "^1.36.1",
     "isomorphic-dompurify": "^2.35.0",
     "juice": "^11.1.0",
     "zod": "^4.3.5"

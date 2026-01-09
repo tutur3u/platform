@@ -1,10 +1,10 @@
 'use client';
 
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 
 /**
  * Shared helper to fetch all workspace user groups
