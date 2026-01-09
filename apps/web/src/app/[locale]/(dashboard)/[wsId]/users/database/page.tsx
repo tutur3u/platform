@@ -154,6 +154,7 @@ async function getInitialData(
         included_groups: [],
         excluded_groups: [],
         search_query: '',
+        include_archived: false,
       },
       {
         count: 'exact',

@@ -3,6 +3,8 @@
 import { Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Label } from '@tuturuuu/ui/label';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -67,6 +69,13 @@ export function WorkspaceUsersTable({
     })
   );
 
+  const [includeArchived, setIncludeArchived] = useQueryState(
+    'includeArchived',
+    parseAsString.withDefault('false').withOptions({
+      shallow: true,
+    })
+  );
+
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;
 
@@ -83,6 +92,7 @@ export function WorkspaceUsersTable({
       pageSize,
       includedGroups,
       excludedGroups,
+      includeArchived: includeArchived === 'true',
     },
     {
       // Use initial data for first render (SSR hydration)
@@ -91,7 +101,8 @@ export function WorkspaceUsersTable({
         page === 1 &&
         pageSize === 10 &&
         includedGroups.length === 0 &&
-        excludedGroups.length === 0
+        excludedGroups.length === 0 &&
+        includeArchived === 'false'
           ? initialData
           : undefined,
     }
@@ -145,9 +156,10 @@ export function WorkspaceUsersTable({
     setQ(null);
     setPage(null);
     setPageSize(null);
+    setIncludeArchived(null);
     // Also clear filter params not managed by nuqs
     router.push(pathname);
-  }, [setQ, setPage, setPageSize, router, pathname]);
+  }, [setQ, setPage, setPageSize, setIncludeArchived, router, pathname]);
 
   if (error) {
     return (
@@ -186,11 +198,29 @@ export function WorkspaceUsersTable({
         pageSize={pageSize}
         defaultQuery={q}
         filters={
-          <ClientFilters
-            wsId={wsId}
-            includedGroups={includedGroups}
-            excludedGroups={excludedGroups}
-          />
+          <div className="flex items-center gap-4">
+            <ClientFilters
+              wsId={wsId}
+              includedGroups={includedGroups}
+              excludedGroups={excludedGroups}
+            />
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="include-archived"
+                checked={includeArchived === 'true'}
+                onCheckedChange={(checked) => {
+                  setIncludeArchived(checked ? 'true' : 'false');
+                  setPage(1); // Reset to first page when toggling
+                }}
+              />
+              <Label
+                htmlFor="include-archived"
+                className="cursor-pointer text-sm font-normal"
+              >
+                {t('ws-users.include_archived')}
+              </Label>
+            </div>
+          </div>
         }
         toolbarImportContent={toolbarImportContent}
         toolbarExportContent={toolbarExportContent}

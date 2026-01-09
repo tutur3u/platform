@@ -10100,6 +10100,7 @@
     "guardian_tooltip": "Thông tin người giám hộ hoặc phụ huynh của người dùng.",
     "guest_user": "Người dùng khách",
     "guest_user_tooltip": "Nếu bật, người dùng sẽ được liên kết với nhóm khách của không gian làm việc.",
+    "include_archived": "Bao gồm người dùng đã lưu trữ",
     "mark_as_archived": "Đánh dấu là được lưu trữ",
     "mark_as_guest": "Đánh dấu là khách",
     "national_id": "CMND/CCCD",
