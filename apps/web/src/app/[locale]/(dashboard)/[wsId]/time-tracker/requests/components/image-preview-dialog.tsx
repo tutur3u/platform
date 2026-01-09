@@ -48,7 +48,7 @@ export function ImagePreviewDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-4xl">
+      <DialogContent className="flex max-h-[95vh] flex-col sm:max-w-7xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>
@@ -61,13 +61,13 @@ export function ImagePreviewDialog({
         </DialogHeader>
 
         {imageUrls[selectedImageIndex] && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-center overflow-hidden rounded-lg bg-muted/10">
+          <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
+            <div className="flex flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted/10">
               {/* biome-ignore lint/performance/noImgElement: Dynamic blob URL from Supabase storage */}
               <img
                 src={imageUrls[selectedImageIndex]}
                 alt={`Full view - Attachment ${selectedImageIndex + 1}`}
-                className="max-h-[60vh] w-auto object-contain"
+                className="h-full max-h-[80vh] w-full object-contain"
               />
             </div>
 
