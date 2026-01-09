@@ -252,14 +252,16 @@ export function FullInvoiceTemplate({
             })}
           </p>
         )}
-        <p
-          className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
-        >
-          <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-          {formatCurrency(invoice.total_diff, 'vi-VN', 'VND', {
-            signDisplay: 'never',
-          })}
-        </p>
+        {invoice.total_diff !== 0 && (
+          <p
+            className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+          >
+            <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
+            {formatCurrency(invoice.total_diff, 'vi-VN', 'VND', {
+              signDisplay: 'never',
+            })}
+          </p>
+        )}
         <Separator className="my-2" />
         <p
           className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
