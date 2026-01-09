@@ -9083,6 +9083,8 @@
     "manage_payroll_description": "Allows members to create, approve, and finalize payroll runs.",
     "manage_projects": "Manage Projects",
     "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
+    "manage_subscription": "Manage subscription",
+    "manage_subscription_description": "Allows members to view, manage, and update workspace subscription and billing information.",
     "manage_time_tracking_requests": "Manage Time Tracking Requests",
     "manage_time_tracking_requests_description": "Allows the user to view & approve/reject time tracking missed entries",
     "manage_user_report_templates": "Manage user report templates",

@@ -9185,6 +9185,8 @@
     "manage_payroll_description": "Cho phép thành viên tạo, phê duyệt và hoàn tất các đợt thanh toán lương.",
     "manage_projects": "Quản lý dự án",
     "manage_projects_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa dự án trong không gian làm việc.",
+    "manage_subscription": "Quản lý đăng ký",
+    "manage_subscription_description": "Cho phép thành viên xem, quản lý và cập nhật thông tin đăng ký và thanh toán của không gian làm việc.",
     "manage_time_tracking_requests": "Quản lý các yêu cầu theo dõi thời gian",
     "manage_time_tracking_requests_description": "Cho phép người dùng xem và duyệt/từ chối các yêu cầu thêm theo dõi thời gian thiếu",
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
