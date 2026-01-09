@@ -252,6 +252,7 @@ export function FullInvoiceTemplate({
             })}
           </p>
         )}
+        {invoice.total_diff !== 0 && (
         <p
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
@@ -260,6 +261,7 @@ export function FullInvoiceTemplate({
             signDisplay: 'never',
           })}
         </p>
+        )}
         <Separator className="my-2" />
         <p
           className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
