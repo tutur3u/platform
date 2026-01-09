@@ -67,7 +67,13 @@ BEGIN
         wu.updated_at
     FROM workspace_users_with_groups wu
     WHERE wu.ws_id = _ws_id
-    AND (search_query IS NULL OR search_query = '' OR COALESCE(wu.full_name, '') ILIKE '%' || search_query || '%' OR COALESCE(wu.display_name, '') ILIKE '%' || search_query || '%')
+    AND (
+        search_query IS NULL 
+        OR search_query = '' 
+        OR COALESCE(wu.full_name, '') ILIKE '%' || search_query || '%' 
+        OR COALESCE(wu.display_name, '') ILIKE '%' || search_query || '%' 
+        OR COALESCE(wu.email, '') ILIKE '%' || search_query || '%'
+    )
     AND ((included_groups IS NULL OR included_groups = ARRAY[]::uuid[] OR ARRAY(SELECT json_array_elements_text(wu.groups)::UUID) && included_groups) AND (excluded_groups IS NULL OR excluded_groups = ARRAY[]::uuid[] OR NOT (ARRAY(SELECT json_array_elements_text(wu.groups)::UUID) && excluded_groups)))
     AND (include_archived = TRUE OR wu.archived IS NOT TRUE);
 END; $$
