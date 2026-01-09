@@ -294,6 +294,7 @@ export function FullInvoiceTemplate({
 
       {/* Creator */}
       {(invoice.creator_id ||
+        invoice.platform_creator_id ||
         invoice.creator?.full_name ||
         invoice.creator?.display_name) && (
         <div className="mb-8">
