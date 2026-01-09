@@ -125,12 +125,13 @@ export default function GroupAttendanceClient({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
-        .select('workspace_users(*)')
+        .select('workspace_users!inner(*)')
         .eq('group_id', groupId)
+        .eq('workspace_users.archived', false)
         .eq('role', 'STUDENT');
       if (error) throw error;
       return (
-        (data as any[])?.map((row) => ({
+        data?.map((row) => ({
           id: row.workspace_users?.id,
           display_name: row.workspace_users?.display_name,
           full_name: row.workspace_users?.full_name,
