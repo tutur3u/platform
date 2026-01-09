@@ -1,5 +1,7 @@
 'use client';
 
+import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -28,38 +30,54 @@ import {
   getFlowTypeFromUseCase,
   getPreviousStep,
   ONBOARDING_STEPS,
+  USE_CASE_OPTIONS,
 } from './types';
 import { WelcomeScreen } from './welcome-screen';
 
 interface OnboardingFlowProps {
   user: WorkspaceUser;
   initialProgress: OnboardingProgressType | null;
+  /** URL to redirect to after onboarding (for external app login flow) */
+  returnUrl?: string;
+  /** Path to redirect to after onboarding (for internal redirect) */
+  nextUrl?: string;
+  /** Whether user came from an internal app link (auto-selects team flow) */
+  isFromInternalApp?: boolean;
 }
 
 export default function OnboardingFlow({
   user,
   initialProgress,
+  returnUrl,
+  nextUrl,
+  isFromInternalApp = false,
 }: OnboardingFlowProps) {
   const t = useTranslations('onboarding');
   const router = useRouter();
 
-  // State management
+  const supabase = createClient();
+
+  // State management - if coming from internal app, start with team flow
+  const initialFlowType = isFromInternalApp
+    ? FLOW_TYPES.TEAM
+    : (initialProgress?.flow_type as FlowType) || FLOW_TYPES.PERSONAL;
+
+  const initialUseCase = isFromInternalApp
+    ? USE_CASE_OPTIONS.SMALL_TEAM
+    : (initialProgress?.use_case as UseCase) || null;
+
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(
     (initialProgress?.current_step as OnboardingStep) ||
       ONBOARDING_STEPS.WELCOME
   );
-  const [flowType, setFlowType] = useState<FlowType>(
-    (initialProgress?.flow_type as FlowType) || FLOW_TYPES.PERSONAL
-  );
+  const [flowType, setFlowType] = useState<FlowType>(initialFlowType);
   const [completedSteps, setCompletedSteps] = useState<string[]>(
     initialProgress?.completed_steps || []
   );
   const [loading, setLoading] = useState(false);
 
-  // Collected data
-  const [useCase, setUseCase] = useState<UseCase | null>(
-    (initialProgress?.use_case as UseCase) || null
-  );
+  // Collected data - auto-select use case for internal app users
+  const [useCase, setUseCase] = useState<UseCase | null>(initialUseCase);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [teamWorkspaceData, setTeamWorkspaceData] =
     useState<TeamWorkspaceData | null>(
@@ -165,12 +183,32 @@ export default function OnboardingFlow({
       const result = await response.json();
       setPersonalWorkspaceId(result.id);
 
-      await updateProgress({
-        current_step: ONBOARDING_STEPS.USE_CASE,
-        completed_steps: [...completedSteps, ONBOARDING_STEPS.WELCOME],
-      });
-
-      goToNextStep(ONBOARDING_STEPS.USE_CASE);
+      // If coming from internal app, skip use case step and go directly to profile
+      // Auto-select "small_team" use case for collaborative context
+      if (isFromInternalApp) {
+        await updateProgress({
+          use_case: USE_CASE_OPTIONS.SMALL_TEAM,
+          flow_type: FLOW_TYPES.TEAM,
+          current_step: ONBOARDING_STEPS.PROFILE,
+          completed_steps: [
+            ...completedSteps,
+            ONBOARDING_STEPS.WELCOME,
+            ONBOARDING_STEPS.USE_CASE,
+          ],
+        });
+        setCompletedSteps((prev) => [
+          ...prev,
+          ONBOARDING_STEPS.WELCOME,
+          ONBOARDING_STEPS.USE_CASE,
+        ]);
+        setCurrentStep(ONBOARDING_STEPS.PROFILE);
+      } else {
+        await updateProgress({
+          current_step: ONBOARDING_STEPS.USE_CASE,
+          completed_steps: [...completedSteps, ONBOARDING_STEPS.WELCOME],
+        });
+        goToNextStep(ONBOARDING_STEPS.USE_CASE);
+      }
     } catch (error) {
       console.error('Error creating personal workspace:', error);
       toast.error(t('errors.title'), {
@@ -370,7 +408,7 @@ export default function OnboardingFlow({
     goToNextStep(ONBOARDING_STEPS.PREFERENCES);
   };
 
-  // Handle celebration complete - redirect to dashboard
+  // Handle celebration complete - redirect to dashboard or external app
   const handleCelebrationComplete = async () => {
     setLoading(true);
     try {
@@ -397,7 +435,50 @@ export default function OnboardingFlow({
         }
       }
 
-      // Redirect to team workspace if created, otherwise personal workspace
+      // Handle redirect based on where user came from
+      if (returnUrl) {
+        // User came from external app - generate cross-app token and redirect back
+        const targetApp = mapUrlToApp(returnUrl);
+
+        if (targetApp && targetApp !== 'platform') {
+          // Generate cross-app token for the external app
+          const token = await generateCrossAppToken(
+            supabase,
+            targetApp,
+            'platform'
+          );
+
+          if (token) {
+            const redirectUrl = new URL(decodeURIComponent(returnUrl));
+            redirectUrl.searchParams.set('token', token);
+            redirectUrl.searchParams.set('originApp', 'platform');
+            redirectUrl.searchParams.set('targetApp', targetApp);
+
+            // Use window.location for cross-origin redirect
+            window.location.assign(redirectUrl.toString());
+            return;
+          }
+        }
+
+        // Fallback: try to redirect to returnUrl directly (same origin)
+        try {
+          const url = new URL(returnUrl, window.location.origin);
+          if (url.origin === window.location.origin) {
+            router.push(url.pathname + url.search);
+            return;
+          }
+        } catch {
+          // Invalid URL, fall through to default
+        }
+      }
+
+      // Handle internal nextUrl redirect
+      if (nextUrl) {
+        router.push(nextUrl);
+        return;
+      }
+
+      // Default: redirect to team workspace if created, otherwise personal workspace
       const redirectId = teamWorkspaceId || personalWorkspaceId || 'personal';
       router.push(`/${redirectId}`);
     } catch (error) {

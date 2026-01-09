@@ -33,31 +33,18 @@ export async function generateCrossAppToken(
       return null;
     }
 
-    // Get the current session
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getSession();
-
-    if (sessionError) {
-      console.error('Error getting session:', sessionError);
-      return null;
-    }
-
-    // Extract the session tokens
-    const sessionTokens = {
-      access_token: sessionData.session?.access_token,
-      refresh_token: sessionData.session?.refresh_token,
-    };
-
-    // Create parameters object with type assertion
+    // Create parameters object - session_data is passed as null for backward compatibility
+    // The DB function still expects this param until a migration is run
+    // The target app will create its own independent session
     const params = {
       p_user_id: user.id,
       p_origin_app: originApp,
       p_target_app: targetApp,
       p_expiry_seconds: expirySeconds,
-      p_session_data: sessionTokens,
+      p_session_data: null, // Not used anymore - each app creates its own session
     };
 
-    // Call the RPC function to generate a token with session data
+    // Call the RPC function to generate a token
     const { data, error } = await supabase.rpc(
       'generate_cross_app_token',
       params
@@ -76,11 +63,12 @@ export async function generateCrossAppToken(
 }
 
 /**
- * Validates a cross-app authentication token and returns the session data
+ * Validates a cross-app authentication token and returns the user ID
  * @param supabase The Supabase client
  * @param token The token to validate
  * @param targetApp The target app identifier
- * @returns An object with userId and sessionData if valid, null otherwise
+ * @returns An object with userId if valid, null otherwise
+ * @deprecated Use validateCrossAppToken instead - session data is no longer copied
  */
 export async function validateCrossAppTokenWithSession(
   supabase: TypedSupabaseClient,
@@ -90,8 +78,27 @@ export async function validateCrossAppTokenWithSession(
   userId: string;
   sessionData?: { access_token: string; refresh_token: string };
 } | null> {
+  const result = await validateCrossAppToken(supabase, token, targetApp);
+  if (!result) return null;
+  return { userId: result.userId };
+}
+
+/**
+ * Validates a cross-app authentication token and returns the user ID
+ * The target app should create its own session using this user ID
+ * @param supabase The Supabase client
+ * @param token The token to validate
+ * @param targetApp The target app identifier
+ * @returns An object with userId if valid, null otherwise
+ */
+export async function validateCrossAppToken(
+  supabase: TypedSupabaseClient,
+  token: string,
+  targetApp: string
+): Promise<{ userId: string } | null> {
   try {
-    // Call the RPC function to validate the token and get session data
+    // Call the RPC function to validate the token
+    // Note: The RPC may still return session_data from the DB, but we ignore it
     const { data, error } = await supabase.rpc(
       'validate_cross_app_token_with_session',
       {
@@ -105,36 +112,22 @@ export async function validateCrossAppTokenWithSession(
       return null;
     }
 
-    // Process the result
+    // Process the result - only extract user_id
     const result = data as unknown as {
       user_id: string | null;
-      session_data?: {
-        access_token: string;
-        refresh_token: string;
-      };
     };
 
     if (!result.user_id) {
       return null;
     }
 
-    // If session data is available, set the session
-    if (result.session_data) {
-      await supabase.auth.setSession({
-        access_token: result.session_data.access_token,
-        refresh_token: result.session_data.refresh_token,
-      });
-    }
-
+    // Return only the user ID - NO session copying!
+    // The target app must create its own session using admin API
     return {
       userId: result.user_id,
-      sessionData: result.session_data,
     };
   } catch (error) {
-    console.error(
-      'Unexpected error validating cross-app token with session:',
-      error
-    );
+    console.error('Unexpected error validating cross-app token:', error);
     return null;
   }
 }

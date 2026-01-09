@@ -1,3 +1,4 @@
+import { mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import {
   getCurrentUser,
   getUserDefaultWorkspace,
@@ -12,7 +13,13 @@ export const metadata: Metadata = {
   description: 'Guide new teammates through getting started with Tuturuuu.',
 };
 
-export default async function OnboardingPage() {
+interface OnboardingPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function OnboardingPage({
+  searchParams,
+}: OnboardingPageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -34,5 +41,22 @@ export default async function OnboardingPage() {
   }
 
   const progress = await getUserOnboardingProgress(user.id);
-  return <OnboardingFlow user={user} initialProgress={progress} />;
+
+  // Extract redirect URLs from search params
+  const params = await searchParams;
+  const returnUrl = params.returnUrl as string | undefined;
+  const nextUrl = params.nextUrl as string | undefined;
+
+  // Determine if user came from an internal app (for auto-team flow)
+  const isFromInternalApp = returnUrl ? !!mapUrlToApp(returnUrl) : false;
+
+  return (
+    <OnboardingFlow
+      user={user}
+      initialProgress={progress}
+      returnUrl={returnUrl}
+      nextUrl={nextUrl}
+      isFromInternalApp={isFromInternalApp}
+    />
+  );
 }

@@ -229,6 +229,20 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const needsOnboarding = await shouldRedirectToOnboarding(user.id);
         if (needsOnboarding) {
           const redirectUrl = new URL('/onboarding', req.nextUrl);
+
+          // Preserve returnUrl if coming from external app login flow
+          // This ensures users are redirected back to the external app after onboarding
+          const returnUrl = req.nextUrl.searchParams.get('returnUrl');
+          if (returnUrl) {
+            redirectUrl.searchParams.set('returnUrl', returnUrl);
+          }
+
+          // Also preserve nextUrl for internal redirects
+          const nextUrl = req.nextUrl.searchParams.get('nextUrl');
+          if (nextUrl) {
+            redirectUrl.searchParams.set('nextUrl', nextUrl);
+          }
+
           return NextResponse.redirect(redirectUrl);
         }
       }
