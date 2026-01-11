@@ -39,7 +39,7 @@ export async function createCustomerSessionWithFallback({
     // Get user email from user_private_details
     const { data: userDetails, error: emailError } = await supabase
       .from('user_private_details')
-      .select('email')
+      .select('email, full_name, ...users(display_name)')
       .eq('user_id', userId)
       .single();
 
@@ -55,7 +55,26 @@ export async function createCustomerSessionWithFallback({
     const customers = customersResponse.result?.items || [];
 
     if (customers.length === 0) {
-      throw new Error('Customer not found in Polar by email or external ID');
+      // Create new customer if not found
+      console.log(
+        'Customer not found in Polar by email, creating new customer...'
+      );
+      const newCustomer = await polar.customers.create({
+        email: userDetails.email,
+        name: userDetails.full_name || userDetails.display_name || undefined,
+        externalId: userId,
+      });
+
+      if (!newCustomer) {
+        throw new Error('Failed to create new customer in Polar');
+      }
+
+      console.log('Created new Polar customer:', newCustomer.id);
+
+      // Create session with new customer ID
+      return await polar.customerSessions.create({
+        customerId: newCustomer.id,
+      });
     }
 
     // Use the first matching customer's ID to create session
