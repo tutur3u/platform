@@ -1,4 +1,4 @@
-import { CircleDashed, FileCheck2, Plus } from '@tuturuuu/icons';
+import { FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { invoiceColumns } from './columns';
 import { InvoicesToolbar } from './invoices-toolbar';
+import { PendingInvoicesTab } from './pending-invoices-tab';
 import { PendingInvoicesTable } from './pending-invoices-table';
 
 type DeleteInvoiceAction = (
@@ -95,10 +96,10 @@ export default async function InvoicesPage({
             <FileCheck2 className="h-4 w-4" />
             {t('ws-invoices.created_invoices')}
           </TabsTrigger>
-          <TabsTrigger value="pending" className="gap-2">
-            <CircleDashed className="h-4 w-4" />
-            {t('ws-invoices.pending_invoices')}
-          </TabsTrigger>
+          <PendingInvoicesTab
+            wsId={wsId}
+            label={t('ws-invoices.pending_invoices')}
+          />
         </TabsList>
         <TabsContent value="created">
           <CustomDataTable

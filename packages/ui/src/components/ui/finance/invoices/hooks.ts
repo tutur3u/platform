@@ -519,3 +519,45 @@ export const usePendingInvoices = (
     retry: 3,
   });
 };
+
+// Get count of pending invoices for the current month
+export const usePendingInvoicesCurrentMonthCount = (wsId: string) => {
+  return useQuery({
+    queryKey: ['pending-invoices-current-month', wsId],
+    queryFn: async () => {
+      const supabase = createClient();
+
+      // Get current month in YYYY-MM format
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      // Fetch all pending invoices without pagination to count current month
+      const { data, error } = await supabase.rpc('get_pending_invoices', {
+        p_ws_id: wsId,
+        p_limit: 10000, // Large limit to get all records
+        p_offset: 0,
+      });
+
+      if (error) {
+        console.error('❌ Pending invoices current month count error:', error);
+        throw error;
+      }
+
+      // Count invoices that include the current month
+      const currentMonthCount = (data || []).filter((invoice: any) => {
+        const monthsOwed =
+          typeof invoice.months_owed === 'string'
+            ? parseMonthsOwed(invoice.months_owed)
+            : invoice.months_owed || [];
+        return monthsOwed.includes(currentMonth);
+      }).length;
+
+      return currentMonthCount;
+    },
+    enabled: !!wsId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+    retry: 3,
+  });
+};
