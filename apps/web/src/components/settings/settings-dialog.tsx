@@ -20,6 +20,14 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@tuturuuu/ui/breadcrumb';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   DialogContent,
@@ -330,17 +338,22 @@ export function SettingsDialog({
       : []),
   ];
 
+  // Determine the active group name for breadcrumbs
+  const activeGroup = navItems.find((g) =>
+    g.items.some((i) => i.name === activeTab)
+  );
+
   const activeItem =
     navItems.flatMap((g) => g.items).find((i) => i.name === activeTab) ||
     navItems[0]?.items[0];
 
   return (
-    <DialogContent className="flex h-full flex-col overflow-hidden p-0 md:max-h-200 md:max-w-250 lg:max-w-300">
+    <DialogContent className="flex h-[80vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
       <DialogDescription className="sr-only">
         {t('common.settings')}
       </DialogDescription>
-      <SidebarProvider className="flex items-start">
+      <SidebarProvider className="flex h-full min-h-0 items-start">
         <Sidebar
           collapsible="none"
           className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
@@ -376,20 +389,49 @@ export function SettingsDialog({
             ))}
           </SidebarContent>
         </Sidebar>
-        <main className="flex h-[calc(100%-5rem)] flex-1 flex-col overflow-hidden bg-background 2xl:h-[calc(100%-10rem)]">
-          <header className="flex h-20 shrink-0 flex-col items-start justify-center gap-1 overflow-hidden border-b bg-background/80 px-4 py-2 backdrop-blur-md">
-            <h2 className="font-semibold text-lg tracking-tight">
-              {activeItem?.label}
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {activeItem?.description ||
-                t('settings.manage_settings', {
-                  label: activeItem?.label?.toLowerCase() ?? '',
-                })}
-            </p>
+        <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="#" className="pointer-events-none">
+                      {t('common.settings')}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  {activeGroup && (
+                    <>
+                      <BreadcrumbItem className="hidden md:block">
+                        <BreadcrumbPage className="text-muted-foreground">
+                          {activeGroup.label}
+                        </BreadcrumbPage>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator className="hidden md:block" />
+                    </>
+                  )}
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{activeItem?.label}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
           </header>
-          <div className="flex h-32 grow flex-col gap-4 overflow-y-auto p-6 pb-20">
-            <div className="mx-auto w-full max-w-3xl">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+            <div className="mx-auto w-full max-w-3xl space-y-6">
+              <div className="space-y-1">
+                <h2 className="font-semibold text-lg tracking-tight">
+                  {activeItem?.label}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  {activeItem?.description ||
+                    t('settings.manage_settings', {
+                      label: activeItem?.label?.toLowerCase() ?? '',
+                    })}
+                </p>
+              </div>
+              <Separator />
+
               <CalendarSettingsWrapper
                 wsId={wsId}
                 initialSettings={
