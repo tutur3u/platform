@@ -18331,6 +18331,8 @@ export type Database = {
         };
         Returns: boolean;
       };
+      show_limit: { Args: never; Returns: number };
+      show_trgm: { Args: { '': string }; Returns: string[] };
       sum_quiz_scores: {
         Args: { p_set_id: string };
         Returns: {
