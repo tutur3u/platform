@@ -1,6 +1,10 @@
 -- Create a helper function that returns base pending invoice data
 -- This eliminates duplication between get_pending_invoices and get_pending_invoices_count
 -- Returns user-group combinations with aggregated attendance data for unpaid periods
+
+-- Drop the function first because we are changing the return type
+DROP FUNCTION IF EXISTS get_pending_invoices_base(uuid) CASCADE;
+
 CREATE OR REPLACE FUNCTION get_pending_invoices_base(p_ws_id uuid)
 RETURNS TABLE (
   user_id uuid,
@@ -109,6 +113,36 @@ BEGIN
   WHERE COALESCE(ac.attendance_days, 0) > 0;  -- Only include months with attendance
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+-- Create a count function for pending invoices pagination
+CREATE OR REPLACE FUNCTION get_pending_invoices_count(p_ws_id uuid)
+RETURNS bigint AS $$
+DECLARE
+  result_count bigint;
+BEGIN
+  WITH base_data AS (
+    SELECT * FROM get_pending_invoices_base(p_ws_id)
+  ),
+  combined_pending AS (
+    -- Combine all pending months per user-group with aggregated attendance
+    SELECT
+      bd.user_id,
+      bd.user_name,
+      bd.group_id,
+      bd.group_name,
+      SUM(bd.attendance_days)::integer as total_attendance_days
+    FROM base_data bd
+    GROUP BY bd.user_id, bd.user_name, bd.group_id, bd.group_name
+  )
+  SELECT COUNT(*)
+  INTO result_count
+  FROM combined_pending
+  WHERE total_attendance_days > 0;
+  
+  RETURN result_count;
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
 
 -- Create function to get pending invoices for a workspace
 -- This function calculates invoices that haven't been created yet based on:
