@@ -3,7 +3,7 @@
 import { Check, ChevronDown, ChevronUp } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from '../button';
+import { Button, buttonVariants } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
@@ -319,23 +319,19 @@ export const ComparedDateRangePicker = ({
     if (!a || !b) return a === b; // If either is undefined, return true if both are undefined
     return (
       a.from.getTime() === b.from.getTime() &&
-      (!a.to || !b.to || a.to.getTime() === b.to.getTime())
+      a.to?.getTime() === b.to?.getTime()
     );
   };
-
-  useEffect(() => {
-    if (isOpen) {
-      openedRangeRef.current = range;
-      openedRangeCompareRef.current = rangeCompare;
-    }
-  }, [isOpen, range, rangeCompare]);
 
   return (
     <Popover
       modal={true}
       open={isOpen}
       onOpenChange={(open: boolean) => {
-        if (!open) {
+        if (open) {
+          openedRangeRef.current = range;
+          openedRangeCompareRef.current = rangeCompare;
+        } else {
           resetValues();
         }
         setIsOpen(open);
@@ -515,6 +511,21 @@ export const ComparedDateRangePicker = ({
                     )
                   }
                   preferences={preferences}
+                  classNames={{
+                    week: 'flex gap-0 w-full', // Remove gap-1
+                    day: 'text-center text-sm p-0 relative w-full',
+                    day_button: cn(
+                      buttonVariants({ variant: 'ghost' }),
+                      'h-9 w-full rounded-none p-0 font-normal transition-colors duration-300', // rounded-none for continuity
+                      'hover:bg-accent/50 hover:text-accent-foreground'
+                    ),
+                    range_start:
+                      'type-range-start bg-primary text-primary-foreground rounded-l-md rounded-r-none [&>button]:bg-transparent [&>button]:text-primary-foreground [&>button]:hover:bg-transparent [&>button]:hover:text-primary-foreground',
+                    range_end:
+                      'type-range-end bg-primary text-primary-foreground rounded-r-md rounded-l-none [&>button]:bg-transparent [&>button]:text-primary-foreground [&>button]:hover:bg-transparent [&>button]:hover:text-primary-foreground',
+                    range_middle:
+                      'bg-primary/20 rounded-none [&>button]:bg-transparent [&>button]:text-foreground [&>button]:hover:bg-transparent [&>button]:hover:text-foreground',
+                  }}
                 />
               </div>
             </div>

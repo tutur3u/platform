@@ -3,8 +3,10 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { FileText } from '@tuturuuu/icons';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -34,9 +36,25 @@ export const pendingInvoiceColumns = (
         title={t(`${namespace}.customer`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-32">{row.getValue('user_name') || '-'}</div>
-    ),
+    cell: ({ row }) => {
+      const name = row.getValue<string>('user_name') || 'Unknown';
+      const avatarUrl = row.original.user_avatar_url;
+
+      return (
+        <div className="flex min-w-32 items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage
+              src={avatarUrl || getAvatarPlaceholder(name)}
+              alt={name}
+            />
+            <AvatarFallback className="text-xs">
+              {getInitials(name)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="line-clamp-1">{name}</span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'group_id',

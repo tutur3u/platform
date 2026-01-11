@@ -5,14 +5,17 @@ import {
   FileText,
   Percent,
   ShoppingCart,
+  User,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ProductCard } from '@tuturuuu/ui/finance/invoices/invoiceId/product-card';
 import { PromotionCard } from '@tuturuuu/ui/finance/invoices/invoiceId/promotion-card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
+import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
@@ -60,6 +63,43 @@ export default async function InvoiceDetailsPage({
             </div>
             <Separator />
             <div className="flex flex-col gap-2">
+              <DetailItem
+                icon={<User className="h-5 w-5" />}
+                label={t('invoice-data-table.customer')}
+                value={
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage
+                        src={
+                          invoice.customer_avatar_url ||
+                          getAvatarPlaceholder(
+                            invoice.customer_full_name ||
+                              invoice.customer_display_name ||
+                              'Unknown'
+                          )
+                        }
+                        alt={
+                          invoice.customer_full_name ||
+                          invoice.customer_display_name ||
+                          'Unknown'
+                        }
+                      />
+                      <AvatarFallback className="text-xs">
+                        {getInitials(
+                          invoice.customer_full_name ||
+                            invoice.customer_display_name ||
+                            'Unknown'
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>
+                      {invoice.customer_full_name ||
+                        invoice.customer_display_name ||
+                        '-'}
+                    </span>
+                  </div>
+                }
+              />
               <DetailItem
                 icon={<FileText className="h-5 w-5" />}
                 label={t('invoice-data-table.id')}
@@ -203,7 +243,7 @@ async function getInvoiceDetails(invoiceId: string) {
     .from('finance_invoices')
     .select(
       `*,
-      ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name),
+      ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name, customer_avatar_url:avatar_url),
       legacy_creator:workspace_users!creator_id(display_name, full_name),
       platform_creator:users!platform_creator_id(display_name, user_private_details(full_name, email)),
       wallet:workspace_wallets(name)`

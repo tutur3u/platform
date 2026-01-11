@@ -5,7 +5,19 @@ export interface Invoice {
   note?: string;
   notice?: string;
   customer_id?: string;
+  customer?: {
+    full_name?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
   creator_id?: string;
+  creator?: {
+    id: string;
+    full_name?: string | null;
+    display_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
+  } | null;
   platform_creator_id?: string;
   ws_id?: string;
   completed_at?: string;

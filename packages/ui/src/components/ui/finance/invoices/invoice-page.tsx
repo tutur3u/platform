@@ -4,13 +4,17 @@ import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-filter-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { invoiceColumns } from './columns';
 import { PendingInvoicesTable } from './pending-invoices-table';
+import { UserFilterWrapper } from './user-filter-wrapper';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -25,6 +29,9 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
+    start: string;
+    end: string;
+    userIds: string | string[];
   }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
@@ -71,6 +78,14 @@ export default async function InvoicesPage({
         }
       />
       <Separator className="my-4" />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Suspense fallback={<Skeleton className="h-10 w-50" />}>
+          <UserFilterWrapper wsId={wsId} />
+        </Suspense>
+        <Suspense fallback={<Skeleton className="h-10 w-75" />}>
+          <DateRangeFilterWrapper />
+        </Suspense>
+      </div>
       <Tabs defaultValue="created" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="created">
@@ -113,33 +128,99 @@ async function getData(
     // q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    start,
+    end,
+    userIds,
+  }: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    start?: string;
+    end?: string;
+    userIds?: string | string[];
+  }
 ) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
+  let queryBuilder = supabase
     .from('finance_invoices')
-    .select('*, customer:workspace_users!customer_id(full_name)', {
-      count: 'exact',
-    })
+    .select(
+      '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))',
+      {
+        count: 'exact',
+      }
+    )
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
+
+  if (start && end) {
+    queryBuilder = queryBuilder.gte('created_at', start).lte('created_at', end);
+  }
+
+  if (userIds) {
+    const ids = Array.isArray(userIds) ? userIds : [userIds];
+    if (ids.length > 0) {
+      queryBuilder = queryBuilder.in('creator_id', ids);
+    }
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    queryBuilder = queryBuilder.range(start, end).limit(parsedSize);
   }
 
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData.map(({ customer, ...rest }) => ({
-    ...rest,
-    customer: customer?.full_name || '-',
-  }));
+  const data = rawData.map(
+    ({ customer, legacy_creator, platform_creator, ...rest }) => {
+      const platformCreator = platform_creator as {
+        id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        user_private_details: {
+          full_name: string | null;
+          email: string | null;
+        } | null;
+      } | null;
+
+      const legacyCreator = legacy_creator as {
+        id: string;
+        display_name: string | null;
+        full_name: string | null;
+        email: string | null;
+        avatar_url: string | null;
+      } | null;
+
+      const creator = {
+        id: platformCreator?.id ?? legacyCreator?.id ?? '',
+        display_name:
+          platformCreator?.display_name ??
+          legacyCreator?.display_name ??
+          platformCreator?.user_private_details?.email ??
+          null,
+        full_name:
+          platformCreator?.user_private_details?.full_name ??
+          legacyCreator?.full_name ??
+          null,
+        email:
+          platformCreator?.user_private_details?.email ??
+          legacyCreator?.email ??
+          null,
+        avatar_url:
+          platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+      };
+
+      return {
+        ...rest,
+        customer,
+        creator,
+      };
+    }
+  );
 
   return { data, count } as { data: Invoice[]; count: number };
 }

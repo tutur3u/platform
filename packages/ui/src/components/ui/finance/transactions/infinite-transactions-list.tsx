@@ -108,12 +108,16 @@ export function InfiniteTransactionsList({
   const userIds = searchParams.getAll('userIds');
   const categoryIds = searchParams.getAll('categoryIds');
   const walletIds = searchParams.getAll('walletIds');
+  const start = searchParams.get('start');
+  const end = searchParams.get('end');
 
   const buildQueryString = (cursor?: string) => {
     const params = new URLSearchParams();
     if (cursor) params.set('cursor', cursor);
     if (q) params.set('q', q);
     if (walletId) params.set('walletId', walletId);
+    if (start) params.set('start', start);
+    if (end) params.set('end', end);
     userIds.forEach((id) => {
       params.append('userIds', id);
     });
@@ -142,6 +146,8 @@ export function InfiniteTransactionsList({
       categoryIds,
       walletIds,
       walletId,
+      start,
+      end,
     ],
     queryFn: async ({ pageParam }) => {
       const queryString = buildQueryString(pageParam as string | undefined);

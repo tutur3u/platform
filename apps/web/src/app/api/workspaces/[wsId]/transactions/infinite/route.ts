@@ -20,6 +20,8 @@ export async function GET(req: Request, { params }: Params) {
     const categoryIds = searchParams.getAll('categoryIds');
     const walletIds = searchParams.getAll('walletIds');
     const walletId = searchParams.get('walletId'); // For single wallet view
+    const startDate = searchParams.get('start');
+    const endDate = searchParams.get('end');
 
     // Parse and validate cursor for cursor-based pagination
     let cursorTakenAt = null;
@@ -62,6 +64,8 @@ export async function GET(req: Request, { params }: Params) {
         p_category_ids: categoryIds.length > 0 ? categoryIds : undefined,
         p_creator_ids: userIds.length > 0 ? userIds : undefined,
         p_search_query: q || undefined,
+        p_start_date: startDate || undefined,
+        p_end_date: endDate || undefined,
         p_order_by: 'taken_at',
         p_order_direction: 'DESC',
         p_limit: limit + 1, // Fetch one extra to check for more

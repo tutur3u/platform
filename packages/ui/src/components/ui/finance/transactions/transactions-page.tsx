@@ -15,6 +15,9 @@ interface Props {
     pageSize: string;
     userIds?: string | string[];
     categoryIds?: string | string[];
+    walletIds?: string | string[];
+    start?: string;
+    end?: string;
   };
 }
 

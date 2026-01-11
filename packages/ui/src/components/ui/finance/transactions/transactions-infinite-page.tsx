@@ -4,6 +4,7 @@ import { Download, Upload } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
 import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-filter-wrapper';
 import { CategoryFilterWrapper } from '@tuturuuu/ui/finance/transactions/category-filter-wrapper';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-lover-import-dialog';
@@ -64,6 +65,9 @@ export function TransactionsInfinitePage({
             onSearch={handleSearch}
             className="col-span-full w-full bg-background md:col-span-1 md:max-w-xs"
           />
+          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+            <DateRangeFilterWrapper />
+          </Suspense>
           <Suspense fallback={<Skeleton className="h-8 w-32" />}>
             <UserFilterWrapper wsId={wsId} />
           </Suspense>

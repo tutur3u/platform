@@ -17,6 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -37,6 +38,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -455,6 +457,44 @@ export function StandardInvoice({
                 placeholder={t('ws-invoices.search_customers')}
               />
             </div>
+
+            {selectedUser && (
+              <div className="flex items-center gap-3 rounded-lg border p-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage
+                    src={
+                      selectedUser.avatar_url ||
+                      getAvatarPlaceholder(
+                        selectedUser.full_name ||
+                          selectedUser.display_name ||
+                          'Unknown'
+                      )
+                    }
+                    alt={
+                      selectedUser.full_name ||
+                      selectedUser.display_name ||
+                      'Unknown'
+                    }
+                  />
+                  <AvatarFallback>
+                    {getInitials(
+                      selectedUser.full_name ||
+                        selectedUser.display_name ||
+                        'Unknown'
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">
+                    {selectedUser.full_name || selectedUser.display_name}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    {selectedUser.email || selectedUser.phone || '-'}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Conditional User History Accordion */}
             {selectedUser && (
               <div className="mt-4">

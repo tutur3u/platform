@@ -2992,6 +2992,7 @@
   },
   "invoice-data-table": {
     "created_at": "Created at",
+    "creator": "Creator",
     "customer": "Customer",
     "customer_id": "Customer ID",
     "final_price": "Final price",

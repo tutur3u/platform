@@ -9,6 +9,9 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
+    start: string;
+    end: string;
+    userIds: string | string[];
   }>;
 }
 

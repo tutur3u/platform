@@ -25,13 +25,36 @@ interface UserFilterProps {
   selectedUserIds: string[];
   onUsersChange: (userIds: string[]) => void;
   className?: string;
+  filterType?: 'all' | 'transaction_creators' | 'invoice_creators';
 }
 
-async function fetchWorkspaceUsers(wsId: string): Promise<WorkspaceUser[]> {
+async function fetchWorkspaceUsers(
+  wsId: string,
+  filterType: 'all' | 'transaction_creators' | 'invoice_creators' = 'all'
+): Promise<WorkspaceUser[]> {
   const supabase = await createClient();
+
+  if (filterType === 'transaction_creators') {
+    const { data, error } = await supabase
+      .from('distinct_transaction_creators' as any)
+      .select('id, display_name');
+
+    if (error) throw error;
+    return (data as unknown as WorkspaceUser[]) || [];
+  }
+
+  if (filterType === 'invoice_creators') {
+    const { data, error } = await supabase
+      .from('distinct_invoice_creators' as any)
+      .select('id, display_name');
+
+    if (error) throw error;
+    return (data as unknown as WorkspaceUser[]) || [];
+  }
+
   const { data, error } = await supabase
     .from('workspace_users')
-    .select('id, full_name, email, avatar_url')
+    .select('id, full_name, display_name, email, avatar_url')
     .eq('ws_id', wsId)
     .order('full_name', { ascending: true });
 
@@ -44,6 +67,7 @@ export function UserFilter({
   selectedUserIds,
   onUsersChange,
   className,
+  filterType = 'all',
 }: UserFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -55,8 +79,8 @@ export function UserFilter({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['workspace-users', wsId],
-    queryFn: () => fetchWorkspaceUsers(wsId),
+    queryKey: ['workspace-users', wsId, filterType],
+    queryFn: () => fetchWorkspaceUsers(wsId, filterType),
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
     enabled: !!wsId, // Only run query if wsId is provided
@@ -73,6 +97,10 @@ export function UserFilter({
   const clearAllFilters = () => {
     onUsersChange([]);
   };
+
+  const isCreatorFilter =
+    filterType === 'transaction_creators' || filterType === 'invoice_creators';
+  const filterLabel = isCreatorFilter ? 'Filter by creator' : 'Filter by users';
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -125,15 +153,25 @@ export function UserFilter({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
             <Users className="h-3 w-3" />
-            <span className="text-xs">Filter by users</span>
+            <span className="text-xs">{filterLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search users..." />
+            <CommandInput
+              placeholder={
+                isCreatorFilter ? 'Search creators...' : 'Search users...'
+              }
+            />
             <CommandList>
               <CommandEmpty>
-                {isLoading ? 'Loading users...' : 'No users found.'}
+                {isLoading
+                  ? isCreatorFilter
+                    ? 'Loading creators...'
+                    : 'Loading users...'
+                  : isCreatorFilter
+                    ? 'No creators found.'
+                    : 'No users found.'}
               </CommandEmpty>
 
               {error && (
@@ -158,14 +196,19 @@ export function UserFilter({
                       if (!aSelected && bSelected) return 1;
 
                       // For users with the same selection status, sort by name
-                      const aName = a.full_name || a.email || 'Unknown';
-                      const bName = b.full_name || b.email || 'Unknown';
+                      const aName =
+                        a.display_name || a.full_name || a.email || 'Unknown';
+                      const bName =
+                        b.display_name || b.full_name || b.email || 'Unknown';
                       return aName.localeCompare(bName);
                     })
                     .map((user) => {
                       const isSelected = selectedUserIds.includes(user.id);
                       const displayName =
-                        user.full_name || user.email || 'Unknown User';
+                        user.display_name ||
+                        user.full_name ||
+                        user.email ||
+                        'Unknown User';
 
                       return (
                         <CommandItem
@@ -197,7 +240,7 @@ export function UserFilter({
                           </Avatar>
                           <div className="flex flex-1 flex-col">
                             <span className="font-medium text-sm">
-                              {user.full_name || 'Unknown'}
+                              {displayName}
                             </span>
                             {user.email && (
                               <span className="text-muted-foreground text-xs">

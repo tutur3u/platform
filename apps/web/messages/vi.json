@@ -3015,6 +3015,7 @@
   },
   "invoice-data-table": {
     "created_at": "Tạo lúc",
+    "creator": "Người tạo",
     "customer": "Khách hàng",
     "customer_id": "Mã khách hàng",
     "final_price": "Tổng tiền",

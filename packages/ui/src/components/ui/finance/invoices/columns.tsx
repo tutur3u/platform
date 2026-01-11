@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { InvoiceRowActions } from '@tuturuuu/ui/finance/invoices/row-actions';
 import {
@@ -10,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 
 type DeleteInvoiceAction = (
@@ -82,9 +84,60 @@ export const invoiceColumns = (
         title={t(`${namespace}.customer`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-32">{row.getValue('customer') || '-'}</div>
+    cell: ({ row }) => {
+      const customer = row.original.customer;
+      if (!customer) return <div className="min-w-32">-</div>;
+
+      const displayName =
+        customer.display_name || customer.full_name || 'Unknown';
+
+      return (
+        <div className="flex min-w-32 items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage
+              src={customer.avatar_url || getAvatarPlaceholder(displayName)}
+              alt={displayName}
+            />
+            <AvatarFallback className="text-xs">
+              {getInitials(displayName)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="line-clamp-1">{displayName}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'creator',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.creator`)}
+      />
     ),
+    cell: ({ row }) => {
+      const creator = row.original.creator;
+      if (!creator) return <div className="min-w-32">-</div>;
+
+      const displayName =
+        creator.display_name || creator.full_name || creator.email || 'Unknown';
+
+      return (
+        <div className="flex min-w-32 items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage
+              src={creator.avatar_url || getAvatarPlaceholder(displayName)}
+              alt={displayName}
+            />
+            <AvatarFallback className="text-xs">
+              {getInitials(displayName)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="line-clamp-1">{displayName}</span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'price',
