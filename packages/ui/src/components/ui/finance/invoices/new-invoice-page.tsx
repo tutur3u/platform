@@ -1,41 +1,53 @@
 'use client';
 
-import { Info } from '@tuturuuu/icons';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
 
 interface Props {
   wsId: string;
+  defaultWalletId?: string;
 }
 
-export default function NewInvoicePage({ wsId }: Props) {
+export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
   const t = useTranslations();
   const searchParams = useSearchParams();
 
-  // Read URL params for prefilling
-  const urlInvoiceType = searchParams.get('type') || 'subscription';
-  const urlAmount = searchParams.get('amount');
-  const prefillAmount = urlAmount ? parseInt(urlAmount, 10) : undefined;
+  const [createMultipleInvoices, setCreateMultipleInvoices] = useState(false);
+  const [printAfterCreate, setPrintAfterCreate] = useState(true);
 
-  const [multipleInvoices, setMultipleInvoices] = useState<boolean>(false);
-  const [printAfterCreate, setPrintAfterCreate, printAfterCreateInitialized] =
-    useLocalStorage<boolean>('invoice-print-after-create', false);
+  useEffect(() => {
+    const storedCreateMultipleInvoices = localStorage.getItem(
+      'createMultipleInvoices'
+    );
+    if (storedCreateMultipleInvoices) {
+      setCreateMultipleInvoices(storedCreateMultipleInvoices === 'true');
+    }
+
+    const storedPrintAfterCreate = localStorage.getItem('printAfterCreate');
+    if (storedPrintAfterCreate) {
+      setPrintAfterCreate(storedPrintAfterCreate === 'true');
+    }
+  }, []);
+
+  const handleCreateMultipleInvoicesChange = (checked: boolean) => {
+    setCreateMultipleInvoices(checked);
+    localStorage.setItem('createMultipleInvoices', checked.toString());
+  };
+
+  const handlePrintAfterCreateChange = (checked: boolean) => {
+    setPrintAfterCreate(checked);
+    localStorage.setItem('printAfterCreate', checked.toString());
+  };
+
+  const invoiceType = searchParams.get('type') || 'standard';
 
   return (
     <>
@@ -44,7 +56,16 @@ export default function NewInvoicePage({ wsId }: Props) {
         singularTitle={t('ws-invoices.new_invoice')}
       />
       <Separator className="my-4" />
-      <Tabs defaultValue={urlInvoiceType} className="w-full">
+      <Tabs
+        defaultValue={invoiceType}
+        className="w-full"
+        onValueChange={(value) => {
+          // Update URL without refreshing
+          const url = new URL(window.location.href);
+          url.searchParams.set('type', value);
+          window.history.replaceState({}, '', url.toString());
+        }}
+      >
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="standard">
@@ -55,80 +76,43 @@ export default function NewInvoicePage({ wsId }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          {printAfterCreateInitialized ? (
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 space-y-1">
-                  <Label htmlFor="multiple-invoices">
-                    {t('ws-invoices.create_multiple_invoices')}
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {t('ws-invoices.create_multiple_invoices_tooltip')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Switch
-                  id="multiple-invoices"
-                  checked={multipleInvoices}
-                  onCheckedChange={(v) => {
-                    setMultipleInvoices(v);
-                    if (v) setPrintAfterCreate(false);
-                  }}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 space-y-1">
-                  <Label htmlFor="print-after-create">
-                    {t('ws-invoices.print_after_create')}
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{t('ws-invoices.print_after_create_tooltip')}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Switch
-                  id="print-after-create"
-                  checked={printAfterCreate}
-                  disabled={multipleInvoices}
-                  onCheckedChange={setPrintAfterCreate}
-                />
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="create-multiple-invoices"
+                checked={createMultipleInvoices}
+                onCheckedChange={handleCreateMultipleInvoicesChange}
+              />
+              <Label htmlFor="create-multiple-invoices">
+                {t('ws-invoices.create_multiple_invoices')}
+              </Label>
             </div>
-          ) : (
-            <div className="flex items-center justify-center gap-4">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-8 w-48" />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="print-after-create"
+                checked={printAfterCreate}
+                onCheckedChange={handlePrintAfterCreateChange}
+              />
+              <Label htmlFor="print-after-create">
+                {t('ws-invoices.print_after_create')}
+              </Label>
             </div>
-          )}
+          </div>
         </div>
 
-        <TabsContent value="standard" className="w-full">
+        <TabsContent value="standard" className="mt-4">
           <StandardInvoice
             wsId={wsId}
-            createMultipleInvoices={multipleInvoices}
+            defaultWalletId={defaultWalletId}
+            createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
           />
         </TabsContent>
-
-        <TabsContent value="subscription" className="w-full">
+        <TabsContent value="subscription" className="mt-4">
           <SubscriptionInvoice
             wsId={wsId}
-            prefillAmount={prefillAmount}
-            createMultipleInvoices={multipleInvoices}
+            defaultWalletId={defaultWalletId}
+            createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
           />
         </TabsContent>

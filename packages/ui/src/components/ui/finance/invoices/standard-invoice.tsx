@@ -61,12 +61,14 @@ interface Props {
   wsId: string;
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
+  defaultWalletId?: string;
 }
 
 export function StandardInvoice({
   wsId,
   createMultipleInvoices,
   printAfterCreate = false,
+  defaultWalletId,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -109,7 +111,15 @@ export function StandardInvoice({
   const [selectedProducts, setSelectedProducts] = useState<
     SelectedProductItem[]
   >([]);
-  const [selectedWalletId, setSelectedWalletId] = useState<string>('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(
+    defaultWalletId || ''
+  );
+
+  useEffect(() => {
+    if (defaultWalletId) {
+      setSelectedWalletId(defaultWalletId);
+    }
+  }, [defaultWalletId]);
   const [selectedPromotionId, setSelectedPromotionId] =
     useState<string>('none');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');

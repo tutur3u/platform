@@ -5012,6 +5012,11 @@
     },
     "error_loading_workspace": "Đã xảy ra lỗi khi tải không gian làm việc",
     "failed_to_load_workspace": "Không thể tải không gian làm việc",
+    "finance": {
+      "default_wallet": "Ví mặc định",
+      "default_wallet_description": "Cấu hình ví mặc định cho hóa đơn",
+      "title": "Tài chính"
+    },
     "loading_workspace": "Đang tải không gian làm việc...",
     "manage_settings": "Quản lý cài đặt {label} của bạn",
     "preferences": {
@@ -8444,6 +8449,20 @@
     "plural": "Email",
     "singular": "E-mail"
   },
+  "ws-finance-settings": {
+    "default_wallet": "Ví mặc định",
+    "default_wallet_card_description": "Chọn ví mặc định sẽ được sử dụng khi tạo hóa đơn mới.",
+    "default_wallet_label": "Ví mặc định",
+    "default_wallet_placeholder": "Chọn một ví",
+    "description": "Quản lý cài đặt tài chính cho không gian làm việc của bạn.",
+    "no_default_wallet": "Không có ví mặc định",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "select_default_wallet": "Chọn một ví",
+    "title": "Cài đặt tài chính",
+    "update_error": "Cập nhật cài đặt thất bại",
+    "update_success": "Cập nhật cài đặt thành công"
+  },
   "ws-flashcards": {
     "back": "Mặt sau",
     "create": "Tạo thẻ từ vựng",
@@ -10248,6 +10267,7 @@
     "filter_by_wallet": "Lọc theo ví",
     "plural": "Ví",
     "singular": "Ví",
+    "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán"
   }
 }

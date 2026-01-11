@@ -63,6 +63,7 @@ interface Props {
   prefillAmount?: number; // Total attendance days to prefill product quantities
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
+  defaultWalletId?: string;
 }
 
 const buildAutoSelectedProductsForGroup = (
@@ -217,6 +218,7 @@ export function SubscriptionInvoice({
   prefillAmount,
   createMultipleInvoices,
   printAfterCreate = false,
+  defaultWalletId,
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
@@ -270,7 +272,15 @@ export function SubscriptionInvoice({
     useCategories(wsId);
 
   // State management
-  const [selectedWalletId, setSelectedWalletId] = useState<string>('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(
+    defaultWalletId || ''
+  );
+
+  useEffect(() => {
+    if (defaultWalletId) {
+      setSelectedWalletId(defaultWalletId);
+    }
+  }, [defaultWalletId]);
   const [selectedPromotionId, setSelectedPromotionId] =
     useState<string>('none');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
@@ -566,15 +576,20 @@ export function SubscriptionInvoice({
     setSubscriptionRoundedTotal(subscriptionTotalBeforeRounding);
   };
 
-  // Auto-select first wallet when wallets load (if no wallet selected)
+  // Auto-select first wallet if none selected or if default provided
   useEffect(() => {
-    if (wallets.length > 0 && !selectedWalletId) {
-      const firstWallet = wallets[0];
-      if (firstWallet?.id) {
-        setSelectedWalletId(firstWallet.id);
+    if (!walletsLoading && wallets.length > 0 && !selectedWalletId) {
+      if (defaultWalletId) {
+        // Double check if default wallet is in the list
+        const defaultExists = wallets.find((w) => w.id === defaultWalletId);
+        if (defaultExists) {
+          setSelectedWalletId(defaultWalletId);
+          return;
+        }
       }
+      setSelectedWalletId(wallets[0]?.id || '');
     }
-  }, [wallets, selectedWalletId]);
+  }, [wallets, walletsLoading, selectedWalletId, defaultWalletId]);
 
   // Auto-select "Học phí" category when categories load (if no category selected)
   useEffect(() => {

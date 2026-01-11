@@ -4974,6 +4974,11 @@
     },
     "error_loading_workspace": "An error occurred while loading the workspace",
     "failed_to_load_workspace": "Failed to load workspace",
+    "finance": {
+      "default_wallet": "Default Wallet",
+      "default_wallet_description": "Configure default wallet for invoices",
+      "title": "Finance"
+    },
     "loading_workspace": "Loading workspace...",
     "manage_settings": "Manage your {label} settings",
     "preferences": {
@@ -8352,6 +8357,20 @@
     "plural": "Emails",
     "singular": "Email"
   },
+  "ws-finance-settings": {
+    "default_wallet": "Default Wallet",
+    "default_wallet_card_description": "Select the default wallet to be used when creating new invoices.",
+    "default_wallet_label": "Default Wallet",
+    "default_wallet_placeholder": "Select a wallet",
+    "description": "Manage finance settings for your workspace.",
+    "no_default_wallet": "No default wallet",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "select_default_wallet": "Select a wallet",
+    "title": "Finance Settings",
+    "update_error": "Failed to update settings",
+    "update_success": "Settings updated successfully"
+  },
   "ws-flashcards": {
     "back": "Back",
     "create": "Create flashcard",
@@ -10044,7 +10063,6 @@
   },
   "ws-user-status-settings": {
     "archived_label": "Archived Label",
-    "archived_until_label": "Temporarily Archived Label",
     "description": "Customize the terminology used for user statuses in your workspace.",
     "permanently_archived_label": "Permanently Archived Label",
     "save": "Save changes",
@@ -10128,6 +10146,7 @@
     "filter_by_wallet": "Filter by wallet",
     "plural": "Wallets",
     "singular": "Wallet",
+    "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method"
   }
 }

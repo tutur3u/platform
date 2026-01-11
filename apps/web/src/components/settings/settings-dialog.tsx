@@ -16,6 +16,7 @@ import {
   Sparkles,
   User,
   Users,
+  Wallet,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
@@ -62,6 +63,7 @@ import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
+import DefaultWalletSettings from './finance/default-wallet-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import MembersSettings from './workspace/members-settings';
@@ -334,6 +336,17 @@ export function SettingsDialog({
               },
             ],
           },
+          {
+            label: t('settings.finance.title'),
+            items: [
+              {
+                name: 'default_wallet',
+                label: t('settings.finance.default_wallet'),
+                icon: Wallet,
+                description: t('settings.finance.default_wallet_description'),
+              },
+            ],
+          },
         ]
       : []),
   ];
@@ -599,6 +612,10 @@ export function SettingsDialog({
                   <div className="h-full">
                     <BillingSettings />
                   </div>
+                )}
+
+                {activeTab === 'default_wallet' && wsId && (
+                  <DefaultWalletSettings wsId={wsId} />
                 )}
 
                 {activeTab.startsWith('calendar_') && wsId && (
