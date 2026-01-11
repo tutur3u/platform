@@ -197,12 +197,16 @@ export function BoardUserPresenceAvatars({
               <div className="relative transition-transform hover:z-10 hover:scale-110">
                 <Avatar
                   className={cn(
-                    'size-7 border-2 border-background ring-1 ring-border transition-all hover:ring-2 sm:size-8',
+                    'size-7 border-2 border-background transition-all sm:size-8',
+                    // Same view users and current user: solid ring
+                    hasMatchingFilters && 'ring-1 ring-border hover:ring-2',
+                    // Current user: blue ring
                     isCurrentUser &&
-                      'ring-dynamic-blue/60 hover:ring-dynamic-blue',
+                      'opacity-60 outline-2 outline-dynamic-light-cyan outline-offset-0 hover:opacity-80 hover:outline-dynamic-light-cyan',
+                    // Different view users: dashed outline + opacity
                     !hasMatchingFilters &&
                       !isCurrentUser &&
-                      'opacity-50 hover:opacity-75',
+                      'opacity-60 outline-dashed outline-2 outline-dynamic-light-pink outline-offset-0 hover:opacity-80 hover:outline-dynamic-light-pink',
                     avatarClassName
                   )}
                 >
