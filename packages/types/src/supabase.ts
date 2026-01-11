@@ -6959,7 +6959,7 @@ export type Database = {
       support_inquiries: {
         Row: {
           created_at: string;
-          creator_id: string;
+          creator_id: string | null;
           email: string;
           id: string;
           images: string[] | null;
@@ -6973,7 +6973,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          creator_id?: string;
+          creator_id?: string | null;
           email: string;
           id?: string;
           images?: string[] | null;
@@ -6987,7 +6987,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          creator_id?: string;
+          creator_id?: string | null;
           email?: string;
           id?: string;
           images?: string[] | null;
@@ -10417,6 +10417,7 @@ export type Database = {
           is_amount_confidential: boolean;
           is_category_confidential: boolean;
           is_description_confidential: boolean;
+          platform_creator_id: string | null;
           report_opt_in: boolean;
           taken_at: string;
           wallet_id: string;
@@ -10432,6 +10433,7 @@ export type Database = {
           is_amount_confidential?: boolean;
           is_category_confidential?: boolean;
           is_description_confidential?: boolean;
+          platform_creator_id?: string | null;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id: string;
@@ -10447,6 +10449,7 @@ export type Database = {
           is_amount_confidential?: boolean;
           is_category_confidential?: boolean;
           is_description_confidential?: boolean;
+          platform_creator_id?: string | null;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id?: string;
@@ -10499,6 +10502,34 @@ export type Database = {
             columns: ['invoice_id'];
             isOneToOne: true;
             referencedRelation: 'finance_invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_platform_creator_id_fkey';
+            columns: ['platform_creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
@@ -15143,7 +15174,6 @@ export type Database = {
           logo_url: string | null;
           name: string | null;
           personal: boolean;
-          preset: string;
           scheduling_settings: Json | null;
           timezone: string | null;
         };
@@ -15159,7 +15189,6 @@ export type Database = {
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
-          preset?: string;
           scheduling_settings?: Json | null;
           timezone?: string | null;
         };
@@ -15175,7 +15204,6 @@ export type Database = {
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
-          preset?: string;
           scheduling_settings?: Json | null;
           timezone?: string | null;
         };
@@ -15207,13 +15235,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspaces_handle_fkey';
-            columns: ['handle'];
-            isOneToOne: false;
-            referencedRelation: 'handles';
-            referencedColumns: ['value'];
           },
         ];
       };
@@ -17837,6 +17858,9 @@ export type Database = {
           amount: number;
           category_id: string;
           created_at: string;
+          creator_avatar_url: string;
+          creator_email: string;
+          creator_full_name: string;
           creator_id: string;
           description: string;
           id: string;
@@ -17844,10 +17868,12 @@ export type Database = {
           is_amount_confidential: boolean;
           is_category_confidential: boolean;
           is_description_confidential: boolean;
+          platform_creator_id: string;
           report_opt_in: boolean;
           taken_at: string;
           total_count: number;
           wallet_id: string;
+          wallet_name: string;
         }[];
       };
       get_wau_count: { Args: never; Returns: number };
@@ -18305,8 +18331,6 @@ export type Database = {
         };
         Returns: boolean;
       };
-      show_limit: { Args: never; Returns: number };
-      show_trgm: { Args: { '': string }; Returns: string[] };
       sum_quiz_scores: {
         Args: { p_set_id: string };
         Returns: {

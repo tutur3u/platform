@@ -1,7 +1,6 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -37,8 +36,7 @@ export default function ExportDialogContent({
     page?: string;
     pageSize?: string;
     userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
+    walletId?: string;
     start?: string;
     end?: string;
   };
@@ -55,7 +53,7 @@ export default function ExportDialogContent({
 
   const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
 
-  const downloadCSV = (data: Transaction[], filename: string) => {
+  const downloadCSV = (data: any[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -66,7 +64,7 @@ export default function ExportDialogContent({
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: Transaction[], filename: string) => {
+  const downloadExcel = (data: any[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -90,54 +88,71 @@ export default function ExportDialogContent({
     setIsExporting(true);
     setProgress(0);
 
-    const allData: Transaction[] = [];
+    const allData: any[] = [];
     let currentPage = 1;
     const pageSize = 1000;
 
-    while (true) {
-      const { data, count } = await getData(wsId, {
-        q: searchParams.q,
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
-        userIds: searchParams.userIds,
-        categoryIds: searchParams.categoryIds,
-        walletIds: searchParams.walletIds,
-        start: searchParams.start,
-        end: searchParams.end,
-      });
+    try {
+      while (true) {
+        const { data, count } = await getData(wsId, {
+          q: searchParams.q,
+          page: currentPage.toString(),
+          pageSize: pageSize.toString(),
+          userIds: searchParams.userIds,
+          walletId: searchParams.walletId,
+          start: searchParams.start,
+          end: searchParams.end,
+        });
 
-      allData.push(...data);
+        const flattenedData = data.map((invoice) => ({
+          ...invoice,
+          customer_name: invoice.customer?.full_name || '',
+          customer_avatar_url: invoice.customer?.avatar_url || '',
+          creator_name:
+            invoice.creator?.display_name ||
+            invoice.creator?.full_name ||
+            invoice.creator?.email ||
+            '',
+          creator_email: invoice.creator?.email || '',
+          wallet_name: invoice.wallet?.name || '',
+          // Remove complex objects to avoid [object Object] in CSV/Excel
+          customer: undefined,
+          creator: undefined,
+          wallet: undefined,
+        }));
 
-      const totalPages = Math.ceil(count / pageSize);
-      const progressValue = (currentPage / totalPages) * 100;
-      setProgress(progressValue);
+        allData.push(...flattenedData);
 
-      if (data.length < pageSize) {
-        break;
+        const totalPages = Math.ceil(count / pageSize);
+        const progressValue = (currentPage / totalPages) * 100;
+        setProgress(progressValue);
+
+        if (data.length < pageSize) {
+          break;
+        }
+
+        currentPage++;
       }
 
-      currentPage++;
+      setProgress(100);
+
+      if (exportFileType === 'csv') {
+        downloadCSV(
+          allData,
+          `${(filename || defaultFilename).replace(/\.csv/g, '')}.csv`
+        );
+      } else if (exportFileType === 'excel') {
+        downloadExcel(
+          allData,
+          `${(filename || defaultFilename).replace(/\.xlsx/g, '')}.xlsx`
+        );
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      // You might want to show a toast error here
+    } finally {
+      setIsExporting(false);
     }
-
-    setProgress(100);
-
-    if (exportFileType === 'csv') {
-      downloadCSV(
-        allData,
-        `${(filename || defaultFilename)
-          // remove all .csv from the filename
-          .replace(/\.csv/g, '')}.csv`
-      );
-    } else if (exportFileType === 'excel') {
-      downloadExcel(
-        allData,
-        `${(filename || defaultFilename)
-          // remove all .xlsx from the filename
-          .replace(/\.xlsx/g, '')}.xlsx`
-      );
-    }
-
-    setIsExporting(false);
   };
 
   function getFileExtension(fileType: string) {
@@ -213,93 +228,122 @@ export default function ExportDialogContent({
 async function getData(
   wsId: string,
   {
-    q,
     page = '1',
     pageSize = '10',
-    userIds,
-    categoryIds,
-    walletIds,
     start,
     end,
+    userIds,
+    walletId,
   }: {
     q?: string;
     page?: string;
     pageSize?: string;
-    userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
     start?: string;
     end?: string;
+    userIds?: string | string[];
+    walletId?: string;
   }
 ) {
   const supabase = createClient();
 
+  // Build select query dynamically
+  let selectQuery =
+    '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
+
+  const walletJoinType = walletId ? '!inner' : '';
+  selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
+
   let queryBuilder = supabase
-    .from('wallet_transactions')
-    .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('workspace_wallets.ws_id', wsId)
-    .order('taken_at', { ascending: false })
+    .from('finance_invoices')
+    .select(selectQuery, {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder = queryBuilder.ilike('description', `%${q}%`);
-
-  // Filter by user IDs if provided
-  if (userIds) {
-    const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
-    if (userIdArray.length > 0) {
-      queryBuilder = queryBuilder.in('creator_id', userIdArray);
-    }
-  }
-
-  // Filter by category IDs if provided
-  if (categoryIds) {
-    const categoryIdArray = Array.isArray(categoryIds)
-      ? categoryIds
-      : [categoryIds];
-    if (categoryIdArray.length > 0) {
-      queryBuilder = queryBuilder.in('category_id', categoryIdArray);
-    }
-  }
-
-  // Filter by wallet IDs if provided
-  if (walletIds) {
-    const walletIdArray = Array.isArray(walletIds) ? walletIds : [walletIds];
-    if (walletIdArray.length > 0) {
-      queryBuilder = queryBuilder.in('wallet_id', walletIdArray);
-    }
-  }
-
-  // Filter by date range if provided
   if (start && end) {
-    queryBuilder = queryBuilder.gte('taken_at', start).lte('taken_at', end);
+    queryBuilder = queryBuilder.gte('created_at', start).lte('created_at', end);
+  }
+
+  if (userIds) {
+    const ids = Array.isArray(userIds) ? userIds : [userIds];
+    if (ids.length > 0) {
+      queryBuilder = queryBuilder.in('creator_id', ids);
+    }
+  }
+
+  if (walletId) {
+    queryBuilder = queryBuilder.eq('wallet_transactions.wallet_id', walletId);
   }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
-    const startOffset = (parsedPage - 1) * parsedSize;
-    const endOffset = parsedPage * parsedSize - 1;
-    queryBuilder = queryBuilder.range(startOffset, endOffset);
+    const startRange = (parsedPage - 1) * parsedSize;
+    const endRange = parsedPage * parsedSize - 1;
+    queryBuilder = queryBuilder.range(startRange, endRange);
   }
 
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
   const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
-      ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
-    })
+    ({
+      customer,
+      legacy_creator,
+      platform_creator,
+      wallet_transactions,
+      ...rest
+    }: any) => {
+      const platformCreator = platform_creator as {
+        id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        user_private_details: {
+          full_name: string | null;
+          email: string | null;
+        } | null;
+      } | null;
+
+      const legacyCreator = legacy_creator as {
+        id: string;
+        display_name: string | null;
+        full_name: string | null;
+        email: string | null;
+        avatar_url: string | null;
+      } | null;
+
+      const creator = {
+        id: platformCreator?.id ?? legacyCreator?.id ?? '',
+        display_name:
+          platformCreator?.display_name ??
+          legacyCreator?.display_name ??
+          platformCreator?.user_private_details?.email ??
+          null,
+        full_name:
+          platformCreator?.user_private_details?.full_name ??
+          legacyCreator?.full_name ??
+          null,
+        email:
+          platformCreator?.user_private_details?.email ??
+          legacyCreator?.email ??
+          null,
+        avatar_url:
+          platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+      };
+
+      const wallet = wallet_transactions?.wallet
+        ? { name: wallet_transactions.wallet.name }
+        : null;
+
+      return {
+        ...rest,
+        customer,
+        creator,
+        wallet,
+      };
+    }
   );
 
-  return { data, count } as {
-    data: Transaction[];
-    count: number;
-  };
+  return { data, count } as { data: any[]; count: number };
 }

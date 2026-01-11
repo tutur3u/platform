@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface WorkspaceWallet {
@@ -50,6 +51,7 @@ export function WalletFilter({
   onWalletsChange,
   className,
 }: WalletFilterProps) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
   const hasActiveFilters = selectedWalletIds.length > 0;
@@ -86,7 +88,7 @@ export function WalletFilter({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
             <Wallet className="h-3 w-3" />
-            <span className="text-xs">Filter by wallets</span>
+            <span className="text-xs">{t('finance.filter_by_wallets')}</span>
             {hasActiveFilters && (
               <Badge
                 variant="secondary"
@@ -99,10 +101,12 @@ export function WalletFilter({
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search wallets..." />
+            <CommandInput placeholder={t('finance.search_wallets')} />
             <CommandList>
               <CommandEmpty>
-                {isLoading ? 'Loading wallets...' : 'No wallets found.'}
+                {isLoading
+                  ? t('finance.loading_wallets')
+                  : t('finance.no_wallets_found')}
               </CommandEmpty>
 
               {error && (
@@ -110,7 +114,7 @@ export function WalletFilter({
                   <CommandItem disabled className="text-destructive">
                     {error instanceof Error
                       ? error.message
-                      : 'Failed to load wallets'}
+                      : t('finance.failed_to_load_wallets')}
                   </CommandItem>
                 </CommandGroup>
               )}
@@ -179,7 +183,7 @@ export function WalletFilter({
                       className="cursor-pointer justify-center text-center text-destructive"
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Clear all filters
+                      {t('common.clear_all_filters')}
                     </CommandItem>
                   </CommandGroup>
                 </>

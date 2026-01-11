@@ -186,20 +186,20 @@ export function TransactionCard({
                   </span>
                 </div>
               )}
-              {transaction.creator && (
+              {transaction.user && (
                 <div className="flex items-center gap-1.5">
                   <Avatar className="h-4 w-4 ring-1 ring-border">
                     <AvatarImage
-                      src={transaction.creator.avatar_url || undefined}
+                      src={transaction.user.avatar_url || undefined}
                     />
                     <AvatarFallback className="text-[8px]">
-                      {transaction.creator.full_name?.[0] ||
-                        transaction.creator.email?.[0] ||
+                      {transaction.user.full_name?.[0] ||
+                        transaction.user.email?.[0] ||
                         '?'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="truncate">
-                    {transaction.creator.full_name || transaction.creator.email}
+                    {transaction.user.full_name || transaction.user.email}
                   </span>
                 </div>
               )}

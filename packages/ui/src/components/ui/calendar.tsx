@@ -68,7 +68,8 @@ function Calendar({
     const month = new Date(2024, i, 1);
     return {
       value: i.toString(),
-      label: format(month, 'MMMM'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      label: format(month, 'MMMM', { locale: props.locale as any }),
     };
   });
 

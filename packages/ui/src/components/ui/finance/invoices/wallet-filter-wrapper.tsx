@@ -1,56 +1,53 @@
 'use client';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { useTranslations } from 'next-intl';
-import { useQueryState } from 'nuqs';
-import { useWallets } from './hooks';
+import { WalletFilter } from '@tuturuuu/ui/finance/transactions/wallet-filter';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
 
 interface WalletFilterWrapperProps {
   wsId: string;
 }
 
 export function WalletFilterWrapper({ wsId }: WalletFilterWrapperProps) {
-  const t = useTranslations();
-  const [walletId, setWalletId] = useQueryState('walletId', { shallow: false });
-  const { data: wallets = [], isLoading } = useWallets(wsId);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
-  // If no wallets or loading, show nothing or placeholder?
-  // Better to show it so user knows it's there.
-  // If loading, maybe disabled.
+  // Get current wallet IDs from search params
+  const currentWalletIds = searchParams.getAll('walletIds');
 
-  const handleValueChange = (value: string) => {
-    if (value === 'all') {
-      setWalletId(null);
-    } else {
-      setWalletId(value);
-    }
-  };
+  // Handle wallet filter changes
+  const handleWalletsChange = useCallback(
+    (walletIds: string[]) => {
+      const params = new URLSearchParams(searchParams);
+
+      // Remove all existing walletIds params
+      params.delete('walletIds');
+      // Remove legacy walletId param if exists
+      params.delete('walletId');
+
+      // Add new walletIds params
+      if (walletIds.length > 0) {
+        walletIds.forEach((walletId) => {
+          params.append('walletIds', walletId);
+        });
+      }
+
+      // Reset to first page when filtering
+      params.set('page', '1');
+
+      const newUrl = `${pathname}?${params.toString()}`;
+      router.push(newUrl);
+      router.refresh();
+    },
+    [router, searchParams, pathname]
+  );
 
   return (
-    <div className="w-50">
-      <Select
-        value={walletId || 'all'}
-        onValueChange={handleValueChange}
-        disabled={isLoading}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder={t('ws-wallets.filter_by_wallet')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('ws-wallets.all_wallets')}</SelectItem>
-          {wallets.map((wallet) => (
-            <SelectItem key={wallet.id} value={wallet.id || ''}>
-              {wallet.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <WalletFilter
+      wsId={wsId}
+      selectedWalletIds={currentWalletIds}
+      onWalletsChange={handleWalletsChange}
+    />
   );
 }

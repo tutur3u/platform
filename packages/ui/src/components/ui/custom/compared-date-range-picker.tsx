@@ -1,7 +1,13 @@
 'use client';
 
-import { Check, ChevronDown, ChevronUp } from '@tuturuuu/icons';
+import {
+  Calendar as CalendarIcon,
+  Check,
+  ChevronDown,
+  ChevronUp,
+} from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import type { Locale } from 'date-fns';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, buttonVariants } from '../button';
 import { Calendar } from '../calendar';
@@ -32,7 +38,7 @@ interface ComparedDateRangePickerProps {
   /** Alignment of popover */
   align?: 'start' | 'center' | 'end';
   /** Option for locale */
-  locale?: string;
+  locale?: string | Locale;
   /** Option for showing compare feature */
   showCompare?: boolean;
   /** Calendar preferences for week start and timezone */
@@ -40,10 +46,44 @@ interface ComparedDateRangePickerProps {
     weekStartsOn?: 0 | 1 | 6;
     timezone?: string;
   };
+  /** Custom class name for the trigger button */
+  className?: string;
+  /** Labels for localization */
+  labels?: {
+    allDates?: string;
+    compare?: string;
+    vs?: string;
+    cancel?: string;
+    update?: string;
+    clear?: string;
+    presets?: {
+      today?: string;
+      yesterday?: string;
+      last7?: string;
+      last14?: string;
+      last30?: string;
+      thisWeek?: string;
+      lastWeek?: string;
+      thisMonth?: string;
+      lastMonth?: string;
+    };
+  };
 }
 
-const formatDate = (date: Date, locale: string = 'en-us'): string => {
-  return date.toLocaleDateString(locale, {
+const formatDate = (date: Date, locale: string | Locale = 'en-US'): string => {
+  if (typeof locale === 'string') {
+    return date.toLocaleDateString(locale, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+  // For date-fns locale object, we might need a different formatting strategy
+  // However, toLocaleDateString expects a BCP 47 language tag (string).
+  // If a Locale object is passed, we should extract the code if possible, or fallback.
+  // Ideally, if using date-fns Locale, we should use date-fns format, but specific requirement here is just to support the prop type.
+  // Let's fallback to 'en-US' if it's an object for toLocaleDateString, OR better, use the code property if it exists.
+  return date.toLocaleDateString(locale.code || 'en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -58,14 +98,17 @@ const getDateAdjustedForTimezone = (dateInput: Date | string): Date => {
     // Note: Month is 0-indexed, so subtract 1 from the month part
     const date = new Date(parts[0]!, parts[1]! - 1, parts[2]);
     return date;
-  } else {
+  } else if (dateInput instanceof Date) {
     // If dateInput is already a Date object, return it directly
     return dateInput;
+  } else {
+    // Handle undefined or null
+    return new Date(); // Fallback or handle appropriately in caller
   }
 };
 
 interface DateRange {
-  from: Date;
+  from: Date | undefined;
   to: Date | undefined;
 }
 
@@ -88,7 +131,9 @@ const PRESETS: Preset[] = [
 ];
 
 // Pure function to get date range for a preset (moved to module scope)
-const getPresetRange = (presetName: string): DateRange => {
+const getPresetRange = (
+  presetName: string
+): { from: Date; to: Date | undefined } => {
   const preset = PRESETS.find(({ name }) => name === presetName);
   if (!preset) throw new Error(`Unknown date range preset: ${presetName}`);
   const from = new Date();
@@ -151,7 +196,7 @@ const getPresetRange = (presetName: string): DateRange => {
 
 /** The DateRangePicker component allows a user to select a range of dates */
 export const ComparedDateRangePicker = ({
-  initialDateFrom = new Date(new Date().setHours(0, 0, 0, 0)),
+  initialDateFrom,
   initialDateTo,
   initialCompareFrom,
   initialCompareTo,
@@ -160,14 +205,20 @@ export const ComparedDateRangePicker = ({
   locale = 'en-US',
   showCompare = true,
   preferences,
+  className,
+  labels,
 }: ComparedDateRangePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const [range, setRange] = useState<DateRange>({
-    from: getDateAdjustedForTimezone(initialDateFrom),
+    from: initialDateFrom
+      ? getDateAdjustedForTimezone(initialDateFrom)
+      : undefined,
     to: initialDateTo
       ? getDateAdjustedForTimezone(initialDateTo)
-      : getDateAdjustedForTimezone(initialDateFrom),
+      : initialDateFrom
+        ? getDateAdjustedForTimezone(initialDateFrom)
+        : undefined,
   });
   const [rangeCompare, setRangeCompare] = useState<DateRange | undefined>(
     initialCompareFrom
@@ -229,6 +280,8 @@ export const ComparedDateRangePicker = ({
   const checkPreset = useCallback((): void => {
     for (const preset of PRESETS) {
       const presetRange = getPresetRange(preset.name);
+
+      if (!range.from) continue;
 
       const normalizedRangeFrom = new Date(range.from);
       normalizedRangeFrom.setHours(0, 0, 0, 0);
@@ -318,7 +371,7 @@ export const ComparedDateRangePicker = ({
   const areRangesEqual = (a?: DateRange, b?: DateRange): boolean => {
     if (!a || !b) return a === b; // If either is undefined, return true if both are undefined
     return (
-      a.from.getTime() === b.from.getTime() &&
+      a.from?.getTime() === b.from?.getTime() &&
       a.to?.getTime() === b.to?.getTime()
     );
   };
@@ -338,24 +391,37 @@ export const ComparedDateRangePicker = ({
       }}
     >
       <PopoverTrigger asChild>
-        <Button size={'lg'} variant="outline">
-          <div className="text-right">
-            <div className="py-1">
-              <div>{`${formatDate(range.from, locale)}${
-                range.to != null ? ` - ${formatDate(range.to, locale)}` : ''
-              }`}</div>
-            </div>
-            {rangeCompare != null && (
-              <div className="-mt-1 text-xs opacity-60">
-                vs. {formatDate(rangeCompare.from, locale)}
-                {rangeCompare.to != null
-                  ? ` - ${formatDate(rangeCompare.to, locale)}`
-                  : ''}
+        <Button size={'lg'} variant="outline" className={className}>
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="flex items-center gap-2 py-1">
+                <CalendarIcon className="h-4 w-4 opacity-50" />
+                <div>
+                  {range.from ? (
+                    `${formatDate(range.from, locale)}${
+                      range.to != null
+                        ? ` - ${formatDate(range.to, locale)}`
+                        : ''
+                    }`
+                  ) : (
+                    <span className="opacity-50">
+                      {labels?.allDates ?? 'All dates'}
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-          <div className="-mr-2 scale-125 pl-1 opacity-60">
-            {isOpen ? <ChevronUp width={24} /> : <ChevronDown width={24} />}
+              {rangeCompare?.from != null && (
+                <div className="-mt-1 text-xs opacity-60">
+                  {labels?.vs ?? 'vs.'} {formatDate(rangeCompare.from, locale)}
+                  {rangeCompare.to != null
+                    ? ` - ${formatDate(rangeCompare.to, locale)}`
+                    : ''}
+                </div>
+              )}
+            </div>
+            <div className="-mr-2 pl-1 opacity-60">
+              {isOpen ? <ChevronUp width={16} /> : <ChevronDown width={16} />}
+            </div>
           </div>
         </Button>
       </PopoverTrigger>
@@ -370,6 +436,7 @@ export const ComparedDateRangePicker = ({
                       defaultChecked={Boolean(rangeCompare)}
                       onCheckedChange={(checked: boolean) => {
                         if (checked) {
+                          if (!range.from) return;
                           if (!range.to) {
                             setRange({
                               from: range.from,
@@ -400,7 +467,9 @@ export const ComparedDateRangePicker = ({
                       }}
                       id="compare-mode"
                     />
-                    <Label htmlFor="compare-mode">Compare</Label>
+                    <Label htmlFor="compare-mode">
+                      {labels?.compare ?? 'Compare'}
+                    </Label>
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
@@ -421,6 +490,10 @@ export const ComparedDateRangePicker = ({
                     <DateInput
                       value={range.to}
                       onChange={(date) => {
+                        if (!range.from) {
+                          setRange({ from: date, to: date });
+                          return;
+                        }
                         const fromDate = date < range.from ? date : range.from;
                         setRange((prevRange) => ({
                           ...prevRange,
@@ -487,7 +560,8 @@ export const ComparedDateRangePicker = ({
                   <SelectContent>
                     {PRESETS.map((preset) => (
                       <SelectItem key={preset.name} value={preset.name}>
-                        {preset.label}
+                        {/* @ts-ignore */}
+                        {labels?.presets?.[preset.name] ?? preset.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -511,6 +585,7 @@ export const ComparedDateRangePicker = ({
                     )
                   }
                   preferences={preferences}
+                  locale={typeof locale === 'string' ? undefined : locale}
                   classNames={{
                     week: 'flex gap-0 w-full', // Remove gap-1
                     day: 'text-center text-sm p-0 relative w-full',
@@ -537,7 +612,11 @@ export const ComparedDateRangePicker = ({
                   <PresetButton
                     key={preset.name}
                     preset={preset.name}
-                    label={preset.label}
+                    label={
+                      labels?.presets?.[
+                        preset.name as keyof typeof labels.presets
+                      ] ?? preset.label
+                    }
                     isSelected={selectedPreset === preset.name}
                   />
                 ))}
@@ -549,11 +628,25 @@ export const ComparedDateRangePicker = ({
           <Button
             onClick={() => {
               setIsOpen(false);
+              setRange({ from: undefined, to: undefined });
+              setRangeCompare(undefined);
+              onUpdate?.({
+                range: { from: undefined, to: undefined },
+                rangeCompare: undefined,
+              });
+            }}
+            variant="ghost"
+          >
+            {labels?.clear ?? 'Clear'}
+          </Button>
+          <Button
+            onClick={() => {
+              setIsOpen(false);
               resetValues();
             }}
             variant="ghost"
           >
-            Cancel
+            {labels?.cancel ?? 'Cancel'}
           </Button>
           <Button
             onClick={() => {
@@ -562,11 +655,13 @@ export const ComparedDateRangePicker = ({
                 !areRangesEqual(range, openedRangeRef.current) ||
                 !areRangesEqual(rangeCompare, openedRangeCompareRef.current)
               ) {
-                onUpdate?.({ range, rangeCompare });
+                // Determine effective range for update
+                // If from is undefined, we pass it as such, caller should handle
+                onUpdate?.({ range: range as DateRange, rangeCompare });
               }
             }}
           >
-            Update
+            {labels?.update ?? 'Update'}
           </Button>
         </div>
       </PopoverContent>

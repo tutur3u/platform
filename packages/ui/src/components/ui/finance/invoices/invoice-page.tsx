@@ -1,21 +1,17 @@
-import { Plus } from '@tuturuuu/icons';
+import { CircleDashed, FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
-import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-filter-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 import { invoiceColumns } from './columns';
+import { InvoicesToolbar } from './invoices-toolbar';
 import { PendingInvoicesTable } from './pending-invoices-table';
-import { UserFilterWrapper } from './user-filter-wrapper';
-import { WalletFilterWrapper } from './wallet-filter-wrapper';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -33,7 +29,8 @@ interface Props {
     start: string;
     end: string;
     userIds: string | string[];
-    walletId: string;
+    walletIds: string | string[];
+    walletId: string; // Keep for backward compat or singular case
   }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
@@ -49,10 +46,17 @@ export default async function InvoicesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: id } = await params;
+  const resolvedSearchParams = await searchParams;
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
-  const { data: rawData, count } = await getData(wsId, await searchParams);
+  const { data: rawData, count } = await getData(wsId, resolvedSearchParams);
+
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
+  const canExportFinanceData = containsPermission('export_finance_data');
 
   const data = rawData.map((d) => ({
     ...d,
@@ -69,34 +73,30 @@ export default async function InvoicesPage({
         createTitle={t('ws-invoices.create')}
         createDescription={t('ws-invoices.create_description')}
         action={
-          canCreateInvoices ? (
-            <Link href={`/${wsId}/finance/invoices/new`}>
-              <Button>
-                <Plus />
-                {t('ws-invoices.create')}
-              </Button>
-            </Link>
-          ) : null
+          <div className="flex gap-2">
+            {canCreateInvoices && (
+              <Link href={`/${wsId}/finance/invoices/new`}>
+                <Button>
+                  <Plus />
+                  {t('ws-invoices.create')}
+                </Button>
+              </Link>
+            )}
+          </div>
         }
       />
       <Separator className="my-4" />
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Suspense fallback={<Skeleton className="h-10 w-50" />}>
-          <UserFilterWrapper wsId={wsId} />
-        </Suspense>
-        <Suspense fallback={<Skeleton className="h-10 w-75" />}>
-          <DateRangeFilterWrapper />
-        </Suspense>
-        <Suspense fallback={<Skeleton className="h-10 w-50" />}>
-          <WalletFilterWrapper wsId={wsId} />
-        </Suspense>
-      </div>
+
+      <InvoicesToolbar wsId={wsId} canExport={canExportFinanceData} />
+
       <Tabs defaultValue="created" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="created">
+          <TabsTrigger value="created" className="gap-2">
+            <FileCheck2 className="h-4 w-4" />
             {t('ws-invoices.created_invoices')}
           </TabsTrigger>
-          <TabsTrigger value="pending">
+          <TabsTrigger value="pending" className="gap-2">
+            <CircleDashed className="h-4 w-4" />
             {t('ws-invoices.pending_invoices')}
           </TabsTrigger>
         </TabsList>
@@ -106,6 +106,7 @@ export default async function InvoicesPage({
             columnGenerator={invoiceColumns}
             namespace="invoice-data-table"
             count={count}
+            hideToolbar={true}
             extraData={{
               canDeleteInvoices,
               deleteInvoiceAction,
@@ -136,6 +137,7 @@ async function getData(
     start,
     end,
     userIds,
+    walletIds,
     walletId,
   }: {
     q?: string;
@@ -144,16 +146,26 @@ async function getData(
     start?: string;
     end?: string;
     userIds?: string | string[];
+    walletIds?: string | string[];
     walletId?: string;
   }
 ) {
   const supabase = await createClient();
 
+  // Combine walletId and walletIds
+  let wallets = Array.isArray(walletIds)
+    ? walletIds
+    : walletIds
+      ? [walletIds]
+      : [];
+  if (walletId) wallets.push(walletId);
+  wallets = Array.from(new Set(wallets.filter(Boolean)));
+
   // Build select query dynamically
   let selectQuery =
     '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
 
-  const walletJoinType = walletId ? '!inner' : '';
+  const walletJoinType = wallets.length > 0 ? '!inner' : '';
   selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
 
   let queryBuilder = supabase
@@ -175,16 +187,16 @@ async function getData(
     }
   }
 
-  if (walletId) {
-    queryBuilder = queryBuilder.eq('wallet_transactions.wallet_id', walletId);
+  if (wallets.length > 0) {
+    queryBuilder = queryBuilder.in('wallet_transactions.wallet_id', wallets);
   }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder = queryBuilder.range(start, end).limit(parsedSize);
+    const startRange = (parsedPage - 1) * parsedSize;
+    const endRange = parsedPage * parsedSize;
+    queryBuilder = queryBuilder.range(startRange, endRange).limit(parsedSize);
   }
 
   const { data: rawData, error, count } = await queryBuilder;

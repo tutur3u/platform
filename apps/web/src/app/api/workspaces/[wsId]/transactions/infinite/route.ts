@@ -79,7 +79,18 @@ export async function GET(req: Request, { params }: Params) {
 
     // Check if there are more results
     const hasMore = (data || []).length > limit;
-    const transactions = hasMore ? data.slice(0, limit) : data || [];
+    const rawTransactions = hasMore ? data.slice(0, limit) : data || [];
+
+    const transactions = rawTransactions.map((t: any) => ({
+      ...t,
+      wallet: t.wallet_name,
+      user: {
+        full_name: t.creator_full_name,
+        email: t.creator_email,
+        avatar_url: t.creator_avatar_url,
+      },
+      // Remove flat fields to keep response clean (optional, keeping them doesn't hurt)
+    }));
 
     // Generate next cursor
     let nextCursor = null;

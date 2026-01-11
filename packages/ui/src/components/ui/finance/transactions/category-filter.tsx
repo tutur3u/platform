@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface TransactionCategory {
@@ -55,6 +56,7 @@ export function CategoryFilter({
   onCategoriesChange,
   className,
 }: CategoryFilterProps) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
   const hasActiveFilters = selectedCategoryIds.length > 0;
@@ -91,7 +93,7 @@ export function CategoryFilter({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
             <Tag className="h-3 w-3" />
-            <span className="text-xs">Filter by categories</span>
+            <span className="text-xs">{t('finance.filter_by_categories')}</span>
             {hasActiveFilters && (
               <Badge
                 variant="secondary"
@@ -102,12 +104,14 @@ export function CategoryFilter({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[280px] p-0" align="start">
+        <PopoverContent className="w-70 p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search categories..." />
+            <CommandInput placeholder={t('finance.search_categories')} />
             <CommandList>
               <CommandEmpty>
-                {isLoading ? 'Loading categories...' : 'No categories found.'}
+                {isLoading
+                  ? t('finance.loading_categories')
+                  : t('finance.no_categories_found')}
               </CommandEmpty>
 
               {error && (
@@ -115,7 +119,7 @@ export function CategoryFilter({
                   <CommandItem disabled className="text-destructive">
                     {error instanceof Error
                       ? error.message
-                      : 'Failed to load categories'}
+                      : t('finance.failed_to_load_categories')}
                   </CommandItem>
                 </CommandGroup>
               )}
@@ -162,7 +166,9 @@ export function CategoryFilter({
                                 {category.name}
                               </span>
                               <span className="text-muted-foreground text-xs">
-                                {category.is_expense ? 'Expense' : 'Income'}
+                                {category.is_expense
+                                  ? t('finance.expense')
+                                  : t('finance.income')}
                               </span>
                             </div>
                           </div>
@@ -181,7 +187,7 @@ export function CategoryFilter({
                       className="cursor-pointer justify-center text-center text-destructive"
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Clear all filters
+                      {t('common.clear_all_filters')}
                     </CommandItem>
                   </CommandGroup>
                 </>

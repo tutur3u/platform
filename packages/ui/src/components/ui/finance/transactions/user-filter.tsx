@@ -18,6 +18,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface UserFilterProps {
@@ -69,6 +70,7 @@ export function UserFilter({
   className,
   filterType = 'all',
 }: UserFilterProps) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
   const hasActiveFilters = selectedUserIds.length > 0;
@@ -100,7 +102,9 @@ export function UserFilter({
 
   const isCreatorFilter =
     filterType === 'transaction_creators' || filterType === 'invoice_creators';
-  const filterLabel = isCreatorFilter ? 'Filter by creator' : 'Filter by users';
+  const filterLabel = isCreatorFilter
+    ? t('finance.filter_by_creator')
+    : t('finance.filter_by_users');
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -156,22 +160,24 @@ export function UserFilter({
             <span className="text-xs">{filterLabel}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[280px] p-0" align="start">
+        <PopoverContent className="w-70 p-0" align="start">
           <Command>
             <CommandInput
               placeholder={
-                isCreatorFilter ? 'Search creators...' : 'Search users...'
+                isCreatorFilter
+                  ? t('finance.search_creators')
+                  : t('finance.search_users')
               }
             />
             <CommandList>
               <CommandEmpty>
                 {isLoading
                   ? isCreatorFilter
-                    ? 'Loading creators...'
-                    : 'Loading users...'
+                    ? t('finance.loading_creators')
+                    : t('finance.loading_users')
                   : isCreatorFilter
-                    ? 'No creators found.'
-                    : 'No users found.'}
+                    ? t('finance.no_creators_found')
+                    : t('finance.no_users_found')}
               </CommandEmpty>
 
               {error && (
@@ -179,7 +185,7 @@ export function UserFilter({
                   <CommandItem disabled className="text-destructive">
                     {error instanceof Error
                       ? error.message
-                      : 'Failed to load users'}
+                      : t('finance.failed_to_load_users')}
                   </CommandItem>
                 </CommandGroup>
               )}
@@ -263,7 +269,7 @@ export function UserFilter({
                       className="cursor-pointer justify-center text-center text-destructive"
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Clear all filters
+                      {t('common.clear_all_filters')}
                     </CommandItem>
                   </CommandGroup>
                 </>

@@ -2551,6 +2551,23 @@
     "year": "Năm",
     "yesterday": "Ngày hôm qua"
   },
+  "date_range": {
+    "all_dates": "Tất cả các ngày",
+    "cancel": "Hủy",
+    "clear": "Xóa",
+    "compare": "So sánh",
+    "last_14_days": "14 ngày qua",
+    "last_30_days": "30 ngày qua",
+    "last_7_days": "7 ngày qua",
+    "last_month": "Tháng trước",
+    "last_week": "Tuần trước",
+    "this_month": "Tháng này",
+    "this_week": "Tuần này",
+    "today": "Hôm nay",
+    "update": "Cập nhật",
+    "vs": "so với",
+    "yesterday": "Hôm qua"
+  },
   "documents": {
     "cancel": "Hủy",
     "create": "Tạo",
@@ -2761,6 +2778,29 @@
   "experimental-notice": {
     "experimental_feature": "Tính năng thử nghiệm",
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
+  },
+  "finance": {
+    "expense": "Chi tiêu",
+    "failed_to_load_categories": "Không thể tải danh sách danh mục",
+    "failed_to_load_users": "Không thể tải danh sách người dùng",
+    "failed_to_load_wallets": "Không thể tải danh sách ví",
+    "filter_by_categories": "Lọc theo danh mục",
+    "filter_by_creator": "Lọc theo người tạo",
+    "filter_by_users": "Lọc theo người dùng",
+    "filter_by_wallets": "Lọc theo ví",
+    "income": "Thu nhập",
+    "loading_categories": "Đang tải danh sách danh mục...",
+    "loading_creators": "Đang tải danh sách người tạo...",
+    "loading_users": "Đang tải danh sách người dùng...",
+    "loading_wallets": "Đang tải danh sách ví...",
+    "no_categories_found": "Không tìm thấy danh mục nào.",
+    "no_creators_found": "Không tìm thấy người tạo nào.",
+    "no_users_found": "Không tìm thấy người dùng nào.",
+    "no_wallets_found": "Không tìm thấy ví nào.",
+    "search_categories": "Tìm kiếm danh mục...",
+    "search_creators": "Tìm kiếm người tạo...",
+    "search_users": "Tìm kiếm người dùng...",
+    "search_wallets": "Tìm kiếm ví..."
   },
   "finance-overview": {
     "confidential-mode": "Chế độ bảo mật",
