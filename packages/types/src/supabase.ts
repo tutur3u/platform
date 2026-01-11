@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
+    PostgrestVersion: '14.1';
   };
   public: {
     Tables: {
@@ -1010,6 +1010,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -2138,6 +2145,13 @@ export type Database = {
             foreignKeyName: 'external_user_monthly_report_logs_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -2222,6 +2236,13 @@ export type Database = {
             foreignKeyName: 'external_user_monthly_report_logs_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -2287,6 +2308,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -2364,6 +2392,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_external_user_monthly_reports_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -2690,6 +2725,13 @@ export type Database = {
             foreignKeyName: 'finance_invoices_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -2712,6 +2754,13 @@ export type Database = {
             columns: ['customer_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -2884,6 +2933,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'guest_users_lead_generation_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -3213,6 +3269,13 @@ export type Database = {
             columns: ['patient_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
+            columns: ['patient_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -5513,6 +5576,13 @@ export type Database = {
             foreignKeyName: 'payroll_run_items_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payroll_run_items_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -6254,6 +6324,13 @@ export type Database = {
             foreignKeyName: 'product_stock_changes_beneficiary_id_fkey';
             columns: ['beneficiary_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_beneficiary_id_fkey';
+            columns: ['beneficiary_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -6276,6 +6353,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_stock_changes_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -6725,6 +6809,13 @@ export type Database = {
             foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -6868,7 +6959,7 @@ export type Database = {
       support_inquiries: {
         Row: {
           created_at: string;
-          creator_id: string | null;
+          creator_id: string;
           email: string;
           id: string;
           images: string[] | null;
@@ -6882,7 +6973,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: string;
           email: string;
           id?: string;
           images?: string[] | null;
@@ -6896,7 +6987,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: string;
           email?: string;
           id?: string;
           images?: string[] | null;
@@ -9467,6 +9558,13 @@ export type Database = {
             foreignKeyName: 'user_feedbacks_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -9538,6 +9636,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -9643,6 +9748,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -9821,6 +9933,13 @@ export type Database = {
             foreignKeyName: 'user_group_post_checks_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -9951,6 +10070,13 @@ export type Database = {
             foreignKeyName: 'user_indicators_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -9980,6 +10106,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -10041,6 +10174,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_linked_promotions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -10324,6 +10464,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -10622,6 +10769,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workforce_contracts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -13062,6 +13216,13 @@ export type Database = {
             foreignKeyName: 'public_workspace_products_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_products_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -13154,6 +13315,13 @@ export type Database = {
             foreignKeyName: 'fk_workspace_promotions_owner';
             columns: ['owner_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            columns: ['owner_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -13176,6 +13344,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_promotions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -14329,6 +14504,13 @@ export type Database = {
             foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -14401,6 +14583,13 @@ export type Database = {
             columns: ['virtual_user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_linked_users_virtual_user_id_fkey';
+            columns: ['virtual_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -14480,6 +14669,13 @@ export type Database = {
             foreignKeyName: 'workspace_user_status_changes_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -14502,6 +14698,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -14626,6 +14829,13 @@ export type Database = {
             foreignKeyName: 'fk_workspace_users_referred_by';
             columns: ['referred_by'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_workspace_users_referred_by';
+            columns: ['referred_by'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -14648,6 +14858,13 @@ export type Database = {
             columns: ['updated_by'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_users_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -14676,6 +14893,13 @@ export type Database = {
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_users_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -14919,6 +15143,7 @@ export type Database = {
           logo_url: string | null;
           name: string | null;
           personal: boolean;
+          preset: string;
           scheduling_settings: Json | null;
           timezone: string | null;
         };
@@ -14934,6 +15159,7 @@ export type Database = {
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
+          preset?: string;
           scheduling_settings?: Json | null;
           timezone?: string | null;
         };
@@ -14949,6 +15175,7 @@ export type Database = {
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
+          preset?: string;
           scheduling_settings?: Json | null;
           timezone?: string | null;
         };
@@ -14980,6 +15207,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspaces_handle_fkey';
+            columns: ['handle'];
+            isOneToOne: false;
+            referencedRelation: 'handles';
+            referencedColumns: ['value'];
           },
         ];
       };
@@ -15041,10 +15275,55 @@ export type Database = {
       };
       distinct_invoice_creators: {
         Row: {
+          avatar_url: string | null;
           display_name: string | null;
+          email: string | null;
+          full_name: string | null;
           id: string | null;
+          ws_id: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'finance_invoices_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      distinct_transaction_creators: {
+        Row: {
+          avatar_url: string | null;
+          display_name: string | null;
+          email: string | null;
+          full_name: string | null;
+          id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_wallets_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_wallets_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       group_user_with_attendance: {
         Row: {
@@ -15160,6 +15439,13 @@ export type Database = {
             foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -15210,6 +15496,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -15531,6 +15824,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -15889,6 +16189,13 @@ export type Database = {
             foreignKeyName: 'fk_workspace_promotions_owner';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -15974,6 +16281,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -16263,6 +16577,13 @@ export type Database = {
             foreignKeyName: 'public_workspace_users_updated_by_fkey';
             columns: ['updated_by'];
             isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_users_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
             referencedRelation: 'group_user_with_attendance';
             referencedColumns: ['user_id'];
           },
@@ -16285,6 +16606,13 @@ export type Database = {
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_users_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
             referencedColumns: ['id'];
           },
           {
@@ -16918,6 +17246,15 @@ export type Database = {
         Args: { ws_id: string };
         Returns: number;
       };
+      get_invoice_creators: {
+        Args: { p_ws_id: string };
+        Returns: {
+          avatar_url: string;
+          email: string;
+          full_name: string;
+          id: string;
+        }[];
+      };
       get_ip_block_level: { Args: { p_ip_address: string }; Returns: number };
       get_joined_workspace_count: {
         Args: { user_id: string };
@@ -17029,6 +17366,7 @@ export type Database = {
           months_owed: string;
           potential_total: number;
           total_sessions: number;
+          user_avatar_url: string;
           user_id: string;
           user_name: string;
         }[];
@@ -17041,6 +17379,7 @@ export type Database = {
           group_name: string;
           month: string;
           sessions: string[];
+          user_avatar_url: string;
           user_id: string;
           user_name: string;
         }[];
@@ -17318,6 +17657,15 @@ export type Database = {
           tag_id: string;
           tag_name: string;
           transaction_count: number;
+        }[];
+      };
+      get_transaction_creators: {
+        Args: { p_ws_id: string };
+        Returns: {
+          avatar_url: string;
+          email: string;
+          full_name: string;
+          id: string;
         }[];
       };
       get_upcoming_recurring_transactions: {

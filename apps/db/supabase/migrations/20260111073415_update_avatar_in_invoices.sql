@@ -150,6 +150,10 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 -- 2. User attendance aggregated across all unpaid months
 -- 3. Product pricing from user group linked products
 -- Note: Combines all unpaid months per user-group and calculates total: attendance * price
+
+-- Drop the function first because we are changing the return type
+DROP FUNCTION IF EXISTS get_pending_invoices(uuid, integer, integer);
+
 CREATE OR REPLACE FUNCTION get_pending_invoices(
   p_ws_id uuid,
   p_limit integer DEFAULT NULL,
