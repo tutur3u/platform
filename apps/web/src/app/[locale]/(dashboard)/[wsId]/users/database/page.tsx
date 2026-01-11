@@ -120,7 +120,11 @@ export default async function WorkspaceUsersPage({
             }
             toolbarExportContent={
               canExportUsers && (
-                <ExportDialogContent wsId={wsId} exportType="users" />
+                <ExportDialogContent
+                  wsId={wsId}
+                  exportType="users"
+                  showDataTypeSelector
+                />
               )
             }
           />
