@@ -4986,6 +4986,13 @@
       "appearance_ws_description": "Customize the look and feel of your interface and calendar",
       "notifications": "Notifications",
       "notifications_ws_description": "Manage your notification preferences including calendar notifications",
+      "sidebar": "Sidebar",
+      "sidebar_behavior": "Sidebar Behavior",
+      "sidebar_behavior_description": "Choose how the sidebar behaves by default",
+      "sidebar_collapsed": "Collapsed",
+      "sidebar_description": "Manage sidebar visibility and behavior",
+      "sidebar_expanded": "Expanded",
+      "sidebar_hover": "Hover",
       "title": "Preferences"
     },
     "tasks": {
@@ -5122,6 +5129,7 @@
     "full-name-updated": "Your full name has been successfully updated",
     "handle-description": "This is your custom URL namespace within Tuturuuu.",
     "hide-experimental-on-sidebar": "Hide experimental features on sidebar",
+    "hide-experimental-on-sidebar-description": "Remove experimental features from the sidebar navigation",
     "hide-experimental-on-top-nav": "Hide experimental features on top navigation bar",
     "insufficient_permissions_avatar": "You do not have permission to change the workspace avatar.",
     "invalid-verification-code": "Invalid verification code. Please try again.",

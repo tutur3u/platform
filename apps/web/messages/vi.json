@@ -5024,6 +5024,13 @@
       "appearance_ws_description": "Tùy chỉnh giao diện hiển thị và lịch",
       "notifications": "Thông báo",
       "notifications_ws_description": "Quản lý tùy chọn thông báo bao gồm thông báo lịch",
+      "sidebar": "Thanh bên",
+      "sidebar_behavior": "Hành vi thanh bên",
+      "sidebar_behavior_description": "Chọn cách thanh bên hoạt động mặc định",
+      "sidebar_collapsed": "Thu gọn",
+      "sidebar_description": "Quản lý hiển thị và hành vi của thanh bên",
+      "sidebar_expanded": "Mở rộng",
+      "sidebar_hover": "Di chuột",
       "title": "Tùy chọn"
     },
     "tasks": {
@@ -5161,6 +5168,7 @@
     "full-settings": "Xem tất cả cài đặt",
     "handle-description": "Đây là URL tự chọn của bạn trong Tuturuuu.",
     "hide-experimental-on-sidebar": "Ẩn tính năng thử nghiệm trên thanh bên",
+    "hide-experimental-on-sidebar-description": "Loại bỏ các tính năng thử nghiệm khỏi thanh điều hướng bên",
     "hide-experimental-on-top-nav": "Ẩn tính năng thử nghiệm trên thanh điều hướng trên cùng",
     "insufficient_permissions_avatar": "Bạn không có quyền thay đổi hình đại diện của không gian làm việc.",
     "invalid-verification-code": "Mã xác minh không hợp lệ. Vui lòng thử lại.",

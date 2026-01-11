@@ -13,9 +13,9 @@ import {
   Laptop,
   Paintbrush,
   Palette,
+  PanelLeft,
   Search,
   Shield,
-  Sparkles,
   User,
   Users,
   Wallet,
@@ -74,6 +74,7 @@ import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DefaultWalletSettings from './finance/default-wallet-settings';
+import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import MembersSettings from './workspace/members-settings';
@@ -254,6 +255,13 @@ export function SettingsDialog({
             : 'Manage your notification preferences',
           keywords: ['Notifications'],
         },
+        {
+          name: 'sidebar',
+          label: t('settings.preferences.sidebar'),
+          icon: PanelLeft,
+          description: t('settings.preferences.sidebar_description'),
+          keywords: ['Sidebar', 'Navigation', 'Menu'],
+        },
       ],
     },
     {
@@ -341,13 +349,6 @@ export function SettingsDialog({
                 icon: CalendarDays,
                 description: t('settings.calendar.integrations_description'),
                 keywords: ['Calendar', 'Integrations', 'Google'],
-              },
-              {
-                name: 'calendar_smart',
-                label: t('settings.calendar.smart'),
-                icon: Sparkles,
-                description: t('settings.calendar.smart_description'),
-                keywords: ['Calendar', 'Smart Features', 'AI'],
               },
             ],
           },
@@ -578,6 +579,12 @@ export function SettingsDialog({
                 {activeTab === 'appearance' && (
                   <div className="h-full">
                     <AppearanceSettings />
+                  </div>
+                )}
+
+                {activeTab === 'sidebar' && (
+                  <div className="h-full">
+                    <SidebarSettings />
                   </div>
                 )}
 
