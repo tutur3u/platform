@@ -54,6 +54,7 @@ export function DateRangeFilterWrapper() {
         cancel: t('date_range.cancel'),
         update: t('date_range.update'),
         clear: t('date_range.clear'),
+        presetsTitle: t('date_range.presets'),
         presets: {
           today: t('date_range.today'),
           yesterday: t('date_range.yesterday'),
