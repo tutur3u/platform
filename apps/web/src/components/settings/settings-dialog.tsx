@@ -6,12 +6,14 @@ import {
   Building,
   CalendarDays,
   CheckSquare,
+  ChevronRight,
   Clock,
   Coffee,
   CreditCard,
   Laptop,
   Paintbrush,
   Palette,
+  Search,
   Shield,
   Sparkles,
   User,
@@ -29,6 +31,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   DialogContent,
@@ -42,12 +49,15 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
+import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
@@ -84,6 +94,7 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch workspace data if not provided (using TanStack Query)
   const {
@@ -204,18 +215,21 @@ export function SettingsDialog({
           label: t('settings.user.profile'),
           icon: User,
           description: t('settings.user.profile_description'),
+          keywords: ['Profile'],
         },
         {
           name: 'security',
           label: t('ws-settings.security'),
           icon: Shield,
           description: t('settings-account.security-description'),
+          keywords: ['Security'],
         },
         {
           name: 'sessions',
           label: t('settings.user.sessions'),
           icon: Laptop,
           description: t('settings.user.sessions_description'),
+          keywords: ['Sessions', 'Devices'],
         },
       ],
     },
@@ -229,6 +243,7 @@ export function SettingsDialog({
           description: wsId
             ? t('settings.preferences.appearance_ws_description')
             : t('settings-account.appearance-description'),
+          keywords: ['Appearance', 'Theme'],
         },
         {
           name: 'notifications',
@@ -237,6 +252,7 @@ export function SettingsDialog({
           description: wsId
             ? t('settings.preferences.notifications_ws_description')
             : 'Manage your notification preferences',
+          keywords: ['Notifications'],
         },
       ],
     },
@@ -248,6 +264,7 @@ export function SettingsDialog({
           label: t('settings.tasks.general'),
           icon: CheckSquare,
           description: t('settings.tasks.general_description'),
+          keywords: ['Tasks', 'General'],
         },
       ],
     },
@@ -263,6 +280,7 @@ export function SettingsDialog({
           description: wsId
             ? t('settings.workspaces.manage_current')
             : t('settings.workspaces.manage_all'),
+          keywords: ['Workspaces', 'Overview', 'All Workspaces'],
         },
         ...(wsId
           ? [
@@ -271,24 +289,28 @@ export function SettingsDialog({
                 label: t('settings.workspaces.general'),
                 icon: Building,
                 description: t('ws-settings.general-description'),
+                keywords: ['Workspace', 'General'],
               },
               {
                 name: 'workspace_members',
                 label: t('settings.workspaces.members'),
                 icon: Users,
                 description: t('ws-settings.members-description'),
+                keywords: ['Members', 'Team'],
               },
               {
                 name: 'billing',
                 label: t('billing.billing'),
                 icon: CreditCard,
                 description: t('settings-account.billing-description'),
+                keywords: ['Billing', 'Plan', 'Subscription'],
               },
               {
                 name: 'user_status',
                 label: t('settings.workspaces.user_status'),
                 icon: Users,
                 description: t('settings.workspaces.user_status_description'),
+                keywords: ['User Status'],
               },
             ]
           : []),
@@ -304,24 +326,28 @@ export function SettingsDialog({
                 label: t('settings.calendar.hours'),
                 icon: Clock,
                 description: t('settings.calendar.hours_description'),
+                keywords: ['Calendar', 'Hours', 'Timezone'],
               },
               {
                 name: 'calendar_colors',
                 label: t('settings.calendar.colors'),
                 icon: Palette,
                 description: t('settings.calendar.colors_description'),
+                keywords: ['Calendar', 'Colors', 'Categories'],
               },
               {
                 name: 'calendar_google',
                 label: t('settings.calendar.integrations'),
                 icon: CalendarDays,
                 description: t('settings.calendar.integrations_description'),
+                keywords: ['Calendar', 'Integrations', 'Google'],
               },
               {
                 name: 'calendar_smart',
                 label: t('settings.calendar.smart'),
                 icon: Sparkles,
                 description: t('settings.calendar.smart_description'),
+                keywords: ['Calendar', 'Smart Features', 'AI'],
               },
             ],
           },
@@ -333,6 +359,7 @@ export function SettingsDialog({
                 label: t('settings.time_tracker.break_types'),
                 icon: Coffee,
                 description: t('settings.time_tracker.break_types_description'),
+                keywords: ['Time Tracker', 'Breaks'],
               },
             ],
           },
@@ -344,6 +371,7 @@ export function SettingsDialog({
                 label: t('settings.finance.default_wallet'),
                 icon: Wallet,
                 description: t('settings.finance.default_wallet_description'),
+                keywords: ['Finance', 'Wallet'],
               },
             ],
           },
@@ -360,6 +388,24 @@ export function SettingsDialog({
     navItems.flatMap((g) => g.items).find((i) => i.name === activeTab) ||
     navItems[0]?.items[0];
 
+  const filteredNavItems = navItems
+    .map((group) => {
+      const normalizedQuery = removeAccents(searchQuery.toLowerCase());
+      const filteredItems = group.items.filter(
+        (item) =>
+          removeAccents(item.label.toLowerCase()).includes(normalizedQuery) ||
+          (item.description &&
+            removeAccents(item.description.toLowerCase()).includes(
+              normalizedQuery
+            )) ||
+          item.keywords?.some((keyword) =>
+            removeAccents(keyword.toLowerCase()).includes(normalizedQuery)
+          )
+      );
+      return { ...group, items: filteredItems };
+    })
+    .filter((group) => group.items.length > 0);
+
   return (
     <DialogContent className="flex h-[80vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
@@ -371,34 +417,61 @@ export function SettingsDialog({
           collapsible="none"
           className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
         >
+          <SidebarHeader className="z-10 p-4 pb-0">
+            <div className="relative">
+              <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
+              <SidebarInput
+                placeholder={t('search.search')}
+                className="bg-background pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </SidebarHeader>
           <SidebarContent className="overflow-y-auto p-4">
-            {navItems.map((group) => (
-              <SidebarGroup key={group.label} className="p-0">
-                <SidebarGroupLabel className="px-2 py-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                  {group.label}
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {group.items.map((item) => (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton
-                          isActive={activeTab === item.name}
-                          onClick={() => setActiveTab(item.name)}
-                          className={cn(
-                            'h-9 w-full justify-start px-2 transition-colors',
-                            activeTab === item.name
-                              ? 'bg-accent font-medium text-accent-foreground'
-                              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
-                          )}
-                        >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.label}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
+            {filteredNavItems.map((group) => (
+              <Collapsible
+                key={`${group.label}-${searchQuery ? 'search' : 'browse'}`}
+                defaultOpen={
+                  !!searchQuery || group.label === navItems[0]?.label
+                }
+                className="group/collapsible"
+              >
+                <SidebarGroup className="p-0">
+                  <SidebarGroupLabel
+                    asChild
+                    className="group/label w-full cursor-pointer text-sidebar-foreground text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  >
+                    <CollapsibleTrigger>
+                      {group.label}
+                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </CollapsibleTrigger>
+                  </SidebarGroupLabel>
+                  <CollapsibleContent>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {group.items.map((item) => (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton
+                              isActive={activeTab === item.name}
+                              onClick={() => setActiveTab(item.name)}
+                              className={cn(
+                                'h-9 w-full justify-start px-2 transition-colors',
+                                activeTab === item.name
+                                  ? 'bg-accent font-medium text-accent-foreground'
+                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                              )}
+                            >
+                              <item.icon className="mr-2 h-4 w-4" />
+                              <span>{item.label}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </CollapsibleContent>
+                </SidebarGroup>
+              </Collapsible>
             ))}
           </SidebarContent>
         </Sidebar>
