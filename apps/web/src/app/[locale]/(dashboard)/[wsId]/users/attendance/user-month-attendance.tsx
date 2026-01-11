@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { AttendanceDialog } from './attendance-dialogue';
 
 export default function UserMonthAttendance({
@@ -45,9 +46,11 @@ export default function UserMonthAttendance({
   const locale = useLocale();
   const tDetails = useTranslations('ws-user-group-details');
   const tGuests = useTranslations('meet-together');
-  const tUsers = useTranslations('ws-users');
+
   const searchParams = useSearchParams();
+
   const router = useRouter();
+  const userStatusLabels = useUserStatusLabels(wsId);
 
   const queryMonth = searchParams.get('month');
 
@@ -311,11 +314,11 @@ export default function UserMonthAttendance({
                 {data.archived_until &&
                 new Date(data.archived_until) > new Date() ? (
                   <>
-                    {tUsers('status_archived_until')}:{' '}
+                    {userStatusLabels.archived_until}:{' '}
                     {format(new Date(data.archived_until), 'dd/MM/yyyy HH:mm')}
                   </>
                 ) : (
-                  tUsers('status_archived')
+                  userStatusLabels.archived
                 )}
                 {data.note && <div>{data.note}</div>}
               </div>

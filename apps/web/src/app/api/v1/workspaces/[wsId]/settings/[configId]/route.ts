@@ -35,3 +35,27 @@ export async function PUT(req: Request, { params }: Params) {
 
   return NextResponse.json({ message: 'success' });
 }
+
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId, configId: id } = await params;
+
+  const { data, error } = await supabase
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', wsId)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({}, { status: 404 });
+    }
+    return NextResponse.json(
+      { message: 'Error fetching workspace config' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ value: data.value });
+}

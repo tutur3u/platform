@@ -15,6 +15,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
+import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { ClientFilters } from './client-filters';
 import { getUserColumns } from './columns';
 import { useWorkspaceUsers, type WorkspaceUsersResponse } from './hooks';
@@ -46,6 +47,7 @@ export function WorkspaceUsersTable({
   toolbarExportContent,
 }: Props) {
   const t = useTranslations();
+  const userStatusLabels = useUserStatusLabels(wsId);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -224,13 +226,13 @@ export function WorkspaceUsersTable({
                 <SelectItem value="archived">
                   <div className="flex items-center gap-2">
                     <Archive className="h-4 w-4" />
-                    <span>{t('ws-users.status_archived')}</span>
+                    <span>{userStatusLabels.archived}</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="archived_until">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
-                    <span>{t('ws-users.status_archived_until')}</span>
+                    <span>{userStatusLabels.archived_until}</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="all">

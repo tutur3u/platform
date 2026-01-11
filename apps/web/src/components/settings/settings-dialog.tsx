@@ -57,6 +57,7 @@ import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import MembersSettings from './workspace/members-settings';
+import UserStatusSettings from './workspace/user-status-settings';
 
 interface SettingsDialogProps {
   wsId?: string;
@@ -122,8 +123,8 @@ export function SettingsDialog({
       if (error) {
         throw new Error(
           error.code === 'PGRST116'
-            ? 'Workspace not found or you do not have access'
-            : error.message || 'Failed to load workspace'
+            ? t('settings.workspace_not_found_or_no_access')
+            : error.message || t('settings.failed_to_load_workspace')
         );
       }
 
@@ -186,13 +187,13 @@ export function SettingsDialog({
 
   const navItems = [
     {
-      label: 'User Settings',
+      label: t('settings.user.title'),
       items: [
         {
           name: 'profile',
-          label: 'Profile',
+          label: t('settings.user.profile'),
           icon: User,
-          description: 'Manage your profile information',
+          description: t('settings.user.profile_description'),
         },
         {
           name: 'security',
@@ -202,29 +203,29 @@ export function SettingsDialog({
         },
         {
           name: 'sessions',
-          label: 'Sessions & Devices',
+          label: t('settings.user.sessions'),
           icon: Laptop,
-          description: 'Manage your active sessions and devices',
+          description: t('settings.user.sessions_description'),
         },
       ],
     },
     {
-      label: 'Preferences',
+      label: t('settings.preferences.title'),
       items: [
         {
           name: 'appearance',
-          label: 'Appearance & Theme',
+          label: t('settings.preferences.appearance'),
           icon: Paintbrush,
           description: wsId
-            ? 'Customize the look and feel of your interface and calendar'
+            ? t('settings.preferences.appearance_ws_description')
             : t('settings-account.appearance-description'),
         },
         {
           name: 'notifications',
-          label: 'Notifications',
+          label: t('settings.preferences.notifications'),
           icon: Bell,
           description: wsId
-            ? 'Manage your notification preferences including calendar notifications'
+            ? t('settings.preferences.notifications_ws_description')
             : 'Manage your notification preferences',
         },
       ],
@@ -241,27 +242,29 @@ export function SettingsDialog({
       ],
     },
     {
-      label: 'My Workspaces',
+      label: t('settings.workspaces.title'),
       items: [
         {
           name: 'workspaces',
-          label: wsId ? 'Overview' : 'All Workspaces',
+          label: wsId
+            ? t('settings.workspaces.overview')
+            : t('settings.workspaces.all_workspaces'),
           icon: Building,
           description: wsId
-            ? 'Manage current workspace settings'
-            : 'Manage your workspaces',
+            ? t('settings.workspaces.manage_current')
+            : t('settings.workspaces.manage_all'),
         },
         ...(wsId
           ? [
               {
                 name: 'workspace_general',
-                label: 'General',
+                label: t('settings.workspaces.general'),
                 icon: Building,
                 description: t('ws-settings.general-description'),
               },
               {
                 name: 'workspace_members',
-                label: 'Members',
+                label: t('settings.workspaces.members'),
                 icon: Users,
                 description: t('ws-settings.members-description'),
               },
@@ -271,6 +274,12 @@ export function SettingsDialog({
                 icon: CreditCard,
                 description: t('settings-account.billing-description'),
               },
+              {
+                name: 'user_status',
+                label: t('settings.workspaces.user_status'),
+                icon: Users,
+                description: t('settings.workspaces.user_status_description'),
+              },
             ]
           : []),
       ],
@@ -278,45 +287,42 @@ export function SettingsDialog({
     ...(wsId
       ? [
           {
-            label: 'Calendar',
+            label: t('settings.calendar.title'),
             items: [
               {
                 name: 'calendar_hours',
-                label: 'Hours & Timezone',
+                label: t('settings.calendar.hours'),
                 icon: Clock,
-                description:
-                  'Configure your work hours, meeting hours, and timezone',
+                description: t('settings.calendar.hours_description'),
               },
               {
                 name: 'calendar_colors',
-                label: 'Category Colors',
+                label: t('settings.calendar.colors'),
                 icon: Palette,
-                description: 'Customize colors for different event categories',
+                description: t('settings.calendar.colors_description'),
               },
               {
                 name: 'calendar_google',
-                label: 'Integrations',
+                label: t('settings.calendar.integrations'),
                 icon: CalendarDays,
-                description: 'Connect your Google Calendar and other services',
+                description: t('settings.calendar.integrations_description'),
               },
               {
                 name: 'calendar_smart',
-                label: 'Smart Features',
+                label: t('settings.calendar.smart'),
                 icon: Sparkles,
-                description:
-                  'Configure AI-powered scheduling and task management',
+                description: t('settings.calendar.smart_description'),
               },
             ],
           },
           {
-            label: 'Time Tracker',
+            label: t('settings.time_tracker.title'),
             items: [
               {
                 name: 'break_types',
-                label: 'Break Types',
+                label: t('settings.time_tracker.break_types'),
                 icon: Coffee,
-                description:
-                  'Manage and customize break types for your workspace',
+                description: t('settings.time_tracker.break_types_description'),
               },
             ],
           },
@@ -377,7 +383,9 @@ export function SettingsDialog({
             </h2>
             <p className="text-muted-foreground text-sm">
               {activeItem?.description ||
-                `Manage your ${activeItem?.label.toLowerCase()} settings`}
+                t('settings.manage_settings', {
+                  label: activeItem?.label?.toLowerCase() ?? '',
+                })}
             </p>
           </header>
           <div className="flex h-32 grow flex-col gap-4 overflow-y-auto p-6 pb-20">
@@ -470,18 +478,18 @@ export function SettingsDialog({
                         <div className="text-center">
                           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                           <p className="mt-4 text-muted-foreground text-sm">
-                            Loading workspace...
+                            {t('settings.loading_workspace')}
                           </p>
                         </div>
                       </div>
                     ) : workspaceError ? (
                       <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
                         <p className="font-medium text-destructive">
-                          Failed to load workspace
+                          {t('settings.failed_to_load_workspace')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-sm">
                           {workspaceError.message ||
-                            'An error occurred while loading the workspace'}
+                            t('settings.error_loading_workspace')}
                         </p>
                       </div>
                     ) : workspace ? (
@@ -499,7 +507,7 @@ export function SettingsDialog({
                     ) : (
                       <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">
-                          Workspace not found
+                          {t('settings.workspace_not_found')}
                         </p>
                       </div>
                     )}
@@ -513,18 +521,18 @@ export function SettingsDialog({
                         <div className="text-center">
                           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                           <p className="mt-4 text-muted-foreground text-sm">
-                            Loading workspace...
+                            {t('settings.loading_workspace')}
                           </p>
                         </div>
                       </div>
                     ) : workspaceError ? (
                       <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
                         <p className="font-medium text-destructive">
-                          Failed to load workspace
+                          {t('settings.failed_to_load_workspace')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-sm">
                           {workspaceError.message ||
-                            'An error occurred while loading the workspace'}
+                            t('settings.error_loading_workspace')}
                         </p>
                       </div>
                     ) : workspace ? (
@@ -532,10 +540,16 @@ export function SettingsDialog({
                     ) : (
                       <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">
-                          Workspace not found
+                          {t('settings.workspace_not_found')}
                         </p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {activeTab === 'user_status' && wsId && (
+                  <div className="h-full">
+                    <UserStatusSettings wsId={wsId} />
                   </div>
                 )}
 

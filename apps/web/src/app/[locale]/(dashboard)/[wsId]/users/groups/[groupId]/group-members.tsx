@@ -43,6 +43,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import GroupMemberActions from './group-member-actions';
 
 interface GroupMember extends WorkspaceUser {
@@ -75,6 +76,7 @@ export default function GroupMembers({
 }: GroupMembersProps) {
   const t = useTranslations();
   const { dateTime } = useFormatter();
+  const userStatusLabels = useUserStatusLabels(wsId);
 
   // React Query with server-side data hydration
   // initialData comes from server-side fetch in the page component
@@ -412,13 +414,13 @@ export default function GroupMembers({
                                   new Date(person.archived_until) >
                                     new Date() ? (
                                     <>
-                                      {t('ws-users.status_archived_until')}:{' '}
+                                      {userStatusLabels.archived_until}:{' '}
                                       {dateTime(
                                         new Date(person.archived_until)
                                       )}
                                     </>
                                   ) : (
-                                    t('ws-users.status_archived')
+                                    userStatusLabels.archived
                                   )}
                                   {person.note && <div>{person.note}</div>}
                                 </div>

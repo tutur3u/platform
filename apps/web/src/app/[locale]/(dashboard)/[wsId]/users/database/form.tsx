@@ -29,6 +29,7 @@ import React, { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
 import { DatePicker } from '@/components/row-actions/users/date-picker';
+import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 
 interface Props {
   wsId: string;
@@ -100,6 +101,7 @@ export default function UserForm({
   canUpdateUsers = true,
 }: Props) {
   const t = useTranslations();
+  const userStatusLabels = useUserStatusLabels(wsId);
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
@@ -772,7 +774,7 @@ export default function UserForm({
                     <FormItem className="gap-4">
                       <FormLabel>
                         <LabelWithTooltip
-                          label={t('ws-users.archived_user')}
+                          label={userStatusLabels.permanently_archived}
                           tooltip={t('ws-users.archived_user_tooltip')}
                         />
                       </FormLabel>
@@ -805,7 +807,7 @@ export default function UserForm({
                     <FormItem>
                       <FormLabel>
                         <LabelWithTooltip
-                          label={t('ws-users.archived_at')}
+                          label={userStatusLabels.archived_until}
                           tooltip={t('ws-users.archived_at_tooltip')}
                         />
                       </FormLabel>

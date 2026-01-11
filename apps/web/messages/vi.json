@@ -4999,6 +4999,28 @@
     "try_again": "Thử lại"
   },
   "settings": {
+    "calendar": {
+      "colors": "Màu sắc danh mục",
+      "colors_description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
+      "hours": "Giờ & Múi giờ",
+      "hours_description": "Cấu hình giờ làm việc, giờ họp và múi giờ của bạn",
+      "integrations": "Tích hợp",
+      "integrations_description": "Kết nối Google Calendar và các dịch vụ khác",
+      "smart": "Tính năng thông minh",
+      "smart_description": "Cấu hình lập lịch và quản lý tác vụ hỗ trợ bởi AI",
+      "title": "Lịch"
+    },
+    "error_loading_workspace": "Đã xảy ra lỗi khi tải không gian làm việc",
+    "failed_to_load_workspace": "Không thể tải không gian làm việc",
+    "loading_workspace": "Đang tải không gian làm việc...",
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
+    "preferences": {
+      "appearance": "Giao diện & Chủ đề",
+      "appearance_ws_description": "Tùy chỉnh giao diện hiển thị và lịch",
+      "notifications": "Thông báo",
+      "notifications_ws_description": "Quản lý tùy chọn thông báo bao gồm thông báo lịch",
+      "title": "Tùy chọn"
+    },
     "tasks": {
       "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
       "auto_assign_to_self": "Tự động gán cho bản thân",
@@ -5010,6 +5032,31 @@
       "settings_update_failed": "Không thể cập nhật cài đặt nhiệm vụ",
       "settings_updated": "Đã cập nhật cài đặt nhiệm vụ",
       "title": "Nhiệm vụ"
+    },
+    "time_tracker": {
+      "break_types": "Loại nghỉ",
+      "break_types_description": "Quản lý và tùy chỉnh các loại nghỉ cho không gian làm việc",
+      "title": "Theo dõi thời gian"
+    },
+    "user": {
+      "profile": "Hồ sơ",
+      "profile_description": "Quản lý thông tin hồ sơ của bạn",
+      "sessions": "Phiên & Thiết bị",
+      "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
+      "title": "Cài đặt người dùng"
+    },
+    "workspace_not_found": "Không tìm thấy không gian làm việc",
+    "workspace_not_found_or_no_access": "Không tìm thấy không gian làm việc hoặc bạn không có quyền truy cập",
+    "workspaces": {
+      "all_workspaces": "Tất cả không gian làm việc",
+      "general": "Chung",
+      "manage_all": "Quản lý các không gian làm việc của bạn",
+      "manage_current": "Quản lý cài đặt không gian làm việc hiện tại",
+      "members": "Thành viên",
+      "overview": "Tổng quan",
+      "title": "Không gian làm việc",
+      "user_status": "Thuật ngữ trạng thái người dùng",
+      "user_status_description": "Tùy chỉnh thuật ngữ cho trạng thái người dùng"
     }
   },
   "settings-account": {
@@ -10114,6 +10161,17 @@
     "edit_description": "Sửa báo cáo hiện có",
     "plural": "Báo cáo người dùng",
     "singular": "Báo cáo người dùng"
+  },
+  "ws-user-status-settings": {
+    "archived_label": "Nhãn đã lưu trữ",
+    "archived_until_label": "Nhãn lưu trữ tạm thời",
+    "description": "Tùy chỉnh thuật ngữ được sử dụng cho trạng thái người dùng trong không gian làm việc của bạn.",
+    "permanently_archived_label": "Nhãn lưu trữ vĩnh viễn",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "title": "Thuật ngữ trạng thái người dùng",
+    "update_error": "Không thể cập nhật cài đặt.",
+    "update_success": "Đã cập nhật cài đặt thành công."
   },
   "ws-users": {
     "address": "Địa chỉ",

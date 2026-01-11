@@ -4961,6 +4961,28 @@
     "try_again": "Try Again"
   },
   "settings": {
+    "calendar": {
+      "colors": "Category Colors",
+      "colors_description": "Customize colors for different event categories",
+      "hours": "Hours & Timezone",
+      "hours_description": "Configure your work hours, meeting hours, and timezone",
+      "integrations": "Integrations",
+      "integrations_description": "Connect your Google Calendar and other services",
+      "smart": "Smart Features",
+      "smart_description": "Configure AI-powered scheduling and task management",
+      "title": "Calendar"
+    },
+    "error_loading_workspace": "An error occurred while loading the workspace",
+    "failed_to_load_workspace": "Failed to load workspace",
+    "loading_workspace": "Loading workspace...",
+    "manage_settings": "Manage your {label} settings",
+    "preferences": {
+      "appearance": "Appearance & Theme",
+      "appearance_ws_description": "Customize the look and feel of your interface and calendar",
+      "notifications": "Notifications",
+      "notifications_ws_description": "Manage your notification preferences including calendar notifications",
+      "title": "Preferences"
+    },
     "tasks": {
       "always_enabled_personal": "This is always enabled for personal workspaces",
       "auto_assign_to_self": "Auto-assign to self",
@@ -4972,6 +4994,31 @@
       "settings_update_failed": "Failed to update task settings",
       "settings_updated": "Task settings updated",
       "title": "Tasks"
+    },
+    "time_tracker": {
+      "break_types": "Break Types",
+      "break_types_description": "Manage and customize break types for your workspace",
+      "title": "Time Tracker"
+    },
+    "user": {
+      "profile": "Profile",
+      "profile_description": "Manage your profile information",
+      "sessions": "Sessions & Devices",
+      "sessions_description": "Manage your active sessions and devices",
+      "title": "User Settings"
+    },
+    "workspace_not_found": "Workspace not found",
+    "workspace_not_found_or_no_access": "Workspace not found or you do not have access",
+    "workspaces": {
+      "all_workspaces": "All Workspaces",
+      "general": "General",
+      "manage_all": "Manage your workspaces",
+      "manage_current": "Manage current workspace settings",
+      "members": "Members",
+      "overview": "Overview",
+      "title": "My Workspaces",
+      "user_status": "User Status Terminology",
+      "user_status_description": "Customize user status terminology"
     }
   },
   "settings-account": {
@@ -9994,6 +10041,17 @@
     "edit_description": "Edit an existing user report",
     "plural": "User Reports",
     "singular": "User Report"
+  },
+  "ws-user-status-settings": {
+    "archived_label": "Archived Label",
+    "archived_until_label": "Temporarily Archived Label",
+    "description": "Customize the terminology used for user statuses in your workspace.",
+    "permanently_archived_label": "Permanently Archived Label",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "title": "User Status Terminology",
+    "update_error": "Failed to update settings.",
+    "update_success": "Settings updated successfully."
   },
   "ws-users": {
     "address": "Address",
