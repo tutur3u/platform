@@ -85,8 +85,8 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.0.5",
-    "@types/react": "^19.2.7",
+    "@types/node": "^25.0.6",
+    "@types/react": "^19.2.8",
     "next": "^16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
