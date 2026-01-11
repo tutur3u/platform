@@ -863,6 +863,9 @@ export default function GroupAttendanceClient({
                                 variant="ghost"
                                 className={cn(
                                   'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                                  entry.status !== 'NONE' &&
+                                    entry.status !== 'PRESENT' &&
+                                    'opacity-20 grayscale hover:opacity-100 hover:grayscale-0',
                                   entry.status === 'PRESENT'
                                     ? 'border-dynamic-green/40 bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
                                     : 'border-dynamic-green/20 bg-dynamic-green/5 text-dynamic-green/70 hover:border-dynamic-green/40 hover:bg-dynamic-green/10 hover:text-dynamic-green'
@@ -881,6 +884,9 @@ export default function GroupAttendanceClient({
                                 variant="ghost"
                                 className={cn(
                                   'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                                  entry.status !== 'NONE' &&
+                                    entry.status !== 'ABSENT' &&
+                                    'opacity-20 grayscale hover:opacity-100 hover:grayscale-0',
                                   entry.status === 'ABSENT'
                                     ? 'border-dynamic-red/40 bg-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/30'
                                     : 'border-dynamic-red/20 bg-dynamic-red/5 text-dynamic-red/70 hover:border-dynamic-red/40 hover:bg-dynamic-red/10 hover:text-dynamic-red'
@@ -899,6 +905,9 @@ export default function GroupAttendanceClient({
                                 variant="ghost"
                                 className={cn(
                                   'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                                  entry.status !== 'NONE' &&
+                                    entry.status !== 'LATE' &&
+                                    'opacity-20 grayscale hover:opacity-100 hover:grayscale-0',
                                   entry.status === 'LATE'
                                     ? 'border-dynamic-yellow/40 bg-dynamic-yellow/20 text-dynamic-yellow hover:bg-dynamic-yellow/30'
                                     : 'border-dynamic-yellow/20 bg-dynamic-yellow/5 text-dynamic-yellow/70 hover:border-dynamic-yellow/40 hover:bg-dynamic-yellow/10 hover:text-dynamic-yellow'
