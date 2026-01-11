@@ -26,6 +26,12 @@ interface Props {
   }>;
   searchParams: Promise<{
     tab?: string;
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    includedGroups?: string | string[];
+    excludedGroups?: string | string[];
+    status?: string;
   }>;
 }
 
@@ -58,11 +64,30 @@ export default async function WorkspaceUsersPage({
   }
 
   // Fetch initial data for hydration (first page only)
-  const { data: initialUsers, count } = await getInitialData(wsId, {
-    hasPrivateInfo,
-    hasPublicInfo,
-    canCheckUserAttendance,
-  });
+  const { data: initialUsers, count } = await getInitialData(
+    wsId,
+    {
+      hasPrivateInfo,
+      hasPublicInfo,
+      canCheckUserAttendance,
+    },
+    {
+      q: sp.q,
+      page: sp.page ? parseInt(sp.page) : 1,
+      pageSize: sp.pageSize ? parseInt(sp.pageSize) : 10,
+      includedGroups: Array.isArray(sp.includedGroups)
+        ? sp.includedGroups
+        : sp.includedGroups
+          ? [sp.includedGroups]
+          : [],
+      excludedGroups: Array.isArray(sp.excludedGroups)
+        ? sp.excludedGroups
+        : sp.excludedGroups
+          ? [sp.excludedGroups]
+          : [],
+      status: sp.status as 'active' | 'archived' | 'archived_until' | 'all',
+    }
+  );
 
   const { data: extraFields } = await getUserFields(wsId);
 
@@ -146,27 +171,54 @@ async function getInitialData(
     hasPrivateInfo: boolean;
     hasPublicInfo: boolean;
     canCheckUserAttendance: boolean;
-  }
+  },
+  searchParams: {
+    q?: string;
+    page?: number;
+    pageSize?: number;
+    includedGroups?: string[];
+    excludedGroups?: string[];
+    status?: 'active' | 'archived' | 'archived_until' | 'all';
+  } = {}
 ) {
+  const {
+    q = '',
+    page = 1,
+    pageSize = 10,
+    includedGroups = [],
+    excludedGroups = [],
+    status = 'active',
+  } = searchParams;
+
   const supabase = await createClient();
 
-  const queryBuilder = supabase
+  let queryBuilder = supabase
     .rpc(
       'get_workspace_users',
       {
         _ws_id: wsId,
-        included_groups: [],
-        excluded_groups: [],
-        search_query: '',
-        include_archived: false,
+        included_groups: includedGroups,
+        excluded_groups: excludedGroups,
+        search_query: q,
+        include_archived: status !== 'active',
       },
       {
         count: 'exact',
       }
     )
     .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false })
-    .range(0, 9);
+    .order('full_name', { ascending: true, nullsFirst: false });
+
+  // Apply status filters
+  if (status === 'archived') {
+    queryBuilder = queryBuilder.eq('archived', true);
+  } else if (status === 'archived_until') {
+    queryBuilder = queryBuilder.gt('archived_until', new Date().toISOString());
+  }
+
+  const start = (page - 1) * pageSize;
+  const end = page * pageSize - 1;
+  queryBuilder = queryBuilder.range(start, end);
 
   const { data, error, count } = await queryBuilder;
 

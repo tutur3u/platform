@@ -29,7 +29,7 @@ export interface WorkspaceUsersParams {
   pageSize?: number;
   includedGroups?: string[];
   excludedGroups?: string[];
-  includeArchived?: boolean;
+  status?: 'active' | 'archived' | 'archived_until' | 'all';
 }
 
 export interface WorkspaceUsersResponse {
@@ -59,14 +59,14 @@ export function useWorkspaceUsers(
     pageSize = 10,
     includedGroups = [],
     excludedGroups = [],
-    includeArchived = false,
+    status = 'active',
   } = params;
 
   return useQuery({
     queryKey: [
       'workspace-users',
       wsId,
-      { q, page, pageSize, includedGroups, excludedGroups, includeArchived },
+      { q, page, pageSize, includedGroups, excludedGroups, status },
     ],
     queryFn: async (): Promise<WorkspaceUsersResponse> => {
       const searchParams = new URLSearchParams();
@@ -74,7 +74,7 @@ export function useWorkspaceUsers(
       if (q) searchParams.set('q', q);
       searchParams.set('page', String(page));
       searchParams.set('pageSize', String(pageSize));
-      searchParams.set('includeArchived', String(includeArchived));
+      searchParams.set('status', status);
 
       includedGroups.forEach((group) => {
         searchParams.append('includedGroups', group);

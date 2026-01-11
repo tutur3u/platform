@@ -213,11 +213,11 @@ export function Filter({
                             <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
                           </div>
                           <div className="flex min-w-0 flex-col">
-                            <span className="max-w-[120px] truncate font-semibold text-secondary-foreground leading-none">
+                            <span className="max-w-30 truncate font-semibold text-secondary-foreground leading-none">
                               {displayName}
                             </span>
                             {email && (
-                              <span className="mt-0.5 max-w-[120px] truncate text-muted-foreground text-xs leading-none">
+                              <span className="mt-0.5 max-w-30 truncate text-muted-foreground text-xs leading-none">
                                 {email}
                               </span>
                             )}

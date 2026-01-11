@@ -16,10 +16,9 @@ const SearchParamsSchema = z.object({
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
     .default([]),
-  includeArchived: z
-    .union([z.boolean(), z.string()])
-    .transform((val) => (typeof val === 'string' ? val === 'true' : val))
-    .default(false),
+  status: z
+    .enum(['active', 'archived', 'archived_until', 'all'])
+    .default('active'),
 });
 
 interface Params {
@@ -68,7 +67,7 @@ export async function GET(request: Request, { params }: Params) {
     const sp = SearchParamsSchema.parse(params_obj);
 
     // Fetch data using RPC
-    const queryBuilder = supabase
+    let queryBuilder = supabase
       .rpc(
         'get_workspace_users',
         {
@@ -76,7 +75,7 @@ export async function GET(request: Request, { params }: Params) {
           included_groups: sp.includedGroups,
           excluded_groups: sp.excludedGroups,
           search_query: sp.q,
-          include_archived: sp.includeArchived,
+          include_archived: sp.status !== 'active',
         },
         {
           count: 'exact',
@@ -85,10 +84,20 @@ export async function GET(request: Request, { params }: Params) {
       .select('*')
       .order('full_name', { ascending: true, nullsFirst: false });
 
+    // Apply status filters
+    if (sp.status === 'archived') {
+      queryBuilder = queryBuilder.eq('archived', true);
+    } else if (sp.status === 'archived_until') {
+      queryBuilder = queryBuilder.gt(
+        'archived_until',
+        new Date().toISOString()
+      );
+    }
+
     // Apply pagination
     const start = (sp.page - 1) * sp.pageSize;
     const end = sp.page * sp.pageSize - 1;
-    queryBuilder.range(start, end);
+    queryBuilder = queryBuilder.range(start, end);
 
     const { data, error, count } = await queryBuilder;
 

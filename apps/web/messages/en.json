@@ -10052,6 +10052,11 @@
     },
     "plural": "Users",
     "singular": "User",
+    "status_active": "Active",
+    "status_all": "All",
+    "status_archived": "Archived",
+    "status_archived_until": "Temporary Archive",
+    "status_filter": "Status",
     "user_id": "User ID",
     "user_id_tooltip": "The identification number of this user in your workspace. This is automatically managed by Tuturuuu, and cannot be changed."
   },
