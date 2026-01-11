@@ -73,8 +73,8 @@ export default async function WorkspaceUsersPage({
     },
     {
       q: sp.q,
-      page: sp.page ? parseInt(sp.page) : 1,
-      pageSize: sp.pageSize ? parseInt(sp.pageSize) : 10,
+      page: sp.page ? parseInt(sp.page, 10) : 1,
+      pageSize: sp.pageSize ? parseInt(sp.pageSize, 10) : 10,
       includedGroups: Array.isArray(sp.includedGroups)
         ? sp.includedGroups
         : sp.includedGroups
