@@ -1073,7 +1073,7 @@
       "version": "0.0.1",
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.0.5",
+        "@types/node": "^25.0.6",
         "typescript": "^5.9.3",
       },
     },
