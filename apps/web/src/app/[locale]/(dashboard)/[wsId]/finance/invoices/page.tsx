@@ -22,6 +22,7 @@ interface Props {
     start: string;
     end: string;
     userIds: string | string[];
+    walletId: string;
   }>;
 }
 

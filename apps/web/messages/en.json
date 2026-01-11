@@ -10009,11 +10009,13 @@
     "user_id_tooltip": "The identification number of this user in your workspace. This is automatically managed by Tuturuuu, and cannot be changed."
   },
   "ws-wallets": {
+    "all_wallets": "All wallets",
     "create": "Create wallet",
     "create_description": "Create a new wallet",
     "description": "Wallets are used to store and manage the financial activities of your workspace.",
     "edit": "Edit wallet",
     "edit_description": "Edit an existing wallet",
+    "filter_by_wallet": "Filter by wallet",
     "plural": "Wallets",
     "singular": "Wallet",
     "wallet": "Payment Method"

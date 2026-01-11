@@ -15,6 +15,7 @@ import { Suspense } from 'react';
 import { invoiceColumns } from './columns';
 import { PendingInvoicesTable } from './pending-invoices-table';
 import { UserFilterWrapper } from './user-filter-wrapper';
+import { WalletFilterWrapper } from './wallet-filter-wrapper';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -32,6 +33,7 @@ interface Props {
     start: string;
     end: string;
     userIds: string | string[];
+    walletId: string;
   }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
@@ -85,6 +87,9 @@ export default async function InvoicesPage({
         <Suspense fallback={<Skeleton className="h-10 w-75" />}>
           <DateRangeFilterWrapper />
         </Suspense>
+        <Suspense fallback={<Skeleton className="h-10 w-50" />}>
+          <WalletFilterWrapper wsId={wsId} />
+        </Suspense>
       </div>
       <Tabs defaultValue="created" className="w-full">
         <TabsList className="mb-4">
@@ -131,6 +136,7 @@ async function getData(
     start,
     end,
     userIds,
+    walletId,
   }: {
     q?: string;
     page?: string;
@@ -138,18 +144,23 @@ async function getData(
     start?: string;
     end?: string;
     userIds?: string | string[];
+    walletId?: string;
   }
 ) {
   const supabase = await createClient();
 
+  // Build select query dynamically
+  let selectQuery =
+    '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
+
+  const walletJoinType = walletId ? '!inner' : '';
+  selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
+
   let queryBuilder = supabase
     .from('finance_invoices')
-    .select(
-      '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))',
-      {
-        count: 'exact',
-      }
-    )
+    .select(selectQuery, {
+      count: 'exact',
+    })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
@@ -164,6 +175,10 @@ async function getData(
     }
   }
 
+  if (walletId) {
+    queryBuilder = queryBuilder.eq('wallet_transactions.wallet_id', walletId);
+  }
+
   if (page && pageSize) {
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
@@ -176,7 +191,13 @@ async function getData(
   if (error) throw error;
 
   const data = rawData.map(
-    ({ customer, legacy_creator, platform_creator, ...rest }) => {
+    ({
+      customer,
+      legacy_creator,
+      platform_creator,
+      wallet_transactions,
+      ...rest
+    }: any) => {
       const platformCreator = platform_creator as {
         id: string;
         display_name: string | null;
@@ -214,10 +235,15 @@ async function getData(
           platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
       };
 
+      const wallet = wallet_transactions?.wallet
+        ? { name: wallet_transactions.wallet.name }
+        : null;
+
       return {
         ...rest,
         customer,
         creator,
+        wallet,
       };
     }
   );

@@ -118,6 +118,7 @@ export const invoiceColumns = (
     ),
     cell: ({ row }) => {
       const creator = row.original.creator;
+      const wallet = (row.original as any).wallet;
       if (!creator) return <div className="min-w-32">-</div>;
 
       const displayName =
@@ -134,7 +135,14 @@ export const invoiceColumns = (
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
-          <span className="line-clamp-1">{displayName}</span>
+          <div className="flex flex-col">
+            <span className="line-clamp-1">{displayName}</span>
+            {wallet?.name && (
+              <span className="line-clamp-1 text-muted-foreground text-xs">
+                {wallet.name}
+              </span>
+            )}
+          </div>
         </div>
       );
     },

@@ -10129,11 +10129,13 @@
     "user_id_tooltip": "Mã định danh của người dùng này trong không gian làm việc của bạn. Hệ thống Tuturuuu tự động quản lý và không thể thay đổi."
   },
   "ws-wallets": {
+    "all_wallets": "Tất cả ví",
     "create": "Tạo ví",
     "create_description": "Tạo một ví mới",
     "description": "Ví được sử dụng để lưu trữ và quản lý các hoạt động tài chính của không gian làm việc của bạn.",
     "edit": "Chỉnh sửa ví",
     "edit_description": "Chỉnh sửa ví hiện có",
+    "filter_by_wallet": "Lọc theo ví",
     "plural": "Ví",
     "singular": "Ví",
     "wallet": "Phương thức thanh toán"
