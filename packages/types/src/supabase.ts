@@ -3916,6 +3916,360 @@ export type Database = {
           },
         ];
       };
+      leave_balances: {
+        Row: {
+          accrued_days: number;
+          adjusted_days: number;
+          balance_year: number;
+          carried_over_days: number | null;
+          created_at: string | null;
+          id: string;
+          last_accrual_date: string | null;
+          leave_type_id: string;
+          notes: string | null;
+          updated_at: string | null;
+          used_days: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          accrued_days?: number;
+          adjusted_days?: number;
+          balance_year: number;
+          carried_over_days?: number | null;
+          created_at?: string | null;
+          id?: string;
+          last_accrual_date?: string | null;
+          leave_type_id: string;
+          notes?: string | null;
+          updated_at?: string | null;
+          used_days?: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          accrued_days?: number;
+          adjusted_days?: number;
+          balance_year?: number;
+          carried_over_days?: number | null;
+          created_at?: string | null;
+          id?: string;
+          last_accrual_date?: string | null;
+          leave_type_id?: string;
+          notes?: string | null;
+          updated_at?: string | null;
+          used_days?: number;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'leave_balances_leave_type_id_fkey';
+            columns: ['leave_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'leave_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_balances_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      leave_requests: {
+        Row: {
+          approver_id: string | null;
+          attachment_urls: string[] | null;
+          created_at: string | null;
+          duration_days: number;
+          end_date: string;
+          id: string;
+          is_half_day_end: boolean | null;
+          is_half_day_start: boolean | null;
+          leave_type_id: string;
+          reason: string | null;
+          reviewed_at: string | null;
+          reviewer_comments: string | null;
+          start_date: string;
+          status: Database['public']['Enums']['leave_request_status'];
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          approver_id?: string | null;
+          attachment_urls?: string[] | null;
+          created_at?: string | null;
+          duration_days: number;
+          end_date: string;
+          id?: string;
+          is_half_day_end?: boolean | null;
+          is_half_day_start?: boolean | null;
+          leave_type_id: string;
+          reason?: string | null;
+          reviewed_at?: string | null;
+          reviewer_comments?: string | null;
+          start_date: string;
+          status?: Database['public']['Enums']['leave_request_status'];
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          approver_id?: string | null;
+          attachment_urls?: string[] | null;
+          created_at?: string | null;
+          duration_days?: number;
+          end_date?: string;
+          id?: string;
+          is_half_day_end?: boolean | null;
+          is_half_day_start?: boolean | null;
+          leave_type_id?: string;
+          reason?: string | null;
+          reviewed_at?: string | null;
+          reviewer_comments?: string | null;
+          start_date?: string;
+          status?: Database['public']['Enums']['leave_request_status'];
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_approver_id_fkey';
+            columns: ['approver_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_leave_type_id_fkey';
+            columns: ['leave_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'leave_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_requests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      leave_types: {
+        Row: {
+          accrual_rate_days_per_month: number | null;
+          allow_half_days: boolean;
+          category: Database['public']['Enums']['leave_category'];
+          code: string;
+          color: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          display_order: number | null;
+          icon: string | null;
+          id: string;
+          is_active: boolean;
+          is_funeral_leave: boolean | null;
+          is_paid: boolean;
+          is_tet_leave: boolean | null;
+          is_wedding_leave: boolean | null;
+          max_balance_days: number | null;
+          max_carryover_days: number | null;
+          name: string;
+          requires_approval: boolean;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          accrual_rate_days_per_month?: number | null;
+          allow_half_days?: boolean;
+          category?: Database['public']['Enums']['leave_category'];
+          code: string;
+          color?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_funeral_leave?: boolean | null;
+          is_paid?: boolean;
+          is_tet_leave?: boolean | null;
+          is_wedding_leave?: boolean | null;
+          max_balance_days?: number | null;
+          max_carryover_days?: number | null;
+          name: string;
+          requires_approval?: boolean;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          accrual_rate_days_per_month?: number | null;
+          allow_half_days?: boolean;
+          category?: Database['public']['Enums']['leave_category'];
+          code?: string;
+          color?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_funeral_leave?: boolean | null;
+          is_paid?: boolean;
+          is_tet_leave?: boolean | null;
+          is_wedding_leave?: boolean | null;
+          max_balance_days?: number | null;
+          max_carryover_days?: number | null;
+          name?: string;
+          requires_approval?: boolean;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_types_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'leave_types_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       link_analytics: {
         Row: {
           browser: string | null;
@@ -8006,6 +8360,118 @@ export type Database = {
           },
           {
             foreignKeyName: 'task_projects_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_rate_overrides: {
+        Row: {
+          board_id: string | null;
+          created_at: string | null;
+          currency: string;
+          effective_from: string;
+          effective_until: string | null;
+          hourly_rate: number;
+          id: string;
+          notes: string | null;
+          project_id: string | null;
+          task_id: string | null;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          effective_from: string;
+          effective_until?: string | null;
+          hourly_rate: number;
+          id?: string;
+          notes?: string | null;
+          project_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          effective_from?: string;
+          effective_until?: string | null;
+          hourly_rate?: number;
+          id?: string;
+          notes?: string | null;
+          project_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_rate_overrides_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_rate_overrides_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -12772,6 +13238,60 @@ export type Database = {
           },
         ];
       };
+      workspace_holidays: {
+        Row: {
+          country_code: string | null;
+          created_at: string | null;
+          holiday_date: string;
+          id: string;
+          is_recurring: boolean;
+          name: string;
+          notes: string | null;
+          overtime_multiplier: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          country_code?: string | null;
+          created_at?: string | null;
+          holiday_date: string;
+          id?: string;
+          is_recurring?: boolean;
+          name: string;
+          notes?: string | null;
+          overtime_multiplier?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          country_code?: string | null;
+          created_at?: string | null;
+          holiday_date?: string;
+          id?: string;
+          is_recurring?: boolean;
+          name?: string;
+          notes?: string | null;
+          overtime_multiplier?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_holidays_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_holidays_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_invite_link_uses: {
         Row: {
           id: string;
@@ -16675,6 +17195,16 @@ export type Database = {
       };
     };
     Functions: {
+      approve_leave_request_with_details: {
+        Args: {
+          p_action: string;
+          p_rejection_reason?: string;
+          p_request_id: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -16692,6 +17222,16 @@ export type Database = {
           success: boolean;
           sync_token: string;
         }[];
+      };
+      calculate_leave_duration: {
+        Args: {
+          p_end_date: string;
+          p_is_half_day_end: boolean;
+          p_is_half_day_start: boolean;
+          p_start_date: string;
+          p_ws_id: string;
+        };
+        Returns: number;
       };
       calculate_next_occurrence: {
         Args: {
@@ -16716,6 +17256,15 @@ export type Database = {
       can_view_request_comments: {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
+      };
+      cancel_leave_request_with_details: {
+        Args: {
+          p_cancellation_reason?: string;
+          p_request_id: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       check_email_blocked: { Args: { p_email: string }; Returns: boolean };
       check_email_bounce_status: {
@@ -16775,6 +17324,37 @@ export type Database = {
           p_source_email: string;
           p_source_name: string;
           p_subject: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      create_leave_balance_with_details: {
+        Args: {
+          p_accrued_days?: number;
+          p_adjusted_days?: number;
+          p_balance_year: number;
+          p_carried_over_days?: number;
+          p_created_by?: string;
+          p_leave_type_id: string;
+          p_notes?: string;
+          p_used_days?: number;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      create_leave_request_with_details: {
+        Args: {
+          p_emergency_contact?: string;
+          p_end_date: string;
+          p_is_half_day_end?: boolean;
+          p_is_half_day_start?: boolean;
+          p_leave_type_id: string;
+          p_notes?: string;
+          p_reason: string;
+          p_start_date: string;
+          p_submitted_by?: string;
+          p_user_id: string;
           p_ws_id: string;
         };
         Returns: Json;
@@ -17280,6 +17860,44 @@ export type Database = {
       get_joined_workspace_count: {
         Args: { user_id: string };
         Returns: number;
+      };
+      get_leave_balance_with_details: {
+        Args: { p_balance_id: string; p_user_id?: string; p_ws_id: string };
+        Returns: Json;
+      };
+      get_leave_balances_with_details: {
+        Args: {
+          p_filter_leave_type_id?: string;
+          p_filter_user_id?: string;
+          p_filter_year?: number;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      get_leave_calendar_events: {
+        Args: {
+          p_can_manage_workforce?: boolean;
+          p_end_date: string;
+          p_filter_user_id?: string;
+          p_start_date: string;
+          p_statuses?: string[];
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      get_leave_requests_with_details: {
+        Args: {
+          p_can_manage_workforce?: boolean;
+          p_filter_leave_type_id?: string;
+          p_filter_status?: string;
+          p_filter_user_id?: string;
+          p_filter_year?: number;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       get_mau_count: { Args: never; Returns: number };
       get_monthly_income_expense:
@@ -18308,6 +18926,14 @@ export type Database = {
           relevance: number;
         }[];
       };
+      seed_default_leave_types: {
+        Args: { p_ws_id: string };
+        Returns: undefined;
+      };
+      seed_default_vn_holidays: {
+        Args: { target_ws_id: string };
+        Returns: undefined;
+      };
       set_default_break_type: {
         Args: { p_target_id: string; p_ws_id: string };
         Returns: {
@@ -18354,6 +18980,15 @@ export type Database = {
         Returns: boolean;
       };
       update_expired_sessions: { Args: never; Returns: undefined };
+      update_leave_balance_with_details: {
+        Args: {
+          p_balance_id: string;
+          p_updates: Json;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       update_many_tasks: { Args: { updates: Json }; Returns: number };
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
@@ -18500,6 +19135,13 @@ export type Database = {
         | 'ENABLE_QUIZZES';
       habit_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
       ip_block_status: 'active' | 'expired' | 'manually_unblocked';
+      leave_category: 'standard' | 'parental' | 'special' | 'custom';
+      leave_request_status:
+        | 'pending'
+        | 'approved'
+        | 'rejected'
+        | 'cancelled'
+        | 'withdrawn';
       monthly_recurrence_type: 'day_of_month' | 'day_of_week';
       notification_delivery_mode: 'immediate' | 'batched';
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -19146,6 +19788,14 @@ export const Constants = {
       ],
       habit_frequency: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
       ip_block_status: ['active', 'expired', 'manually_unblocked'],
+      leave_category: ['standard', 'parental', 'special', 'custom'],
+      leave_request_status: [
+        'pending',
+        'approved',
+        'rejected',
+        'cancelled',
+        'withdrawn',
+      ],
       monthly_recurrence_type: ['day_of_month', 'day_of_week'],
       notification_delivery_mode: ['immediate', 'batched'],
       notification_priority: ['low', 'medium', 'high', 'urgent'],
