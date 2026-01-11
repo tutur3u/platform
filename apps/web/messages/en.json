@@ -10063,6 +10063,7 @@
   },
   "ws-user-status-settings": {
     "archived_label": "Archived Label",
+    "archived_until_label": "Archived Until Label",
     "description": "Customize the terminology used for user statuses in your workspace.",
     "permanently_archived_label": "Permanently Archived Label",
     "save": "Save changes",
