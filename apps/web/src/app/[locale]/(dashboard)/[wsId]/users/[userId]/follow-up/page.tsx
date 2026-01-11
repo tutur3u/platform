@@ -64,7 +64,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         // Fetch user info and their groups for context
         const { data: user } = await supabase
           .from('workspace_users')
-          .select('id, full_name, email, ws_id')
+          .select('id, full_name, email, ws_id, archived, archived_until, note')
           .eq('ws_id', wsId)
           .eq('id', userId)
           .maybeSingle();
@@ -115,6 +115,9 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
               userId={userId}
               userName={user?.full_name ?? undefined}
               userEmail={user?.email ?? undefined}
+              userArchived={user?.archived ?? undefined}
+              userArchivedUntil={user?.archived_until ?? undefined}
+              userNote={user?.note ?? undefined}
               emailCredentials={emailCreds ?? undefined}
               userGroups={
                 userGroups?.map((ug) => ({

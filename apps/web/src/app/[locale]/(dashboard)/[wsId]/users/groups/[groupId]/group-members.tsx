@@ -39,6 +39,7 @@ import {
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -50,6 +51,9 @@ interface GroupMember extends WorkspaceUser {
   phone?: string | null;
   gender?: string | null;
   birthday?: string | null;
+  archived?: boolean;
+  archived_until?: string | null;
+  note?: string | null;
 }
 
 interface GroupMembersProps {
@@ -94,7 +98,8 @@ export default function GroupMembers({
       const from = typeof pageParam === 'number' ? pageParam : 0;
       const to = from + pageSize - 1;
 
-      const baseFields = 'id, display_name, full_name, avatar_url';
+      const baseFields =
+        'id, display_name, full_name, avatar_url, archived, archived_until, note';
       const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
       const personalFields = canViewPersonalInfo ? ', email, phone' : '';
       const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
@@ -361,7 +366,16 @@ export default function GroupMembers({
                             )}
                             <div>
                               <div className="flex items-center gap-2">
-                                <div className="font-medium">
+                                <div
+                                  className={cn(
+                                    'font-medium',
+                                    (person.archived ||
+                                      (person.archived_until &&
+                                        new Date(person.archived_until) >
+                                          new Date())) &&
+                                      'text-dynamic-red line-through decoration-2 decoration-dynamic-red'
+                                  )}
+                                >
                                   {person.full_name
                                     ? person.display_name
                                       ? `${person.full_name} (${person.display_name})`
@@ -389,6 +403,26 @@ export default function GroupMembers({
                                   </Badge>
                                 )}
                               </div>
+                              {(person.archived ||
+                                (person.archived_until &&
+                                  new Date(person.archived_until) >
+                                    new Date())) && (
+                                <div className="mt-1 font-semibold text-dynamic-red text-xs">
+                                  {person.archived_until &&
+                                  new Date(person.archived_until) >
+                                    new Date() ? (
+                                    <>
+                                      {t('ws-users.status_archived_until')}:{' '}
+                                      {dateTime(
+                                        new Date(person.archived_until)
+                                      )}
+                                    </>
+                                  ) : (
+                                    t('ws-users.status_archived')
+                                  )}
+                                  {person.note && <div>{person.note}</div>}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2" />

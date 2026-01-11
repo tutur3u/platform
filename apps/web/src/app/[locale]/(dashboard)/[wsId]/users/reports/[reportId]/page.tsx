@@ -158,7 +158,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
     .select(
-      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
+      '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
       {
         count: 'exact',
       }
@@ -183,6 +183,18 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
       ? rawData.user?.[0]?.full_name
       : //
         (rawData.user?.full_name ?? undefined),
+    user_archived: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.archived
+      : //
+        (rawData.user?.archived ?? undefined),
+    user_archived_until: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.archived_until
+      : //
+        (rawData.user?.archived_until ?? undefined),
+    user_note: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.note
+      : //
+        (rawData.user?.note ?? undefined),
     creator_name: Array.isArray(rawData.creator)
       ? rawData.creator?.[0]?.full_name
       : //
@@ -193,7 +205,12 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   delete data.user;
   delete data.creator;
 
-  return data as WorkspaceUserReport & { group_name: string };
+  return data as WorkspaceUserReport & {
+    group_name: string;
+    user_archived?: boolean;
+    user_archived_until?: string | null;
+    user_note?: string | null;
+  };
 }
 
 async function getUserGroups(wsId: string) {

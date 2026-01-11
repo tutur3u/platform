@@ -191,9 +191,13 @@ export default async function WorkspaceUserDetailsPage({
             <UserMonthAttendance
               wsId={wsId}
               user={{
+                ...data,
                 id: data.id,
                 full_name: data.display_name || data.full_name,
                 href: `/${wsId}/users/database/${data.id}`,
+                archived: data.archived,
+                archived_until: data.archived_until,
+                isGuest,
               }}
             />
           )}

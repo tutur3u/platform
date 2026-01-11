@@ -76,6 +76,9 @@ export default function EditableReportPreview({
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
     user_name?: string;
+    user_archived?: boolean;
+    user_archived_until?: string | null;
+    user_note?: string | null;
     creator_name?: string;
     group_name?: string;
   };
@@ -915,6 +918,9 @@ export default function EditableReportPreview({
               id: report.user_id,
               full_name: report.user_name,
               href: `/${wsId}/users/database/${report.user_id}`,
+              archived: report.user_archived,
+              archived_until: report.user_archived_until,
+              note: report.user_note,
             }}
             defaultIncludedGroups={[groupId || report.group_id!]}
           />

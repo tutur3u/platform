@@ -44,6 +44,9 @@ export default function FollowUpClient({
   userId,
   userName,
   userEmail,
+  userArchived,
+  userArchivedUntil,
+  userNote,
   emailCredentials,
   userGroups = [],
   minimumAttendance,
@@ -53,6 +56,9 @@ export default function FollowUpClient({
   userId: string;
   userName?: string;
   userEmail?: string;
+  userArchived?: boolean;
+  userArchivedUntil?: string | null;
+  userNote?: string | null;
   emailCredentials?: { source_name: string; source_email: string };
   userGroups?: Array<{ id: string; name: string | null }>;
   minimumAttendance?: number;
@@ -656,6 +662,9 @@ export default function FollowUpClient({
                     id: userId,
                     full_name: userName,
                     href: `/${wsId}/users/${userId}`,
+                    archived: userArchived,
+                    archived_until: userArchivedUntil,
+                    note: userNote,
                   }}
                   defaultIncludedGroups={groupId ? [groupId] : undefined}
                   noOutline

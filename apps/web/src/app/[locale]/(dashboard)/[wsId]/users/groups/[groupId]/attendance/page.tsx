@@ -217,19 +217,29 @@ async function getInitialAttendanceData(
   // Members (basic profile info)
   const { data: membersRows } = await supabase
     .from('workspace_user_groups_users')
-    .select('workspace_users(*)')
-    .eq('group_id', groupId)
-    .eq('role', 'STUDENT');
+    .select('workspace_users(*), role')
+    .eq('group_id', groupId);
 
-  const members =
-    membersRows?.map((row: any) => ({
-      id: row.workspace_users?.id,
-      display_name: row.workspace_users?.display_name,
-      full_name: row.workspace_users?.full_name,
-      email: row.workspace_users?.email,
-      phone: row.workspace_users?.phone,
-      avatar_url: row.workspace_users?.avatar_url,
-    })) ?? [];
+  const members = await Promise.all(
+    (membersRows || []).map(async (row: any) => {
+      const { data: isGuest } = await supabase.rpc('is_user_guest', {
+        user_uuid: row.workspace_users?.id,
+      });
+
+      return {
+        id: row.workspace_users?.id,
+        display_name: row.workspace_users?.display_name,
+        full_name: row.workspace_users?.full_name,
+        email: row.workspace_users?.email,
+        phone: row.workspace_users?.phone,
+        avatar_url: row.workspace_users?.avatar_url,
+        archived: row.workspace_users?.archived,
+        archived_until: row.workspace_users?.archived_until,
+        role: row.role,
+        isGuest: !!isGuest,
+      };
+    })
+  );
 
   // Initial attendance for the requested date (seed hydration)
   const { data: attRows } = await supabase

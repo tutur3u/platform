@@ -7,6 +7,7 @@ import type {
   WorkspaceUser,
   WorkspaceUserAttendance,
 } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import {
@@ -19,7 +20,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AttendanceDialog } from './attendance-dialogue';
 
@@ -30,11 +31,21 @@ export default function UserMonthAttendance({
   defaultIncludedGroups,
 }: {
   wsId: string;
-  user: WorkspaceUser & { href: string };
+  user: WorkspaceUser & {
+    href: string;
+    isGuest?: boolean;
+    role?: string;
+    archived?: boolean;
+    archived_until?: string | null;
+    note?: string | null;
+  };
   defaultIncludedGroups?: string[];
   noOutline?: boolean;
 }) {
   const locale = useLocale();
+  const tDetails = useTranslations('ws-user-group-details');
+  const tGuests = useTranslations('meet-together');
+  const tUsers = useTranslations('ws-users');
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -104,7 +115,15 @@ export default function UserMonthAttendance({
   const data = {
     ...baseData,
     attendance: filteredAttendance,
-  } as WorkspaceUser & { attendance?: WorkspaceUserAttendance[] };
+  } as WorkspaceUser & {
+    attendance?: WorkspaceUserAttendance[];
+    role?: string;
+    archived?: boolean;
+    archived_until?: string | null;
+    note?: string | null;
+    isGuest?: boolean;
+    href?: string;
+  };
 
   const handlePrev = async () =>
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)));
@@ -256,11 +275,51 @@ export default function UserMonthAttendance({
             <div className="flex items-center justify-between gap-1">
               <Link
                 href={data.href || '#'}
-                className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
+                className={cn(
+                  'line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200',
+                  (data.archived ||
+                    (data.archived_until &&
+                      new Date(data.archived_until) > new Date())) &&
+                    'text-dynamic-red line-through decoration-2 decoration-dynamic-red'
+                )}
               >
                 {data?.display_name || data?.full_name || data?.email || '-'}
               </Link>
+              <div className="flex items-center gap-1">
+                {data.role === 'TEACHER' && (
+                  <Badge
+                    variant="default"
+                    className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green"
+                  >
+                    {tDetails('managers')}
+                  </Badge>
+                )}
+                {!!data.isGuest && data.role !== 'TEACHER' && (
+                  <Badge
+                    variant="secondary"
+                    className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange"
+                  >
+                    {tGuests('guests')}
+                  </Badge>
+                )}
+              </div>
             </div>
+            {(data.archived ||
+              (data.archived_until &&
+                new Date(data.archived_until) > new Date())) && (
+              <div className="mt-1 font-semibold text-dynamic-red text-xs">
+                {data.archived_until &&
+                new Date(data.archived_until) > new Date() ? (
+                  <>
+                    {tUsers('status_archived_until')}:{' '}
+                    {format(new Date(data.archived_until), 'dd/MM/yyyy HH:mm')}
+                  </>
+                ) : (
+                  tUsers('status_archived')
+                )}
+                {data.note && <div>{data.note}</div>}
+              </div>
+            )}
             <div className="scrollbar-none flex items-center gap-1 overflow-auto">
               {differentGroups?.map((group, idx) => (
                 <div

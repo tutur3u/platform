@@ -171,22 +171,34 @@ export default function GroupAttendanceSelector({
     ],
     queryFn: async () => {
       if (!selectedGroupId) return [];
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
-        .select('workspace_users!inner(*)')
-        .eq('workspace_users.archived', false)
-        .eq('group_id', selectedGroupId)
-        .eq('role', 'STUDENT');
+        .select('workspace_users!inner(*), role')
+        .eq('group_id', selectedGroupId);
+
       if (error) throw error;
-      return (
-        data?.map((row) => ({
-          id: row.workspace_users?.id,
-          display_name: row.workspace_users?.display_name,
-          full_name: row.workspace_users?.full_name,
-          email: row.workspace_users?.email,
-          phone: row.workspace_users?.phone,
-          avatar_url: row.workspace_users?.avatar_url,
-        })) || []
+
+      return Promise.all(
+        (data || []).map(async (row) => {
+          const { data: isGuest } = await supabase.rpc('is_user_guest', {
+            user_uuid: row.workspace_users?.id,
+          });
+
+          return {
+            id: row.workspace_users?.id,
+            display_name: row.workspace_users?.display_name,
+            full_name: row.workspace_users?.full_name,
+            email: row.workspace_users?.email,
+            phone: row.workspace_users?.phone,
+            avatar_url: row.workspace_users?.avatar_url,
+            archived: row.workspace_users?.archived,
+            archived_until: row.workspace_users?.archived_until,
+            note: row.workspace_users?.note,
+            role: row.role,
+            isGuest: !!isGuest,
+          };
+        })
       );
     },
     enabled: !!selectedGroupId,

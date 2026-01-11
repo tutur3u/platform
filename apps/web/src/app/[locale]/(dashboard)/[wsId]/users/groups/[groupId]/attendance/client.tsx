@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
@@ -36,6 +37,11 @@ type Member = {
   email?: string | null;
   phone?: string | null;
   avatar_url?: string | null;
+  archived?: boolean;
+  archived_until?: string | null;
+  note?: string | null;
+  role?: string | null;
+  isGuest?: boolean;
 };
 
 export type InitialAttendanceProps = {
@@ -73,6 +79,8 @@ export default function GroupAttendanceClient({
   const tCommon = useTranslations('common');
   const tAtt = useTranslations('ws-user-group-attendance');
   const tDetails = useTranslations('ws-user-group-details');
+  const tUsers = useTranslations('ws-users');
+  const tGuests = useTranslations('meet-together'); // For guest badge
 
   const [dateStr, setDateStr] = useQueryState(
     'date',
@@ -129,20 +137,31 @@ export default function GroupAttendanceClient({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
-        .select('workspace_users!inner(*)')
-        .eq('group_id', groupId)
-        .eq('workspace_users.archived', false)
-        .eq('role', 'STUDENT');
+        .select('workspace_users!inner(*), role')
+        .eq('group_id', groupId);
+
       if (error) throw error;
-      return (
-        data?.map((row) => ({
-          id: row.workspace_users?.id,
-          display_name: row.workspace_users?.display_name,
-          full_name: row.workspace_users?.full_name,
-          email: row.workspace_users?.email,
-          phone: row.workspace_users?.phone,
-          avatar_url: row.workspace_users?.avatar_url,
-        })) || []
+
+      return Promise.all(
+        (data || []).map(async (row) => {
+          const { data: isGuest } = await supabase.rpc('is_user_guest', {
+            user_uuid: row.workspace_users?.id,
+          });
+
+          return {
+            id: row.workspace_users?.id,
+            display_name: row.workspace_users?.display_name,
+            full_name: row.workspace_users?.full_name,
+            email: row.workspace_users?.email,
+            phone: row.workspace_users?.phone,
+            avatar_url: row.workspace_users?.avatar_url,
+            archived: row.workspace_users?.archived,
+            archived_until: row.workspace_users?.archived_until,
+            note: row.workspace_users?.note,
+            role: row.role,
+            isGuest: !!isGuest,
+          };
+        })
       );
     },
     initialData: initialMembers,
@@ -740,16 +759,62 @@ export default function GroupAttendanceClient({
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate font-semibold text-base">
-                                {m.full_name
-                                  ? m.display_name
-                                    ? `${m.full_name} (${m.display_name})`
-                                    : m.full_name
-                                  : m.display_name || m.email || 'Unknown'}
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={cn(
+                                    'truncate font-semibold text-base',
+                                    (m.archived ||
+                                      (m.archived_until &&
+                                        new Date(m.archived_until) >
+                                          new Date())) &&
+                                      'text-dynamic-red line-through decoration-2 decoration-dynamic-red'
+                                  )}
+                                >
+                                  {m.full_name
+                                    ? m.display_name
+                                      ? `${m.full_name} (${m.display_name})`
+                                      : m.full_name
+                                    : m.display_name || m.email || 'Unknown'}
+                                </div>
+                                {m.role === 'TEACHER' && (
+                                  <Badge
+                                    variant="default"
+                                    className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green"
+                                  >
+                                    {tDetails('managers')}
+                                  </Badge>
+                                )}
+                                {!!m.isGuest && m.role !== 'TEACHER' && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange"
+                                  >
+                                    {tGuests('guests')}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="truncate text-foreground/60 text-sm">
                                 {m.phone || tAtt('phone_fallback')}
                               </div>
+                              {(m.archived ||
+                                (m.archived_until &&
+                                  new Date(m.archived_until) > new Date())) && (
+                                <div className="mt-1 font-semibold text-dynamic-red text-xs">
+                                  {m.archived_until &&
+                                  new Date(m.archived_until) > new Date() ? (
+                                    <>
+                                      {tUsers('status_archived_until')}:{' '}
+                                      {format(
+                                        new Date(m.archived_until),
+                                        'dd/MM/yyyy HH:mm'
+                                      )}
+                                    </>
+                                  ) : (
+                                    tUsers('status_archived')
+                                  )}
+                                  {m.note && <div>{m.note}</div>}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">
