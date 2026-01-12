@@ -17305,24 +17305,44 @@ export type Database = {
           id: string;
         }[];
       };
-      get_invoice_totals_by_date_range: {
-        Args: {
-          _ws_id: string;
-          end_date?: string;
-          group_by_creator?: boolean;
-          start_date?: string;
-          user_ids?: string[];
-          wallet_ids?: string[];
-        };
-        Returns: {
-          group_avatar_url: string;
-          group_id: string;
-          group_name: string;
-          invoice_count: number;
-          period: string;
-          total_amount: number;
-        }[];
-      };
+      get_invoice_totals_by_date_range:
+        | {
+            Args: {
+              _ws_id: string;
+              end_date?: string;
+              group_by_creator?: boolean;
+              start_date?: string;
+              user_ids?: string[];
+              wallet_ids?: string[];
+            };
+            Returns: {
+              group_avatar_url: string;
+              group_id: string;
+              group_name: string;
+              invoice_count: number;
+              period: string;
+              total_amount: number;
+            }[];
+          }
+        | {
+            Args: {
+              _ws_id: string;
+              end_date?: string;
+              group_by_creator?: boolean;
+              start_date?: string;
+              user_ids?: string[];
+              wallet_ids?: string[];
+              week_start_day?: number;
+            };
+            Returns: {
+              group_avatar_url: string;
+              group_id: string;
+              group_name: string;
+              invoice_count: number;
+              period: string;
+              total_amount: number;
+            }[];
+          };
       get_ip_block_level: { Args: { p_ip_address: string }; Returns: number };
       get_joined_workspace_count: {
         Args: { user_id: string };
@@ -17941,23 +17961,42 @@ export type Database = {
         }[];
       };
       get_wau_count: { Args: never; Returns: number };
-      get_weekly_invoice_totals: {
-        Args: {
-          _ws_id: string;
-          end_date?: string;
-          past_weeks?: number;
-          start_date?: string;
-          user_ids?: string[];
-          wallet_ids?: string[];
-        };
-        Returns: {
-          invoice_count: number;
-          period: string;
-          total_amount: number;
-          wallet_id: string;
-          wallet_name: string;
-        }[];
-      };
+      get_weekly_invoice_totals:
+        | {
+            Args: {
+              _ws_id: string;
+              end_date?: string;
+              past_weeks?: number;
+              start_date?: string;
+              user_ids?: string[];
+              wallet_ids?: string[];
+            };
+            Returns: {
+              invoice_count: number;
+              period: string;
+              total_amount: number;
+              wallet_id: string;
+              wallet_name: string;
+            }[];
+          }
+        | {
+            Args: {
+              _ws_id: string;
+              end_date?: string;
+              past_weeks?: number;
+              start_date?: string;
+              user_ids?: string[];
+              wallet_ids?: string[];
+              week_start_day?: number;
+            };
+            Returns: {
+              invoice_count: number;
+              period: string;
+              total_amount: number;
+              wallet_id: string;
+              wallet_name: string;
+            }[];
+          };
       get_workspace_drive_size: { Args: { ws_id: string }; Returns: number };
       get_workspace_member_count: {
         Args: { p_ws_id: string };
@@ -18434,6 +18473,10 @@ export type Database = {
       transactions_have_same_amount: {
         Args: { transaction_id_1: string; transaction_id_2: string };
         Returns: boolean;
+      };
+      trunc_to_week_start: {
+        Args: { input_date: string; week_start_day?: number };
+        Returns: string;
       };
       update_expired_sessions: { Args: never; Returns: undefined };
       update_many_tasks: { Args: { updates: Json }; Returns: number };

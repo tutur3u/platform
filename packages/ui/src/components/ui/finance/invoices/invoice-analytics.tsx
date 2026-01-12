@@ -1,6 +1,15 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import dayjs from 'dayjs';
 import type { InvoiceTotalsChartProps } from './charts/invoice-totals-chart';
 import { InvoiceTotalsChart } from './charts/invoice-totals-chart';
+
+/**
+ * weekStartsOn values (JavaScript convention, matching useCalendarPreferences):
+ *   0 = Sunday
+ *   1 = Monday (default)
+ *   6 = Saturday
+ */
+type WeekStartsOn = 0 | 1 | 6;
 
 // Local type definition until types package is picked up
 interface InvoiceTotalsByGroup {
@@ -23,12 +32,19 @@ interface InvoiceAnalyticsProps {
   wsId: string;
   filters?: InvoiceAnalyticsFilters;
   className?: string;
+  /**
+   * First day of week preference (0=Sunday, 1=Monday, 6=Saturday)
+   * Used for weekly grouping calculations
+   * @default 1 (Monday)
+   */
+  weekStartsOn?: WeekStartsOn;
 }
 
 export async function InvoiceAnalytics({
   wsId,
   filters,
   className,
+  weekStartsOn = 1,
 }: InvoiceAnalyticsProps) {
   const { walletIds, userIds, startDate, endDate } = filters || {};
 
@@ -45,6 +61,7 @@ export async function InvoiceAnalytics({
         startDate: startDate!,
         endDate: endDate!,
         groupByCreator: false,
+        weekStartsOn,
       }),
       getInvoiceTotalsByDateRange(wsId, {
         walletIds,
@@ -52,6 +69,7 @@ export async function InvoiceAnalytics({
         startDate: startDate!,
         endDate: endDate!,
         groupByCreator: true,
+        weekStartsOn,
       }),
     ]);
 
@@ -77,10 +95,10 @@ export async function InvoiceAnalytics({
     monthlyCreatorData,
   ] = await Promise.all([
     getDailyInvoiceTotals(wsId, walletIds, userIds),
-    getWeeklyInvoiceTotals(wsId, walletIds, userIds),
+    getWeeklyInvoiceTotals(wsId, walletIds, userIds, weekStartsOn),
     getMonthlyInvoiceTotals(wsId, walletIds, userIds),
-    getDailyInvoiceTotalsByCreator(wsId, walletIds, userIds),
-    getWeeklyInvoiceTotalsByCreator(wsId, walletIds, userIds),
+    getDailyInvoiceTotalsByCreator(wsId, walletIds, userIds, weekStartsOn),
+    getWeeklyInvoiceTotalsByCreator(wsId, walletIds, userIds, weekStartsOn),
     getMonthlyInvoiceTotalsByCreator(wsId, walletIds, userIds),
   ]);
 
@@ -108,6 +126,7 @@ interface DateRangeParams {
   startDate: string;
   endDate: string;
   groupByCreator: boolean;
+  weekStartsOn?: WeekStartsOn;
 }
 
 async function getInvoiceTotalsByDateRange(
@@ -125,6 +144,7 @@ async function getInvoiceTotalsByDateRange(
       wallet_ids: params.walletIds?.length ? params.walletIds : null,
       user_ids: params.userIds?.length ? params.userIds : null,
       group_by_creator: params.groupByCreator,
+      week_start_day: params.weekStartsOn ?? 1,
     } as any
   );
 
@@ -178,7 +198,8 @@ async function getDailyInvoiceTotals(
 async function getWeeklyInvoiceTotals(
   wsId: string,
   walletIds?: string[],
-  userIds?: string[]
+  userIds?: string[],
+  weekStartsOn: WeekStartsOn = 1
 ): Promise<InvoiceTotalsByGroup[]> {
   const supabase = await createClient();
 
@@ -189,6 +210,7 @@ async function getWeeklyInvoiceTotals(
       past_weeks: 12,
       wallet_ids: walletIds?.length ? walletIds : null,
       user_ids: userIds?.length ? userIds : null,
+      week_start_day: weekStartsOn,
     } as any
   );
 
@@ -239,27 +261,45 @@ async function getMonthlyInvoiceTotals(
   }));
 }
 
+// ============================================================================
 // Creator-grouped versions
+// ============================================================================
+
+/**
+ * Helper to calculate start of week based on weekStartsOn preference
+ * weekStartsOn: 0=Sunday, 1=Monday, 6=Saturday
+ */
+function getStartOfWeek(
+  date: dayjs.Dayjs,
+  weekStartsOn: WeekStartsOn
+): dayjs.Dayjs {
+  const dow = date.day(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+  const daysToSubtract = (dow - weekStartsOn + 7) % 7;
+  return date.subtract(daysToSubtract, 'day').startOf('day');
+}
+
 async function getDailyInvoiceTotalsByCreator(
   wsId: string,
   walletIds?: string[],
-  userIds?: string[]
+  userIds?: string[],
+  weekStartsOn: WeekStartsOn = 1
 ): Promise<InvoiceTotalsByGroup[]> {
   const supabase = await createClient();
 
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 13);
+  // Match SQL: CURRENT_DATE - INTERVAL '13 days' to CURRENT_DATE (14 days total)
+  const endDate = dayjs();
+  const startDate = endDate.subtract(13, 'day');
 
   const { data, error } = await supabase.rpc(
     'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
     {
       _ws_id: wsId,
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0],
+      start_date: startDate.format('YYYY-MM-DD'),
+      end_date: endDate.format('YYYY-MM-DD'),
       wallet_ids: walletIds?.length ? walletIds : null,
       user_ids: userIds?.length ? userIds : null,
       group_by_creator: true,
+      week_start_day: weekStartsOn,
     } as any
   );
 
@@ -281,23 +321,26 @@ async function getDailyInvoiceTotalsByCreator(
 async function getWeeklyInvoiceTotalsByCreator(
   wsId: string,
   walletIds?: string[],
-  userIds?: string[]
+  userIds?: string[],
+  weekStartsOn: WeekStartsOn = 1
 ): Promise<InvoiceTotalsByGroup[]> {
   const supabase = await createClient();
 
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 12 * 7 + 1);
+  // Calculate week-aligned start date based on user's preference
+  const endDate = dayjs();
+  const startOfCurrentWeek = getStartOfWeek(endDate, weekStartsOn);
+  const startDate = startOfCurrentWeek.subtract(11, 'week');
 
   const { data, error } = await supabase.rpc(
     'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
     {
       _ws_id: wsId,
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0],
+      start_date: startDate.format('YYYY-MM-DD'),
+      end_date: endDate.format('YYYY-MM-DD'),
       wallet_ids: walletIds?.length ? walletIds : null,
       user_ids: userIds?.length ? userIds : null,
       group_by_creator: true,
+      week_start_day: weekStartsOn,
     } as any
   );
 
@@ -323,17 +366,16 @@ async function getMonthlyInvoiceTotalsByCreator(
 ): Promise<InvoiceTotalsByGroup[]> {
   const supabase = await createClient();
 
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setMonth(startDate.getMonth() - 11);
-  startDate.setDate(1);
+  // Match SQL: date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' * 11 to CURRENT_DATE
+  const endDate = dayjs();
+  const startDate = endDate.startOf('month').subtract(11, 'month');
 
   const { data, error } = await supabase.rpc(
     'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
     {
       _ws_id: wsId,
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0],
+      start_date: startDate.format('YYYY-MM-DD'),
+      end_date: endDate.format('YYYY-MM-DD'),
       wallet_ids: walletIds?.length ? walletIds : null,
       user_ids: userIds?.length ? userIds : null,
       group_by_creator: true,

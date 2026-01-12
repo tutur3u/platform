@@ -41,6 +41,81 @@ interface Props {
   deleteInvoiceAction?: DeleteInvoiceAction;
 }
 
+/**
+ * Fetches the first day of week preference for a user/workspace
+ * Returns: 0 (Sunday), 1 (Monday), or 6 (Saturday)
+ */
+async function getWeekStartsOn(wsId: string): Promise<0 | 1 | 6> {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Try user preference first
+  if (user) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('first_day_of_week')
+      .eq('id', user.id)
+      .single();
+
+    if (userData?.first_day_of_week && userData.first_day_of_week !== 'auto') {
+      return firstDayStringToNumber(userData.first_day_of_week);
+    }
+  }
+
+  // Fall back to workspace preference
+  const { data: workspaceData } = await supabase
+    .from('workspaces')
+    .select('first_day_of_week')
+    .eq('id', wsId)
+    .single();
+
+  if (
+    workspaceData?.first_day_of_week &&
+    workspaceData.first_day_of_week !== 'auto'
+  ) {
+    return firstDayStringToNumber(workspaceData.first_day_of_week);
+  }
+
+  // Default to Monday (most common business standard)
+  return 1;
+}
+
+function firstDayStringToNumber(day: string): 0 | 1 | 6 {
+  switch (day) {
+    case 'sunday':
+      return 0;
+    case 'monday':
+      return 1;
+    case 'saturday':
+      return 6;
+    default:
+      return 1;
+  }
+}
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<{
+    q: string;
+    page: string;
+    pageSize: string;
+    start: string;
+    end: string;
+    userIds: string | string[];
+    walletIds: string | string[];
+    walletId: string; // Keep for backward compat or singular case
+  }>;
+  canCreateInvoices?: boolean;
+  canDeleteInvoices?: boolean;
+  deleteInvoiceAction?: DeleteInvoiceAction;
+}
+
 export default async function InvoicesPage({
   params,
   searchParams,
@@ -54,7 +129,10 @@ export default async function InvoicesPage({
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
-  const { data: rawData, count } = await getData(wsId, resolvedSearchParams);
+  const [{ data: rawData, count }, weekStartsOn] = await Promise.all([
+    getData(wsId, resolvedSearchParams),
+    getWeekStartsOn(wsId),
+  ]);
 
   const { containsPermission } = await getPermissions({
     wsId,
@@ -128,6 +206,7 @@ export default async function InvoicesPage({
           wsId={wsId}
           filters={analyticsFilters}
           className="mb-4"
+          weekStartsOn={weekStartsOn}
         />
       </Suspense>
 
