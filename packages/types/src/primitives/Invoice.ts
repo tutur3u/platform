@@ -25,3 +25,25 @@ export interface Invoice {
   created_at?: string;
   href?: string;
 }
+
+/**
+ * Represents invoice totals for a specific time period and wallet
+ * Used by invoice analytics charts (daily, weekly, monthly views)
+ */
+export interface InvoiceTotalsByPeriod {
+  period: string; // ISO date string (YYYY-MM-DD)
+  wallet_id: string;
+  wallet_name: string;
+  total_amount: number;
+  invoice_count: number;
+}
+
+/**
+ * Time period options for invoice analytics
+ */
+export type InvoiceAnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
+
+/**
+ * Metric type options for invoice analytics
+ */
+export type InvoiceAnalyticsMetric = 'amount' | 'count';

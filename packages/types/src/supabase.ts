@@ -17104,6 +17104,16 @@ export type Database = {
               total_income: number;
             }[];
           };
+      get_daily_invoice_totals: {
+        Args: { _ws_id: string; past_days?: number; wallet_ids?: string[] };
+        Returns: {
+          invoice_count: number;
+          period: string;
+          total_amount: number;
+          wallet_id: string;
+          wallet_name: string;
+        }[];
+      };
       get_daily_prompt_completion_tokens: {
         Args: { past_days?: number };
         Returns: {
@@ -17315,6 +17325,16 @@ export type Database = {
               total_income: number;
             }[];
           };
+      get_monthly_invoice_totals: {
+        Args: { _ws_id: string; past_months?: number; wallet_ids?: string[] };
+        Returns: {
+          invoice_count: number;
+          period: string;
+          total_amount: number;
+          wallet_id: string;
+          wallet_name: string;
+        }[];
+      };
       get_monthly_prompt_completion_tokens: {
         Args: { past_months?: number };
         Returns: {
@@ -17889,6 +17909,16 @@ export type Database = {
         }[];
       };
       get_wau_count: { Args: never; Returns: number };
+      get_weekly_invoice_totals: {
+        Args: { _ws_id: string; past_weeks?: number; wallet_ids?: string[] };
+        Returns: {
+          invoice_count: number;
+          period: string;
+          total_amount: number;
+          wallet_id: string;
+          wallet_name: string;
+        }[];
+      };
       get_workspace_drive_size: { Args: { ws_id: string }; Returns: number };
       get_workspace_member_count: {
         Args: { p_ws_id: string };

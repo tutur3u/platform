@@ -3031,6 +3031,20 @@
     "workspace-invitation": "Workspace invitation",
     "you-been-invited-to-join-the": "You've been invited to join the"
   },
+  "invoice-analytics": {
+    "amount": "Amount",
+    "count": "Count",
+    "daily": "Daily",
+    "daily_invoice_totals": "Daily Invoice Totals (14 Days)",
+    "hide_values": "Hide values",
+    "invoice_analytics": "Invoice Analytics",
+    "monthly": "Monthly",
+    "monthly_invoice_totals": "Monthly Invoice Totals (12 Months)",
+    "no_data_available": "No invoice data available for this period",
+    "show_values": "Show values",
+    "weekly": "Weekly",
+    "weekly_invoice_totals": "Weekly Invoice Totals (12 Weeks)"
+  },
   "invoice-data-table": {
     "created_at": "Created at",
     "creator": "Creator",

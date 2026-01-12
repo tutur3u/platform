@@ -3054,6 +3054,20 @@
     "workspace-invitation": "Lời mời vào không gian làm việc",
     "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc"
   },
+  "invoice-analytics": {
+    "amount": "Số tiền",
+    "count": "Số lượng",
+    "daily": "Theo ngày",
+    "daily_invoice_totals": "Tổng hóa đơn theo ngày (14 ngày)",
+    "hide_values": "Ẩn giá trị",
+    "invoice_analytics": "Phân tích hóa đơn",
+    "monthly": "Theo tháng",
+    "monthly_invoice_totals": "Tổng hóa đơn theo tháng (12 tháng)",
+    "no_data_available": "Không có dữ liệu hóa đơn cho khoảng thời gian này",
+    "show_values": "Hiện giá trị",
+    "weekly": "Theo tuần",
+    "weekly_invoice_totals": "Tổng hóa đơn theo tuần (12 tuần)"
+  },
   "invoice-data-table": {
     "created_at": "Tạo lúc",
     "creator": "Người tạo",

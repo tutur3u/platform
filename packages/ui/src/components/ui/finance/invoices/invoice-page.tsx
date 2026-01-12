@@ -9,7 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import { InvoiceTotalsChartSkeleton } from './charts/invoice-totals-chart';
 import { invoiceColumns } from './columns';
+import { InvoiceAnalytics } from './invoice-analytics';
 import { InvoicesToolbar } from './invoices-toolbar';
 import { PendingInvoicesTab } from './pending-invoices-tab';
 import { PendingInvoicesTable } from './pending-invoices-table';
@@ -59,6 +62,18 @@ export default async function InvoicesPage({
 
   const canExportFinanceData = containsPermission('export_finance_data');
 
+  // Parse wallet IDs for analytics chart
+  const walletIdsArray = (() => {
+    const { walletIds, walletId } = resolvedSearchParams;
+    let wallets = Array.isArray(walletIds)
+      ? walletIds
+      : walletIds
+        ? [walletIds]
+        : [];
+    if (walletId) wallets.push(walletId);
+    return Array.from(new Set(wallets.filter(Boolean)));
+  })();
+
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/finance/invoices/${d.id}`,
@@ -89,6 +104,14 @@ export default async function InvoicesPage({
       <Separator className="my-4" />
 
       <InvoicesToolbar wsId={wsId} canExport={canExportFinanceData} />
+
+      <Suspense fallback={<InvoiceTotalsChartSkeleton className="mb-4" />}>
+        <InvoiceAnalytics
+          wsId={wsId}
+          walletIds={walletIdsArray}
+          className="mb-4"
+        />
+      </Suspense>
 
       <Tabs defaultValue="created" className="w-full">
         <TabsList className="mb-4">
