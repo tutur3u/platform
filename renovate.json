@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": ["config:base", "customManagers:biomeVersions"],
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true
@@ -8,8 +8,7 @@
   "baseBranches": ["main"],
   "packageRules": [
     {
-      "matchDepTypes": ["devDependencies"],
-      "matchPackagePatterns": ["lint", "prettier"]
+      "matchDepTypes": ["devDependencies"]
     },
     {
       "matchUpdateTypes": ["minor", "patch"],
