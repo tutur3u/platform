@@ -74,11 +74,29 @@ export default async function InvoicesPage({
     return Array.from(new Set(wallets.filter(Boolean)));
   })();
 
+  // Parse user IDs for analytics chart
+  const userIdsArray = (() => {
+    const { userIds } = resolvedSearchParams;
+    const users = Array.isArray(userIds) ? userIds : userIds ? [userIds] : [];
+    return Array.from(new Set(users.filter(Boolean)));
+  })();
+
+  // Get date range from search params
+  const { start: startDate, end: endDate } = resolvedSearchParams;
+
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/finance/invoices/${d.id}`,
     ws_id: wsId,
   }));
+
+  // Build analytics filters object
+  const analyticsFilters = {
+    walletIds: walletIdsArray.length > 0 ? walletIdsArray : undefined,
+    userIds: userIdsArray.length > 0 ? userIdsArray : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  };
 
   return (
     <>
@@ -108,7 +126,7 @@ export default async function InvoicesPage({
       <Suspense fallback={<InvoiceTotalsChartSkeleton className="mb-4" />}>
         <InvoiceAnalytics
           wsId={wsId}
-          walletIds={walletIdsArray}
+          filters={analyticsFilters}
           className="mb-4"
         />
       </Suspense>

@@ -17105,7 +17105,14 @@ export type Database = {
             }[];
           };
       get_daily_invoice_totals: {
-        Args: { _ws_id: string; past_days?: number; wallet_ids?: string[] };
+        Args: {
+          _ws_id: string;
+          end_date?: string;
+          past_days?: number;
+          start_date?: string;
+          user_ids?: string[];
+          wallet_ids?: string[];
+        };
         Returns: {
           invoice_count: number;
           period: string;
@@ -17298,6 +17305,24 @@ export type Database = {
           id: string;
         }[];
       };
+      get_invoice_totals_by_date_range: {
+        Args: {
+          _ws_id: string;
+          end_date?: string;
+          group_by_creator?: boolean;
+          start_date?: string;
+          user_ids?: string[];
+          wallet_ids?: string[];
+        };
+        Returns: {
+          group_avatar_url: string;
+          group_id: string;
+          group_name: string;
+          invoice_count: number;
+          period: string;
+          total_amount: number;
+        }[];
+      };
       get_ip_block_level: { Args: { p_ip_address: string }; Returns: number };
       get_joined_workspace_count: {
         Args: { user_id: string };
@@ -17326,7 +17351,14 @@ export type Database = {
             }[];
           };
       get_monthly_invoice_totals: {
-        Args: { _ws_id: string; past_months?: number; wallet_ids?: string[] };
+        Args: {
+          _ws_id: string;
+          end_date?: string;
+          past_months?: number;
+          start_date?: string;
+          user_ids?: string[];
+          wallet_ids?: string[];
+        };
         Returns: {
           invoice_count: number;
           period: string;
@@ -17910,7 +17942,14 @@ export type Database = {
       };
       get_wau_count: { Args: never; Returns: number };
       get_weekly_invoice_totals: {
-        Args: { _ws_id: string; past_weeks?: number; wallet_ids?: string[] };
+        Args: {
+          _ws_id: string;
+          end_date?: string;
+          past_weeks?: number;
+          start_date?: string;
+          user_ids?: string[];
+          wallet_ids?: string[];
+        };
         Returns: {
           invoice_count: number;
           period: string;

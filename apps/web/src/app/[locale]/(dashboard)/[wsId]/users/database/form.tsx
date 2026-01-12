@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 import * as z from 'zod';
@@ -102,7 +102,7 @@ export default function UserForm({
 }: Props) {
   const t = useTranslations();
   const userStatusLabels = useUserStatusLabels(wsId);
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
     data?.avatar_url || null
@@ -262,7 +262,9 @@ export default function UserForm({
       return;
     }
 
-    router.refresh();
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-users', wsId],
+    });
     setSaving(false);
   };
 
@@ -365,7 +367,9 @@ export default function UserForm({
         onFinish?.(formData);
         onSuccess?.();
         if (!onSuccess) {
-          router.refresh();
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-users', wsId],
+          });
         }
       } else {
         const resData = await res.json();

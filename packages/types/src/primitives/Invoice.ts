@@ -39,6 +39,19 @@ export interface InvoiceTotalsByPeriod {
 }
 
 /**
+ * Represents invoice totals grouped by wallet or creator
+ * Used by the unified analytics RPC function
+ */
+export interface InvoiceTotalsByGroup {
+  period: string; // ISO date string (YYYY-MM-DD)
+  group_id: string;
+  group_name: string;
+  group_avatar_url?: string | null;
+  total_amount: number;
+  invoice_count: number;
+}
+
+/**
  * Time period options for invoice analytics
  */
 export type InvoiceAnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
@@ -47,3 +60,18 @@ export type InvoiceAnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
  * Metric type options for invoice analytics
  */
 export type InvoiceAnalyticsMetric = 'amount' | 'count';
+
+/**
+ * Grouping options for invoice analytics
+ */
+export type InvoiceAnalyticsGroupBy = 'wallet' | 'creator';
+
+/**
+ * Filter parameters for invoice analytics
+ */
+export interface InvoiceAnalyticsFilters {
+  walletIds?: string[];
+  userIds?: string[];
+  startDate?: string;
+  endDate?: string;
+}

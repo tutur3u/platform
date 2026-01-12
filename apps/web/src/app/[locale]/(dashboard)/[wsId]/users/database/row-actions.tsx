@@ -1,8 +1,17 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import { Ellipsis, Eye } from '@tuturuuu/icons';
+import { Ellipsis, Eye, Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -18,9 +27,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import UserForm from './form';
@@ -33,49 +43,60 @@ interface UserRowActionsProps {
 
 export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const t = useTranslations();
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
 
   const user = row.original;
   const [open, setOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleFormSuccess = () => {
-    toast({
-      title: t('ws-members.member-updated'),
+    toast.success(t('ws-members.member-updated'), {
       description: `"${user?.display_name || user?.full_name || 'Unknown'}" ${t(
         'ws-members.has-been-updated'
       )}`,
-      color: 'teal',
     });
     setOpen(false);
-    router.refresh();
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-users', user.ws_id],
+    });
   };
 
   const handleFormError = (error: string) => {
-    toast({
-      title: t('ws-members.error'),
+    toast.error(t('ws-members.error'), {
       description: error,
-      variant: 'destructive',
     });
   };
 
   const deleteUser = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${user.ws_id}/users/${user.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    setIsDeleting(true);
 
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace user',
-        description: data.message,
-        variant: 'destructive',
-      });
+    try {
+      const res = await fetch(
+        `/api/v1/workspaces/${user.ws_id}/users/${user.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (res.ok) {
+        toast.success(t('ws-users.delete_success'));
+        setShowDeleteDialog(false);
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-users', user.ws_id],
+        });
+      } else {
+        const data = await res.json();
+        toast.error(t('ws-users.failed_delete'), {
+          description: data.message,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(t('common.error'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -96,13 +117,13 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
     );
 
     if (res.ok) {
-      router.refresh();
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-users', wsId],
+      });
     } else {
-      const data = await res.json();
-      toast({
-        title: 'Failed to remove user from group',
-        description: data.message,
-        variant: 'destructive',
+      const resData = await res.json();
+      toast.error(t('common.error'), {
+        description: resData.message,
       });
     }
   };
@@ -162,7 +183,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
             {pathname.includes('/users/database') &&
               !!extraData?.canDeleteUsers && (
                 <DropdownMenuItem
-                  onClick={deleteUser}
+                  onClick={() => setShowDeleteDialog(true)}
                   disabled={!user.id || !user.ws_id}
                 >
                   {t('common.delete')}
@@ -184,6 +205,50 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {!!extraData?.canDeleteUsers && (
+        <AlertDialog
+          open={showDeleteDialog}
+          onOpenChange={(open) => {
+            if (!isDeleting) {
+              setShowDeleteDialog(open);
+            }
+          }}
+        >
+          <AlertDialogContent
+            onEscapeKeyDown={(e) => isDeleting && e.preventDefault()}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('ws-users.delete')}</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>{t('ws-users.delete_confirmation')}</p>
+                <p className="font-semibold text-destructive">
+                  {t('ws-users.delete_warning')}
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                {t('common.cancel')}
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={deleteUser}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.deleting')}
+                  </>
+                ) : (
+                  t('common.delete')
+                )}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );

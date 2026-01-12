@@ -19,7 +19,7 @@ const CreateUserSchema = z.object({
   email: z.email().optional(),
   phone: z.string().optional(),
   gender: z.string().optional(),
-  birthday: z.string().optional(), // ISO string format expected
+  birthday: z.string().nullable().optional(), // ISO string format expected
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
   national_id: z.string().optional(),
