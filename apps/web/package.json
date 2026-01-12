@@ -80,7 +80,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.36.1",
-    "ai": "^6.0.27",
+    "ai": "^6.0.28",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
@@ -93,7 +93,7 @@
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.1",
     "eventemitter3": "^5.0.1",
-    "framer-motion": "^12.25.0",
+    "framer-motion": "^12.26.0",
     "html2canvas-pro": "^1.6.4",
     "isomorphic-dompurify": "^2.35.0",
     "jotai": "^2.16.1",
@@ -102,7 +102,7 @@
     "mermaid": "^11.12.2",
     "mic": "^2.1.2",
     "moment": "^2.30.1",
-    "motion": "^12.25.0",
+    "motion": "^12.26.0",
     "nanoid": "^5.1.6",
     "negotiator": "^1.0.0",
     "next": "^16.1.1",
@@ -137,7 +137,7 @@
     "uuid": "^13.0.0",
     "vega-embed": "^7.1.0",
     "zod": "^4.3.5",
-    "zustand": "^5.0.9"
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.1.1",
