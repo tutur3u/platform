@@ -4,6 +4,8 @@ import {
   Calendar as CalendarIcon,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
@@ -384,6 +386,28 @@ export const ComparedDateRangePicker = ({
     }
   }, [isOpen, range.from]);
 
+  // Navigate months - 1 month on small screen, 2 months on large screen
+  const navigatePreviousMonth = useCallback(() => {
+    setMonth((prev) => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(newMonth.getMonth() - (isSmallScreen ? 1 : 2));
+      return newMonth;
+    });
+  }, [isSmallScreen]);
+
+  const navigateNextMonth = useCallback(() => {
+    setMonth((prev) => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(newMonth.getMonth() + (isSmallScreen ? 1 : 2));
+      return newMonth;
+    });
+  }, [isSmallScreen]);
+
+  // Sync calendar view when a date is changed via DateInput
+  const syncCalendarToDate = useCallback((date: Date) => {
+    setMonth(date);
+  }, []);
+
   return (
     <Popover
       modal={true}
@@ -436,7 +460,11 @@ export const ComparedDateRangePicker = ({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align={align} className="w-auto p-0">
+      <PopoverContent
+        align={align}
+        className="w-auto p-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <div className="flex">
           <div className="flex flex-col">
             {/* Header / Inputs */}
@@ -453,6 +481,7 @@ export const ComparedDateRangePicker = ({
                         from: date,
                         to: toDate,
                       }));
+                      syncCalendarToDate(date);
                     }}
                   />
                   <div className="text-muted-foreground text-xs">-</div>
@@ -461,6 +490,7 @@ export const ComparedDateRangePicker = ({
                     onChange={(date) => {
                       if (!range.from) {
                         setRange({ from: date, to: date });
+                        syncCalendarToDate(date);
                         return;
                       }
                       const fromDate = date < range.from ? date : range.from;
@@ -469,6 +499,7 @@ export const ComparedDateRangePicker = ({
                         from: fromDate,
                         to: date,
                       }));
+                      syncCalendarToDate(date);
                     }}
                   />
                 </div>
@@ -540,6 +571,7 @@ export const ComparedDateRangePicker = ({
                       } else {
                         setRangeCompare({ from: date, to: undefined });
                       }
+                      syncCalendarToDate(date);
                     }}
                   />
                   <div className="text-muted-foreground text-xs">-</div>
@@ -555,6 +587,7 @@ export const ComparedDateRangePicker = ({
                           to: date,
                         });
                       }
+                      syncCalendarToDate(date);
                     }}
                   />
                 </div>
@@ -592,8 +625,17 @@ export const ComparedDateRangePicker = ({
               </div>
             )}
 
-            {/* Calendar */}
-            <div className="p-2">
+            {/* Calendar with Navigation */}
+            <div className="flex items-center gap-1 p-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={navigatePreviousMonth}
+                aria-label={`Previous ${isSmallScreen ? 'month' : '2 months'}`}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
               <DayPicker
                 mode="range"
                 selected={range}
@@ -651,6 +693,15 @@ export const ComparedDateRangePicker = ({
                   hidden: 'invisible',
                 }}
               />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={navigateNextMonth}
+                aria-label={`Next ${isSmallScreen ? 'month' : '2 months'}`}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 

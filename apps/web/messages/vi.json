@@ -3059,6 +3059,8 @@
     "auto_daily": "Theo ngày (tự động)",
     "auto_monthly": "Theo tháng (tự động)",
     "auto_weekly": "Theo tuần (tự động)",
+    "chart_grouped": "Biểu đồ nhóm",
+    "chart_stacked": "Biểu đồ xếp chồng",
     "count": "Số lượng",
     "daily": "Theo ngày",
     "daily_invoice_totals": "Tổng hóa đơn theo ngày (14 ngày)",

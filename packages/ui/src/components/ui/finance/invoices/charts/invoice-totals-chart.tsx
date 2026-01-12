@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, EyeOff, Users, Wallet } from '@tuturuuu/icons';
+import { BarChart3, Eye, EyeOff, Layers, Users, Wallet } from '@tuturuuu/icons';
 import type {
   InvoiceAnalyticsGroupBy,
   InvoiceAnalyticsMetric,
@@ -39,6 +39,9 @@ export type {
   InvoiceAnalyticsMetric,
   InvoiceAnalyticsGroupBy,
 };
+
+// Chart display mode for creator view
+type ChartMode = 'grouped' | 'stacked';
 
 // Cookie helper functions
 const setCookie = (name: string, value: string, days = 365) => {
@@ -106,6 +109,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const [period, setPeriod] = useState<InvoiceAnalyticsPeriod>('daily');
   const [metric, setMetric] = useState<InvoiceAnalyticsMetric>('amount');
   const [groupBy, setGroupBy] = useState<InvoiceAnalyticsGroupBy>('wallet');
+  const [chartMode, setChartMode] = useState<ChartMode>('stacked');
   const [isConfidential, setIsConfidential] = useState(true);
 
   // Load confidential mode from cookie on mount
@@ -377,48 +381,6 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
       : GROUP_COLORS[colorIndex]?.light;
   };
 
-  // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-
-    return (
-      <div className="rounded-lg border bg-popover p-3 shadow-lg">
-        <p className="mb-2 font-medium text-sm">{formatPeriodTooltip(label)}</p>
-        <div className="space-y-1.5">
-          {payload.map((entry: any, index: number) => {
-            const group = groups.find((g) => g.id === entry.dataKey);
-            const color = getColor(
-              groups.findIndex((g) => g.id === entry.dataKey)
-            );
-            return (
-              <div key={index} className="flex items-center gap-2">
-                {groupBy === 'creator' && group?.avatarUrl ? (
-                  <Avatar className="h-4 w-4">
-                    <AvatarImage src={group.avatarUrl} />
-                    <AvatarFallback className="text-[8px]">
-                      {group?.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <div
-                    className="h-3 w-3 rounded"
-                    style={{ backgroundColor: color }}
-                  />
-                )}
-                <span className="text-muted-foreground text-xs">
-                  {group?.name || entry.dataKey}:
-                </span>
-                <span className="font-semibold text-sm" style={{ color }}>
-                  {formatValue(entry.value)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   // Custom legend component
   const CustomLegend = () => {
     if (groups.length === 0) return null;
@@ -556,6 +518,13 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
               </Badge>
             )}
             <MetricToggle metric={metric} setMetric={setMetric} t={t} />
+            {groupBy === 'creator' && (
+              <ChartModeToggle
+                chartMode={chartMode}
+                setChartMode={setChartMode}
+                t={t}
+              />
+            )}
           </div>
         </div>
       </CardHeader>
@@ -589,16 +558,42 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 width={55}
               />
-              <Tooltip content={<CustomTooltip />} />
-              {groups.map((group, index) => (
-                <Bar
-                  key={group.id}
-                  dataKey={group.id}
-                  fill={getColor(index)}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={32}
-                />
-              ))}
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    chartMode={chartMode}
+                    groupBy={groupBy}
+                    groups={groups}
+                    getColor={getColor}
+                    formatValue={formatValue}
+                    formatPeriodTooltip={formatPeriodTooltip}
+                  />
+                }
+              />
+              {groups.map((group, index) => {
+                const isStacked =
+                  groupBy === 'creator' && chartMode === 'stacked';
+                const isFirst = index === 0;
+                const isLast = index === groups.length - 1;
+                return (
+                  <Bar
+                    key={group.id}
+                    dataKey={group.id}
+                    fill={getColor(index)}
+                    stackId={isStacked ? 'stack' : undefined}
+                    radius={
+                      isStacked
+                        ? isLast
+                          ? [4, 4, 0, 0]
+                          : isFirst
+                            ? [0, 0, 4, 4]
+                            : [0, 0, 0, 0]
+                        : [4, 4, 0, 0]
+                    }
+                    maxBarSize={isStacked ? 48 : 32}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -734,6 +729,152 @@ function GroupByToggle({
           </TooltipContent>
         </TooltipUI>
       </TooltipProvider>
+    </div>
+  );
+}
+
+function ChartModeToggle({
+  chartMode,
+  setChartMode,
+  t,
+}: {
+  chartMode: ChartMode;
+  setChartMode: (m: ChartMode) => void;
+  t: (key: 'chart_grouped' | 'chart_stacked') => string;
+}) {
+  return (
+    <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+      <TooltipProvider>
+        <TooltipUI>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setChartMode('grouped')}
+              className={cn(
+                'rounded-md p-1.5 transition-colors',
+                chartMode === 'grouped'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('chart_grouped')}</p>
+          </TooltipContent>
+        </TooltipUI>
+      </TooltipProvider>
+      <TooltipProvider>
+        <TooltipUI>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setChartMode('stacked')}
+              className={cn(
+                'rounded-md p-1.5 transition-colors',
+                chartMode === 'stacked'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Layers className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('chart_stacked')}</p>
+          </TooltipContent>
+        </TooltipUI>
+      </TooltipProvider>
+    </div>
+  );
+}
+
+// Custom tooltip component for the chart
+function CustomTooltip({
+  active,
+  payload,
+  label,
+  chartMode,
+  groupBy,
+  groups,
+  getColor,
+  formatValue,
+  formatPeriodTooltip,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  chartMode: ChartMode;
+  groupBy: InvoiceAnalyticsGroupBy;
+  groups: { id: string; name: string; avatarUrl?: string | null }[];
+  getColor: (index: number) => string | undefined;
+  formatValue: (value: number) => string;
+  formatPeriodTooltip: (value: string) => string;
+}) {
+  if (!active || !payload?.length || !label) return null;
+
+  // Calculate total for percentage in stacked mode
+  const total = payload.reduce(
+    (sum: number, entry: any) => sum + (entry.value || 0),
+    0
+  );
+  const isStacked = groupBy === 'creator' && chartMode === 'stacked';
+
+  // Sort by value descending for better readability in stacked mode
+  const sortedPayload = isStacked
+    ? [...payload].sort((a, b) => (b.value || 0) - (a.value || 0))
+    : payload;
+
+  return (
+    <div className="rounded-lg border bg-popover p-3 shadow-lg">
+      <p className="mb-2 font-medium text-sm">{formatPeriodTooltip(label)}</p>
+      {isStacked && total > 0 && (
+        <p className="mb-2 border-b pb-2 font-semibold text-sm">
+          Total: {formatValue(total)}
+        </p>
+      )}
+      <div className="space-y-1.5">
+        {sortedPayload.map((entry: any, index: number) => {
+          const group = groups.find((g) => g.id === entry.dataKey);
+          const color = getColor(
+            groups.findIndex((g) => g.id === entry.dataKey)
+          );
+          const percentage =
+            isStacked && total > 0
+              ? ((entry.value / total) * 100).toFixed(1)
+              : null;
+
+          return (
+            <div key={index} className="flex items-center gap-2">
+              {groupBy === 'creator' && group?.avatarUrl ? (
+                <Avatar className="h-4 w-4">
+                  <AvatarImage src={group.avatarUrl} />
+                  <AvatarFallback className="text-[8px]">
+                    {group?.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div
+                  className="h-3 w-3 rounded"
+                  style={{ backgroundColor: color }}
+                />
+              )}
+              <span className="flex-1 text-muted-foreground text-xs">
+                {group?.name || entry.dataKey}
+              </span>
+              <span className="font-semibold text-sm" style={{ color }}>
+                {formatValue(entry.value)}
+              </span>
+              {percentage && (
+                <span className="text-muted-foreground text-xs">
+                  ({percentage}%)
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -3036,6 +3036,8 @@
     "auto_daily": "Daily (auto)",
     "auto_monthly": "Monthly (auto)",
     "auto_weekly": "Weekly (auto)",
+    "chart_grouped": "Grouped bars",
+    "chart_stacked": "Stacked bars",
     "count": "Count",
     "daily": "Daily",
     "daily_invoice_totals": "Daily Invoice Totals (14 Days)",
