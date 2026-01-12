@@ -22,25 +22,6 @@ type DeleteInvoiceAction = (
   invoiceId: string
 ) => Promise<{ success: boolean; message?: string }>;
 
-interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-    start: string;
-    end: string;
-    userIds: string | string[];
-    walletIds: string | string[];
-    walletId: string; // Keep for backward compat or singular case
-  }>;
-  canCreateInvoices?: boolean;
-  canDeleteInvoices?: boolean;
-  deleteInvoiceAction?: DeleteInvoiceAction;
-}
-
 /**
  * Fetches the first day of week preference for a user/workspace
  * Returns: 0 (Sunday), 1 (Monday), or 6 (Saturday)

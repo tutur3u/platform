@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -23,7 +24,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 import * as z from 'zod';
