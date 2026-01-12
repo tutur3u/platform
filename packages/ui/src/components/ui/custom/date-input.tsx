@@ -95,8 +95,10 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
       if (!isValid) {
         setDate(initialDate.current);
       } else {
-        // If the new value is valid, update the initial value
-        initialDate.current = { ...date, [field]: newValue };
+        // If the new value is valid, update the initial value and notify parent
+        const newDate = { ...date, [field]: newValue };
+        initialDate.current = newDate;
+        onChange?.(new Date(newDate.year, newDate.month - 1, newDate.day));
       }
 
       // Focus logic
