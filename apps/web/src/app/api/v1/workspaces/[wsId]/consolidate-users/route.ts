@@ -68,15 +68,13 @@ export async function POST(_req: Request, { params }: Params) {
     // Note: consolidate_workspace_user_links is defined in migration 20260112060000
     // Using type assertion since RPC types are generated after migration is applied
     const sbAdmin = await createAdminClient();
-    const result = (await (sbAdmin.rpc as Function)(
-      'consolidate_workspace_user_links',
-      {
-        target_ws_id: resolvedWsId,
-      }
-    )) as {
-      data: ConsolidationResult[] | null;
-      error: Error | null;
-    };
+    const rpc = sbAdmin.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: ConsolidationResult[] | null; error: Error | null }>;
+    const result = await rpc('consolidate_workspace_user_links', {
+      target_ws_id: resolvedWsId,
+    });
 
     if (result.error) {
       console.error('[consolidate-users] RPC error:', result.error);

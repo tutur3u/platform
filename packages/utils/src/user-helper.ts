@@ -98,13 +98,14 @@ export async function getCurrentWorkspaceUser(
     const sbAdmin = await createAdminClient();
     // Note: ensure_workspace_user_link is defined in migration 20260112060000
     // Using type assertion since RPC types are generated after migration is applied
-    const { error: repairError } = await (sbAdmin.rpc as Function)(
-      'ensure_workspace_user_link',
-      {
-        target_user_id: user.id,
-        target_ws_id: resolvedWsId,
-      }
-    );
+    const rpc = sbAdmin.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ error: Error | null }>;
+    const { error: repairError } = await rpc('ensure_workspace_user_link', {
+      target_user_id: user.id,
+      target_ws_id: resolvedWsId,
+    });
 
     if (repairError) {
       console.error(
