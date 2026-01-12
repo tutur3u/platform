@@ -65,7 +65,7 @@ export default async function InvoicesPage({
   // Parse wallet IDs for analytics chart
   const walletIdsArray = (() => {
     const { walletIds, walletId } = resolvedSearchParams;
-    let wallets = Array.isArray(walletIds)
+    const wallets = Array.isArray(walletIds)
       ? walletIds
       : walletIds
         ? [walletIds]
