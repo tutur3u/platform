@@ -16752,6 +16752,14 @@ export type Database = {
         };
         Returns: number;
       };
+      consolidate_workspace_user_links: {
+        Args: { target_ws_id?: string };
+        Returns: {
+          action: string;
+          platform_user_id: string;
+          ws_id: string;
+        }[];
+      };
       count_search_users: {
         Args: {
           enabled_filter?: boolean;
@@ -16842,6 +16850,10 @@ export type Database = {
           p_type: string;
           p_user_id: string;
         };
+        Returns: string;
+      };
+      ensure_workspace_user_link: {
+        Args: { target_user_id: string; target_ws_id: string };
         Returns: string;
       };
       extract_domain: { Args: { url: string }; Returns: string };
@@ -17984,6 +17996,7 @@ export type Database = {
           excluded_groups: string[];
           include_archived?: boolean;
           included_groups: string[];
+          link_status?: string;
           search_query: string;
         };
         Returns: {

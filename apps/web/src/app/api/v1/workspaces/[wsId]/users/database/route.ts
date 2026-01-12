@@ -19,6 +19,7 @@ const SearchParamsSchema = z.object({
   status: z
     .enum(['active', 'archived', 'archived_until', 'all'])
     .default('active'),
+  linkStatus: z.enum(['all', 'linked', 'virtual']).default('all'),
 });
 
 interface Params {
@@ -66,7 +67,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const sp = SearchParamsSchema.parse(params_obj);
 
-    // Fetch data using RPC
+    // Fetch data using RPC with link_status parameter for efficient filtering
     let queryBuilder = supabase
       .rpc(
         'get_workspace_users',
@@ -76,6 +77,7 @@ export async function GET(request: Request, { params }: Params) {
           excluded_groups: sp.excludedGroups,
           search_query: sp.q,
           include_archived: sp.status !== 'active',
+          link_status: sp.linkStatus,
         },
         {
           count: 'exact',
@@ -84,7 +86,7 @@ export async function GET(request: Request, { params }: Params) {
       .select('*')
       .order('full_name', { ascending: true, nullsFirst: false });
 
-    // Apply status filters
+    // Apply status filters (archived vs archived_until distinction)
     if (sp.status === 'archived') {
       queryBuilder = queryBuilder.eq('archived', true);
     } else if (sp.status === 'archived_until') {

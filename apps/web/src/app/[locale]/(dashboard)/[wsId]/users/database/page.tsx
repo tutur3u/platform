@@ -32,6 +32,7 @@ interface Props {
     includedGroups?: string | string[];
     excludedGroups?: string | string[];
     status?: string;
+    linkStatus?: string;
   }>;
 }
 
@@ -86,6 +87,7 @@ export default async function WorkspaceUsersPage({
           ? [sp.excludedGroups]
           : [],
       status: sp.status as 'active' | 'archived' | 'archived_until' | 'all',
+      linkStatus: sp.linkStatus as 'all' | 'linked' | 'virtual',
     }
   );
 
@@ -179,6 +181,7 @@ async function getInitialData(
     includedGroups?: string[];
     excludedGroups?: string[];
     status?: 'active' | 'archived' | 'archived_until' | 'all';
+    linkStatus?: 'all' | 'linked' | 'virtual';
   } = {}
 ) {
   const {
@@ -188,10 +191,12 @@ async function getInitialData(
     includedGroups = [],
     excludedGroups = [],
     status = 'active',
+    linkStatus = 'all',
   } = searchParams;
 
   const supabase = await createClient();
 
+  // Fetch data using RPC with link_status parameter for efficient filtering
   let queryBuilder = supabase
     .rpc(
       'get_workspace_users',
@@ -201,6 +206,7 @@ async function getInitialData(
         excluded_groups: excludedGroups,
         search_query: q,
         include_archived: status !== 'active',
+        link_status: linkStatus,
       },
       {
         count: 'exact',
@@ -209,7 +215,7 @@ async function getInitialData(
     .select('*')
     .order('full_name', { ascending: true, nullsFirst: false });
 
-  // Apply status filters
+  // Apply status filters (archived vs archived_until distinction)
   if (status === 'archived') {
     queryBuilder = queryBuilder.eq('archived', true);
   } else if (status === 'archived_until') {

@@ -10262,6 +10262,10 @@
     "status_archived": "Đã lưu trữ",
     "status_archived_until": "Lưu trữ tạm thời",
     "status_filter": "Trạng thái",
+    "link_status_all": "Tất cả",
+    "link_status_linked": "Đã liên kết",
+    "link_status_virtual": "Ảo",
+    "link_status_filter": "Liên kết",
     "user_id": "Mã người dùng",
     "user_id_tooltip": "Mã định danh của người dùng này trong không gian làm việc của bạn. Hệ thống Tuturuuu tự động quản lý và không thể thay đổi."
   },

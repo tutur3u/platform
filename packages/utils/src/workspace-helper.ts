@@ -575,11 +575,35 @@ export async function getPermissions({
   return { permissions, containsPermission, withoutPermission };
 }
 
-export async function getWorkspaceUser(id: string, userId: string) {
+export interface GetWorkspaceUserOptions {
+  /**
+   * If true (default), automatically creates a missing workspace_user_linked_users entry
+   * when a workspace member doesn't have one. This uses the ensure_workspace_user_link RPC.
+   */
+  autoRepair?: boolean;
+}
+
+/**
+ * Gets the workspace user link for a specific user in a workspace.
+ * Optionally auto-repairs missing links (enabled by default).
+ *
+ * @param id - The workspace ID (can be a UUID or special identifier like 'personal')
+ * @param userId - The platform user ID to look up
+ * @param options - Configuration options
+ * @returns The workspace user link data
+ * @throws notFound() if not found and auto-repair fails
+ */
+export async function getWorkspaceUser(
+  id: string,
+  userId: string,
+  options: GetWorkspaceUserOptions = {}
+) {
+  const { autoRepair = true } = options;
   const supabase = await createClient();
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);
 
+  // First attempt to get the workspace user link
   const { data, error } = await supabase
     .from('workspace_user_linked_users')
     .select('*')
@@ -587,12 +611,76 @@ export async function getWorkspaceUser(id: string, userId: string) {
     .eq('platform_user_id', userId)
     .single();
 
-  if (error) {
+  // If found, return it
+  if (data && !error) {
+    return data;
+  }
+
+  // If not found and auto-repair is disabled, throw
+  if (!autoRepair) {
     console.error('Error fetching workspace user:', error);
     notFound();
   }
 
-  return data;
+  // Check if user is a workspace member first
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('user_id', userId)
+    .eq('ws_id', resolvedWorkspaceId)
+    .maybeSingle();
+
+  // Not a member, can't create a link
+  if (!membership) {
+    console.error(
+      'User is not a workspace member, cannot create workspace user link:',
+      { userId, wsId: resolvedWorkspaceId }
+    );
+    notFound();
+  }
+
+  // Try to repair the missing link using the RPC function
+  try {
+    const sbAdmin = await createAdminClient();
+    // Note: ensure_workspace_user_link is defined in migration 20260112060000
+    // Using type assertion since RPC types are generated after migration is applied
+    const { error: repairError } = await (sbAdmin.rpc as Function)(
+      'ensure_workspace_user_link',
+      {
+        target_user_id: userId,
+        target_ws_id: resolvedWorkspaceId,
+      }
+    );
+
+    if (repairError) {
+      console.error(
+        '[getWorkspaceUser] Failed to auto-repair workspace user link:',
+        repairError
+      );
+      notFound();
+    }
+
+    // Fetch the newly created link
+    const { data: repairedData, error: fetchError } = await supabase
+      .from('workspace_user_linked_users')
+      .select('*')
+      .eq('ws_id', resolvedWorkspaceId)
+      .eq('platform_user_id', userId)
+      .single();
+
+    if (fetchError || !repairedData) {
+      console.error(
+        '[getWorkspaceUser] Failed to fetch repaired workspace user link:',
+        fetchError
+      );
+      notFound();
+    }
+
+    return repairedData;
+  } catch (err) {
+    console.error('[getWorkspaceUser] Error during auto-repair:', err);
+    notFound();
+  }
 }
 
 /**

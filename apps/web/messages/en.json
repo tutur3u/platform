@@ -10142,6 +10142,10 @@
     "status_archived": "Archived",
     "status_archived_until": "Temporary Archive",
     "status_filter": "Status",
+    "link_status_all": "All Users",
+    "link_status_linked": "Platform Linked",
+    "link_status_virtual": "Virtual Only",
+    "link_status_filter": "Link Status",
     "user_id": "User ID",
     "user_id_tooltip": "The identification number of this user in your workspace. This is automatically managed by Tuturuuu, and cannot be changed."
   },

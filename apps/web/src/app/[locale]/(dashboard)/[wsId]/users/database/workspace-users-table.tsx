@@ -1,7 +1,16 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Activity, Archive, Clock, Layers, Loader2 } from '@tuturuuu/icons';
+import {
+  Activity,
+  Archive,
+  Clock,
+  Layers,
+  Link,
+  Link2Off,
+  Loader2,
+  Users,
+} from '@tuturuuu/icons';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import {
@@ -83,6 +92,13 @@ export function WorkspaceUsersTable({
     })
   );
 
+  const [linkStatus, setLinkStatus] = useQueryState(
+    'linkStatus',
+    parseAsString.withDefault('all').withOptions({
+      shallow: true,
+    })
+  );
+
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;
 
@@ -100,6 +116,7 @@ export function WorkspaceUsersTable({
       includedGroups,
       excludedGroups,
       status: status as 'active' | 'archived' | 'archived_until' | 'all',
+      linkStatus: linkStatus as 'all' | 'linked' | 'virtual',
     },
     {
       // Use initial data for first render (SSR hydration)
@@ -109,7 +126,8 @@ export function WorkspaceUsersTable({
         pageSize === 10 &&
         includedGroups.length === 0 &&
         excludedGroups.length === 0 &&
-        status === 'active'
+        status === 'active' &&
+        linkStatus === 'all'
           ? initialData
           : undefined,
     }
@@ -164,9 +182,10 @@ export function WorkspaceUsersTable({
     setPage(null);
     setPageSize(null);
     setStatus(null);
+    setLinkStatus(null);
     // Also clear filter params not managed by nuqs
     router.push(pathname);
-  }, [setQ, setPage, setPageSize, setStatus, router, pathname]);
+  }, [setQ, setPage, setPageSize, setStatus, setLinkStatus, router, pathname]);
 
   if (error) {
     return (
@@ -239,6 +258,37 @@ export function WorkspaceUsersTable({
                   <div className="flex items-center gap-2">
                     <Layers className="h-4 w-4" />
                     <span>{t('ws-users.status_all')}</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={linkStatus}
+              onValueChange={(val) => {
+                setLinkStatus(val);
+                setPage(1); // Reset to first page when toggling
+              }}
+            >
+              <SelectTrigger className="h-8 w-37.5 border-dashed bg-background">
+                <SelectValue placeholder={t('ws-users.link_status_filter')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>{t('ws-users.link_status_all')}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="linked">
+                  <div className="flex items-center gap-2">
+                    <Link className="h-4 w-4" />
+                    <span>{t('ws-users.link_status_linked')}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="virtual">
+                  <div className="flex items-center gap-2">
+                    <Link2Off className="h-4 w-4" />
+                    <span>{t('ws-users.link_status_virtual')}</span>
                   </div>
                 </SelectItem>
               </SelectContent>
