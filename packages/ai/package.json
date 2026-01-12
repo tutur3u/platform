@@ -6,7 +6,6 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -43,22 +42,16 @@
     "@ncthub/supabase": "workspace:*",
     "@ncthub/utils": "workspace:*",
     "ai": "^4.3.19",
-    "eslint": "^9.39.2",
     "next": "16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
-    "@eslint/js": "^9.39.2",
-    "@ncthub/eslint-config": "workspace:*",
     "@ncthub/types": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^25.0.3",
-    "@types/react": "^19.2.7",
-    "@typescript-eslint/eslint-plugin": "^8.51.0",
-    "@typescript-eslint/parser": "^8.51.0",
+    "@types/node": "^25.0.6",
+    "@types/react": "^19.2.8",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   },

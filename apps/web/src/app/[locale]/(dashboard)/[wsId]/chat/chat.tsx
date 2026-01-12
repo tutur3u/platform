@@ -54,11 +54,12 @@ const Chat = ({
       initialMessages,
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${(chat?.model
-              ? models
-                  .find((m) => m.value === chat.model)
-                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
-              : model?.provider.toLowerCase()
+          ? `/api/ai/chat/${(
+              chat?.model
+                ? models
+                    .find((m) => m.value === chat.model)
+                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
+                : model?.provider.toLowerCase()
             )?.replaceAll(' ', '-')}`
           : undefined,
       body: {
