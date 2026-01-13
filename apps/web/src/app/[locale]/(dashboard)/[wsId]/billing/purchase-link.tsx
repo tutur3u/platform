@@ -11,6 +11,8 @@ interface PurchaseLinkProps {
   customerEmail?: string;
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
+  /** Called when user wants to change an existing subscription. If provided, opens in-app dialog instead of external portal */
+  onPlanChange?: () => void;
 }
 
 export default function PurchaseLink({
@@ -20,61 +22,31 @@ export default function PurchaseLink({
   theme = 'auto',
   className,
   children,
+  onPlanChange,
 }: PropsWithChildren<PurchaseLinkProps>) {
   const mutation = useMutation({
     mutationFn: async () => {
-      if (subscriptionId !== null) {
-        // For existing subscriptions, redirect to Customer Portal
-        // where users can see proration and confirm plan changes
-        const response = await fetch('/api/payment/customer-sessions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+      // Create new checkout session for new subscriptions
+      const response = await fetch('/api/payment/checkouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wsId,
+          productId,
+        }),
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message ||
-              errorData.error ||
-              'Failed to get customer portal URL'
-          );
-        }
-
-        const data = await response.json();
-        return { type: 'portal' as const, data };
-      } else {
-        // Create new checkout session for new subscriptions
-        const response = await fetch('/api/payment/checkouts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            wsId,
-            productId,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to create checkout session');
-        }
-
-        const data = await response.json();
-        return { type: 'checkout' as const, data };
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
       }
+
+      const data = await response.json();
+      return { type: 'checkout' as const, data };
     },
     onSuccess: (result) => {
-      if (result.type === 'portal' && result.data.customerPortalUrl) {
-        // Open Polar Customer Portal in new tab for plan changes
-        // Users can see proration details and confirm the change there
-        window.open(
-          result.data.customerPortalUrl,
-          '_blank',
-          'noopener,noreferrer'
-        );
-      } else if (result.type === 'checkout' && result.data.url) {
+      if (result.type === 'checkout' && result.data.url) {
         // Open checkout for new subscriptions
         window.open(result.data.url, '_blank', 'noopener,noreferrer');
       }
@@ -86,6 +58,12 @@ export default function PurchaseLink({
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    // If onPlanChange is provided and there's an existing subscription,
+    // call the callback directly instead of using mutation
+    if (subscriptionId !== null && onPlanChange) {
+      onPlanChange();
+      return;
+    }
     mutation.mutate();
   };
 
