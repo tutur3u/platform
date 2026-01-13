@@ -31,7 +31,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface WorkspaceUserLite {
   id: string;
@@ -61,77 +61,93 @@ export default function GroupMemberActions({
   const t = useTranslations();
   const queryClient = useQueryClient();
 
-  const { data: allUsers, isLoading } = useQuery({
-    queryKey: ['workspace-users-lite', wsId],
+  const [activeAction, setActiveAction] = useState<ActionType | null>(null);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Store selected user objects to persist data even if they disappear from search results
+  const [selectedUsersMap, setSelectedUsersMap] = useState<
+    Record<string, WorkspaceUserLite>
+  >({});
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const { data: searchResults, isLoading } = useQuery({
+    queryKey: ['workspace-users-search', wsId, debouncedSearch, activeAction],
     queryFn: async () => {
+      if (!activeAction) return [];
       const supabase = createClient();
-      const { data, error } = await supabase
+
+      let queryBuilder = supabase
         .from('workspace_users')
         .select('id, display_name, full_name, email, avatar_url')
         .eq('ws_id', wsId)
-        .neq('archived', true);
+        .neq('archived', true)
+        .limit(50);
+
+      if (debouncedSearch) {
+        queryBuilder = queryBuilder.or(
+          `display_name.ilike.%${debouncedSearch}%,full_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`
+        );
+      }
+
+      const { data, error } = await queryBuilder;
       if (error) throw error;
       return (data ?? []) as WorkspaceUserLite[];
     },
-    staleTime: 5 * 60 * 1000,
+    enabled: !!activeAction,
+    placeholderData: (previousData) => previousData,
   });
-
-  const [activeAction, setActiveAction] = useState<ActionType | null>(null);
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const closeDialog = () => {
     setActiveAction(null);
     setSearch('');
-    setSelected({});
+    setDebouncedSearch('');
+    setSelectedUsersMap({});
   };
 
   const candidateUsers: WorkspaceUserLite[] = useMemo(() => {
-    if (!allUsers) return [];
-    let pool: WorkspaceUserLite[] = allUsers;
-    switch (activeAction) {
-      case 'add_members':
-        // Show users not already members (members include guests) and not managers
-        pool = allUsers.filter(
-          (u) => !memberIds.has(u.id) && !managerIds.has(u.id)
-        );
-        break;
-      case 'add_managers':
-        // Show users not already managers
-        pool = allUsers.filter((u) => !managerIds.has(u.id));
-        break;
-      default:
-        pool = [];
-    }
-    const bySearch = (() => {
-      if (!search) return pool;
-      const q = search.toLowerCase();
-      return pool.filter(
-        (u) =>
-          (u.display_name || u.full_name || '').toLowerCase().includes(q) ||
-          (u.email || '').toLowerCase().includes(q)
+    if (!searchResults) return [];
+
+    let pool = searchResults;
+    if (activeAction === 'add_members') {
+      pool = searchResults.filter(
+        (u) => !memberIds.has(u.id) && !managerIds.has(u.id)
       );
-    })();
+    } else if (activeAction === 'add_managers') {
+      pool = searchResults.filter((u) => !managerIds.has(u.id));
+    }
 
     // Exclude currently selected users from the list; no sorting for perf
-    const unselected = bySearch.filter((u) => !selected[u.id]);
-    return unselected;
-  }, [allUsers, activeAction, memberIds, managerIds, search, selected]);
+    return pool.filter((u) => !selectedUsersMap[u.id]);
+  }, [searchResults, activeAction, memberIds, managerIds, selectedUsersMap]);
 
-  const toggleSelection = (id: string) => {
-    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleSelection = (user: WorkspaceUserLite) => {
+    setSelectedUsersMap((prev) => {
+      const next = { ...prev };
+      if (next[user.id]) {
+        delete next[user.id];
+      } else {
+        next[user.id] = user;
+      }
+      return next;
+    });
   };
 
-  const selectedIds = useMemo(
-    () => Object.keys(selected).filter((k) => selected[k]),
-    [selected]
+  const selectedUsers = useMemo(
+    () => Object.values(selectedUsersMap),
+    [selectedUsersMap]
   );
 
-  const selectedUsers = useMemo(() => {
-    if (!allUsers) return [] as WorkspaceUserLite[];
-    const set = new Set(selectedIds);
-    return allUsers.filter((u) => set.has(u.id));
-  }, [allUsers, selectedIds]);
+  const selectedIds = useMemo(
+    () => Object.keys(selectedUsersMap),
+    [selectedUsersMap]
+  );
 
   const onSubmit = async () => {
     if (!activeAction) return;
@@ -204,14 +220,7 @@ export default function GroupMemberActions({
           <DropdownMenuItem
             onClick={() => {
               setActiveAction('add_members');
-              if (allUsers) {
-                const initial: Record<string, boolean> = {};
-                allUsers.forEach((u) => {
-                  if (!memberIds.has(u.id) && !managerIds.has(u.id))
-                    initial[u.id] = false;
-                });
-                setSelected(initial);
-              }
+              setSelectedUsersMap({});
             }}
             disabled={!canUpdateUserGroups}
           >
@@ -220,13 +229,7 @@ export default function GroupMemberActions({
           <DropdownMenuItem
             onClick={() => {
               setActiveAction('add_managers');
-              if (allUsers) {
-                const initial: Record<string, boolean> = {};
-                allUsers.forEach((u) => {
-                  if (!managerIds.has(u.id)) initial[u.id] = false;
-                });
-                setSelected(initial);
-              }
+              setSelectedUsersMap({});
             }}
             disabled={!canUpdateUserGroups}
           >
@@ -285,12 +288,7 @@ export default function GroupMemberActions({
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6"
-                            onClick={() =>
-                              setSelected((prev) => ({
-                                ...prev,
-                                [u.id]: false,
-                              }))
-                            }
+                            onClick={() => toggleSelection(u)}
                             aria-label={`Remove ${name}`}
                           >
                             <X className="h-3 w-3" />
@@ -336,7 +334,7 @@ export default function GroupMemberActions({
                           type="button"
                           key={u.id}
                           className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left hover:cursor-pointer hover:bg-foreground/5"
-                          onClick={() => toggleSelection(u.id)}
+                          onClick={() => toggleSelection(u)}
                         >
                           <div className="flex items-center gap-3">
                             {u.avatar_url ? (
@@ -364,8 +362,8 @@ export default function GroupMemberActions({
                             </div>
                           </div>
                           <Checkbox
-                            checked={!!selected[u.id]}
-                            onCheckedChange={() => toggleSelection(u.id)}
+                            checked={!!selectedUsersMap[u.id]}
+                            onCheckedChange={() => toggleSelection(u)}
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
                           />
