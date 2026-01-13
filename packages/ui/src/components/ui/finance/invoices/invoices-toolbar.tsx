@@ -73,7 +73,16 @@ export function InvoicesToolbar({ wsId, canExport }: InvoicesToolbarProps) {
               <ExportDialogContent
                 wsId={wsId}
                 exportType="invoices"
-                searchParams={Object.fromEntries(searchParams.entries())}
+                searchParams={{
+                  q: searchParams.get('q') || undefined,
+                  page: searchParams.get('page') || undefined,
+                  pageSize: searchParams.get('pageSize') || undefined,
+                  start: searchParams.get('start') || undefined,
+                  end: searchParams.get('end') || undefined,
+                  userIds: searchParams.getAll('userIds'),
+                  walletIds: searchParams.getAll('walletIds'),
+                  walletId: searchParams.get('walletId') || undefined,
+                }}
               />
             </DialogContent>
           </Dialog>
