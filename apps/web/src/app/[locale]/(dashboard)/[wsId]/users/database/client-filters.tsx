@@ -9,6 +9,8 @@ interface Props {
   wsId: string;
   includedGroups: string[];
   excludedGroups: string[];
+  setIncludedGroups?: (groups: string[] | null) => void;
+  setExcludedGroups?: (groups: string[] | null) => void;
   noInclude?: boolean;
   noExclude?: boolean;
 }
@@ -17,6 +19,8 @@ export function ClientFilters({
   wsId,
   includedGroups,
   excludedGroups,
+  setIncludedGroups,
+  setExcludedGroups,
   noInclude = false,
   noExclude = false,
 }: Props) {
@@ -47,6 +51,11 @@ export function ClientFilters({
           title={t('included_groups')}
           icon={<PlusCircle className="mr-2 h-4 w-4" />}
           defaultValues={includedGroups}
+          onSet={
+            setIncludedGroups
+              ? (vals) => setIncludedGroups(vals.length > 0 ? vals : null)
+              : undefined
+          }
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
@@ -61,6 +70,11 @@ export function ClientFilters({
           title={t('excluded_groups')}
           icon={<MinusCircle className="mr-2 h-4 w-4" />}
           defaultValues={excludedGroups}
+          onSet={
+            setExcludedGroups
+              ? (vals) => setExcludedGroups(vals.length > 0 ? vals : null)
+              : undefined
+          }
           options={excludedUserGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,

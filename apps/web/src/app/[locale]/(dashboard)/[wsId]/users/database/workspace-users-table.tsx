@@ -20,9 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
 import { useCallback } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { ClientFilters } from './client-filters';
@@ -57,9 +61,6 @@ export function WorkspaceUsersTable({
 }: Props) {
   const t = useTranslations();
   const userStatusLabels = useUserStatusLabels(wsId);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
   const queryClient = useQueryClient();
 
   // Use nuqs for URL state management (shallow: true for client-side only)
@@ -99,12 +100,22 @@ export function WorkspaceUsersTable({
     })
   );
 
+  const [includedGroups, setIncludedGroups] = useQueryState(
+    'includedGroups',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [excludedGroups, setExcludedGroups] = useQueryState(
+    'excludedGroups',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;
-
-  // Parse array params for filters (nuqs doesn't handle arrays well, use searchParams)
-  const includedGroups = searchParams.getAll('includedGroups');
-  const excludedGroups = searchParams.getAll('excludedGroups');
 
   // Fetch data with React Query
   const { data, isLoading, isFetching, error } = useWorkspaceUsers(
@@ -183,9 +194,17 @@ export function WorkspaceUsersTable({
     setPageSize(null);
     setStatus(null);
     setLinkStatus(null);
-    // Also clear filter params not managed by nuqs
-    router.push(pathname);
-  }, [setQ, setPage, setPageSize, setStatus, setLinkStatus, router, pathname]);
+    setIncludedGroups(null);
+    setExcludedGroups(null);
+  }, [
+    setQ,
+    setPage,
+    setPageSize,
+    setStatus,
+    setLinkStatus,
+    setIncludedGroups,
+    setExcludedGroups,
+  ]);
 
   if (error) {
     return (
@@ -297,6 +316,8 @@ export function WorkspaceUsersTable({
               wsId={wsId}
               includedGroups={includedGroups}
               excludedGroups={excludedGroups}
+              setIncludedGroups={setIncludedGroups}
+              setExcludedGroups={setExcludedGroups}
             />
           </div>
         }
@@ -305,7 +326,15 @@ export function WorkspaceUsersTable({
         onSearch={handleSearch}
         setParams={handleSetParams}
         resetParams={handleResetParams}
-        isEmpty={searchParams.toString().length === 0}
+        isEmpty={
+          !q &&
+          page === 1 &&
+          pageSize === 10 &&
+          status === 'active' &&
+          linkStatus === 'all' &&
+          includedGroups.length === 0 &&
+          excludedGroups.length === 0
+        }
         onRefresh={() => {
           queryClient.invalidateQueries({
             queryKey: ['workspace-users', wsId],
