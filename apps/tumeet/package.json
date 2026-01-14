@@ -26,7 +26,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.7.5",
     "@hookform/resolvers": "^5.2.2",
-    "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-query": "^5.90.17",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -45,13 +45,13 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-hook-form": "^7.71.0",
+    "react-hook-form": "^7.71.1",
     "zod": "^4.3.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.8",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",

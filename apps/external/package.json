@@ -24,7 +24,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-query": "^5.90.17",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.8",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
