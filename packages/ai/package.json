@@ -61,5 +61,5 @@
   "exports": {
     "./*": "./src/*.ts"
   },
-  "packageManager": "bun@1.3.5"
+  "packageManager": "bun@1.3.6"
 }

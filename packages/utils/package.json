@@ -56,5 +56,5 @@
     "./abuse-protection": "./src/abuse-protection/index.ts",
     "./encryption": "./src/encryption/index.ts"
   },
-  "packageManager": "bun@1.3.5"
+  "packageManager": "bun@1.3.6"
 }

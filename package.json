@@ -14,7 +14,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "bun@1.3.5",
+  "packageManager": "bun@1.3.6",
   "private": true,
   "scripts": {
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
@@ -71,7 +71,7 @@
     "type-check:shortener": "turbo run type-check -F @tuturuuu/shortener",
     "type-check:external": "turbo run type-check -F @tuturuuu/external",
     "type-check:playground": "turbo run type-check -F @tuturuuu/playground",
-    "check": "bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check",
+    "check": "bun biome check && bun test && bun type-check && bun i18n:check && bun i18n:sort:check",
     "format": "biome format",
     "format:fix": "biome format --write",
     "ff": "biome format --write",

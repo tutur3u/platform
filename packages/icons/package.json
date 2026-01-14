@@ -19,5 +19,5 @@
   "exports": {
     ".": "./src/icons.tsx"
   },
-  "packageManager": "bun@1.3.5"
+  "packageManager": "bun@1.3.6"
 }
