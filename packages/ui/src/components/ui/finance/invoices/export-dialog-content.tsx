@@ -37,6 +37,7 @@ export default function ExportDialogContent({
     pageSize?: string;
     userIds?: string | string[];
     walletId?: string;
+    walletIds?: string | string[];
     start?: string;
     end?: string;
   };
@@ -100,6 +101,7 @@ export default function ExportDialogContent({
           pageSize: pageSize.toString(),
           userIds: searchParams.userIds,
           walletId: searchParams.walletId,
+          walletIds: searchParams.walletIds,
           start: searchParams.start,
           end: searchParams.end,
         });
@@ -228,12 +230,14 @@ export default function ExportDialogContent({
 async function getData(
   wsId: string,
   {
+    // q,
     page = '1',
     pageSize = '10',
     start,
     end,
     userIds,
     walletId,
+    walletIds,
   }: {
     q?: string;
     page?: string;
@@ -242,15 +246,25 @@ async function getData(
     end?: string;
     userIds?: string | string[];
     walletId?: string;
+    walletIds?: string | string[];
   }
 ) {
   const supabase = createClient();
+
+  // Combine walletId and walletIds
+  let wallets = Array.isArray(walletIds)
+    ? walletIds
+    : walletIds
+      ? [walletIds]
+      : [];
+  if (walletId) wallets.push(walletId);
+  wallets = Array.from(new Set(wallets.filter(Boolean)));
 
   // Build select query dynamically
   let selectQuery =
     '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
 
-  const walletJoinType = walletId ? '!inner' : '';
+  const walletJoinType = wallets.length > 0 ? '!inner' : '';
   selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
 
   let queryBuilder = supabase
@@ -272,8 +286,8 @@ async function getData(
     }
   }
 
-  if (walletId) {
-    queryBuilder = queryBuilder.eq('wallet_transactions.wallet_id', walletId);
+  if (wallets.length > 0) {
+    queryBuilder = queryBuilder.in('wallet_transactions.wallet_id', wallets);
   }
 
   if (page && pageSize) {

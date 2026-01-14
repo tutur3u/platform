@@ -79,12 +79,12 @@ export default async function WorkspaceUsersPage({
       includedGroups: Array.isArray(sp.includedGroups)
         ? sp.includedGroups
         : sp.includedGroups
-          ? [sp.includedGroups]
+          ? sp.includedGroups.split(',')
           : [],
       excludedGroups: Array.isArray(sp.excludedGroups)
         ? sp.excludedGroups
         : sp.excludedGroups
-          ? [sp.excludedGroups]
+          ? sp.excludedGroups.split(',')
           : [],
       status: sp.status as 'active' | 'archived' | 'archived_until' | 'all',
       linkStatus: sp.linkStatus as 'all' | 'linked' | 'virtual',
