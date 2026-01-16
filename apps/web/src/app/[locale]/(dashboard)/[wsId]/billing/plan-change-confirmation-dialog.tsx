@@ -5,7 +5,6 @@ import {
   ArrowDownCircle,
   ArrowRight,
   ArrowUpCircle,
-  Calendar,
   CheckCircle,
   Loader2,
   Sparkles,
