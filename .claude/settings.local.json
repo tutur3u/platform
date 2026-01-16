@@ -11,7 +11,8 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(xargs cat:*)",
-      "Bash(bun biome check:*)"
+      "Bash(bun biome check:*)",
+      "Bash(git diff:*)"
     ]
   }
 }
