@@ -12,13 +12,13 @@
     "type-check": "tsgo --build"
   },
   "dependencies": {
-    "googleapis": "^170.0.0",
+    "googleapis": "^170.1.0",
     "google-auth-library": "^10.5.0"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.0.8",
+    "@types/node": "^25.0.9",
     "@types/react": "^19.2.8",
     "@vitejs/plugin-react": "^5.1.2",
     "typescript": "^5.9.3",

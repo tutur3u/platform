@@ -2,9 +2,9 @@
   "name": "tutur3u",
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
-    "@lingual/i18n-check": "^0.8.17",
+    "@lingual/i18n-check": "^0.8.18",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260114.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260116.1",
     "@vitest/coverage-v8": "^4.0.17",
     "turbo": "^2.7.4",
     "typescript": "^5.9.3",
