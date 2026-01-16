@@ -416,6 +416,15 @@ export async function WorkspaceNavigationLinks({
       href: `/${personalOrWsId}/qr-generator`,
       icon: <QrCodeIcon className="h-5 w-5" />,
     },
+    process.env.NEXT_PUBLIC_DISCORD_LINK
+      ? {
+          title: t('sidebar_tabs.discord_community'),
+          href: process.env.NEXT_PUBLIC_DISCORD_LINK,
+          icon: <Users className="h-5 w-5" />,
+          external: true,
+          newTab: true,
+        }
+      : null,
     null,
     {
       title: t('sidebar_tabs.finance'),
