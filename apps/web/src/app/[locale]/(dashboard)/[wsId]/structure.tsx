@@ -26,6 +26,7 @@ import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
+import { DiscordLink } from './discord-link';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
 import { WorkspaceSelect } from './workspace-select';
@@ -609,7 +610,12 @@ export function Structure({
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
-      feedbackButton={<FeedbackButton isCollapsed={isCollapsed} />}
+      feedbackButton={
+        <div className="flex w-full flex-col items-center justify-center gap-1">
+          <DiscordLink isCollapsed={isCollapsed} />
+          <FeedbackButton isCollapsed={isCollapsed} />
+        </div>
+      }
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}
