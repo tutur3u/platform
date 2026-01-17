@@ -25,6 +25,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import type { Plan } from './billing-client';
+import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';
 
 interface PlanListProps {
@@ -36,6 +37,14 @@ interface PlanListProps {
 }
 
 type BillingCycleTab = 'month' | 'year';
+
+interface TargetPlanForDialog {
+  id: string;
+  name: string;
+  price: number;
+  billingCycle: string;
+  features: string[];
+}
 
 export function PlanList({
   currentPlan,
@@ -50,6 +59,11 @@ export function PlanList({
   const [selectedCycle, setSelectedCycle] = useState<BillingCycleTab>(
     currentPlan.billingCycle === 'month' ? 'month' : 'year'
   );
+
+  // State for plan change confirmation dialog
+  const [showPlanChangeDialog, setShowPlanChangeDialog] = useState(false);
+  const [selectedTargetPlan, setSelectedTargetPlan] =
+    useState<TargetPlanForDialog | null>(null);
 
   // Helper to simplify plan names (remove "Tuturuuu Workspace" prefix and billing cycle suffix)
   const getSimplePlanName = (name: string): string => {
@@ -181,6 +195,25 @@ export function PlanList({
       variant: 'default' as const,
       disabled: false,
     };
+  };
+
+  // Handle plan change for existing subscriptions
+  const handlePlanChange = (plan: (typeof allPlans)[0]) => {
+    setSelectedTargetPlan({
+      id: plan.id,
+      name: plan.fullName,
+      price: plan.price,
+      billingCycle: plan.billingCycle || 'month',
+      features: plan.features,
+    });
+    setShowPlanChangeDialog(true);
+  };
+
+  // Handle successful plan change
+  const handlePlanChangeSuccess = () => {
+    setShowPlanChangeDialog(false);
+    setSelectedTargetPlan(null);
+    onOpenChange(false);
   };
 
   return (
@@ -410,6 +443,7 @@ export function PlanList({
                             wsId={wsId}
                             productId={plan.id}
                             subscriptionId={currentPlan.id}
+                            onPlanChange={() => handlePlanChange(plan)}
                             className={cn(
                               'w-full transition-all hover:scale-[1.02]',
                               !plan.isFree &&
@@ -446,6 +480,20 @@ export function PlanList({
           </div>
         </div>
       </DialogContent>
+
+      {/* Plan Change Confirmation Dialog */}
+      {selectedTargetPlan && currentPlan.id && (
+        <PlanChangeConfirmationDialog
+          open={showPlanChangeDialog}
+          onOpenChange={setShowPlanChangeDialog}
+          currentPlanName={currentPlan.name}
+          currentPlanPrice={currentPlan.price}
+          currentPlanBillingCycle={currentPlan.billingCycle || 'month'}
+          targetPlan={selectedTargetPlan}
+          subscriptionId={currentPlan.id}
+          onSuccess={handlePlanChangeSuccess}
+        />
+      )}
     </Dialog>
   );
 }
