@@ -310,8 +310,8 @@ const CountdownJT26 = () => {
   const t = useTranslations('dashboard.japan_trip_countdown');
 
   const calculateTimeLeft = () => {
-    // March 31, 2026 at 11:59 PM Vietnam time (GMT+7)
-    const milestoneDate = new Date('2026-03-31T16:59:00Z'); // 11:59 PM GMT+7 = 4:59 PM UTC
+    // December 31, 2026 at 11:59 PM Vietnam time (GMT+7)
+    const milestoneDate = new Date('2026-12-31T16:59:00Z'); // 11:59 PM GMT+7 = 4:59 PM UTC
     const difference = milestoneDate.getTime() - Date.now();
 
     if (difference > 0) {
@@ -327,8 +327,8 @@ const CountdownJT26 = () => {
   };
 
   const calculateProgress = () => {
-    // March 31, 2026 at 11:59 PM Vietnam time (GMT+7)
-    const milestoneDate = new Date('2026-03-31T16:59:00Z');
+    // December 31, 2026 at 11:59 PM Vietnam time (GMT+7)
+    const milestoneDate = new Date('2026-12-31T16:59:00Z');
     const startDate = new Date('2025-11-07T00:00:00Z'); // Starting from today
     const now = Date.now();
     const totalDuration = milestoneDate.getTime() - startDate.getTime();
@@ -351,7 +351,7 @@ const CountdownJT26 = () => {
 
   const daysRemaining = Math.ceil(
     ((100 - progress) / 100) *
-      ((new Date('2026-03-31T16:59:00Z').getTime() -
+      ((new Date('2026-12-31T16:59:00Z').getTime() -
         new Date('2025-11-07T00:00:00Z').getTime()) /
         (1000 * 60 * 60 * 24))
   );
