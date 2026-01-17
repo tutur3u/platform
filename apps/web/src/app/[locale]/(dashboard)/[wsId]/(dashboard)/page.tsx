@@ -19,6 +19,7 @@ import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
 import UserGroupQuickActions from './user-groups/quick-actions';
 import VoiceAssistantCard from './voice-assistant-card';
+import YearSchedule from './year-schedule';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
@@ -67,6 +68,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
           <div className="flex flex-col gap-4 pb-4 xl:flex-row">
             {/* Main content area - 2 column grid */}
             <div className={cn('grid h-fit flex-1 gap-4 lg:grid-cols-2')}>
+              {isInternalUser && <YearSchedule />}
               {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
               {currentUser && (
                 <>
