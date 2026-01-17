@@ -22,6 +22,7 @@ export interface ProrationPreview {
   totalDaysInPeriod: number;
   isUpgrade: boolean;
   nextBillingDate: string;
+  billingCycleChanged: boolean; // true when switching between monthly/yearly
 }
 
 // POST: Calculate proration preview for a plan change
@@ -189,41 +190,35 @@ export async function POST(
   );
 
   let newPlanProratedCharge: number;
+  const billingCycleChanged =
+    currentProduct.recurring_interval !== targetProduct.recurring_interval;
 
-  if (currentProduct.recurring_interval === targetProduct.recurring_interval) {
+  if (!billingCycleChanged) {
     // Same billing cycle - simple proration
     newPlanProratedCharge = Math.round(
       (targetProduct.price ?? 0) * prorationFactor
     );
   } else {
+    // Different billing cycle - charge full price for new cycle
     newPlanProratedCharge = targetProduct.price ?? 0;
+  }
 
-    const netAmount = newPlanProratedCharge - currentPlanRemainingValue;
-    const isUpgrade = (targetProduct.price ?? 0) > (currentProduct.price ?? 0);
+  // Calculate next billing date
+  let nextBillingDate: Date;
+  if (billingCycleChanged) {
+    // When switching cycles, next billing is based on new cycle from now
+    const newCycleInterval = targetProduct.recurring_interval ?? 'month';
+    nextBillingDate = new Date(now);
 
-    const preview: ProrationPreview = {
-      currentPlan: {
-        id: currentProduct.id,
-        name: currentProduct.name ?? '',
-        price: currentProduct.price ?? 0,
-        billingCycle: currentProduct.recurring_interval ?? 'month',
-        remainingValue: currentPlanRemainingValue,
-      },
-      newPlan: {
-        id: targetProduct.id,
-        name: targetProduct.name ?? '',
-        price: targetProduct.price ?? 0,
-        billingCycle: targetProduct.recurring_interval ?? 'month',
-        proratedCharge: newPlanProratedCharge,
-      },
-      netAmount,
-      daysRemaining,
-      totalDaysInPeriod,
-      isUpgrade,
-      nextBillingDate: currentPeriodEnd.toISOString(),
-    };
-
-    return NextResponse.json(preview);
+    if (newCycleInterval === 'year') {
+      nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+    } else {
+      // Default to month
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    }
+  } else {
+    // Same cycle - next billing is at end of current period
+    nextBillingDate = currentPeriodEnd;
   }
 
   // Calculate net amount (what user pays or receives as credit)
@@ -250,7 +245,8 @@ export async function POST(
     daysRemaining,
     totalDaysInPeriod,
     isUpgrade,
-    nextBillingDate: currentPeriodEnd.toISOString(),
+    nextBillingDate: nextBillingDate.toISOString(),
+    billingCycleChanged,
   };
 
   return NextResponse.json(preview);

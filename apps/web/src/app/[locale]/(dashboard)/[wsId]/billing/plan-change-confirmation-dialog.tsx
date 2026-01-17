@@ -297,8 +297,22 @@ export function PlanChangeConfirmationDialog({
                 {/* Charge for new plan */}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">
-                    {simplifiedTargetPlanName} {t('charge')} (
-                    {preview.daysRemaining} {t('days')})
+                    {simplifiedTargetPlanName} {t('charge')}
+                    {preview.billingCycleChanged ? (
+                      <span>
+                        {' '}
+                        ({t('full')}{' '}
+                        {preview.newPlan.billingCycle === 'year'
+                          ? t('yr')
+                          : t('mo')}
+                        )
+                      </span>
+                    ) : (
+                      <span>
+                        {' '}
+                        ({preview.daysRemaining} {t('days')})
+                      </span>
+                    )}
                   </span>
                   <span className="font-medium">
                     +${centToDollar(preview.newPlan.proratedCharge)}
