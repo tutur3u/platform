@@ -21,7 +21,6 @@ export interface ProrationPreview {
   daysRemaining: number;
   totalDaysInPeriod: number;
   isUpgrade: boolean;
-  effectiveImmediately: boolean;
   nextBillingDate: string;
 }
 
@@ -56,7 +55,7 @@ export async function POST(
   }
 
   // Get subscription from database with product details
-  const { data: subscription } = await supabase
+  const { data: subscription, error: subscriptionError } = await supabase
     .from('workspace_subscriptions')
     .select(
       `
@@ -70,7 +69,15 @@ export async function POST(
     `
     )
     .eq('id', subscriptionId)
-    .single();
+    .maybeSingle();
+
+  if (subscriptionError) {
+    console.error('Error fetching subscription:', subscriptionError);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the subscription' },
+      { status: 500 }
+    );
+  }
 
   if (!subscription) {
     return NextResponse.json(
@@ -113,11 +120,19 @@ export async function POST(
   }
 
   // Get target product details
-  const { data: targetProduct } = await supabase
+  const { data: targetProduct, error: targetProductError } = await supabase
     .from('workspace_subscription_products')
     .select('*')
     .eq('id', productId)
-    .single();
+    .maybeSingle();
+
+  if (targetProductError) {
+    console.error('Error fetching target product:', targetProductError);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the target product' },
+      { status: 500 }
+    );
+  }
 
   if (!targetProduct) {
     return NextResponse.json(
@@ -136,12 +151,15 @@ export async function POST(
   }
 
   // Calculate proration
-  const currentPeriodStart = new Date(
-    subscription.current_period_start ?? new Date().toISOString()
-  );
-  const currentPeriodEnd = new Date(
-    subscription.current_period_end ?? new Date().toISOString()
-  );
+  if (!subscription.current_period_start || !subscription.current_period_end) {
+    return NextResponse.json(
+      { error: 'Subscription billing period is missing' },
+      { status: 500 }
+    );
+  }
+
+  const currentPeriodStart = new Date(subscription.current_period_start);
+  const currentPeriodEnd = new Date(subscription.current_period_end);
   const now = new Date();
 
   // Total days in current billing period
@@ -160,7 +178,9 @@ export async function POST(
 
   // Proration factor (0 to 1)
   const prorationFactor =
-    totalDaysInPeriod > 0 ? daysRemaining / totalDaysInPeriod : 0;
+    totalDaysInPeriod > 0
+      ? Math.min(1, Math.max(0, daysRemaining / totalDaysInPeriod))
+      : 0;
 
   // Calculate prorated amounts
   // Current plan: credit for unused portion
@@ -168,8 +188,6 @@ export async function POST(
     (currentProduct.price ?? 0) * prorationFactor
   );
 
-  // For the new plan, we need to handle billing cycle differences
-  // If switching between monthly and yearly, calculate the daily rate for the remaining period
   let newPlanProratedCharge: number;
 
   if (currentProduct.recurring_interval === targetProduct.recurring_interval) {
@@ -178,28 +196,9 @@ export async function POST(
       (targetProduct.price ?? 0) * prorationFactor
     );
   } else {
-    // Different billing cycles - calculate based on daily rates
-    const currentDailyRate =
-      currentProduct.recurring_interval === 'month'
-        ? (currentProduct.price ?? 0) / 30
-        : (currentProduct.price ?? 0) / 365;
+    newPlanProratedCharge = targetProduct.price ?? 0;
 
-    const newDailyRate =
-      targetProduct.recurring_interval === 'month'
-        ? (targetProduct.price ?? 0) / 30
-        : (targetProduct.price ?? 0) / 365;
-
-    // Credit for remaining days at current rate
-    const creditAmount = Math.round(currentDailyRate * daysRemaining);
-
-    // Charge for remaining days at new rate
-    newPlanProratedCharge = Math.round(newDailyRate * daysRemaining);
-
-    // Adjust the remaining value calculation for different cycles
-    // Use the credit amount instead since we calculated it with daily rates
-    const adjustedRemainingValue = creditAmount;
-
-    const netAmount = newPlanProratedCharge - adjustedRemainingValue;
+    const netAmount = newPlanProratedCharge - currentPlanRemainingValue;
     const isUpgrade = (targetProduct.price ?? 0) > (currentProduct.price ?? 0);
 
     const preview: ProrationPreview = {
@@ -208,7 +207,7 @@ export async function POST(
         name: currentProduct.name ?? '',
         price: currentProduct.price ?? 0,
         billingCycle: currentProduct.recurring_interval ?? 'month',
-        remainingValue: adjustedRemainingValue,
+        remainingValue: currentPlanRemainingValue,
       },
       newPlan: {
         id: targetProduct.id,
@@ -221,7 +220,6 @@ export async function POST(
       daysRemaining,
       totalDaysInPeriod,
       isUpgrade,
-      effectiveImmediately: true,
       nextBillingDate: currentPeriodEnd.toISOString(),
     };
 
@@ -252,7 +250,6 @@ export async function POST(
     daysRemaining,
     totalDaysInPeriod,
     isUpgrade,
-    effectiveImmediately: true,
     nextBillingDate: currentPeriodEnd.toISOString(),
   };
 

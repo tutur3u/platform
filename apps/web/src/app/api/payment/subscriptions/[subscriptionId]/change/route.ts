@@ -34,11 +34,19 @@ export async function POST(
   }
 
   // Get subscription from database
-  const { data: subscription } = await supabase
+  const { data: subscription, error: subscriptionError } = await supabase
     .from('workspace_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
-    .single();
+    .maybeSingle();
+
+  if (subscriptionError) {
+    console.error('Error fetching subscription:', subscriptionError);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the subscription' },
+      { status: 500 }
+    );
+  }
 
   if (!subscription) {
     return NextResponse.json(
@@ -91,11 +99,21 @@ export async function POST(
   }
 
   // Verify the target product exists in our database
-  const { data: targetProduct } = await supabase
+  const { data: targetProduct, error: targetProductError } = await supabase
     .from('workspace_subscription_products')
     .select('*')
     .eq('id', productId)
-    .single();
+    .maybeSingle();
+
+  if (targetProductError) {
+    console.error('Error fetching target product:', targetProductError);
+    return NextResponse.json(
+      {
+        error: 'An error occurred while fetching the target product',
+      },
+      { status: 500 }
+    );
+  }
 
   if (!targetProduct) {
     return NextResponse.json(
