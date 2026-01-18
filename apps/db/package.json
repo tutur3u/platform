@@ -26,7 +26,7 @@
     "sb:linkpush": "bun supabase link && bun supabase db push"
   },
   "devDependencies": {
-    "supabase": "^2.72.7",
+    "supabase": "^2.72.8",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.3.6"
