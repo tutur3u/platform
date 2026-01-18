@@ -1,0 +1,48 @@
+import type { VercelConfig } from '@vercel/config/v1';
+
+export const config: VercelConfig = {
+  github: {
+    enabled: false,
+  },
+  buildCommand: 'bun run build',
+  framework: 'nextjs',
+
+  crons: [
+    {
+      path: '/api/cron/discord/wol/daily/remind',
+      schedule: '0 14 * * *',
+    },
+    {
+      path: '/api/cron/discord/daily-report',
+      schedule: '0 16 * * *',
+    },
+    {
+      path: '/api/cron/tasks/generate-embeddings',
+      schedule: '0 2 * * *',
+    },
+    {
+      path: '/api/cron/calendar/smart-schedule',
+      schedule: '0 * * * *',
+    },
+    {
+      path: '/api/cron/payment/products',
+      schedule: '0 * * * *',
+    },
+    {
+      path: '/api/cron/payment/subscriptions',
+      schedule: '0 * * * *',
+    },
+    {
+      path: '/api/cron/payment/orders',
+      schedule: '0 * * * *',
+    },
+    {
+      path: '/api/cron/process-notification-batches',
+      schedule: '*/10 * * * *',
+    },
+    {
+      path: '/api/cron/tasks/deadline-reminders',
+      schedule: '*/5 * * * *',
+    },
+  ],
+};
