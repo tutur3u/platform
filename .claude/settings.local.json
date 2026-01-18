@@ -12,7 +12,12 @@
       "Bash(ls:*)",
       "Bash(xargs cat:*)",
       "Bash(bun biome check:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(tree:*)",
+      "Bash(xargs:*)",
+      "Bash(bun type-check:foundapack:*)",
+      "Bash(bun:*)",
+      "Bash(curl:*)"
     ]
   }
 }
