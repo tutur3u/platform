@@ -12,14 +12,13 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import RecentChangelog from './changelog/recent-changelog';
-import Countdown from './countdown';
+import CompanyHub from './company-hub';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
 import UserGroupQuickActions from './user-groups/quick-actions';
 import VoiceAssistantCard from './voice-assistant-card';
-import YearSchedule from './year-schedule';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
@@ -54,6 +53,8 @@ export default async function WorkspaceHomePage({ params }: Props) {
         });
 
         const isInternalUser = isValidTuturuuuEmail(currentUser?.email);
+        const isInternalWorkspace = wsId === ROOT_WORKSPACE_ID;
+
         const disableCalendar = withoutPermission('manage_calendar');
 
         // Check tier requirements for features
@@ -68,8 +69,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
           <div className="flex flex-col gap-4 pb-4 xl:flex-row">
             {/* Main content area - 2 column grid */}
             <div className={cn('grid h-fit flex-1 gap-4 lg:grid-cols-2')}>
-              {isInternalUser && <YearSchedule />}
-              {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
+              {isInternalUser && isInternalWorkspace && <CompanyHub />}
               {currentUser && (
                 <>
                   <Suspense fallback={null}>
