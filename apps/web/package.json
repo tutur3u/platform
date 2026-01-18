@@ -80,7 +80,6 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.36.1",
-    "@vercel/config": "^0.0.25",
     "ai": "^6.0.39",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
