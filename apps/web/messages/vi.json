@@ -2547,15 +2547,39 @@
     },
     "year_schedule": {
       "birthday": {
+        "balloons": "Bong bóng",
+        "cake": "Bánh kem",
+        "celebration_message": "Chúc mừng thêm một năm đổi mới!",
+        "countdown_message": "Sẵn sàng chào đón!",
+        "countdown_title": "Sinh nhật Tuturuuu",
         "date": "20 tháng 6",
         "days_until": "Còn {count} ngày đến sinh nhật",
         "founded": "Thành lập: 20/06/2022",
+        "gifts": "Quà tặng",
         "happy_birthday": "Chúc mừng sinh nhật {count} tuổi Tuturuuu!",
         "milestone": "Cột mốc đạt được",
         "next_birthday": "Tuturuuu sẽ tròn {age} tuổi vào ngày 20 tháng 6 năm {year}",
+        "party": "Tiệc",
         "title": "Sinh nhật",
         "today_celebration": "Hôm nay chúng ta ăn mừng!",
+        "turning": "Sắp tròn {age} tuổi",
         "years_of_innovation": "{count} năm đổi mới sáng tạo"
+      },
+      "christmas_launch": {
+        "complete_message": "Christmas Launch đã đến! 🎄",
+        "complete_title": "Giáng Sinh Vui Vẻ!",
+        "countdown_message": "Ra mắt trước kỳ nghỉ lễ!",
+        "date": "15/12/2026",
+        "goal": "Ship tất cả tính năng trước Giáng sinh",
+        "goal_desc": "Hoàn thành sản phẩm cho mùa lễ hội",
+        "items": {
+          "deploy": "Deploy",
+          "gifts": "Quà tặng",
+          "launch": "Ra mắt",
+          "party": "Tiệc"
+        },
+        "subtitle": "Early Christmas Launch 2026",
+        "title": "Christmas Launch 🎄"
       },
       "collapse": "Thu gọn",
       "company_age": "{years}n {months}th {days}ng tuổi",
@@ -2563,6 +2587,7 @@
         "founded": "Thành lập ngày 20 tháng 6 năm 2022",
         "title": "Tuổi công ty Tuturuuu"
       },
+      "days": "Ngày",
       "expand": "Mở rộng",
       "fiscal_year": "Năm tài chính {year}",
       "fiscal_year_range": "Tháng 2/{startYear} - Tháng 1/{endYear}",
@@ -2580,6 +2605,8 @@
         "q4_item2": "Chuẩn bị ngày lễ và ăn mừng",
         "q4_item3": "Chuyển giao kiến thức và bàn giao"
       },
+      "hours": "Giờ",
+      "minutes": "Phút",
       "phases": {
         "current_phase": "Giai đoạn hiện tại",
         "january_desc": "Tháng Một dành riêng để nhìn lại năm qua và lập kế hoạch chiến lược cho năm tới",
@@ -2616,6 +2643,7 @@
         "q4_focus": "Tổng kết & Chuyển giao",
         "q4_months": "T11-T1"
       },
+      "seconds": "Giây",
       "status": {
         "active": "Đang hoạt động",
         "completed": "Đã hoàn thành",

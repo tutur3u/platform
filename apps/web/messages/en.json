@@ -2525,15 +2525,39 @@
     },
     "year_schedule": {
       "birthday": {
+        "balloons": "Balloons",
+        "cake": "Cake",
+        "celebration_message": "Celebrating another year of innovation!",
+        "countdown_message": "Get ready to celebrate!",
+        "countdown_title": "Tuturuuu Birthday",
         "date": "June 20",
         "days_until": "{count} days until birthday",
         "founded": "Est. June 20, 2022",
+        "gifts": "Gifts",
         "happy_birthday": "Happy {count}th Birthday Tuturuuu!",
         "milestone": "Milestone achieved",
         "next_birthday": "Tuturuuu will turn {age} years old on June 20, {year}",
+        "party": "Party",
         "title": "Birthday",
         "today_celebration": "Today we celebrate!",
+        "turning": "Turning {age} years old",
         "years_of_innovation": "{count} years of innovation"
+      },
+      "christmas_launch": {
+        "complete_message": "Christmas Launch is here! 🎄",
+        "complete_title": "Merry Christmas!",
+        "countdown_message": "Launch before the holidays!",
+        "date": "Dec 15, 2026",
+        "goal": "Ship all features before Christmas",
+        "goal_desc": "Deliver a complete product for the holiday season",
+        "items": {
+          "deploy": "Deploy",
+          "gifts": "Gifts",
+          "launch": "Launch",
+          "party": "Party"
+        },
+        "subtitle": "Early Christmas Launch 2026",
+        "title": "Christmas Launch 🎄"
       },
       "collapse": "Collapse",
       "company_age": "{years}y {months}m {days}d old",
@@ -2541,6 +2565,7 @@
         "founded": "Founded June 20, 2022",
         "title": "Tuturuuu Company Age"
       },
+      "days": "Days",
       "expand": "Expand",
       "fiscal_year": "Fiscal Year {year}",
       "fiscal_year_range": "Feb {startYear} - Jan {endYear}",
@@ -2558,6 +2583,8 @@
         "q4_item2": "Holiday preparations and celebrations",
         "q4_item3": "Knowledge transfer and handover"
       },
+      "hours": "Hours",
+      "minutes": "Minutes",
       "phases": {
         "current_phase": "Current Phase",
         "january_desc": "January is dedicated to reflection on the past year and strategic planning for the year ahead",
@@ -2594,6 +2621,7 @@
         "q4_focus": "Wrap-up & Transition",
         "q4_months": "Nov-Jan"
       },
+      "seconds": "Seconds",
       "status": {
         "active": "Active",
         "completed": "Completed",
