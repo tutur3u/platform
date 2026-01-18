@@ -5,8 +5,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: supabase-types.yaml
+
   deploy:
     name: Verify generated types
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 15
     runs-on: ubuntu-latest
 

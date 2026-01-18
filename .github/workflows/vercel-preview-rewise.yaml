@@ -11,7 +11,14 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: vercel-preview-rewise.yaml
+
   Deploy-Preview:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -38,7 +45,7 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.6"
+          bun-version: latest
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'

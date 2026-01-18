@@ -11,8 +11,15 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: rust-backend.yml
+
   check:
     name: Check
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -55,6 +62,8 @@ jobs:
 
   test:
     name: Test Suite
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -95,6 +104,8 @@ jobs:
 
   fmt:
     name: Formatting
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -113,6 +124,8 @@ jobs:
 
   clippy:
     name: Clippy
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -155,6 +168,8 @@ jobs:
 
   build:
     name: Build
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -201,6 +216,8 @@ jobs:
 
   security:
     name: Security Audit
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

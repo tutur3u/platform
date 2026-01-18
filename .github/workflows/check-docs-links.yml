@@ -19,7 +19,14 @@ on:
   workflow_dispatch: # Allow manual trigger
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: check-docs-links.yml
+
   check-links:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

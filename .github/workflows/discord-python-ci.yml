@@ -14,8 +14,15 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: discord-python-ci.yml
+
   lint:
     name: Lint (Ruff)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,7 +35,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies
@@ -44,6 +51,8 @@ jobs:
 
   type-check:
     name: Type Check (mypy)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -56,7 +65,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies
@@ -69,6 +78,8 @@ jobs:
 
   test:
     name: Test Suite
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -81,7 +92,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies
@@ -102,6 +113,8 @@ jobs:
 
   test-coverage:
     name: Test Coverage
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -114,7 +127,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies
@@ -137,6 +150,8 @@ jobs:
 
   build-check:
     name: Build Check
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -149,7 +164,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies
@@ -167,6 +182,8 @@ jobs:
 
   security:
     name: Security Audit
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -179,7 +196,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies
@@ -194,6 +211,8 @@ jobs:
 
   matrix-test:
     name: Multi-Version Test
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -211,7 +230,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: "pip"
           cache-dependency-path: apps/discord/requirements.txt
 
       - name: Install dependencies

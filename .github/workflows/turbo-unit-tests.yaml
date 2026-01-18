@@ -4,8 +4,15 @@ on:
   push:
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: turbo-unit-tests.yaml
+
   build:
     name: Unit Tests
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 15
     runs-on: ubuntu-latest
     strategy:
@@ -43,7 +50,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.6"
+          bun-version: latest
 
       - name: Use Node.js 24
         uses: actions/setup-node@v6

@@ -8,8 +8,15 @@ on:
       - production
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: branch-name-check.yaml
+
   check-branch-name:
     name: Check branch name
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check branch name

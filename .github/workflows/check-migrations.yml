@@ -3,10 +3,17 @@ name: Check Database Migrations
 on:
   pull_request:
     paths:
-      - 'apps/db/supabase/migrations/**.sql'
+      - "apps/db/supabase/migrations/**.sql"
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: check-migrations.yml
+
   check-migrations:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -59,4 +66,4 @@ jobs:
             done
           fi
 
-          echo "All migration checks passed." 
+          echo "All migration checks passed."

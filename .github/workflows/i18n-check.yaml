@@ -8,8 +8,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: i18n-check.yaml
+
   i18n-sort-check:
     name: Translation Sort Check
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
@@ -46,6 +53,8 @@ jobs:
 
   i18n-translation-check:
     name: Translation Keys Check
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:

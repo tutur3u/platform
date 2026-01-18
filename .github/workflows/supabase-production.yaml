@@ -13,12 +13,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: supabase-production.yaml
+
   deploy:
     name: Migrate production database
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    needs: [check-ci]
     # Only run if the Vercel deployment succeeded or if manually triggered
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

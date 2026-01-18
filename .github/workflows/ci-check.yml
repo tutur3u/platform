@@ -1,0 +1,61 @@
+name: CI Configuration Check
+
+on:
+  workflow_call:
+    inputs:
+      workflow_name:
+        required: true
+        type: string
+        description: "The name of the workflow file (e.g., biome-check.yaml)"
+    outputs:
+      should_run:
+        description: "Whether the workflow should run"
+        value: ${{ jobs.check.outputs.should_run }}
+
+jobs:
+  check:
+    name: Check CI Config
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check_config.outputs.should_run }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            tuturuuu.ts
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Check Configuration
+        id: check_config
+        shell: bash
+        run: |
+          CONFIG_FILE="tuturuuu.ts"
+          WORKFLOW_NAME="${{ inputs.workflow_name }}"
+
+          if [ ! -f "$CONFIG_FILE" ]; then
+            echo "::warning::Configuration file $CONFIG_FILE not found. Defaulting to true."
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Create a temporary script to read the config
+          cat << 'EOF' > check_config.ts
+          import { ci } from './tuturuuu.ts';
+
+          const workflowName = process.env.WORKFLOW_NAME || '';
+          // Default to true if key not found
+          const shouldRun = ci[workflowName as keyof typeof ci] ?? true;
+          console.log(String(shouldRun).toLowerCase());
+          EOF
+
+          # Run the script with Bun
+          # Use --silent to prevent bun version info from polluting output
+          SHOULD_RUN=$(WORKFLOW_NAME="$WORKFLOW_NAME" bun run --silent check_config.ts | tr -d '[:space:]')
+
+          echo "Workflow $WORKFLOW_NAME configured to run: $SHOULD_RUN"
+          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT

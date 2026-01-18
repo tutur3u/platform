@@ -9,8 +9,14 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: release-types-package.yaml
+
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/types)')
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true' && github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/types)')
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
@@ -43,7 +49,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.6"
+          bun-version: latest
 
       - uses: actions/setup-node@v6
         with:
@@ -70,7 +76,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.6"
+          bun-version: latest
 
       - uses: actions/setup-node@v6
         with:
@@ -97,7 +103,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.6"
+          bun-version: latest
 
       - uses: actions/setup-node@v6
         with:
@@ -126,7 +132,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.6"
+          bun-version: latest
 
       - uses: actions/setup-node@v6
         with:
