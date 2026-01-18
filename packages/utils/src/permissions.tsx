@@ -146,6 +146,14 @@ export const permissionGroups = ({
               ]
             : []),
           {
+            id: 'admin',
+            icon: <ShieldCheck />,
+            title: t('ws-roles.admin'),
+            description: t('ws-roles.admin_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
             id: 'manage_api_keys',
             icon: <KeyRound />,
             title: t('ws-roles.manage_api_keys'),

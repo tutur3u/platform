@@ -2301,6 +2301,7 @@
       "untitled_note": "Untitled Note"
     },
     "complete": "complete",
+    "configure_permissions": "Configure Permissions",
     "create_plan": "Create Plan",
     "create_task": "Create Task",
     "day": "{count, plural, =1 {Day} other {Days}}",
@@ -2371,6 +2372,8 @@
     "no_updates_description": "Check back later for the latest updates and features.",
     "one_task_attention": "1 task needs your attention",
     "open_tracker": "Open Tracker",
+    "permission_setup_description": "New members who join this workspace don't have any permissions yet. Configure default permissions to grant access to workspace features.",
+    "permission_setup_title": "Set up workspace permissions",
     "quick_actions": {
       "attendance": "Attendance",
       "attendance_desc": "Track and manage member attendance",
@@ -8969,6 +8972,8 @@
   "ws-members": {
     "admin": "Administrator",
     "admin_badge": "Admin",
+    "admin_has_all_permissions": "As the workspace administrator, this member has full access to all permissions",
+    "admin_status": "Admin Status",
     "all": "All",
     "cannot-delete-last-owner": "You cannot delete the last owner of the workspace.",
     "clear_filters": "Clear filters",
@@ -9265,6 +9270,8 @@
     "add_members_to_get_started": "Click 'Add Members' above to assign members to this role",
     "admin": "Administrator",
     "admin_description": "Full access to all features and settings.",
+    "admin_enabled_description": "All permissions below are automatically granted. Individual permission toggles are disabled while administrator access is active.",
+    "admin_enabled_title": "Administrator Access Enabled",
     "ai": "Artificial Intelligence",
     "ai_chat": "AI Chat",
     "ai_chat_description": "Allows members to interact with artificial intelligence through chat.",
@@ -9334,6 +9341,7 @@
     "export_users_data_description": "Allows members to export users data in the workspace.",
     "failed_to_add_member": "Failed to add member",
     "failed_to_remove_member": "Failed to remove member",
+    "granted_via_admin": "Granted via administrator",
     "infrastructure": "Infrastructure",
     "infrastructure_description": "System-level controls for platform administration and technical operations",
     "inventory_access_denied": "Access Denied",

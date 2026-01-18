@@ -17305,44 +17305,25 @@ export type Database = {
           id: string;
         }[];
       };
-      get_invoice_totals_by_date_range:
-        | {
-            Args: {
-              _ws_id: string;
-              end_date?: string;
-              group_by_creator?: boolean;
-              start_date?: string;
-              user_ids?: string[];
-              wallet_ids?: string[];
-            };
-            Returns: {
-              group_avatar_url: string;
-              group_id: string;
-              group_name: string;
-              invoice_count: number;
-              period: string;
-              total_amount: number;
-            }[];
-          }
-        | {
-            Args: {
-              _ws_id: string;
-              end_date?: string;
-              group_by_creator?: boolean;
-              start_date?: string;
-              user_ids?: string[];
-              wallet_ids?: string[];
-              week_start_day?: number;
-            };
-            Returns: {
-              group_avatar_url: string;
-              group_id: string;
-              group_name: string;
-              invoice_count: number;
-              period: string;
-              total_amount: number;
-            }[];
-          };
+      get_invoice_totals_by_date_range: {
+        Args: {
+          _ws_id: string;
+          end_date?: string;
+          group_by_creator?: boolean;
+          start_date?: string;
+          user_ids?: string[];
+          wallet_ids?: string[];
+          week_start_day?: number;
+        };
+        Returns: {
+          group_avatar_url: string;
+          group_id: string;
+          group_name: string;
+          invoice_count: number;
+          period: string;
+          total_amount: number;
+        }[];
+      };
       get_ip_block_level: { Args: { p_ip_address: string }; Returns: number };
       get_joined_workspace_count: {
         Args: { user_id: string };
@@ -18474,10 +18455,15 @@ export type Database = {
         Args: { transaction_id_1: string; transaction_id_2: string };
         Returns: boolean;
       };
-      trunc_to_week_start: {
-        Args: { input_date: string; week_start_day?: number };
-        Returns: string;
-      };
+      trunc_to_week_start:
+        | {
+            Args: { input_date: string; week_start_day?: number };
+            Returns: string;
+          }
+        | {
+            Args: { input_date: string; week_start_day?: number };
+            Returns: string;
+          };
       update_expired_sessions: { Args: never; Returns: undefined };
       update_many_tasks: { Args: { updates: Json }; Returns: number };
       update_session_total_score: {
@@ -19094,7 +19080,8 @@ export type Database = {
         | 'manage_workforce'
         | 'manage_payroll'
         | 'view_workforce'
-        | 'view_payroll';
+        | 'view_payroll'
+        | 'admin';
     };
     CompositeTypes: {
       email_block_status: {
@@ -19749,6 +19736,7 @@ export const Constants = {
         'manage_payroll',
         'view_workforce',
         'view_payroll',
+        'admin',
       ],
     },
   },

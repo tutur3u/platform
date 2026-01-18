@@ -157,7 +157,7 @@ export async function getWorkspace(
   const queryBuilder = sbAdmin
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
+      '*, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
     );
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);

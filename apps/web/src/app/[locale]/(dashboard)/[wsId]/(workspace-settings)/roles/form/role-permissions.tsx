@@ -1,4 +1,4 @@
-import { CheckCircle, Info, Shield, ShieldCheck } from '@tuturuuu/icons';
+import { CheckCircle, Info, Lock, Shield, ShieldCheck } from '@tuturuuu/icons';
 import {
   Accordion,
   AccordionContent,
@@ -38,15 +38,17 @@ export default function RoleFormPermissionsSection({
     )
   );
 
+  // Check if admin permission is enabled
+  const isAdminEnabled = form.watch('permissions.admin') === true;
+
   const totalPermissions = groups.reduce(
     (acc, group) => acc + group.permissions.length,
     0
   );
 
-  const totalEnabledPermissions = enabledPermissionsCount.reduce(
-    (acc, group) => acc + group.count,
-    0
-  );
+  const totalEnabledPermissions = isAdminEnabled
+    ? totalPermissions
+    : enabledPermissionsCount.reduce((acc, group) => acc + group.count, 0);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
@@ -136,30 +138,56 @@ export default function RoleFormPermissionsSection({
 
       <Separator />
 
-      {/* Admin Toggle */}
+      {/* Admin Permission - Bypasses all other permissions */}
       <div className="space-y-3">
         <Label className="flex items-center gap-2 font-semibold text-base">
           <ShieldCheck className="h-4 w-4" />
           {t('ws-roles.quick_actions')}
         </Label>
 
-        <div
-          className={cn(
-            'rounded-lg border p-3 transition-colors sm:p-4',
-            allPermissionsEnabled
-              ? 'border-dynamic-green/20 bg-dynamic-green/5'
-              : 'bg-background'
+        <FormField
+          control={form.control}
+          name="permissions.admin"
+          render={({ field }) => (
+            <FormItem>
+              <div
+                className={cn(
+                  'rounded-lg border p-3 transition-colors sm:p-4',
+                  field.value
+                    ? 'border-dynamic-green/20 bg-dynamic-green/5'
+                    : 'bg-background'
+                )}
+              >
+                <RolePermission
+                  icon={<ShieldCheck className="h-5 w-5" />}
+                  title={t('ws-roles.admin')}
+                  description={t('ws-roles.admin_description')}
+                  value={field.value}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    form.trigger('permissions');
+                  }}
+                />
+              </div>
+            </FormItem>
           )}
-        >
-          <RolePermission
-            icon={<ShieldCheck className="h-5 w-5" />}
-            title={t('ws-roles.admin')}
-            description={t('ws-roles.admin_description')}
-            value={allPermissionsEnabled}
-            onChange={handleToggleAll}
-          />
-        </div>
+        />
       </div>
+
+      {/* Admin Override Notice */}
+      {isAdminEnabled && (
+        <div className="flex gap-2.5 rounded-lg border border-dynamic-green/30 bg-dynamic-green/10 p-3 sm:gap-3 sm:p-4">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
+          <div className="text-sm">
+            <p className="font-semibold text-dynamic-green">
+              {t('ws-roles.admin_enabled_title')}
+            </p>
+            <p className="text-foreground/80 leading-relaxed">
+              {t('ws-roles.admin_enabled_description')}
+            </p>
+          </div>
+        </div>
+      )}
 
       <Separator />
 
@@ -188,9 +216,12 @@ export default function RoleFormPermissionsSection({
           defaultValue={filteredGroups.map((group) => `group-${group.id}`)}
         >
           {filteredGroups.map((group, idx) => {
-            const groupEnabledCount =
+            const count =
               enabledPermissionsCount.find((x) => x.id === group.id)?.count ||
               0;
+            const groupEnabledCount = isAdminEnabled
+              ? group.permissions.length
+              : count;
             const allGroupEnabled =
               groupEnabledCount === group.permissions.length;
 
@@ -247,21 +278,36 @@ export default function RoleFormPermissionsSection({
                               <div
                                 className={cn(
                                   'rounded-lg border p-3 transition-colors sm:p-4',
-                                  field.value
-                                    ? 'border-dynamic-green/20 bg-dynamic-green/5'
-                                    : 'bg-muted/30'
+                                  isAdminEnabled && permission.id !== 'admin'
+                                    ? 'border-dynamic-green/30 bg-dynamic-green/10 opacity-75'
+                                    : field.value
+                                      ? 'border-dynamic-green/20 bg-dynamic-green/5'
+                                      : 'bg-muted/30'
                                 )}
                               >
+                                {isAdminEnabled &&
+                                  permission.id !== 'admin' && (
+                                    <div className="mb-2 flex items-center gap-1.5 text-dynamic-green text-xs">
+                                      <Lock className="h-3 w-3" />
+                                      <span>
+                                        {t('ws-roles.granted_via_admin')}
+                                      </span>
+                                    </div>
+                                  )}
                                 <RolePermission
                                   icon={permission.icon}
                                   title={permission.title}
                                   description={permission.description}
-                                  value={field.value}
+                                  value={isAdminEnabled ? true : field.value}
                                   onChange={(value) => {
                                     field.onChange(value);
                                     form.trigger('permissions');
                                   }}
-                                  disabled={permission?.disabled}
+                                  disabled={
+                                    permission?.disabled ||
+                                    (isAdminEnabled &&
+                                      permission.id !== 'admin')
+                                  }
                                 />
                               </div>
                             </FormItem>

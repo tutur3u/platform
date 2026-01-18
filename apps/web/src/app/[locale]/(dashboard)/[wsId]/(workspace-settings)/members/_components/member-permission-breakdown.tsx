@@ -7,6 +7,7 @@ import {
   Crown,
   Layers,
   Shield,
+  ShieldCheck,
 } from '@tuturuuu/icons';
 import type { PermissionId } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -146,8 +147,16 @@ export function MemberPermissionBreakdown({
 
   // Calculate permission stats with proper accounting
   const stats = useMemo(() => {
-    // If creator, they have all permissions
-    if (member.is_creator) {
+    const hasAdmin =
+      member.default_permissions?.some(
+        (p) => p.permission === 'admin' && p.enabled
+      ) ||
+      member.roles?.some((r) =>
+        r.permissions?.some((p) => p.permission === 'admin' && p.enabled)
+      );
+
+    // If creator or admin, they have all permissions
+    if (member.is_creator || hasAdmin) {
       return {
         total: totalPermCount,
         onlyDefault: permissionAnalysis.onlyDefault.length,
@@ -157,6 +166,7 @@ export function MemberPermissionBreakdown({
         coverage: 100,
         hasOrphanedPermissions: permissionAnalysis.orphaned.length > 0,
         orphanedCount: permissionAnalysis.orphaned.length,
+        isAdmin: hasAdmin,
       };
     }
 
@@ -396,6 +406,24 @@ export function MemberPermissionBreakdown({
                   </div>
                   <p className="pl-6 text-muted-foreground text-xs">
                     {t('ws-members.creator_has_all_permissions')}
+                  </p>
+                </div>
+              )}
+
+              {/* Admin Status */}
+              {stats.isAdmin && !member.is_creator && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-dynamic-green" />
+                    <h4 className="font-semibold text-sm">
+                      {t('ws-members.admin_status')}
+                    </h4>
+                    <Badge className="border-dynamic-green/50 bg-dynamic-green/10 text-dynamic-green text-xs">
+                      {t('ws-members.admin_badge')}
+                    </Badge>
+                  </div>
+                  <p className="pl-6 text-muted-foreground text-xs">
+                    {t('ws-members.admin_has_all_permissions')}
                   </p>
                 </div>
               )}

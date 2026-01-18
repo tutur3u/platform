@@ -176,6 +176,13 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     ).length,
   }));
 
+  const adminEnabled = form.watch('permissions.admin');
+  const totalCount = totalPermissions({ wsId, user });
+
+  const currentCount = adminEnabled
+    ? totalCount
+    : enabledPermissionsCount.reduce((acc, group) => acc + group.count, 0);
+
   const sectionProps = { wsId, user, roleId, form, enabledPermissionsCount };
   const [tab, setTab] = useState<'display' | 'permissions' | 'members'>(
     forceDefault ? 'permissions' : 'display'
@@ -201,12 +208,8 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
             </TabsTrigger>
             <TabsTrigger value="permissions">
               <PencilRuler className="mr-1 h-5 w-5" />
-              {t('ws-roles.permissions')} (
-              {enabledPermissionsCount.reduce(
-                (acc, group) => acc + group.count,
-                0
-              )}
-              /{totalPermissions({ wsId, user })})
+              {t('ws-roles.permissions')} ({currentCount}/
+              {totalPermissions({ wsId, user })})
             </TabsTrigger>
             <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />

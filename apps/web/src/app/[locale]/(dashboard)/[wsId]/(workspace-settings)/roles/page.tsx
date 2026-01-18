@@ -64,6 +64,18 @@ export default async function WorkspaceRolesPage({
 
         const permissionsCount = totalPermissions({ wsId, user });
 
+        const adminEnabled = defaultData.permissions.some(
+          (p) => p.id === 'admin' && p.enabled
+        );
+
+        const enabledInfos = permissions({ wsId, user }).filter((p) =>
+          defaultData.permissions.some((dp) => dp.id === p.id && dp.enabled)
+        );
+
+        const currentCount = adminEnabled
+          ? permissionsCount
+          : enabledInfos.length;
+
         return (
           <>
             <FeatureSummary
@@ -74,13 +86,9 @@ export default async function WorkspaceRolesPage({
               createDescription={t('ws-roles.create_description')}
               form={<RoleForm wsId={wsId} user={user} />}
               defaultData={defaultData}
-              secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
-                permissions({ wsId, user }).filter((p) =>
-                  defaultData.permissions.some(
-                    (dp) => dp.id === p.id && dp.enabled
-                  )
-                ).length
-              }/${permissionsCount})`}
+              secondaryTriggerTitle={`${t(
+                'ws-roles.manage_default_permissions'
+              )} (${currentCount}/${permissionsCount})`}
               secondaryTitle={t('ws-roles.default_permissions')}
               secondaryDescription={t(
                 'ws-roles.default_permissions_description'

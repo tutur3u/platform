@@ -14,6 +14,7 @@ import UpcomingCalendarEvents from './calendar/upcoming-events';
 import RecentChangelog from './changelog/recent-changelog';
 import CompanyHub from './company-hub';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
+import PermissionSetupBanner from './permission-setup-banner';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
@@ -69,6 +70,13 @@ export default async function WorkspaceHomePage({ params }: Props) {
           <div className="flex flex-col gap-4 pb-4 xl:flex-row">
             {/* Main content area - 2 column grid */}
             <div className={cn('grid h-fit flex-1 gap-4 lg:grid-cols-2')}>
+              {/* Permission setup banner for workspace creators */}
+              {currentUser && !workspace.personal && (
+                <PermissionSetupBanner
+                  wsId={wsId}
+                  isCreator={workspace.creator_id === currentUser.id}
+                />
+              )}
               {isInternalUser && isInternalWorkspace && <CompanyHub />}
               {currentUser && (
                 <>
