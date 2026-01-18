@@ -46,6 +46,7 @@ Mandatory guardrails:
 10. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
 11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
 12. Verification: Run `bun check` at the end of your work. This unified command runs formatting, tests, type-checking, and i18n checks (`bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check`). All checks MUST pass. This is a mandatory requirement.
+13. CI/Workflow Configuration: When adding or modifying GitHub Actions workflows in `.github/workflows/`, ALWAYS update `tuturuuu.ts` at the repository root. Add an entry for the new workflow filename (e.g., `"my-workflow.yaml": true`). The workflow must include a `check-ci` job that calls `.github/workflows/ci-check.yml` and all main jobs must depend on it with `needs: [check-ci]` and `if: needs.check-ci.outputs.should_run == 'true'`.
 
 Prohibited actions (HARD STOP - agents must NEVER do these):
 
@@ -475,10 +476,10 @@ Mutations:
 - Define `useMutation({ mutationFn, onMutate, onError, onSettled })`.
 - Optimistic Update Flow:
 
-1.  `onMutate` – cancel outgoing queries for affected keys (`queryClient.cancelQueries`). Snapshot previous value.
-2.  Apply optimistic cache change (`setQueryData`).
-3.  On error – restore snapshot; surface toast / non-intrusive error.
-4.  On success – merge server response (source of truth) and invalidate narrowly (e.g., `invalidateQueries({ queryKey: [...] })`).
+  1. `onMutate` – cancel outgoing queries for affected keys (`queryClient.cancelQueries`). Snapshot previous value.
+  2. Apply optimistic cache change (`setQueryData`).
+  3. On error – restore snapshot; surface toast / non-intrusive error.
+  4. On success – merge server response (source of truth) and invalidate narrowly (e.g., `invalidateQueries({ queryKey: [...] })`).
 
 - Avoid broad `invalidateQueries()` with no key – hurts perf & determinism.
 

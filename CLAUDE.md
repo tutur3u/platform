@@ -214,6 +214,7 @@ bun trigger:deploy
 15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
 16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
 17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
+18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
 
 ### Escalate When
 
