@@ -32,15 +32,16 @@ export function MemberCard({ member }: MemberCardProps) {
           'pack-card-glow'
         )}
       >
-        {/* Campfire Glow Hover Effect */}
+        {/* Campfire Glow Hover Effect (Charged) */}
         <div
           className={cn(
-            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700',
+            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500',
             'group-hover:opacity-100'
           )}
           style={{
             background:
-              'radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.15) 0%, transparent 70%)',
+              'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, transparent 80%)',
+            boxShadow: 'inset 0 0 40px rgba(251, 191, 36, 0.05)',
           }}
         />
 

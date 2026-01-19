@@ -10,7 +10,27 @@ export function SceneIVHunt() {
       <div className="pack-texture-overlay opacity-5" />
 
       {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-pack-slate/40 via-pack-void to-pack-void opacity-50" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,var(--tw-gradient-stops))] from-pack-slate/40 via-pack-void to-pack-void opacity-50" />
+
+      {/* Constellation Mesh Background (Subtle connections between cards) */}
+      <svg
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-20"
+        aria-hidden="true"
+      >
+        <motion.path
+          d="M 20% 60% Q 50% 40% 80% 60%"
+          fill="none"
+          stroke="var(--color-pack-amber)"
+          strokeWidth="1"
+          strokeDasharray="4 4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          whileInView={{ pathLength: 1, opacity: 0.3 }}
+          transition={{ duration: 2 }}
+        />
+        <motion.circle cx="20%" cy="60%" r="2" fill="var(--color-pack-amber)" />
+        <motion.circle cx="50%" cy="40%" r="2" fill="var(--color-pack-amber)" />
+        <motion.circle cx="80%" cy="60%" r="2" fill="var(--color-pack-amber)" />
+      </svg>
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -46,7 +66,7 @@ export function SceneIVHunt() {
               className="group relative"
             >
               {/* Rugged Border/Frame */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-pack-border/30 bg-pack-charcoal transition-all duration-500 group-hover:border-pack-amber/50 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.1)]">
+              <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-pack-border/30 bg-pack-charcoal transition-all duration-500 group-hover:border-pack-amber/50 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.1)]">
                 <Image
                   src={venture.previewUrl}
                   alt={venture.name}
@@ -55,7 +75,7 @@ export function SceneIVHunt() {
                 />
 
                 {/* Overlay Vignette */}
-                <div className="absolute inset-0 bg-gradient-to-t from-pack-void via-transparent to-transparent opacity-80" />
+                <div className="absolute inset-0 bg-linear-to-t from-pack-void via-transparent to-transparent opacity-80" />
 
                 {/* Texture */}
                 <div className="pack-texture-overlay opacity-10" />
