@@ -6,6 +6,7 @@ import {
 import {
   transformInvoiceData,
   transformInvoiceSearchResults,
+  type FullInvoiceData,
 } from '@tuturuuu/utils/finance/transform-invoice-results';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -277,7 +278,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // No search query - use regular query builder
-    let selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))`;
+    let selectQuery = `*, customer:workspace_users!finance_invoices_customer_id_fkey(full_name, avatar_url), legacy_creator:workspace_users!finance_invoices_creator_id_fkey(id, full_name, display_name, email, avatar_url), platform_creator:users!finance_invoices_platform_creator_id_fkey(id, display_name, avatar_url, user_private_details(full_name, email))`;
 
     // Join wallet_transactions, using !inner if walletIds filter is present
     const walletJoinType = sp.walletIds.length > 0 ? '!inner' : '';
@@ -317,7 +318,11 @@ export async function GET(request: Request, { params }: Params) {
     const end = sp.page * sp.pageSize - 1;
     queryBuilder = queryBuilder.range(start, end);
 
-    const { data: rawData, error, count } = await queryBuilder;
+    const {
+      data: rawData,
+      error,
+      count,
+    } = await queryBuilder.returns<FullInvoiceData[]>();
 
     if (error) {
       console.error('Error fetching invoices:', error);
@@ -328,7 +333,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // Transform data to match expected Invoice type
-    const data = transformInvoiceData(rawData);
+    const data = transformInvoiceData(rawData || []);
 
     return NextResponse.json({
       data,
