@@ -10,14 +10,14 @@ export function AtmosphericPass() {
   // Pack -> Infinite (approx 0.6 - 0.75)
   const fogOpacity = useTransform(
     scrollYProgress,
-    [0, 0.2, 0.3, 0.4, 0.55, 0.65, 0.75, 0.9, 1],
-    [0.1, 0.15, 0.4, 0.15, 0.15, 0.4, 0.15, 0.1, 0.1]
+    [0, 0.15, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 1],
+    [0.1, 0.15, 0.45, 0.15, 0.15, 0.45, 0.15, 0.1, 0.1]
   );
 
   const fogScale = useTransform(
     scrollYProgress,
-    [0, 0.3, 0.65, 1],
-    [1, 1.2, 1.1, 1]
+    [0, 0.25, 0.65, 1],
+    [1, 1.2, 1.15, 1]
   );
 
   return (

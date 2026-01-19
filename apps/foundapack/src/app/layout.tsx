@@ -50,7 +50,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={cn(
-          'bg-pack-void text-pack-frost antialiased',
+          'overflow-x-hidden bg-pack-void text-pack-frost antialiased',
           inter.variable,
           crimson.variable,
           caveat.variable,

@@ -14,15 +14,17 @@ export function ScalingNetwork() {
     offset: ['start start', 'end end'],
   });
 
-  // Background Opacity Transitions (Exclusive phases)
-  // 0.0 - 0.3: Lone Wolf
-  // 0.3 - 0.6: The Pack
-  // 0.6 - 1.0: Infinite
+  // Background Opacity Transitions (Exclusive phases with crossfade zones)
+  // 0.0 - 0.2: Lone Wolf (fully visible)
+  // 0.2 - 0.3: Crossfade Wolf → Pack
+  // 0.3 - 0.6: The Pack (fully visible)
+  // 0.6 - 0.7: Crossfade Pack → Infinite
+  // 0.7 - 1.0: Infinite (fully visible)
 
-  const wolfOpacity = useTransform(scrollYProgress, [0, 0.2, 0.4], [1, 1, 0]);
+  const wolfOpacity = useTransform(scrollYProgress, [0, 0.2, 0.3], [1, 1, 0]);
   const packOpacity = useTransform(
     scrollYProgress,
-    [0.3, 0.4, 0.6, 0.7],
+    [0.2, 0.3, 0.6, 0.7],
     [0, 1, 1, 0]
   );
   const infiniteOpacity = useTransform(
@@ -34,28 +36,28 @@ export function ScalingNetwork() {
   // Content Visibility (One after another)
   const wolfContentOpacity = useTransform(
     scrollYProgress,
-    [0, 0.15, 0.3],
+    [0, 0.15, 0.25],
     [1, 1, 0]
   );
-  const wolfContentY = useTransform(scrollYProgress, [0, 0.3], [0, -100]);
+  const wolfContentY = useTransform(scrollYProgress, [0, 0.25], [0, -80]);
 
   const packContentOpacity = useTransform(
     scrollYProgress,
-    [0.3, 0.45, 0.6, 0.7],
+    [0.2, 0.3, 0.6, 0.7],
     [0, 1, 1, 0]
   );
   const packContentY = useTransform(
     scrollYProgress,
-    [0.3, 0.45, 0.7],
-    [100, 0, -100]
+    [0.2, 0.3, 0.7],
+    [80, 0, -80]
   );
 
   const infiniteContentOpacity = useTransform(
     scrollYProgress,
-    [0.7, 0.85, 1],
+    [0.6, 0.75, 1],
     [0, 1, 1]
   );
-  const infiniteContentY = useTransform(scrollYProgress, [0.7, 0.85], [100, 0]);
+  const infiniteContentY = useTransform(scrollYProgress, [0.6, 0.75], [80, 0]);
 
   return (
     <section

@@ -10,8 +10,8 @@ export function PackBackground() {
   // Ember global opacity increases during scene changes
   const transitionEmberOpacity = useTransform(
     scrollYProgress,
-    [0, 0.25, 0.35, 0.6, 0.75, 1],
-    [0.4, 1, 0.4, 1, 0.4, 0.2]
+    [0, 0.2, 0.3, 0.6, 0.7, 1],
+    [0.4, 1, 0.5, 1, 0.5, 0.25]
   );
 
   useEffect(() => {

@@ -3,6 +3,51 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
+// Geometric definition of a low-poly wolf head (Front facing)
+const nodes = [
+  { id: 'nose', x: 50, y: 75 },
+  { id: 'snout_top', x: 50, y: 60 },
+  { id: 'eye_l', x: 35, y: 50 },
+  { id: 'eye_r', x: 65, y: 50 },
+  { id: 'ear_l_tip', x: 25, y: 15 },
+  { id: 'ear_r_tip', x: 75, y: 15 },
+  { id: 'ear_l_base', x: 35, y: 35 },
+  { id: 'ear_r_base', x: 65, y: 35 },
+  { id: 'forehead', x: 50, y: 30 },
+  { id: 'cheek_l', x: 20, y: 60 },
+  { id: 'cheek_r', x: 80, y: 60 },
+  { id: 'jaw_l', x: 35, y: 80 },
+  { id: 'jaw_r', x: 65, y: 80 },
+];
+
+const connections = [
+  // Snout / Central
+  ['nose', 'snout_top'],
+  ['snout_top', 'forehead'],
+  ['nose', 'jaw_l'],
+  ['nose', 'jaw_r'],
+  ['jaw_l', 'cheek_l'],
+  ['jaw_r', 'cheek_r'],
+
+  // Eyes mask
+  ['snout_top', 'eye_l'],
+  ['snout_top', 'eye_r'],
+  ['eye_l', 'forehead'],
+  ['eye_r', 'forehead'],
+  ['eye_l', 'cheek_l'],
+  ['eye_r', 'cheek_r'],
+
+  // Ears
+  ['eye_l', 'ear_l_base'],
+  ['eye_r', 'ear_r_base'],
+  ['ear_l_base', 'ear_l_tip'],
+  ['ear_r_base', 'ear_r_tip'],
+  ['ear_l_tip', 'forehead'], // Connection back to head
+  ['ear_r_tip', 'forehead'],
+  ['ear_l_base', 'cheek_l'],
+  ['ear_r_base', 'cheek_r'],
+];
+
 export function WolfSilhouette() {
   const [mounted, setMounted] = useState(false);
 
@@ -10,181 +55,142 @@ export function WolfSilhouette() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="h-72 w-72 md:h-[500px] md:w-[500px]" />;
+  if (!mounted) return <div className="h-72 w-72 md:h-125 md:w-125" />;
 
   return (
-    <div className="relative flex h-72 w-72 items-center justify-center md:h-[500px] md:w-[500px]">
-      {/* Intense Center Glow for Visibility */}
-      <div className="absolute inset-0 rounded-full bg-pack-amber/10 blur-[100px]" />
-      <div className="absolute h-32 w-32 rounded-full bg-pack-orange/20 blur-[60px]" />
-
-      {/* Dynamic Background Glow */}
+    <div className="relative flex h-72 w-72 items-center justify-center md:h-150 md:w-150">
+      {/* 1. Core Atmosphere - The "Spark" */}
       <motion.div
         animate={{
-          opacity: [0.2, 0.4, 0.2],
-          scale: [1, 1.1, 1],
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute inset-0 rounded-full bg-pack-amber/20 blur-[120px]"
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute inset-0 rounded-full bg-[radial-gradient(circle,var(--color-pack-amber)_0%,transparent_70%)] opacity-20 blur-3xl"
+      />
+
+      {/* 2. Rotating Ring (The Void boundary) */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+        className="absolute inset-0 rounded-full border border-pack-amber/5 opacity-20"
+        style={{ width: '90%', height: '90%', left: '5%', top: '5%' }}
+      />
+
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+        className="absolute inset-0 rounded-full border border-pack-frost/10 border-dashed opacity-30"
+        style={{ width: '70%', height: '70%', left: '15%', top: '15%' }}
       />
 
       <svg
-        viewBox="0 0 400 400"
+        viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="relative z-10 h-full w-full drop-shadow-[0_0_30px_rgba(251,191,36,0.2)]"
+        className="relative z-10 h-full w-full drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+        aria-labelledby="wolf-title"
       >
-        <title>Spectral Wolf Silhouette</title>
-        <defs>
-          <filter id="wolf-glow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-          <linearGradient
-            id="wolf-grad"
-            x1="200"
-            y1="50"
-            x2="200"
-            y2="350"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop
-              offset="0%"
-              stopColor="var(--color-pack-amber)"
-              stopOpacity="0.8"
-            />
-            <stop
-              offset="50%"
-              stopColor="var(--color-pack-orange)"
-              stopOpacity="0.4"
-            />
-            <stop
-              offset="100%"
-              stopColor="var(--color-pack-void)"
-              stopOpacity="0"
-            />
-          </linearGradient>
-        </defs>
-
-        {/* The Spectral Wolf Silhouette */}
-        <motion.path
-          d="M200 60 
-             C 240 60, 280 90, 290 140 
-             C 290 180, 270 220, 240 250 
-             L 250 340 
-             L 200 320 
-             L 150 340 
-             L 160 250 
-             C 130 220, 110 180, 110 140 
-             C 120 90, 160 60, 200 60 Z"
-          fill="rgba(251, 191, 36, 0.05)"
-          stroke="var(--color-pack-amber)"
-          strokeWidth="1"
-          filter="url(#wolf-glow)"
-          animate={{
-            strokeOpacity: [0.4, 1, 0.4],
-            fillOpacity: [0.05, 0.1, 0.05],
-            scale: [1, 1.01, 1],
-          }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* Noble Ears */}
-        <path
-          d="M170 85 L140 20 L190 75 M230 85 L260 20 L210 75"
-          fill="rgba(251, 191, 36, 0.05)"
-          stroke="var(--color-pack-amber)"
-          strokeWidth="1"
-          strokeLinejoin="round"
-        />
-
-        {/* Celestial Eyes - Brighter */}
-        <motion.g
-          animate={{
-            opacity: [0.6, 1, 0.6],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <circle cx="175" cy="150" r="2.5" fill="var(--color-pack-amber)" />
-          <circle cx="225" cy="150" r="2.5" fill="var(--color-pack-amber)" />
-          <circle
-            cx="175"
-            cy="150"
-            r="8"
-            fill="var(--color-pack-amber)"
-            opacity="0.3"
-          />
-          <circle
-            cx="225"
-            cy="150"
-            r="8"
-            fill="var(--color-pack-amber)"
-            opacity="0.3"
-          />
-        </motion.g>
-
-        {/* Floating Ember Particles Around Wolf */}
-        {[...Array(12)].map((_, i) => {
-          const r = 0.5 + (i % 3) * 0.5;
-          const cx = 200 + (((i * 17) % 200) - 100);
-          const cy = 200 + (((i * 23) % 200) - 100);
-          const duration = 4 + (i % 4);
+        <title id="wolf-title">Constellation Wolf</title>
+        {/* Connections (Wireframe) */}
+        {connections.map(([startId, endId], i) => {
+          const start = nodes.find((n) => n.id === startId);
+          const end = nodes.find((n) => n.id === endId);
+          if (!start || !end) return null;
 
           return (
-            <motion.circle
-              key={i}
-              r={r}
-              fill="var(--color-pack-amber)"
-              initial={{
-                cx,
-                cy,
-                opacity: 0,
-              }}
+            <motion.line
+              key={`${startId}-${endId}`}
+              x1={start.x}
+              y1={start.y}
+              x2={end.x}
+              y2={end.y}
+              stroke="var(--color-pack-amber)"
+              strokeWidth="0.5"
+              strokeOpacity="0.4"
+              initial={{ pathLength: 0, opacity: 0 }}
               animate={{
-                cy: [cy, cy - 100],
-                opacity: [0, 0.6, 0],
+                pathLength: 1,
+                opacity: [0.2, 0.6, 0.2],
               }}
               transition={{
-                duration,
+                duration: 3 + Math.random() * 2,
                 repeat: Infinity,
-                delay: i * 0.5,
+                delay: i * 0.1,
+                ease: 'easeInOut',
               }}
             />
           );
         })}
+
+        {/* Nodes (Stars) */}
+        {nodes.map((node, i) => (
+          <motion.g key={node.id}>
+            {/* Glow */}
+            <motion.circle
+              cx={node.x}
+              cy={node.y}
+              r="3" // Glow radius
+              fill="var(--color-pack-amber)"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{
+                duration: 2 + Math.random(),
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+            {/* Core Dot */}
+            <motion.circle
+              cx={node.x}
+              cy={node.y}
+              r={node.id.includes('eye') ? 1 : 0.6}
+              fill={
+                node.id.includes('eye') ? '#fff' : 'var(--color-pack-amber)'
+              }
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5 + i * 0.05 }}
+            />
+          </motion.g>
+        ))}
+
+        {/* The Spark (Heart) */}
+        <motion.circle
+          cx="50"
+          cy="60"
+          r="15"
+          fill="url(#spark-gradient)"
+          filter="blur(10px)"
+          animate={{ opacity: [0.2, 0.6, 0.2], scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+
+        <defs>
+          <radialGradient
+            id="spark-gradient"
+            cx="0"
+            cy="0"
+            r="1"
+            gradientUnits="userSpaceOnUse"
+            gradientTransform="translate(50 60) rotate(90) scale(15)"
+          >
+            <stop stopColor="var(--color-pack-amber)" />
+            <stop
+              offset="1"
+              stopColor="var(--color-pack-amber)"
+              stopOpacity="0"
+            />
+          </radialGradient>
+        </defs>
       </svg>
 
-      {/* Internal Stars (Constellation inside the silhouette) */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="relative h-1/2 w-1/3">
-          {[...Array(8)].map((_, i) => {
-            const left = (i * 37) % 100;
-            const top = (i * 43) % 100;
-            const duration = 2 + (i % 3);
-
-            return (
-              <motion.div
-                key={i}
-                className="absolute h-1 w-1 rounded-full bg-pack-amber"
-                style={{
-                  left: `${left}%`,
-                  top: `${top}%`,
-                }}
-                animate={{
-                  opacity: [0.2, 0.8, 0.2],
-                  scale: [1, 1.5, 1],
-                }}
-                transition={{
-                  duration,
-                  repeat: Infinity,
-                  delay: i * 0.3,
-                }}
-              />
-            );
-          })}
-        </div>
-      </div>
+      {/* Glitch Overlay for "Unstable" feel */}
+      <motion.div
+        className="absolute inset-0 bg-pack-amber/5 mix-blend-overlay"
+        animate={{ opacity: [0, 0.1, 0, 0.2, 0] }}
+        transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 5 }}
+      />
     </div>
   );
 }

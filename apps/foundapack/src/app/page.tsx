@@ -18,13 +18,13 @@ export default function FoundapackPage() {
   // Opacity of embers (warmth) increases as we scroll
   const emberOpacity = useTransform(
     scrollYProgress,
-    [0, 0.4, 0.6, 1],
-    [0.1, 0.8, 0.8, 0.4]
+    [0, 0.25, 0.65, 1],
+    [0.15, 0.85, 0.85, 0.5]
   );
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-pack-void text-pack-frost">
-      <div className="pack-noise pointer-events-none fixed inset-0 z-50 opacity-20 mix-blend-overlay" />
+    <main className="relative min-h-screen bg-pack-void text-pack-frost">
+      <div className="pack-noise pointer-events-none fixed inset-0 z-40 opacity-20 mix-blend-overlay" />
 
       {/* Atmosphere */}
       <NightSky />
