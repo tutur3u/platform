@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -17444,7 +17444,13 @@ export type Database = {
         Returns: number;
       };
       get_pending_invoices: {
-        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_user_ids?: string[];
+          p_ws_id: string;
+        };
         Returns: {
           attendance_days: number;
           group_id: string;
@@ -17471,7 +17477,7 @@ export type Database = {
         }[];
       };
       get_pending_invoices_count: {
-        Args: { p_ws_id: string };
+        Args: { p_query?: string; p_user_ids?: string[]; p_ws_id: string };
         Returns: number;
       };
       get_period_summary_stats: {
@@ -18367,6 +18373,34 @@ export type Database = {
       revoke_user_session: {
         Args: { session_id: string; target_user_id: string };
         Returns: boolean;
+      };
+      search_finance_invoices: {
+        Args: {
+          p_end_date?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_search_query: string;
+          p_start_date?: string;
+          p_user_ids?: string[];
+          p_wallet_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          created_at: string;
+          creator_id: string;
+          customer_avatar_url: string;
+          customer_full_name: string;
+          customer_id: string;
+          id: string;
+          note: string;
+          notice: string;
+          platform_creator_id: string;
+          price: number;
+          total_count: number;
+          total_diff: number;
+          transaction_id: string;
+          ws_id: string;
+        }[];
       };
       search_users: {
         Args: {

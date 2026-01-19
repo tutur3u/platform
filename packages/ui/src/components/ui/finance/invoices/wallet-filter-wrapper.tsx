@@ -1,7 +1,12 @@
 'use client';
 
 import { WalletFilter } from '@tuturuuu/ui/finance/transactions/wallet-filter';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
 import { useCallback } from 'react';
 
 interface WalletFilterWrapperProps {
@@ -9,44 +14,33 @@ interface WalletFilterWrapperProps {
 }
 
 export function WalletFilterWrapper({ wsId }: WalletFilterWrapperProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const [walletIds, setWalletIds] = useQueryState(
+    'walletIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
 
-  // Get current wallet IDs from search params
-  const currentWalletIds = searchParams.getAll('walletIds');
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle wallet filter changes
   const handleWalletsChange = useCallback(
-    (walletIds: string[]) => {
-      const params = new URLSearchParams(searchParams);
-
-      // Remove all existing walletIds params
-      params.delete('walletIds');
-      // Remove legacy walletId param if exists
-      params.delete('walletId');
-
-      // Add new walletIds params
-      if (walletIds.length > 0) {
-        walletIds.forEach((walletId) => {
-          params.append('walletIds', walletId);
-        });
-      }
-
-      // Reset to first page when filtering
-      params.set('page', '1');
-
-      const newUrl = `${pathname}?${params.toString()}`;
-      router.push(newUrl);
-      router.refresh();
+    (newIds: string[]) => {
+      setWalletIds(newIds.length > 0 ? newIds : null);
+      setPage(1); // Reset to first page when filtering
     },
-    [router, searchParams, pathname]
+    [setWalletIds, setPage]
   );
 
   return (
     <WalletFilter
       wsId={wsId}
-      selectedWalletIds={currentWalletIds}
+      selectedWalletIds={walletIds}
       onWalletsChange={handleWalletsChange}
     />
   );

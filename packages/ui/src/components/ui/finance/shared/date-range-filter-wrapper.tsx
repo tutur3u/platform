@@ -9,9 +9,9 @@ import { useCallback } from 'react';
 export function DateRangeFilterWrapper() {
   const t = useTranslations();
   const locale = useLocale();
-  const [start, setStart] = useQueryState('start', { shallow: false });
-  const [end, setEnd] = useQueryState('end', { shallow: false });
-  const [, setPage] = useQueryState('page', { shallow: false });
+  const [start, setStart] = useQueryState('start', { shallow: true });
+  const [end, setEnd] = useQueryState('end', { shallow: true });
+  const [, setPage] = useQueryState('page', { shallow: true });
 
   const handleDateRangeChange = useCallback(
     async (values: {

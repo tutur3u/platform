@@ -1,6 +1,27 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const SearchParamsSchema = z.object({
+  q: z.string().default(''),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  start: z.string().optional(),
+  end: z.string().optional(),
+  userIds: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
+  walletIds: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
+});
 
 interface Params {
   params: Promise<{
@@ -151,6 +172,279 @@ export async function calculateInvoiceValues(
     values_recalculated,
     rounding_applied,
   };
+}
+
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const supabase = await createClient();
+    const { wsId: id } = await params;
+
+    // Resolve workspace ID
+    const wsId = await normalizeWorkspaceId(id);
+
+    // Check permissions
+    const { containsPermission } = await getPermissions({ wsId });
+    const canViewInvoices = containsPermission('view_invoices');
+
+    if (!canViewInvoices) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Parse query params
+    const { searchParams } = new URL(request.url);
+    const params_obj: Record<string, string | string[]> = {};
+
+    searchParams.forEach((value, key) => {
+      const existing = params_obj[key];
+      if (existing) {
+        if (Array.isArray(existing)) {
+          existing.push(value);
+        } else {
+          params_obj[key] = [existing, value];
+        }
+      } else {
+        params_obj[key] = value;
+      }
+    });
+
+    const sp = SearchParamsSchema.parse(params_obj);
+    const q = sp.q;
+
+    // If there's a search query, use the RPC function for customer name search
+    if (q) {
+      const { data: searchResults, error: rpcError } = await supabase.rpc(
+        'search_finance_invoices',
+        {
+          p_ws_id: wsId,
+          p_search_query: q,
+          p_start_date: sp.start || null,
+          p_end_date: sp.end || null,
+          p_user_ids: sp.userIds.length > 0 ? sp.userIds : null,
+          p_wallet_ids: sp.walletIds.length > 0 ? sp.walletIds : null,
+          p_limit: sp.pageSize,
+          p_offset: (sp.page - 1) * sp.pageSize,
+        }
+      );
+
+      if (rpcError) {
+        console.error('Error searching invoices:', rpcError);
+        return NextResponse.json(
+          { message: 'Error searching invoices' },
+          { status: 500 }
+        );
+      }
+
+      // Extract count from first row (all rows have same count)
+      const count = searchResults?.[0]?.total_count || 0;
+
+      // Fetch additional data for legacy/platform creators and wallet info
+      const invoiceIds = searchResults.map((r: any) => r.id);
+      const { data: fullInvoices } = await supabase
+        .from('finance_invoices')
+        .select(
+          `*, 
+           legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
+           platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
+           wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+        )
+        .in('id', invoiceIds);
+
+      // Merge search results with full invoice data
+      const rawData = searchResults.map((searchRow: any) => {
+        const fullInvoice = fullInvoices?.find(
+          (fi: any) => fi.id === searchRow.id
+        );
+        return {
+          ...searchRow,
+          customer: {
+            full_name: searchRow.customer_full_name,
+            avatar_url: searchRow.customer_avatar_url,
+          },
+          legacy_creator: fullInvoice?.legacy_creator || null,
+          platform_creator: fullInvoice?.platform_creator || null,
+          wallet_transactions: fullInvoice?.wallet_transactions || null,
+        };
+      });
+
+      const error = null;
+      const data = rawData.map(
+        ({
+          customer,
+          legacy_creator,
+          platform_creator,
+          wallet_transactions,
+          ...rest
+        }: any) => {
+          const platformCreator = platform_creator as {
+            id: string;
+            display_name: string | null;
+            avatar_url: string | null;
+            user_private_details: {
+              full_name: string | null;
+              email: string | null;
+            } | null;
+          } | null;
+
+          const legacyCreator = legacy_creator as {
+            id: string;
+            display_name: string | null;
+            full_name: string | null;
+            email: string | null;
+            avatar_url: string | null;
+          } | null;
+
+          const creator = {
+            id: platformCreator?.id ?? legacyCreator?.id ?? '',
+            display_name:
+              platformCreator?.display_name ??
+              legacyCreator?.display_name ??
+              platformCreator?.user_private_details?.email ??
+              null,
+            full_name:
+              platformCreator?.user_private_details?.full_name ??
+              legacyCreator?.full_name ??
+              null,
+            email:
+              platformCreator?.user_private_details?.email ??
+              legacyCreator?.email ??
+              null,
+            avatar_url:
+              platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+          };
+
+          return {
+            ...rest,
+            customer,
+            creator,
+            wallet: wallet_transactions?.wallet || null,
+          } as Invoice;
+        }
+      );
+
+      return NextResponse.json({ data, count });
+    }
+
+    // No search query - use regular query builder
+    let selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))`;
+
+    // Join wallet_transactions, using !inner if walletIds filter is present
+    const walletJoinType = sp.walletIds.length > 0 ? '!inner' : '';
+    selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
+
+    let queryBuilder = supabase
+      .from('finance_invoices')
+      .select(selectQuery, {
+        count: 'exact',
+      })
+      .eq('ws_id', wsId);
+
+    queryBuilder = queryBuilder.order('created_at', { ascending: false });
+
+    // Apply date range filter
+    if (sp.start && sp.end) {
+      queryBuilder = queryBuilder
+        .gte('created_at', sp.start)
+        .lte('created_at', sp.end);
+    }
+
+    // Apply user IDs filter
+    if (sp.userIds.length > 0) {
+      queryBuilder = queryBuilder.in('creator_id', sp.userIds);
+    }
+
+    // Apply wallet IDs filter
+    if (sp.walletIds.length > 0) {
+      queryBuilder = queryBuilder.in(
+        'wallet_transactions.wallet_id',
+        sp.walletIds
+      );
+    }
+
+    // Apply pagination
+    const start = (sp.page - 1) * sp.pageSize;
+    const end = sp.page * sp.pageSize - 1;
+    queryBuilder = queryBuilder.range(start, end);
+
+    const { data: rawData, error, count } = await queryBuilder;
+
+    if (error) {
+      console.error('Error fetching invoices:', error);
+      return NextResponse.json(
+        { message: 'Error fetching invoices' },
+        { status: 500 }
+      );
+    }
+
+    // Transform data to match expected Invoice type
+    const data = rawData.map(
+      ({
+        customer,
+        legacy_creator,
+        platform_creator,
+        wallet_transactions,
+        ...rest
+      }: any) => {
+        const platformCreator = platform_creator as {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          user_private_details: {
+            full_name: string | null;
+            email: string | null;
+          } | null;
+        } | null;
+
+        const legacyCreator = legacy_creator as {
+          id: string;
+          display_name: string | null;
+          full_name: string | null;
+          email: string | null;
+          avatar_url: string | null;
+        } | null;
+
+        const creator = {
+          id: platformCreator?.id ?? legacyCreator?.id ?? '',
+          display_name:
+            platformCreator?.display_name ??
+            legacyCreator?.display_name ??
+            platformCreator?.user_private_details?.email ??
+            null,
+          full_name:
+            platformCreator?.user_private_details?.full_name ??
+            legacyCreator?.full_name ??
+            null,
+          email:
+            platformCreator?.user_private_details?.email ??
+            legacyCreator?.email ??
+            null,
+          avatar_url:
+            platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+        };
+
+        const wallet = wallet_transactions?.wallet
+          ? { name: wallet_transactions.wallet.name }
+          : null;
+
+        return {
+          ...rest,
+          customer,
+          creator,
+          wallet,
+        };
+      }
+    );
+
+    return NextResponse.json({
+      data: data as Invoice[],
+      count: count ?? 0,
+    });
+  } catch (error) {
+    console.error('Error in workspace invoices API:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: Request, { params }: Params) {
