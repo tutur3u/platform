@@ -211,7 +211,14 @@ export async function GET(request: Request, { params }: Params) {
       }
     });
 
-    const sp = SearchParamsSchema.parse(params_obj);
+    const parsed = SearchParamsSchema.safeParse(params_obj);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid query parameters' },
+        { status: 400 }
+      );
+    }
+    const sp = parsed.data;
     const q = sp.q;
 
     // If there's a search query, use the RPC function for customer name search
@@ -243,23 +250,30 @@ export async function GET(request: Request, { params }: Params) {
 
       // Fetch additional data for legacy/platform creators and wallet info
       const invoiceIds = searchResults.map((r) => r.id);
-      const { data: fullInvoices } = await supabase
-        .from('finance_invoices')
-        .select(
-          `*, 
-           legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
-           platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
-           wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
-        )
-        .in('id', invoiceIds);
 
-      // Transform search results using shared utility
-      const data = transformInvoiceSearchResults(
-        searchResults,
-        fullInvoices || []
-      );
+      // Guard: skip query if invoiceIds is empty to avoid SQL error
+      let fullInvoices:
+        | ReturnType<typeof transformInvoiceSearchResults>
+        | undefined;
+      if (invoiceIds.length === 0) {
+        fullInvoices = transformInvoiceSearchResults(searchResults, []);
+      } else {
+        const { data: invoicesData } = await supabase
+          .from('finance_invoices')
+          .select(
+            `*, 
+             legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
+             platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
+             wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+          )
+          .in('id', invoiceIds);
+        fullInvoices = transformInvoiceSearchResults(
+          searchResults,
+          invoicesData || []
+        );
+      }
 
-      return NextResponse.json({ data, count });
+      return NextResponse.json({ data: fullInvoices, count });
     }
 
     // No search query - use regular query builder

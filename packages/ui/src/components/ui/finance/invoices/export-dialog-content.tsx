@@ -24,6 +24,44 @@ import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { XLSX } from '../../../../xlsx';
 
+/**
+ * Shape of invoice data as exported to CSV/Excel
+ * Flattened structure with complex objects decomposed into primitive fields
+ */
+interface InvoiceExportRow {
+  // Common fields
+  id: string;
+  ws_id: string;
+  created_at: string;
+  notice?: string;
+  note?: string;
+  price?: number | string;
+  total_diff?: number | string;
+
+  // Flattened customer fields
+  customer_name?: string;
+  customer_avatar_url?: string;
+
+  // Flattened creator fields (created invoices only)
+  creator_name?: string;
+  creator_email?: string;
+  creator_id?: string;
+
+  // Flattened wallet fields (created invoices only)
+  wallet_name?: string;
+
+  // Pending invoice specific fields
+  user_id?: string;
+  user_name?: string;
+  user_avatar_url?: string;
+  group_id?: string;
+  group_name?: string;
+  months_owed?: string;
+  attendance_days?: number;
+  total_sessions?: number;
+  potential_total?: number | string;
+}
+
 // Helper function to fetch pending invoices data for export
 async function getPendingInvoicesData(
   wsId: string,
@@ -155,7 +193,7 @@ export default function ExportDialogContent({
 
   const defaultFilename = `${exportType}_${invoiceType}_export.${getFileExtension(exportFileType)}`;
 
-  const downloadCSV = (data: any[], filename: string) => {
+  const downloadCSV = (data: InvoiceExportRow[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -166,7 +204,7 @@ export default function ExportDialogContent({
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: any[], filename: string) => {
+  const downloadExcel = (data: InvoiceExportRow[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -190,7 +228,7 @@ export default function ExportDialogContent({
     setIsExporting(true);
     setProgress(0);
 
-    const allData: any[] = [];
+    const allData: InvoiceExportRow[] = [];
     let currentPage = 1;
     const pageSize = 1000;
 
@@ -215,7 +253,7 @@ export default function ExportDialogContent({
                 end: searchParams.end,
               });
 
-        const flattenedData = data.map((invoice) => {
+        const flattenedData: InvoiceExportRow[] = data.map((invoice: any) => {
           // Destructure out complex objects to prevent [object Object] in exports
           const { customer, creator, wallet, ...rest } = invoice;
 
@@ -232,11 +270,11 @@ export default function ExportDialogContent({
                 '',
               creator_email: creator?.email || '',
               wallet_name: wallet?.name || '',
-            };
+            } as InvoiceExportRow;
           }
 
           // For pending invoices, just return rest (user_name & user_avatar_url already included)
-          return rest;
+          return rest as InvoiceExportRow;
         });
 
         allData.push(...flattenedData);
@@ -475,5 +513,5 @@ async function getData(
     }
   );
 
-  return { data, count } as { data: any[]; count: number };
+  return { data, count } as { data: Array<Record<string, any>>; count: number };
 }

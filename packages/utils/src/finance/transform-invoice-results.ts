@@ -33,6 +33,10 @@ export interface FullInvoiceData {
   creator_id: string | null;
   platform_creator_id?: string | null;
   transaction_id?: string | null;
+  customer?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
   legacy_creator: LegacyCreator | null;
   platform_creator: PlatformCreator | null;
   wallet_transactions: WalletTransaction | null;
@@ -63,6 +67,24 @@ export interface WalletTransaction {
 }
 
 /**
+ * Intermediate type for merged search results
+ * Combines SearchInvoiceRpcResult with additional creator and wallet data
+ */
+interface MergedSearchInvoiceData
+  extends Omit<
+    SearchInvoiceRpcResult,
+    'customer_full_name' | 'customer_avatar_url'
+  > {
+  customer: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+  legacy_creator: LegacyCreator | null;
+  platform_creator: PlatformCreator | null;
+  wallet_transactions: WalletTransaction | null;
+}
+
+/**
  * Transforms and merges search results from RPC with full invoice data from follow-up query
  * Handles creator resolution (platform_creator vs legacy_creator) and wallet mapping
  *
@@ -87,7 +109,7 @@ export function transformInvoiceSearchResults(
       platform_creator: fullInvoice?.platform_creator || null,
       wallet_transactions: fullInvoice?.wallet_transactions || null,
     };
-  });
+  }) as MergedSearchInvoiceData[];
 
   // Second transform: normalize creator data and shape into Invoice type
   return rawData.map(
@@ -97,7 +119,7 @@ export function transformInvoiceSearchResults(
       platform_creator,
       wallet_transactions,
       ...rest
-    }: any) => {
+    }: MergedSearchInvoiceData) => {
       const platformCreator = platform_creator as PlatformCreator | null;
       const legacyCreator = legacy_creator as LegacyCreator | null;
 
@@ -143,7 +165,7 @@ export function transformInvoiceSearchResults(
  * @param rawData Array of raw invoice data with creator and wallet relations
  * @returns Normalized Invoice[] array ready for UI consumption
  */
-export function transformInvoiceData(rawData: any[]): Invoice[] {
+export function transformInvoiceData(rawData: FullInvoiceData[]): Invoice[] {
   return rawData.map(
     ({
       customer,
@@ -151,7 +173,7 @@ export function transformInvoiceData(rawData: any[]): Invoice[] {
       platform_creator,
       wallet_transactions,
       ...rest
-    }) => {
+    }: FullInvoiceData) => {
       const platformCreator = platform_creator as PlatformCreator | null;
       const legacyCreator = legacy_creator as LegacyCreator | null;
 

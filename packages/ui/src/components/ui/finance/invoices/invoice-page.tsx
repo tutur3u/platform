@@ -1,11 +1,12 @@
 import { FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { z } from 'zod';
 import { Button } from '../../button';
 import FeatureSummary from '../../custom/feature-summary';
 import { Separator } from '../../separator';
@@ -254,8 +255,39 @@ async function getInitialData(
   if (walletId) wallets.push(walletId);
   wallets = Array.from(new Set(wallets.filter(Boolean)));
 
-  const parsedPage = parseInt(page ?? '1', 10);
-  const parsedSize = parseInt(pageSize ?? '10', 10);
+  // Validate and coerce pagination parameters
+  const paginationSchema = z.object({
+    page: z
+      .string()
+      .transform((val) => parseInt(val, 10))
+      .refine((val) => !Number.isNaN(val), 'page must be a valid number')
+      .pipe(
+        z
+          .number()
+          .int('page must be an integer')
+          .min(1, 'page must be at least 1')
+      )
+      .default(1)
+      .catch(1),
+    pageSize: z
+      .string()
+      .transform((val) => parseInt(val, 10))
+      .refine((val) => !Number.isNaN(val), 'pageSize must be a valid number')
+      .pipe(
+        z
+          .number()
+          .int('pageSize must be an integer')
+          .min(1, 'pageSize must be at least 1')
+          .max(100, 'pageSize must not exceed 100')
+      )
+      .default(10)
+      .catch(10),
+  });
+
+  const { page: parsedPage, pageSize: parsedSize } = paginationSchema.parse({
+    page: page ?? '1',
+    pageSize: pageSize ?? '10',
+  });
 
   // If there's a search query, use the RPC function for customer name search
   if (q) {
