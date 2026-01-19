@@ -106,7 +106,7 @@ function normalizeCreator(
  */
 function normalizeWallet(
   walletTransactions: WalletTransaction | null
-): Invoice['wallet'] {
+): { name: string | null } | null {
   return walletTransactions?.wallet
     ? { name: walletTransactions.wallet.name }
     : null;

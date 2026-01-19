@@ -1,13 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  type FullInvoiceData,
+  transformInvoiceData,
+  transformInvoiceSearchResults,
+} from '@tuturuuu/utils/finance/transform-invoice-results';
+import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
-import {
-  transformInvoiceData,
-  transformInvoiceSearchResults,
-  type FullInvoiceData,
-} from '@tuturuuu/utils/finance/transform-invoice-results';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -293,11 +293,12 @@ export async function GET(request: Request, { params }: Params) {
 
     queryBuilder = queryBuilder.order('created_at', { ascending: false });
 
-    // Apply date range filter
-    if (sp.start && sp.end) {
-      queryBuilder = queryBuilder
-        .gte('created_at', sp.start)
-        .lte('created_at', sp.end);
+    // Apply date range filter (independently to allow one-sided ranges)
+    if (sp.start) {
+      queryBuilder = queryBuilder.gte('created_at', sp.start);
+    }
+    if (sp.end) {
+      queryBuilder = queryBuilder.lte('created_at', sp.end);
     }
 
     // Apply user IDs filter
