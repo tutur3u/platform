@@ -57,9 +57,9 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
 
   const handleResetParams = useCallback(() => {
     setQ(null);
-    setUserIds([]);
-    setPage(1);
-    setPageSize(10);
+    setUserIds(null);
+    setPage(null);
+    setPageSize(null);
   }, [setQ, setUserIds, setPage, setPageSize]);
 
   const { data, isLoading, isFetching, error } = usePendingInvoices(wsId, {
@@ -108,7 +108,7 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
         ...item,
         ws_id: wsId,
       }))
-    : isLoading || isFetching
+    : isLoading
       ? undefined
       : [];
 
@@ -122,7 +122,7 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
           <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-muted-foreground text-sm">Loading...</span>
+              <span className="text-muted-foreground text-sm">{t('common.loading')}</span>
           </div>
         </div>
       )}

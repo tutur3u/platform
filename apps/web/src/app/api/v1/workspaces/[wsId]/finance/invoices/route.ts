@@ -4,6 +4,10 @@ import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
+import {
+  transformInvoiceData,
+  transformInvoiceSearchResults,
+} from '@tuturuuu/utils/finance/transform-invoice-results';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -61,8 +65,8 @@ export interface CalculatedValues {
 }
 
 // Backend calculation functions
+
 export async function calculateInvoiceValues(
-  supabase: any,
   wsId: string,
   products: InvoiceProduct[],
   promotion_id?: string,
@@ -72,6 +76,7 @@ export async function calculateInvoiceValues(
     total?: number;
   }
 ): Promise<CalculatedValues> {
+  const supabase = await createClient();
   // Calculate subtotal from products
   let subtotal = 0;
   const productIds = products.map((p) => p.product_id);
@@ -99,7 +104,7 @@ export async function calculateInvoiceValues(
 
   // Create a map for quick lookup
   const productMap = new Map();
-  productData.forEach((item: any) => {
+  productData.forEach((item) => {
     const key = `${item.product_id}-${item.unit_id}-${item.warehouse_id}`;
     productMap.set(key, item);
   });
@@ -217,10 +222,10 @@ export async function GET(request: Request, { params }: Params) {
         {
           p_ws_id: wsId,
           p_search_query: q,
-          p_start_date: sp.start || null,
-          p_end_date: sp.end || null,
-          p_user_ids: sp.userIds.length > 0 ? sp.userIds : null,
-          p_wallet_ids: sp.walletIds.length > 0 ? sp.walletIds : null,
+          p_start_date: sp.start || undefined,
+          p_end_date: sp.end || undefined,
+          p_user_ids: sp.userIds.length > 0 ? sp.userIds : undefined,
+          p_wallet_ids: sp.walletIds.length > 0 ? sp.walletIds : undefined,
           p_limit: sp.pageSize,
           p_offset: (sp.page - 1) * sp.pageSize,
         }
@@ -238,7 +243,7 @@ export async function GET(request: Request, { params }: Params) {
       const count = searchResults?.[0]?.total_count || 0;
 
       // Fetch additional data for legacy/platform creators and wallet info
-      const invoiceIds = searchResults.map((r: any) => r.id);
+      const invoiceIds = searchResults.map((r) => r.id);
       const { data: fullInvoices } = await supabase
         .from('finance_invoices')
         .select(
@@ -249,76 +254,8 @@ export async function GET(request: Request, { params }: Params) {
         )
         .in('id', invoiceIds);
 
-      // Merge search results with full invoice data
-      const rawData = searchResults.map((searchRow: any) => {
-        const fullInvoice = fullInvoices?.find(
-          (fi: any) => fi.id === searchRow.id
-        );
-        return {
-          ...searchRow,
-          customer: {
-            full_name: searchRow.customer_full_name,
-            avatar_url: searchRow.customer_avatar_url,
-          },
-          legacy_creator: fullInvoice?.legacy_creator || null,
-          platform_creator: fullInvoice?.platform_creator || null,
-          wallet_transactions: fullInvoice?.wallet_transactions || null,
-        };
-      });
-
-      const data = rawData.map(
-        ({
-          customer,
-          legacy_creator,
-          platform_creator,
-          wallet_transactions,
-          ...rest
-        }: any) => {
-          const platformCreator = platform_creator as {
-            id: string;
-            display_name: string | null;
-            avatar_url: string | null;
-            user_private_details: {
-              full_name: string | null;
-              email: string | null;
-            } | null;
-          } | null;
-
-          const legacyCreator = legacy_creator as {
-            id: string;
-            display_name: string | null;
-            full_name: string | null;
-            email: string | null;
-            avatar_url: string | null;
-          } | null;
-
-          const creator = {
-            id: platformCreator?.id ?? legacyCreator?.id ?? '',
-            display_name:
-              platformCreator?.display_name ??
-              legacyCreator?.display_name ??
-              platformCreator?.user_private_details?.email ??
-              null,
-            full_name:
-              platformCreator?.user_private_details?.full_name ??
-              legacyCreator?.full_name ??
-              null,
-            email:
-              platformCreator?.user_private_details?.email ??
-              legacyCreator?.email ??
-              null,
-            avatar_url:
-              platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
-          };
-
-          return {
-            ...rest,
-            customer,
-            creator,
-            wallet: wallet_transactions?.wallet || null,
-          } as Invoice;
-        }
-      );
+      // Transform search results using shared utility
+      const data = transformInvoiceSearchResults(searchResults, fullInvoices || []);
 
       return NextResponse.json({ data, count });
     }
@@ -375,66 +312,10 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // Transform data to match expected Invoice type
-    const data = rawData.map(
-      ({
-        customer,
-        legacy_creator,
-        platform_creator,
-        wallet_transactions,
-        ...rest
-      }: any) => {
-        const platformCreator = platform_creator as {
-          id: string;
-          display_name: string | null;
-          avatar_url: string | null;
-          user_private_details: {
-            full_name: string | null;
-            email: string | null;
-          } | null;
-        } | null;
-
-        const legacyCreator = legacy_creator as {
-          id: string;
-          display_name: string | null;
-          full_name: string | null;
-          email: string | null;
-          avatar_url: string | null;
-        } | null;
-
-        const creator = {
-          id: platformCreator?.id ?? legacyCreator?.id ?? '',
-          display_name:
-            platformCreator?.display_name ??
-            legacyCreator?.display_name ??
-            platformCreator?.user_private_details?.email ??
-            null,
-          full_name:
-            platformCreator?.user_private_details?.full_name ??
-            legacyCreator?.full_name ??
-            null,
-          email:
-            platformCreator?.user_private_details?.email ??
-            legacyCreator?.email ??
-            null,
-          avatar_url:
-            platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
-        };
-
-        const wallet = wallet_transactions?.wallet
-          ? { name: wallet_transactions.wallet.name }
-          : null;
-
-        return {
-          ...rest,
-          customer,
-          creator,
-          wallet,
-        };
-      }
-    );
+    const data = transformInvoiceData(rawData);
 
     return NextResponse.json({
-      data: data as Invoice[],
+      data,
       count: count ?? 0,
     });
   } catch (error) {
@@ -490,7 +371,6 @@ export async function POST(req: Request, { params }: Params) {
 
     // Calculate values using backend logic
     const calculatedValues = await calculateInvoiceValues(
-      supabase,
       wsId,
       products,
       promotion_id,

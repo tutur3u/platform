@@ -5,10 +5,18 @@ CREATE OR REPLACE FUNCTION get_pending_invoices_count(
   p_query text DEFAULT NULL,
   p_user_ids uuid[] DEFAULT NULL
 )
-RETURNS bigint AS $$
+RETURNS bigint
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   result_count bigint;
+  v_escaped_query text;
 BEGIN
+  v_escaped_query := replace(replace(replace(p_query, '\', '\\'), '%', '\%'), '_', '\_');
+
   WITH base_data AS (
     SELECT * FROM get_pending_invoices_base(p_ws_id)
   ),
@@ -16,8 +24,8 @@ BEGIN
     SELECT * FROM base_data bd
     WHERE (p_user_ids IS NULL OR bd.user_id = ANY(p_user_ids))
       AND (p_query IS NULL OR (
-        bd.user_name ILIKE '%' || p_query || '%' OR 
-        bd.group_name ILIKE '%' || p_query || '%'
+        bd.user_name ILIKE '%' || v_escaped_query || '%' ESCAPE '\' OR 
+        bd.group_name ILIKE '%' || v_escaped_query || '%' ESCAPE '\'
       ))
   ),
   combined_pending AS (
@@ -36,7 +44,7 @@ BEGIN
   
   RETURN result_count;
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$;
 
 
 -- Update get_pending_invoices to support filtering
@@ -58,8 +66,17 @@ RETURNS TABLE (
   attendance_days integer,
   total_sessions integer,
   potential_total numeric
-) AS $$
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_escaped_query text;
 BEGIN
+  v_escaped_query := replace(replace(replace(p_query, '\', '\\'), '%', '\%'), '_', '\_');
+
   RETURN QUERY
   WITH base_data AS (
     SELECT * FROM get_pending_invoices_base(p_ws_id)
@@ -68,8 +85,8 @@ BEGIN
     SELECT * FROM base_data bd
     WHERE (p_user_ids IS NULL OR bd.user_id = ANY(p_user_ids))
       AND (p_query IS NULL OR (
-        bd.user_name ILIKE '%' || p_query || '%' OR 
-        bd.group_name ILIKE '%' || p_query || '%'
+        bd.user_name ILIKE '%' || v_escaped_query || '%' ESCAPE '\' OR 
+        bd.group_name ILIKE '%' || v_escaped_query || '%' ESCAPE '\'
       ))
   ),
   session_counts AS (
@@ -169,4 +186,4 @@ BEGIN
   LIMIT p_limit
   OFFSET p_offset;
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$;

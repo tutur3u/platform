@@ -328,8 +328,6 @@ export function WorkspaceUsersTable({
         resetParams={handleResetParams}
         isFiltered={
           !!q ||
-          page !== 1 ||
-          pageSize !== 10 ||
           status !== 'active' ||
           linkStatus !== 'all' ||
           includedGroups.length > 0 ||

@@ -1,7 +1,11 @@
 import { FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+} from '@tuturuuu/utils/workspace-helper';
+import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -284,7 +288,7 @@ async function getInitialData(
     const count = searchResults?.[0]?.total_count || 0;
 
     // Fetch additional data for legacy/platform creators and wallet info
-    const invoiceIds = searchResults.map((r: any) => r.id);
+    const invoiceIds = searchResults.map((r) => r.id);
     if (invoiceIds.length === 0) {
       return { data: [], count: 0 };
     }
@@ -299,79 +303,10 @@ async function getInitialData(
       )
       .in('id', invoiceIds);
 
-    // Merge search results with full invoice data
-    const rawData = searchResults.map((searchRow: any) => {
-      const fullInvoice = fullInvoices?.find(
-        (fi: any) => fi.id === searchRow.id
-      );
-      return {
-        ...searchRow,
-        customer: {
-          full_name: searchRow.customer_full_name,
-          avatar_url: searchRow.customer_avatar_url,
-        },
-        legacy_creator: fullInvoice?.legacy_creator || null,
-        platform_creator: fullInvoice?.platform_creator || null,
-        wallet_transactions: fullInvoice?.wallet_transactions || null,
-      };
-    });
-
-    const data = rawData.map(
-      ({
-        customer,
-        legacy_creator,
-        platform_creator,
-        wallet_transactions,
-        ...rest
-      }: any) => {
-        const platformCreator = platform_creator as {
-          id: string;
-          display_name: string | null;
-          avatar_url: string | null;
-          user_private_details: {
-            full_name: string | null;
-            email: string | null;
-          } | null;
-        } | null;
-
-        const legacyCreator = legacy_creator as {
-          id: string;
-          display_name: string | null;
-          full_name: string | null;
-          email: string | null;
-          avatar_url: string | null;
-        } | null;
-
-        const creator = {
-          id: platformCreator?.id ?? legacyCreator?.id ?? '',
-          display_name:
-            platformCreator?.display_name ??
-            legacyCreator?.display_name ??
-            platformCreator?.user_private_details?.email ??
-            null,
-          full_name:
-            platformCreator?.user_private_details?.full_name ??
-            legacyCreator?.full_name ??
-            null,
-          email:
-            platformCreator?.user_private_details?.email ??
-            legacyCreator?.email ??
-            null,
-          avatar_url:
-            platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
-        };
-
-        const wallet = wallet_transactions?.wallet
-          ? { name: wallet_transactions.wallet.name }
-          : null;
-
-        return {
-          ...rest,
-          customer,
-          creator,
-          wallet,
-        };
-      }
+    // Transform search results using shared utility
+    const data = transformInvoiceSearchResults(
+      searchResults,
+      fullInvoices || []
     );
 
     return { data, count } as { data: Invoice[]; count: number };

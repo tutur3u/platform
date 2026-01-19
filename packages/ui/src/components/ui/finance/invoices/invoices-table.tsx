@@ -184,9 +184,7 @@ export function InvoicesTable({
   if (error) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-destructive">
-          Error loading invoices. Please try again.
-        </p>
+        <p className="text-destructive">{t('ws-invoices.error_loading')}</p>
       </div>
     );
   }

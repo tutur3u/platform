@@ -45,11 +45,14 @@ async function getPendingInvoicesData(
   const parsedSize = parseInt(pageSize, 10);
   const offset = (parsedPage - 1) * parsedSize;
 
-  const ids = userIds
-    ? Array.isArray(userIds)
+  // Normalize userIds: treat empty array as no filter (undefined)
+  const ids = Array.isArray(userIds)
+    ? userIds.length > 0
       ? userIds
-      : [userIds]
-    : undefined;
+      : undefined
+    : userIds
+      ? [userIds]
+      : undefined;
 
   // Fetch pending invoices data
   const { data: rawData, error } = await supabase.rpc('get_pending_invoices', {
@@ -74,12 +77,26 @@ async function getPendingInvoicesData(
 
   if (countError) throw countError;
 
+  // Define the shape of raw pending invoice data from RPC
+  interface PendingInvoiceRaw {
+    user_id?: string | null;
+    user_name?: string | null;
+    user_avatar_url?: string | null;
+    group_id?: string | null;
+    group_name?: string | null;
+    months_owed?: string | string[];
+    [key: string]: unknown;
+  }
+
   // Transform the data to match the expected format
-  const data = (rawData || []).map((invoice: any) => {
-    // Parse months_owed if it's a CSV string
+  const data = (rawData || []).map((invoice: PendingInvoiceRaw) => {
+    // Parse months_owed - handle both CSV string and array, normalize formatting
     const monthsOwed =
       typeof invoice.months_owed === 'string'
         ? invoice.months_owed
+            .split(',')
+            .map((m) => m.trim())
+            .join(', ')
         : Array.isArray(invoice.months_owed)
           ? invoice.months_owed.join(', ')
           : '';
@@ -89,13 +106,13 @@ async function getPendingInvoicesData(
       months_owed: monthsOwed,
       customer: invoice.user_id
         ? {
-            full_name: invoice.full_name || '',
-            avatar_url: invoice.avatar_url || '',
+            full_name: invoice.user_name || '',
+            avatar_url: invoice.user_avatar_url || '',
           }
         : invoice.group_id
           ? {
               full_name: invoice.group_name || '',
-              avatar_url: null,
+              avatar_url: '',
             }
           : null,
       creator: null, // Pending invoices don't have creator info
@@ -198,26 +215,33 @@ export default function ExportDialogContent({
                 end: searchParams.end,
               });
 
-        const flattenedData = data.map((invoice) => ({
-          ...invoice,
-          customer_name: invoice.customer?.full_name || '',
-          customer_avatar_url: invoice.customer?.avatar_url || '',
-          creator_name:
-            invoice.creator?.display_name ||
-            invoice.creator?.full_name ||
-            invoice.creator?.email ||
-            '',
-          creator_email: invoice.creator?.email || '',
-          wallet_name: invoice.wallet?.name || '',
-          // Remove complex objects to avoid [object Object] in CSV/Excel
-          customer: undefined,
-          creator: undefined,
-          wallet: undefined,
-        }));
+        const flattenedData = data.map((invoice) => {
+          // Destructure out complex objects to prevent [object Object] in exports
+          const { customer, creator, wallet, ...rest } = invoice;
+
+          // Only include creator & wallet fields for created invoices
+          if (invoiceType === 'created') {
+            return {
+              ...rest,
+              customer_name: customer?.full_name || '',
+              customer_avatar_url: customer?.avatar_url || '',
+              creator_name:
+                creator?.display_name ||
+                creator?.full_name ||
+                creator?.email ||
+                '',
+              creator_email: creator?.email || '',
+              wallet_name: wallet?.name || '',
+            };
+          }
+
+          // For pending invoices, just return rest (user_name & user_avatar_url already included)
+          return rest;
+        });
 
         allData.push(...flattenedData);
 
-        const totalPages = Math.ceil(count / pageSize);
+        const totalPages = Math.max(1, Math.ceil(count / pageSize));
         const progressValue = (currentPage / totalPages) * 100;
         setProgress(progressValue);
 
