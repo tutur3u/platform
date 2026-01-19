@@ -762,7 +762,7 @@ export default function GroupAttendanceClient({
                               <div className="flex items-center gap-2">
                                 <div
                                   className={cn(
-                                    'truncate font-semibold text-base',
+                                    'font-semibold text-base',
                                     (m.archived ||
                                       (m.archived_until &&
                                         new Date(m.archived_until) >
