@@ -34,7 +34,7 @@ export function AtmosphericPass() {
       {/* Ground Fog (Bottom of viewport) */}
       <motion.div
         style={{ opacity: useTransform(fogOpacity, (v) => v * 1.5) }}
-        className="absolute bottom-0 left-0 right-0 h-[40vh] bg-gradient-to-t from-pack-void via-pack-void/40 to-transparent"
+        className="absolute right-0 bottom-0 left-0 h-[40vh] bg-gradient-to-t from-pack-void via-pack-void/40 to-transparent"
       />
 
       {/* Atmospheric Texture */}

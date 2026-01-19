@@ -30,14 +30,17 @@ export function NightSky() {
       </motion.div>
 
       {/* Stars Layer 1 (Far/Slow) */}
-      <motion.div style={{ y: farStarsY }} className="pack-stars absolute inset-0">
+      <motion.div
+        style={{ y: farStarsY }}
+        className="pack-stars absolute inset-0"
+      >
         {[...Array(80)].map((_, i) => {
           const left = (i * 17) % 100;
           const top = (i * 23) % 100;
           const scale = 0.2 + ((i * 7) % 10) / 30;
           const opacity = 0.1 + ((i * 11) % 10) / 30;
           const duration = 5 + (i % 5);
-          
+
           return (
             <motion.div
               key={`s1-${i}`}
@@ -66,7 +69,10 @@ export function NightSky() {
       </motion.div>
 
       {/* Stars Layer 2 (Near/Twinkle) */}
-      <motion.div style={{ y: nearStarsY }} className="pack-stars absolute inset-0">
+      <motion.div
+        style={{ y: nearStarsY }}
+        className="pack-stars absolute inset-0"
+      >
         {[...Array(30)].map((_, i) => {
           const left = (i * 31) % 100;
           const top = (i * 37) % 100;

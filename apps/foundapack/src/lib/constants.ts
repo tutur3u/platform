@@ -59,7 +59,7 @@ export const CORE_MEMBERS: Member[] = [
     name: 'Thai Thi My Yen',
     role: 'Member',
     venture: 'Noah',
-    avatarUrl: '/members/yen-thai.jpg',
+    avatarUrl: '/members/yen-thai.jpeg',
   },
 ];
 

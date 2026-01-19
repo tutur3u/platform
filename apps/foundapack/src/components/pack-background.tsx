@@ -21,15 +21,15 @@ export function PackBackground() {
   if (!mounted) return null;
 
   return (
-    <motion.div 
+    <motion.div
       style={{ opacity: transitionEmberOpacity }}
       className="pointer-events-none fixed inset-0 z-0"
     >
       <div className="pack-vignette absolute inset-0" />
 
       {/* Cozy Warmth Layer - Ground Glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[60vh] bg-[radial-gradient(ellipse_at_bottom,_rgba(251,191,36,0.15)_0%,_rgba(249,115,22,0.05)_40%,_transparent_70%)]" />
-      
+      <div className="absolute bottom-0 left-1/2 h-[60vh] w-full -translate-x-1/2 bg-[radial-gradient(ellipse_at_bottom,_rgba(251,191,36,0.15)_0%,_rgba(249,115,22,0.05)_40%,_transparent_70%)]" />
+
       {/* Deep Smoke/Mist Layer */}
       <div className="absolute inset-0 overflow-hidden opacity-30">
         {[...Array(8)].map((_, i) => (
@@ -44,10 +44,10 @@ export function PackBackground() {
             animate={{
               bottom: '120%',
               opacity: [0, 0.5, 0],
-              x: [0, (i % 2 === 0 ? 50 : -50)],
+              x: [0, i % 2 === 0 ? 50 : -50],
             }}
             transition={{
-              duration: 30 + (i * 2),
+              duration: 30 + i * 2,
               repeat: Infinity,
               ease: 'linear',
               delay: i * -5,
@@ -60,7 +60,7 @@ export function PackBackground() {
       <div className="pack-embers absolute inset-0 overflow-hidden">
         {[...Array(50)].map((_, i) => {
           const size = 3 + (i % 4);
-          const xOffset = (i * 7) % 300 - 150;
+          const xOffset = ((i * 7) % 300) - 150;
           return (
             <motion.div
               key={i}

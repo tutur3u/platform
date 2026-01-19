@@ -23,8 +23,8 @@ export default function FoundapackPage() {
   );
 
   return (
-    <main className="relative min-h-screen bg-pack-void text-pack-frost overflow-x-hidden">
-      <div className="pack-noise fixed inset-0 z-50 mix-blend-overlay opacity-20 pointer-events-none" />
+    <main className="relative min-h-screen overflow-x-hidden bg-pack-void text-pack-frost">
+      <div className="pack-noise pointer-events-none fixed inset-0 z-50 opacity-20 mix-blend-overlay" />
 
       {/* Atmosphere */}
       <NightSky />
