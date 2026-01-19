@@ -8076,6 +8076,7 @@
     }
   },
   "workspace-users-tabs": {
+    "active": "Active Users",
     "attendance": "Attendance",
     "database": "Database",
     "fields": "Fields",
@@ -8084,7 +8085,9 @@
     "guest_leads": "Guest Leads",
     "metrics": "Metrics",
     "overview": "Overview",
-    "reports": "Reports"
+    "permanently_archived": "Permanently Archived",
+    "reports": "Reports",
+    "temporarily_archived": "Temporarily Archived"
   },
   "workspace-workforce-tabs": {
     "contracts": "Contracts",

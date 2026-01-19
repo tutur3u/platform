@@ -88,7 +88,9 @@ export async function GET(request: Request, { params }: Params) {
 
     // Apply status filters (archived vs archived_until distinction)
     if (sp.status === 'archived') {
-      queryBuilder = queryBuilder.eq('archived', true);
+      queryBuilder = queryBuilder
+        .eq('archived', true)
+        .is('archived_until', null);
     } else if (sp.status === 'archived_until') {
       queryBuilder = queryBuilder.gt(
         'archived_until',

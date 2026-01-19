@@ -8168,6 +8168,7 @@
     }
   },
   "workspace-users-tabs": {
+    "active": "Người dùng đang hoạt động",
     "attendance": "Điểm danh",
     "database": "Danh sách",
     "fields": "Trường thông tin",
@@ -8176,7 +8177,9 @@
     "guest_leads": "Khách hàng tiềm năng",
     "metrics": "Số liệu",
     "overview": "Tổng quan",
-    "reports": "Báo cáo"
+    "permanently_archived": "Đã lưu trữ vĩnh viễn",
+    "reports": "Báo cáo",
+    "temporarily_archived": "Đã lưu trữ tạm thời"
   },
   "workspace-workforce-tabs": {
     "contracts": "Hợp đồng",
