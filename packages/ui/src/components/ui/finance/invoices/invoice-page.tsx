@@ -15,7 +15,6 @@ import { InvoiceAnalytics } from './invoice-analytics';
 import { InvoicesTable } from './invoices-table';
 import { PendingInvoicesTab } from './pending-invoices-tab';
 import { PendingInvoicesTable } from './pending-invoices-table';
-import { buildInvoiceSearchOrQuery } from './utils';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -270,10 +269,10 @@ async function getInitialData(
       {
         p_ws_id: wsId,
         p_search_query: q,
-        p_start_date: start || null,
-        p_end_date: end || null,
-        p_user_ids: userIdsArray.length > 0 ? userIdsArray : null,
-        p_wallet_ids: wallets.length > 0 ? wallets : null,
+        p_start_date: start || undefined,
+        p_end_date: end || undefined,
+        p_user_ids: userIdsArray.length > 0 ? userIdsArray : undefined,
+        p_wallet_ids: wallets.length > 0 ? wallets : undefined,
         p_limit: parsedSize,
         p_offset: (parsedPage - 1) * parsedSize,
       }

@@ -607,7 +607,7 @@ export const usePendingInvoices = (
     staleTime: 2 * 60 * 1000, // 2 minutes - more frequent refresh for pending data
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true, // Refetch when window gains focus
-    placeholderData: keepPreviousData, 
+    placeholderData: keepPreviousData,
     retry: 3,
   });
 };

@@ -266,7 +266,6 @@ export async function GET(request: Request, { params }: Params) {
         };
       });
 
-      const error = null;
       const data = rawData.map(
         ({
           customer,
