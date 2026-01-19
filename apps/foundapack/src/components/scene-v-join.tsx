@@ -4,7 +4,10 @@ import { motion } from 'framer-motion';
 
 export function SceneVJoin() {
   return (
-    <section className="relative flex min-h-[60vh] flex-col items-center justify-center overflow-hidden bg-pack-void px-4 py-20">
+    <section
+      id="join"
+      className="relative flex min-h-[60vh] flex-col items-center justify-center overflow-hidden bg-pack-void px-4 py-20"
+    >
       {/* Ambient Background Glow */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.15)_0%,transparent_60%)]" />
 

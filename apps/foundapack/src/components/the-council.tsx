@@ -6,9 +6,7 @@ import { MemberCard } from './member-card';
 
 export function TheCouncil() {
   return (
-    <section className="relative overflow-hidden px-4 py-32">
-      <div className="pack-texture-overlay opacity-5" />
-
+    <section id="council" className="relative overflow-hidden px-4 py-32">
       <div className="relative z-10 mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -84,8 +82,8 @@ export function TheCouncil() {
       </div>
 
       {/* Background Decorative Glows */}
-      <div className="pointer-events-none absolute top-1/4 left-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-pack-amber/5 blur-[120px]" />
-      <div className="pointer-events-none absolute right-0 bottom-1/4 h-[500px] w-[500px] translate-x-1/2 rounded-full bg-pack-orange/5 blur-[120px]" />
+      <div className="pointer-events-none absolute top-1/4 left-0 h-125 w-125 -translate-x-1/2 rounded-full bg-pack-amber/5 blur-[120px]" />
+      <div className="pointer-events-none absolute right-0 bottom-1/4 h-125 w-125 translate-x-1/2 rounded-full bg-pack-orange/5 blur-[120px]" />
     </section>
   );
 }

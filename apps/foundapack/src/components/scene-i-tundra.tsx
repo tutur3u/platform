@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 export function SceneITundra() {
   return (
     <section className="relative flex h-screen flex-col items-center justify-center overflow-hidden px-4 text-center">
-      <div className="pack-texture-overlay" />
-
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -81,7 +79,7 @@ export function SceneITundra() {
         <span className="text-pack-frost/30 text-xs uppercase tracking-widest">
           Scroll to explore
         </span>
-        <div className="h-12 w-px animate-pulse bg-gradient-to-b from-pack-amber/50 to-transparent" />
+        <div className="h-12 w-px animate-pulse bg-linear-to-b from-pack-amber/50 to-transparent" />
       </motion.div>
     </section>
   );

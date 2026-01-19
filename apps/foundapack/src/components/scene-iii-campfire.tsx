@@ -5,12 +5,15 @@ import { DataFire } from './data-fire';
 
 export function SceneIIICampfire() {
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-pack-charcoal/30 to-pack-void/80 px-4 py-20">
+    <section
+      id="manifesto"
+      className="relative flex min-h-screen flex-col items-center justify-center bg-linear-to-b from-pack-charcoal/30 to-pack-void/80 px-4 py-20"
+    >
       {/* Campfire glow center (Pulse) */}
       <motion.div
         animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.05, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-pack-amber/5 blur-[100px]"
+        className="pointer-events-none absolute top-1/2 left-1/2 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pack-amber/5 blur-[100px]"
       />
 
       <motion.div
@@ -63,7 +66,7 @@ export function SceneIIICampfire() {
             </p>
 
             {/* Holographic Scanline */}
-            <div className="pack-scan-line pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-pack-amber/20 to-transparent opacity-10" />
+            <div className="pack-scan-line pointer-events-none absolute inset-0 bg-linear-to-b from-transparent via-pack-amber/20 to-transparent opacity-10" />
           </div>
         </div>
       </motion.div>

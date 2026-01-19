@@ -184,13 +184,6 @@ export function WolfSilhouette() {
           </radialGradient>
         </defs>
       </svg>
-
-      {/* Glitch Overlay for "Unstable" feel */}
-      <motion.div
-        className="absolute inset-0 bg-pack-amber/5 mix-blend-overlay"
-        animate={{ opacity: [0, 0.1, 0, 0.2, 0] }}
-        transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 5 }}
-      />
     </div>
   );
 }

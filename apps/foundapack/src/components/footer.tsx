@@ -15,13 +15,15 @@ export function Footer() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mb-24 grid grid-cols-1 gap-16 md:grid-cols-3 md:gap-8">
+        <div className="mb-24 grid grid-cols-1 gap-16 md:flex md:justify-between md:gap-8">
           {/* Brand & Mission */}
           <div className="space-y-6">
-            <h4 className="pack-font-serif font-bold text-3xl text-pack-white tracking-tight">
-              Foundapack
-            </h4>
-            <p className="max-w-sm text-lg text-pack-frost/70 leading-relaxed">
+            <Link href="/" className="text-white">
+              <h4 className="pack-font-serif font-bold text-3xl text-white/80 tracking-tight hover:text-white">
+                Foundapack
+              </h4>
+            </Link>
+            <p className="max-w-sm text-lg text-white/70 leading-relaxed">
               The operating system for the next generation of visionary
               founders. Built in the shadows, united by the fire.
             </p>
@@ -31,7 +33,7 @@ export function Footer() {
                 href="https://www.facebook.com/tuturuuu"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-pack-frost/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
                 aria-label="Facebook"
               >
                 <svg
@@ -49,7 +51,7 @@ export function Footer() {
                 href="https://www.instagram.com/tutu.ruuu/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-pack-frost/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
                 aria-label="Instagram"
               >
                 <svg
@@ -68,7 +70,7 @@ export function Footer() {
                 href="https://x.com/tutur3u"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-pack-frost/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
                 aria-label="X (formerly Twitter)"
               >
                 <svg
@@ -93,7 +95,7 @@ export function Footer() {
                 href="https://github.com/tutur3u"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-pack-frost/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
                 aria-label="GitHub"
               >
                 <svg
@@ -111,7 +113,7 @@ export function Footer() {
                 href="https://www.linkedin.com/company/tuturuuu/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-pack-frost/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 fill-white/70 transition-all hover:border-pack-amber hover:fill-(--color-pack-amber)"
                 aria-label="LinkedIn"
               >
                 <svg
@@ -128,35 +130,35 @@ export function Footer() {
           </div>
 
           {/* Lore-based Navigation */}
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-2 gap-8 md:gap-16 lg:gap-32">
             <div className="space-y-4">
               <h5 className="font-mono text-[10px] text-pack-amber/60 uppercase tracking-[0.3em]">
                 The Journey
               </h5>
               <ul className="space-y-3">
                 <li>
-                  <a
+                  <Link
                     href="/"
-                    className="text-pack-frost/70 transition-colors hover:text-pack-white"
+                    className="text-white/70 transition-colors hover:text-white"
                   >
                     The Tundra
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/"
-                    className="text-pack-frost/70 transition-colors hover:text-pack-white"
+                  <Link
+                    href="/#council"
+                    className="text-white/70 transition-colors hover:text-white"
                   >
                     The Council
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/"
-                    className="text-pack-frost/70 transition-colors hover:text-pack-white"
+                  <Link
+                    href="/#metrics"
+                    className="text-white/70 transition-colors hover:text-white"
                   >
                     Pack Emblems
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -166,28 +168,30 @@ export function Footer() {
               </h5>
               <ul className="space-y-3">
                 <li>
-                  <a
-                    href="/"
-                    className="text-pack-frost/70 transition-colors hover:text-pack-white"
+                  <Link
+                    href="/#join"
+                    className="text-white/70 transition-colors hover:text-white"
                   >
                     The Den
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/"
-                    className="text-pack-frost/70 transition-colors hover:text-pack-white"
+                  <Link
+                    href="/#manifesto"
+                    className="text-white/70 transition-colors hover:text-white"
                   >
                     Lore
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/"
-                    className="text-pack-frost/70 transition-colors hover:text-pack-white"
+                  <Link
+                    href="https://tuturuuu.com/contact"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/70 transition-colors hover:text-white"
                   >
                     Support
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -198,7 +202,7 @@ export function Footer() {
             href="https://tuturuuu.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col space-y-6 transition-opacity hover:opacity-90 md:items-end md:text-right"
+            className="group flex w-fit flex-col space-y-6 opacity-80 transition-opacity hover:opacity-100 md:items-end md:text-right"
           >
             <h5 className="font-mono text-[10px] text-pack-amber/60 uppercase tracking-[0.3em]">
               Forged By
@@ -211,14 +215,14 @@ export function Footer() {
                 height={320}
                 className="h-24 w-auto md:ml-auto"
               />
-              <span className="block font-bold text-4xl text-pack-white tracking-tighter transition-colors group-hover:text-pack-amber">
+              <span className="block font-bold text-4xl text-white tracking-tighter transition-colors group-hover:text-white">
                 Tuturuuu
               </span>
               <p className="pack-font-handwritten -rotate-2 text-2xl text-pack-amber/80">
                 The Alpha behind the Pack.
               </p>
             </div>
-            <p className="max-w-xs text-pack-frost/60 text-sm italic leading-relaxed md:text-right">
+            <p className="max-w-xs text-sm text-white/60 italic leading-relaxed md:text-right">
               "We don't just build products; we build the force that moves the
               world forward."
             </p>
@@ -227,15 +231,15 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="flex flex-col items-center justify-between gap-6 border-pack-border/10 border-t pt-12 md:flex-row">
-          <p className="font-mono text-[10px] text-pack-frost/50 uppercase tracking-widest">
+          <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest">
             &copy; 2026 Foundapack &bull; All Rights Reserved
           </p>
-          <div className="flex gap-8 font-mono text-[10px] text-pack-frost/50 uppercase tracking-widest">
+          <div className="flex gap-8 font-mono text-[10px] text-white/50 uppercase tracking-widest">
             <a
               href="https://tuturuuu.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-pack-amber"
+              className="transition-colors hover:text-white"
             >
               Privacy Policy
             </a>
@@ -243,7 +247,7 @@ export function Footer() {
               href="https://tuturuuu.com/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-pack-amber"
+              className="transition-colors hover:text-white"
             >
               Terms of Service
             </a>

@@ -6,7 +6,10 @@ import { VENTURES } from '@/lib/constants';
 
 export function SceneIVHunt() {
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-pack-void px-4 py-32">
+    <section
+      id="metrics"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-pack-void px-4 py-32"
+    >
       <div className="pack-texture-overlay opacity-5" />
 
       {/* Dynamic Background */}

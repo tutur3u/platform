@@ -27,14 +27,14 @@ export function AtmosphericPass() {
         style={{ opacity: fogOpacity, scale: fogScale }}
         className="absolute inset-0"
       >
-        <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_at_20%_80%,_rgba(11,11,16,0.4)_0%,_transparent_60%)]" />
-        <div className="absolute top-0 right-0 h-full w-full bg-[radial-gradient(circle_at_80%_20%,_rgba(11,11,16,0.4)_0%,_transparent_60%)]" />
+        <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_at_20%_80%,rgba(11,11,16,0.4)_0%,transparent_60%)]" />
+        <div className="absolute top-0 right-0 h-full w-full bg-[radial-gradient(circle_at_80%_20%,rgba(11,11,16,0.4)_0%,transparent_60%)]" />
       </motion.div>
 
       {/* Ground Fog (Bottom of viewport) */}
       <motion.div
         style={{ opacity: useTransform(fogOpacity, (v) => v * 1.5) }}
-        className="absolute right-0 bottom-0 left-0 h-[40vh] bg-gradient-to-t from-pack-void via-pack-void/40 to-transparent"
+        className="absolute right-0 bottom-0 left-0 h-[40vh] bg-linear-to-t from-pack-void via-pack-void/40 to-transparent"
       />
 
       {/* Atmospheric Texture */}

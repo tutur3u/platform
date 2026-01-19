@@ -47,7 +47,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark scroll-smooth">
       <body
         className={cn(
           'overflow-x-hidden bg-pack-void text-pack-frost antialiased',

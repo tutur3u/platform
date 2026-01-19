@@ -68,7 +68,7 @@ export function ScalingNetwork() {
       <div className="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-pack-void/10">
         {/* ATMOSPHERIC PROGRESS INDICATOR - More visible */}
         <div className="absolute top-12 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-3">
-          <div className="relative h-[2px] w-64 overflow-hidden bg-pack-border">
+          <div className="relative h-0.5 w-64 overflow-hidden bg-pack-border">
             <motion.div
               style={{ scaleX: scrollYProgress }}
               className="absolute inset-0 origin-left bg-pack-amber shadow-[0_0_10px_var(--color-pack-amber)]"
