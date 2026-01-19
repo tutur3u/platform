@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
@@ -8,6 +8,89 @@ import type { TransactionCategory } from '@tuturuuu/types/primitives/Transaction
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { Product, Promotion, UserGroupProducts } from './types';
+
+// ==================== INVOICES DATA FETCHING ====================
+
+export interface InvoicesParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  start?: string;
+  end?: string;
+  userIds?: string[];
+  walletIds?: string[];
+}
+
+export interface InvoicesResponse {
+  data: Invoice[];
+  count: number;
+}
+
+/**
+ * Fetch workspace invoices with search, filter and pagination support
+ * Uses API route for client-side data fetching with proper caching
+ */
+export function useWorkspaceInvoices(
+  wsId: string,
+  params: InvoicesParams = {},
+  options?: {
+    enabled?: boolean;
+    initialData?: InvoicesResponse;
+  }
+) {
+  const {
+    q = '',
+    page = 1,
+    pageSize = 10,
+    start,
+    end,
+    userIds = [],
+    walletIds = [],
+  } = params;
+
+  return useQuery({
+    queryKey: [
+      'workspace-invoices',
+      wsId,
+      { q, page, pageSize, start, end, userIds, walletIds },
+    ],
+    queryFn: async (): Promise<InvoicesResponse> => {
+      const searchParams = new URLSearchParams();
+
+      if (q) searchParams.set('q', q);
+      searchParams.set('page', String(page));
+      searchParams.set('pageSize', String(pageSize));
+      if (start) searchParams.set('start', start);
+      if (end) searchParams.set('end', end);
+
+      userIds.forEach((userId) => {
+        searchParams.append('userIds', userId);
+      });
+
+      walletIds.forEach((walletId) => {
+        searchParams.append('walletIds', walletId);
+      });
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace invoices');
+      }
+
+      return response.json();
+    },
+    enabled: options?.enabled !== false,
+    initialData: options?.initialData,
+    // Keep previous data while fetching new page - prevents UI from becoming unresponsive
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// ==================== LEGACY HOOKS ====================
 
 // React Query hooks for data fetching
 export const useUsers = (wsId: string) => {
@@ -460,24 +543,30 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
 // Get Pending Invoices for a workspace
 export const usePendingInvoices = (
   wsId: string,
-  page?: string,
-  pageSize?: string
+  params: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    userIds?: string[];
+  } = {}
 ) => {
+  const { page = 1, pageSize = 10, q = '', userIds = [] } = params;
+
   return useQuery({
-    queryKey: ['pending-invoices', wsId, page, pageSize],
+    queryKey: ['pending-invoices', wsId, page, pageSize, q, userIds],
     queryFn: async () => {
       const supabase = createClient();
 
       // Calculate limit and offset
-      const parsedPage = page ? parseInt(page, 10) : 1;
-      const parsedSize = pageSize ? parseInt(pageSize, 10) : 10;
-      const offset = (parsedPage - 1) * parsedSize;
+      const offset = (page - 1) * pageSize;
 
-      // Fetch data with pagination
+      // Fetch data with pagination and filters
       const { data, error } = await supabase.rpc('get_pending_invoices', {
         p_ws_id: wsId,
-        p_limit: parsedSize,
+        p_limit: pageSize,
         p_offset: offset,
+        p_query: q || undefined,
+        p_user_ids: userIds.length > 0 ? userIds : undefined,
       });
 
       if (error) {
@@ -485,11 +574,13 @@ export const usePendingInvoices = (
         throw error;
       }
 
-      // Fetch total count
+      // Fetch total count with filters
       const { data: countData, error: countError } = await supabase.rpc(
         'get_pending_invoices_count',
         {
           p_ws_id: wsId,
+          p_query: q || undefined,
+          p_user_ids: userIds.length > 0 ? userIds : undefined,
         }
       );
 
@@ -516,6 +607,7 @@ export const usePendingInvoices = (
     staleTime: 2 * 60 * 1000, // 2 minutes - more frequent refresh for pending data
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true, // Refetch when window gains focus
+    placeholderData: keepPreviousData, 
     retry: 3,
   });
 };

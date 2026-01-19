@@ -20,7 +20,7 @@ interface DataTableToolbarProps<TData> {
   extraColumns?: any[];
   defaultQuery?: string;
   disableSearch?: boolean;
-  isEmpty: boolean;
+  isFiltered?: boolean;
   t?: any;
   importContent?: ReactNode;
   exportContent?: ReactNode;
@@ -39,7 +39,7 @@ export function DataTableToolbar<TData>({
   extraColumns,
   defaultQuery,
   disableSearch = false,
-  isEmpty,
+  isFiltered: isFilteredProp,
   t,
   namespace,
   importContent,
@@ -49,9 +49,10 @@ export function DataTableToolbar<TData>({
   resetParams,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
-    table.getState().columnFilters.length > 0 ||
-    !isEmpty ||
-    (defaultQuery?.length || 0) > 0;
+    isFilteredProp !== undefined
+      ? isFilteredProp
+      : table.getState().columnFilters.length > 0 ||
+        (defaultQuery?.length || 0) > 0;
 
   return (
     <div className="flex flex-col items-start justify-between gap-2 md:flex-row">

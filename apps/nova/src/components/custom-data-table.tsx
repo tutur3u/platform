@@ -66,7 +66,7 @@ export function CustomDataTable<TData, TValue>({
         }
         setParams={(params) => searchParams.set(params)}
         resetParams={() => searchParams.reset()}
-        isEmpty={searchParams.isEmpty}
+        isFiltered={!searchParams.isEmpty}
         newObjectTitle={t('common.create')}
         className={className}
         {...props}

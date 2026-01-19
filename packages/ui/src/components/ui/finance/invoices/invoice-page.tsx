@@ -1,21 +1,21 @@
 import { FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { Button } from '../../button';
+import FeatureSummary from '../../custom/feature-summary';
+import { Separator } from '../../separator';
+import { Skeleton } from '../../skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
 import { InvoiceTotalsChartSkeleton } from './charts/invoice-totals-chart';
-import { invoiceColumns } from './columns';
 import { InvoiceAnalytics } from './invoice-analytics';
-import { InvoicesToolbar } from './invoices-toolbar';
+import { InvoicesTable } from './invoices-table';
 import { PendingInvoicesTab } from './pending-invoices-tab';
 import { PendingInvoicesTable } from './pending-invoices-table';
+import { buildInvoiceSearchOrQuery } from './utils';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -110,8 +110,8 @@ export default async function InvoicesPage({
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
-  const [{ data: rawData, count }, weekStartsOn] = await Promise.all([
-    getData(wsId, resolvedSearchParams),
+  const [initialData, weekStartsOn] = await Promise.all([
+    getInitialData(wsId, resolvedSearchParams),
     getWeekStartsOn(wsId),
   ]);
 
@@ -142,12 +142,6 @@ export default async function InvoicesPage({
 
   // Get date range from search params
   const { start: startDate, end: endDate } = resolvedSearchParams;
-
-  const data = rawData.map((d) => ({
-    ...d,
-    href: `/${wsId}/finance/invoices/${d.id}`,
-    ws_id: wsId,
-  }));
 
   // Build analytics filters object
   const analyticsFilters = {
@@ -180,8 +174,6 @@ export default async function InvoicesPage({
       />
       <Separator className="my-4" />
 
-      <InvoicesToolbar wsId={wsId} canExport={canExportFinanceData} />
-
       <Suspense fallback={<InvoiceTotalsChartSkeleton className="mb-4" />}>
         <InvoiceAnalytics
           wsId={wsId}
@@ -203,37 +195,36 @@ export default async function InvoicesPage({
           />
         </TabsList>
         <TabsContent value="created">
-          <CustomDataTable
-            data={data}
-            columnGenerator={invoiceColumns}
-            namespace="invoice-data-table"
-            count={count}
-            hideToolbar={true}
-            extraData={{
-              canDeleteInvoices,
-              deleteInvoiceAction,
-            }}
-            defaultVisibility={{
-              id: false,
-              customer_id: false,
-              price: false,
-              total_diff: false,
-              note: false,
-            }}
-          />
+          <Suspense fallback={<Skeleton className="h-125 w-full" />}>
+            <InvoicesTable
+              wsId={wsId}
+              canDeleteInvoices={canDeleteInvoices}
+              canExport={canExportFinanceData}
+              deleteInvoiceAction={deleteInvoiceAction}
+              initialData={initialData}
+            />
+          </Suspense>
         </TabsContent>
         <TabsContent value="pending">
-          <PendingInvoicesTable wsId={wsId} />
+          <Suspense fallback={<Skeleton className="h-125 w-full" />}>
+            <PendingInvoicesTable
+              wsId={wsId}
+              canExport={canExportFinanceData}
+            />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </>
   );
 }
 
-async function getData(
+/**
+ * Fetches initial page of invoices for SSR hydration
+ */
+async function getInitialData(
   wsId: string,
   {
-    // q,
+    q,
     page = '1',
     pageSize = '10',
     start,
@@ -263,9 +254,132 @@ async function getData(
   if (walletId) wallets.push(walletId);
   wallets = Array.from(new Set(wallets.filter(Boolean)));
 
-  // Build select query dynamically
-  let selectQuery =
-    '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
+  const parsedPage = parseInt(page ?? '1', 10);
+  const parsedSize = parseInt(pageSize ?? '10', 10);
+
+  // If there's a search query, use the RPC function for customer name search
+  if (q) {
+    const userIdsArray = userIds
+      ? Array.isArray(userIds)
+        ? userIds
+        : [userIds]
+      : [];
+
+    const { data: searchResults, error: rpcError } = await supabase.rpc(
+      'search_finance_invoices',
+      {
+        p_ws_id: wsId,
+        p_search_query: q,
+        p_start_date: start || null,
+        p_end_date: end || null,
+        p_user_ids: userIdsArray.length > 0 ? userIdsArray : null,
+        p_wallet_ids: wallets.length > 0 ? wallets : null,
+        p_limit: parsedSize,
+        p_offset: (parsedPage - 1) * parsedSize,
+      }
+    );
+
+    if (rpcError) throw rpcError;
+
+    // Extract count from first row
+    const count = searchResults?.[0]?.total_count || 0;
+
+    // Fetch additional data for legacy/platform creators and wallet info
+    const invoiceIds = searchResults.map((r: any) => r.id);
+    if (invoiceIds.length === 0) {
+      return { data: [], count: 0 };
+    }
+
+    const { data: fullInvoices } = await supabase
+      .from('finance_invoices')
+      .select(
+        `*, 
+         legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
+         platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
+         wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+      )
+      .in('id', invoiceIds);
+
+    // Merge search results with full invoice data
+    const rawData = searchResults.map((searchRow: any) => {
+      const fullInvoice = fullInvoices?.find(
+        (fi: any) => fi.id === searchRow.id
+      );
+      return {
+        ...searchRow,
+        customer: {
+          full_name: searchRow.customer_full_name,
+          avatar_url: searchRow.customer_avatar_url,
+        },
+        legacy_creator: fullInvoice?.legacy_creator || null,
+        platform_creator: fullInvoice?.platform_creator || null,
+        wallet_transactions: fullInvoice?.wallet_transactions || null,
+      };
+    });
+
+    const data = rawData.map(
+      ({
+        customer,
+        legacy_creator,
+        platform_creator,
+        wallet_transactions,
+        ...rest
+      }: any) => {
+        const platformCreator = platform_creator as {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          user_private_details: {
+            full_name: string | null;
+            email: string | null;
+          } | null;
+        } | null;
+
+        const legacyCreator = legacy_creator as {
+          id: string;
+          display_name: string | null;
+          full_name: string | null;
+          email: string | null;
+          avatar_url: string | null;
+        } | null;
+
+        const creator = {
+          id: platformCreator?.id ?? legacyCreator?.id ?? '',
+          display_name:
+            platformCreator?.display_name ??
+            legacyCreator?.display_name ??
+            platformCreator?.user_private_details?.email ??
+            null,
+          full_name:
+            platformCreator?.user_private_details?.full_name ??
+            legacyCreator?.full_name ??
+            null,
+          email:
+            platformCreator?.user_private_details?.email ??
+            legacyCreator?.email ??
+            null,
+          avatar_url:
+            platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+        };
+
+        const wallet = wallet_transactions?.wallet
+          ? { name: wallet_transactions.wallet.name }
+          : null;
+
+        return {
+          ...rest,
+          customer,
+          creator,
+          wallet,
+        };
+      }
+    );
+
+    return { data, count } as { data: Invoice[]; count: number };
+  }
+
+  // No search query - use regular query builder
+  let selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))`;
 
   const walletJoinType = wallets.length > 0 ? '!inner' : '';
   selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
@@ -275,8 +389,9 @@ async function getData(
     .select(selectQuery, {
       count: 'exact',
     })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .eq('ws_id', wsId);
+
+  queryBuilder = queryBuilder.order('created_at', { ascending: false });
 
   if (start && end) {
     queryBuilder = queryBuilder.gte('created_at', start).lte('created_at', end);
@@ -294,8 +409,6 @@ async function getData(
   }
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
     const startRange = (parsedPage - 1) * parsedSize;
     const endRange = parsedPage * parsedSize;
     queryBuilder = queryBuilder.range(startRange, endRange).limit(parsedSize);
