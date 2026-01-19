@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function SceneITundra() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -14,6 +14,22 @@ export function SceneITundra() {
   const titleY = useTransform(scrollYProgress, [0, 1], [0, 100]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const subtitleY = useTransform(scrollYProgress, [0, 1], [0, 50]);
+
+  const [particles, setParticles] = useState<
+    { id: number; left: string; top: string; duration: number; delay: number }[]
+  >([]);
+
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 20 }).map((_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        duration: 3 + Math.random() * 2,
+        delay: Math.random() * 2,
+      }))
+    );
+  }, []);
 
   return (
     <section
@@ -44,22 +60,22 @@ export function SceneITundra() {
 
       {/* Floating particles */}
       <div className="pointer-events-none absolute inset-0">
-        {[...Array(20)].map((_, i) => (
+        {particles.map((particle) => (
           <motion.div
-            key={i}
+            key={particle.id}
             className="absolute h-1 w-1 rounded-full bg-pack-amber/30"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: particle.left,
+              top: particle.top,
             }}
             animate={{
               y: [0, -30, 0],
               opacity: [0.2, 0.6, 0.2],
             }}
             transition={{
-              duration: 3 + Math.random() * 2,
+              duration: particle.duration,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: particle.delay,
               ease: 'easeInOut',
             }}
           />
