@@ -83,7 +83,7 @@
     "dayjs": "^1.11.19",
     "debug": "^4.4.3",
     "embla-carousel-react": "^8.6.0",
-    "eventemitter3": "^5.0.3",
+    "eventemitter3": "^5.0.4",
     "framer-motion": "^12.27.1",
     "gsap": "^3.14.2",
     "html2canvas-pro": "^1.6.5",

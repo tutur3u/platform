@@ -92,7 +92,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.1",
-    "eventemitter3": "^5.0.3",
+    "eventemitter3": "^5.0.4",
     "framer-motion": "^12.27.1",
     "html2canvas-pro": "^1.6.5",
     "isomorphic-dompurify": "^2.35.0",
