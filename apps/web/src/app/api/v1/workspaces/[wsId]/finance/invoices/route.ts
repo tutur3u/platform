@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -255,7 +254,10 @@ export async function GET(request: Request, { params }: Params) {
         .in('id', invoiceIds);
 
       // Transform search results using shared utility
-      const data = transformInvoiceSearchResults(searchResults, fullInvoices || []);
+      const data = transformInvoiceSearchResults(
+        searchResults,
+        fullInvoices || []
+      );
 
       return NextResponse.json({ data, count });
     }

@@ -1,10 +1,7 @@
 import { FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import {
-  getPermissions,
-  getWorkspace,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
