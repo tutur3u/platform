@@ -14,7 +14,6 @@ export default async function TemporarilyArchivedUsersStatistics({
   const today = new Date().toISOString();
 
   const enabled = true;
-  console.log(wsId);
 
   const { count: temporarilyArchivedUsers } = enabled
     ? await supabase
@@ -28,7 +27,6 @@ export default async function TemporarilyArchivedUsersStatistics({
         .gt('archived_until', today)
     : { count: 0 };
 
-  console.log('temporarily archived', temporarilyArchivedUsers);
 
   const { permissions } = await getPermissions({
     wsId,
