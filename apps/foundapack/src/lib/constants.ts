@@ -23,7 +23,7 @@ export const CORE_MEMBERS: Member[] = [
     name: 'Nguyen Thuy Tien',
     role: 'Growth Lead',
     venture: 'Tuturuuu',
-    avatarUrl: '/members/tien-nguyen.jpeg',
+    avatarUrl: '/members/tien-nguyen.jpg',
   },
   {
     name: 'Trinh Hoang Xuan Nghi',

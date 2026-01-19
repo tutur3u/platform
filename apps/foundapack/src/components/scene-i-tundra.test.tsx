@@ -6,7 +6,7 @@ describe('SceneITundra', () => {
   it('renders the core message', () => {
     render(<SceneITundra />);
     // Check for the heading which contains the text broken by spans
-    const heading = screen.getByRole('heading', { level: 2 });
+    const heading = screen.getByRole('heading', { level: 1 });
     expect(heading.textContent).toMatch(/The hardest walk is walking alone/i);
   });
 });

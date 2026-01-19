@@ -97,7 +97,7 @@ export function SceneITundra() {
           transition={{ delay: 0.4, duration: 1, ease: 'easeOut' }}
           className="pack-font-serif mb-10 font-bold text-6xl leading-[1.1] tracking-tight md:text-8xl lg:text-9xl"
         >
-          <span className="block text-pack-white">The hardest walk is</span>
+          <span className="block text-pack-white">The hardest walk is </span>
           <motion.span
             className="relative mt-2 block text-orange-200 italic"
             initial={{ opacity: 0 }}
