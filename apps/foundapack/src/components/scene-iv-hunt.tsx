@@ -1,107 +1,128 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { VENTURES } from '@/lib/constants';
 
 export function SceneIVHunt() {
   return (
     <section
       id="metrics"
-      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-pack-void px-4 py-32"
+      className="relative min-h-screen overflow-hidden bg-pack-void px-4 py-24 md:py-32"
     >
-      <div className="pack-texture-overlay opacity-5" />
+      {/* Subtle ambient glow */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/3 left-1/2 h-200 w-200 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pack-amber/[0.03] blur-[150px]" />
+      </div>
 
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,var(--tw-gradient-stops))] from-pack-slate/40 via-pack-void to-pack-void opacity-50" />
+      <div className="relative z-10 mx-auto max-w-6xl">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mb-16 text-center md:mb-24"
+        >
+          <span className="mb-4 inline-block font-mono text-pack-amber/60 text-xs uppercase tracking-[0.4em]">
+            The Territory
+          </span>
+          <h2 className="pack-font-serif mb-4 font-bold text-4xl text-pack-white md:mb-6 md:text-6xl lg:text-7xl">
+            Pack Emblems
+          </h2>
+          <p className="mx-auto max-w-lg text-base text-pack-frost/50 md:text-lg">
+            Each emblem represents a fire we've lit in the vast tundra of human
+            progress.
+          </p>
+        </motion.div>
 
-      {/* Constellation Mesh Background (Subtle connections between cards) */}
-      <svg
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-20"
-        aria-hidden="true"
-      >
-        <motion.path
-          d="M 20% 60% Q 50% 40% 80% 60%"
-          fill="none"
-          stroke="var(--color-pack-amber)"
-          strokeWidth="1"
-          strokeDasharray="4 4"
-          initial={{ pathLength: 0, opacity: 0 }}
-          whileInView={{ pathLength: 1, opacity: 0.3 }}
-          transition={{ duration: 2 }}
-        />
-        <motion.circle cx="20%" cy="60%" r="2" fill="var(--color-pack-amber)" />
-        <motion.circle cx="50%" cy="40%" r="2" fill="var(--color-pack-amber)" />
-        <motion.circle cx="80%" cy="60%" r="2" fill="var(--color-pack-amber)" />
-      </svg>
-
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 max-w-6xl text-center"
-      >
-        <span className="mb-6 inline-block rounded-full border border-pack-amber/20 bg-pack-amber/5 px-4 py-1.5 font-mono text-pack-amber text-sm tracking-wider">
-          PROJECT TERRITORY
-        </span>
-
-        <h2 className="pack-font-serif mb-8 font-bold text-5xl text-pack-white tracking-tight md:text-7xl">
-          Pack Emblems
-        </h2>
-
-        <p className="mx-auto mb-20 max-w-2xl text-pack-frost/60 text-xl">
-          The territory we've claimed. Each emblem represents a fire we've lit
-          in the vast tundra of human progress.
-        </p>
-
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+        {/* Ventures Grid */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
           {VENTURES.map((venture, i) => (
-            <motion.a
+            <motion.div
               key={venture.id}
-              href={venture.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.1 }}
-              className="group relative"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.6, delay: i * 0.15 }}
             >
-              {/* Rugged Border/Frame */}
-              <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-pack-border/30 bg-pack-charcoal transition-all duration-500 group-hover:border-pack-amber/50 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.1)]">
-                <Image
-                  src={venture.previewUrl}
-                  alt={venture.name}
-                  fill
-                  className="h-full w-full object-cover opacity-60 transition-all duration-700 group-hover:scale-110 group-hover:opacity-100"
-                />
+              <Link
+                href={venture.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  'group relative block overflow-hidden rounded-xl',
+                  'border border-white/5 bg-pack-charcoal/40',
+                  'transition-all duration-500',
+                  'hover:border-pack-amber/20 hover:bg-pack-charcoal/60',
+                  'hover:shadow-[0_0_40px_rgba(251,191,36,0.08)]'
+                )}
+              >
+                {/* Image */}
+                <div className="relative aspect-16/10 w-full overflow-hidden">
+                  <Image
+                    src={venture.previewUrl}
+                    alt={venture.name}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-linear-to-t from-pack-charcoal via-pack-charcoal/40 to-transparent" />
+                </div>
 
-                {/* Overlay Vignette */}
-                <div className="absolute inset-0 bg-linear-to-t from-pack-void via-transparent to-transparent opacity-80" />
-
-                {/* Texture */}
-                <div className="pack-texture-overlay opacity-10" />
-
-                {/* Content Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                  <h3 className="pack-font-serif mb-2 translate-y-4 font-bold text-2xl text-pack-white opacity-0 transition-opacity duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                {/* Content */}
+                <div className="p-6">
+                  {/* Title */}
+                  <h3 className="pack-font-serif mb-3 font-bold text-2xl text-pack-white transition-colors duration-300 group-hover:text-pack-amber">
                     {venture.name}
                   </h3>
-                  <div className="h-px w-0 bg-pack-amber transition-all duration-500 group-hover:w-12" />
-                </div>
-              </div>
 
-              {/* Base Label (Always Visible) */}
-              <div className="mt-6 text-center">
-                <span className="font-mono text-pack-frost/40 text-xs uppercase tracking-[0.3em] transition-colors group-hover:text-pack-amber">
-                  {venture.name}
-                </span>
-              </div>
-            </motion.a>
+                  {/* Divider line */}
+                  <div className="mb-4 h-px w-12 bg-pack-amber/30 transition-all duration-500 group-hover:w-20 group-hover:bg-pack-amber" />
+
+                  {/* CTA */}
+                  <div className="flex items-center gap-2 text-pack-frost/40 text-sm transition-colors duration-300 group-hover:text-pack-amber/80">
+                    <span>Explore</span>
+                    <svg
+                      className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <title>Explore</title>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
-      </motion.div>
+
+        {/* Bottom flourish */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="mt-16 flex justify-center md:mt-24"
+        >
+          <div className="flex items-center gap-4">
+            <div className="h-px w-8 bg-linear-to-r from-transparent to-pack-amber/30" />
+            <span className="font-mono text-[10px] text-pack-frost/30 uppercase tracking-[0.3em]">
+              {VENTURES.length} Ventures
+            </span>
+            <div className="h-px w-8 bg-linear-to-l from-transparent to-pack-amber/30" />
+          </div>
+        </motion.div>
+      </div>
     </section>
   );
 }
