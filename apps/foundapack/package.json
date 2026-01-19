@@ -1,0 +1,39 @@
+{
+  "name": "@tuturuuu/foundapack",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "type-check": "tsgo --build",
+    "dev": "next dev -p 3004 --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "preview": "next build --turbopack && next start -p 3004 --turbopack",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "@tuturuuu/vercel": "workspace:*",
+    "framer-motion": "^12.26.2",
+    "next": "^16.1.3",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/react": "^16.3.1",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^25.0.9",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "jsdom": "^27.4.0",
+    "postcss": "^8.5.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.17"
+  },
+  "packageManager": "bun@1.3.6"
+}
