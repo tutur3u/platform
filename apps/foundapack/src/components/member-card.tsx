@@ -72,7 +72,7 @@ export function MemberCard({ member }: MemberCardProps) {
                 />
               </svg>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-pack-amber/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <div className="absolute inset-0 bg-linear-to-t from-pack-amber/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
             </div>
           )}
 
@@ -88,7 +88,15 @@ export function MemberCard({ member }: MemberCardProps) {
             {member.role}
           </p>
           <div className="flex items-center gap-2">
-            <span className="h-px w-4 bg-pack-border" />
+            {member.venture === 'Tuturuuu' && (
+              <Image
+                src="/tuturuuu-logo.png"
+                alt="Tuturuuu"
+                width={16}
+                height={16}
+                className="h-4 w-4"
+              />
+            )}
             <span className="text-[10px] text-pack-frost/40 uppercase tracking-widest transition-colors group-hover:text-pack-frost/70">
               {member.venture}
             </span>

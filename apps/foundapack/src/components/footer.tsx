@@ -18,10 +18,11 @@ export function Footer() {
         <div className="mb-24 grid grid-cols-1 gap-16 md:flex md:justify-between md:gap-8">
           {/* Brand & Mission */}
           <div className="space-y-6">
-            <Link href="/" className="text-white">
-              <h4 className="pack-font-serif font-bold text-3xl text-white/80 tracking-tight hover:text-white">
-                Foundapack
-              </h4>
+            <Link
+              href="/"
+              className="pack-font-serif w-fit font-bold text-3xl text-white/80 tracking-tight transition duration-500 hover:text-white"
+            >
+              Foundapack
             </Link>
             <p className="max-w-sm text-lg text-white/70 leading-relaxed">
               The operating system for the next generation of visionary
@@ -139,7 +140,7 @@ export function Footer() {
                 <li>
                   <Link
                     href="/"
-                    className="text-white/70 transition-colors hover:text-white"
+                    className="text-white/70 transition duration-500 hover:text-white"
                   >
                     The Tundra
                   </Link>
@@ -147,7 +148,7 @@ export function Footer() {
                 <li>
                   <Link
                     href="/#council"
-                    className="text-white/70 transition-colors hover:text-white"
+                    className="text-white/70 transition duration-500 hover:text-white"
                   >
                     The Council
                   </Link>
@@ -155,7 +156,7 @@ export function Footer() {
                 <li>
                   <Link
                     href="/#metrics"
-                    className="text-white/70 transition-colors hover:text-white"
+                    className="text-white/70 transition duration-500 hover:text-white"
                   >
                     Pack Emblems
                   </Link>
@@ -170,7 +171,7 @@ export function Footer() {
                 <li>
                   <Link
                     href="/#join"
-                    className="text-white/70 transition-colors hover:text-white"
+                    className="text-white/70 transition duration-500 hover:text-white"
                   >
                     The Den
                   </Link>
@@ -178,7 +179,7 @@ export function Footer() {
                 <li>
                   <Link
                     href="/#manifesto"
-                    className="text-white/70 transition-colors hover:text-white"
+                    className="text-white/70 transition duration-500 hover:text-white"
                   >
                     Lore
                   </Link>
@@ -188,7 +189,7 @@ export function Footer() {
                     href="https://tuturuuu.com/contact"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white/70 transition-colors hover:text-white"
+                    className="text-white/70 transition duration-500 hover:text-white"
                   >
                     Support
                   </Link>
@@ -215,7 +216,7 @@ export function Footer() {
                 height={320}
                 className="h-24 w-auto md:ml-auto"
               />
-              <span className="block font-bold text-4xl text-white tracking-tighter transition-colors group-hover:text-white">
+              <span className="group- block font-bold text-4xl text-white tracking-tighter transition duration-500 hover:text-white">
                 Tuturuuu
               </span>
               <p className="pack-font-handwritten -rotate-2 text-2xl text-pack-amber/80">
@@ -239,7 +240,7 @@ export function Footer() {
               href="https://tuturuuu.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-white"
+              className="transition duration-500 hover:text-white"
             >
               Privacy Policy
             </a>
@@ -247,7 +248,7 @@ export function Footer() {
               href="https://tuturuuu.com/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-white"
+              className="transition duration-500 hover:text-white"
             >
               Terms of Service
             </a>

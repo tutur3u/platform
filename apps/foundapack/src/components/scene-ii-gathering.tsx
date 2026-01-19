@@ -12,7 +12,7 @@ export function SceneIIGathering() {
         className="max-w-3xl"
       >
         <div className="mb-8 flex justify-center">
-          <div className="h-16 w-1 bg-gradient-to-b from-transparent to-pack-amber" />
+          <div className="h-16 w-1 bg-linear-to-b from-transparent to-pack-amber" />
         </div>
 
         <h2 className="mb-8 font-bold text-4xl text-pack-white md:text-6xl">

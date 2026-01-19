@@ -18,6 +18,7 @@ const founders: Founder[] = [
   // Noah
   { name: 'Nghi', role: 'Co-founder', startup: 'Noah', x: 20, y: 60 },
   { name: 'Toida', role: 'Co-founder', startup: 'Noah', x: 30, y: 70 },
+  { name: 'Yen', role: 'Member', startup: 'Noah', x: 25, y: 80 },
   // AICC
   { name: 'Shirin', role: 'Co-founder', startup: 'AICC', x: 80, y: 60 },
   { name: 'Thao', role: 'Co-founder', startup: 'AICC', x: 90, y: 70 },
