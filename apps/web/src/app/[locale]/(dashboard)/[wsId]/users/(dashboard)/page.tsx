@@ -25,7 +25,7 @@ interface Props {
 export default async function WorkspaceUsersPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {({wsId}) => (
+      {({ wsId }) => (
         <div className="flex min-h-full w-full flex-col">
           <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Suspense fallback={<LoadingStatisticCard />}>

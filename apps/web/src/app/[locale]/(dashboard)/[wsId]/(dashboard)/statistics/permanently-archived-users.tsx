@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 
-
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
