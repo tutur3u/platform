@@ -217,7 +217,7 @@ async function getInitialData(
 
   // Apply status filters (archived vs archived_until distinction)
   if (status === 'archived') {
-    queryBuilder = queryBuilder.eq('archived', true);
+    queryBuilder = queryBuilder.eq('archived', true).is('archived_until', null);
   } else if (status === 'archived_until') {
     queryBuilder = queryBuilder.gt('archived_until', new Date().toISOString());
   }
