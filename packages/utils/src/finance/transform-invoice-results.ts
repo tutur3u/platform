@@ -67,6 +67,52 @@ export interface WalletTransaction {
 }
 
 /**
+ * Normalizes creator data from either platform or legacy creator sources
+ * Resolves display_name, full_name, email, and avatar_url with proper fallback chain
+ *
+ * @param platformCreator Platform creator object (preferred source)
+ * @param legacyCreator Legacy creator object (fallback source)
+ * @returns Normalized creator object for Invoice type
+ */
+function normalizeCreator(
+  platformCreator: PlatformCreator | null,
+  legacyCreator: LegacyCreator | null
+): Invoice['creator'] {
+  return {
+    id: platformCreator?.id ?? legacyCreator?.id ?? '',
+    display_name:
+      platformCreator?.display_name ??
+      legacyCreator?.display_name ??
+      platformCreator?.user_private_details?.email ??
+      null,
+    full_name:
+      platformCreator?.user_private_details?.full_name ??
+      legacyCreator?.full_name ??
+      null,
+    email:
+      platformCreator?.user_private_details?.email ??
+      legacyCreator?.email ??
+      null,
+    avatar_url:
+      platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+  };
+}
+
+/**
+ * Extracts wallet information from wallet transaction data
+ *
+ * @param walletTransactions Wallet transaction object containing wallet relation
+ * @returns Normalized wallet object for Invoice type, or null if no wallet present
+ */
+function normalizeWallet(
+  walletTransactions: WalletTransaction | null
+): Invoice['wallet'] {
+  return walletTransactions?.wallet
+    ? { name: walletTransactions.wallet.name }
+    : null;
+}
+
+/**
  * Intermediate type for merged search results
  * Combines SearchInvoiceRpcResult with additional creator and wallet data
  */
@@ -96,9 +142,12 @@ export function transformInvoiceSearchResults(
   searchResults: SearchInvoiceRpcResult[],
   fullInvoices: FullInvoiceData[]
 ): Invoice[] {
+  // Create an index map for O(1) lookup instead of O(n) find operations
+  const fullInvoiceMap = new Map(fullInvoices?.map((fi) => [fi.id, fi]) ?? []);
+
   // First merge: combine search results with full invoice data
   const rawData = searchResults.map((searchRow) => {
-    const fullInvoice = fullInvoices?.find((fi) => fi.id === searchRow.id);
+    const fullInvoice = fullInvoiceMap.get(searchRow.id);
     return {
       ...searchRow,
       customer: {
@@ -120,33 +169,11 @@ export function transformInvoiceSearchResults(
       wallet_transactions,
       ...rest
     }: MergedSearchInvoiceData) => {
-      const platformCreator = platform_creator as PlatformCreator | null;
-      const legacyCreator = legacy_creator as LegacyCreator | null;
-
-      // Resolve creator from either platform or legacy source
-      const creator = {
-        id: platformCreator?.id ?? legacyCreator?.id ?? '',
-        display_name:
-          platformCreator?.display_name ??
-          legacyCreator?.display_name ??
-          platformCreator?.user_private_details?.email ??
-          null,
-        full_name:
-          platformCreator?.user_private_details?.full_name ??
-          legacyCreator?.full_name ??
-          null,
-        email:
-          platformCreator?.user_private_details?.email ??
-          legacyCreator?.email ??
-          null,
-        avatar_url:
-          platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
-      };
-
-      // Extract wallet name if present
-      const wallet = wallet_transactions?.wallet
-        ? { name: wallet_transactions.wallet.name }
-        : null;
+      const creator = normalizeCreator(
+        platform_creator as PlatformCreator | null,
+        legacy_creator as LegacyCreator | null
+      );
+      const wallet = normalizeWallet(wallet_transactions);
 
       return {
         ...rest,
@@ -174,33 +201,11 @@ export function transformInvoiceData(rawData: FullInvoiceData[]): Invoice[] {
       wallet_transactions,
       ...rest
     }: FullInvoiceData) => {
-      const platformCreator = platform_creator as PlatformCreator | null;
-      const legacyCreator = legacy_creator as LegacyCreator | null;
-
-      // Resolve creator from either platform or legacy source
-      const creator = {
-        id: platformCreator?.id ?? legacyCreator?.id ?? '',
-        display_name:
-          platformCreator?.display_name ??
-          legacyCreator?.display_name ??
-          platformCreator?.user_private_details?.email ??
-          null,
-        full_name:
-          platformCreator?.user_private_details?.full_name ??
-          legacyCreator?.full_name ??
-          null,
-        email:
-          platformCreator?.user_private_details?.email ??
-          legacyCreator?.email ??
-          null,
-        avatar_url:
-          platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
-      };
-
-      // Extract wallet name if present
-      const wallet = wallet_transactions?.wallet
-        ? { name: wallet_transactions.wallet.name }
-        : null;
+      const creator = normalizeCreator(
+        platform_creator as PlatformCreator | null,
+        legacy_creator as LegacyCreator | null
+      );
+      const wallet = normalizeWallet(wallet_transactions);
 
       return {
         ...rest,
