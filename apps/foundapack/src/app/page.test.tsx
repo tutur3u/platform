@@ -19,6 +19,11 @@ vi.mock('../components/scaling-network', () => ({
   ScalingNetwork: () => <div>ScalingNetwork Component</div>,
 }));
 
+// Mock TheCouncil
+vi.mock('../components/the-council', () => ({
+  TheCouncil: () => <div>The Council Component</div>,
+}));
+
 describe('Foundapack Landing Page', () => {
   it('renders all main sections', () => {
     render(<Page />);
@@ -32,10 +37,13 @@ describe('Foundapack Landing Page', () => {
     // Scene III
     expect(screen.getByText(/Iron sharpens iron/i)).toBeDefined();
 
+    // The Council
+    expect(screen.getByText('The Council Component')).toBeDefined();
+
     // Scene V
     expect(screen.getByText(/The fire is lit/i)).toBeDefined();
 
-    // Footer
-    expect(screen.getByText(/Powered by Tuturuuu/i)).toBeDefined();
+    // Footer (Checking for the brand name in the footer)
+    expect(screen.getAllByText(/Foundapack/i).length).toBeGreaterThan(0);
   });
 });

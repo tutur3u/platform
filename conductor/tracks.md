@@ -20,4 +20,41 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - [x] **Track: Foundapack Ecosystem & Alphas - Content & Storytelling Expansion**
+
 *Link: [./tracks/foundapack_ecosystem_20260119/](./tracks/foundapack_ecosystem_20260119/)*
+
+
+
+---
+
+
+
+- [x] **Track: Foundapack Aesthetic Overhaul & The Alpha Pack**
+
+
+
+*Link: [./tracks/foundapack_aesthetic_overhaul_20260119/](./tracks/foundapack_aesthetic_overhaul_20260119/)*
+
+
+
+
+
+
+
+---
+
+
+
+
+
+
+
+- [x] **Track: Foundapack - The Lone Wolf & Footer Revamp**
+
+
+
+*Link: [./tracks/foundapack_lone_wolf_footer_20260119/](./tracks/foundapack_lone_wolf_footer_20260119/)*
+
+
+
+

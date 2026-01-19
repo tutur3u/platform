@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { Footer } from './footer';
 
 describe('Footer', () => {
-  it('renders Powered by Tuturuuu', () => {
+  it('renders Foundapack and Tuturuuu', () => {
     render(<Footer />);
-    expect(screen.getByText(/Powered by Tuturuuu/i)).toBeDefined();
+    expect(screen.getAllByText(/Foundapack/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Tuturuuu/i).length).toBeGreaterThan(0);
   });
 });

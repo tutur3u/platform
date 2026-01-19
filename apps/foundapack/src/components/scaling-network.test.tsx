@@ -22,7 +22,8 @@ describe('ScalingNetwork', () => {
 
   it('contains the visualization container', () => {
     const { container } = render(<ScalingNetwork />);
-    const vizContainer = container.querySelector('.scaling-network-viz');
+    // Search for the viz class anywhere in the output
+    const vizContainer = container.querySelector('[class*="scaling-network-viz"]');
     expect(vizContainer).toBeDefined();
   });
 });

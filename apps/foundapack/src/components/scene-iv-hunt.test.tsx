@@ -6,6 +6,6 @@ describe('SceneIVHunt', () => {
   it('renders the impact pitch', () => {
     render(<SceneIVHunt />);
     const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading.textContent).toMatch(/Access the.*Internal Universe/i);
+    expect(heading.textContent).toMatch(/Pack Emblems/i);
   });
 });
