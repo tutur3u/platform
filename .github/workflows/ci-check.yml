@@ -20,7 +20,7 @@ jobs:
       should_run: ${{ steps.check_config.outputs.should_run }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             tuturuuu.ts
