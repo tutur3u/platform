@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export function SceneITundra() {
   return (
-    <section className="relative flex h-screen flex-col items-center justify-center px-4 text-center overflow-hidden">
+    <section className="relative flex h-screen flex-col items-center justify-center overflow-hidden px-4 text-center">
       <div className="pack-texture-overlay" />
 
       <motion.div
@@ -17,20 +17,20 @@ export function SceneITundra() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 0.4 }}
           transition={{ delay: 0.5, duration: 1 }}
-          className="mb-4 block font-mono text-xs uppercase tracking-[0.3em] text-pack-amber"
+          className="mb-4 block font-mono text-pack-amber text-xs uppercase tracking-[0.3em]"
         >
           Scene I: The Isolation
         </motion.span>
 
-        <h2 className="mb-8 font-bold text-6xl text-pack-white md:text-8xl pack-font-serif leading-tight">
+        <h2 className="pack-font-serif mb-8 font-bold text-6xl text-pack-white leading-tight md:text-8xl">
           The hardest walk is <br />
           <span className="text-pack-frost/30 italic">walking alone.</span>
         </h2>
 
         <div className="relative mx-auto max-w-xl">
-          <p className="text-pack-frost/80 text-xl md:text-2xl leading-relaxed">
+          <p className="text-pack-frost/80 text-xl leading-relaxed md:text-2xl">
             In the vast tundra of entrepreneurship, <br />
-            <span className="pack-font-handwritten text-pack-amber/80 text-3xl">
+            <span className="pack-font-handwritten text-3xl text-pack-amber/80">
               isolation is the default state.
             </span>
           </p>
@@ -38,8 +38,9 @@ export function SceneITundra() {
       </motion.div>
 
       {/* Animated Footprints */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-10 pointer-events-none">
+      <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 opacity-10">
         <svg width="200" height="400" viewBox="0 0 200 400" fill="none">
+          <title>Animated Footprints</title>
           <motion.path
             d="M80 350C80 350 70 340 70 330C70 320 80 315 85 315C90 315 100 320 100 330C100 340 90 350 80 350Z"
             fill="currentColor"
@@ -77,10 +78,10 @@ export function SceneITundra() {
         transition={{ delay: 1.5, duration: 1 }}
         className="absolute bottom-12 flex flex-col items-center gap-2"
       >
-        <span className="text-xs uppercase tracking-widest text-pack-frost/30">
+        <span className="text-pack-frost/30 text-xs uppercase tracking-widest">
           Scroll to explore
         </span>
-        <div className="h-12 w-px bg-gradient-to-b from-pack-amber/50 to-transparent animate-pulse" />
+        <div className="h-12 w-px animate-pulse bg-gradient-to-b from-pack-amber/50 to-transparent" />
       </motion.div>
     </section>
   );

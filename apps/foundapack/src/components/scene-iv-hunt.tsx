@@ -1,13 +1,14 @@
 'use client';
 
-import { VENTURES } from '@/lib/constants';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { VENTURES } from '@/lib/constants';
 
 export function SceneIVHunt() {
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-pack-void px-4 py-32">
       <div className="pack-texture-overlay opacity-5" />
-      
+
       {/* Dynamic Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-pack-slate/40 via-pack-void to-pack-void opacity-50" />
 
@@ -22,7 +23,7 @@ export function SceneIVHunt() {
           PROJECT TERRITORY
         </span>
 
-        <h2 className="mb-8 font-bold text-5xl text-pack-white tracking-tight md:text-7xl pack-font-serif">
+        <h2 className="pack-font-serif mb-8 font-bold text-5xl text-pack-white tracking-tight md:text-7xl">
           Pack Emblems
         </h2>
 
@@ -46,21 +47,22 @@ export function SceneIVHunt() {
             >
               {/* Rugged Border/Frame */}
               <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-pack-border/30 bg-pack-charcoal transition-all duration-500 group-hover:border-pack-amber/50 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.1)]">
-                <img
+                <Image
                   src={venture.previewUrl}
                   alt={venture.name}
+                  fill
                   className="h-full w-full object-cover opacity-60 transition-all duration-700 group-hover:scale-110 group-hover:opacity-100"
                 />
-                
+
                 {/* Overlay Vignette */}
                 <div className="absolute inset-0 bg-gradient-to-t from-pack-void via-transparent to-transparent opacity-80" />
-                
+
                 {/* Texture */}
                 <div className="pack-texture-overlay opacity-10" />
-                
+
                 {/* Content Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                  <h3 className="mb-2 font-bold text-2xl text-pack-white pack-font-serif opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-y-4 group-hover:translate-y-0">
+                  <h3 className="pack-font-serif mb-2 translate-y-4 font-bold text-2xl text-pack-white opacity-0 transition-opacity duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                     {venture.name}
                   </h3>
                   <div className="h-px w-0 bg-pack-amber transition-all duration-500 group-hover:w-12" />
@@ -69,7 +71,7 @@ export function SceneIVHunt() {
 
               {/* Base Label (Always Visible) */}
               <div className="mt-6 text-center">
-                <span className="font-mono text-xs uppercase tracking-[0.3em] text-pack-frost/40 group-hover:text-pack-amber transition-colors">
+                <span className="font-mono text-pack-frost/40 text-xs uppercase tracking-[0.3em] transition-colors group-hover:text-pack-amber">
                   {venture.name}
                 </span>
               </div>
