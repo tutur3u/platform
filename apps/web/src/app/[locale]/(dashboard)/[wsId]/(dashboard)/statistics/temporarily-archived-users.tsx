@@ -27,7 +27,6 @@ export default async function TemporarilyArchivedUsersStatistics({
         .gt('archived_until', today)
     : { count: 0 };
 
-
   const { permissions } = await getPermissions({
     wsId,
   });
