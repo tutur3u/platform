@@ -17,7 +17,7 @@ export function Footer() {
       <div className="relative z-10 mx-auto max-w-7xl">
         <div className="mb-24 grid grid-cols-1 gap-16 md:flex md:justify-between md:gap-8">
           {/* Brand & Mission */}
-          <div className="space-y-6">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center md:items-start md:justify-start md:text-left">
             <Link
               href="/"
               className="pack-font-serif w-fit font-bold text-3xl text-white/80 tracking-tight transition duration-500 hover:text-white"
@@ -131,8 +131,8 @@ export function Footer() {
           </div>
 
           {/* Lore-based Navigation */}
-          <div className="grid grid-cols-2 gap-8 md:gap-16 lg:gap-32">
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-16 lg:gap-32">
+            <div className="flex-col items-center justify-center space-y-4 text-center md:items-start md:justify-start md:text-left">
               <h5 className="font-mono text-[10px] text-pack-amber/60 uppercase tracking-[0.3em]">
                 The Journey
               </h5>
@@ -163,7 +163,7 @@ export function Footer() {
                 </li>
               </ul>
             </div>
-            <div className="space-y-4">
+            <div className="flex-col items-center justify-center space-y-4 text-center md:items-start md:justify-start md:text-left">
               <h5 className="font-mono text-[10px] text-pack-amber/60 uppercase tracking-[0.3em]">
                 Join the Hunt
               </h5>
@@ -203,18 +203,18 @@ export function Footer() {
             href="https://tuturuuu.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex w-fit flex-col space-y-6 opacity-80 transition-opacity hover:opacity-100 md:items-end md:text-right"
+            className="group flex w-full flex-col items-center justify-center space-y-6 text-center opacity-80 transition-opacity hover:opacity-100 md:w-fit md:items-end md:text-right"
           >
             <h5 className="font-mono text-[10px] text-pack-amber/60 uppercase tracking-[0.3em]">
               Forged By
             </h5>
-            <div className="space-y-4">
+            <div className="flex flex-col items-center justify-center space-y-4 md:items-end md:justify-start">
               <Image
                 src="/tuturuuu-logo.png"
                 alt="Tuturuuu"
                 width={320}
                 height={320}
-                className="h-24 w-auto md:ml-auto"
+                className="md:h-28 h-32 w-auto md:ml-auto"
               />
               <span className="group- block font-bold text-4xl text-white tracking-tighter transition duration-500 hover:text-white">
                 Tuturuuu

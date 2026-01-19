@@ -25,8 +25,8 @@ export function NightSky() {
 
       {/* Deep Space Dust */}
       <motion.div style={{ y: dustY }} className="absolute inset-0 opacity-20">
-        <div className="absolute top-[-20%] left-[-10%] h-[140%] w-[120%] bg-[radial-gradient(circle_at_20%_30%,rgba(251,191,36,0.05)_0%,transparent_50%)]" />
-        <div className="absolute top-[-20%] left-[-10%] h-[140%] w-[120%] bg-[radial-gradient(circle_at_80%_70%,rgba(249,115,22,0.05)_0%,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(251,191,36,0.05)_0%,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(249,115,22,0.05)_0%,transparent_50%)]" />
       </motion.div>
 
       {/* Stars Layer 1 (Far/Slow) */}

@@ -7,7 +7,7 @@ export function SceneIIICampfire() {
   return (
     <section
       id="manifesto"
-      className="relative flex min-h-screen flex-col items-center justify-center bg-linear-to-b from-pack-charcoal/30 to-pack-void/80 px-4 py-20"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-linear-to-b from-pack-charcoal/30 to-pack-void/80 px-4 py-20"
     >
       {/* Campfire glow center (Pulse) */}
       <motion.div
