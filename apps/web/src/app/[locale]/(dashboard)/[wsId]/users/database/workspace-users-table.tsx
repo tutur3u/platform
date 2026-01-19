@@ -326,14 +326,12 @@ export function WorkspaceUsersTable({
         onSearch={handleSearch}
         setParams={handleSetParams}
         resetParams={handleResetParams}
-        isEmpty={
-          !q &&
-          page === 1 &&
-          pageSize === 10 &&
-          status === 'active' &&
-          linkStatus === 'all' &&
-          includedGroups.length === 0 &&
-          excludedGroups.length === 0
+        isFiltered={
+          !!q ||
+          status !== 'active' ||
+          linkStatus !== 'all' ||
+          includedGroups.length > 0 ||
+          excludedGroups.length > 0
         }
         onRefresh={() => {
           queryClient.invalidateQueries({

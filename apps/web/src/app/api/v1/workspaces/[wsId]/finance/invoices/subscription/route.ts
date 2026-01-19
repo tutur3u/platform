@@ -72,7 +72,6 @@ export async function POST(req: Request, { params }: Params) {
 
     // Calculate values using backend logic (shared)
     const calculatedValues = await calculateInvoiceValues(
-      supabase,
       wsId,
       products,
       promotion_id,

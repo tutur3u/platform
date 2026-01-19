@@ -24,10 +24,148 @@ import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { XLSX } from '../../../../xlsx';
 
+/**
+ * Shape of invoice data as exported to CSV/Excel
+ * Flattened structure with complex objects decomposed into primitive fields
+ */
+interface InvoiceExportRow {
+  // Common fields
+  id: string;
+  ws_id: string;
+  created_at: string;
+  notice?: string;
+  note?: string;
+  price?: number | string;
+  total_diff?: number | string;
+
+  // Flattened customer fields
+  customer_name?: string;
+  customer_avatar_url?: string;
+
+  // Flattened creator fields (created invoices only)
+  creator_name?: string;
+  creator_email?: string;
+  creator_id?: string;
+
+  // Flattened wallet fields (created invoices only)
+  wallet_name?: string;
+
+  // Pending invoice specific fields
+  user_id?: string;
+  user_name?: string;
+  user_avatar_url?: string;
+  group_id?: string;
+  group_name?: string;
+  months_owed?: string;
+  attendance_days?: number;
+  total_sessions?: number;
+  potential_total?: number | string;
+}
+
+// Helper function to fetch pending invoices data for export
+async function getPendingInvoicesData(
+  wsId: string,
+  {
+    page = '1',
+    pageSize = '10',
+    q,
+    userIds,
+  }: {
+    page?: string;
+    pageSize?: string;
+    q?: string;
+    userIds?: string | string[];
+  }
+) {
+  const supabase = createClient();
+
+  const parsedPage = parseInt(page, 10);
+  const parsedSize = parseInt(pageSize, 10);
+  const offset = (parsedPage - 1) * parsedSize;
+
+  // Normalize userIds: treat empty array as no filter (undefined)
+  const ids = Array.isArray(userIds)
+    ? userIds.length > 0
+      ? userIds
+      : undefined
+    : userIds
+      ? [userIds]
+      : undefined;
+
+  // Fetch pending invoices data
+  const { data: rawData, error } = await supabase.rpc('get_pending_invoices', {
+    p_ws_id: wsId,
+    p_limit: parsedSize,
+    p_offset: offset,
+    p_query: q || undefined,
+    p_user_ids: ids,
+  });
+
+  if (error) throw error;
+
+  // Fetch total count
+  const { data: countData, error: countError } = await supabase.rpc(
+    'get_pending_invoices_count',
+    {
+      p_ws_id: wsId,
+      p_query: q || undefined,
+      p_user_ids: ids,
+    }
+  );
+
+  if (countError) throw countError;
+
+  // Define the shape of raw pending invoice data from RPC
+  interface PendingInvoiceRaw {
+    user_id?: string | null;
+    user_name?: string | null;
+    user_avatar_url?: string | null;
+    group_id?: string | null;
+    group_name?: string | null;
+    months_owed?: string | string[];
+    [key: string]: unknown;
+  }
+
+  // Transform the data to match the expected format
+  const data = (rawData || []).map((invoice: PendingInvoiceRaw) => {
+    // Parse months_owed - handle both CSV string and array, normalize formatting
+    const monthsOwed =
+      typeof invoice.months_owed === 'string'
+        ? invoice.months_owed
+            .split(',')
+            .map((m) => m.trim())
+            .join(', ')
+        : Array.isArray(invoice.months_owed)
+          ? invoice.months_owed.join(', ')
+          : '';
+
+    return {
+      ...invoice,
+      months_owed: monthsOwed,
+      customer: invoice.user_id
+        ? {
+            full_name: invoice.user_name || '',
+            avatar_url: invoice.user_avatar_url || '',
+          }
+        : invoice.group_id
+          ? {
+              full_name: invoice.group_name || '',
+              avatar_url: '',
+            }
+          : null,
+      creator: null, // Pending invoices don't have creator info
+      wallet: null, // Pending invoices don't have wallet info yet
+    };
+  });
+
+  return { data, count: (countData as number) || 0 };
+}
+
 export default function ExportDialogContent({
   wsId,
   exportType,
   searchParams,
+  invoiceType = 'created',
 }: {
   wsId: string;
   exportType: string;
@@ -41,6 +179,7 @@ export default function ExportDialogContent({
     start?: string;
     end?: string;
   };
+  invoiceType?: 'created' | 'pending';
 }) {
   const t = useTranslations();
 
@@ -52,9 +191,9 @@ export default function ExportDialogContent({
   const filenameId = useId();
   const fileTypeId = useId();
 
-  const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
+  const defaultFilename = `${exportType}_${invoiceType}_export.${getFileExtension(exportFileType)}`;
 
-  const downloadCSV = (data: any[], filename: string) => {
+  const downloadCSV = (data: InvoiceExportRow[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -65,7 +204,7 @@ export default function ExportDialogContent({
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: any[], filename: string) => {
+  const downloadExcel = (data: InvoiceExportRow[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -89,43 +228,58 @@ export default function ExportDialogContent({
     setIsExporting(true);
     setProgress(0);
 
-    const allData: any[] = [];
+    const allData: InvoiceExportRow[] = [];
     let currentPage = 1;
     const pageSize = 1000;
 
     try {
       while (true) {
-        const { data, count } = await getData(wsId, {
-          q: searchParams.q,
-          page: currentPage.toString(),
-          pageSize: pageSize.toString(),
-          userIds: searchParams.userIds,
-          walletId: searchParams.walletId,
-          walletIds: searchParams.walletIds,
-          start: searchParams.start,
-          end: searchParams.end,
-        });
+        const { data, count } =
+          invoiceType === 'pending'
+            ? await getPendingInvoicesData(wsId, {
+                page: currentPage.toString(),
+                pageSize: pageSize.toString(),
+                q: searchParams.q,
+                userIds: searchParams.userIds,
+              })
+            : await getData(wsId, {
+                q: searchParams.q,
+                page: currentPage.toString(),
+                pageSize: pageSize.toString(),
+                userIds: searchParams.userIds,
+                walletId: searchParams.walletId,
+                walletIds: searchParams.walletIds,
+                start: searchParams.start,
+                end: searchParams.end,
+              });
 
-        const flattenedData = data.map((invoice) => ({
-          ...invoice,
-          customer_name: invoice.customer?.full_name || '',
-          customer_avatar_url: invoice.customer?.avatar_url || '',
-          creator_name:
-            invoice.creator?.display_name ||
-            invoice.creator?.full_name ||
-            invoice.creator?.email ||
-            '',
-          creator_email: invoice.creator?.email || '',
-          wallet_name: invoice.wallet?.name || '',
-          // Remove complex objects to avoid [object Object] in CSV/Excel
-          customer: undefined,
-          creator: undefined,
-          wallet: undefined,
-        }));
+        const flattenedData: InvoiceExportRow[] = data.map((invoice: any) => {
+          // Destructure out complex objects to prevent [object Object] in exports
+          const { customer, creator, wallet, ...rest } = invoice;
+
+          // Only include creator & wallet fields for created invoices
+          if (invoiceType === 'created') {
+            return {
+              ...rest,
+              customer_name: customer?.full_name || '',
+              customer_avatar_url: customer?.avatar_url || '',
+              creator_name:
+                creator?.display_name ||
+                creator?.full_name ||
+                creator?.email ||
+                '',
+              creator_email: creator?.email || '',
+              wallet_name: wallet?.name || '',
+            } as InvoiceExportRow;
+          }
+
+          // For pending invoices, just return rest (user_name & user_avatar_url already included)
+          return rest as InvoiceExportRow;
+        });
 
         allData.push(...flattenedData);
 
-        const totalPages = Math.ceil(count / pageSize);
+        const totalPages = Math.max(1, Math.ceil(count / pageSize));
         const progressValue = (currentPage / totalPages) * 100;
         setProgress(progressValue);
 
@@ -359,5 +513,5 @@ async function getData(
     }
   );
 
-  return { data, count } as { data: any[]; count: number };
+  return { data, count } as { data: Array<Record<string, any>>; count: number };
 }

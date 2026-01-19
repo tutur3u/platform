@@ -1,6 +1,31 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  type FullInvoiceData,
+  transformInvoiceData,
+  transformInvoiceSearchResults,
+} from '@tuturuuu/utils/finance/transform-invoice-results';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const SearchParamsSchema = z.object({
+  q: z.string().default(''),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  start: z.string().optional(),
+  end: z.string().optional(),
+  userIds: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
+  walletIds: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
+});
 
 interface Params {
   params: Promise<{
@@ -40,8 +65,8 @@ export interface CalculatedValues {
 }
 
 // Backend calculation functions
+
 export async function calculateInvoiceValues(
-  supabase: any,
   wsId: string,
   products: InvoiceProduct[],
   promotion_id?: string,
@@ -51,6 +76,7 @@ export async function calculateInvoiceValues(
     total?: number;
   }
 ): Promise<CalculatedValues> {
+  const supabase = await createClient();
   // Calculate subtotal from products
   let subtotal = 0;
   const productIds = products.map((p) => p.product_id);
@@ -78,7 +104,7 @@ export async function calculateInvoiceValues(
 
   // Create a map for quick lookup
   const productMap = new Map();
-  productData.forEach((item: any) => {
+  productData.forEach((item) => {
     const key = `${item.product_id}-${item.unit_id}-${item.warehouse_id}`;
     productMap.set(key, item);
   });
@@ -153,6 +179,176 @@ export async function calculateInvoiceValues(
   };
 }
 
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const supabase = await createClient();
+    const { wsId: id } = await params;
+
+    // Resolve workspace ID
+    const wsId = await normalizeWorkspaceId(id);
+
+    // Check permissions
+    const { containsPermission } = await getPermissions({ wsId });
+    const canViewInvoices = containsPermission('view_invoices');
+
+    if (!canViewInvoices) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Parse query params
+    const { searchParams } = new URL(request.url);
+    const params_obj: Record<string, string | string[]> = {};
+
+    searchParams.forEach((value, key) => {
+      const existing = params_obj[key];
+      if (existing) {
+        if (Array.isArray(existing)) {
+          existing.push(value);
+        } else {
+          params_obj[key] = [existing, value];
+        }
+      } else {
+        params_obj[key] = value;
+      }
+    });
+
+    const parsed = SearchParamsSchema.safeParse(params_obj);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid query parameters' },
+        { status: 400 }
+      );
+    }
+    const sp = parsed.data;
+    const q = sp.q;
+
+    // If there's a search query, use the RPC function for customer name search
+    if (q) {
+      const { data: searchResults, error: rpcError } = await supabase.rpc(
+        'search_finance_invoices',
+        {
+          p_ws_id: wsId,
+          p_search_query: q,
+          p_start_date: sp.start || undefined,
+          p_end_date: sp.end || undefined,
+          p_user_ids: sp.userIds.length > 0 ? sp.userIds : undefined,
+          p_wallet_ids: sp.walletIds.length > 0 ? sp.walletIds : undefined,
+          p_limit: sp.pageSize,
+          p_offset: (sp.page - 1) * sp.pageSize,
+        }
+      );
+
+      if (rpcError) {
+        console.error('Error searching invoices:', rpcError);
+        return NextResponse.json(
+          { message: 'Error searching invoices' },
+          { status: 500 }
+        );
+      }
+
+      // Extract count from first row (all rows have same count)
+      const count = searchResults?.[0]?.total_count || 0;
+
+      // Fetch additional data for legacy/platform creators and wallet info
+      const invoiceIds = searchResults.map((r) => r.id);
+
+      // Guard: skip query if invoiceIds is empty to avoid SQL error
+      let fullInvoices:
+        | ReturnType<typeof transformInvoiceSearchResults>
+        | undefined;
+      if (invoiceIds.length === 0) {
+        fullInvoices = transformInvoiceSearchResults(searchResults, []);
+      } else {
+        const { data: invoicesData } = await supabase
+          .from('finance_invoices')
+          .select(
+            `*, 
+             legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
+             platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
+             wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+          )
+          .in('id', invoiceIds);
+        fullInvoices = transformInvoiceSearchResults(
+          searchResults,
+          invoicesData || []
+        );
+      }
+
+      return NextResponse.json({ data: fullInvoices, count });
+    }
+
+    // No search query - use regular query builder
+    let selectQuery = `*, customer:workspace_users!finance_invoices_customer_id_fkey(full_name, avatar_url), legacy_creator:workspace_users!finance_invoices_creator_id_fkey(id, full_name, display_name, email, avatar_url), platform_creator:users!finance_invoices_platform_creator_id_fkey(id, display_name, avatar_url, user_private_details(full_name, email))`;
+
+    // Join wallet_transactions, using !inner if walletIds filter is present
+    const walletJoinType = sp.walletIds.length > 0 ? '!inner' : '';
+    selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
+
+    let queryBuilder = supabase
+      .from('finance_invoices')
+      .select(selectQuery, {
+        count: 'exact',
+      })
+      .eq('ws_id', wsId);
+
+    queryBuilder = queryBuilder.order('created_at', { ascending: false });
+
+    // Apply date range filter (independently to allow one-sided ranges)
+    if (sp.start) {
+      queryBuilder = queryBuilder.gte('created_at', sp.start);
+    }
+    if (sp.end) {
+      queryBuilder = queryBuilder.lte('created_at', sp.end);
+    }
+
+    // Apply user IDs filter
+    if (sp.userIds.length > 0) {
+      queryBuilder = queryBuilder.in('creator_id', sp.userIds);
+    }
+
+    // Apply wallet IDs filter
+    if (sp.walletIds.length > 0) {
+      queryBuilder = queryBuilder.in(
+        'wallet_transactions.wallet_id',
+        sp.walletIds
+      );
+    }
+
+    // Apply pagination
+    const start = (sp.page - 1) * sp.pageSize;
+    const end = sp.page * sp.pageSize - 1;
+    queryBuilder = queryBuilder.range(start, end);
+
+    const {
+      data: rawData,
+      error,
+      count,
+    } = await queryBuilder.returns<FullInvoiceData[]>();
+
+    if (error) {
+      console.error('Error fetching invoices:', error);
+      return NextResponse.json(
+        { message: 'Error fetching invoices' },
+        { status: 500 }
+      );
+    }
+
+    // Transform data to match expected Invoice type
+    const data = transformInvoiceData(rawData || []);
+
+    return NextResponse.json({
+      data,
+      count: count ?? 0,
+    });
+  } catch (error) {
+    console.error('Error in workspace invoices API:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
@@ -197,7 +393,6 @@ export async function POST(req: Request, { params }: Params) {
 
     // Calculate values using backend logic
     const calculatedValues = await calculateInvoiceValues(
-      supabase,
       wsId,
       products,
       promotion_id,

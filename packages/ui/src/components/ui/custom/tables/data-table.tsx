@@ -44,7 +44,7 @@ export interface DataTableProps<TData, TValue> {
   defaultQuery?: string;
   defaultVisibility?: VisibilityState;
   disableSearch?: boolean;
-  isEmpty?: boolean;
+  isFiltered?: boolean;
   enableServerSideSorting?: boolean;
   currentSortBy?: string;
   currentSortOrder?: 'asc' | 'desc';
@@ -94,7 +94,7 @@ export function DataTable<TData, TValue>({
   defaultQuery,
   defaultVisibility = {},
   disableSearch,
-  isEmpty,
+  isFiltered,
   enableServerSideSorting = false,
   currentSortBy,
   currentSortOrder,
@@ -195,7 +195,7 @@ export function DataTable<TData, TValue>({
           extraColumns={extraColumns}
           disableSearch={disableSearch}
           t={t}
-          isEmpty={isEmpty || !data?.length}
+          isFiltered={isFiltered}
           defaultQuery={defaultQuery}
           onSearch={onSearch || (() => {})}
           onRefresh={onRefresh || (() => {})}

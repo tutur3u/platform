@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
@@ -7,7 +7,205 @@ import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { z } from 'zod';
 import type { Product, Promotion, UserGroupProducts } from './types';
+
+// ==================== ZOD SCHEMAS ====================
+
+const invoiceSchema = z.object({
+  id: z.string(),
+  price: z
+    .number()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  total_diff: z
+    .number()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  note: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  notice: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  customer_id: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  customer: z
+    .object({
+      full_name: z.string().nullable().optional(),
+      display_name: z.string().nullable().optional(),
+      avatar_url: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  creator_id: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  creator: z
+    .object({
+      id: z.string(),
+      full_name: z.string().nullable().optional(),
+      display_name: z.string().nullable().optional(),
+      email: z.string().nullable().optional(),
+      avatar_url: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  platform_creator_id: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  ws_id: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  completed_at: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  transaction_id: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  created_at: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+  href: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? undefined),
+});
+
+const invoicesResponseSchema = z.object({
+  data: z.array(invoiceSchema),
+  count: z.number(),
+});
+
+const pendingInvoiceRawSchema = z.object({
+  user_id: z.string(),
+  user_name: z.string(),
+  user_avatar_url: z.string().optional().nullable(),
+  group_id: z.string(),
+  group_name: z.string(),
+  months_owed: z.union([z.string(), z.array(z.string())]),
+  attendance_days: z.number(),
+  total_sessions: z.number(),
+  potential_total: z.number(),
+  href: z.string().optional().nullable(),
+  ws_id: z.string().optional().nullable(),
+});
+
+const pendingInvoicesRawSchema = z.array(pendingInvoiceRawSchema);
+
+// ==================== INVOICES DATA FETCHING ====================
+
+export interface InvoicesParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  start?: string;
+  end?: string;
+  userIds?: string[];
+  walletIds?: string[];
+}
+
+export interface InvoicesResponse {
+  data: Invoice[];
+  count: number;
+}
+
+/**
+ * Fetch workspace invoices with search, filter and pagination support
+ * Uses API route for client-side data fetching with proper caching
+ */
+export function useWorkspaceInvoices(
+  wsId: string,
+  params: InvoicesParams = {},
+  options?: {
+    enabled?: boolean;
+    initialData?: InvoicesResponse;
+  }
+) {
+  const {
+    q = '',
+    page = 1,
+    pageSize = 10,
+    start,
+    end,
+    userIds = [],
+    walletIds = [],
+  } = params;
+
+  return useQuery({
+    queryKey: [
+      'workspace-invoices',
+      wsId,
+      { q, page, pageSize, start, end, userIds, walletIds },
+    ],
+    queryFn: async (): Promise<InvoicesResponse> => {
+      const searchParams = new URLSearchParams();
+
+      if (q) searchParams.set('q', q);
+      searchParams.set('page', String(page));
+      searchParams.set('pageSize', String(pageSize));
+      if (start) searchParams.set('start', start);
+      if (end) searchParams.set('end', end);
+
+      userIds.forEach((userId) => {
+        searchParams.append('userIds', userId);
+      });
+
+      walletIds.forEach((walletId) => {
+        searchParams.append('walletIds', walletId);
+      });
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace invoices');
+      }
+
+      const json = await response.json();
+      const result = invoicesResponseSchema.safeParse(json);
+
+      if (!result.success) {
+        throw new Error(
+          `Invalid response from workspace invoices API: ${result.error.message}`
+        );
+      }
+
+      return result.data;
+    },
+    enabled: options?.enabled !== false,
+    initialData: options?.initialData,
+    // Keep previous data while fetching new page - prevents UI from becoming unresponsive
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// ==================== LEGACY HOOKS ====================
 
 // React Query hooks for data fetching
 export const useUsers = (wsId: string) => {
@@ -460,36 +658,56 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
 // Get Pending Invoices for a workspace
 export const usePendingInvoices = (
   wsId: string,
-  page?: string,
-  pageSize?: string
+  params: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    userIds?: string[];
+  } = {}
 ) => {
+  const { page = 1, pageSize = 10, q = '', userIds = [] } = params;
+
   return useQuery({
-    queryKey: ['pending-invoices', wsId, page, pageSize],
+    queryKey: ['pending-invoices', wsId, page, pageSize, q, userIds],
     queryFn: async () => {
       const supabase = createClient();
 
       // Calculate limit and offset
-      const parsedPage = page ? parseInt(page, 10) : 1;
-      const parsedSize = pageSize ? parseInt(pageSize, 10) : 10;
-      const offset = (parsedPage - 1) * parsedSize;
+      const offset = (page - 1) * pageSize;
 
-      // Fetch data with pagination
-      const { data, error } = await supabase.rpc('get_pending_invoices', {
-        p_ws_id: wsId,
-        p_limit: parsedSize,
-        p_offset: offset,
-      });
+      // Fetch data with pagination and filters
+      const { data: rawData, error } = await supabase.rpc(
+        'get_pending_invoices',
+        {
+          p_ws_id: wsId,
+          p_limit: pageSize,
+          p_offset: offset,
+          p_query: q || undefined,
+          p_user_ids: userIds.length > 0 ? userIds : undefined,
+        }
+      );
 
       if (error) {
         console.error('❌ Pending invoices fetch error:', error);
         throw error;
       }
 
-      // Fetch total count
+      const result = pendingInvoicesRawSchema.safeParse(rawData || []);
+      if (!result.success) {
+        throw new Error(
+          `Invalid response from get_pending_invoices RPC: ${result.error.message}`
+        );
+      }
+
+      const data = result.data;
+
+      // Fetch total count with filters
       const { data: countData, error: countError } = await supabase.rpc(
         'get_pending_invoices_count',
         {
           p_ws_id: wsId,
+          p_query: q || undefined,
+          p_user_ids: userIds.length > 0 ? userIds : undefined,
         }
       );
 
@@ -498,8 +716,17 @@ export const usePendingInvoices = (
         throw countError;
       }
 
+      const countResult = z.number().safeParse(countData);
+      if (!countResult.success) {
+        throw new Error(
+          `Invalid response from get_pending_invoices_count RPC: ${countResult.error.message}`
+        );
+      }
+
+      const count = countResult.data;
+
       // Transform months_owed from CSV string to array
-      const transformedData = (data || []).map((invoice: any) => ({
+      const transformedData = data.map((invoice) => ({
         ...invoice,
         months_owed:
           typeof invoice.months_owed === 'string'
@@ -509,13 +736,14 @@ export const usePendingInvoices = (
 
       return {
         data: transformedData,
-        count: (countData as number) || 0,
+        count: count || 0,
       };
     },
     enabled: !!wsId,
     staleTime: 2 * 60 * 1000, // 2 minutes - more frequent refresh for pending data
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true, // Refetch when window gains focus
+    placeholderData: keepPreviousData,
     retry: 3,
   });
 };
@@ -532,19 +760,31 @@ export const usePendingInvoicesCurrentMonthCount = (wsId: string) => {
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
       // Fetch all pending invoices without pagination to count current month
-      const { data, error } = await supabase.rpc('get_pending_invoices', {
-        p_ws_id: wsId,
-        p_limit: 10000, // Large limit to get all records
-        p_offset: 0,
-      });
+      const { data: rawData, error } = await supabase.rpc(
+        'get_pending_invoices',
+        {
+          p_ws_id: wsId,
+          p_limit: 10000, // Large limit to get all records
+          p_offset: 0,
+        }
+      );
 
       if (error) {
         console.error('❌ Pending invoices current month count error:', error);
         throw error;
       }
 
+      const result = pendingInvoicesRawSchema.safeParse(rawData || []);
+      if (!result.success) {
+        throw new Error(
+          `Invalid response from get_pending_invoices RPC (current month count): ${result.error.message}`
+        );
+      }
+
+      const data = result.data;
+
       // Count invoices that include the current month
-      const currentMonthCount = (data || []).filter((invoice: any) => {
+      const currentMonthCount = data.filter((invoice) => {
         const monthsOwed =
           typeof invoice.months_owed === 'string'
             ? parseMonthsOwed(invoice.months_owed)

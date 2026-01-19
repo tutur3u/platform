@@ -100,7 +100,7 @@ function CustomDataTableInner<TData, TValue>({
       onSearch={handleSearch}
       setParams={handleSetParams}
       resetParams={handleResetParams}
-      isEmpty={mounted ? searchParams.toString().length === 0 : true}
+      isFiltered={mounted ? searchParams.toString().length > 0 : false}
       newObjectTitle={t('common.create')}
       className={className}
       rowWrapper={rowWrapper}

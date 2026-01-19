@@ -1,19 +1,20 @@
 import { FileCheck2, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { z } from 'zod';
+import { Button } from '../../button';
+import FeatureSummary from '../../custom/feature-summary';
+import { Separator } from '../../separator';
+import { Skeleton } from '../../skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
 import { InvoiceTotalsChartSkeleton } from './charts/invoice-totals-chart';
-import { invoiceColumns } from './columns';
 import { InvoiceAnalytics } from './invoice-analytics';
-import { InvoicesToolbar } from './invoices-toolbar';
+import { InvoicesTable } from './invoices-table';
 import { PendingInvoicesTab } from './pending-invoices-tab';
 import { PendingInvoicesTable } from './pending-invoices-table';
 
@@ -110,8 +111,8 @@ export default async function InvoicesPage({
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
-  const [{ data: rawData, count }, weekStartsOn] = await Promise.all([
-    getData(wsId, resolvedSearchParams),
+  const [initialData, weekStartsOn] = await Promise.all([
+    getInitialData(wsId, resolvedSearchParams),
     getWeekStartsOn(wsId),
   ]);
 
@@ -142,12 +143,6 @@ export default async function InvoicesPage({
 
   // Get date range from search params
   const { start: startDate, end: endDate } = resolvedSearchParams;
-
-  const data = rawData.map((d) => ({
-    ...d,
-    href: `/${wsId}/finance/invoices/${d.id}`,
-    ws_id: wsId,
-  }));
 
   // Build analytics filters object
   const analyticsFilters = {
@@ -180,8 +175,6 @@ export default async function InvoicesPage({
       />
       <Separator className="my-4" />
 
-      <InvoicesToolbar wsId={wsId} canExport={canExportFinanceData} />
-
       <Suspense fallback={<InvoiceTotalsChartSkeleton className="mb-4" />}>
         <InvoiceAnalytics
           wsId={wsId}
@@ -203,37 +196,36 @@ export default async function InvoicesPage({
           />
         </TabsList>
         <TabsContent value="created">
-          <CustomDataTable
-            data={data}
-            columnGenerator={invoiceColumns}
-            namespace="invoice-data-table"
-            count={count}
-            hideToolbar={true}
-            extraData={{
-              canDeleteInvoices,
-              deleteInvoiceAction,
-            }}
-            defaultVisibility={{
-              id: false,
-              customer_id: false,
-              price: false,
-              total_diff: false,
-              note: false,
-            }}
-          />
+          <Suspense fallback={<Skeleton className="h-125 w-full" />}>
+            <InvoicesTable
+              wsId={wsId}
+              canDeleteInvoices={canDeleteInvoices}
+              canExport={canExportFinanceData}
+              deleteInvoiceAction={deleteInvoiceAction}
+              initialData={initialData}
+            />
+          </Suspense>
         </TabsContent>
         <TabsContent value="pending">
-          <PendingInvoicesTable wsId={wsId} />
+          <Suspense fallback={<Skeleton className="h-125 w-full" />}>
+            <PendingInvoicesTable
+              wsId={wsId}
+              canExport={canExportFinanceData}
+            />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </>
   );
 }
 
-async function getData(
+/**
+ * Fetches initial page of invoices for SSR hydration
+ */
+async function getInitialData(
   wsId: string,
   {
-    // q,
+    q,
     page = '1',
     pageSize = '10',
     start,
@@ -263,9 +255,94 @@ async function getData(
   if (walletId) wallets.push(walletId);
   wallets = Array.from(new Set(wallets.filter(Boolean)));
 
-  // Build select query dynamically
-  let selectQuery =
-    '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
+  // Validate and coerce pagination parameters
+  const paginationSchema = z.object({
+    page: z
+      .string()
+      .transform((val) => parseInt(val, 10))
+      .refine((val) => !Number.isNaN(val), 'page must be a valid number')
+      .pipe(
+        z
+          .number()
+          .int('page must be an integer')
+          .min(1, 'page must be at least 1')
+      )
+      .default(1)
+      .catch(1),
+    pageSize: z
+      .string()
+      .transform((val) => parseInt(val, 10))
+      .refine((val) => !Number.isNaN(val), 'pageSize must be a valid number')
+      .pipe(
+        z
+          .number()
+          .int('pageSize must be an integer')
+          .min(1, 'pageSize must be at least 1')
+          .max(100, 'pageSize must not exceed 100')
+      )
+      .default(10)
+      .catch(10),
+  });
+
+  const { page: parsedPage, pageSize: parsedSize } = paginationSchema.parse({
+    page: page ?? '1',
+    pageSize: pageSize ?? '10',
+  });
+
+  // If there's a search query, use the RPC function for customer name search
+  if (q) {
+    const userIdsArray = userIds
+      ? Array.isArray(userIds)
+        ? userIds
+        : [userIds]
+      : [];
+
+    const { data: searchResults, error: rpcError } = await supabase.rpc(
+      'search_finance_invoices',
+      {
+        p_ws_id: wsId,
+        p_search_query: q,
+        p_start_date: start || undefined,
+        p_end_date: end || undefined,
+        p_user_ids: userIdsArray.length > 0 ? userIdsArray : undefined,
+        p_wallet_ids: wallets.length > 0 ? wallets : undefined,
+        p_limit: parsedSize,
+        p_offset: (parsedPage - 1) * parsedSize,
+      }
+    );
+
+    if (rpcError) throw rpcError;
+
+    // Extract count from first row
+    const count = searchResults?.[0]?.total_count || 0;
+
+    // Fetch additional data for legacy/platform creators and wallet info
+    const invoiceIds = searchResults.map((r) => r.id);
+    if (invoiceIds.length === 0) {
+      return { data: [], count: 0 };
+    }
+
+    const { data: fullInvoices } = await supabase
+      .from('finance_invoices')
+      .select(
+        `*, 
+         legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
+         platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
+         wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+      )
+      .in('id', invoiceIds);
+
+    // Transform search results using shared utility
+    const data = transformInvoiceSearchResults(
+      searchResults,
+      fullInvoices || []
+    );
+
+    return { data, count } as { data: Invoice[]; count: number };
+  }
+
+  // No search query - use regular query builder
+  let selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))`;
 
   const walletJoinType = wallets.length > 0 ? '!inner' : '';
   selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
@@ -275,8 +352,9 @@ async function getData(
     .select(selectQuery, {
       count: 'exact',
     })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .eq('ws_id', wsId);
+
+  queryBuilder = queryBuilder.order('created_at', { ascending: false });
 
   if (start && end) {
     queryBuilder = queryBuilder.gte('created_at', start).lte('created_at', end);
@@ -294,8 +372,6 @@ async function getData(
   }
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
     const startRange = (parsedPage - 1) * parsedSize;
     const endRange = parsedPage * parsedSize;
     queryBuilder = queryBuilder.range(startRange, endRange).limit(parsedSize);
