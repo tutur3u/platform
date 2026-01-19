@@ -258,6 +258,8 @@ interface TaskMentionChipProps {
     create_new_project_description?: string;
     project_name?: string;
     create_project?: string;
+    // TaskLabelsDisplay
+    hidden_labels?: string;
   };
 }
 
@@ -1218,6 +1220,7 @@ export function TaskMentionChip({
         onOpenChange={setPopoverOpen}
         blockedBy={blockedByTasks as Task[]}
         workspaceId={boardConfig?.ws_id}
+        hiddenLabelsLabel={translations?.hidden_labels}
       >
         {chipContent}
       </TaskSummaryPopover>

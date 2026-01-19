@@ -39,6 +39,8 @@ interface TaskSummaryPopoverProps {
   onOpenChange?: (open: boolean) => void;
   blockedBy?: Task[];
   workspaceId?: string;
+  /** Localized label for "Hidden Labels" tooltip. Passed to TaskLabelsDisplay. */
+  hiddenLabelsLabel?: string;
 }
 
 export function TaskSummaryPopover({
@@ -52,6 +54,7 @@ export function TaskSummaryPopover({
   onOpenChange,
   blockedBy,
   workspaceId,
+  hiddenLabelsLabel,
 }: TaskSummaryPopoverProps) {
   if (isLoading) {
     return <>{children}</>;
@@ -265,6 +268,7 @@ export function TaskSummaryPopover({
                   size="sm"
                   showIcon={false}
                   className="flex-1"
+                  hiddenLabelsLabel={hiddenLabelsLabel}
                 />
               </div>
             )}

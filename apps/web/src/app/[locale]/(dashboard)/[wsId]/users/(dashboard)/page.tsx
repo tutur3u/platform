@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   ActiveUsersStatistics,
   PermanentlyArchivedUsersStatistics,
@@ -9,7 +10,6 @@ import {
   UserGroupTagsStatistics,
   UserReportsStatistics,
 } from '../../(dashboard)/statistics';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Users',

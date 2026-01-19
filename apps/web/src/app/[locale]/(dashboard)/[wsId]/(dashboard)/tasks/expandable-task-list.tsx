@@ -95,6 +95,7 @@ export default function ExpandableTaskList({
 }: ExpandableTaskListProps) {
   const { openTask, onUpdate } = useTaskDialog();
   const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
@@ -541,6 +542,7 @@ export default function ExpandableTaskList({
                           )}
                         size="sm"
                         maxDisplay={3}
+                        hiddenLabelsLabel={tCommon('hidden_labels')}
                       />
                     )}
 

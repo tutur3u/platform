@@ -705,6 +705,7 @@ function TaskCardInner({
                 a.name.toLowerCase().localeCompare(b.name.toLowerCase())
               )}
               size="sm"
+              hiddenLabelsLabel={t('hidden_labels')}
             />
           </div>
         ),

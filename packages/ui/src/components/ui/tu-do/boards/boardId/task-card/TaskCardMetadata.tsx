@@ -19,12 +19,15 @@ interface TaskCardMetadataProps {
   task: Task;
   taskList?: TaskList;
   estimationType?: string;
+  /** Localized label for "Hidden Labels" tooltip. Passed to TaskLabelsDisplay. */
+  hiddenLabelsLabel?: string;
 }
 
 export const TaskCardMetadata = memo(function TaskCardMetadata({
   task,
   taskList,
   estimationType,
+  hiddenLabelsLabel,
 }: TaskCardMetadataProps) {
   const descriptionMeta = getDescriptionMetadata(task.description);
 
@@ -82,6 +85,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
                 a.name.toLowerCase().localeCompare(b.name.toLowerCase())
               )}
               size="sm"
+              hiddenLabelsLabel={hiddenLabelsLabel}
             />
           </div>
         )}
