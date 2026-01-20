@@ -29,7 +29,7 @@ export function CreatePromotionDialog({
   const t = useTranslations();
 
   const handleFinish = (
-    formData: z.infer<typeof FormSchema>,
+    _formData: z.infer<typeof FormSchema>,
     promotion?: ProductPromotion
   ) => {
     // Close the dialog on successful submission
