@@ -4957,11 +4957,11 @@
   "promotion-data-table": {
     "code": "Mã giảm giá",
     "created_at": "Tạo lúc",
+    "current_uses": "Số lần sử dụng",
     "description": "Mô tả",
     "id": "Mã số",
     "name": "Tên",
-    "value": "Giá trị",
-    "current_uses": "Số lần sử dụng"
+    "value": "Giá trị"
   },
   "qr": {
     "image_upload": {
@@ -8860,12 +8860,12 @@
       "description": "Mô tả",
       "max_uses": "Số lượt sử dụng tối đa",
       "name": "Tên",
-      "unlimited_uses": "Sử dụng không giới hạn",
       "unit": {
         "currency": "Tiền tệ",
         "percentage": "Phần trăm",
         "placeholder": "Đơn vị"
       },
+      "unlimited_uses": "Sử dụng không giới hạn",
       "value": "Giá trị"
     },
     "plural": "Khuyến mãi",
@@ -8988,11 +8988,11 @@
     "content_placeholder": "Nhập mô tả hoặc chi tiết hóa đơn...",
     "create": "Tạo hóa đơn",
     "create_description": "Tạo hóa đơn mới",
-    "create_promotion": "Tạo khuyến mãi",
     "create_invoice": "Tạo Hóa Đơn",
     "create_invoice_validation": "Vui lòng chọn khách hàng, thêm sản phẩm, chọn ví và chọn danh mục giao dịch trước khi tạo hóa đơn.",
     "create_multiple_invoices": "Tạo Nhiều Hóa Đơn",
     "create_multiple_invoices_tooltip": "Cho phép bạn tạo nhiều hóa đơn trong một phiên làm việc.",
+    "create_promotion": "Tạo khuyến mãi",
     "create_subscription_invoice": "Tạo Hóa Đơn Đăng Ký",
     "create_subscription_invoice_validation": "Vui lòng chọn khách hàng, nhóm, thêm sản phẩm, chọn ví và chọn danh mục giao dịch trước khi tạo hóa đơn.",
     "created_invoices": "Hóa đơn đã tạo",
@@ -9019,7 +9019,6 @@
     "failed_to_create_invoice": "Không thể tạo hóa đơn",
     "failed_to_create_subscription_invoice": "Không thể tạo hóa đơn đăng ký",
     "frontend_calculated": "Frontend tính toán",
-    "promotion_limit_reached": "Khuyến mãi này đã hết lượt sử dụng",
     "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn",
     "invoice_configuration": "Thông tin hóa đơn",
     "invoice_created_recalculated": "Hóa đơn đã được tạo thành công! Các giá trị đã được tính toán lại trên máy chủ.",
@@ -9068,6 +9067,7 @@
     "print_after_create": "In hóa đơn",
     "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công",
     "products_selection_description": "Chọn sản phẩm và chỉ định số lượng cho hóa đơn.",
+    "promotion_limit_reached": "Khuyến mãi này đã hết lượt sử dụng",
     "remove": "Xóa",
     "reset": "Đặt Lại",
     "round_down": "Làm Tròn Xuống",
@@ -9078,9 +9078,9 @@
     "search_products": "Tìm kiếm sản phẩm...",
     "search_promotions": "Tìm kiếm khuyến mãi...",
     "select_category_required": "Chọn danh mục (bắt buộc)...",
-    "select_user_first": "Vui lòng chọn người dùng trước",
     "select_month": "Chọn tháng...",
     "select_product": "Chọn Sản Phẩm",
+    "select_user_first": "Vui lòng chọn người dùng trước",
     "select_wallet_required": "Chọn ví (bắt buộc)...",
     "server_calculated": "Máy chủ tính toán",
     "singular": "Hóa đơn",

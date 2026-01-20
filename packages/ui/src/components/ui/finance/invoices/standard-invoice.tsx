@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDown,
   ArrowUp,
@@ -27,7 +28,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Combobox, ComboboxOption, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
+import {
+  Combobox,
+  type ComboboxOption,
+  type ComboboxOptions,
+} from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -39,13 +44,12 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useQueryClient } from '@tanstack/react-query';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AvailablePromotion } from './hooks';
 import { CreatePromotionDialog } from './create-promotion-dialog';
+import type { AvailablePromotion } from './hooks';
 import {
   useAvailablePromotions,
   useCategories,
@@ -828,10 +832,16 @@ export function StandardInvoice({
                     onSuccess={(promotion) => {
                       if (selectedUserId) {
                         void queryClient.invalidateQueries({
-                          queryKey: ['available-promotions', wsId, selectedUserId],
+                          queryKey: [
+                            'available-promotions',
+                            wsId,
+                            selectedUserId,
+                          ],
                         });
                       }
-                      setSelectedPromotionId(promotion.id);
+                      if (promotion.id) {
+                        setSelectedPromotionId(promotion.id);
+                      }
                     }}
                   />
                   <Combobox
@@ -899,7 +909,9 @@ export function StandardInvoice({
                       return list;
                     })()}
                     selected={selectedPromotionId}
-                    onChange={(value) => setSelectedPromotionId(value as string)}
+                    onChange={(value) =>
+                      setSelectedPromotionId(value as string)
+                    }
                     placeholder={
                       selectedUserId
                         ? t('ws-invoices.search_promotions')

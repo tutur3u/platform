@@ -1,5 +1,6 @@
 'use client';
 
+import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import {
   Dialog,
   DialogContent,
@@ -7,20 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import type { FormSchema } from '@tuturuuu/ui/finance/invoices/promotion-form';
 import { PromotionForm } from '@tuturuuu/ui/finance/invoices/promotion-form';
 import { useTranslations } from 'next-intl';
-import type { FormSchema } from '@tuturuuu/ui/finance/invoices/promotion-form';
-import {z} from 'zod';
-
-export type CreatedPromotion = {
-  id: string;
-  name: string | null;
-  code: string | null;
-  value: number;
-  use_ratio: boolean;
-  max_uses: number | null;
-  current_uses: number;
-};
+import type { z } from 'zod';
 
 export function CreatePromotionDialog({
   wsId,
@@ -32,14 +23,14 @@ export function CreatePromotionDialog({
   wsId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: (promotion: CreatedPromotion) => void;
+  onSuccess?: (promotion: ProductPromotion) => void;
   canCreateInventory?: boolean;
 }) {
   const t = useTranslations();
 
   const handleFinish = (
     formData: z.infer<typeof FormSchema>,
-    promotion?: CreatedPromotion
+    promotion?: ProductPromotion
   ) => {
     // Close the dialog on successful submission
     onOpenChange(false);
@@ -74,4 +65,3 @@ export function CreatePromotionDialog({
     </Dialog>
   );
 }
-
