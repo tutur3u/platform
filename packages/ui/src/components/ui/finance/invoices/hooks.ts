@@ -473,7 +473,7 @@ export const useInvoiceAttendanceConfig = (wsId: string) => {
         const res = await fetch(
           `/api/v1/workspaces/${wsId}/settings/INVOICE_USE_ATTENDANCE_BASED_CALCULATION`
         );
-        
+
         if (!res.ok) {
           if (res.status === 404) {
             // Config not set, return default (true)
@@ -481,7 +481,7 @@ export const useInvoiceAttendanceConfig = (wsId: string) => {
           }
           throw new Error('Failed to fetch invoice attendance config');
         }
-        
+
         const data = await res.json();
         // workspace_configs stores values as text, so we need to parse "true"/"false" strings
         const value = data.value?.toLowerCase();

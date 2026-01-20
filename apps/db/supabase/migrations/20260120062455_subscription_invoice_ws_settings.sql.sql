@@ -139,7 +139,7 @@ BEGIN
     AND sc.month = pm.month
   WHERE COALESCE(ac.attendance_days, 0) > 0;  -- Always require attendance records
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
 -- Update get_pending_invoices_count to fetch workspace config and pass it to base function
 DROP FUNCTION IF EXISTS get_pending_invoices_count(uuid, text, uuid[]);
@@ -172,7 +172,10 @@ BEGIN
     true
   ) INTO v_use_attendance_based;
 
-  v_escaped_query := replace(replace(replace(p_query, '\', '\\'), '%', '\%'), '_', '\_');
+  v_escaped_query := CASE 
+    WHEN p_query IS NULL THEN NULL
+    ELSE replace(replace(replace(p_query, '\', '\\'), '%', '\%'), '_', '\_')
+  END;
 
   WITH base_data AS (
     SELECT * FROM get_pending_invoices_base(p_ws_id, v_use_attendance_based)

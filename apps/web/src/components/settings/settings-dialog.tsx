@@ -379,7 +379,9 @@ export function SettingsDialog({
                 name: 'invoice_attendance',
                 label: t('settings.finance.invoice_attendance'),
                 icon: CreditCard,
-                description: t('settings.finance.invoice_attendance_description'),
+                description: t(
+                  'settings.finance.invoice_attendance_description'
+                ),
                 keywords: ['Finance', 'Invoice', 'Attendance', 'Sessions'],
               },
             ],

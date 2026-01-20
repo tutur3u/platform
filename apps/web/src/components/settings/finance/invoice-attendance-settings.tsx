@@ -10,10 +10,10 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@tuturuuu/ui/form';
 import { Switch } from '@tuturuuu/ui/switch';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Loader2 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -30,10 +30,10 @@ const formSchema = z.object({
 
 export default function InvoiceAttendanceSettings({ wsId }: Props) {
   const t = useTranslations('ws-finance-settings');
-  const { data: configValue } = useWorkspaceConfig(
+  const { data: configValue, isLoading } = useWorkspaceConfig<string>(
     wsId,
     'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
-    true
+    'true'
   );
 
   const queryClient = useQueryClient();
@@ -47,11 +47,8 @@ export default function InvoiceAttendanceSettings({ wsId }: Props) {
 
   useEffect(() => {
     if (configValue !== undefined) {
-      // workspace_configs stores values as text, so we need to parse "true"/"false" strings
-      const value =
-        typeof configValue === 'string'
-          ? configValue.toLowerCase() === 'true'
-          : configValue === true;
+      // `workspace_configs.value` is stored as text.
+      const value = configValue.trim().toLowerCase() === 'true';
       form.reset({
         use_attendance_based: value,
       });
@@ -65,7 +62,9 @@ export default function InvoiceAttendanceSettings({ wsId }: Props) {
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: values.use_attendance_based.toString() }),
+          body: JSON.stringify({
+            value: values.use_attendance_based.toString(),
+          }),
         }
       );
 
@@ -77,7 +76,11 @@ export default function InvoiceAttendanceSettings({ wsId }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId, 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'],
+        queryKey: [
+          'workspace-config',
+          wsId,
+          'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
+        ],
       });
       queryClient.invalidateQueries({
         queryKey: ['invoice-attendance-config', wsId],
@@ -121,10 +124,14 @@ export default function InvoiceAttendanceSettings({ wsId }: Props) {
                   </FormDescription>
                 </div>
                 <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
                 </FormControl>
               </FormItem>
             )}
@@ -132,7 +139,9 @@ export default function InvoiceAttendanceSettings({ wsId }: Props) {
 
           <Button
             type="submit"
-            disabled={updateMutation.isPending || !form.formState.isDirty}
+            disabled={
+              isLoading || updateMutation.isPending || !form.formState.isDirty
+            }
           >
             {updateMutation.isPending ? t('saving') : t('save')}
           </Button>

@@ -332,7 +332,7 @@ export function SubscriptionInvoice({
   } = useUserAttendance(selectedGroupId, selectedUserId, selectedMonth);
   const { data: groupProducts = [], isLoading: groupProductsLoading } =
     useUserGroupProducts(selectedGroupId);
-  
+
   // Fetch workspace config for attendance-based calculation
   const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
 
@@ -735,7 +735,11 @@ export function SubscriptionInvoice({
     );
     const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
     const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
-    const attendanceDays = getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
+    const attendanceDays = getEffectiveDays(
+      userAttendance,
+      totalSessions,
+      useAttendanceBased
+    );
 
     const calculatedProducts = groupProducts.map((item) => ({
       product: item.workspace_products,
