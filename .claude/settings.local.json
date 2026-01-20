@@ -17,7 +17,8 @@
       "Bash(xargs:*)",
       "Bash(bun type-check:foundapack:*)",
       "Bash(bun:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(bunx tsgo:*)"
     ]
   }
 }
