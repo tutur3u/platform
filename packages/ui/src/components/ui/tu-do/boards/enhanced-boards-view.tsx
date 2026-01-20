@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { LayoutGrid, LayoutList, Pencil } from '@tuturuuu/icons';
+import { LayoutGrid, LayoutList } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -20,7 +20,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { getIconComponentByKey } from '../../custom/icon-picker';
 import { projectColumns } from './columns';
-import { TaskBoardForm } from './form';
+import { BoardCardActions } from './row-actions';
 
 interface EnhancedBoardsViewProps {
   wsId: string;
@@ -316,26 +316,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                         </div>
                       </button>
 
-                      <TaskBoardForm wsId={wsId} data={board}>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="relative z-10 h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                          aria-label={t('common.edit')}
-                          onPointerDown={(e) => {
-                            e.stopPropagation();
-                            // Ensure pointerup/click stays captured by this button
-                            // so it can't fall through to the board navigation area.
-                            e.currentTarget.setPointerCapture?.(e.pointerId);
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TaskBoardForm>
+                      <BoardCardActions wsId={wsId} board={board} />
                     </div>
                   </div>
                 );

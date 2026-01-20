@@ -56,7 +56,7 @@ interface ComboboxProps {
    * Translation function (legacy support)
    * @deprecated Use emptyText, createText props instead
    */
-  t?: (key: string) => string;
+  t?: (key: any) => any;
 }
 
 export function Combobox({

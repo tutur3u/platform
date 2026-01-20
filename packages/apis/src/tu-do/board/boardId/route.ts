@@ -16,14 +16,23 @@ export async function PUT(req: Request, { params }: Params) {
     name?: string;
     icon?: Database['public']['Enums']['workspace_board_icon'] | null;
     color?: string;
+    archived?: boolean;
     group_ids?: string[];
   };
 
-  const { group_ids: _, ...coreData } = data;
+  const { group_ids: _, archived, ...coreData } = data;
+
+  const updateData: typeof coreData & { archived_at?: string | null } = {
+    ...coreData,
+  };
+
+  if (archived !== undefined) {
+    updateData.archived_at = archived ? new Date().toISOString() : null;
+  }
 
   const { error } = await supabase
     .from('workspace_boards')
-    .update(coreData)
+    .update(updateData)
     .eq('id', id);
 
   if (error) {

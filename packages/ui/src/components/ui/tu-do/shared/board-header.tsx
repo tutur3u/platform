@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  Archive,
   ArrowDown,
   ArrowDownAZ,
   ArrowLeft,
@@ -21,6 +22,7 @@ import {
   MoreHorizontal,
   Pencil,
   Play,
+  RotateCcw,
   Search,
   Settings,
   Trash2,
@@ -60,6 +62,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -169,7 +172,10 @@ function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
 }
 
 interface Props {
-  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
+  board: Pick<
+    WorkspaceTaskBoard,
+    'id' | 'name' | 'ws_id' | 'ticket_prefix' | 'archived_at'
+  > & {
     icon?: WorkspaceTaskBoard['icon'];
   };
   currentUserId?: string;
@@ -218,10 +224,13 @@ export function BoardHeader({
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
   const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix || '');
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
+  const { archiveBoard, unarchiveBoard } = useBoardActions(board.ws_id);
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -989,6 +998,29 @@ export function BoardHeader({
                     {t('ws-task-boards.actions.recycle_bin')}
                   </DropdownMenuItem>
                 )}
+                {board.archived_at ? (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setShowUnarchiveDialog(true);
+                      setBoardMenuOpen(false);
+                    }}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('ws-task-boards.row_actions.unarchive')}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setShowArchiveDialog(true);
+                      setBoardMenuOpen(false);
+                    }}
+                    className="gap-2"
+                  >
+                    <Archive className="h-4 w-4" />
+                    {t('ws-task-boards.row_actions.archive')}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -1032,7 +1064,6 @@ export function BoardHeader({
           )}
         </div>
       </div>
-
       {/* Edit Board (name + icon) Dialog */}
       <Dialog open={editBoardOpen} onOpenChange={setEditBoardOpen}>
         <DialogContent className="p-0 sm:max-w-lg">
@@ -1063,14 +1094,12 @@ export function BoardHeader({
           />
         </DialogContent>
       </Dialog>
-
       {/* Duplicate Board Dialog */}
       <CopyBoardDialog
         board={{ id: board.id, ws_id: board.ws_id, name: board.name }}
         open={duplicateBoardOpen}
         onOpenChange={setDuplicateBoardOpen}
       />
-
       {/* Board Layout Settings */}
       {onUpdate && (
         <BoardLayoutSettings
@@ -1151,7 +1180,6 @@ export function BoardHeader({
           }}
         />
       )}
-
       {/* Board Settings Dialog */}
       <Dialog open={boardSettingsOpen} onOpenChange={setBoardSettingsOpen}>
         <DialogContent className="sm:max-w-106.25">
@@ -1203,7 +1231,71 @@ export function BoardHeader({
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>{' '}
+      {/* End Board Settings Dialog */}
+      {/* Archive Dialog */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.archive_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const name = board.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return t(
+                  'ws-task-boards.row_actions.dialog.archive_description',
+                  { name: display }
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => archiveBoard(board.id)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {t('ws-task-boards.row_actions.dialog.archive_button')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Unarchive Dialog */}
+      <AlertDialog
+        open={showUnarchiveDialog}
+        onOpenChange={setShowUnarchiveDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.unarchive_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const name = board.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return t(
+                  'ws-task-boards.row_actions.dialog.unarchive_description',
+                  { name: display }
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => unarchiveBoard(board.id)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {t('ws-task-boards.row_actions.dialog.unarchive_button')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
