@@ -87,8 +87,7 @@ export function PromotionForm({
       code: data?.code,
       value: data?.value ? parseInt(data?.value.toString(), 10) : undefined,
       unit: data?.use_ratio ? 'percentage' : 'currency',
-      max_uses:
-        data?.max_uses === undefined ? undefined : (data?.max_uses ?? null),
+      max_uses: data?.max_uses
     },
   });
 

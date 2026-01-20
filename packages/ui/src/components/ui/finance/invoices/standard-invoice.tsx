@@ -30,8 +30,7 @@ import {
 } from '@tuturuuu/ui/card';
 import {
   Combobox,
-  type ComboboxOption,
-  type ComboboxOptions,
+  type ComboboxOption
 } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -257,10 +256,10 @@ export function StandardInvoice({
 
   // Reset promotion when user is cleared
   useEffect(() => {
-    if (!selectedUserId && selectedPromotionId !== 'none') {
+    if (!selectedUserId) {
       setSelectedPromotionId('none');
     }
-  }, [selectedUserId, selectedPromotionId]);
+  }, [selectedUserId]);
 
   // Auto-select user's best linked promotion based on current subtotal
   useEffect(() => {
@@ -489,7 +488,7 @@ export function StandardInvoice({
               <Combobox
                 t={t}
                 options={users.map(
-                  (user): ComboboxOptions => ({
+                  (user): ComboboxOption => ({
                     value: user.id,
                     label: `${user.full_name} ${user.display_name ? `(${user.display_name})` : ''} (${user.email || user.phone || '-'})`,
                   })
@@ -808,7 +807,7 @@ export function StandardInvoice({
                 <Combobox
                   t={t}
                   options={categories.map(
-                    (category): ComboboxOptions => ({
+                    (category): ComboboxOption => ({
                       value: category.id || '',
                       label: category.name || t('ws-invoices.unnamed_category'),
                     })

@@ -4,6 +4,7 @@ import {
   transformInvoiceData,
   transformInvoiceSearchResults,
 } from '@tuturuuu/utils/finance/transform-invoice-results';
+import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -64,6 +65,7 @@ export interface CalculatedValues {
   values_recalculated: boolean;
   rounding_applied: number;
   allowPromotions: boolean;
+  promotion?: WorkspacePromotion;
 }
 
 // Backend calculation functions
@@ -127,6 +129,7 @@ export async function calculateInvoiceValues(
 
   // Calculate discount amount
   let discount_amount = 0;
+  let promotionData: WorkspacePromotion | null = null;
   const allowPromotions = await isPromotionAllowedForWorkspace(
     wsId,
     isSubscriptionInvoice
@@ -137,7 +140,9 @@ export async function calculateInvoiceValues(
       const { data: promotion, error: promotionError } = await supabase
         .from('workspace_promotions')
         // NOTE: column types land after migration + typegen; keep TS unblocked
-        .select('value, use_ratio, max_uses, current_uses')
+        .select(
+          'id, value, use_ratio, max_uses, current_uses, name, code, description'
+        )
         .eq('id', promotion_id)
         .eq('ws_id', wsId)
         .single();
@@ -157,6 +162,7 @@ export async function calculateInvoiceValues(
           throw err;
         }
 
+        promotionData = promotion;
         if (promotion.use_ratio) {
           discount_amount = subtotal * (promotion.value / 100);
         } else {
@@ -195,6 +201,7 @@ export async function calculateInvoiceValues(
     values_recalculated,
     rounding_applied,
     allowPromotions,
+    promotion: promotionData,
   };
 }
 
@@ -467,6 +474,7 @@ export async function POST(req: Request, { params }: Params) {
       values_recalculated,
       rounding_applied,
       allowPromotions,
+      promotion,
     } = calculatedValues;
 
     // Round values first to avoid floating-point precision issues
@@ -607,85 +615,54 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Insert promotion if provided
-    if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      if (allowPromotions) {
-        // Get Promotion use-ratio from workspace_promotions
-        const { data: promotion, error: promotionFetchError } = await supabase
-          .from('workspace_promotions')
-          // NOTE: column types land after migration + typegen; keep TS unblocked
-          .select(
-            'use_ratio, value, name, code, description, max_uses, current_uses'
-          )
-          .eq('id', promotion_id)
-          .single();
+    if (
+      promotion_id &&
+      promotion_id !== 'none' &&
+      discount_amount > 0 &&
+      allowPromotions &&
+      promotion
+    ) {
+      const { error: promotionError } = await supabase
+        .from('finance_invoice_promotions')
+        .insert({
+          invoice_id: invoiceId,
+          promo_id: promotion_id,
+          value: promotion.value,
+          use_ratio: promotion.use_ratio ?? true,
+          name: promotion.name || '',
+          code: promotion.code || '',
+          description: promotion.description || '',
+        });
 
-        if (promotionFetchError) {
-          console.error('Error getting promotion:', promotionFetchError);
-          console.warn('Continuing without promotion due to fetch error');
+      if (promotionError) {
+        const isLimitReached =
+          promotionError.code === '23514' ||
+          promotionError.message?.toLowerCase().includes('usage limit');
+
+        // Rollback: delete all created records
+        await Promise.all([
+          supabase
+            .from('finance_invoice_products')
+            .delete()
+            .eq('invoice_id', invoiceId),
+          supabase.from('finance_invoices').delete().eq('id', invoiceId),
+        ]);
+
+        if (isLimitReached) {
+          return NextResponse.json(
+            { message: 'Promotion usage limit reached' },
+            { status: 400 }
+          );
         }
-        // Only insert promotion if we successfully fetched promotion data or use default
-        if (!promotionFetchError || promotion) {
-          if (
-            promotion?.max_uses !== null &&
-            promotion?.max_uses !== undefined &&
-            Number(promotion.current_uses ?? 0) >= Number(promotion.max_uses)
-          ) {
-            await Promise.all([
-              supabase
-                .from('finance_invoice_products')
-                .delete()
-                .eq('invoice_id', invoiceId),
-              supabase.from('finance_invoices').delete().eq('id', invoiceId),
-            ]);
-            return NextResponse.json(
-              { message: 'Promotion usage limit reached' },
-              { status: 400 }
-            );
-          }
 
-          const { error: promotionError } = await supabase
-            .from('finance_invoice_promotions')
-            .insert({
-              invoice_id: invoiceId,
-              promo_id: promotion_id,
-              value: promotion?.value || discount_amount, // Convert to integer
-              use_ratio: promotion?.use_ratio ?? true,
-              name: promotion?.name || '',
-              code: promotion?.code || '',
-              description: promotion?.description || '',
-            });
-
-          if (promotionError) {
-            const isLimitReached =
-              (promotionError as any)?.code === '23514' ||
-              promotionError.message?.toLowerCase().includes('usage limit');
-
-            // Rollback: delete all created records
-            await Promise.all([
-              supabase
-                .from('finance_invoice_products')
-                .delete()
-                .eq('invoice_id', invoiceId),
-              supabase.from('finance_invoices').delete().eq('id', invoiceId),
-            ]);
-
-            if (isLimitReached) {
-              return NextResponse.json(
-                { message: 'Promotion usage limit reached' },
-                { status: 400 }
-              );
-            }
-
-            console.error('Error creating invoice promotion:', promotionError);
-            return NextResponse.json(
-              {
-                message: 'Error applying promotion to invoice',
-                details: promotionError.message,
-              },
-              { status: 500 }
-            );
-          }
-        }
+        console.error('Error creating invoice promotion:', promotionError);
+        return NextResponse.json(
+          {
+            message: 'Error applying promotion to invoice',
+            details: promotionError.message,
+          },
+          { status: 500 }
+        );
       }
     }
 
