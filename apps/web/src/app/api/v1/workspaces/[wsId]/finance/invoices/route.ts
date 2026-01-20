@@ -129,7 +129,7 @@ export async function calculateInvoiceValues(
 
   // Calculate discount amount
   let discount_amount = 0;
-  let promotionData: WorkspacePromotion | null = null;
+  let promotionData: WorkspacePromotion | undefined;
   const allowPromotions = await isPromotionAllowedForWorkspace(
     wsId,
     isSubscriptionInvoice
@@ -141,7 +141,7 @@ export async function calculateInvoiceValues(
         .from('workspace_promotions')
         // NOTE: column types land after migration + typegen; keep TS unblocked
         .select(
-          'id, value, use_ratio, max_uses, current_uses, name, code, description'
+          '*'
         )
         .eq('id', promotion_id)
         .eq('ws_id', wsId)
