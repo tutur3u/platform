@@ -8,9 +8,9 @@ import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
-import { isPromotionAllowedForWorkspace } from '@/utils/workspace-config';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { isPromotionAllowedForWorkspace } from '@/utils/workspace-config';
 
 const SearchParamsSchema = z.object({
   q: z.string().default(''),

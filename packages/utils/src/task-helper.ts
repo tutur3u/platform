@@ -3074,3 +3074,186 @@ export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
     },
   });
 }
+// Bulk clear activities from a list (sequential processing for auditing)
+export async function clearAllAssigneesFromList(
+  supabase: TypedSupabaseClient,
+  listId: string
+) {
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('list_id', listId)
+    .is('deleted_at', null);
+
+  if (fetchError) throw fetchError;
+  if (!tasks || tasks.length === 0) return { count: 0 };
+
+  let count = 0;
+  for (const task of tasks) {
+    const { error } = await supabase
+      .from('task_assignees')
+      .delete()
+      .eq('task_id', task.id);
+    if (!error) count++;
+  }
+
+  return { count };
+}
+
+export async function clearAllLabelsFromList(
+  supabase: TypedSupabaseClient,
+  listId: string
+) {
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('list_id', listId)
+    .is('deleted_at', null);
+
+  if (fetchError) throw fetchError;
+  if (!tasks || tasks.length === 0) return { count: 0 };
+
+  let count = 0;
+  for (const task of tasks) {
+    const { error } = await supabase
+      .from('task_labels')
+      .delete()
+      .eq('task_id', task.id);
+    if (!error) count++;
+  }
+
+  return { count };
+}
+
+export async function clearAllProjectsFromList(
+  supabase: TypedSupabaseClient,
+  listId: string
+) {
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('list_id', listId)
+    .is('deleted_at', null);
+
+  if (fetchError) throw fetchError;
+  if (!tasks || tasks.length === 0) return { count: 0 };
+
+  let count = 0;
+  for (const task of tasks) {
+    const { error } = await supabase
+      .from('task_project_tasks')
+      .delete()
+      .eq('task_id', task.id);
+    if (!error) count++;
+  }
+
+  return { count };
+}
+
+export function useClearAllAssigneesFromList(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (listId: string) => {
+      const supabase = createClient();
+      return clearAllAssigneesFromList(supabase, listId);
+    },
+    onMutate: async (listId) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) =>
+            task.list_id === listId ? { ...task, assignees: [] } : task
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Failed to clear all assignees:', err);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    },
+  });
+}
+
+export function useClearAllLabelsFromList(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (listId: string) => {
+      const supabase = createClient();
+      return clearAllLabelsFromList(supabase, listId);
+    },
+    onMutate: async (listId) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) =>
+            task.list_id === listId ? { ...task, labels: [] } : task
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Failed to clear all labels:', err);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    },
+  });
+}
+
+export function useClearAllProjectsFromList(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (listId: string) => {
+      const supabase = createClient();
+      return clearAllProjectsFromList(supabase, listId);
+    },
+    onMutate: async (listId) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) =>
+            task.list_id === listId ? { ...task, projects: [] } : task
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Failed to clear all projects:', err);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    },
+  });
+}

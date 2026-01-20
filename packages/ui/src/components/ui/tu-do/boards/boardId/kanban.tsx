@@ -826,10 +826,13 @@ export function KanbanBoard({
     bulkMoveToStatus,
     bulkAddLabel,
     bulkRemoveLabel,
+    bulkClearLabels,
     bulkAddProject,
     bulkRemoveProject,
+    bulkClearProjects,
     bulkAddAssignee,
     bulkRemoveAssignee,
+    bulkClearAssignees,
     bulkDeleteTasks,
   } = useBulkOperations({
     queryClient,
@@ -2270,7 +2273,7 @@ export function KanbanBoard({
                     ) : (
                       <div className="max-h-50 overflow-auto">
                         <div className="flex flex-col gap-1 p-1">
-                          {filteredLabels.map((label) => {
+                          {filteredLabels.slice(0, 50).map((label) => {
                             const isApplied = appliedLabels.has(label.id);
                             return (
                               <DropdownMenuItem
@@ -2336,6 +2339,17 @@ export function KanbanBoard({
                         <Plus className="h-4 w-4" />
                         {tc('create_new_label')}
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={bulkWorking}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          bulkClearLabels();
+                        }}
+                        className="cursor-pointer text-dynamic-red hover:text-dynamic-red"
+                      >
+                        <X className="h-4 w-4" />
+                        {t('ws-task-boards.bulk.clear_all_labels')}
+                      </DropdownMenuItem>
                     </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
@@ -2372,7 +2386,7 @@ export function KanbanBoard({
                     ) : (
                       <div className="max-h-50 overflow-auto">
                         <div className="flex flex-col gap-1 p-1">
-                          {filteredProjects.map((project: any) => {
+                          {filteredProjects.slice(0, 50).map((project: any) => {
                             const isApplied = appliedProjects.has(project.id);
                             return (
                               <DropdownMenuItem
@@ -2431,6 +2445,17 @@ export function KanbanBoard({
                       >
                         <Plus className="h-4 w-4" />
                         {t('common.create_new_project')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={bulkWorking}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          bulkClearProjects();
+                        }}
+                        className="cursor-pointer text-dynamic-red hover:text-dynamic-red"
+                      >
+                        <X className="h-4 w-4" />
+                        {t('ws-task-boards.bulk.clear_all_projects')}
                       </DropdownMenuItem>
                     </div>
                   </DropdownMenuSubContent>
@@ -2540,7 +2565,7 @@ export function KanbanBoard({
                       ) : (
                         <div className="max-h-37.5 overflow-auto">
                           <div className="flex flex-col gap-1 p-1">
-                            {filteredMembers.map((member: any) => {
+                            {filteredMembers.slice(0, 50).map((member: any) => {
                               const isApplied = appliedAssignees.has(member.id);
                               return (
                                 <DropdownMenuItem
@@ -2594,6 +2619,21 @@ export function KanbanBoard({
                           </div>
                         </div>
                       )}
+
+                      {/* Clear all assignees */}
+                      <div className="border-t">
+                        <DropdownMenuItem
+                          disabled={bulkWorking}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            bulkClearAssignees();
+                          }}
+                          className="cursor-pointer text-dynamic-red hover:text-dynamic-red"
+                        >
+                          <X className="h-4 w-4" />
+                          {t('ws-task-boards.bulk.clear_all_assignees')}
+                        </DropdownMenuItem>
+                      </div>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
                 )}

@@ -9687,6 +9687,9 @@
     "bulk": {
       "applied_to_all": "{count} applied to all",
       "assigned_to_all": "{count} assigned to all",
+      "clear_all_assignees": "Clear all assignees",
+      "clear_all_labels": "Clear all labels",
+      "clear_all_projects": "Clear all projects",
       "create_new_project": "Create new project",
       "move_to_list": "Move to list",
       "set_custom_due_date": "Set custom due date",

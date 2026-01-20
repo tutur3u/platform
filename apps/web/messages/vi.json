@@ -9789,6 +9789,9 @@
     "bulk": {
       "applied_to_all": "{count} đã áp dụng cho tất cả",
       "assigned_to_all": "{count} đã gán cho tất cả",
+      "clear_all_assignees": "Xóa tất cả người được giao",
+      "clear_all_labels": "Xóa tất cả nhãn",
+      "clear_all_projects": "Xóa tất cả dự án",
       "create_new_project": "Tạo dự án mới",
       "move_to_list": "Di chuyển đến danh sách",
       "set_custom_due_date": "Đặt ngày đến hạn tùy chỉnh",
