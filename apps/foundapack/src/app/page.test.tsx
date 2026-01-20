@@ -29,7 +29,7 @@ describe('Foundapack Landing Page', () => {
     render(<Page />);
 
     // Scene I
-    expect(screen.getByText(/The hardest walk/i)).toBeDefined();
+    expect(screen.getByText(/Find your pack/i)).toBeDefined();
 
     // ScalingNetwork
     expect(screen.getByText('ScalingNetwork Component')).toBeDefined();

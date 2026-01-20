@@ -214,7 +214,7 @@ export function Footer() {
                 alt="Tuturuuu"
                 width={320}
                 height={320}
-                className="md:h-28 h-32 w-auto md:ml-auto"
+                className="h-32 w-auto md:ml-auto md:h-28"
               />
               <span className="group- block font-bold text-4xl text-white tracking-tighter transition duration-500 hover:text-white">
                 Tuturuuu
