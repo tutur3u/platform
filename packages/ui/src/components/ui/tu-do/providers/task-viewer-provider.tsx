@@ -166,7 +166,7 @@ export function TaskViewerProvider({
                 break;
               case 'TIMED_OUT': {
                 if (DEV_MODE) {
-                  console.error(`❌ Board ${boardId} channel error:`, status);
+                  console.warn(`⚠️ Board ${boardId} channel timed out:`, status);
                 }
                 if (retryCountRef.current < MAX_RETRIES) {
                   retryCountRef.current++;
