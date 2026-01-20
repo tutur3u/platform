@@ -28,6 +28,8 @@ interface ReferralSectionClientProps {
   workspaceSettings: {
     referral_count_cap: number;
     referral_increment_percent: number;
+    referral_reward_type: 'REFERRER' | 'RECEIVER' | 'BOTH';
+    referral_promotion_id: string | null;
   } | null;
   initialAvailableUsers: WorkspaceUser[];
   initialAvailableUsersCount: number;
@@ -218,16 +220,12 @@ export default function ReferralSectionClient({
         .eq('ws_id', wsId);
       if (updateErr) throw updateErr;
 
-      // 3) Link workspace default referral promotion to referred user (if configured)
-      const { data: wsSettings, error: settingsErr } = await supabase
-        .from('workspace_settings')
-        .select('referral_promotion_id')
-        .eq('ws_id', wsId)
-        .maybeSingle();
-      if (settingsErr) throw settingsErr;
+      // 3) Conditionally link workspace default referral promotion to referred user
+      const rewardType = workspaceSettings?.referral_reward_type;
+      const shouldLink = rewardType === 'RECEIVER' || rewardType === 'BOTH';
+      const promoIdToLink = workspaceSettings?.referral_promotion_id || null;
 
-      const promoIdToLink = wsSettings?.referral_promotion_id || null;
-      if (promoIdToLink) {
+      if (shouldLink && promoIdToLink) {
         const { error: linkErr } = await supabase
           .from('user_linked_promotions')
           .upsert(
@@ -270,8 +268,7 @@ export default function ReferralSectionClient({
         queryClient.invalidateQueries({
           queryKey: ['ws', wsId, 'user', userId, 'referrals', 'list'],
         }),
-        // Also refresh linked promotions for this user, since we may have
-        // upserted the workspace's default referral promotion
+        // Also refresh linked promotions for this user
         queryClient.invalidateQueries({
           queryKey: ['user-linked-promotions', wsId, userId],
         }),
@@ -329,15 +326,10 @@ export default function ReferralSectionClient({
 
       if (updateErr) throw updateErr;
 
-      // 2) Remove linked referral promotion if it exists and is the default workspace referral promotion
-      const { data: wsSettings, error: settingsErr } = await supabase
-        .from('workspace_settings')
-        .select('referral_promotion_id')
-        .eq('ws_id', wsId)
-        .maybeSingle();
-      if (settingsErr) throw settingsErr;
-
-      const promoIdToRemove = wsSettings?.referral_promotion_id || null;
+      // 2) Remove linked referral promotion if it exists and matches the workspace default
+      // Note: We try to remove it regardless of the current 'referral_reward_type' setting
+      // to clean up past links, provided it matches the current configured promo ID.
+      const promoIdToRemove = workspaceSettings?.referral_promotion_id || null;
       if (promoIdToRemove) {
         const { error: unlinkErr } = await supabase
           .from('user_linked_promotions')
@@ -349,11 +341,27 @@ export default function ReferralSectionClient({
 
       return referredUserId;
     },
-    onSuccess: async (_referredUserId) => {
+    onSuccess: async (referredUserId) => {
       toast.success(t('unrefer_success'));
       setSelectedUserId('');
 
-      // Invalidate queries to refresh data from server
+      // Optimistic cache updates
+      await queryClient.setQueryData(
+        ['ws', wsId, 'users', 'available-for-referral', userId],
+        (prev: { data: WorkspaceUser[]; count: number } | undefined) => {
+          if (!prev) return prev as any;
+          const data = prev.data.filter((u) => u.id !== referredUserId);
+          return { data, count: data.length };
+        }
+      );
+
+      await queryClient.setQueryData(
+        ['ws', wsId, 'user', userId, 'referrals', 'count'],
+        (prev: number | undefined) =>
+          typeof prev === 'number' ? prev + 1 : undefined
+      );
+
+      // Invalidate to reconcile with server
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['ws', wsId, 'users', 'available-for-referral', userId],

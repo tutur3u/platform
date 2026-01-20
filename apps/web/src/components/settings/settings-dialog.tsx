@@ -17,6 +17,7 @@ import {
   PanelLeft,
   Search,
   Shield,
+  Ticket,
   User,
   Users,
   Wallet,
@@ -78,6 +79,7 @@ import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DefaultWalletSettings from './finance/default-wallet-settings';
 import InvoiceSettings from './finance/invoice-settings';
+import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
@@ -378,6 +380,18 @@ export function SettingsDialog({
                 icon: ClipboardList,
                 description: t('settings.attendance.display_description'),
                 keywords: ['Attendance', 'Display', 'Members', 'Managers'],
+              },
+            ],
+          },
+          {
+            label: t('common.inventory'),
+            items: [
+              {
+                name: 'referrals',
+                label: t('inventory.referral_reward_type'),
+                icon: Ticket,
+                description: t('user-data-table.referral_settings_desc'),
+                keywords: ['Referral', 'Promotion', 'Reward'],
               },
             ],
           },
@@ -729,6 +743,10 @@ export function SettingsDialog({
 
                 {activeTab === 'invoice_settings' && wsId && (
                   <InvoiceSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'referrals' && wsId && (
+                  <ReferralSettings wsId={wsId} />
                 )}
 
                 {activeTab.startsWith('calendar_') && wsId && (

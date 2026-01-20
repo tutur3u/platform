@@ -16,6 +16,13 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -42,6 +49,7 @@ const FormSchema = z.object({
   referral_count_cap: z.coerce.number().int().min(0),
   referral_increment_percent: z.coerce.number().min(0),
   referral_promotion_id: z.string().uuid().nullable().optional(),
+  referral_reward_type: z.enum(['REFERRER', 'RECEIVER', 'BOTH']),
 });
 
 export default function WorkspaceSettingsForm({
@@ -64,6 +72,9 @@ export default function WorkspaceSettingsForm({
       referral_count_cap: row?.referral_count_cap ?? 0,
       referral_increment_percent: row?.referral_increment_percent ?? 0,
       referral_promotion_id: row?.referral_promotion_id ?? null,
+      referral_reward_type:
+        (row?.referral_reward_type as 'REFERRER' | 'RECEIVER' | 'BOTH') ??
+        'REFERRER',
     },
   });
 
@@ -75,6 +86,7 @@ export default function WorkspaceSettingsForm({
         referral_count_cap: values.referral_count_cap,
         referral_increment_percent: values.referral_increment_percent,
         referral_promotion_id: values.referral_promotion_id ?? null,
+        referral_reward_type: values.referral_reward_type,
       });
       if (error) throw error;
 
@@ -190,6 +202,37 @@ export default function WorkspaceSettingsForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+        <FormField
+          control={form.control}
+          name="referral_reward_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('inventory.referral_reward_type')}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t('inventory.select_reward_type')}
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="REFERRER">
+                    {t('inventory.reward_referrer_only')}
+                  </SelectItem>
+                  <SelectItem value="RECEIVER">
+                    {t('inventory.reward_receiver_only')}
+                  </SelectItem>
+                  <SelectItem value="BOTH">
+                    {t('inventory.reward_both')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="referral_count_cap"

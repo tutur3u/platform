@@ -3142,7 +3142,12 @@
   "inventory": {
     "default_referral_promotion": "Default referral promotion",
     "referral_count_cap": "Referral count cap",
-    "referral_increment_percent": "Referral increment percent"
+    "referral_increment_percent": "Referral increment percent",
+    "referral_reward_type": "Referral Reward Type",
+    "reward_both": "Both Referrer and Receiver",
+    "reward_receiver_only": "Receiver Only",
+    "reward_referrer_only": "Referrer Only",
+    "select_reward_type": "Select who receives the reward"
   },
   "inventory-overview": {
     "products-with-prices": "Products with prices"

@@ -551,7 +551,9 @@ async function getWorkspaceSettings(wsId: string) {
 
   const { data, error } = await supabase
     .from('workspace_settings')
-    .select('referral_count_cap, referral_increment_percent')
+    .select(
+      'referral_count_cap, referral_increment_percent, referral_reward_type, referral_promotion_id'
+    )
     .eq('ws_id', wsId)
     .maybeSingle();
 

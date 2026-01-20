@@ -13899,6 +13899,7 @@ export type Database = {
           referral_count_cap: number;
           referral_increment_percent: number;
           referral_promotion_id: string | null;
+          referral_reward_type: Database['public']['Enums']['referral_reward_type'];
           updated_at: string;
           ws_id: string;
         };
@@ -13912,6 +13913,7 @@ export type Database = {
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: string | null;
+          referral_reward_type?: Database['public']['Enums']['referral_reward_type'];
           updated_at?: string;
           ws_id: string;
         };
@@ -13925,6 +13927,7 @@ export type Database = {
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: string | null;
+          referral_reward_type?: Database['public']['Enums']['referral_reward_type'];
           updated_at?: string;
           ws_id?: string;
         };
@@ -18686,6 +18689,7 @@ export type Database = {
         | 'completed'
         | 'failed';
       recurring_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+      referral_reward_type: 'REFERRER' | 'RECEIVER' | 'BOTH';
       subscription_status:
         | 'incomplete'
         | 'incomplete_expired'
@@ -19336,6 +19340,7 @@ export const Constants = {
         'failed',
       ],
       recurring_frequency: ['daily', 'weekly', 'monthly', 'yearly'],
+      referral_reward_type: ['REFERRER', 'RECEIVER', 'BOTH'],
       subscription_status: [
         'incomplete',
         'incomplete_expired',

@@ -3165,7 +3165,12 @@
   "inventory": {
     "default_referral_promotion": "Khuyến mãi được cấp mặc định",
     "referral_count_cap": "Giới hạn số lượt giới thiệu",
-    "referral_increment_percent": "Phần trăm tăng theo lượt giới thiệu"
+    "referral_increment_percent": "Phần trăm tăng theo lượt giới thiệu",
+    "referral_reward_type": "Loại phần thưởng giới thiệu",
+    "reward_both": "Cả hai",
+    "reward_receiver_only": "Chỉ người được giới thiệu",
+    "reward_referrer_only": "Chỉ người giới thiệu",
+    "select_reward_type": "Chọn người nhận thưởng"
   },
   "inventory-overview": {
     "products-with-prices": "Sản phẩm có đơn giá"
