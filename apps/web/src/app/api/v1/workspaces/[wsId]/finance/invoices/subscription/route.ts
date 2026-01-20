@@ -79,7 +79,8 @@ export async function POST(req: Request, { params }: Params) {
         subtotal: frontend_subtotal,
         discount_amount: frontend_discount_amount,
         total: frontend_total,
-      }
+      },
+      true
     );
 
     const {

@@ -500,6 +500,45 @@ export const useInvoiceAttendanceConfig = (wsId: string) => {
   });
 };
 
+// Get workspace config for allowing promotions for standard invoices
+// Returns true if promotions are allowed for standard invoices (default), false otherwise
+export const useInvoicePromotionConfig = (wsId: string) => {
+  return useQuery({
+    queryKey: ['invoice-promotion-config', wsId],
+    queryFn: async () => {
+      if (!wsId) return true; // Default to true for backward compatibility
+
+      try {
+        const res = await fetch(
+          `/api/v1/workspaces/${wsId}/settings/INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD`
+        );
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            // Config not set, return default (true)
+            return true;
+          }
+          throw new Error('Failed to fetch invoice promotion config');
+        }
+
+        const data = await res.json();
+        // workspace_configs stores values as text, so we need to parse "true"/"false" strings
+        const value = data.value?.trim().toLowerCase();
+        return value !== 'false';
+      } catch (error) {
+        console.error('❌ Invoice promotion config fetch error:', error);
+        // Return default (true) on error to maintain backward compatibility
+        return true;
+      }
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+};
+
 // Get User's Group Products with improved caching
 export const useUserGroupProducts = (groupId: string) => {
   return useQuery({
