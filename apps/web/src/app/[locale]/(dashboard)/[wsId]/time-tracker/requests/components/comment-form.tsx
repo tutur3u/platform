@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Kbd } from '@tuturuuu/ui/kbd';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { useAddComment } from '../hooks/use-request-mutations';
@@ -22,6 +23,7 @@ export function CommentForm({
   currentUser,
 }: CommentFormProps) {
   const t = useTranslations('time-tracker.requests');
+  const { modKey } = usePlatform();
   const addComment = useAddComment();
 
   const [content, setContent] = useState('');
@@ -82,7 +84,7 @@ export function CommentForm({
           {/* Submit Button */}
           <div className="flex items-center justify-end gap-2">
             <span className="flex items-center gap-1 text-muted-foreground text-xs">
-              <Kbd>Ctrl</Kbd>
+              <Kbd>{modKey}</Kbd>
               <span>+</span>
               <Kbd>Enter</Kbd>
               <span>

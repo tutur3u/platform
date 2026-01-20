@@ -1,5 +1,6 @@
 'use client';
 
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { useEffect } from 'react';
 import { BoardNavigation } from './board-navigation';
 import { ComingSoonSection } from './coming-soon';
@@ -19,6 +20,8 @@ export function CommandRoot({
   setOpen,
   setPage,
 }: CommandRootProps) {
+  const { modKey } = usePlatform();
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,11 +86,11 @@ export function CommandRoot({
           <p className="text-muted-foreground text-xs">
             Use{' '}
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-              ⌘1
+              {modKey}1
             </kbd>{' '}
             and{' '}
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-              ⌘2
+              {modKey}2
             </kbd>{' '}
             to toggle sections
           </p>

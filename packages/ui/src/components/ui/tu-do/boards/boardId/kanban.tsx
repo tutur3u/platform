@@ -77,6 +77,7 @@ import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferen
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import {
   useBoardConfig,
@@ -199,6 +200,7 @@ export function KanbanBoard({
 }: Props) {
   const t = useTranslations();
   const tc = useTranslations('common');
+  const { modKey } = usePlatform();
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
@@ -899,17 +901,24 @@ export function KanbanBoard({
         return;
       }
 
-      // Shift or Command/Control keys enable multiselect mode
-      if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      // Only Shift key (without other modifiers) enables multiselect mode
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (!isMultiSelectMode) {
           setIsMultiSelectMode(true);
+        }
+      }
+
+      // Turn OFF if any forbidden modifier is pressed
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        if (isMultiSelectMode) {
+          setIsMultiSelectMode(false);
         }
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       // Exit multiselect mode when all modifier keys are released
-      if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      if (!e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         // Only exit if we have no selected tasks
         if (isMultiSelectMode && selectedTasks.size === 0) {
           setIsMultiSelectMode(false);
@@ -1974,7 +1983,7 @@ export function KanbanBoard({
               </span>
             </div>
             <span className="hidden text-muted-foreground text-xs sm:inline">
-              {tc('selection_instruction')}
+              {tc('selection_instruction', { modKey })}
             </span>
             {bulkWorking && (
               <Badge

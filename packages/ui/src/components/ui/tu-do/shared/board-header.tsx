@@ -25,6 +25,7 @@ import {
   Settings,
   Trash2,
   X,
+  Zap,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
@@ -356,6 +357,51 @@ export function BoardHeader({
     setSortMenuOpen(false);
   }
 
+  function handleSmartFocus() {
+    setIsLoading(true);
+
+    // Check if currently "focused"
+    const isFocused =
+      listStatusFilter === 'active' &&
+      filters.includeMyTasks &&
+      filters.sortBy === 'priority-high';
+
+    if (isFocused) {
+      // Toggle OFF: Reset defaults
+      onListStatusFilterChange('all');
+
+      const resetFilters: TaskFilters = {
+        ...filters,
+        includeMyTasks: false,
+        includeUnassigned: false,
+        sortBy: undefined,
+      };
+
+      onFiltersChange(resetFilters);
+    } else {
+      // Toggle ON: Apply focus
+      onListStatusFilterChange('active');
+
+      const newFilters: TaskFilters = {
+        ...filters,
+        includeMyTasks: true,
+        includeUnassigned: false,
+        sortBy: 'priority-high',
+      };
+
+      onFiltersChange(newFilters);
+    }
+
+    // Small delay to show feedback if needed, but mostly instant
+    setTimeout(() => setIsLoading(false), 300);
+  }
+
+  // Derived state for button UI
+  const isSmartFocusActive =
+    listStatusFilter === 'active' &&
+    filters.includeMyTasks &&
+    filters.sortBy === 'priority-high';
+
   const viewConfig = {
     kanban: {
       icon: KanbanSquare,
@@ -451,6 +497,32 @@ export function BoardHeader({
               onListStatusFilterChange={onListStatusFilterChange}
             />
           )}
+
+          {/* Smart Focus Button */}
+          <Button
+            variant={isSmartFocusActive ? 'secondary' : 'outline'}
+            size="xs"
+            onClick={handleSmartFocus}
+            disabled={isLoading}
+            className={cn(
+              'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
+              isSmartFocusActive
+                ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
+                : 'text-muted-foreground hover:text-dynamic-yellow'
+            )}
+            title={
+              isSmartFocusActive
+                ? t('common.clear_smart_focus')
+                : t('common.smart_focus')
+            }
+          >
+            <Zap
+              className={cn(
+                'h-3.5 w-3.5',
+                isSmartFocusActive && 'fill-current'
+              )}
+            />
+          </Button>
 
           {/* Multi-select Toggle */}
           <Button

@@ -34,6 +34,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import { notFound, redirect, useParams } from 'next/navigation';
@@ -84,6 +85,7 @@ export default function UserNavClient({
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const sidebar = useContext(SidebarContext);
   const { accounts } = useAccountSwitcher();
+  const { modKey } = usePlatform();
 
   return (
     <>
@@ -169,7 +171,7 @@ export default function UserNavClient({
                 <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
                   <Terminal className="h-4 w-4 text-dynamic-blue" />
                   <span>Command Palette</span>
-                  <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
+                  <DropdownMenuShortcut>{modKey}K</DropdownMenuShortcut>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
               </>
@@ -267,7 +269,7 @@ export default function UserNavClient({
             >
               <Users className="h-4 w-4 text-dynamic-orange" />
               <span>{t('account_switcher.switch_account')}</span>
-              <DropdownMenuShortcut>⌘⇧A</DropdownMenuShortcut>
+              <DropdownMenuShortcut>{modKey}⇧A</DropdownMenuShortcut>
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem asChild>
