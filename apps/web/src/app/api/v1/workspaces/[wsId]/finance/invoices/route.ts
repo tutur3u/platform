@@ -8,6 +8,7 @@ import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
+import { isPromotionAllowedForWorkspace } from '@/utils/workspace-config';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -62,6 +63,7 @@ export interface CalculatedValues {
   total: number;
   values_recalculated: boolean;
   rounding_applied: number;
+  allowPromotions: boolean;
 }
 
 // Backend calculation functions
@@ -128,21 +130,12 @@ export async function calculateInvoiceValues(
 
   // Calculate discount amount
   let discount_amount = 0;
+  const allowPromotions = await isPromotionAllowedForWorkspace(
+    wsId,
+    isSubscriptionInvoice
+  );
+
   if (promotion_id && promotion_id !== 'none') {
-    // Check workspace config for standard invoices
-    let allowPromotions = true;
-    if (!isSubscriptionInvoice) {
-      const { data: config } = await supabase
-        .from('workspace_configs')
-        .select('value')
-        .eq('ws_id', wsId)
-        .eq('id', 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD')
-        .single();
-
-      // Default to true for backward compatibility
-      allowPromotions = config?.value?.toLowerCase() !== 'false';
-    }
-
     if (allowPromotions) {
       const { data: promotion, error: promotionError } = await supabase
         .from('workspace_promotions')
@@ -193,6 +186,7 @@ export async function calculateInvoiceValues(
     total,
     values_recalculated,
     rounding_applied,
+    allowPromotions,
   };
 }
 
@@ -453,6 +447,7 @@ export async function POST(req: Request, { params }: Params) {
       total,
       values_recalculated,
       rounding_applied,
+      allowPromotions,
     } = calculatedValues;
 
     // Round values first to avoid floating-point precision issues
@@ -594,20 +589,6 @@ export async function POST(req: Request, { params }: Params) {
 
     // Insert promotion if provided
     if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      // Check workspace config for standard invoices
-      let allowPromotions = true;
-      if (!isSubscriptionInvoice) {
-        const { data: config } = await supabase
-          .from('workspace_configs')
-          .select('value')
-          .eq('ws_id', wsId)
-          .eq('id', 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD')
-          .single();
-
-        // Default to true for backward compatibility
-        allowPromotions = config?.value?.toLowerCase() !== 'false';
-      }
-
       if (allowPromotions) {
         // Get Promotion use-ratio from workspace_promotions
         const { data: promotion, error: promotionFetchError } = await supabase
