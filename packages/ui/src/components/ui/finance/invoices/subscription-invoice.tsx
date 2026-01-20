@@ -40,6 +40,7 @@ import type { AvailablePromotion } from './hooks';
 import {
   useAvailablePromotions,
   useCategories,
+  useInvoiceAttendanceConfig,
   useProducts,
   useUserAttendance,
   useUserGroupProducts,
@@ -213,6 +214,20 @@ const getEffectiveAttendanceDays = (
   return stats.present + stats.late;
 };
 
+// Helper function to calculate effective days based on config
+// When useAttendanceBased is true: use attendance days (PRESENT + LATE)
+// When useAttendanceBased is false: use total sessions count
+const getEffectiveDays = (
+  attendance: { status: string; date: string }[],
+  totalSessions: number,
+  useAttendanceBased: boolean
+) => {
+  if (useAttendanceBased) {
+    return getEffectiveAttendanceDays(attendance);
+  }
+  return totalSessions;
+};
+
 export function SubscriptionInvoice({
   wsId,
   prefillAmount,
@@ -318,6 +333,9 @@ export function SubscriptionInvoice({
   const { data: groupProducts = [], isLoading: groupProductsLoading } =
     useUserGroupProducts(selectedGroupId);
 
+  // Fetch workspace config for attendance-based calculation
+  const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
+
   // Latest subscription invoice for paid state
   const { data: latestSubscriptionInvoice = [] } =
     useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
@@ -393,12 +411,19 @@ export function SubscriptionInvoice({
     // Reset one-time fallback toast when switching groups
     fallbackToastShownRef.current = false;
 
-    // Use prefillAmount if provided AND not yet used, otherwise calculate from attendance
+    // Get total sessions for the selected month
+    const selectedGroup = userGroups.find(
+      (group) => group.workspace_user_groups?.id === selectedGroupId
+    );
+    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
+    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
+
+    // Use prefillAmount if provided AND not yet used, otherwise calculate based on config
     const shouldUsePrefill =
       prefillAmount !== undefined && !initialPrefillUsedRef.current;
     const attendanceDays = shouldUsePrefill
       ? prefillAmount
-      : getEffectiveAttendanceDays(userAttendance);
+      : getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
 
     const { autoSelected, fallbackTriggered } =
       buildAutoSelectedProductsForGroup(
@@ -425,10 +450,13 @@ export function SubscriptionInvoice({
     }
   }, [
     selectedGroupId,
+    selectedMonth,
     prefillAmount,
     userAttendance,
     groupProducts,
     products,
+    userGroups,
+    useAttendanceBased,
     t,
   ]);
 
@@ -443,12 +471,19 @@ export function SubscriptionInvoice({
       return;
     }
 
-    // Use prefillAmount if provided AND already used (for updates), otherwise calculate from attendance
+    // Get total sessions for the selected month
+    const selectedGroup = userGroups.find(
+      (group) => group.workspace_user_groups?.id === selectedGroupId
+    );
+    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
+    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
+
+    // Use prefillAmount if provided AND already used (for updates), otherwise calculate based on config
     const shouldUsePrefill =
       prefillAmount !== undefined && initialPrefillUsedRef.current;
     const attendanceDays = shouldUsePrefill
       ? prefillAmount
-      : getEffectiveAttendanceDays(userAttendance);
+      : getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
 
     if (attendanceDays === 0) return;
 
@@ -514,10 +549,13 @@ export function SubscriptionInvoice({
     }
   }, [
     selectedGroupId,
+    selectedMonth,
     userAttendance?.length,
     prefillAmount,
     groupProducts,
     products,
+    userGroups,
+    useAttendanceBased,
     t,
     userAttendance,
   ]);
@@ -697,7 +735,11 @@ export function SubscriptionInvoice({
     );
     const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
     const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
-    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
+    const attendanceDays = getEffectiveDays(
+      userAttendance,
+      totalSessions,
+      useAttendanceBased
+    );
 
     const calculatedProducts = groupProducts.map((item) => ({
       product: item.workspace_products,
@@ -713,6 +755,7 @@ export function SubscriptionInvoice({
     userAttendance,
     groupProducts,
     userGroups,
+    useAttendanceBased,
   ]);
 
   // Reset subscription state when user changes

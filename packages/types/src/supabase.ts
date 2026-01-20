@@ -17464,7 +17464,7 @@ export type Database = {
         }[];
       };
       get_pending_invoices_base: {
-        Args: { p_ws_id: string };
+        Args: { p_use_attendance_based?: boolean; p_ws_id: string };
         Returns: {
           attendance_days: number;
           group_id: string;

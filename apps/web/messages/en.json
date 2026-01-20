@@ -5151,6 +5151,8 @@
     "finance": {
       "default_wallet": "Default Wallet",
       "default_wallet_description": "Configure default wallet for invoices",
+      "invoice_attendance": "Invoice Calculation",
+      "invoice_attendance_description": "Configure how pending invoices are calculated (attendance-based or all sessions)",
       "title": "Finance"
     },
     "loading_workspace": "Loading workspace...",
@@ -8550,6 +8552,10 @@
     "default_wallet_label": "Default Wallet",
     "default_wallet_placeholder": "Select a wallet",
     "description": "Manage finance settings for your workspace.",
+    "invoice_attendance_description": "Control how pending invoices are calculated. When enabled, only days with attendance (PRESENT/LATE) are counted. When disabled, all scheduled sessions are included.",
+    "invoice_attendance_help": "Enable to count only attended days, disable to include all sessions regardless of attendance.",
+    "invoice_attendance_label": "Use Attendance-Based Calculation",
+    "invoice_attendance_title": "Invoice Calculation Method",
     "no_default_wallet": "No default wallet",
     "save": "Save changes",
     "saving": "Saving...",

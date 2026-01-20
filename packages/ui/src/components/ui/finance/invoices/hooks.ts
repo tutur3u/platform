@@ -461,6 +461,45 @@ export const useUserAttendance = (
   });
 };
 
+// Get workspace config for attendance-based invoice calculation
+// Returns true if attendance-based calculation should be used (default), false if all sessions should be included
+export const useInvoiceAttendanceConfig = (wsId: string) => {
+  return useQuery({
+    queryKey: ['invoice-attendance-config', wsId],
+    queryFn: async () => {
+      if (!wsId) return true; // Default to true for backward compatibility
+
+      try {
+        const res = await fetch(
+          `/api/v1/workspaces/${wsId}/settings/INVOICE_USE_ATTENDANCE_BASED_CALCULATION`
+        );
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            // Config not set, return default (true)
+            return true;
+          }
+          throw new Error('Failed to fetch invoice attendance config');
+        }
+
+        const data = await res.json();
+        // workspace_configs stores values as text, so we need to parse "true"/"false" strings
+        const value = data.value?.toLowerCase();
+        return value === 'true' || value === true;
+      } catch (error) {
+        console.error('❌ Invoice attendance config fetch error:', error);
+        // Return default (true) on error to maintain backward compatibility
+        return true;
+      }
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - config doesn't change often
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 2, // Fewer retries since we have a default fallback
+  });
+};
+
 // Get User's Group Products with improved caching
 export const useUserGroupProducts = (groupId: string) => {
   return useQuery({

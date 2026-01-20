@@ -5189,6 +5189,8 @@
     "finance": {
       "default_wallet": "Ví mặc định",
       "default_wallet_description": "Cấu hình ví mặc định cho hóa đơn",
+      "invoice_attendance": "Tính toán hóa đơn",
+      "invoice_attendance_description": "Cấu hình cách tính hóa đơn chờ thanh toán (dựa trên điểm danh hoặc tất cả buổi học)",
       "title": "Tài chính"
     },
     "loading_workspace": "Đang tải không gian làm việc...",
@@ -8642,6 +8644,10 @@
     "default_wallet_label": "Ví mặc định",
     "default_wallet_placeholder": "Chọn một ví",
     "description": "Quản lý cài đặt tài chính cho không gian làm việc của bạn.",
+    "invoice_attendance_description": "Điều khiển cách tính hóa đơn chờ thanh toán. Khi bật, chỉ tính các ngày có điểm danh (CÓ MẶT/ĐI MUỘN). Khi tắt, tất cả các buổi học đã lên lịch đều được tính.",
+    "invoice_attendance_help": "Bật để chỉ tính các ngày đã điểm danh, tắt để tính tất cả các buổi học bất kể điểm danh.",
+    "invoice_attendance_label": "Sử dụng tính toán dựa trên điểm danh",
+    "invoice_attendance_title": "Phương pháp tính hóa đơn",
     "no_default_wallet": "Không có ví mặc định",
     "save": "Lưu thay đổi",
     "saving": "Đang lưu...",
