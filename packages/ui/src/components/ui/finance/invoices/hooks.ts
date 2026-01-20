@@ -1,4 +1,9 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
@@ -97,6 +102,20 @@ const invoiceSchema = z.object({
 const invoicesResponseSchema = z.object({
   data: z.array(invoiceSchema),
   count: z.number(),
+});
+
+const createdPromotionSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  code: z.string().nullable(),
+  value: z.number(),
+  use_ratio: z.boolean(),
+  max_uses: z.number().nullable(),
+  current_uses: z.number(),
+});
+
+const createdPromotionResponseSchema = z.object({
+  data: createdPromotionSchema,
 });
 
 const pendingInvoiceRawSchema = z.object({
@@ -670,6 +689,8 @@ export type AvailablePromotion = {
   value: number;
   use_ratio: boolean;
   is_referral: boolean;
+  max_uses?: number | null;
+  current_uses?: number | null;
 };
 
 export const useAvailablePromotions = (wsId: string, userId: string) => {
@@ -681,7 +702,7 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
       // Regular (non-referral) promotions
       const { data: regular, error: regularErr } = await supabase
         .from('workspace_promotions')
-        .select('id, name, code, value, use_ratio')
+        .select('id, name, code, value, use_ratio, max_uses, current_uses')
         .eq('ws_id', wsId)
         .neq('promo_type', 'REFERRAL')
         .order('code', { ascending: true });
@@ -691,7 +712,7 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
       const { data: linked, error: linkedErr } = await supabase
         .from('user_linked_promotions')
         .select(
-          'promo_id, workspace_promotions(id, name, code, value, use_ratio, promo_type)'
+          'promo_id, workspace_promotions(id, name, code, value, use_ratio, promo_type, max_uses, current_uses)'
         )
         .eq('user_id', userId);
       if (linkedErr) throw linkedErr;
@@ -699,6 +720,15 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
       // Build result: include all regular + only linked where promo_type == 'REFERRAL'
       const resultMap = new Map<string, AvailablePromotion>();
       for (const p of regular || []) {
+        const maxUses = p.max_uses as number | null | undefined;
+        const currentUses = p.current_uses as number | null | undefined;
+        if (
+          maxUses !== null &&
+          maxUses !== undefined &&
+          Number(currentUses ?? 0) >= Number(maxUses)
+        ) {
+          continue;
+        }
         resultMap.set(p.id, {
           id: p.id,
           name: p.name,
@@ -706,12 +736,23 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
           value: Number(p.value ?? 0),
           use_ratio: !!p.use_ratio,
           is_referral: false,
+          max_uses: maxUses ?? null,
+          current_uses: currentUses ?? 0,
         });
       }
 
       for (const row of linked || []) {
         const p = row.workspace_promotions;
         if (p?.promo_type === 'REFERRAL' && p?.id) {
+          const maxUses = p.max_uses as number | null | undefined;
+          const currentUses = p.current_uses as number | null | undefined;
+          if (
+            maxUses !== null &&
+            maxUses !== undefined &&
+            Number(currentUses ?? 0) >= Number(maxUses)
+          ) {
+            continue;
+          }
           resultMap.set(p.id, {
             id: p.id,
             name: p.name ?? null,
@@ -719,6 +760,8 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
             value: Number(p.value ?? 0),
             use_ratio: !!p.use_ratio,
             is_referral: true,
+            max_uses: maxUses ?? null,
+            current_uses: currentUses ?? 0,
           });
         }
       }
@@ -732,6 +775,53 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
     retry: 3,
   });
 };
+
+export function useCreatePromotion(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      name: string;
+      description?: string;
+      code: string;
+      value: number;
+      unit: 'percentage' | 'currency';
+      max_uses?: number | null;
+    }) => {
+      const res = await fetch(`/api/v1/workspaces/${wsId}/promotions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: input.name,
+          description: input.description,
+          code: input.code,
+          value: input.value,
+          unit: input.unit,
+          max_uses: input.max_uses ?? null,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.message || 'Failed to create promotion');
+      }
+
+      const parsed = createdPromotionResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        throw new Error(
+          `Invalid response from create promotion API: ${parsed.error.message}`
+        );
+      }
+
+      return parsed.data.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['available-promotions', wsId],
+      });
+    },
+  });
+}
 
 // Get Pending Invoices for a workspace
 export const usePendingInvoices = (

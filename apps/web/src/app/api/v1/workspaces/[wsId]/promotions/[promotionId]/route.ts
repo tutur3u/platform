@@ -1,6 +1,27 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const PromotionUpdateSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    code: z.string().min(1).max(255),
+    value: z.coerce.number().min(0),
+    unit: z.enum(['percentage', 'currency']).optional(),
+    // NULL/undefined = unlimited
+    max_uses: z.union([z.coerce.number().int().min(0), z.null()]).optional(),
+  })
+  .refine(
+    ({ unit, value }) =>
+      (unit === 'percentage' && value <= 100) || unit !== 'percentage',
+    {
+      // TODO: i18n
+      message: 'Percentage value cannot exceed 100%',
+      path: ['value'],
+    }
+  );
 
 interface Params {
   params: Promise<{
@@ -22,21 +43,39 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient();
-  const data = await req.json();
+  const parsed = PromotionUpdateSchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+
+  const updateData: Record<string, unknown> = {
+    name: data.name,
+    description: data.description,
+    code: data.code,
+    value: data.value,
+    use_ratio: data.unit === 'percentage',
+  };
+
+  if ('max_uses' in data) {
+    updateData.max_uses = data.max_uses ?? null;
+  }
 
   const { error } = await supabase
     .from('workspace_promotions')
     .update({
-      ...data,
-      // TODO: better handling boolean value, as expand to further units
-      unit: undefined,
-      use_ratio: data.unit === 'percentage',
+      ...updateData,
     })
     .eq('id', promotionId);
 
   if (error) {
     // TODO: logging
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { message: 'Error updating promotion' },
       { status: 500 }

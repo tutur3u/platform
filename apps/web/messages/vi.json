@@ -4957,6 +4957,7 @@
   "promotion-data-table": {
     "code": "Mã giảm giá",
     "created_at": "Tạo lúc",
+    "current_uses": "Số lần sử dụng",
     "description": "Mô tả",
     "id": "Mã số",
     "name": "Tên",
@@ -8855,13 +8856,16 @@
     "failed_delete_promotion": "Đã có lỗi xảy ra khi xóa mã giảm giá",
     "form": {
       "code": "Mã giảm giá",
+      "current_uses": "Số lượt đã sử dụng",
       "description": "Mô tả",
+      "max_uses": "Số lượt sử dụng tối đa",
       "name": "Tên",
       "unit": {
         "currency": "Tiền tệ",
         "percentage": "Phần trăm",
         "placeholder": "Đơn vị"
       },
+      "unlimited_uses": "Sử dụng không giới hạn",
       "value": "Giá trị"
     },
     "plural": "Khuyến mãi",
@@ -8988,6 +8992,7 @@
     "create_invoice_validation": "Vui lòng chọn khách hàng, thêm sản phẩm, chọn ví và chọn danh mục giao dịch trước khi tạo hóa đơn.",
     "create_multiple_invoices": "Tạo Nhiều Hóa Đơn",
     "create_multiple_invoices_tooltip": "Cho phép bạn tạo nhiều hóa đơn trong một phiên làm việc.",
+    "create_promotion": "Tạo khuyến mãi",
     "create_subscription_invoice": "Tạo Hóa Đơn Đăng Ký",
     "create_subscription_invoice_validation": "Vui lòng chọn khách hàng, nhóm, thêm sản phẩm, chọn ví và chọn danh mục giao dịch trước khi tạo hóa đơn.",
     "created_invoices": "Hóa đơn đã tạo",
@@ -9062,6 +9067,7 @@
     "print_after_create": "In hóa đơn",
     "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công",
     "products_selection_description": "Chọn sản phẩm và chỉ định số lượng cho hóa đơn.",
+    "promotion_limit_reached": "Khuyến mãi này đã hết lượt sử dụng",
     "remove": "Xóa",
     "reset": "Đặt Lại",
     "round_down": "Làm Tròn Xuống",
@@ -9074,6 +9080,7 @@
     "select_category_required": "Chọn danh mục (bắt buộc)...",
     "select_month": "Chọn tháng...",
     "select_product": "Chọn Sản Phẩm",
+    "select_user_first": "Vui lòng chọn người dùng trước",
     "select_wallet_required": "Chọn ví (bắt buộc)...",
     "server_calculated": "Máy chủ tính toán",
     "singular": "Hóa đơn",

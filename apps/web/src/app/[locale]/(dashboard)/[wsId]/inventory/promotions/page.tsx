@@ -9,8 +9,8 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { PromotionForm } from '@tuturuuu/ui/finance/invoices/promotion-form';
 import { getPromotionColumns } from './columns';
-import { PromotionForm } from './form';
 import WorkspaceSettingsForm from './settings-form';
 
 export const metadata: Metadata = {

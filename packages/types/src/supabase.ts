@@ -13299,8 +13299,10 @@ export type Database = {
           code: string | null;
           created_at: string;
           creator_id: string | null;
+          current_uses: number;
           description: string | null;
           id: string;
+          max_uses: number | null;
           name: string | null;
           owner_id: string | null;
           promo_type: Database['public']['Enums']['promotion_type'];
@@ -13312,8 +13314,10 @@ export type Database = {
           code?: string | null;
           created_at?: string;
           creator_id?: string | null;
+          current_uses?: number;
           description?: string | null;
           id?: string;
+          max_uses?: number | null;
           name?: string | null;
           owner_id?: string | null;
           promo_type?: Database['public']['Enums']['promotion_type'];
@@ -13325,8 +13329,10 @@ export type Database = {
           code?: string | null;
           created_at?: string;
           creator_id?: string | null;
+          current_uses?: number;
           description?: string | null;
           id?: string;
+          max_uses?: number | null;
           name?: string | null;
           owner_id?: string | null;
           promo_type?: Database['public']['Enums']['promotion_type'];
@@ -17467,6 +17473,7 @@ export type Database = {
         Args: { p_use_attendance_based?: boolean; p_ws_id: string };
         Returns: {
           attendance_days: number;
+          billable_days: number;
           group_id: string;
           group_name: string;
           month: string;

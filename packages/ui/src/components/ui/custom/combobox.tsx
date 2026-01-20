@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';
@@ -18,6 +19,14 @@ import { Separator } from '../separator';
 export type ComboboxOption = {
   value: string;
   label: string;
+};
+
+export type ComboboxAction = {
+  key: string;
+  label: string;
+  onSelect: () => void;
+  icon?: React.ReactNode;
+  disabled?: boolean;
 };
 
 /** @deprecated Use ComboboxOption instead */
@@ -28,6 +37,10 @@ type Mode = 'single' | 'multiple';
 interface ComboboxProps {
   /** Options to display in the combobox */
   options: ComboboxOption[];
+  /** Optional action items rendered separately from options */
+  actions?: ComboboxAction[];
+  /** Where to render action items relative to options */
+  actionsPosition?: 'top' | 'bottom';
   /** Currently selected value(s) */
   selected: string | string[];
   /** Callback when selection changes */
@@ -61,6 +74,8 @@ interface ComboboxProps {
 
 export function Combobox({
   options,
+  actions,
+  actionsPosition = 'bottom',
   selected,
   onChange,
   mode = 'single',
@@ -77,6 +92,7 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
+  const actionValuePrefix = '__combobox_action__';
 
   // Resolve text with fallbacks: explicit prop > t function > default
   const resolvedEmptyText =
@@ -117,6 +133,31 @@ export function Combobox({
     return selected === value;
   };
 
+  const renderActions = () => {
+    if (!actions?.length) return null;
+
+    return (
+      <CommandGroup>
+        {actions.map((action) => (
+          <CommandItem
+            key={action.key}
+            value={`${actionValuePrefix}:${action.key}`}
+            disabled={action.disabled}
+            onSelect={() => {
+              action.onSelect();
+              setOpen(false);
+              setQuery('');
+            }}
+            className="font-medium text-primary [&_svg]:text-primary"
+          >
+            {action.icon}
+            <span className="truncate">{action.label}</span>
+          </CommandItem>
+        ))}
+      </CommandGroup>
+    );
+  };
+
   return (
     <div className={cn('block', className)}>
       <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -143,6 +184,7 @@ export function Combobox({
         >
           <Command
             filter={(value, search) => {
+              if (value.startsWith(actionValuePrefix)) return 1;
               if (value.toLowerCase().includes(search.toLowerCase())) return 1;
               return 0;
             }}
@@ -191,6 +233,12 @@ export function Combobox({
                 } as React.CSSProperties
               }
             >
+              {actionsPosition === 'top' && actions?.length ? (
+                <>
+                  {renderActions()}
+                  <CommandSeparator />
+                </>
+              ) : null}
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem
@@ -223,6 +271,12 @@ export function Combobox({
                   </CommandItem>
                 ))}
               </CommandGroup>
+              {actionsPosition === 'bottom' && actions?.length ? (
+                <>
+                  <CommandSeparator />
+                  {renderActions()}
+                </>
+              ) : null}
             </CommandList>
           </Command>
         </PopoverContent>

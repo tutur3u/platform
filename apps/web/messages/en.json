@@ -4927,6 +4927,7 @@
   "promotion-data-table": {
     "code": "Code",
     "created_at": "Created at",
+    "current_uses": "Current Uses",
     "description": "Description",
     "id": "ID",
     "name": "Name",
@@ -8763,13 +8764,16 @@
     "failed_delete_promotion": "Failed to delete promotion",
     "form": {
       "code": "Coupon code",
+      "current_uses": "Current uses",
       "description": "Description",
+      "max_uses": "Maximum uses",
       "name": "Name",
       "unit": {
         "currency": "Currency",
         "percentage": "Percentage",
         "placeholder": "Unit"
       },
+      "unlimited_uses": "Unlimited uses",
       "value": "Discount value"
     },
     "plural": "Promotions",
@@ -8896,6 +8900,7 @@
     "create_invoice_validation": "Please select a customer, add products, choose a wallet, and select a transaction category before creating the invoice.",
     "create_multiple_invoices": "Create Multiple Invoices",
     "create_multiple_invoices_tooltip": "Allows you to create multiple invoices in a single session.",
+    "create_promotion": "Create promotion",
     "create_subscription_invoice": "Create Subscription Invoice",
     "create_subscription_invoice_validation": "Please select a customer, group, add products, choose a wallet, and select a transaction category before creating the invoice.",
     "created_invoices": "Created Invoices",
@@ -8970,6 +8975,7 @@
     "print_after_create": "Print after Creation",
     "print_after_create_tooltip": "Prints invoice after creation",
     "products_selection_description": "Select products and specify quantities for the invoice.",
+    "promotion_limit_reached": "This promotion has reached its usage limit",
     "remove": "Remove",
     "reset": "Reset",
     "round_down": "Round Down",
@@ -8982,6 +8988,7 @@
     "select_category_required": "Select a category (required)...",
     "select_month": "Select month...",
     "select_product": "Select Product",
+    "select_user_first": "Please select a user first",
     "select_wallet_required": "Select a wallet (required)...",
     "server_calculated": "Server calculated",
     "singular": "Invoice",
