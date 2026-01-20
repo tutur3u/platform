@@ -77,18 +77,38 @@ export default function InvoiceSettings({ wsId }: Props) {
         },
       ];
 
-      await Promise.all(
-        updates.map((update) =>
-          fetch(`/api/v1/workspaces/${wsId}/settings/${update.key}`, {
+      const settled = await Promise.allSettled(
+        updates.map(async (update) => {
+          const res = await fetch(`/api/v1/workspaces/${wsId}/settings/${update.key}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ value: update.value }),
-          }).then((res) => {
-            if (!res.ok) throw new Error(`Failed to update ${update.key}`);
-            return res.json();
-          })
-        )
+          });
+
+          if (!res.ok) throw new Error(`Failed to update ${update.key}`);
+          return res.json();
+        })
       );
+
+      const rejected = settled.filter(
+        (r): r is PromiseRejectedResult => r.status === 'rejected'
+      );
+      if (rejected.length > 0) {
+        const errors = rejected.map((r) =>
+          r.reason instanceof Error ? r.reason : new Error(String(r.reason))
+        );
+
+        const AggregateErrorCtor = (globalThis as unknown as { AggregateError?: unknown })
+          .AggregateError as
+          | (new (errors: unknown[], message?: string) => Error)
+          | undefined;
+
+        throw AggregateErrorCtor
+          ? new AggregateErrorCtor(errors, 'Failed to update one or more invoice settings')
+          : Object.assign(new Error('Failed to update one or more invoice settings'), {
+              errors,
+            });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -105,6 +125,14 @@ export default function InvoiceSettings({ wsId }: Props) {
     },
     onError: () => {
       toast.error(t('update_error'));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-config', wsId, 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-config', wsId, 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'],
+      });
     },
   });
 

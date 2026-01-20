@@ -628,7 +628,7 @@ export async function POST(req: Request, { params }: Params) {
               invoice_id: invoiceId,
               promo_id: promotion_id,
               value: promotion?.value || discount_amount, // Convert to integer
-              use_ratio: promotion?.use_ratio || true,
+              use_ratio: promotion?.use_ratio ?? true,
               name: promotion?.name || '',
               code: promotion?.code || '',
               description: promotion?.description || '',
