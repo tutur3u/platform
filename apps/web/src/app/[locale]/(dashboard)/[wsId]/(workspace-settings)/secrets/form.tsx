@@ -2,6 +2,7 @@
 
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   Form,
   FormControl,
@@ -17,10 +18,12 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
+import { KNOWN_SECRETS } from './constants';
 
 interface Props {
   wsId: string;
   data?: WorkspaceSecret;
+  existingSecrets?: string[];
 
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -33,7 +36,12 @@ const FormSchema = z.object({
 
 export const ApiConfigFormSchema = FormSchema;
 
-export default function SecretForm({ wsId, data, onFinish }: Props) {
+export default function SecretForm({
+  wsId,
+  data,
+  existingSecrets = [],
+  onFinish,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -82,23 +90,59 @@ export default function SecretForm({ wsId, data, onFinish }: Props) {
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>{t('ws-secrets.name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Name"
-                  autoComplete="off"
-                  {...field}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value
-                        .replace(/-/g, '_')
-                        .replace(/\s/g, '_')
-                        .toUpperCase()
-                    )
-                  }
-                />
-              </FormControl>
+              <div className="grid gap-2">
+                <FormControl>
+                  <Combobox
+                    t={t}
+                    mode="single"
+                    className="w-full"
+                    placeholder={t('ws-secrets.name')}
+                    options={KNOWN_SECRETS.filter(
+                      (secret) =>
+                        !existingSecrets.includes(secret.name) ||
+                        data?.name === secret.name
+                    ).map((secret) => ({
+                      value: secret.name,
+                      label: secret.name,
+                    }))}
+                    selected={field.value}
+                    onChange={(val) => {
+                      const value = Array.isArray(val) ? val[0] : val;
+                      if (!value) return;
+
+                      field.onChange(value);
+
+                      // Prefill value if it's a known secret and current value is empty or default
+                      const secret = KNOWN_SECRETS.find(
+                        (s) => s.name === value
+                      );
+                      const currentValue = form.getValues('value');
+
+                      if (
+                        secret?.defaultValue &&
+                        (!currentValue || currentValue === 'true')
+                      ) {
+                        form.setValue('value', secret.defaultValue);
+                      }
+                    }}
+                    onCreate={(val) => {
+                      field.onChange(
+                        val.replace(/-/g, '_').replace(/\s/g, '_').toUpperCase()
+                      );
+                    }}
+                  />
+                </FormControl>
+                {KNOWN_SECRETS.find((s) => s.name === field.value) && (
+                  <p className="text-muted-foreground text-sm">
+                    {
+                      KNOWN_SECRETS.find((s) => s.name === field.value)
+                        ?.description
+                    }
+                  </p>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )}
