@@ -14,7 +14,7 @@ import { z } from 'zod';
 const SearchParamsSchema = z.object({
   q: z.string().default(''),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  pageSize: z.coerce.number().int().min(1).max(1000).default(10),
   start: z.string().optional(),
   end: z.string().optional(),
   userIds: z
@@ -214,6 +214,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {
+      console.error('Invalid query parameters:', parsed.error);
       return NextResponse.json(
         { message: 'Invalid query parameters' },
         { status: 400 }
@@ -434,11 +435,16 @@ export async function POST(req: Request, { params }: Params) {
       workspaceUserId = workspaceUser?.virtual_user_id || null;
     }
 
+    // Round values first to avoid floating-point precision issues
+    const roundedTotal = Math.round(total);
+    const roundedRounding = Math.round(rounding_applied);
+    const roundedPrice = roundedTotal - roundedRounding;
+
     const invoiceData: any = {
       ws_id: wsId,
       customer_id,
-      price: Math.round(total - rounding_applied), // Convert to integer (VND smallest unit)
-      total_diff: Math.round(rounding_applied), // Store the rounding applied
+      price: roundedPrice, // Calculate from rounded values for consistency
+      total_diff: roundedRounding, // Store the rounding applied
       note: notes,
       notice: content,
       wallet_id,
@@ -447,7 +453,7 @@ export async function POST(req: Request, { params }: Params) {
       valid_until: new Date(
         Date.now() + 1000 * 60 * 60 * 24 * 30
       ).toISOString(),
-      paid_amount: Math.round(total), // Convert to integer
+      paid_amount: roundedTotal, // Convert to integer
       platform_creator_id: user.id, // Store the platform user ID who created the invoice
     };
 

@@ -562,13 +562,13 @@ export function SubscriptionInvoice({
 
   const roundUpSubscription = () => {
     setSubscriptionRoundedTotal(
-      Math.ceil(subscriptionTotalBeforeRounding / 1000) * 1000
+      Math.ceil(Math.round(subscriptionTotalBeforeRounding) / 1000) * 1000
     );
   };
 
   const roundDownSubscription = () => {
     setSubscriptionRoundedTotal(
-      Math.floor(subscriptionTotalBeforeRounding / 1000) * 1000
+      Math.floor(Math.round(subscriptionTotalBeforeRounding) / 1000) * 1000
     );
   };
 

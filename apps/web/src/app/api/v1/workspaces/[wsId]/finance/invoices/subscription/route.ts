@@ -117,19 +117,24 @@ export async function POST(req: Request, { params }: Params) {
     const validUntil = new Date(startOfMonth);
     validUntil.setMonth(validUntil.getMonth() + 1);
 
+    // Round values first to avoid floating-point precision issues
+    const roundedTotal = Math.round(total);
+    const roundedRounding = Math.round(rounding_applied);
+    const roundedPrice = roundedTotal - roundedRounding;
+
     const invoiceData: any = {
       ws_id: wsId,
       customer_id,
       user_group_id: group_id,
-      price: Math.round(total - rounding_applied),
-      total_diff: Math.round(rounding_applied),
+      price: roundedPrice, // Calculate from rounded values for consistency
+      total_diff: roundedRounding,
       note: notes,
       notice: content,
       wallet_id,
       category_id,
       completed_at: new Date().toISOString(),
       valid_until: validUntil.toISOString(),
-      paid_amount: Math.round(total),
+      paid_amount: roundedTotal,
       platform_creator_id: user.id,
     };
 

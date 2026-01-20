@@ -194,11 +194,11 @@ export function StandardInvoice({
   }, [totalBeforeRounding]);
 
   const roundUp = () => {
-    setRoundedTotal(Math.ceil(totalBeforeRounding / 1000) * 1000);
+    setRoundedTotal(Math.ceil(Math.round(totalBeforeRounding) / 1000) * 1000);
   };
 
   const roundDown = () => {
-    setRoundedTotal(Math.floor(totalBeforeRounding / 1000) * 1000);
+    setRoundedTotal(Math.floor(Math.round(totalBeforeRounding) / 1000) * 1000);
   };
 
   const resetRounding = () => {
