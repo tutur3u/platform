@@ -46,6 +46,7 @@ import type { AvailablePromotion } from './hooks';
 import {
   useAvailablePromotions,
   useCategories,
+  useInvoicePromotionConfig,
   useProducts,
   useUserInvoices,
   useUserLinkedPromotions,
@@ -97,6 +98,7 @@ export function StandardInvoice({
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
+  const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId);
   const { data: linkedPromotions = [] } =
     useUserLinkedPromotions(selectedUserId);
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
@@ -170,7 +172,12 @@ export function StandardInvoice({
   }, [selectedProducts]);
 
   const discountAmount = useMemo(() => {
-    if (!selectedPromotionId || selectedPromotionId === 'none') return 0;
+    if (
+      !promotionsAllowed ||
+      !selectedPromotionId ||
+      selectedPromotionId === 'none'
+    )
+      return 0;
 
     const referralPercent = referralDiscountMap.get(selectedPromotionId);
     if (referralPercent !== undefined) {
@@ -184,7 +191,13 @@ export function StandardInvoice({
     }
 
     return 0;
-  }, [selectedPromotionId, selectedPromotion, subtotal, referralDiscountMap]);
+  }, [
+    selectedPromotionId,
+    selectedPromotion,
+    subtotal,
+    referralDiscountMap,
+    promotionsAllowed,
+  ]);
 
   const totalBeforeRounding = subtotal - discountAmount;
   const [roundedTotal, setRoundedTotal] = useState(totalBeforeRounding);
@@ -236,6 +249,7 @@ export function StandardInvoice({
   // Auto-select user's best linked promotion based on current subtotal
   useEffect(() => {
     if (
+      !promotionsAllowed ||
       !selectedUserId ||
       !Array.isArray(linkedPromotions) ||
       linkedPromotions.length === 0 ||
@@ -295,6 +309,7 @@ export function StandardInvoice({
     selectedPromotionId,
     subtotal,
     referralDiscountMap,
+    promotionsAllowed,
   ]);
 
   const handleCreateInvoice = async () => {
@@ -786,65 +801,70 @@ export function StandardInvoice({
               </div>
 
               {/* Promotion Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="promotion-select">
-                  {t('invoices.add_promotion')}
-                </Label>
-                <Combobox
-                  t={t}
-                  options={(() => {
-                    const list: ComboboxOptions[] = [
-                      { value: 'none', label: t('ws-invoices.no_promotion') },
-                      ...availablePromotions.map(
-                        (promotion: AvailablePromotion): ComboboxOptions => {
-                          const referralPercent = referralDiscountMap.get(
-                            promotion.id
-                          );
-                          const labelValue =
-                            referralPercent !== undefined
-                              ? `${referralPercent || 0}%`
-                              : promotion.use_ratio
-                                ? `${promotion.value}%`
-                                : Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND',
-                                  }).format(promotion.value);
-                          return {
-                            value: promotion.id,
-                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
-                          } as ComboboxOptions;
-                        }
-                      ),
-                    ];
+              {promotionsAllowed && (
+                <div className="space-y-2">
+                  <Label htmlFor="promotion-select">
+                    {t('invoices.add_promotion')}
+                  </Label>
+                  <Combobox
+                    t={t}
+                    options={(() => {
+                      const list: ComboboxOptions[] = [
+                        { value: 'none', label: t('ws-invoices.no_promotion') },
+                        ...availablePromotions.map(
+                          (promotion: AvailablePromotion): ComboboxOptions => {
+                            const referralPercent = referralDiscountMap.get(
+                              promotion.id
+                            );
+                            const labelValue =
+                              referralPercent !== undefined
+                                ? `${referralPercent || 0}%`
+                                : promotion.use_ratio
+                                  ? `${promotion.value}%`
+                                  : Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND',
+                                    }).format(promotion.value);
+                            return {
+                              value: promotion.id,
+                              label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                            } as ComboboxOptions;
+                          }
+                        ),
+                      ];
 
-                    // If auto-applied referral promotion isn't in the normal list, inject a synthetic item
-                    if (
-                      selectedPromotionId &&
-                      selectedPromotionId !== 'none' &&
-                      !availablePromotions.some(
-                        (p: AvailablePromotion) => p.id === selectedPromotionId
-                      )
-                    ) {
-                      const referralPercent =
-                        referralDiscountMap.get(selectedPromotionId);
-                      const referralName =
-                        (linkedPromotions || []).find(
-                          (lp) => lp.promo_id === selectedPromotionId
-                        )?.workspace_promotions?.name ||
-                        t('ws-invoices.unnamed_promotion');
-                      list.splice(1, 0, {
-                        value: selectedPromotionId,
-                        label: `${referralName} (${referralPercent ?? 0}%)`,
-                      } as ComboboxOptions);
+                      // If auto-applied referral promotion isn't in the normal list, inject a synthetic item
+                      if (
+                        selectedPromotionId &&
+                        selectedPromotionId !== 'none' &&
+                        !availablePromotions.some(
+                          (p: AvailablePromotion) =>
+                            p.id === selectedPromotionId
+                        )
+                      ) {
+                        const referralPercent =
+                          referralDiscountMap.get(selectedPromotionId);
+                        const referralName =
+                          (linkedPromotions || []).find(
+                            (lp) => lp.promo_id === selectedPromotionId
+                          )?.workspace_promotions?.name ||
+                          t('ws-invoices.unnamed_promotion');
+                        list.splice(1, 0, {
+                          value: selectedPromotionId,
+                          label: `${referralName} (${referralPercent ?? 0}%)`,
+                        } as ComboboxOptions);
+                      }
+
+                      return list;
+                    })()}
+                    selected={selectedPromotionId}
+                    onChange={(value) =>
+                      setSelectedPromotionId(value as string)
                     }
-
-                    return list;
-                  })()}
-                  selected={selectedPromotionId}
-                  onChange={(value) => setSelectedPromotionId(value as string)}
-                  placeholder={t('ws-invoices.search_promotions')}
-                />
-              </div>
+                    placeholder={t('ws-invoices.search_promotions')}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Checkout Section */}
@@ -872,7 +892,7 @@ export function StandardInvoice({
                       </span>
                     </div>
 
-                    {selectedPromotion && (
+                    {promotionsAllowed && selectedPromotion && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
                           {t('ws-invoices.discount')} (

@@ -77,7 +77,7 @@ import AttendanceDisplaySettings from './attendance/attendance-display-settings'
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DefaultWalletSettings from './finance/default-wallet-settings';
-import InvoiceAttendanceSettings from './finance/invoice-attendance-settings';
+import InvoiceSettings from './finance/invoice-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
@@ -392,13 +392,11 @@ export function SettingsDialog({
                 keywords: ['Finance', 'Wallet'],
               },
               {
-                name: 'invoice_attendance',
-                label: t('settings.finance.invoice_attendance'),
+                name: 'invoice_settings',
+                label: t('settings.finance.invoice_settings'),
                 icon: CreditCard,
-                description: t(
-                  'settings.finance.invoice_attendance_description'
-                ),
-                keywords: ['Finance', 'Invoice', 'Attendance', 'Sessions'],
+                description: t('settings.finance.invoice_settings_description'),
+                keywords: ['Finance', 'Invoice', 'Attendance', 'Promotions'],
               },
             ],
           },
@@ -729,8 +727,8 @@ export function SettingsDialog({
                   <DefaultWalletSettings wsId={wsId} />
                 )}
 
-                {activeTab === 'invoice_attendance' && wsId && (
-                  <InvoiceAttendanceSettings wsId={wsId} />
+                {activeTab === 'invoice_settings' && wsId && (
+                  <InvoiceSettings wsId={wsId} />
                 )}
 
                 {activeTab.startsWith('calendar_') && wsId && (

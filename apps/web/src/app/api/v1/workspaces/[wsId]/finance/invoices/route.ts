@@ -8,6 +8,7 @@ import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
+import { isPromotionAllowedForWorkspace } from '@/utils/workspace-config';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -62,6 +63,7 @@ export interface CalculatedValues {
   total: number;
   values_recalculated: boolean;
   rounding_applied: number;
+  allowPromotions: boolean;
 }
 
 // Backend calculation functions
@@ -74,7 +76,8 @@ export async function calculateInvoiceValues(
     subtotal?: number;
     discount_amount?: number;
     total?: number;
-  }
+  },
+  isSubscriptionInvoice: boolean = false
 ): Promise<CalculatedValues> {
   const supabase = await createClient();
   // Calculate subtotal from products
@@ -127,23 +130,30 @@ export async function calculateInvoiceValues(
 
   // Calculate discount amount
   let discount_amount = 0;
+  const allowPromotions = await isPromotionAllowedForWorkspace(
+    wsId,
+    isSubscriptionInvoice
+  );
+
   if (promotion_id && promotion_id !== 'none') {
-    const { data: promotion, error: promotionError } = await supabase
-      .from('workspace_promotions')
-      .select('value, use_ratio')
-      .eq('id', promotion_id)
-      .eq('ws_id', wsId)
-      .single();
+    if (allowPromotions) {
+      const { data: promotion, error: promotionError } = await supabase
+        .from('workspace_promotions')
+        .select('value, use_ratio')
+        .eq('id', promotion_id)
+        .eq('ws_id', wsId)
+        .single();
 
-    if (promotionError) {
-      throw new Error(`Invalid promotion: ${promotionError.message}`);
-    }
+      if (promotionError) {
+        throw new Error(`Invalid promotion: ${promotionError.message}`);
+      }
 
-    if (promotion) {
-      if (promotion.use_ratio) {
-        discount_amount = subtotal * (promotion.value / 100);
-      } else {
-        discount_amount = Math.min(promotion.value, subtotal);
+      if (promotion) {
+        if (promotion.use_ratio) {
+          discount_amount = subtotal * (promotion.value / 100);
+        } else {
+          discount_amount = Math.min(promotion.value, subtotal);
+        }
       }
     }
   }
@@ -176,6 +186,7 @@ export async function calculateInvoiceValues(
     total,
     values_recalculated,
     rounding_applied,
+    allowPromotions,
   };
 }
 
@@ -392,26 +403,6 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    // Calculate values using backend logic
-    const calculatedValues = await calculateInvoiceValues(
-      wsId,
-      products,
-      promotion_id,
-      {
-        subtotal: frontend_subtotal,
-        discount_amount: frontend_discount_amount,
-        total: frontend_total,
-      }
-    );
-
-    const {
-      subtotal,
-      discount_amount,
-      total,
-      values_recalculated,
-      rounding_applied,
-    } = calculatedValues;
-
     // Get current user
     const {
       data: { user },
@@ -422,18 +413,42 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Get user workspace ID
-    let workspaceUserId: string | null = null;
-    const workspaceUserGroup: string | null = null;
-    if (user) {
-      const { data: workspaceUser } = await supabase
-        .from('workspace_user_linked_users')
-        .select('virtual_user_id')
-        .eq('platform_user_id', user.id)
-        .eq('ws_id', wsId)
-        .single();
+    const { data: workspaceUser } = await supabase
+      .from('workspace_user_linked_users')
+      .select('virtual_user_id')
+      .eq('platform_user_id', user.id)
+      .eq('ws_id', wsId)
+      .single();
 
-      workspaceUserId = workspaceUser?.virtual_user_id || null;
-    }
+    const workspaceUserId = workspaceUser?.virtual_user_id || null;
+    const workspaceUserGroup: string | null = null;
+
+    // Determine if this is a subscription invoice (has user_group_id)
+    // Note: workspaceUserGroup is currently always null in this implementation
+    // but we check it for future compatibility
+    const isSubscriptionInvoice = !!workspaceUserGroup;
+
+    // Calculate values using backend logic
+    const calculatedValues = await calculateInvoiceValues(
+      wsId,
+      products,
+      promotion_id,
+      {
+        subtotal: frontend_subtotal,
+        discount_amount: frontend_discount_amount,
+        total: frontend_total,
+      },
+      isSubscriptionInvoice
+    );
+
+    const {
+      subtotal,
+      discount_amount,
+      total,
+      values_recalculated,
+      rounding_applied,
+      allowPromotions,
+    } = calculatedValues;
 
     // Round values first to avoid floating-point precision issues
     const roundedTotal = Math.round(total);
@@ -574,48 +589,50 @@ export async function POST(req: Request, { params }: Params) {
 
     // Insert promotion if provided
     if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      // Get Promotion use-ratio from workspace_promotions
-      const { data: promotion, error: promotionFetchError } = await supabase
-        .from('workspace_promotions')
-        .select('use_ratio, value, name, code, description')
-        .eq('id', promotion_id)
-        .single();
+      if (allowPromotions) {
+        // Get Promotion use-ratio from workspace_promotions
+        const { data: promotion, error: promotionFetchError } = await supabase
+          .from('workspace_promotions')
+          .select('use_ratio, value, name, code, description')
+          .eq('id', promotion_id)
+          .single();
 
-      if (promotionFetchError) {
-        console.error('Error getting promotion:', promotionFetchError);
-        console.warn('Continuing without promotion due to fetch error');
-      }
-      // Only insert promotion if we successfully fetched promotion data or use default
-      if (!promotionFetchError || promotion) {
-        const { error: promotionError } = await supabase
-          .from('finance_invoice_promotions')
-          .insert({
-            invoice_id: invoiceId,
-            promo_id: promotion_id,
-            value: promotion?.value || discount_amount, // Convert to integer
-            use_ratio: promotion?.use_ratio || true,
-            name: promotion?.name || '',
-            code: promotion?.code || '',
-            description: promotion?.description || '',
-          });
+        if (promotionFetchError) {
+          console.error('Error getting promotion:', promotionFetchError);
+          console.warn('Continuing without promotion due to fetch error');
+        }
+        // Only insert promotion if we successfully fetched promotion data or use default
+        if (!promotionFetchError || promotion) {
+          const { error: promotionError } = await supabase
+            .from('finance_invoice_promotions')
+            .insert({
+              invoice_id: invoiceId,
+              promo_id: promotion_id,
+              value: promotion?.value || discount_amount, // Convert to integer
+              use_ratio: promotion?.use_ratio ?? true,
+              name: promotion?.name || '',
+              code: promotion?.code || '',
+              description: promotion?.description || '',
+            });
 
-        if (promotionError) {
-          console.error('Error creating invoice promotion:', promotionError);
-          // Rollback: delete all created records
-          await Promise.all([
-            supabase
-              .from('finance_invoice_products')
-              .delete()
-              .eq('invoice_id', invoiceId),
-            supabase.from('finance_invoices').delete().eq('id', invoiceId),
-          ]);
-          return NextResponse.json(
-            {
-              message: 'Error applying promotion to invoice',
-              details: promotionError.message,
-            },
-            { status: 500 }
-          );
+          if (promotionError) {
+            console.error('Error creating invoice promotion:', promotionError);
+            // Rollback: delete all created records
+            await Promise.all([
+              supabase
+                .from('finance_invoice_products')
+                .delete()
+                .eq('invoice_id', invoiceId),
+              supabase.from('finance_invoices').delete().eq('id', invoiceId),
+            ]);
+            return NextResponse.json(
+              {
+                message: 'Error applying promotion to invoice',
+                details: promotionError.message,
+              },
+              { status: 500 }
+            );
+          }
         }
       }
     }

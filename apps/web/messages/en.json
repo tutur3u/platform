@@ -5168,8 +5168,8 @@
     "finance": {
       "default_wallet": "Default Wallet",
       "default_wallet_description": "Configure default wallet for invoices",
-      "invoice_attendance": "Invoice Calculation",
-      "invoice_attendance_description": "Configure how pending invoices are calculated (attendance-based or all sessions)",
+      "invoice_settings": "Invoice Settings",
+      "invoice_settings_description": "Configure how invoices are calculated and managed",
       "title": "Finance"
     },
     "loading_workspace": "Loading workspace...",
@@ -8583,6 +8583,10 @@
     "invoice_attendance_help": "Enable to count only attended days, disable to include all sessions regardless of attendance.",
     "invoice_attendance_label": "Use Attendance-Based Calculation",
     "invoice_attendance_title": "Invoice Calculation Method",
+    "invoice_promotion_description": "Configure how promotions are applied to invoices",
+    "invoice_promotion_help": "When enabled, promotions can be applied to all invoices. When disabled, promotions are only allowed for subscription invoices.",
+    "invoice_promotion_label": "Allow promotions for standard invoices",
+    "invoice_promotion_title": "Invoice Promotion Settings",
     "no_default_wallet": "No default wallet",
     "save": "Save changes",
     "saving": "Saving...",

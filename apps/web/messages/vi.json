@@ -5206,8 +5206,8 @@
     "finance": {
       "default_wallet": "Ví mặc định",
       "default_wallet_description": "Cấu hình ví mặc định cho hóa đơn",
-      "invoice_attendance": "Tính toán hóa đơn",
-      "invoice_attendance_description": "Cấu hình cách tính hóa đơn chờ thanh toán (dựa trên điểm danh hoặc tất cả buổi học)",
+      "invoice_settings": "Cài đặt hóa đơn",
+      "invoice_settings_description": "Cấu hình cách hóa đơn được tính toán và quản lý",
       "title": "Tài chính"
     },
     "loading_workspace": "Đang tải không gian làm việc...",
@@ -8675,6 +8675,10 @@
     "invoice_attendance_help": "Bật để chỉ tính các ngày đã điểm danh, tắt để tính tất cả các buổi học bất kể điểm danh.",
     "invoice_attendance_label": "Sử dụng tính toán dựa trên điểm danh",
     "invoice_attendance_title": "Phương pháp tính hóa đơn",
+    "invoice_promotion_description": "Cấu hình cách áp dụng khuyến mãi cho hóa đơn",
+    "invoice_promotion_help": "Khi bật, khuyến mãi có thể áp dụng cho tất cả hóa đơn. Khi tắt, khuyến mãi chỉ được phép cho hóa đơn đăng ký.",
+    "invoice_promotion_label": "Cho phép khuyến mãi cho hóa đơn thông thường",
+    "invoice_promotion_title": "Cài đặt khuyến mãi hóa đơn",
     "no_default_wallet": "Không có ví mặc định",
     "save": "Lưu thay đổi",
     "saving": "Đang lưu...",
