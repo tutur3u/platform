@@ -140,9 +140,7 @@ export async function calculateInvoiceValues(
       const { data: promotion, error: promotionError } = await supabase
         .from('workspace_promotions')
         // NOTE: column types land after migration + typegen; keep TS unblocked
-        .select(
-          '*'
-        )
+        .select('*')
         .eq('id', promotion_id)
         .eq('ws_id', wsId)
         .single();

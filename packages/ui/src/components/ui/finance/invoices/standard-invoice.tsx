@@ -28,10 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  Combobox,
-  type ComboboxOption
-} from '@tuturuuu/ui/custom/combobox';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
