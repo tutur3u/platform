@@ -657,12 +657,19 @@ export async function moveTaskToBoard(
   console.log('📦 Will archive:', shouldArchive);
 
   console.log('🔄 Updating task in database...');
+
+  const updates: any = {
+    list_id: newListId,
+    closed_at: shouldArchive ? new Date().toISOString() : null,
+  };
+
+  if (isMovingToNewBoard) {
+    updates.display_number = null;
+  }
+
   const { data, error } = await supabase
     .from('tasks')
-    .update({
-      list_id: newListId,
-      closed_at: shouldArchive ? new Date().toISOString() : null,
-    })
+    .update(updates)
     .eq('id', taskId)
     .select(
       `
@@ -1924,18 +1931,26 @@ export async function moveAllTasksFromList(
 
   console.log('📋 Found tasks to move:', tasksToMove.length);
 
-  // Move all tasks in parallel for better performance
-  const movePromises = tasksToMove.map(async (task) => {
+  // Move tasks sequentially to avoid race conditions with display_number assignment
+  // (get_next_task_display_number uses MAX+1 which is not concurrency safe without locking)
+  const results: {
+    status: 'fulfilled' | 'rejected';
+    value?: any;
+    reason?: any;
+  }[] = [];
+
+  for (const task of tasksToMove) {
     try {
       await moveTaskToBoard(supabase, task.id, targetListId, targetBoardId);
-      return { success: true, taskId: task.id };
+      results.push({
+        status: 'fulfilled',
+        value: { success: true, taskId: task.id },
+      });
     } catch (error) {
       console.error('❌ Failed to move task:', task.id, error);
-      return { success: false, taskId: task.id, error };
+      results.push({ status: 'rejected', reason: error });
     }
-  });
-
-  const results = await Promise.allSettled(movePromises);
+  }
 
   const successful = results.filter(
     (result) => result.status === 'fulfilled' && result.value.success

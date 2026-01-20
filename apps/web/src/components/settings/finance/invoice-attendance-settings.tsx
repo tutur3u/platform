@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -11,9 +12,8 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
-import { Switch } from '@tuturuuu/ui/switch';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Loader2 } from '@tuturuuu/icons';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

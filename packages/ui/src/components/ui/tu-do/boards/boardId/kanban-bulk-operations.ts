@@ -15,6 +15,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
+import { moveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
 import { calculateDaysUntilEndOfWeek } from '../../utils/weekDateUtils';
 
@@ -407,6 +408,165 @@ function useBulkUpdateCustomDueDate(
         toast.success('Due date updated', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
         });
+      }
+    },
+  });
+}
+
+/**
+ * Bulk move to board mutation
+ */
+function useBulkMoveToBoard(
+  queryClient: QueryClient,
+  supabase: SupabaseClient,
+  boardId: string
+) {
+  return useMutation({
+    mutationFn: async ({
+      targetBoardId,
+      targetListId,
+      taskIds,
+    }: {
+      targetBoardId: string;
+      targetListId: string;
+      taskIds: string[];
+    }) => {
+      console.log(
+        '🔄 Bulk move to board mutation called with taskIds:',
+        taskIds,
+        'targetBoardId:',
+        targetBoardId
+      );
+
+      // Move one by one to ensure triggers fire for each task and consistent logic
+      let successCount = 0;
+      const failures: Array<{ taskId: string; error: string }> = [];
+      const movedTasks: Task[] = [];
+
+      for (const taskId of taskIds) {
+        try {
+          const result = await moveTaskToBoard(
+            supabase,
+            taskId,
+            targetListId,
+            targetBoardId
+          );
+          movedTasks.push(result.task);
+          successCount++;
+        } catch (error: any) {
+          failures.push({ taskId, error: error.message || 'Unknown error' });
+        }
+      }
+
+      // If all failed, throw to trigger onError handler
+      if (successCount === 0) {
+        throw new Error(
+          `Failed to move all ${taskIds.length} tasks to board ${targetBoardId}`
+        );
+      }
+
+      return {
+        count: successCount,
+        targetBoardId,
+        targetListId,
+        taskIds,
+        failures,
+        movedTasks,
+      };
+    },
+    onMutate: async ({ targetBoardId, targetListId, taskIds }) => {
+      // Cancel outgoing refetches for both boards
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      await queryClient.cancelQueries({ queryKey: ['tasks', targetBoardId] });
+
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const previousTargetTasks = queryClient.getQueryData([
+        'tasks',
+        targetBoardId,
+      ]);
+
+      const taskIdSet = new Set(taskIds);
+
+      // Optimistically remove from source board
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.filter((t) => !taskIdSet.has(t.id));
+        }
+      );
+
+      // Optimistically add to target board (best effort estimation)
+      // We need to fetch the tasks from the source cache first to move them
+      const tasksToMove = (previousTasks as Task[] | undefined)?.filter((t) =>
+        taskIdSet.has(t.id)
+      );
+
+      if (tasksToMove && tasksToMove.length > 0) {
+        queryClient.setQueryData(
+          ['tasks', targetBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old; // If target board not loaded, we don't need to add optimistic updates
+
+            // We need to check target list status for completion to set closed_at correctly
+            // This is hard to do optimistically without target list data, so we'll guess or assume active
+            // Ideally we'd look up the target list in cache, but let's just update list_id for now
+            const optimisticMovedTasks = tasksToMove.map((t) => ({
+              ...t,
+              list_id: targetListId,
+              // We don't change closed_at here because we don't know target list status easily
+              // The server response will fix it quickly
+            }));
+
+            return [...old, ...optimisticMovedTasks];
+          }
+        );
+      }
+
+      return { previousTasks, previousTargetTasks };
+    },
+    onError: (error, variables, context) => {
+      // Rollback both boards
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      if (context?.previousTargetTasks) {
+        queryClient.setQueryData(
+          ['tasks', variables.targetBoardId],
+          context.previousTargetTasks
+        );
+      }
+      console.error('Bulk move to board failed', error);
+      toast.error('Failed to move selected tasks to another board');
+    },
+    onSuccess: (data) => {
+      console.log(
+        `✅ Moved ${data.count} tasks to board ${data.targetBoardId}`
+      );
+      if (data.failures && data.failures.length > 0) {
+        toast.warning('Partial move completed', {
+          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
+        });
+      } else {
+        toast.success('Tasks moved to board', {
+          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
+        });
+      }
+
+      // Update target board cache with actual server results (including correct closed_at status)
+      if (data.movedTasks && data.movedTasks.length > 0) {
+        queryClient.setQueryData(
+          ['tasks', data.targetBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [data.movedTasks];
+
+            // Remove any optimistic versions and add real ones
+            const movedIds = new Set(data.movedTasks.map((t) => t.id));
+            const filteredOld = old.filter((t) => !movedIds.has(t.id));
+
+            return [...filteredOld, ...data.movedTasks];
+          }
+        );
       }
     },
   });
@@ -1346,6 +1506,11 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     clearSelection,
     setBulkDeleteOpen
   );
+  const moveToBoardMutation = useBulkMoveToBoard(
+    queryClient,
+    supabase,
+    boardId
+  );
 
   // Track loading state
   const isAnyMutationPending =
@@ -1361,7 +1526,8 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     removeProjectMutation.isPending ||
     addAssigneeMutation.isPending ||
     removeAssigneeMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    moveToBoardMutation.isPending;
 
   // Update bulk working state (side effect, not memoization)
   useEffect(() => {
@@ -1445,6 +1611,15 @@ export function useBulkOperations(config: BulkOperationsConfig) {
       const taskIds = Array.from(selectedTasks);
       if (taskIds.length === 0) return;
       await deleteMutation.mutateAsync({ taskIds });
+    },
+    bulkMoveToBoard: async (targetBoardId: string, targetListId: string) => {
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await moveToBoardMutation.mutateAsync({
+        targetBoardId,
+        targetListId,
+        taskIds,
+      });
     },
     getListIdByStatus,
   };

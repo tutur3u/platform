@@ -110,6 +110,8 @@ export function TaskAssigneesMenu({
               placeholder={t.searchMembers}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              onPointerDownCapture={(e) => e.stopPropagation()}
               className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
             />
           </div>

@@ -402,49 +402,6 @@ export function KanbanBoard({
     }
   }, [selectedTasks]);
 
-  // Handle the actual cross-board move
-  const handleBoardMove = useCallback(
-    async (targetBoardId: string, targetListId: string) => {
-      if (selectedTasks.size === 0) return;
-
-      const tasksToMove = Array.from(selectedTasks);
-
-      try {
-        console.log('🚀 Starting batch cross-board move');
-        console.log('📋 Tasks to move:', tasksToMove);
-        console.log('🎯 Target board:', targetBoardId);
-        console.log('📋 Target list:', targetListId);
-
-        // Move tasks one by one to ensure triggers fire for each task
-        let successCount = 0;
-        for (const taskId of tasksToMove) {
-          try {
-            await moveTaskToBoardMutation.mutateAsync({
-              taskId,
-              newListId: targetListId,
-              targetBoardId,
-            });
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to move task ${taskId}:`, error);
-          }
-        }
-
-        console.log(
-          `✅ Batch cross-board move completed: ${successCount}/${tasksToMove.length} tasks moved`
-        );
-
-        // Clear selection and close dialog after moves
-        clearSelection();
-        setBoardSelectorOpen(false);
-      } catch (error) {
-        console.error('Failed to move tasks:', error);
-        // Don't close the dialog on error so user can retry
-      }
-    },
-    [selectedTasks, moveTaskToBoardMutation, clearSelection]
-  );
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -888,6 +845,48 @@ export function KanbanBoard({
     setBulkDeleteOpen,
   });
 
+  // Handle the actual cross-board move
+  const handleBoardMove = useCallback(
+    async (targetBoardId: string, targetListId: string) => {
+      if (selectedTasks.size === 0) return;
+
+      const tasksToMove = Array.from(selectedTasks);
+
+      try {
+        console.log('🚀 Starting sequential cross-board move');
+        console.log('📋 Tasks to move:', tasksToMove);
+        console.log('🎯 Target board:', targetBoardId);
+        console.log('📋 Target list:', targetListId);
+
+        // Move tasks one by one to ensure triggers fire for each task and provide granular feedback
+        let successCount = 0;
+        for (const taskId of tasksToMove) {
+          try {
+            await moveTaskToBoardMutation.mutateAsync({
+              taskId,
+              newListId: targetListId,
+              targetBoardId,
+            });
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to move task ${taskId}:`, error);
+          }
+        }
+
+        console.log(
+          `✅ Sequential cross-board move completed: ${successCount}/${tasksToMove.length} tasks moved`
+        );
+
+        // Clear selection and close dialog after moves
+        clearSelection();
+        setBoardSelectorOpen(false);
+      } catch (error) {
+        console.error('Failed to move tasks:', error);
+      }
+    },
+    [selectedTasks, moveTaskToBoardMutation, clearSelection]
+  );
+
   // Keyboard shortcuts for multiselect mode (Shift for range select, Cmd/Ctrl for toggle)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1076,9 +1075,17 @@ export function KanbanBoard({
           isOverlay
           isPersonalWorkspace={workspace.personal}
           onUpdate={handleUpdate}
+          wsId={workspace.id}
         />
       ) : null,
-    [activeColumn, tasks, boardId, workspace.personal, handleUpdate]
+    [
+      activeColumn,
+      tasks,
+      boardId,
+      workspace.personal,
+      handleUpdate,
+      workspace.id,
+    ]
   );
 
   // Use the extracted calculateSortKeyWithRetry helper
@@ -2745,6 +2752,7 @@ export function KanbanBoard({
                           }
                           filters={filters}
                           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                          wsId={workspace.id}
                         />
                       );
                     })}
@@ -2780,7 +2788,7 @@ export function KanbanBoard({
         currentBoardId={boardId ?? ''}
         taskCount={selectedTasks.size}
         onMove={handleBoardMove}
-        isMoving={moveTaskToBoardMutation.isPending}
+        isMoving={moveTaskToBoardMutation.isPending || bulkWorking}
       />
 
       {/* Bulk delete confirmation */}
