@@ -57,6 +57,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -268,6 +269,7 @@ export function TimerControls({
   workspace,
 }: TimerControlsProps) {
   const t = useTranslations('time-tracker.controls');
+  const { modKey } = usePlatform();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 
@@ -3091,14 +3093,20 @@ export function TimerControls({
             </span>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
-                ⌘/Ctrl + Enter
+                {modKey} + Enter
               </span>
               to {t('start_stop')}
-              <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + P</span>
+              <span className="rounded bg-muted px-1.5 py-0.5">
+                {modKey} + P
+              </span>
               to {t('pause_resume')}
-              <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + T</span>
+              <span className="rounded bg-muted px-1.5 py-0.5">
+                {modKey} + T
+              </span>
               {t('for_tasks')}
-              <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + M</span>
+              <span className="rounded bg-muted px-1.5 py-0.5">
+                {modKey} + M
+              </span>
               {t('to_switch_mode')}
               <span className="rounded bg-muted px-1.5 py-0.5">Space</span>
               {t('to_start')}
@@ -3581,10 +3589,12 @@ export function TimerControls({
 
                 {/* Quick Actions during session */}
                 <div className="flex justify-center gap-2 text-muted-foreground text-xs">
-                  <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + P</span>
+                  <span className="rounded bg-muted px-2 py-1">
+                    {modKey} + P
+                  </span>
                   <span>{t('for_break')}</span>
                   <span className="rounded bg-muted px-2 py-1">
-                    ⌘/Ctrl + Enter
+                    {modKey} + Enter
                   </span>
                   <span>{t('to_complete')}</span>
                 </div>

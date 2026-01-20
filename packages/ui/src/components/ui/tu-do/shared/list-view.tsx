@@ -5,7 +5,9 @@ import {
   ArrowDown,
   ArrowDownUp,
   ArrowUp,
+  Calendar,
   CheckCircle2,
+  ChevronDown,
   horseHead,
   Icon,
   MoreHorizontal,
@@ -30,6 +32,16 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
@@ -49,7 +61,8 @@ import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useBulkOperations } from '../boards/boardId/kanban-bulk-operations';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 
@@ -59,6 +72,7 @@ interface Props {
   lists: TaskList[];
   isPersonalWorkspace?: boolean;
   searchQuery?: string;
+  weekStartsOn?: 0 | 1 | 6;
 }
 
 type SortField =
@@ -89,11 +103,14 @@ export function ListView({
   lists,
   isPersonalWorkspace = false,
   searchQuery,
+  weekStartsOn = 0,
 }: Props) {
-  const t = useTranslations('common');
+  const t = useTranslations();
+  const tc = useTranslations('common');
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
   const queryClient = useQueryClient();
+  const supabase = createClient();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
@@ -120,6 +137,25 @@ export function ListView({
 
   // Bulk actions state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [bulkWorking, setBulkWorking] = useState(false);
+
+  // Clear selection helper
+  const clearSelection = useCallback(() => {
+    setSelectedTasks(new Set());
+  }, []);
+
+  // Bulk operations hook
+  const { bulkUpdateDueDate, bulkUpdatePriority } = useBulkOperations({
+    queryClient,
+    supabase,
+    boardId,
+    selectedTasks,
+    columns: lists,
+    weekStartsOn,
+    setBulkWorking,
+    clearSelection,
+    setBulkDeleteOpen: setShowBulkDeleteDialog,
+  });
 
   // Bulk delete function
   const handleBulkDelete = async () => {
@@ -333,11 +369,11 @@ export function ListView({
     const dateObj = new Date(date);
 
     if (isToday(dateObj)) {
-      return t('today');
+      return tc('today');
     }
 
     if (isTomorrow(dateObj)) {
-      return t('tomorrow');
+      return tc('tomorrow');
     }
 
     return format(dateObj, 'MMM dd', { locale: dateLocale });
@@ -411,7 +447,7 @@ export function ListView({
       {sortedTasks.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <p className="text-muted-foreground text-sm">{t('no_tasks')}</p>
+            <p className="text-muted-foreground text-sm">{tc('no_tasks')}</p>
           </div>
         </div>
       ) : (
@@ -434,7 +470,7 @@ export function ListView({
                   {columnVisibility.status && (
                     <TableHead className="h-9 w-10 px-2 text-center">
                       <span className="flex items-center justify-center font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-                        {t('status')}
+                        {tc('status')}
                       </span>
                     </TableHead>
                   )}
@@ -450,7 +486,7 @@ export function ListView({
                         )}
                         onClick={() => handleSort('name')}
                       >
-                        {t('task_header')}
+                        {tc('task_header')}
                         {getSortIcon('name')}
                       </Button>
                     </TableHead>
@@ -467,7 +503,7 @@ export function ListView({
                         )}
                         onClick={() => handleSort('priority')}
                       >
-                        {t('priority')}
+                        {tc('priority')}
                         {getSortIcon('priority')}
                       </Button>
                     </TableHead>
@@ -484,7 +520,7 @@ export function ListView({
                         )}
                         onClick={() => handleSort('end_date')}
                       >
-                        {t('due')}
+                        {tc('due')}
                         {getSortIcon('end_date')}
                       </Button>
                     </TableHead>
@@ -501,7 +537,7 @@ export function ListView({
                         )}
                         onClick={() => handleSort('assignees')}
                       >
-                        {t('assignee')}
+                        {tc('assignee')}
                         {getSortIcon('assignees')}
                       </Button>
                     </TableHead>
@@ -655,7 +691,7 @@ export function ListView({
                               !task.closed_at &&
                               !task.completed_at && (
                                 <Badge className="h-4 bg-dynamic-red px-1 text-[9px] text-white">
-                                  {t('overdue')}
+                                  {tc('overdue')}
                                 </Badge>
                               )}
                           </div>
@@ -730,7 +766,7 @@ export function ListView({
               <div className="flex items-center gap-2.5 rounded-lg border bg-background px-4 py-2 shadow-sm">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <span className="font-medium text-muted-foreground text-xs">
-                  {t('loading_more_tasks')}
+                  {tc('loading_more_tasks')}
                 </span>
               </div>
             </div>
@@ -746,12 +782,151 @@ export function ListView({
               <CheckCircle2 className="h-4 w-4 text-primary" />
             </div>
             <span className="font-semibold text-sm">
-              {selectedTasks.size} {t('task_header')}
-              {selectedTasks.size !== 1 ? 's' : ''} {t('selected')}
+              {selectedTasks.size} {tc('task_header')}
+              {selectedTasks.size !== 1 ? 's' : ''} {tc('selected')}
             </span>
           </div>
           <Separator orientation="vertical" className="h-6" />
           <div className="flex items-center gap-2">
+            {/* Bulk Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={bulkWorking}
+                >
+                  {tc('bulk_actions')}
+                  <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {/* Due Date Menu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Calendar className="mr-2 h-4 w-4 text-dynamic-purple" />
+                    {tc('due_date')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('today')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="mr-2 h-4 w-4 text-dynamic-green" />
+                      {tc('today')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('tomorrow')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="mr-2 h-4 w-4 text-dynamic-blue" />
+                      {tc('tomorrow')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('this_week')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="mr-2 h-4 w-4 text-dynamic-purple" />
+                      {tc('this_week')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('next_week')}
+                      className="cursor-pointer"
+                    >
+                      <Calendar className="mr-2 h-4 w-4 text-dynamic-orange" />
+                      {tc('next_week')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('clear')}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      {tc('remove_due_date')}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                {/* Priority Menu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Icon
+                      iconNode={unicornHead}
+                      className="mr-2 h-4 w-4 text-dynamic-red"
+                    />
+                    {tc('priority')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('critical')}
+                      className="cursor-pointer"
+                    >
+                      <Icon
+                        iconNode={unicornHead}
+                        className="mr-2 h-4 w-4 text-dynamic-red"
+                      />
+                      {t('tasks.priority_critical')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('high')}
+                      className="cursor-pointer"
+                    >
+                      <Icon
+                        iconNode={horseHead}
+                        className="mr-2 h-4 w-4 text-dynamic-orange"
+                      />
+                      {t('tasks.priority_high')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('normal')}
+                      className="cursor-pointer"
+                    >
+                      <Rabbit className="mr-2 h-4 w-4 text-dynamic-yellow" />
+                      {t('tasks.priority_normal')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('low')}
+                      className="cursor-pointer"
+                    >
+                      <Turtle className="mr-2 h-4 w-4 text-dynamic-blue" />
+                      {t('tasks.priority_low')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority(null)}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      {t('tasks.priority_none')}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator />
+
+                {/* Delete Option */}
+                <DropdownMenuItem
+                  disabled={bulkWorking}
+                  onClick={handleBulkDelete}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  {tc('delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant="outline"
               size="sm"
@@ -759,16 +934,7 @@ export function ListView({
               className="h-8"
             >
               <X className="mr-1.5 h-3.5 w-3.5" />
-              {t('cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleBulkDelete}
-              className="h-8"
-            >
-              <X className="mr-1.5 h-3.5 w-3.5" />
-              {t('delete')}
+              {tc('cancel')}
             </Button>
           </div>
         </div>
@@ -781,16 +947,16 @@ export function ListView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('delete_selected_tasks')}</AlertDialogTitle>
+            <AlertDialogTitle>{tc('delete_selected_tasks')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('delete_selected_tasks_confirmation', {
+              {tc('delete_selected_tasks_confirmation', {
                 count: selectedTasks.size,
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-              <Button variant="outline">{t('cancel')}</Button>
+              <Button variant="outline">{tc('cancel')}</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button
@@ -801,7 +967,7 @@ export function ListView({
                 }}
                 disabled={isLoading}
               >
-                {t('delete')}
+                {tc('delete')}
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>

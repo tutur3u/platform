@@ -6,12 +6,20 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2 } from '@tuturuuu/icons';
+import { HelpCircle, Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import { formatBytes, formatDuration } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';
+import { KNOWN_SECRETS } from './constants';
 import { SecretRowActions } from './row-actions';
 
 export const secretColumns = (
@@ -123,8 +131,25 @@ export const secretColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 break-all font-semibold">
-          {row.getValue('name') || '-'}
+        <div className="flex items-center gap-2">
+          <div className="line-clamp-1 break-all font-semibold">
+            {row.getValue('name') || '-'}
+          </div>
+          {KNOWN_SECRETS.find((s) => s.name === row.getValue('name')) && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {
+                    KNOWN_SECRETS.find((s) => s.name === row.getValue('name'))
+                      ?.description
+                  }
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       ),
     },
@@ -145,6 +170,71 @@ export const secretColumns = (
         // Check if the value is a boolean string
         const isBool = value === 'true' || value === 'false';
         if (!isBool) {
+          const secretDef = KNOWN_SECRETS.find((s) => s.name === name);
+
+          if (
+            secretDef?.type === 'bytes' &&
+            value &&
+            !Number.isNaN(Number(value))
+          ) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="line-clamp-1 max-w-32 break-all">
+                      {formatBytes(Number(value))}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="font-mono">{value}</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          if (
+            secretDef?.type === 'duration_ms' &&
+            value &&
+            !Number.isNaN(Number(value))
+          ) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="line-clamp-1 max-w-32 break-all">
+                      {formatDuration(Number(value) / 1000)}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="font-mono">{value} ms</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          if (
+            secretDef?.type === 'number' &&
+            value &&
+            !Number.isNaN(Number(value))
+          ) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="line-clamp-1 max-w-32 break-all">
+                      {Number(value).toLocaleString()}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="font-mono">{value}</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
           return (
             <div className="line-clamp-1 max-w-32 break-all">
               {value || '-'}

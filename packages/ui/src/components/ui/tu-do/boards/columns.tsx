@@ -6,7 +6,7 @@ import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
-import { ProjectRowActions } from './row-actions';
+import { BoardActions } from './row-actions';
 
 export const projectColumns = (
   t: (key: string) => string,
@@ -147,6 +147,6 @@ export const projectColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <ProjectRowActions row={row} />,
+    cell: ({ row }) => <BoardActions board={row.original} />,
   },
 ];

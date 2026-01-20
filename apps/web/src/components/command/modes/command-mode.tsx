@@ -8,6 +8,7 @@ import {
   CommandInput,
   CommandList,
 } from '@tuturuuu/ui/command';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import * as React from 'react';
 import type { NavLink } from '@/components/navigation';
 import { AddTaskForm } from '../add-task-form';
@@ -32,6 +33,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   const [showTaskForm, setShowTaskForm] = React.useState(false);
   const [defaultTaskName, setDefaultTaskName] = React.useState('');
   const [recentRefreshKey, setRecentRefreshKey] = React.useState(0);
+  const { modKey } = usePlatform();
 
   // Prepare navigation data
   const flattenedNav = useNavigationData(navLinks);
@@ -119,7 +121,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   // Show task form if in task creation mode
   if (showTaskForm && wsId) {
     return (
-      <div className="flex h-[70vh] min-h-[500px] flex-col">
+      <div className="flex h-[70vh] min-h-125 flex-col">
         <div className="border-b px-4 py-3">
           <h2 className="font-semibold text-lg">Create Task</h2>
         </div>
@@ -136,7 +138,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   }
 
   return (
-    <div className="flex h-[70vh] min-h-[500px] flex-col">
+    <div className="flex h-[70vh] min-h-125 flex-col">
       {/* Header with result count */}
       <div className="border-b px-4 py-3">
         <div className="flex items-center justify-between">
@@ -150,7 +152,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono opacity-100">
-              <span className="text-xs">⌘</span>K
+              <span className="text-xs">{modKey}</span>K
             </kbd>
             <span>to toggle</span>
             <span className="text-muted-foreground/50">•</span>
@@ -206,7 +208,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
                 <p className="text-muted-foreground text-xs">
                   Tip: Press{' '}
                   <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
-                    ⌘↵
+                    {modKey}↵
                   </kbd>{' '}
                   to quickly create a task
                 </p>
@@ -274,7 +276,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
             {!hasQuery && (
               <div className="flex items-center gap-1.5">
                 <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-1 rounded border bg-background px-1 font-medium font-mono">
-                  ⌘X
+                  {modKey}X
                 </kbd>
                 <span>clear recent</span>
               </div>

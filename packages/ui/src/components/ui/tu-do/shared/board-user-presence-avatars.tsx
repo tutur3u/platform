@@ -202,11 +202,11 @@ export function BoardUserPresenceAvatars({
                     hasMatchingFilters && 'ring-1 ring-border hover:ring-2',
                     // Current user: blue ring
                     isCurrentUser &&
-                      'opacity-60 outline-2 outline-dynamic-light-cyan outline-offset-0 hover:opacity-80 hover:outline-dynamic-light-cyan',
+                      'outline-2 outline-dynamic-light-cyan outline-offset-0 hover:outline-dynamic-light-cyan',
                     // Different view users: dashed outline + opacity
                     !hasMatchingFilters &&
                       !isCurrentUser &&
-                      'opacity-60 outline-dashed outline-2 outline-dynamic-light-pink outline-offset-0 hover:opacity-80 hover:outline-dynamic-light-pink',
+                      'outline-dashed outline-2 outline-dynamic-light-pink outline-offset-0 hover:outline-dynamic-light-pink',
                     avatarClassName
                   )}
                 >

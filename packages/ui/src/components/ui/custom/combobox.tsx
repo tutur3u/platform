@@ -15,44 +15,75 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';
 
-export type ComboboxOptions = {
+export type ComboboxOption = {
   value: string;
   label: string;
 };
 
+/** @deprecated Use ComboboxOption instead */
+export type ComboboxOptions = ComboboxOption;
+
 type Mode = 'single' | 'multiple';
 
 interface ComboboxProps {
-  t: any;
+  /** Options to display in the combobox */
+  options: ComboboxOption[];
+  /** Currently selected value(s) */
+  selected: string | string[];
+  /** Callback when selection changes */
+  onChange?: (event: string | string[]) => void;
+  /** Selection mode - 'single' or 'multiple' */
   mode?: Mode;
-  options: ComboboxOptions[];
-  selected: string | string[]; // Updated to handle multiple selections
-  className?: string;
+  /** Placeholder text for the trigger button when nothing is selected */
   placeholder?: string;
+  /** Placeholder text for the search input */
+  searchPlaceholder?: string;
+  /** Text to display when no results are found */
+  emptyText?: string;
+  /** Text to display when creating a new item (used with onCreate) */
+  createText?: string;
+  /** Override label shown on the trigger button */
   label?: string;
+  /** Additional class name for the container */
+  className?: string;
+  /** Whether the combobox is disabled */
   disabled?: boolean;
+  /** Whether to select the first option by default */
   useFirstValueAsDefault?: boolean;
-
-  onChange?: (event: string | string[]) => void; // Updated to handle multiple selections
-
+  /** Callback to create a new option from the search query */
   onCreate?: (value: string) => void;
+  /**
+   * Translation function (legacy support)
+   * @deprecated Use emptyText, createText props instead
+   */
+  t?: (key: any) => any;
 }
 
 export function Combobox({
-  t,
   options,
   selected,
-  className,
-  placeholder,
+  onChange,
   mode = 'single',
+  placeholder = 'Select item...',
+  searchPlaceholder,
+  emptyText,
+  createText,
   label,
+  className,
   disabled,
   useFirstValueAsDefault = false,
-  onChange,
   onCreate,
+  t,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
+
+  // Resolve text with fallbacks: explicit prop > t function > default
+  const resolvedEmptyText =
+    emptyText ?? t?.('common.empty') ?? 'No results found.';
+  const resolvedCreateText = createText ?? t?.('common.add') ?? 'Create';
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? placeholder ?? 'Search...';
 
   React.useEffect(() => {
     if (!open) {
@@ -79,6 +110,13 @@ export function Combobox({
             .join(', ')
         : undefined;
 
+  const isSelected = (value: string) => {
+    if (mode === 'multiple' && Array.isArray(selected)) {
+      return selected.includes(value);
+    }
+    return selected === value;
+  };
+
   return (
     <div className={cn('block', className)}>
       <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -94,8 +132,8 @@ export function Combobox({
             )}
             disabled={disabled}
           >
-            {label ?? selectedLabel ?? placeholder ?? 'Select Item'}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            {label ?? selectedLabel ?? placeholder}
+            <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -110,13 +148,13 @@ export function Combobox({
             }}
           >
             <CommandInput
-              placeholder={placeholder ?? 'Search'}
+              placeholder={resolvedSearchPlaceholder}
               value={query}
               onValueChange={(value: string) => setQuery(value)}
             />
             <CommandEmpty className="flex flex-col items-center justify-center p-1">
               <div className="p-8 text-muted-foreground text-sm">
-                {t('common.empty')}
+                {resolvedEmptyText}
               </div>
               {onCreate && (
                 <>
@@ -135,7 +173,7 @@ export function Combobox({
                   >
                     <Plus className="mr-2 h-4 w-4 shrink-0" />
                     <div className="w-full truncate">
-                      <span className="font-normal">{t('common.add')}</span>{' '}
+                      <span className="font-normal">{resolvedCreateText}</span>{' '}
                       <span className="underline decoration-dashed underline-offset-2">
                         {query}
                       </span>
@@ -145,7 +183,7 @@ export function Combobox({
               )}
             </CommandEmpty>
             <CommandList
-              className="max-h-[200px] overflow-y-auto overscroll-contain"
+              className="max-h-50 overflow-y-auto overscroll-contain"
               style={
                 {
                   touchAction: 'pan-y',
@@ -170,22 +208,18 @@ export function Combobox({
                           onChange(option.value);
                         }
                       }
-                      setOpen(false);
+                      if (mode === 'single') {
+                        setOpen(false);
+                      }
                     }}
                   >
+                    {option.label}
                     <Check
                       className={cn(
-                        'mr-2 h-4 w-4',
-                        (
-                          mode === 'multiple' && Array.isArray(selected)
-                            ? selected.includes(option.value)
-                            : selected === option.value
-                        )
-                          ? 'opacity-100'
-                          : 'opacity-0'
+                        'ml-auto',
+                        isSelected(option.value) ? 'opacity-100' : 'opacity-0'
                       )}
                     />
-                    {option.label}
                   </CommandItem>
                 ))}
               </CommandGroup>

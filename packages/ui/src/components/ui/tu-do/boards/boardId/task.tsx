@@ -429,11 +429,12 @@ function TaskCardInner({
 
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
-      // Check if modifier keys are held (Shift for range select, Cmd/Ctrl for toggle)
-      const isModifierHeld = e.shiftKey || e.metaKey || e.ctrlKey;
+      // Check if only Shift is held (without CMD/Ctrl) for multiselect
+      const isShiftOnlyHeld =
+        e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey;
 
-      // Handle multi-select functionality
-      if (isMultiSelectMode || isModifierHeld) {
+      // Handle multi-select functionality only when Shift is held alone
+      if (isMultiSelectMode || isShiftOnlyHeld) {
         onSelect?.(task.id, e);
       } else if (
         !isDragging &&
@@ -1010,12 +1011,11 @@ function TaskCardInner({
       style={style}
       onClick={handleCardClick}
       onContextMenu={(e) => {
-        // If modifier keys are held (Shift/Cmd/Ctrl), handle as selection
-        // (Command+Click on Mac triggers context menu, but we want it to select)
-        if (e.shiftKey || e.metaKey || e.ctrlKey) {
+        // If only Shift is held (without CMD/Ctrl), handle as selection
+        if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
           e.preventDefault();
           e.stopPropagation();
-          // Trigger selection (Command+Click fires contextmenu instead of click on Mac)
+          // Trigger selection
           onSelect?.(task.id, e as any);
           return;
         }

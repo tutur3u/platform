@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, Loader, Sparkles } from '@tuturuuu/icons';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { Command as CommandPrimitive } from 'cmdk';
 
 interface CommandHeaderProps {
@@ -22,6 +23,7 @@ export function CommandHeader({
   onBack,
   shouldAutoFocus = true,
 }: CommandHeaderProps) {
+  const { modKey } = usePlatform();
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-pink/5" />
@@ -75,7 +77,7 @@ export function CommandHeader({
               </button>
             )}
             <div className="rounded-md border border-dynamic-gray/10 bg-linear-to-r from-dynamic-gray/10 to-dynamic-gray/5 px-3 py-1.5 font-medium text-dynamic-gray text-xs">
-              ⌘K
+              {modKey}K
             </div>
           </div>
         )}

@@ -60,12 +60,13 @@ export function TasksTab({
 
   const virtualBoard: Pick<
     WorkspaceTaskBoard,
-    'id' | 'name' | 'ws_id' | 'ticket_prefix'
+    'id' | 'name' | 'ws_id' | 'ticket_prefix' | 'archived_at'
   > = {
     id: projectId,
     name: projectName,
     ws_id: wsId,
     ticket_prefix: null,
+    archived_at: null,
   };
 
   const renderView = () => {

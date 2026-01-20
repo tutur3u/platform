@@ -66,6 +66,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
@@ -104,6 +105,7 @@ interface TaskList {
 }
 
 export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
+  const { modKey } = usePlatform();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [currentSession, setCurrentSession] =
@@ -860,12 +862,12 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
               <span className="mt-2 text-muted-foreground text-xs">
                 <br />•{' '}
                 <span className="rounded bg-muted px-1 py-0.5 text-xs">
-                  ⌘/Ctrl + Enter
+                  {modKey} + Enter
                 </span>{' '}
                 to start/stop
                 <br />•{' '}
                 <span className="rounded bg-muted px-1 py-0.5 text-xs">
-                  ⌘/Ctrl + P
+                  {modKey} + P
                 </span>{' '}
                 to pause
                 <br />•{' '}

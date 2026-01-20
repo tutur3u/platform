@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { ConfirmationDialog } from './components/confirmation-dialog';
 import { MigrationConfig } from './components/migration-config';
 import { MigrationStats } from './components/migration-stats';
@@ -32,6 +33,7 @@ import { useMigrationState } from './hooks/use-migration-state';
 export default function MigrationDashboard() {
   const state = useMigrationState();
   const actions = useMigrationActions({ state });
+  const { modKey } = usePlatform();
 
   const {
     config,
@@ -239,7 +241,7 @@ export default function MigrationDashboard() {
                       Start all migrations
                     </span>
                     <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono">
-                      Ctrl+Shift+S
+                      {modKey}+Shift+S
                     </kbd>
                   </div>
                   <div className="flex items-center justify-between gap-4">
@@ -247,7 +249,7 @@ export default function MigrationDashboard() {
                       Stop all migrations
                     </span>
                     <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono">
-                      Ctrl+Shift+X
+                      {modKey}+Shift+X
                     </kbd>
                   </div>
                   <div className="flex items-center justify-between gap-4">
@@ -255,17 +257,10 @@ export default function MigrationDashboard() {
                       Clear all data
                     </span>
                     <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono">
-                      Ctrl+Shift+C
+                      {modKey}+Shift+C
                     </kbd>
                   </div>
                 </div>
-                <p className="pt-1 text-muted-foreground text-xs">
-                  Use{' '}
-                  <kbd className="rounded border bg-muted px-1 font-mono">
-                    Cmd
-                  </kbd>{' '}
-                  on macOS
-                </p>
               </div>
             </TooltipContent>
           </Tooltip>

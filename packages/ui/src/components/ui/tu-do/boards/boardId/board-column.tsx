@@ -9,9 +9,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
-import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
@@ -56,9 +56,10 @@ interface BoardColumnProps {
   optimisticUpdateInProgress?: Set<string>;
   filters?: TaskFilters;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+  wsId: string;
 }
 
-function BoardColumnInner({
+export function BoardColumn({
   column,
   boardId,
   tasks,
@@ -76,9 +77,8 @@ function BoardColumnInner({
   optimisticUpdateInProgress,
   filters,
   bulkUpdateCustomDueDate,
+  wsId,
 }: BoardColumnProps) {
-  const params = useParams();
-  const wsId = params.wsId as string;
   const t = useTranslations('common');
   const { createTask } = useTaskDialog();
 
@@ -248,5 +248,3 @@ function BoardColumnInner({
     </Card>
   );
 }
-
-export const BoardColumn = React.memo(BoardColumnInner);

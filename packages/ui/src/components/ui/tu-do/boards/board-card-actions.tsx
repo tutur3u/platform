@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Archive,
-  Edit,
-  Ellipsis,
-  Eye,
-  RotateCcw,
-  Trash2,
-} from '@tuturuuu/icons';
+import { Archive, Edit, Ellipsis, RotateCcw, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -29,26 +22,29 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TaskBoardForm } from './form';
 
-interface BoardActionsProps {
+interface BoardCardActionsProps {
+  wsId: string;
   board: WorkspaceTaskBoard;
-  wsId?: string;
+  className?: string; // Allow passing className for positioning/styling
 }
 
-export function BoardActions({ board, wsId }: BoardActionsProps) {
+export function BoardCardActions({
+  wsId,
+  board,
+  className,
+}: BoardCardActionsProps) {
   const t = useTranslations();
-  const data = board;
   const {
     softDeleteBoard,
     permanentDeleteBoard,
     restoreBoard,
     archiveBoard,
     unarchiveBoard,
-  } = useBoardActions(wsId || data.ws_id);
+  } = useBoardActions(wsId);
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -58,36 +54,22 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
 
-  // No need for onSuccess callback - mutations handle invalidation
-  // React Query will automatically refetch and update the UI
-
-  if (!data.id || !data.ws_id) return null;
-
   return (
     <>
-      <div className="flex items-center justify-end gap-2">
-        {data.href && (
-          <Link href={data.href} onClick={(e) => e.stopPropagation()}>
-            <Button>
-              <Eye className="mr-1 h-5 w-5" />
-              {t('common.view')}
-            </Button>
-          </Link>
-        )}
-
+      <div className={className} onClick={(e) => e.stopPropagation()}>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-              onClick={(e) => e.stopPropagation()}
+              size="sm"
+              className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
             >
               <Ellipsis className="h-4 w-4" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            {data.deleted_at ? (
+            {board.deleted_at ? (
               // Deleted board options
               <>
                 <DropdownMenuItem
@@ -111,7 +93,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
                   {t('ws-task-boards.row_actions.delete_forever')}
                 </DropdownMenuItem>
               </>
-            ) : data.archived_at ? (
+            ) : board.archived_at ? (
               // Archived board options
               <>
                 <DropdownMenuItem
@@ -171,24 +153,22 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
         </DropdownMenu>
 
         <ModifiableDialogTrigger
-          data={data}
+          data={board}
           open={showEditDialog}
-          // title={t('ws-user-group-tags.edit')}
-          // editDescription={t('ws-user-group-tags.edit_description')}
           setOpen={setShowEditDialog}
-          form={<TaskBoardForm wsId={data.ws_id} data={data} />}
+          form={<TaskBoardForm wsId={wsId} data={board} />}
         />
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('ws-task-boards.row_actions.dialog.delete_title')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
-                const name = data.name ?? '';
+                const name = board.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
                 return t(
@@ -203,7 +183,10 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => softDeleteBoard(data.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                softDeleteBoard(board.id);
+              }}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {t('ws-task-boards.row_actions.dialog.delete_button')}
@@ -213,14 +196,14 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
       </AlertDialog>
 
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('ws-task-boards.row_actions.dialog.restore_title')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
-                const name = data.name ?? '';
+                const name = board.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
                 return t(
@@ -233,7 +216,10 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => restoreBoard(data.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                restoreBoard(board.id);
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('ws-task-boards.row_actions.dialog.restore_button')}
@@ -246,14 +232,14 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
         open={showPermanentDeleteDialog}
         onOpenChange={setShowPermanentDeleteDialog}
       >
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('ws-task-boards.row_actions.dialog.delete_perm_title')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
-                const name = data.name ?? '';
+                const name = board.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
                 return t(
@@ -266,7 +252,10 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => permanentDeleteBoard(data.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                permanentDeleteBoard(board.id);
+              }}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {t('ws-task-boards.row_actions.dialog.delete_perm_button')}
@@ -276,14 +265,14 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
       </AlertDialog>
 
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('ws-task-boards.row_actions.dialog.archive_title')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
-                const name = data.name ?? '';
+                const name = board.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
                 return t(
@@ -296,7 +285,10 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveBoard(data.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                archiveBoard(board.id);
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('ws-task-boards.row_actions.dialog.archive_button')}
@@ -316,7 +308,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
-                const name = data.name ?? '';
+                const name = board.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
                 return t(
@@ -329,7 +321,10 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => unarchiveBoard(data.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                unarchiveBoard(board.id);
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('ws-task-boards.row_actions.dialog.unarchive_button')}
@@ -340,6 +335,3 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
     </>
   );
 }
-
-export { BoardActions as BoardCardActions };
-export { BoardActions as ProjectRowActions };

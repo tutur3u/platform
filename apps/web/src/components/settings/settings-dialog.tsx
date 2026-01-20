@@ -57,6 +57,7 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -95,6 +96,7 @@ export function SettingsDialog({
   workspace: workspaceProp,
 }: SettingsDialogProps) {
   const t = useTranslations();
+  const { isMac, modKey } = usePlatform();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -427,7 +429,7 @@ export function SettingsDialog({
           className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
         >
           <SidebarHeader className="z-10 p-4 pb-0">
-            <div className="relative">
+            <div className="relative mb-2">
               <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
               <SidebarInput
                 placeholder={t('search.search')}
@@ -435,6 +437,11 @@ export function SettingsDialog({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Detected OS: {isMac ? 'macOS' : 'Windows/Linux'} ({modKey})
+              </span>
             </div>
           </SidebarHeader>
           <SidebarContent className="overflow-y-auto p-4">

@@ -77,6 +77,7 @@ import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferen
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import {
   useBoardConfig,
@@ -199,6 +200,7 @@ export function KanbanBoard({
 }: Props) {
   const t = useTranslations();
   const tc = useTranslations('common');
+  const { modKey } = usePlatform();
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
@@ -399,49 +401,6 @@ export function KanbanBoard({
       setBoardSelectorOpen(true);
     }
   }, [selectedTasks]);
-
-  // Handle the actual cross-board move
-  const handleBoardMove = useCallback(
-    async (targetBoardId: string, targetListId: string) => {
-      if (selectedTasks.size === 0) return;
-
-      const tasksToMove = Array.from(selectedTasks);
-
-      try {
-        console.log('🚀 Starting batch cross-board move');
-        console.log('📋 Tasks to move:', tasksToMove);
-        console.log('🎯 Target board:', targetBoardId);
-        console.log('📋 Target list:', targetListId);
-
-        // Move tasks one by one to ensure triggers fire for each task
-        let successCount = 0;
-        for (const taskId of tasksToMove) {
-          try {
-            await moveTaskToBoardMutation.mutateAsync({
-              taskId,
-              newListId: targetListId,
-              targetBoardId,
-            });
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to move task ${taskId}:`, error);
-          }
-        }
-
-        console.log(
-          `✅ Batch cross-board move completed: ${successCount}/${tasksToMove.length} tasks moved`
-        );
-
-        // Clear selection and close dialog after moves
-        clearSelection();
-        setBoardSelectorOpen(false);
-      } catch (error) {
-        console.error('Failed to move tasks:', error);
-        // Don't close the dialog on error so user can retry
-      }
-    },
-    [selectedTasks, moveTaskToBoardMutation, clearSelection]
-  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -886,6 +845,48 @@ export function KanbanBoard({
     setBulkDeleteOpen,
   });
 
+  // Handle the actual cross-board move
+  const handleBoardMove = useCallback(
+    async (targetBoardId: string, targetListId: string) => {
+      if (selectedTasks.size === 0) return;
+
+      const tasksToMove = Array.from(selectedTasks);
+
+      try {
+        console.log('🚀 Starting sequential cross-board move');
+        console.log('📋 Tasks to move:', tasksToMove);
+        console.log('🎯 Target board:', targetBoardId);
+        console.log('📋 Target list:', targetListId);
+
+        // Move tasks one by one to ensure triggers fire for each task and provide granular feedback
+        let successCount = 0;
+        for (const taskId of tasksToMove) {
+          try {
+            await moveTaskToBoardMutation.mutateAsync({
+              taskId,
+              newListId: targetListId,
+              targetBoardId,
+            });
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to move task ${taskId}:`, error);
+          }
+        }
+
+        console.log(
+          `✅ Sequential cross-board move completed: ${successCount}/${tasksToMove.length} tasks moved`
+        );
+
+        // Clear selection and close dialog after moves
+        clearSelection();
+        setBoardSelectorOpen(false);
+      } catch (error) {
+        console.error('Failed to move tasks:', error);
+      }
+    },
+    [selectedTasks, moveTaskToBoardMutation, clearSelection]
+  );
+
   // Keyboard shortcuts for multiselect mode (Shift for range select, Cmd/Ctrl for toggle)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -899,17 +900,24 @@ export function KanbanBoard({
         return;
       }
 
-      // Shift or Command/Control keys enable multiselect mode
-      if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      // Only Shift key (without other modifiers) enables multiselect mode
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (!isMultiSelectMode) {
           setIsMultiSelectMode(true);
+        }
+      }
+
+      // Turn OFF if any forbidden modifier is pressed
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        if (isMultiSelectMode) {
+          setIsMultiSelectMode(false);
         }
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       // Exit multiselect mode when all modifier keys are released
-      if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      if (!e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         // Only exit if we have no selected tasks
         if (isMultiSelectMode && selectedTasks.size === 0) {
           setIsMultiSelectMode(false);
@@ -1067,9 +1075,17 @@ export function KanbanBoard({
           isOverlay
           isPersonalWorkspace={workspace.personal}
           onUpdate={handleUpdate}
+          wsId={workspace.id}
         />
       ) : null,
-    [activeColumn, tasks, boardId, workspace.personal, handleUpdate]
+    [
+      activeColumn,
+      tasks,
+      boardId,
+      workspace.personal,
+      handleUpdate,
+      workspace.id,
+    ]
   );
 
   // Use the extracted calculateSortKeyWithRetry helper
@@ -1974,7 +1990,7 @@ export function KanbanBoard({
               </span>
             </div>
             <span className="hidden text-muted-foreground text-xs sm:inline">
-              {tc('selection_instruction')}
+              {tc('selection_instruction', { modKey })}
             </span>
             {bulkWorking && (
               <Badge
@@ -2736,6 +2752,7 @@ export function KanbanBoard({
                           }
                           filters={filters}
                           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                          wsId={workspace.id}
                         />
                       );
                     })}
@@ -2771,7 +2788,7 @@ export function KanbanBoard({
         currentBoardId={boardId ?? ''}
         taskCount={selectedTasks.size}
         onMove={handleBoardMove}
-        isMoving={moveTaskToBoardMutation.isPending}
+        isMoving={moveTaskToBoardMutation.isPending || bulkWorking}
       />
 
       {/* Bulk delete confirmation */}

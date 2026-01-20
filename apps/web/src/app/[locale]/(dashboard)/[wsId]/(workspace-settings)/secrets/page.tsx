@@ -58,7 +58,14 @@ export default async function WorkspaceSecretsPage({
         description={t('ws-secrets.description')}
         createTitle={t('ws-secrets.create')}
         createDescription={t('ws-secrets.create_description')}
-        form={<SecretForm wsId={wsId} />}
+        form={
+          <SecretForm
+            wsId={wsId}
+            existingSecrets={secrets
+              .filter((s) => !!s.name)
+              .map((s) => s.name!)}
+          />
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable

@@ -24,7 +24,7 @@
     "dayjs": "^1.11.19",
     "diff": "^8.0.3",
     "moment": "^2.30.1",
-    "next": "^16.1.3",
+    "next": "^16.1.4",
     "prosemirror-model": "^1.25.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -48,6 +48,7 @@
   "exports": {
     "./timezones": "./src/timezones.json",
     "./email/validation": "./src/email/validation.ts",
+    "./hooks/*": "./src/hooks/*.ts",
     "./*": "./src/*.ts",
     "./common/scan": "./src/common/scan.tsx",
     "./common/nextjs": "./src/common/nextjs.tsx",
