@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
 import { calculateInvoiceValues } from '../route';
 
 interface Params {
@@ -67,6 +68,17 @@ export async function POST(req: Request, { params }: Params) {
             'Missing required fields: customer_id, group_id, selected_month, products, wallet_id, and category_id',
         },
         { status: 400 }
+      );
+    }
+
+    // Block creating subscription invoices for groups configured as blocked
+    if (await isGroupBlockedForSubscriptionInvoices(wsId, group_id)) {
+      return NextResponse.json(
+        {
+          message:
+            'Creating subscription invoices is disabled for this group in workspace settings.',
+        },
+        { status: 403 }
       );
     }
 

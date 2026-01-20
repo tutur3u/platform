@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   Calculator,
@@ -49,8 +50,10 @@ import type { AvailablePromotion } from './hooks';
 import {
   useAvailablePromotions,
   useCategories,
+  useInvoiceBlockedGroups,
   useInvoicePromotionConfig,
   useProducts,
+  useUserGroups,
   useUserInvoices,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
@@ -113,6 +116,26 @@ export function StandardInvoice({
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
 
+  // Blocked groups check
+  const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
+  const { data: userGroups = [], isLoading: userGroupsLoading } =
+    useUserGroups(selectedUserId);
+
+  const isBlocked = useMemo(() => {
+    if (
+      !selectedUserId ||
+      blockedGroupIds.length === 0 ||
+      userGroups.length === 0
+    )
+      return false;
+
+    return userGroups.some(
+      (group) =>
+        group.workspace_user_groups?.id &&
+        blockedGroupIds.includes(group.workspace_user_groups.id)
+    );
+  }, [selectedUserId, blockedGroupIds, userGroups]);
+
   // State management
   const [selectedProducts, setSelectedProducts] = useState<
     SelectedProductItem[]
@@ -156,7 +179,9 @@ export function StandardInvoice({
     productsLoading ||
     promotionsLoading ||
     walletsLoading ||
-    categoriesLoading;
+    walletsLoading ||
+    categoriesLoading ||
+    userGroupsLoading;
 
   const referralDiscountMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -697,357 +722,392 @@ export function StandardInvoice({
         </Card>
 
         {/* Products Section */}
-        <ProductSelection
-          products={products}
-          selectedProducts={selectedProducts}
-          onSelectedProductsChange={setSelectedProducts}
-        />
+        {!isBlocked && (
+          <ProductSelection
+            products={products}
+            selectedProducts={selectedProducts}
+            onSelectedProductsChange={setSelectedProducts}
+          />
+        )}
       </div>
 
       {/* Right Column - Invoice Configuration */}
       <div className="space-y-6">
-        {/* Invoice Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              {t('ws-invoices.invoice_configuration')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Invoice Content */}
-            <div className="space-y-2">
-              <Label htmlFor="invoice-content">
-                {t('ws-invoices.content')}
-              </Label>
-              <Textarea
-                id="invoice-content"
-                placeholder={t('ws-invoices.content_placeholder')}
-                className="min-h-20"
-                value={invoiceContent}
-                onChange={(e) => setInvoiceContent(e.target.value)}
-              />
+        {isBlocked ? (
+          <div className="mt-4 flex flex-col items-center justify-center gap-4 rounded-lg border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900/50 dark:bg-amber-950/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-500" />
             </div>
-
-            {/* Invoice Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="invoice-notes">{t('ws-invoices.notes')}</Label>
-              <Textarea
-                id="invoice-notes"
-                placeholder={t('ws-invoices.notes_placeholder')}
-                className="min-h-15"
-                value={invoiceNotes}
-                onChange={(e) => setInvoiceNotes(e.target.value)}
-              />
+            <div className="space-y-1">
+              <h3 className="font-semibold text-amber-900 dark:text-amber-400">
+                {t('ws-invoices.creation_blocked')}
+              </h3>
+              <p className="max-w-xs text-amber-800 text-sm dark:text-amber-500">
+                {t('ws-invoices.user_in_blocked_group_description')}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Settings and Checkout */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('ws-invoices.payment_and_checkout')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Payment Settings Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <CreditCard className="h-4 w-4" />
-                {t('ws-invoices.payment_settings')}
-              </div>
-
-              {/* Wallet Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="wallet-select">
-                  {t('ws-wallets.wallet')}{' '}
-                  <span className="text-dynamic-red">*</span>
-                </Label>
-                <Select
-                  value={selectedWalletId}
-                  onValueChange={setSelectedWalletId}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t('ws-invoices.select_wallet_required')}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wallets.map((wallet) => (
-                      <SelectItem
-                        key={wallet.id}
-                        value={wallet.id || 'invalid'}
-                      >
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          <div className="flex flex-row gap-2">
-                            <p className="font-medium">
-                              {wallet.name || t('ws-invoices.unnamed_wallet')}
-                            </p>
-                            <p className="text-muted-foreground text-sm">
-                              {wallet.type || 'STANDARD'} -{' '}
-                              {wallet.currency || 'VND'}
-                            </p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Transaction Category Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="category-select">
-                  {t('ws-invoices.transaction_category')}{' '}
-                  <span className="text-dynamic-red">*</span>
-                </Label>
-                <Combobox
-                  t={t}
-                  options={categories.map(
-                    (category): ComboboxOption => ({
-                      value: category.id || '',
-                      label: category.name || t('ws-invoices.unnamed_category'),
-                    })
-                  )}
-                  selected={selectedCategoryId}
-                  onChange={(value) => setSelectedCategoryId(value as string)}
-                  placeholder={t('ws-invoices.select_category_required')}
-                />
-              </div>
-
-              {/* Promotion Selection */}
-              {promotionsAllowed && (
+          </div>
+        ) : (
+          <>
+            {/* Invoice Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  {t('ws-invoices.invoice_configuration')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Invoice Content */}
                 <div className="space-y-2">
-                  <Label htmlFor="promotion-select">
-                    {t('invoices.add_promotion')}
+                  <Label htmlFor="invoice-content">
+                    {t('ws-invoices.content')}
                   </Label>
-                  <CreatePromotionDialog
-                    wsId={wsId}
-                    open={createPromotionOpen}
-                    onOpenChange={setCreatePromotionOpen}
-                    onSuccess={(promotion) => {
-                      if (selectedUserId) {
-                        void queryClient.invalidateQueries({
-                          queryKey: [
-                            'available-promotions',
-                            wsId,
-                            selectedUserId,
-                          ],
-                        });
-                      }
-                      if (promotion.id) {
-                        setSelectedPromotionId(promotion.id);
-                      }
-                    }}
-                  />
-                  <Combobox
-                    disabled={!selectedUserId}
-                    actions={
-                      selectedUserId
-                        ? [
-                            {
-                              key: 'create-promotion',
-                              label: t('ws-invoices.create_promotion'),
-                              icon: <Plus className="h-4 w-4 text-primary" />,
-                              onSelect: () => setCreatePromotionOpen(true),
-                            },
-                          ]
-                        : undefined
-                    }
-                    actionsPosition="top"
-                    options={(() => {
-                      const list: ComboboxOption[] = [
-                        { value: 'none', label: t('ws-invoices.no_promotion') },
-                        ...availablePromotions.map(
-                          (promotion: AvailablePromotion): ComboboxOption => {
-                            const referralPercent = referralDiscountMap.get(
-                              promotion.id
-                            );
-                            const labelValue =
-                              referralPercent !== undefined
-                                ? `${referralPercent || 0}%`
-                                : promotion.use_ratio
-                                  ? `${promotion.value}%`
-                                  : Intl.NumberFormat('vi-VN', {
-                                      style: 'currency',
-                                      currency: 'VND',
-                                    }).format(promotion.value);
-                            return {
-                              value: promotion.id,
-                              label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
-                            } as ComboboxOption;
-                          }
-                        ),
-                      ];
-
-                      // If auto-applied referral promotion isn't in the normal list, inject a synthetic item
-                      if (
-                        selectedPromotionId &&
-                        selectedPromotionId !== 'none' &&
-                        !availablePromotions.some(
-                          (p: AvailablePromotion) =>
-                            p.id === selectedPromotionId
-                        )
-                      ) {
-                        const referralPercent =
-                          referralDiscountMap.get(selectedPromotionId);
-                        const referralName =
-                          (linkedPromotions || []).find(
-                            (lp) => lp.promo_id === selectedPromotionId
-                          )?.workspace_promotions?.name ||
-                          t('ws-invoices.unnamed_promotion');
-                        list.splice(1, 0, {
-                          value: selectedPromotionId,
-                          label: `${referralName} (${referralPercent ?? 0}%)`,
-                        } as ComboboxOption);
-                      }
-
-                      return list;
-                    })()}
-                    selected={selectedPromotionId}
-                    onChange={(value) =>
-                      setSelectedPromotionId(value as string)
-                    }
-                    placeholder={
-                      selectedUserId
-                        ? t('ws-invoices.search_promotions')
-                        : t('ws-invoices.select_user_first')
-                    }
+                  <Textarea
+                    id="invoice-content"
+                    placeholder={t('ws-invoices.content_placeholder')}
+                    className="min-h-20"
+                    value={invoiceContent}
+                    onChange={(e) => setInvoiceContent(e.target.value)}
                   />
                 </div>
-              )}
-            </div>
 
-            {/* Checkout Section */}
-            {selectedProducts.length > 0 && (
-              <>
-                <Separator />
+                {/* Invoice Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="invoice-notes">
+                    {t('ws-invoices.notes')}
+                  </Label>
+                  <Textarea
+                    id="invoice-notes"
+                    placeholder={t('ws-invoices.notes_placeholder')}
+                    className="min-h-15"
+                    value={invoiceNotes}
+                    onChange={(e) => setInvoiceNotes(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
+            {/* Payment Settings and Checkout */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('ws-invoices.payment_and_checkout')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Payment Settings Section */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                    <Calculator className="h-4 w-4" />
-                    {t('ws-invoices.checkout')}
+                    <CreditCard className="h-4 w-4" />
+                    {t('ws-invoices.payment_settings')}
                   </div>
 
-                  {/* Summary */}
+                  {/* Wallet Selection */}
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t('ws-invoices.subtotal')}
-                      </span>
-                      <span>
-                        {Intl.NumberFormat('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        }).format(subtotal)}
-                      </span>
+                    <Label htmlFor="wallet-select">
+                      {t('ws-wallets.wallet')}{' '}
+                      <span className="text-dynamic-red">*</span>
+                    </Label>
+                    <Select
+                      value={selectedWalletId}
+                      onValueChange={setSelectedWalletId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={t('ws-invoices.select_wallet_required')}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wallets.map((wallet) => (
+                          <SelectItem
+                            key={wallet.id}
+                            value={wallet.id || 'invalid'}
+                          >
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" />
+                              <div className="flex flex-row gap-2">
+                                <p className="font-medium">
+                                  {wallet.name ||
+                                    t('ws-invoices.unnamed_wallet')}
+                                </p>
+                                <p className="text-muted-foreground text-sm">
+                                  {wallet.type || 'STANDARD'} -{' '}
+                                  {wallet.currency || 'VND'}
+                                </p>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Transaction Category Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="category-select">
+                      {t('ws-invoices.transaction_category')}{' '}
+                      <span className="text-dynamic-red">*</span>
+                    </Label>
+                    <Combobox
+                      t={t}
+                      options={categories.map(
+                        (category): ComboboxOption => ({
+                          value: category.id || '',
+                          label:
+                            category.name || t('ws-invoices.unnamed_category'),
+                        })
+                      )}
+                      selected={selectedCategoryId}
+                      onChange={(value) =>
+                        setSelectedCategoryId(value as string)
+                      }
+                      placeholder={t('ws-invoices.select_category_required')}
+                    />
+                  </div>
+
+                  {/* Promotion Selection */}
+                  {promotionsAllowed && (
+                    <div className="space-y-2">
+                      <Label htmlFor="promotion-select">
+                        {t('invoices.add_promotion')}
+                      </Label>
+                      <CreatePromotionDialog
+                        wsId={wsId}
+                        open={createPromotionOpen}
+                        onOpenChange={setCreatePromotionOpen}
+                        onSuccess={(promotion) => {
+                          if (selectedUserId) {
+                            void queryClient.invalidateQueries({
+                              queryKey: [
+                                'available-promotions',
+                                wsId,
+                                selectedUserId,
+                              ],
+                            });
+                          }
+                          if (promotion.id) {
+                            setSelectedPromotionId(promotion.id);
+                          }
+                        }}
+                      />
+                      <Combobox
+                        disabled={!selectedUserId}
+                        actions={
+                          selectedUserId
+                            ? [
+                                {
+                                  key: 'create-promotion',
+                                  label: t('ws-invoices.create_promotion'),
+                                  icon: (
+                                    <Plus className="h-4 w-4 text-primary" />
+                                  ),
+                                  onSelect: () => setCreatePromotionOpen(true),
+                                },
+                              ]
+                            : undefined
+                        }
+                        actionsPosition="top"
+                        options={(() => {
+                          const list: ComboboxOption[] = [
+                            {
+                              value: 'none',
+                              label: t('ws-invoices.no_promotion'),
+                            },
+                            ...availablePromotions.map(
+                              (
+                                promotion: AvailablePromotion
+                              ): ComboboxOption => {
+                                const referralPercent = referralDiscountMap.get(
+                                  promotion.id
+                                );
+                                const labelValue =
+                                  referralPercent !== undefined
+                                    ? `${referralPercent || 0}%`
+                                    : promotion.use_ratio
+                                      ? `${promotion.value}%`
+                                      : Intl.NumberFormat('vi-VN', {
+                                          style: 'currency',
+                                          currency: 'VND',
+                                        }).format(promotion.value);
+                                return {
+                                  value: promotion.id,
+                                  label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                                } as ComboboxOption;
+                              }
+                            ),
+                          ];
+
+                          // If auto-applied referral promotion isn't in the normal list, inject a synthetic item
+                          if (
+                            selectedPromotionId &&
+                            selectedPromotionId !== 'none' &&
+                            !availablePromotions.some(
+                              (p: AvailablePromotion) =>
+                                p.id === selectedPromotionId
+                            )
+                          ) {
+                            const referralPercent =
+                              referralDiscountMap.get(selectedPromotionId);
+                            const referralName =
+                              (linkedPromotions || []).find(
+                                (lp) => lp.promo_id === selectedPromotionId
+                              )?.workspace_promotions?.name ||
+                              t('ws-invoices.unnamed_promotion');
+                            list.splice(1, 0, {
+                              value: selectedPromotionId,
+                              label: `${referralName} (${referralPercent ?? 0}%)`,
+                            } as ComboboxOption);
+                          }
+
+                          return list;
+                        })()}
+                        selected={selectedPromotionId}
+                        onChange={(value) =>
+                          setSelectedPromotionId(value as string)
+                        }
+                        placeholder={
+                          selectedUserId
+                            ? t('ws-invoices.search_promotions')
+                            : t('ws-invoices.select_user_first')
+                        }
+                      />
                     </div>
+                  )}
+                </div>
 
-                    {promotionsAllowed && selectedPromotion && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          {t('ws-invoices.discount')} (
-                          {selectedPromotion.name ||
-                            t('ws-invoices.unnamed_promotion')}
-                          )
-                        </span>
-                        <span className="text-dynamic-green">
-                          -
-                          {Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(discountAmount)}
-                        </span>
-                      </div>
-                    )}
-
+                {/* Checkout Section */}
+                {selectedProducts.length > 0 && (
+                  <>
                     <Separator />
 
-                    <div className="flex justify-between font-semibold">
-                      <span>{t('ws-invoices.total')}</span>
-                      <span>
-                        {Intl.NumberFormat('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        }).format(roundedTotal)}
-                      </span>
-                    </div>
-
-                    {Math.abs(roundedTotal - totalBeforeRounding) > 0.01 && (
-                      <div className="flex justify-between text-muted-foreground text-sm">
-                        <span>{t('ws-invoices.adjustment')}</span>
-                        <span>
-                          {roundedTotal > totalBeforeRounding ? '+' : ''}
-                          {Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(roundedTotal - totalBeforeRounding)}
-                        </span>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <Calculator className="h-4 w-4" />
+                        {t('ws-invoices.checkout')}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Rounding Controls */}
-                  <div className="space-y-2">
-                    <Label>{t('ws-invoices.rounding_options')}</Label>
-                    <div className="flex gap-2">
+                      {/* Summary */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            {t('ws-invoices.subtotal')}
+                          </span>
+                          <span>
+                            {Intl.NumberFormat('vi-VN', {
+                              style: 'currency',
+                              currency: 'VND',
+                            }).format(subtotal)}
+                          </span>
+                        </div>
+
+                        {promotionsAllowed && selectedPromotion && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              {t('ws-invoices.discount')} (
+                              {selectedPromotion.name ||
+                                t('ws-invoices.unnamed_promotion')}
+                              )
+                            </span>
+                            <span className="text-dynamic-green">
+                              -
+                              {Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(discountAmount)}
+                            </span>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        <div className="flex justify-between font-semibold">
+                          <span>{t('ws-invoices.total')}</span>
+                          <span>
+                            {Intl.NumberFormat('vi-VN', {
+                              style: 'currency',
+                              currency: 'VND',
+                            }).format(roundedTotal)}
+                          </span>
+                        </div>
+
+                        {Math.abs(roundedTotal - totalBeforeRounding) >
+                          0.01 && (
+                          <div className="flex justify-between text-muted-foreground text-sm">
+                            <span>{t('ws-invoices.adjustment')}</span>
+                            <span>
+                              {roundedTotal > totalBeforeRounding ? '+' : ''}
+                              {Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(roundedTotal - totalBeforeRounding)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rounding Controls */}
+                      <div className="space-y-2">
+                        <Label>{t('ws-invoices.rounding_options')}</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={roundUp}
+                            className="flex-1"
+                          >
+                            <ArrowUp className="mr-1 h-4 w-4" />
+                            {t('ws-invoices.round_up')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={roundDown}
+                            className="flex-1"
+                          >
+                            <ArrowDown className="mr-1 h-4 w-4" />
+                            {t('ws-invoices.round_down')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={resetRounding}
+                            disabled={
+                              Math.abs(roundedTotal - totalBeforeRounding) <
+                              0.01
+                            }
+                          >
+                            {t('ws-invoices.reset')}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Create Invoice Button */}
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={roundUp}
-                        className="flex-1"
-                      >
-                        <ArrowUp className="mr-1 h-4 w-4" />
-                        {t('ws-invoices.round_up')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={roundDown}
-                        className="flex-1"
-                      >
-                        <ArrowDown className="mr-1 h-4 w-4" />
-                        {t('ws-invoices.round_down')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={resetRounding}
+                        className="w-full"
+                        onClick={handleCreateInvoice}
                         disabled={
-                          Math.abs(roundedTotal - totalBeforeRounding) < 0.01
+                          !selectedUser ||
+                          selectedProducts.length === 0 ||
+                          !selectedWalletId ||
+                          !selectedCategoryId ||
+                          isCreating
                         }
                       >
-                        {t('ws-invoices.reset')}
+                        {isCreating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t('ws-invoices.creating_invoice')}
+                          </>
+                        ) : (
+                          t('ws-invoices.create_invoice')
+                        )}
                       </Button>
                     </div>
-                  </div>
-
-                  {/* Create Invoice Button */}
-                  <Button
-                    className="w-full"
-                    onClick={handleCreateInvoice}
-                    disabled={
-                      !selectedUser ||
-                      selectedProducts.length === 0 ||
-                      !selectedWalletId ||
-                      !selectedCategoryId ||
-                      isCreating
-                    }
-                  >
-                    {isCreating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('ws-invoices.creating_invoice')}
-                      </>
-                    ) : (
-                      t('ws-invoices.create_invoice')
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );

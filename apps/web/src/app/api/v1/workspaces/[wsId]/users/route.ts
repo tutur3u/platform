@@ -197,13 +197,16 @@ export async function POST(req: Request, { params }: Params) {
       .maybeSingle();
 
     if (!groupError && guestGroup?.id) {
-      // Insert relation; ignore error if already exists
+      // Insert relation; use upsert to handle case where trigger already assigned user to this group
       const { error: linkError } = await supabase
         .from('workspace_user_groups_users')
-        .insert({
-          group_id: guestGroup.id,
-          user_id: createdUser.id,
-        });
+        .upsert(
+          {
+            group_id: guestGroup.id,
+            user_id: createdUser.id,
+          },
+          { onConflict: 'group_id, user_id', ignoreDuplicates: true }
+        );
 
       if (linkError) {
         console.log(linkError);

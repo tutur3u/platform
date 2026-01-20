@@ -558,6 +558,48 @@ export const useInvoicePromotionConfig = (wsId: string) => {
   });
 };
 
+// Get workspace config for blocked groups from creating invoices
+// Returns array of blocked group IDs
+export const useInvoiceBlockedGroups = (wsId: string) => {
+  return useQuery({
+    queryKey: ['invoice-blocked-groups', wsId],
+    queryFn: async () => {
+      if (!wsId) return [];
+
+      try {
+        const res = await fetch(
+          `/api/v1/workspaces/${wsId}/settings/INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION`
+        );
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            return [];
+          }
+          throw new Error('Failed to fetch invoice blocked groups config');
+        }
+
+        const data = await res.json();
+        const value = data.value?.trim();
+
+        if (!value) return [];
+
+        return value
+          .split(',')
+          .map((id: string) => id.trim())
+          .filter(Boolean);
+      } catch (error) {
+        console.error('❌ Invoice blocked groups config fetch error:', error);
+        return [];
+      }
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+};
+
 // Get User's Group Products with improved caching
 export const useUserGroupProducts = (groupId: string) => {
   return useQuery({

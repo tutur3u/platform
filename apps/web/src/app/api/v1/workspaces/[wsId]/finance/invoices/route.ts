@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   type FullInvoiceData,
   transformInvoiceData,
   transformInvoiceSearchResults,
 } from '@tuturuuu/utils/finance/transform-invoice-results';
-import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   getPermissions,
   normalizeWorkspaceId,

@@ -222,10 +222,12 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
             <AlertDialogHeader>
               <AlertDialogTitle>{t('ws-users.delete')}</AlertDialogTitle>
               <AlertDialogDescription className="space-y-2">
-                <p>{t('ws-users.delete_confirmation')}</p>
-                <p className="font-semibold text-destructive">
+                <span className="block">
+                  {t('ws-users.delete_confirmation')}
+                </span>
+                <span className="block font-semibold text-destructive">
                   {t('ws-users.delete_warning')}
-                </p>
+                </span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

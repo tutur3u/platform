@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   Calculator,
@@ -41,6 +42,7 @@ import {
   useAvailablePromotions,
   useCategories,
   useInvoiceAttendanceConfig,
+  useInvoiceBlockedGroups,
   useProducts,
   useUserAttendance,
   useUserGroupProducts,
@@ -285,6 +287,13 @@ export function SubscriptionInvoice({
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
+
+  // Blocked groups check
+  const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
+
+  const isBlocked = useMemo(() => {
+    return !!selectedGroupId && blockedGroupIds.includes(selectedGroupId);
+  }, [selectedGroupId, blockedGroupIds]);
 
   // State management
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
@@ -1280,7 +1289,7 @@ export function SubscriptionInvoice({
           </Card>
         )}
         {/* Product Selection */}
-        {selectedGroupId && !isSelectedMonthPaid && (
+        {selectedGroupId && !isSelectedMonthPaid && !isBlocked && (
           <ProductSelection
             products={products}
             selectedProducts={subscriptionSelectedProducts}
@@ -1296,620 +1305,657 @@ export function SubscriptionInvoice({
 
       {/* Right Column - Attendance and Products */}
       <div className="space-y-6">
-        {/* Attendance Summary */}
-        {selectedGroupId && selectedMonth && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <CardTitle>{t('ws-invoices.attendance_summary')}</CardTitle>
-                  {isSelectedMonthPaid && (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-[10px] text-green-700 uppercase tracking-wide">
-                      {t('ws-invoices.paid')}
-                    </span>
-                  )}
-                </div>
-                <CardDescription>
-                  {t('ws-invoices.attendance_for_month', {
-                    month: new Date(`${selectedMonth}-01`).toLocaleDateString(
-                      locale,
-                      {
-                        year: 'numeric',
-                        month: 'long',
-                      }
-                    ),
-                  })}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => navigateMonth('prev')}
-                  disabled={!canNavigateMonth('prev')}
-                  aria-label={t('ws-invoices.previous_month')}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Select
-                  value={selectedMonth}
-                  onValueChange={(value) => updateSearchParam('month', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('ws-invoices.select_month')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const selectedGroup = userGroups.find(
-                        (g) => g.workspace_user_groups?.id === selectedGroupId
-                      );
-                      const group = selectedGroup?.workspace_user_groups;
-
-                      if (!group) return null;
-
-                      // Get group start and end dates
-                      const startDate = group.starting_date
-                        ? new Date(group.starting_date)
-                        : new Date();
-                      const endDate = group.ending_date
-                        ? new Date(group.ending_date)
-                        : new Date();
-
-                      // Generate months between start and end date
-                      const months = [];
-                      const currentDate = new Date(startDate);
-                      currentDate.setDate(1); // Set to first day of month
-
-                      while (currentDate <= endDate) {
-                        const value = currentDate.toISOString().slice(0, 7);
-                        const label = currentDate.toLocaleDateString(locale, {
+        {isBlocked ? (
+          <div className="mt-4 flex flex-col items-center justify-center gap-4 rounded-lg border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900/50 dark:bg-amber-950/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-semibold text-amber-900 dark:text-amber-400">
+                {t('ws-invoices.creation_blocked')}
+              </h3>
+              <p className="max-w-xs text-amber-800 text-sm dark:text-amber-500">
+                {t('ws-invoices.group_blocked_description')}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Attendance Summary */}
+            {selectedGroupId && selectedMonth && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle>
+                        {t('ws-invoices.attendance_summary')}
+                      </CardTitle>
+                      {isSelectedMonthPaid && (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-[10px] text-green-700 uppercase tracking-wide">
+                          {t('ws-invoices.paid')}
+                        </span>
+                      )}
+                    </div>
+                    <CardDescription>
+                      {t('ws-invoices.attendance_for_month', {
+                        month: new Date(
+                          `${selectedMonth}-01`
+                        ).toLocaleDateString(locale, {
                           year: 'numeric',
                           month: 'long',
-                        });
-                        const isPaidItem = (() => {
-                          if (!latestValidUntil) return false;
-                          const itemMonthStart = new Date(currentDate);
-                          itemMonthStart.setDate(1);
-                          const paidMonthStart = new Date(latestValidUntil);
-                          paidMonthStart.setDate(1);
-                          return itemMonthStart < paidMonthStart;
-                        })();
-
-                        months.push(
-                          <SelectItem key={value} value={value}>
-                            <span className="flex items-center gap-2">
-                              <span>{label}</span>
-                              {isPaidItem && (
-                                <span className="rounded bg-green-100 px-1.5 py-0.5 font-medium text-[10px] text-green-700">
-                                  {t('ws-invoices.paid')}
-                                </span>
-                              )}
-                            </span>
-                          </SelectItem>
-                        );
-
-                        // Move to next month
-                        currentDate.setMonth(currentDate.getMonth() + 1);
-                      }
-
-                      return months;
-                    })()}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => navigateMonth('next')}
-                  disabled={!canNavigateMonth('next')}
-                  aria-label={t('ws-invoices.next_month')}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingSubscriptionData && userAttendance.length === 0 ? (
-                <div className="flex items-center justify-center py-8">
+                        }),
+                      })}
+                    </CardDescription>
+                  </div>
                   <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <p className="text-muted-foreground text-sm">
-                      {t('ws-invoices.loading_attendance')}
-                    </p>
-                  </div>
-                </div>
-              ) : userAttendanceError ? (
-                <div className="flex items-center justify-center py-8">
-                  <p className="text-destructive text-sm">
-                    {t('ws-invoices.error_loading_attendance')}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Attendance Stats */}
-                  {(() => {
-                    const attendanceStats = getAttendanceStats(userAttendance);
-                    const selectedGroup = userGroups.find(
-                      (g) => g.workspace_user_groups?.id === selectedGroupId
-                    );
-                    const sessionsArray =
-                      selectedGroup?.workspace_user_groups?.sessions || [];
-                    const totalSessions = getSessionsForMonth(
-                      sessionsArray,
-                      selectedMonth
-                    );
-
-                    return (
-                      <>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="rounded-lg border p-3">
-                            <p className="text-muted-foreground text-sm">
-                              {t('ws-invoices.days_attended')}
-                            </p>
-                            <p className="font-bold text-2xl text-green-600">
-                              {attendanceStats.present + attendanceStats.late}
-                            </p>
-                          </div>
-                          <div className="rounded-lg border p-3">
-                            <p className="text-muted-foreground text-sm">
-                              {t('ws-invoices.total_sessions')}
-                            </p>
-                            <p className="font-bold text-2xl">
-                              {totalSessions}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Detailed Status Breakdown */}
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="rounded-lg border p-3">
-                            <p className="text-muted-foreground text-sm">
-                              {t('ws-invoices.present')}
-                            </p>
-                            <p className="font-bold text-green-600 text-xl">
-                              {attendanceStats.present}
-                            </p>
-                          </div>
-                          <div className="rounded-lg border p-3">
-                            <p className="text-muted-foreground text-sm">
-                              {t('ws-invoices.late')}
-                            </p>
-                            <p className="font-bold text-xl text-yellow-600">
-                              {attendanceStats.late}
-                            </p>
-                          </div>
-                          <div className="rounded-lg border p-3">
-                            <p className="text-muted-foreground text-sm">
-                              {t('ws-invoices.absent')}
-                            </p>
-                            <p className="font-bold text-red-600 text-xl">
-                              {attendanceStats.absent}
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-
-                  {/* Attendance Rate */}
-                  {(() => {
-                    const attendanceDays =
-                      getEffectiveAttendanceDays(userAttendance);
-                    const selectedGroup = userGroups.find(
-                      (g) => g.workspace_user_groups?.id === selectedGroupId
-                    );
-                    const sessionsArray =
-                      selectedGroup?.workspace_user_groups?.sessions || [];
-                    const totalSessions = getSessionsForMonth(
-                      sessionsArray,
-                      selectedMonth
-                    );
-                    const attendanceRate =
-                      totalSessions > 0
-                        ? (attendanceDays / totalSessions) * 100
-                        : 0;
-
-                    return (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>{t('ws-invoices.attendance_rate')}</span>
-                          <span className="font-medium">
-                            {attendanceRate.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-muted">
-                          <div
-                            className="h-2 rounded-full bg-green-500 transition-all"
-                            style={{
-                              width: `${Math.min(attendanceRate, 100)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Attendance Calendar */}
-                  {userAttendance && userAttendance.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>{t('ws-invoices.attendance_calendar')}</Label>
-                      <AttendanceCalendar
-                        userAttendance={userAttendance}
-                        selectedMonth={selectedMonth}
-                        selectedGroup={userGroups.find(
-                          (g) => g.workspace_user_groups?.id === selectedGroupId
-                        )}
-                        locale={locale}
-                      />
-                      <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          <span>{t('ws-invoices.present')}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                          <span>{t('ws-invoices.late')}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                          <span>{t('ws-invoices.absent')}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-gray-300"></div>
-                          <span>{t('ws-invoices.no_session')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Invoice Configuration for Subscription */}
-        {(subscriptionProducts.length > 0 ||
-          subscriptionSelectedProducts.length > 0) &&
-          !isSelectedMonthPaid && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  {t('ws-invoices.subscription_invoice_configuration')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Invoice Content */}
-                <div className="space-y-2">
-                  <Label htmlFor="subscription-invoice-content">
-                    {t('ws-invoices.content')}
-                  </Label>
-                  <Textarea
-                    placeholder={t(
-                      'ws-invoices.subscription_invoice_content_placeholder'
-                    )}
-                    className="min-h-20"
-                    value={invoiceContent}
-                    onChange={(e) => setInvoiceContent(e.target.value)}
-                  />
-                </div>
-
-                {/* Invoice Notes */}
-                <div className="space-y-2">
-                  <Label htmlFor="subscription-invoice-notes">
-                    {t('ws-invoices.notes')}
-                  </Label>
-                  <Textarea
-                    placeholder={t('ws-invoices.additional_notes_placeholder')}
-                    className="min-h-15"
-                    value={invoiceNotes}
-                    onChange={(e) => setInvoiceNotes(e.target.value)}
-                  />
-                </div>
-
-                <Separator />
-
-                {/* Payment Settings */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                    <CreditCard className="h-4 w-4" />
-                    {t('ws-invoices.payment_settings')}
-                  </div>
-
-                  {/* Wallet Selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="subscription-wallet-select">
-                      {t('ws-wallets.wallet')}{' '}
-                      <span className="text-red-500">*</span>
-                    </Label>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => navigateMonth('prev')}
+                      disabled={!canNavigateMonth('prev')}
+                      aria-label={t('ws-invoices.previous_month')}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
                     <Select
-                      value={selectedWalletId}
-                      onValueChange={setSelectedWalletId}
+                      value={selectedMonth}
+                      onValueChange={(value) =>
+                        updateSearchParam('month', value)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue
-                          placeholder={t('ws-invoices.select_wallet_required')}
+                          placeholder={t('ws-invoices.select_month')}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {wallets.map((wallet) => (
-                          <SelectItem
-                            key={wallet.id}
-                            value={wallet.id || 'invalid'}
-                          >
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="h-4 w-4" />
-                              <div className="flex flex-row gap-2">
-                                <p className="font-medium">
-                                  {wallet.name ||
-                                    t('ws-invoices.unnamed_wallet')}
-                                </p>
+                        {(() => {
+                          const selectedGroup = userGroups.find(
+                            (g) =>
+                              g.workspace_user_groups?.id === selectedGroupId
+                          );
+                          const group = selectedGroup?.workspace_user_groups;
+
+                          if (!group) return null;
+
+                          // Get group start and end dates
+                          const startDate = group.starting_date
+                            ? new Date(group.starting_date)
+                            : new Date();
+                          const endDate = group.ending_date
+                            ? new Date(group.ending_date)
+                            : new Date();
+
+                          // Generate months between start and end date
+                          const months = [];
+                          const currentDate = new Date(startDate);
+                          currentDate.setDate(1); // Set to first day of month
+
+                          while (currentDate <= endDate) {
+                            const value = currentDate.toISOString().slice(0, 7);
+                            const label = currentDate.toLocaleDateString(
+                              locale,
+                              {
+                                year: 'numeric',
+                                month: 'long',
+                              }
+                            );
+                            const isPaidItem = (() => {
+                              if (!latestValidUntil) return false;
+                              const itemMonthStart = new Date(currentDate);
+                              itemMonthStart.setDate(1);
+                              const paidMonthStart = new Date(latestValidUntil);
+                              paidMonthStart.setDate(1);
+                              return itemMonthStart < paidMonthStart;
+                            })();
+
+                            months.push(
+                              <SelectItem key={value} value={value}>
+                                <span className="flex items-center gap-2">
+                                  <span>{label}</span>
+                                  {isPaidItem && (
+                                    <span className="rounded bg-green-100 px-1.5 py-0.5 font-medium text-[10px] text-green-700">
+                                      {t('ws-invoices.paid')}
+                                    </span>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            );
+
+                            // Move to next month
+                            currentDate.setMonth(currentDate.getMonth() + 1);
+                          }
+
+                          return months;
+                        })()}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => navigateMonth('next')}
+                      disabled={!canNavigateMonth('next')}
+                      aria-label={t('ws-invoices.next_month')}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingSubscriptionData && userAttendance.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <p className="text-muted-foreground text-sm">
+                          {t('ws-invoices.loading_attendance')}
+                        </p>
+                      </div>
+                    </div>
+                  ) : userAttendanceError ? (
+                    <div className="flex items-center justify-center py-8">
+                      <p className="text-destructive text-sm">
+                        {t('ws-invoices.error_loading_attendance')}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Attendance Stats */}
+                      {(() => {
+                        const attendanceStats =
+                          getAttendanceStats(userAttendance);
+                        const selectedGroup = userGroups.find(
+                          (g) => g.workspace_user_groups?.id === selectedGroupId
+                        );
+                        const sessionsArray =
+                          selectedGroup?.workspace_user_groups?.sessions || [];
+                        const totalSessions = getSessionsForMonth(
+                          sessionsArray,
+                          selectedMonth
+                        );
+
+                        return (
+                          <>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="rounded-lg border p-3">
                                 <p className="text-muted-foreground text-sm">
-                                  {wallet.type || 'STANDARD'} -{' '}
-                                  {wallet.currency || 'VND'}
+                                  {t('ws-invoices.days_attended')}
+                                </p>
+                                <p className="font-bold text-2xl text-green-600">
+                                  {attendanceStats.present +
+                                    attendanceStats.late}
+                                </p>
+                              </div>
+                              <div className="rounded-lg border p-3">
+                                <p className="text-muted-foreground text-sm">
+                                  {t('ws-invoices.total_sessions')}
+                                </p>
+                                <p className="font-bold text-2xl">
+                                  {totalSessions}
                                 </p>
                               </div>
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  {/* Transaction Category Selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="subscription-category-select">
-                      {t('ws-invoices.transaction_category')}{' '}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Combobox
-                      t={t}
-                      options={categories.map(
-                        (category): ComboboxOptions => ({
-                          value: category.id || '',
-                          label:
-                            category.name || t('ws-invoices.unnamed_category'),
-                        })
-                      )}
-                      selected={selectedCategoryId}
-                      onChange={(value) =>
-                        setSelectedCategoryId(value as string)
-                      }
-                      placeholder={t('ws-invoices.select_category_required')}
-                    />
-                  </div>
-
-                  {/* Promotion Selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="subscription-promotion-select">
-                      {t('invoices.add_promotion')}
-                    </Label>
-                    <Combobox
-                      t={t}
-                      options={(() => {
-                        const list: ComboboxOptions[] = [
-                          {
-                            value: 'none',
-                            label: t('ws-invoices.no_promotion'),
-                          },
-                          ...availablePromotions.map(
-                            (promotion): ComboboxOptions => {
-                              const referralPercent = referralDiscountMap.get(
-                                promotion.id
-                              );
-                              const labelValue =
-                                referralPercent !== undefined
-                                  ? `${referralPercent || 0}%`
-                                  : promotion.use_ratio
-                                    ? `${promotion.value}%`
-                                    : Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND',
-                                      }).format(promotion.value);
-                              return {
-                                value: promotion.id,
-                                label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
-                              } as ComboboxOptions;
-                            }
-                          ),
-                        ];
-
-                        if (
-                          selectedPromotionId &&
-                          selectedPromotionId !== 'none' &&
-                          !availablePromotions.some(
-                            (p) => p.id === selectedPromotionId
-                          )
-                        ) {
-                          const referralPercent =
-                            referralDiscountMap.get(selectedPromotionId);
-                          const referralName =
-                            (linkedPromotions || []).find(
-                              (lp) => lp.promo_id === selectedPromotionId
-                            )?.workspace_promotions?.name ||
-                            t('ws-invoices.unnamed_promotion');
-                          list.splice(1, 0, {
-                            value: selectedPromotionId,
-                            label: `${referralName} (${referralPercent ?? 0}%)`,
-                          } as ComboboxOptions);
-                        }
-
-                        return list;
+                            {/* Detailed Status Breakdown */}
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="rounded-lg border p-3">
+                                <p className="text-muted-foreground text-sm">
+                                  {t('ws-invoices.present')}
+                                </p>
+                                <p className="font-bold text-green-600 text-xl">
+                                  {attendanceStats.present}
+                                </p>
+                              </div>
+                              <div className="rounded-lg border p-3">
+                                <p className="text-muted-foreground text-sm">
+                                  {t('ws-invoices.late')}
+                                </p>
+                                <p className="font-bold text-xl text-yellow-600">
+                                  {attendanceStats.late}
+                                </p>
+                              </div>
+                              <div className="rounded-lg border p-3">
+                                <p className="text-muted-foreground text-sm">
+                                  {t('ws-invoices.absent')}
+                                </p>
+                                <p className="font-bold text-red-600 text-xl">
+                                  {attendanceStats.absent}
+                                </p>
+                              </div>
+                            </div>
+                          </>
+                        );
                       })()}
-                      selected={selectedPromotionId}
-                      onChange={(value) =>
-                        setSelectedPromotionId(value as string)
-                      }
-                      placeholder={t('ws-invoices.search_promotions')}
-                    />
-                  </div>
-                </div>
 
-                {/* Checkout Section for Manual Products */}
-                {subscriptionSelectedProducts.length > 0 && (
-                  <>
-                    <Separator />
+                      {/* Attendance Rate */}
+                      {(() => {
+                        const attendanceDays =
+                          getEffectiveAttendanceDays(userAttendance);
+                        const selectedGroup = userGroups.find(
+                          (g) => g.workspace_user_groups?.id === selectedGroupId
+                        );
+                        const sessionsArray =
+                          selectedGroup?.workspace_user_groups?.sessions || [];
+                        const totalSessions = getSessionsForMonth(
+                          sessionsArray,
+                          selectedMonth
+                        );
+                        const attendanceRate =
+                          totalSessions > 0
+                            ? (attendanceDays / totalSessions) * 100
+                            : 0;
 
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                        <Calculator className="h-4 w-4" />
-                        {t('ws-invoices.additional_products_checkout')}
-                      </div>
-
-                      {/* Summary */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            {t('ws-invoices.subtotal')}
-                          </span>
-                          <span>
-                            {Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            }).format(subscriptionSubtotal)}
-                          </span>
-                        </div>
-
-                        {(() => {
-                          const referralPercent =
-                            selectedPromotionId &&
-                            selectedPromotionId !== 'none'
-                              ? referralDiscountMap.get(selectedPromotionId)
-                              : undefined;
-                          const hasReferral = referralPercent !== undefined;
-                          if (!selectedPromotion && !hasReferral) return null;
-                          const labelName = selectedPromotion
-                            ? selectedPromotion.name ||
-                              t('ws-invoices.unnamed_promotion')
-                            : (linkedPromotions || []).find(
-                                (lp) => lp.promo_id === selectedPromotionId
-                              )?.workspace_promotions?.name ||
-                              t('ws-invoices.unnamed_promotion');
-                          const amount = subscriptionDiscountAmount;
-                          return (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                {t('ws-invoices.discount')} ({labelName})
-                              </span>
-                              <span className="text-green-600">
-                                -
-                                {Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(amount)}
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>{t('ws-invoices.attendance_rate')}</span>
+                              <span className="font-medium">
+                                {attendanceRate.toFixed(1)}%
                               </span>
                             </div>
-                          );
-                        })()}
-
-                        <Separator />
-
-                        <div className="flex justify-between font-semibold">
-                          <span>{t('ws-invoices.total')}</span>
-                          <span>
-                            {Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            }).format(subscriptionRoundedTotal)}
-                          </span>
-                        </div>
-
-                        {Math.abs(
-                          subscriptionRoundedTotal -
-                            subscriptionTotalBeforeRounding
-                        ) > 0.01 && (
-                          <div className="flex justify-between text-muted-foreground text-sm">
-                            <span>{t('ws-invoices.adjustment')}</span>
-                            <span>
-                              {subscriptionRoundedTotal >
-                              subscriptionTotalBeforeRounding
-                                ? '+'
-                                : ''}
-                              {Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(
-                                subscriptionRoundedTotal -
-                                  subscriptionTotalBeforeRounding
-                              )}
-                            </span>
+                            <div className="h-2 w-full rounded-full bg-muted">
+                              <div
+                                className="h-2 rounded-full bg-green-500 transition-all"
+                                style={{
+                                  width: `${Math.min(attendanceRate, 100)}%`,
+                                }}
+                              />
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        );
+                      })()}
 
-                      {/* Rounding Controls - only show if rounding is applicable */}
-                      {canRound && (
+                      {/* Attendance Calendar */}
+                      {userAttendance && userAttendance.length > 0 && (
                         <div className="space-y-2">
-                          <Label>{t('ws-invoices.rounding_options')}</Label>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={roundUpSubscription}
-                              className="flex-1"
-                            >
-                              <ArrowUp className="mr-1 h-4 w-4" />
-                              {t('ws-invoices.round_up')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={roundDownSubscription}
-                              className="flex-1"
-                            >
-                              <ArrowDown className="mr-1 h-4 w-4" />
-                              {t('ws-invoices.round_down')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={resetRoundingSubscription}
-                              disabled={
-                                Math.abs(
-                                  subscriptionRoundedTotal -
-                                    subscriptionTotalBeforeRounding
-                                ) < 0.01
-                              }
-                            >
-                              {t('ws-invoices.reset')}
-                            </Button>
+                          <Label>{t('ws-invoices.attendance_calendar')}</Label>
+                          <AttendanceCalendar
+                            userAttendance={userAttendance}
+                            selectedMonth={selectedMonth}
+                            selectedGroup={userGroups.find(
+                              (g) =>
+                                g.workspace_user_groups?.id === selectedGroupId
+                            )}
+                            locale={locale}
+                          />
+                          <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                            <div className="flex items-center gap-1">
+                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                              <span>{t('ws-invoices.present')}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                              <span>{t('ws-invoices.late')}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                              <span>{t('ws-invoices.absent')}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                              <span>{t('ws-invoices.no_session')}</span>
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
-                  </>
-                )}
-
-                <Separator />
-
-                {/* Create Subscription Invoice Button */}
-                <Button
-                  className="w-full"
-                  onClick={handleCreateSubscriptionInvoice}
-                  disabled={
-                    !selectedUser ||
-                    !selectedGroupId ||
-                    (subscriptionProducts.length === 0 &&
-                      subscriptionSelectedProducts.length === 0) ||
-                    !selectedWalletId ||
-                    !selectedCategoryId ||
-                    isCreating ||
-                    isSelectedMonthPaid
-                  }
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('ws-invoices.creating_subscription_invoice')}
-                    </>
-                  ) : (
-                    t('ws-invoices.create_subscription_invoice')
                   )}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Invoice Configuration for Subscription */}
+            {(subscriptionProducts.length > 0 ||
+              subscriptionSelectedProducts.length > 0) &&
+              !isSelectedMonthPaid && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      {t('ws-invoices.subscription_invoice_configuration')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Invoice Content */}
+                    <div className="space-y-2">
+                      <Label htmlFor="subscription-invoice-content">
+                        {t('ws-invoices.content')}
+                      </Label>
+                      <Textarea
+                        placeholder={t(
+                          'ws-invoices.subscription_invoice_content_placeholder'
+                        )}
+                        className="min-h-20"
+                        value={invoiceContent}
+                        onChange={(e) => setInvoiceContent(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Invoice Notes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="subscription-invoice-notes">
+                        {t('ws-invoices.notes')}
+                      </Label>
+                      <Textarea
+                        placeholder={t(
+                          'ws-invoices.additional_notes_placeholder'
+                        )}
+                        className="min-h-15"
+                        value={invoiceNotes}
+                        onChange={(e) => setInvoiceNotes(e.target.value)}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    {/* Payment Settings */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <CreditCard className="h-4 w-4" />
+                        {t('ws-invoices.payment_settings')}
+                      </div>
+
+                      {/* Wallet Selection */}
+                      <div className="space-y-2">
+                        <Label htmlFor="subscription-wallet-select">
+                          {t('ws-wallets.wallet')}{' '}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={selectedWalletId}
+                          onValueChange={setSelectedWalletId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t(
+                                'ws-invoices.select_wallet_required'
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {wallets.map((wallet) => (
+                              <SelectItem
+                                key={wallet.id}
+                                value={wallet.id || 'invalid'}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4" />
+                                  <div className="flex flex-row gap-2">
+                                    <p className="font-medium">
+                                      {wallet.name ||
+                                        t('ws-invoices.unnamed_wallet')}
+                                    </p>
+                                    <p className="text-muted-foreground text-sm">
+                                      {wallet.type || 'STANDARD'} -{' '}
+                                      {wallet.currency || 'VND'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Transaction Category Selection */}
+                      <div className="space-y-2">
+                        <Label htmlFor="subscription-category-select">
+                          {t('ws-invoices.transaction_category')}{' '}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Combobox
+                          t={t}
+                          options={categories.map(
+                            (category): ComboboxOptions => ({
+                              value: category.id || '',
+                              label:
+                                category.name ||
+                                t('ws-invoices.unnamed_category'),
+                            })
+                          )}
+                          selected={selectedCategoryId}
+                          onChange={(value) =>
+                            setSelectedCategoryId(value as string)
+                          }
+                          placeholder={t(
+                            'ws-invoices.select_category_required'
+                          )}
+                        />
+                      </div>
+
+                      {/* Promotion Selection */}
+                      <div className="space-y-2">
+                        <Label htmlFor="subscription-promotion-select">
+                          {t('invoices.add_promotion')}
+                        </Label>
+                        <Combobox
+                          t={t}
+                          options={(() => {
+                            const list: ComboboxOptions[] = [
+                              {
+                                value: 'none',
+                                label: t('ws-invoices.no_promotion'),
+                              },
+                              ...availablePromotions.map(
+                                (promotion): ComboboxOptions => {
+                                  const referralPercent =
+                                    referralDiscountMap.get(promotion.id);
+                                  const labelValue =
+                                    referralPercent !== undefined
+                                      ? `${referralPercent || 0}%`
+                                      : promotion.use_ratio
+                                        ? `${promotion.value}%`
+                                        : Intl.NumberFormat('vi-VN', {
+                                            style: 'currency',
+                                            currency: 'VND',
+                                          }).format(promotion.value);
+                                  return {
+                                    value: promotion.id,
+                                    label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                                  } as ComboboxOptions;
+                                }
+                              ),
+                            ];
+
+                            if (
+                              selectedPromotionId &&
+                              selectedPromotionId !== 'none' &&
+                              !availablePromotions.some(
+                                (p) => p.id === selectedPromotionId
+                              )
+                            ) {
+                              const referralPercent =
+                                referralDiscountMap.get(selectedPromotionId);
+                              const referralName =
+                                (linkedPromotions || []).find(
+                                  (lp) => lp.promo_id === selectedPromotionId
+                                )?.workspace_promotions?.name ||
+                                t('ws-invoices.unnamed_promotion');
+                              list.splice(1, 0, {
+                                value: selectedPromotionId,
+                                label: `${referralName} (${referralPercent ?? 0}%)`,
+                              } as ComboboxOptions);
+                            }
+
+                            return list;
+                          })()}
+                          selected={selectedPromotionId}
+                          onChange={(value) =>
+                            setSelectedPromotionId(value as string)
+                          }
+                          placeholder={t('ws-invoices.search_promotions')}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Checkout Section for Manual Products */}
+                    {subscriptionSelectedProducts.length > 0 && (
+                      <>
+                        <Separator />
+
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                            <Calculator className="h-4 w-4" />
+                            {t('ws-invoices.additional_products_checkout')}
+                          </div>
+
+                          {/* Summary */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">
+                                {t('ws-invoices.subtotal')}
+                              </span>
+                              <span>
+                                {Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(subscriptionSubtotal)}
+                              </span>
+                            </div>
+
+                            {(() => {
+                              const referralPercent =
+                                selectedPromotionId &&
+                                selectedPromotionId !== 'none'
+                                  ? referralDiscountMap.get(selectedPromotionId)
+                                  : undefined;
+                              const hasReferral = referralPercent !== undefined;
+                              if (!selectedPromotion && !hasReferral)
+                                return null;
+                              const labelName = selectedPromotion
+                                ? selectedPromotion.name ||
+                                  t('ws-invoices.unnamed_promotion')
+                                : (linkedPromotions || []).find(
+                                    (lp) => lp.promo_id === selectedPromotionId
+                                  )?.workspace_promotions?.name ||
+                                  t('ws-invoices.unnamed_promotion');
+                              const amount = subscriptionDiscountAmount;
+                              return (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    {t('ws-invoices.discount')} ({labelName})
+                                  </span>
+                                  <span className="text-green-600">
+                                    -
+                                    {Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND',
+                                    }).format(amount)}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+
+                            <Separator />
+
+                            <div className="flex justify-between font-semibold">
+                              <span>{t('ws-invoices.total')}</span>
+                              <span>
+                                {Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(subscriptionRoundedTotal)}
+                              </span>
+                            </div>
+
+                            {Math.abs(
+                              subscriptionRoundedTotal -
+                                subscriptionTotalBeforeRounding
+                            ) > 0.01 && (
+                              <div className="flex justify-between text-muted-foreground text-sm">
+                                <span>{t('ws-invoices.adjustment')}</span>
+                                <span>
+                                  {subscriptionRoundedTotal >
+                                  subscriptionTotalBeforeRounding
+                                    ? '+'
+                                    : ''}
+                                  {Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                  }).format(
+                                    subscriptionRoundedTotal -
+                                      subscriptionTotalBeforeRounding
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Rounding Controls - only show if rounding is applicable */}
+                          {canRound && (
+                            <div className="space-y-2">
+                              <Label>{t('ws-invoices.rounding_options')}</Label>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={roundUpSubscription}
+                                  className="flex-1"
+                                >
+                                  <ArrowUp className="mr-1 h-4 w-4" />
+                                  {t('ws-invoices.round_up')}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={roundDownSubscription}
+                                  className="flex-1"
+                                >
+                                  <ArrowDown className="mr-1 h-4 w-4" />
+                                  {t('ws-invoices.round_down')}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={resetRoundingSubscription}
+                                  disabled={
+                                    Math.abs(
+                                      subscriptionRoundedTotal -
+                                        subscriptionTotalBeforeRounding
+                                    ) < 0.01
+                                  }
+                                >
+                                  {t('ws-invoices.reset')}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <Separator />
+
+                    {/* Create Subscription Invoice Button */}
+                    <Button
+                      className="w-full"
+                      onClick={handleCreateSubscriptionInvoice}
+                      disabled={
+                        !selectedUser ||
+                        !selectedGroupId ||
+                        (subscriptionProducts.length === 0 &&
+                          subscriptionSelectedProducts.length === 0) ||
+                        !selectedWalletId ||
+                        !selectedCategoryId ||
+                        isCreating ||
+                        isSelectedMonthPaid
+                      }
+                    >
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t('ws-invoices.creating_subscription_invoice')}
+                        </>
+                      ) : (
+                        t('ws-invoices.create_subscription_invoice')
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+          </>
+        )}
       </div>
     </div>
   );
