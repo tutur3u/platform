@@ -46,7 +46,6 @@ import type { AvailablePromotion } from './hooks';
 import {
   useAvailablePromotions,
   useCategories,
-  useInvoiceAttendanceConfig,
   useInvoicePromotionConfig,
   useProducts,
   useUserInvoices,
@@ -100,7 +99,8 @@ export function StandardInvoice({
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
   const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId);
-  const { data: linkedPromotions = [] } = useUserLinkedPromotions(selectedUserId);
+  const { data: linkedPromotions = [] } =
+    useUserLinkedPromotions(selectedUserId);
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
     wsId,
     selectedUserId
@@ -191,7 +191,13 @@ export function StandardInvoice({
     }
 
     return 0;
-  }, [selectedPromotionId, selectedPromotion, subtotal, referralDiscountMap]);
+  }, [
+    selectedPromotionId,
+    selectedPromotion,
+    subtotal,
+    referralDiscountMap,
+    promotionsAllowed,
+  ]);
 
   const totalBeforeRounding = subtotal - discountAmount;
   const [roundedTotal, setRoundedTotal] = useState(totalBeforeRounding);
@@ -303,6 +309,7 @@ export function StandardInvoice({
     selectedPromotionId,
     subtotal,
     referralDiscountMap,
+    promotionsAllowed,
   ]);
 
   const handleCreateInvoice = async () => {
@@ -831,7 +838,8 @@ export function StandardInvoice({
                         selectedPromotionId &&
                         selectedPromotionId !== 'none' &&
                         !availablePromotions.some(
-                          (p: AvailablePromotion) => p.id === selectedPromotionId
+                          (p: AvailablePromotion) =>
+                            p.id === selectedPromotionId
                         )
                       ) {
                         const referralPercent =

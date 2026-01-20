@@ -138,7 +138,7 @@ export async function calculateInvoiceValues(
         .eq('ws_id', wsId)
         .eq('id', 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD')
         .single();
-      
+
       // Default to true for backward compatibility
       allowPromotions = config?.value?.toLowerCase() !== 'false';
     }
@@ -409,13 +409,6 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    // Pre-declare variables to avoid temporal-dead-zone errors if code is reordered.
-    let workspaceUserId: string | null = null;
-    let workspaceUserGroup: string | null = null;
-    let calculatedValues: CalculatedValues;
-
-
-
     // Get current user
     const {
       data: { user },
@@ -426,25 +419,23 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Get user workspace ID
-    if (user) {
-      const { data: workspaceUser } = await supabase
-        .from('workspace_user_linked_users')
-        .select('virtual_user_id')
-        .eq('platform_user_id', user.id)
-        .eq('ws_id', wsId)
-        .single();
+    const { data: workspaceUser } = await supabase
+      .from('workspace_user_linked_users')
+      .select('virtual_user_id')
+      .eq('platform_user_id', user.id)
+      .eq('ws_id', wsId)
+      .single();
 
-      workspaceUserId = workspaceUser?.virtual_user_id || null;
-    }
+    const workspaceUserId = workspaceUser?.virtual_user_id || null;
+    const workspaceUserGroup: string | null = null;
 
-    
     // Determine if this is a subscription invoice (has user_group_id)
     // Note: workspaceUserGroup is currently always null in this implementation
     // but we check it for future compatibility
     const isSubscriptionInvoice = !!workspaceUserGroup;
 
     // Calculate values using backend logic
-    calculatedValues = await calculateInvoiceValues(
+    const calculatedValues = await calculateInvoiceValues(
       wsId,
       products,
       promotion_id,
@@ -455,7 +446,7 @@ export async function POST(req: Request, { params }: Params) {
       },
       isSubscriptionInvoice
     );
-    
+
     const {
       subtotal,
       discount_amount,
@@ -612,7 +603,7 @@ export async function POST(req: Request, { params }: Params) {
           .eq('ws_id', wsId)
           .eq('id', 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD')
           .single();
-        
+
         // Default to true for backward compatibility
         allowPromotions = config?.value?.toLowerCase() !== 'false';
       }
