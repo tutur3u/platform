@@ -7,6 +7,7 @@ import {
   CreditCard,
   FileText,
   Loader2,
+  Plus,
 } from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
@@ -26,7 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
+import { Combobox, ComboboxOption, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -38,11 +39,13 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useQueryClient } from '@tanstack/react-query';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
+import { CreatePromotionDialog } from './create-promotion-dialog';
 import {
   useAvailablePromotions,
   useCategories,
@@ -74,6 +77,7 @@ export function StandardInvoice({
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   // Read from URL params
   const selectedUserId = searchParams.get('user_id') || '';
@@ -128,6 +132,7 @@ export function StandardInvoice({
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
+  const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
   // User history queries
   const { data: userTransactions = [], isLoading: userTransactionsLoading } =
@@ -245,6 +250,13 @@ export function StandardInvoice({
       );
     }
   }, [selectedProducts, t]);
+
+  // Reset promotion when user is cleared
+  useEffect(() => {
+    if (!selectedUserId && selectedPromotionId !== 'none') {
+      setSelectedPromotionId('none');
+    }
+  }, [selectedUserId, selectedPromotionId]);
 
   // Auto-select user's best linked promotion based on current subtotal
   useEffect(() => {
@@ -421,12 +433,15 @@ export function StandardInvoice({
       console.error('Error creating invoice:', error);
 
       // Show error message
+      const rawMessage = error instanceof Error ? error.message : '';
+      const friendlyMessage = rawMessage
+        .toLowerCase()
+        .includes('promotion usage limit reached')
+        ? t('ws-invoices.promotion_limit_reached')
+        : rawMessage || t('ws-invoices.failed_to_create_invoice');
       toast(
         t('ws-invoices.error_creating_invoice', {
-          error:
-            error instanceof Error
-              ? error.message
-              : t('ws-invoices.failed_to_create_invoice'),
+          error: friendlyMessage,
         })
       );
 
@@ -570,8 +585,8 @@ export function StandardInvoice({
                                     <p
                                       className={`font-semibold ${
                                         (transaction.amount || 0) >= 0
-                                          ? 'text-green-600'
-                                          : 'text-red-600'
+                                          ? 'text-dynamic-green'
+                                          : 'text-dynamic-red'
                                       }`}
                                     >
                                       {transaction.amount !== undefined
@@ -636,7 +651,7 @@ export function StandardInvoice({
                                     )}
                                   </div>
                                   <div className="text-right">
-                                    <p className="font-semibold text-blue-600">
+                                    <p className="font-semibold text-dynamic-blue">
                                       {invoice.price !== undefined
                                         ? Intl.NumberFormat('vi-VN', {
                                             style: 'currency',
@@ -745,7 +760,7 @@ export function StandardInvoice({
               <div className="space-y-2">
                 <Label htmlFor="wallet-select">
                   {t('ws-wallets.wallet')}{' '}
-                  <span className="text-red-500">*</span>
+                  <span className="text-dynamic-red">*</span>
                 </Label>
                 <Select
                   value={selectedWalletId}
@@ -784,7 +799,7 @@ export function StandardInvoice({
               <div className="space-y-2">
                 <Label htmlFor="category-select">
                   {t('ws-invoices.transaction_category')}{' '}
-                  <span className="text-red-500">*</span>
+                  <span className="text-dynamic-red">*</span>
                 </Label>
                 <Combobox
                   t={t}
@@ -806,13 +821,39 @@ export function StandardInvoice({
                   <Label htmlFor="promotion-select">
                     {t('invoices.add_promotion')}
                   </Label>
+                  <CreatePromotionDialog
+                    wsId={wsId}
+                    open={createPromotionOpen}
+                    onOpenChange={setCreatePromotionOpen}
+                    onSuccess={(promotion) => {
+                      if (selectedUserId) {
+                        void queryClient.invalidateQueries({
+                          queryKey: ['available-promotions', wsId, selectedUserId],
+                        });
+                      }
+                      setSelectedPromotionId(promotion.id);
+                    }}
+                  />
                   <Combobox
-                    t={t}
+                    disabled={!selectedUserId}
+                    actions={
+                      selectedUserId
+                        ? [
+                            {
+                              key: 'create-promotion',
+                              label: t('ws-invoices.create_promotion'),
+                              icon: <Plus className="h-4 w-4 text-primary" />,
+                              onSelect: () => setCreatePromotionOpen(true),
+                            },
+                          ]
+                        : undefined
+                    }
+                    actionsPosition="top"
                     options={(() => {
-                      const list: ComboboxOptions[] = [
+                      const list: ComboboxOption[] = [
                         { value: 'none', label: t('ws-invoices.no_promotion') },
                         ...availablePromotions.map(
-                          (promotion: AvailablePromotion): ComboboxOptions => {
+                          (promotion: AvailablePromotion): ComboboxOption => {
                             const referralPercent = referralDiscountMap.get(
                               promotion.id
                             );
@@ -828,7 +869,7 @@ export function StandardInvoice({
                             return {
                               value: promotion.id,
                               label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
-                            } as ComboboxOptions;
+                            } as ComboboxOption;
                           }
                         ),
                       ];
@@ -852,16 +893,18 @@ export function StandardInvoice({
                         list.splice(1, 0, {
                           value: selectedPromotionId,
                           label: `${referralName} (${referralPercent ?? 0}%)`,
-                        } as ComboboxOptions);
+                        } as ComboboxOption);
                       }
 
                       return list;
                     })()}
                     selected={selectedPromotionId}
-                    onChange={(value) =>
-                      setSelectedPromotionId(value as string)
+                    onChange={(value) => setSelectedPromotionId(value as string)}
+                    placeholder={
+                      selectedUserId
+                        ? t('ws-invoices.search_promotions')
+                        : t('ws-invoices.select_user_first')
                     }
-                    placeholder={t('ws-invoices.search_promotions')}
                   />
                 </div>
               )}
@@ -900,7 +943,7 @@ export function StandardInvoice({
                             t('ws-invoices.unnamed_promotion')}
                           )
                         </span>
-                        <span className="text-green-600">
+                        <span className="text-dynamic-green">
                           -
                           {Intl.NumberFormat('vi-VN', {
                             style: 'currency',

@@ -17,11 +17,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { PromotionForm } from '@tuturuuu/ui/finance/invoices/promotion-form';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { PromotionForm } from './form';
 
 interface PromotionRowActionsProps {
   row: Row<ProductPromotion>;
@@ -81,7 +81,14 @@ export function PromotionRowActions({
               <DialogTitle>{t('ws-inventory-promotions.update')}</DialogTitle>
             </DialogHeader>
 
-            <PromotionForm wsId={promotion.ws_id} data={promotion} />
+            <PromotionForm
+              wsId={promotion.ws_id}
+              data={promotion}
+              canUpdateInventory={canUpdateInventory}
+              onFinish={() => {
+                setOpen(false);
+              }}
+            />
           </DialogContent>
         </Dialog>
       )}

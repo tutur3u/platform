@@ -92,6 +92,28 @@ export const getPromotionColumns = (
     cell: ({ row }) => <div>{row.getValue('value') || '-'}</div>,
   },
   {
+    accessorKey: 'current_uses',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t('ws-inventory-promotions.form.current_uses')}
+      />
+    ),
+    cell: ({ row }) => {
+      const current = row.original.current_uses ?? 0;
+      const max = row.original.max_uses;
+      return (
+        <div>
+          {current}/
+          {max === null || max === undefined
+            ? t('ws-inventory-promotions.form.unlimited_uses')
+            : max}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader

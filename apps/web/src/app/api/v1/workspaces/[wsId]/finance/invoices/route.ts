@@ -120,9 +120,6 @@ export async function calculateInvoiceValues(
         `Product not found or not available: ${product.product_id}`
       );
     }
-    console.log(productInfo.workspace_products.name);
-    console.log(productInfo.price);
-    console.log(product.quantity);
     subtotal += productInfo.price * product.quantity;
   }
 
@@ -146,7 +143,8 @@ export async function calculateInvoiceValues(
     if (allowPromotions) {
       const { data: promotion, error: promotionError } = await supabase
         .from('workspace_promotions')
-        .select('value, use_ratio')
+        // NOTE: column types land after migration + typegen; keep TS unblocked
+        .select('value, use_ratio, max_uses, current_uses')
         .eq('id', promotion_id)
         .eq('ws_id', wsId)
         .single();
@@ -156,6 +154,16 @@ export async function calculateInvoiceValues(
       }
 
       if (promotion) {
+        if (
+          promotion.max_uses !== null &&
+          promotion.max_uses !== undefined &&
+          Number(promotion.current_uses ?? 0) >= Number(promotion.max_uses)
+        ) {
+          const err = new Error('Promotion usage limit reached');
+          (err as any).code = 'PROMOTION_LIMIT_REACHED';
+          throw err;
+        }
+
         if (promotion.use_ratio) {
           discount_amount = subtotal * (promotion.value / 100);
         } else {
@@ -435,17 +443,28 @@ export async function POST(req: Request, { params }: Params) {
     const isSubscriptionInvoice = !!workspaceUserGroup;
 
     // Calculate values using backend logic
-    const calculatedValues = await calculateInvoiceValues(
-      wsId,
-      products,
-      promotion_id,
-      {
-        subtotal: frontend_subtotal,
-        discount_amount: frontend_discount_amount,
-        total: frontend_total,
-      },
-      isSubscriptionInvoice
-    );
+    let calculatedValues: CalculatedValues;
+    try {
+      calculatedValues = await calculateInvoiceValues(
+        wsId,
+        products,
+        promotion_id,
+        {
+          subtotal: frontend_subtotal,
+          discount_amount: frontend_discount_amount,
+          total: frontend_total,
+        },
+        isSubscriptionInvoice
+      );
+    } catch (e) {
+      if ((e as any)?.code === 'PROMOTION_LIMIT_REACHED') {
+        return NextResponse.json(
+          { message: 'Promotion usage limit reached' },
+          { status: 400 }
+        );
+      }
+      throw e;
+    }
 
     const {
       subtotal,
@@ -612,7 +631,10 @@ export async function POST(req: Request, { params }: Params) {
         // Get Promotion use-ratio from workspace_promotions
         const { data: promotion, error: promotionFetchError } = await supabase
           .from('workspace_promotions')
-          .select('use_ratio, value, name, code, description')
+          // NOTE: column types land after migration + typegen; keep TS unblocked
+          .select(
+            'use_ratio, value, name, code, description, max_uses, current_uses'
+          )
           .eq('id', promotion_id)
           .single();
 
@@ -622,6 +644,24 @@ export async function POST(req: Request, { params }: Params) {
         }
         // Only insert promotion if we successfully fetched promotion data or use default
         if (!promotionFetchError || promotion) {
+          if (
+            promotion?.max_uses !== null &&
+            promotion?.max_uses !== undefined &&
+            Number(promotion.current_uses ?? 0) >= Number(promotion.max_uses)
+          ) {
+            await Promise.all([
+              supabase
+                .from('finance_invoice_products')
+                .delete()
+                .eq('invoice_id', invoiceId),
+              supabase.from('finance_invoices').delete().eq('id', invoiceId),
+            ]);
+            return NextResponse.json(
+              { message: 'Promotion usage limit reached' },
+              { status: 400 }
+            );
+          }
+
           const { error: promotionError } = await supabase
             .from('finance_invoice_promotions')
             .insert({
@@ -635,7 +675,10 @@ export async function POST(req: Request, { params }: Params) {
             });
 
           if (promotionError) {
-            console.error('Error creating invoice promotion:', promotionError);
+            const isLimitReached =
+              (promotionError as any)?.code === '23514' ||
+              promotionError.message?.toLowerCase().includes('usage limit');
+
             // Rollback: delete all created records
             await Promise.all([
               supabase
@@ -644,6 +687,15 @@ export async function POST(req: Request, { params }: Params) {
                 .eq('invoice_id', invoiceId),
               supabase.from('finance_invoices').delete().eq('id', invoiceId),
             ]);
+
+            if (isLimitReached) {
+              return NextResponse.json(
+                { message: 'Promotion usage limit reached' },
+                { status: 400 }
+              );
+            }
+
+            console.error('Error creating invoice promotion:', promotionError);
             return NextResponse.json(
               {
                 message: 'Error applying promotion to invoice',

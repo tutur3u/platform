@@ -4918,7 +4918,8 @@
     "description": "Description",
     "id": "ID",
     "name": "Name",
-    "value": "Value"
+    "value": "Value",
+    "current_uses": "Current Uses"
   },
   "qr": {
     "image_upload": {
@@ -8736,8 +8737,11 @@
     "failed_delete_promotion": "Failed to delete promotion",
     "form": {
       "code": "Coupon code",
+      "current_uses": "Current uses",
       "description": "Description",
+      "max_uses": "Maximum uses",
       "name": "Name",
+      "unlimited_uses": "Unlimited uses",
       "unit": {
         "currency": "Currency",
         "percentage": "Percentage",
@@ -8865,6 +8869,7 @@
     "content_placeholder": "Enter invoice description or details...",
     "create": "Create invoice",
     "create_description": "Create a new invoice",
+    "create_promotion": "Create promotion",
     "create_invoice": "Create Invoice",
     "create_invoice_validation": "Please select a customer, add products, choose a wallet, and select a transaction category before creating the invoice.",
     "create_multiple_invoices": "Create Multiple Invoices",
@@ -8895,6 +8900,7 @@
     "failed_to_create_invoice": "Failed to create invoice",
     "failed_to_create_subscription_invoice": "Failed to create subscription invoice",
     "frontend_calculated": "Frontend calculated",
+    "promotion_limit_reached": "This promotion has reached its usage limit",
     "inventory_fallback_used": "A warehouse was not specified so a default one has been selected",
     "invoice_configuration": "Invoice Information",
     "invoice_created_recalculated": "Invoice created successfully! Values were recalculated on the server.",
@@ -8953,6 +8959,7 @@
     "search_products": "Search products...",
     "search_promotions": "Search promotions...",
     "select_category_required": "Select a category (required)...",
+    "select_user_first": "Please select a user first",
     "select_month": "Select month...",
     "select_product": "Select Product",
     "select_wallet_required": "Select a wallet (required)...",

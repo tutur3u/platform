@@ -10,6 +10,8 @@ const PromotionSchema = z
     code: z.string().min(1).max(255),
     value: z.coerce.number().min(0),
     unit: z.enum(['percentage', 'currency']).optional(),
+    // NULL/undefined = unlimited
+    max_uses: z.union([z.coerce.number().int().min(0), z.null()]).optional(),
   })
   .refine(
     ({ unit, value }) =>
@@ -77,24 +79,29 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const { error } = await supabase.from('workspace_promotions').insert({
-    name: data.name,
-    description: data.description,
-    code: data.code,
-    value: data.value,
-    creator_id: wsUser.virtual_user_id,
-    ws_id: wsId,
-    use_ratio: data.unit === 'percentage',
-  });
+  const { data: created, error } = await supabase
+    .from('workspace_promotions')
+    .insert({
+      name: data.name,
+      description: data.description,
+      code: data.code,
+      value: data.value,
+      creator_id: wsUser.virtual_user_id,
+      ws_id: wsId,
+      use_ratio: data.unit === 'percentage',
+      max_uses: data.max_uses ?? null,
+    })
+    .select('id, name, code, value, use_ratio, max_uses, current_uses')
+    .single();
 
   if (error) {
     // TODO: logging
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { message: 'Error creating promotion' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({ message: 'success', data: created });
 }

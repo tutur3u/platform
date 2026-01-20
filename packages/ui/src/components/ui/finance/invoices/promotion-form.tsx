@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
   Select,
@@ -22,6 +23,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -31,12 +33,17 @@ import { z } from 'zod';
 interface Props {
   wsId: string;
   data?: ProductPromotion;
-  onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  onFinish?: (
+    formData: z.infer<typeof FormSchema>,
+    promotion?: ProductPromotion
+  ) => void;
   canCreateInventory?: boolean;
   canUpdateInventory?: boolean;
+  onCancel?: () => void;
+  showCancelButton?: boolean;
 }
 
-const FormSchema = z
+export const FormSchema = z
   .object({
     id: z.string().optional(),
     name: z.string().min(1).max(255),
@@ -44,6 +51,8 @@ const FormSchema = z
     code: z.string().min(1).max(255),
     value: z.coerce.number().min(0),
     unit: z.string(),
+    // NULL/undefined = unlimited
+    max_uses: z.union([z.coerce.number().int().min(1), z.null()]).optional(),
   })
   .refine(
     ({ unit, value }) =>
@@ -61,6 +70,8 @@ export function PromotionForm({
   onFinish,
   canCreateInventory = true,
   canUpdateInventory = true,
+  onCancel,
+  showCancelButton = false,
 }: Props) {
   const t = useTranslations();
 
@@ -76,6 +87,8 @@ export function PromotionForm({
       code: data?.code,
       value: data?.value ? parseInt(data?.value.toString(), 10) : undefined,
       unit: data?.use_ratio ? 'percentage' : 'currency',
+      max_uses:
+        data?.max_uses === undefined ? undefined : (data?.max_uses ?? null),
     },
   });
 
@@ -110,16 +123,24 @@ export function PromotionForm({
           code: data.code,
           value: data.value,
           unit: data.unit,
+          max_uses: data.max_uses ?? null,
         }),
       }
     );
 
     if (res.ok) {
-      onFinish?.(data);
+      const json = await res.json().catch(() => null);
+      const promotion = json?.data as ProductPromotion | undefined;
+      setLoading(false);
+      onFinish?.(data, promotion);
       router.refresh();
+      return promotion;
     } else {
       setLoading(false);
-      toast.error(t('ws-inventory-promotions.failed_create_promotion'));
+      const json = await res.json().catch(() => null);
+      toast.error(
+        json?.message || t('ws-inventory-promotions.failed_create_promotion')
+      );
     }
   }
 
@@ -237,13 +258,80 @@ export function PromotionForm({
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading
-            ? t('common.processing')
-            : data?.id
-              ? t('common.edit')
-              : t('common.create')}
-        </Button>
+        <FormField
+          control={form.control}
+          name="max_uses"
+          render={({ field }) => {
+            const isUnlimitedUses =
+              field.value === null || field.value === undefined;
+
+            return (
+              <FormItem className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="promotion-unlimited-uses">
+                    {t('ws-inventory-promotions.form.unlimited_uses')}
+                  </Label>
+                  <Switch
+                    id="promotion-unlimited-uses"
+                    checked={isUnlimitedUses}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked ? null : 1);
+                    }}
+                  />
+                </div>
+
+                {!isUnlimitedUses && (
+                  <div className="space-y-2">
+                    <FormLabel>
+                      {t('ws-inventory-promotions.form.max_uses')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder={t('ws-inventory-promotions.form.max_uses')}
+                        onChange={(e) => {
+                          const next = e.target.valueAsNumber;
+                          field.onChange(Number.isFinite(next) ? next : null);
+                        }}
+                        onBlur={field.onBlur}
+                        value={(field.value as number | null | undefined) ?? ''}
+                        name={field.name}
+                        ref={field.ref}
+                        min={1}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </div>
+                )}
+              </FormItem>
+            );
+          }}
+        />
+
+        <div className="flex gap-2">
+          {showCancelButton && onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+              className="flex-1"
+            >
+              {t('common.cancel')}
+            </Button>
+          )}
+          <Button
+            type="submit"
+            className={showCancelButton ? 'flex-1' : 'w-full'}
+            disabled={loading}
+          >
+            {loading
+              ? t('common.processing')
+              : data?.id
+                ? t('common.edit')
+                : t('common.create')}
+          </Button>
+        </div>
       </form>
     </Form>
   );
