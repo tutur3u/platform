@@ -1483,9 +1483,18 @@
     "choose_tasks": "Chọn công việc",
     "clear": "Xóa bỏ",
     "clear_all": "Xóa tất cả",
+    "clear_all_assignees": "Xóa tất cả người thực hiện",
+    "clear_all_assignees_success": "Đã xóa tất cả người thực hiện thành công.",
     "clear_all_description": "Bạn có chắc chắn muốn xóa tất cả nội dung? Hành động này không thể hoàn tác.",
     "clear_all_filters": "Xóa tất cả các bộ lọc",
+    "clear_all_labels": "Xóa tất cả nhãn",
+    "clear_all_labels_success": "Đã xóa tất cả nhãn thành công.",
+    "clear_all_projects": "Xóa tất cả dự án",
+    "clear_all_projects_success": "Đã xóa tất cả dự án thành công.",
     "clear_all_title": "Xóa tất cả nội dung",
+    "clear_assignees_confirmation": "Bạn có chắc chắn muốn xóa tất cả người thực hiện khỏi các công việc trong danh sách này không?",
+    "clear_labels_confirmation": "Bạn có chắc chắn muốn xóa tất cả nhãn khỏi các công việc trong danh sách này không?",
+    "clear_projects_confirmation": "Bạn có chắc chắn muốn xóa tất cả dự án khỏi các công việc trong danh sách này không?",
     "clear_search": "Xóa tìm kiếm",
     "clear_selection": "Bỏ chọn",
     "clear_smart_focus": "Xóa tập trung thông minh",
@@ -1626,6 +1635,9 @@
     "export": "Xuất dữ liệu",
     "export-content": "Xin hãy chọn định dạng thư mục",
     "failed_to_archive_tasks": "Không thể lưu trữ công việc. Vui lòng thử lại.",
+    "failed_to_clear_assignees": "Không thể xóa người thực hiện.",
+    "failed_to_clear_labels": "Không thể xóa nhãn.",
+    "failed_to_clear_projects": "Không thể xóa dự án.",
     "failed_to_delete": "Không thể xóa",
     "failed_to_delete_tasks": "Không thể xóa công việc.",
     "failed_to_restore": "Không thể khôi phục công việc",
@@ -5173,6 +5185,11 @@
     "try_again": "Thử lại"
   },
   "settings": {
+    "attendance": {
+      "display": "Cài đặt hiển thị",
+      "display_description": "Cấu hình thành viên nào hiển thị trong giao diện điểm danh",
+      "title": "Điểm danh"
+    },
     "calendar": {
       "colors": "Màu sắc danh mục",
       "colors_description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
@@ -8536,6 +8553,16 @@
     "user_agent": "User Agent",
     "value": "Giá trị",
     "view_usage_logs": "Xem nhật ký sử dụng"
+  },
+  "ws-attendance-settings": {
+    "display_description": "Cấu hình cách hiển thị thành viên trong giao diện điểm danh",
+    "display_title": "Hiển thị điểm danh",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "show_managers_help": "Khi bật, quản lý (giáo viên) sẽ được hiển thị trong danh sách điểm danh. Khi tắt, chỉ các thành viên không phải quản lý được hiển thị.",
+    "show_managers_label": "Hiển thị quản lý trong điểm danh",
+    "update_error": "Cập nhật cài đặt thất bại",
+    "update_success": "Cập nhật cài đặt thành công"
   },
   "ws-course-modules": {
     "add_link": "Thêm liên kết",

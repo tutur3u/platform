@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckSquare,
   ChevronRight,
+  ClipboardList,
   Clock,
   Coffee,
   CreditCard,
@@ -72,6 +73,7 @@ import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
 import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
+import AttendanceDisplaySettings from './attendance/attendance-display-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DefaultWalletSettings from './finance/default-wallet-settings';
@@ -364,6 +366,18 @@ export function SettingsDialog({
                 icon: Coffee,
                 description: t('settings.time_tracker.break_types_description'),
                 keywords: ['Time Tracker', 'Breaks'],
+              },
+            ],
+          },
+          {
+            label: t('settings.attendance.title'),
+            items: [
+              {
+                name: 'attendance_display',
+                label: t('settings.attendance.display'),
+                icon: ClipboardList,
+                description: t('settings.attendance.display_description'),
+                keywords: ['Attendance', 'Display', 'Members', 'Managers'],
               },
             ],
           },
@@ -731,6 +745,10 @@ export function SettingsDialog({
 
                 {activeTab === 'break_types' && wsId && (
                   <WorkspaceBreakTypesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'attendance_display' && wsId && (
+                  <AttendanceDisplaySettings wsId={wsId} />
                 )}
               </CalendarSettingsWrapper>
             </div>

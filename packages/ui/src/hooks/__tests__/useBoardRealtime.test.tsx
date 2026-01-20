@@ -807,7 +807,7 @@ describe('useBoardRealtime', () => {
       expect(mockChannel.on).toHaveBeenCalledWith(
         'postgres_changes',
         expect.objectContaining({
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'workspace_task_labels',
         }),

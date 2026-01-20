@@ -1466,9 +1466,18 @@
     "choose_tasks": "Choose tasks",
     "clear": "Clear",
     "clear_all": "Clear All",
+    "clear_all_assignees": "Clear all assignees",
+    "clear_all_assignees_success": "Successfully cleared all assignees.",
     "clear_all_description": "Are you sure you want to clear all content? This action cannot be undone.",
     "clear_all_filters": "Clear all filters",
+    "clear_all_labels": "Clear all labels",
+    "clear_all_labels_success": "Successfully cleared all labels.",
+    "clear_all_projects": "Clear all projects",
+    "clear_all_projects_success": "Successfully cleared all projects.",
     "clear_all_title": "Clear All Content",
+    "clear_assignees_confirmation": "Are you sure you want to clear all assignees from the tasks in this list?",
+    "clear_labels_confirmation": "Are you sure you want to clear all labels from the tasks in this list?",
+    "clear_projects_confirmation": "Are you sure you want to clear all projects from the tasks in this list?",
     "clear_search": "Clear search",
     "clear_selection": "Clear selection",
     "clear_smart_focus": "Clear Smart Focus",
@@ -1608,6 +1617,9 @@
     "export": "Export",
     "export-content": "Please choose file type to export",
     "failed_to_archive_tasks": "Failed to archive tasks. Please try again.",
+    "failed_to_clear_assignees": "Failed to clear assignees.",
+    "failed_to_clear_labels": "Failed to clear labels.",
+    "failed_to_clear_projects": "Failed to clear projects.",
     "failed_to_delete": "Failed to delete",
     "failed_to_delete_tasks": "Failed to delete tasks.",
     "failed_to_restore": "Failed to restore tasks",
@@ -5135,6 +5147,11 @@
     "try_again": "Try Again"
   },
   "settings": {
+    "attendance": {
+      "display": "Display Settings",
+      "display_description": "Configure which members appear in attendance views",
+      "title": "Attendance"
+    },
     "calendar": {
       "colors": "Category Colors",
       "colors_description": "Customize colors for different event categories",
@@ -8444,6 +8461,16 @@
     "user_agent": "User Agent",
     "value": "Value",
     "view_usage_logs": "View Usage Logs"
+  },
+  "ws-attendance-settings": {
+    "display_description": "Configure how members are displayed in attendance views",
+    "display_title": "Attendance Display",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "show_managers_help": "When enabled, managers (teachers) are shown in attendance lists. When disabled, only non-manager members are displayed.",
+    "show_managers_label": "Show Managers in Attendance",
+    "update_error": "Failed to update settings",
+    "update_success": "Settings updated successfully"
   },
   "ws-course-modules": {
     "add_link": "Add link",
