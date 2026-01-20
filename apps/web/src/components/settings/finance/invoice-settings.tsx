@@ -79,11 +79,14 @@ export default function InvoiceSettings({ wsId }: Props) {
 
       const settled = await Promise.allSettled(
         updates.map(async (update) => {
-          const res = await fetch(`/api/v1/workspaces/${wsId}/settings/${update.key}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ value: update.value }),
-          });
+          const res = await fetch(
+            `/api/v1/workspaces/${wsId}/settings/${update.key}`,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ value: update.value }),
+            }
+          );
 
           if (!res.ok) throw new Error(`Failed to update ${update.key}`);
           return res.json();
@@ -98,16 +101,26 @@ export default function InvoiceSettings({ wsId }: Props) {
           r.reason instanceof Error ? r.reason : new Error(String(r.reason))
         );
 
-        const AggregateErrorCtor = (globalThis as unknown as { AggregateError?: unknown })
-          .AggregateError as
-          | (new (errors: unknown[], message?: string) => Error)
+        const AggregateErrorCtor = (
+          globalThis as unknown as { AggregateError?: unknown }
+        ).AggregateError as
+          | (new (
+              errors: unknown[],
+              message?: string
+            ) => Error)
           | undefined;
 
         throw AggregateErrorCtor
-          ? new AggregateErrorCtor(errors, 'Failed to update one or more invoice settings')
-          : Object.assign(new Error('Failed to update one or more invoice settings'), {
+          ? new AggregateErrorCtor(
               errors,
-            });
+              'Failed to update one or more invoice settings'
+            )
+          : Object.assign(
+              new Error('Failed to update one or more invoice settings'),
+              {
+                errors,
+              }
+            );
       }
     },
     onSuccess: () => {
@@ -128,10 +141,18 @@ export default function InvoiceSettings({ wsId }: Props) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId, 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD'],
+        queryKey: [
+          'workspace-config',
+          wsId,
+          'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD',
+        ],
       });
       queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId, 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'],
+        queryKey: [
+          'workspace-config',
+          wsId,
+          'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
+        ],
       });
     },
   });
