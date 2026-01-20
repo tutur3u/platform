@@ -376,17 +376,19 @@ export function useBoardRealtime(
 
     // Listen for changes to workspace labels (affects all tasks in the workspace)
     // Note: workspace_task_labels has ws_id, not task_id
+    // - INSERT: New labels don't affect existing tasks (task_labels listener handles linking)
+    // - UPDATE: Label name/color changes affect all tasks using this label → invalidate
+    // - DELETE: Label removal is handled by task_labels listener
     channel.on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'UPDATE', // Only listen for UPDATE events (name/color changes)
         schema: 'public',
         table: 'workspace_task_labels',
       },
       async (payload) => {
         const newRecord = payload.new as { id?: string } | undefined;
-        const oldRecord = payload.old as { id?: string } | undefined;
-        const labelId = newRecord?.id || oldRecord?.id;
+        const labelId = newRecord?.id;
 
         if (!labelId) return;
 

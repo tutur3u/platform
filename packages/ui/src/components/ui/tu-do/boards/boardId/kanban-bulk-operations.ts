@@ -1346,6 +1346,228 @@ function useBulkRemoveAssignee(
 }
 
 /**
+ * Bulk clear ALL labels from selected tasks
+ */
+function useBulkClearLabels(
+  queryClient: QueryClient,
+  supabase: SupabaseClient,
+  boardId: string
+) {
+  return useMutation({
+    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
+      console.log(
+        '🔄 Bulk clear labels mutation called with taskIds:',
+        taskIds
+      );
+      // Delete one by one to ensure triggers fire for each task
+      let successCount = 0;
+      const failures: Array<{ taskId: string; error: string }> = [];
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('task_labels')
+          .delete()
+          .eq('task_id', taskId);
+        if (error) {
+          failures.push({ taskId, error: error.message });
+        } else {
+          successCount++;
+        }
+      }
+      // If all failed, throw to trigger onError handler
+      if (successCount === 0 && taskIds.length > 0) {
+        throw new Error(
+          `Failed to clear labels from all ${taskIds.length} tasks`
+        );
+      }
+      return { count: successCount, taskIds, failures };
+    },
+    onMutate: async ({ taskIds }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      const taskIdSet = new Set(taskIds);
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            taskIdSet.has(t.id) ? { ...t, labels: [] } : t
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Bulk clear labels failed', error);
+      toast.error('Failed to clear labels from selected tasks');
+    },
+    onSuccess: (data) => {
+      if (data.failures && data.failures.length > 0) {
+        toast.warning('Partial label clear completed', {
+          description: `Cleared labels from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+        });
+      } else {
+        toast.success('Labels cleared', {
+          description: `Cleared all labels from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Bulk clear ALL projects from selected tasks
+ */
+function useBulkClearProjects(
+  queryClient: QueryClient,
+  supabase: SupabaseClient,
+  boardId: string
+) {
+  return useMutation({
+    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
+      console.log(
+        '🔄 Bulk clear projects mutation called with taskIds:',
+        taskIds
+      );
+      // Delete one by one to ensure triggers fire for each task
+      let successCount = 0;
+      const failures: Array<{ taskId: string; error: string }> = [];
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('task_project_tasks')
+          .delete()
+          .eq('task_id', taskId);
+        if (error) {
+          failures.push({ taskId, error: error.message });
+        } else {
+          successCount++;
+        }
+      }
+      // If all failed, throw to trigger onError handler
+      if (successCount === 0 && taskIds.length > 0) {
+        throw new Error(
+          `Failed to clear projects from all ${taskIds.length} tasks`
+        );
+      }
+      return { count: successCount, taskIds, failures };
+    },
+    onMutate: async ({ taskIds }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      const taskIdSet = new Set(taskIds);
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            taskIdSet.has(t.id) ? { ...t, projects: [] } : t
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Bulk clear projects failed', error);
+      toast.error('Failed to clear projects from selected tasks');
+    },
+    onSuccess: (data) => {
+      if (data.failures && data.failures.length > 0) {
+        toast.warning('Partial project clear completed', {
+          description: `Cleared projects from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+        });
+      } else {
+        toast.success('Projects cleared', {
+          description: `Cleared all projects from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Bulk clear ALL assignees from selected tasks
+ */
+function useBulkClearAssignees(
+  queryClient: QueryClient,
+  supabase: SupabaseClient,
+  boardId: string
+) {
+  return useMutation({
+    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
+      console.log(
+        '🔄 Bulk clear assignees mutation called with taskIds:',
+        taskIds
+      );
+      // Delete one by one to ensure triggers fire for each task
+      let successCount = 0;
+      const failures: Array<{ taskId: string; error: string }> = [];
+      for (const taskId of taskIds) {
+        const { error } = await supabase
+          .from('task_assignees')
+          .delete()
+          .eq('task_id', taskId);
+        if (error) {
+          failures.push({ taskId, error: error.message });
+        } else {
+          successCount++;
+        }
+      }
+      // If all failed, throw to trigger onError handler
+      if (successCount === 0 && taskIds.length > 0) {
+        throw new Error(
+          `Failed to clear assignees from all ${taskIds.length} tasks`
+        );
+      }
+      return { count: successCount, taskIds, failures };
+    },
+    onMutate: async ({ taskIds }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      const taskIdSet = new Set(taskIds);
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            taskIdSet.has(t.id) ? { ...t, assignees: [] } : t
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Bulk clear assignees failed', error);
+      toast.error('Failed to clear assignees from selected tasks');
+    },
+    onSuccess: (data) => {
+      if (data.failures && data.failures.length > 0) {
+        toast.warning('Partial assignee clear completed', {
+          description: `Cleared assignees from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+        });
+      } else {
+        toast.success('Assignees cleared', {
+          description: `Cleared all assignees from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        });
+      }
+    },
+  });
+}
+
+/**
  * Bulk delete tasks mutation
  */
 function useBulkDeleteTasks(
@@ -1499,6 +1721,21 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     supabase,
     boardId
   );
+  const clearLabelsMutation = useBulkClearLabels(
+    queryClient,
+    supabase,
+    boardId
+  );
+  const clearProjectsMutation = useBulkClearProjects(
+    queryClient,
+    supabase,
+    boardId
+  );
+  const clearAssigneesMutation = useBulkClearAssignees(
+    queryClient,
+    supabase,
+    boardId
+  );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
     supabase,
@@ -1526,6 +1763,9 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     removeProjectMutation.isPending ||
     addAssigneeMutation.isPending ||
     removeAssigneeMutation.isPending ||
+    clearLabelsMutation.isPending ||
+    clearProjectsMutation.isPending ||
+    clearAssigneesMutation.isPending ||
     deleteMutation.isPending ||
     moveToBoardMutation.isPending;
 
@@ -1606,6 +1846,21 @@ export function useBulkOperations(config: BulkOperationsConfig) {
       const taskIds = Array.from(selectedTasks);
       if (taskIds.length === 0) return;
       await removeAssigneeMutation.mutateAsync({ assigneeId, taskIds });
+    },
+    bulkClearLabels: async () => {
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await clearLabelsMutation.mutateAsync({ taskIds });
+    },
+    bulkClearProjects: async () => {
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await clearProjectsMutation.mutateAsync({ taskIds });
+    },
+    bulkClearAssignees: async () => {
+      const taskIds = Array.from(selectedTasks);
+      if (taskIds.length === 0) return;
+      await clearAssigneesMutation.mutateAsync({ taskIds });
     },
     bulkDeleteTasks: async () => {
       const taskIds = Array.from(selectedTasks);

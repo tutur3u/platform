@@ -131,7 +131,7 @@ export default function GroupAttendanceClient({
   } = sessionData;
 
   // Members query (client) with initial data from RSC
-  const { data: members = [] } = useQuery<Member[]>({
+  const { data: allMembers = [] } = useQuery<Member[]>({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'members'],
     queryFn: async () => {
       const supabase = createClient();
@@ -167,6 +167,30 @@ export default function GroupAttendanceClient({
     initialData: initialMembers,
     staleTime: 60 * 1000,
   });
+
+  // Attendance display settings query
+  const { data: showManagersConfig } = useQuery({
+    queryKey: ['workspace-config', wsId, 'ATTENDANCE_SHOW_MANAGERS'],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/settings/ATTENDANCE_SHOW_MANAGERS`
+      );
+      if (!res.ok) {
+        if (res.status === 404) return 'true'; // Default to showing managers
+        throw new Error('Failed to fetch config');
+      }
+      const data = await res.json();
+      return data.value ?? 'true';
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Filter members based on display setting
+  const showManagers = showManagersConfig?.trim().toLowerCase() !== 'false';
+  const members = useMemo(() => {
+    if (showManagers) return allMembers;
+    return allMembers.filter((m) => m.role !== 'TEACHER');
+  }, [allMembers, showManagers]);
 
   // Attendance state is local (front-end only for now), managed via React Query cache
   const attendanceKey = [
