@@ -9,3 +9,14 @@ ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'create_user_grou
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_user_groups_reports';
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_user_groups_reports';
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_user_groups_reports';
+
+
+-- Transaction Permissions
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_expenses';
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_incomes';
+
+-- Wallet Permissions
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'create_wallets';
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_wallets';
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_wallets';
