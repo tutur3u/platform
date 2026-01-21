@@ -68,54 +68,40 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'workspace-configs': 'workspace_configs',
 };
 
-// Tables that need special handling for workspace scoping
-const WORKSPACE_COLUMN_MAP: Record<string, string> = {
+// Tables that have ws_id column for direct workspace scoping
+const TABLES_WITH_WS_ID: Set<string> = new Set([
   // Inventory tables
-  // Note: inventory_products, inventory_batches, inventory_batch_products don't have ws_id
-  // They're queried via warehouse join (handled separately)
-  inventory_suppliers: 'ws_id',
-  inventory_warehouses: 'ws_id',
-  product_categories: 'ws_id',
-  inventory_units: 'ws_id',
-  transaction_categories: 'ws_id',
+  'inventory_suppliers',
+  'inventory_warehouses',
+  'product_categories',
+  'inventory_units',
+  'transaction_categories',
   // Finance tables
-  finance_budgets: 'ws_id',
-  finance_invoices: 'ws_id',
-  finance_invoice_products: 'ws_id',
-  finance_invoice_promotions: 'ws_id',
+  'finance_budgets',
+  'finance_invoices',
   // Wallet tables
-  credit_wallets: 'ws_id',
-  wallet_types: 'ws_id',
-  wallet_transaction_tags: 'ws_id',
-  workspace_wallets: 'ws_id',
-  workspace_wallet_transfers: 'ws_id',
+  'workspace_wallets',
   // Workspace user tables
-  workspace_users: 'ws_id',
-  workspace_user_fields: 'ws_id',
-  workspace_user_groups: 'ws_id',
-  // Junction tables: workspace_user_groups_users and workspace_user_group_tag_groups
-  // don't have ws_id - they're queried via joins (handled separately)
-  workspace_user_group_tags: 'ws_id',
-  workspace_user_linked_users: 'ws_id',
-  workspace_user_status_changes: 'ws_id',
+  'workspace_users',
+  'workspace_user_fields',
+  'workspace_user_groups',
+  'workspace_user_group_tags',
+  'workspace_user_linked_users',
+  'workspace_user_status_changes',
   // Other tables
-  workspace_roles: 'ws_id',
-  workspace_products: 'ws_id',
-  workspace_promotions: 'ws_id',
-  user_linked_promotions: 'ws_id',
-  user_group_posts: 'ws_id',
-  healthcare_vitals: 'ws_id', // Indicator definitions (score-names)
-  user_indicators: 'ws_id', // Indicator values (class-scores)
-  user_group_linked_products: 'ws_id',
-  user_group_attendance: 'ws_id',
-  user_feedbacks: 'ws_id',
-  product_stock_changes: 'ws_id',
-  external_user_monthly_reports: 'ws_id',
-  external_user_monthly_report_logs: 'ws_id',
-  wallet_transactions: 'ws_id',
-  workspace_settings: 'ws_id',
-  workspace_configs: 'ws_id',
-};
+  'workspace_roles',
+  'workspace_products',
+  'workspace_promotions',
+  'healthcare_vitals', // Indicator definitions (score-names)
+  'wallet_transactions',
+  'workspace_settings',
+  'workspace_configs',
+]);
+
+// Tables without workspace scoping (global lookup tables)
+const GLOBAL_TABLES: Set<string> = new Set([
+  'wallet_types', // Just has 'id', no ws_id
+]);
 
 /**
  * GET /api/v2/workspaces/[wsId]/migrate/[module]
@@ -165,6 +151,43 @@ export const GET = withApiAuth<Params>(
     // Use admin client for SDK API routes
     const supabase = await createDynamicAdminClient();
 
+    // Handle global tables (no workspace scoping needed)
+    if (GLOBAL_TABLES.has(tableName)) {
+      const { count: totalCount, error: countError } = await supabase
+        .from(tableName as 'wallet_types')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error(`Error counting ${tableName}:`, countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from(tableName as 'wallet_types')
+        .select('*')
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error(`Error fetching ${tableName}:`, error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
+
     // Tables without ws_id need special handling via joins
     const tablesWithoutWsId: Record<
       string,
@@ -187,6 +210,59 @@ export const GET = withApiAuth<Params>(
       inventory_batches: {
         parentTable: 'inventory_warehouses',
         joinColumn: 'warehouse_id',
+      },
+      // Product stock changes - query via warehouse
+      product_stock_changes: {
+        parentTable: 'inventory_warehouses',
+        joinColumn: 'warehouse_id',
+      },
+      // Finance invoice related - query via invoice
+      finance_invoice_products: {
+        parentTable: 'finance_invoices',
+        joinColumn: 'invoice_id',
+      },
+      finance_invoice_promotions: {
+        parentTable: 'finance_invoices',
+        joinColumn: 'invoice_id',
+      },
+      // Wallet related - query via workspace_wallets
+      credit_wallets: {
+        parentTable: 'workspace_wallets',
+        joinColumn: 'wallet_id',
+      },
+      // User group related - query via workspace_user_groups
+      user_group_posts: {
+        parentTable: 'workspace_user_groups',
+        joinColumn: 'group_id',
+      },
+      user_group_linked_products: {
+        parentTable: 'workspace_user_groups',
+        joinColumn: 'group_id',
+      },
+      user_group_attendance: {
+        parentTable: 'workspace_user_groups',
+        joinColumn: 'group_id',
+      },
+      external_user_monthly_reports: {
+        parentTable: 'workspace_user_groups',
+        joinColumn: 'group_id',
+      },
+      external_user_monthly_report_logs: {
+        parentTable: 'workspace_user_groups',
+        joinColumn: 'group_id',
+      },
+      // User related - query via workspace_users
+      user_linked_promotions: {
+        parentTable: 'workspace_users',
+        joinColumn: 'user_id',
+      },
+      user_indicators: {
+        parentTable: 'workspace_users',
+        joinColumn: 'user_id',
+      },
+      user_feedbacks: {
+        parentTable: 'workspace_users',
+        joinColumn: 'user_id',
       },
     };
 
@@ -274,6 +350,131 @@ export const GET = withApiAuth<Params>(
       });
     }
 
+    // wallet_transaction_tags needs join via wallet_transactions
+    if (tableName === 'wallet_transaction_tags') {
+      const { data: transactions, error: txError } = await supabase
+        .from('wallet_transactions')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (txError) {
+        console.error('Error fetching wallet_transactions:', txError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch transactions: ${txError.message}`,
+          500,
+          'TRANSACTION_FETCH_ERROR'
+        );
+      }
+
+      const transactionIds = transactions?.map((t) => t.id) ?? [];
+
+      if (transactionIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      const { count: totalCount, error: countError } = await supabase
+        .from('wallet_transaction_tags')
+        .select('*', { count: 'exact', head: true })
+        .in('transaction_id', transactionIds);
+
+      if (countError) {
+        console.error('Error counting wallet_transaction_tags:', countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('wallet_transaction_tags')
+        .select('*')
+        .in('transaction_id', transactionIds)
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error('Error fetching wallet_transaction_tags:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
+
+    // workspace_wallet_transfers needs join via wallet_transactions
+    if (tableName === 'workspace_wallet_transfers') {
+      const { data: transactions, error: txError } = await supabase
+        .from('wallet_transactions')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (txError) {
+        console.error('Error fetching wallet_transactions:', txError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch transactions: ${txError.message}`,
+          500,
+          'TRANSACTION_FETCH_ERROR'
+        );
+      }
+
+      const transactionIds = transactions?.map((t) => t.id) ?? [];
+
+      if (transactionIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Query transfers where either from or to transaction is in the workspace
+      const { count: totalCount, error: countError } = await supabase
+        .from('workspace_wallet_transfers')
+        .select('*', { count: 'exact', head: true })
+        .or(
+          `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
+        );
+
+      if (countError) {
+        console.error('Error counting workspace_wallet_transfers:', countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('workspace_wallet_transfers')
+        .select('*')
+        .or(
+          `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
+        )
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error('Error fetching workspace_wallet_transfers:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
+
     const joinConfig = tablesWithoutWsId[tableName];
 
     if (joinConfig) {
@@ -345,14 +546,23 @@ export const GET = withApiAuth<Params>(
       });
     }
 
-    // Get workspace column name for this table
-    const wsColumn = WORKSPACE_COLUMN_MAP[tableName] || 'ws_id';
+    // Tables with ws_id can be queried directly
+    if (!TABLES_WITH_WS_ID.has(tableName)) {
+      // This table doesn't have ws_id and wasn't handled by join config
+      console.error(`Table ${tableName} has no ws_id and no join config`);
+      return createErrorResponse(
+        'Internal Server Error',
+        `Table ${tableName} cannot be queried - no workspace scoping configured`,
+        500,
+        'CONFIG_ERROR'
+      );
+    }
 
     // First get total count
     const { count: totalCount, error: countError } = await supabase
       .from(tableName as 'workspace_users')
       .select('*', { count: 'exact', head: true })
-      .eq(wsColumn, wsId);
+      .eq('ws_id', wsId);
 
     if (countError) {
       console.error(`Error counting ${tableName}:`, countError);
@@ -368,7 +578,7 @@ export const GET = withApiAuth<Params>(
     const { data, error } = await supabase
       .from(tableName as 'workspace_users')
       .select('*')
-      .eq(wsColumn, wsId)
+      .eq('ws_id', wsId)
       .range(from, from + limit - 1);
 
     if (error) {
