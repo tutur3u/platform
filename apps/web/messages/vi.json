@@ -10591,6 +10591,7 @@
     "edit": "Chỉnh sửa ví",
     "edit_description": "Chỉnh sửa ví hiện có",
     "failed_to_add_role": "Không thể thêm vai trò",
+    "failed_to_create_wallet": "Không tạo được ví",
     "failed_to_remove_role": "Không thể xóa vai trò",
     "failed_to_update_role": "Không thể cập nhật vai trò",
     "filter_by_wallet": "Lọc theo ví",

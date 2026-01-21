@@ -10471,6 +10471,7 @@
     "edit": "Edit wallet",
     "edit_description": "Edit an existing wallet",
     "failed_to_add_role": "Failed to add role",
+    "failed_to_create_wallet": "Failed to create wallet",
     "failed_to_remove_role": "Failed to remove role",
     "failed_to_update_role": "Failed to update role",
     "filter_by_wallet": "Filter by wallet",
