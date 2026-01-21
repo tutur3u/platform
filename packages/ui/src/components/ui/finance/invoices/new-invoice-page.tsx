@@ -1,13 +1,23 @@
 'use client';
 
+import { ChevronDown, Info } from '@tuturuuu/icons';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
 
@@ -19,33 +29,25 @@ interface Props {
 export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
   const t = useTranslations();
   const searchParams = useSearchParams();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const [createMultipleInvoices, setCreateMultipleInvoices] = useState(false);
-  const [printAfterCreate, setPrintAfterCreate] = useState(true);
+  const [
+    createMultipleInvoices,
+    setCreateMultipleInvoices,
+    createMultipleInvoicesInitialized,
+  ] = useLocalStorage('createMultipleInvoices', false);
+  const [printAfterCreate, setPrintAfterCreate, printAfterCreateInitialized] =
+    useLocalStorage('printAfterCreate', true);
+  const [
+    downloadImageAfterCreate,
+    setDownloadImageAfterCreate,
+    downloadImageAfterCreateInitialized,
+  ] = useLocalStorage('downloadImageAfterCreate', false);
 
-  useEffect(() => {
-    const storedCreateMultipleInvoices = localStorage.getItem(
-      'createMultipleInvoices'
-    );
-    if (storedCreateMultipleInvoices) {
-      setCreateMultipleInvoices(storedCreateMultipleInvoices === 'true');
-    }
-
-    const storedPrintAfterCreate = localStorage.getItem('printAfterCreate');
-    if (storedPrintAfterCreate) {
-      setPrintAfterCreate(storedPrintAfterCreate === 'true');
-    }
-  }, []);
-
-  const handleCreateMultipleInvoicesChange = (checked: boolean) => {
-    setCreateMultipleInvoices(checked);
-    localStorage.setItem('createMultipleInvoices', checked.toString());
-  };
-
-  const handlePrintAfterCreateChange = (checked: boolean) => {
-    setPrintAfterCreate(checked);
-    localStorage.setItem('printAfterCreate', checked.toString());
-  };
+  const isInitialized =
+    createMultipleInvoicesInitialized &&
+    printAfterCreateInitialized &&
+    downloadImageAfterCreateInitialized;
 
   const invoiceType = searchParams.get('type') || 'standard';
 
@@ -76,28 +78,86 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="create-multiple-invoices"
-                checked={createMultipleInvoices}
-                onCheckedChange={handleCreateMultipleInvoicesChange}
-              />
-              <Label htmlFor="create-multiple-invoices">
-                {t('ws-invoices.create_multiple_invoices')}
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="print-after-create"
-                checked={printAfterCreate}
-                onCheckedChange={handlePrintAfterCreateChange}
-              />
-              <Label htmlFor="print-after-create">
-                {t('ws-invoices.print_after_create')}
-              </Label>
-            </div>
-          </div>
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                {t('ws-invoices.options')}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              {isInitialized ? (
+                <div className="flex flex-col gap-3 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <span className="text-sm font-medium">
+                        {t('ws-invoices.create_multiple_invoices')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('ws-invoices.create_multiple_invoices_tooltip')}
+                      </span>
+                    </div>
+                    <Switch
+                      id="create-multiple-invoices"
+                      checked={createMultipleInvoices}
+                      onCheckedChange={setCreateMultipleInvoices}
+                      disabled={printAfterCreate || downloadImageAfterCreate}
+                    />
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <span className="text-sm font-medium">
+                        {t('ws-invoices.print_after_create')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('ws-invoices.print_after_create_tooltip')}
+                      </span>
+                    </div>
+                    <Switch
+                      id="print-after-create"
+                      checked={printAfterCreate}
+                      onCheckedChange={setPrintAfterCreate}
+                      disabled={
+                        createMultipleInvoices || downloadImageAfterCreate
+                      }
+                    />
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <span className="text-sm font-medium">
+                        {t('ws-invoices.download_image_after_create')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('ws-invoices.download_image_after_create_tooltip')}
+                      </span>
+                    </div>
+                    <Switch
+                      id="download-image-after-create"
+                      checked={downloadImageAfterCreate}
+                      onCheckedChange={setDownloadImageAfterCreate}
+                      disabled={createMultipleInvoices || printAfterCreate}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 px-2 py-1.5">
+                  <Skeleton className="h-6 w-32 rounded" />
+                  <Skeleton className="h-6 w-32 rounded" />
+                  <Skeleton className="h-6 w-32 rounded" />
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <TabsContent value="standard" className="mt-4">
@@ -106,6 +166,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
             defaultWalletId={defaultWalletId}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
+            downloadImageAfterCreate={downloadImageAfterCreate}
           />
         </TabsContent>
         <TabsContent value="subscription" className="mt-4">
@@ -114,6 +175,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
             defaultWalletId={defaultWalletId}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
+            downloadImageAfterCreate={downloadImageAfterCreate}
           />
         </TabsContent>
       </Tabs>

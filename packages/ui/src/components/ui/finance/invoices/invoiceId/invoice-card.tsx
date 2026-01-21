@@ -175,22 +175,33 @@ export default function InvoiceCard({
     }
   }, [invoice.id, isDarkPreview]);
 
-  // Auto trigger print when URL contains ?print=true
+  // Auto trigger print or image download when URL contains ?print=true or ?image=true
   useEffect(() => {
     if (!isCompactInitialized) return;
 
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('print') === 'true') {
-        handlePrintExport();
+      const shouldPrint = params.get('print') === 'true';
+      const shouldDownloadImage = params.get('image') === 'true';
+
+      if (shouldPrint || shouldDownloadImage) {
+        if (shouldPrint) {
+          handlePrintExport();
+        }
+
+        if (shouldDownloadImage) {
+          handlePngExport();
+        }
+
         const url = new URL(window.location.href);
         url.searchParams.delete('print');
+        url.searchParams.delete('image');
         window.history.replaceState({}, '', url.toString());
       }
     } catch (_) {
       // no-op
     }
-  }, [handlePrintExport, isCompactInitialized]);
+  }, [handlePrintExport, handlePngExport, isCompactInitialized]);
 
   return (
     <div className="overflow-x-auto xl:flex-none">
