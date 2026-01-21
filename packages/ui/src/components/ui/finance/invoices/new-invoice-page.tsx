@@ -13,7 +13,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -96,11 +95,11 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
               {isInitialized ? (
                 <div className="flex flex-col gap-3 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-col gap-1 flex-1">
-                      <span className="text-sm font-medium">
+                    <div className="flex flex-1 flex-col gap-1">
+                      <span className="font-medium text-sm">
                         {t('ws-invoices.create_multiple_invoices')}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {t('ws-invoices.create_multiple_invoices_tooltip')}
                       </span>
                     </div>
@@ -113,11 +112,11 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
                   </div>
                   <div className="h-px bg-border" />
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-col gap-1 flex-1">
-                      <span className="text-sm font-medium">
+                    <div className="flex flex-1 flex-col gap-1">
+                      <span className="font-medium text-sm">
                         {t('ws-invoices.print_after_create')}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {t('ws-invoices.print_after_create_tooltip')}
                       </span>
                     </div>
@@ -132,11 +131,11 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
                   </div>
                   <div className="h-px bg-border" />
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-col gap-1 flex-1">
-                      <span className="text-sm font-medium">
+                    <div className="flex flex-1 flex-col gap-1">
+                      <span className="font-medium text-sm">
                         {t('ws-invoices.download_image_after_create')}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {t('ws-invoices.download_image_after_create_tooltip')}
                       </span>
                     </div>
