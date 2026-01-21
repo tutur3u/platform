@@ -119,12 +119,20 @@ export function createMigrationResponse(
   entityName: string
 ) {
   if (!result.success) {
+    // Include first error details for debugging
+    const firstError = result.errors[0] as {
+      batch: number;
+      error: { message?: string; code?: string; details?: string };
+    };
     return NextResponse.json(
       {
         message: `Error migrating ${entityName}`,
         successCount: result.successCount,
         errorCount: result.errorCount,
         totalBatches: result.totalBatches,
+        errorDetails: firstError?.error?.message || 'Unknown error',
+        errorCode: firstError?.error?.code,
+        errorBatch: firstError?.batch,
       },
       { status: 500 }
     );

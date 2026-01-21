@@ -635,56 +635,21 @@ export const GET = withApiAuth<Params>(
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      // For .or() queries with two columns, we need to batch differently
-      // Query in batches and deduplicate results by composite key
+      // For workspace_wallet_transfers, query each column separately then merge
+      // This avoids the .or() doubling the query size
       const seenKeys = new Set<string>();
-      let totalCount = 0;
-      const allData: unknown[] = [];
+      const allTransfers: Record<
+        string,
+        { from_transaction_id: string; to_transaction_id: string }
+      > = {};
 
-      // First pass: count total (batched)
+      // Query by from_transaction_id in batches
       for (let i = 0; i < transactionIds.length; i += MAX_IN_BATCH_SIZE) {
         const batchIds = transactionIds.slice(i, i + MAX_IN_BATCH_SIZE);
-        const orFilter = `from_transaction_id.in.(${batchIds.join(',')}),to_transaction_id.in.(${batchIds.join(',')})`;
-
-        const { count, error: countError } = await supabase
-          .from('workspace_wallet_transfers')
-          .select('*', { count: 'exact', head: true })
-          .or(orFilter);
-
-        if (countError) {
-          console.error(
-            'Error counting workspace_wallet_transfers:',
-            countError
-          );
-          return createErrorResponse(
-            'Internal Server Error',
-            `Failed to count records: ${countError.message}`,
-            500,
-            'COUNT_ERROR'
-          );
-        }
-
-        totalCount += count ?? 0;
-      }
-
-      // Second pass: fetch data (batched), with deduplication
-      let recordsToSkip = from;
-      let recordsNeeded = limit;
-
-      for (
-        let i = 0;
-        i < transactionIds.length && recordsNeeded > 0;
-        i += MAX_IN_BATCH_SIZE
-      ) {
-        const batchIds = transactionIds.slice(i, i + MAX_IN_BATCH_SIZE);
-        const orFilter = `from_transaction_id.in.(${batchIds.join(',')}),to_transaction_id.in.(${batchIds.join(',')})`;
-
-        // Fetch more than needed to account for possible duplicates
         const { data, error } = await supabase
           .from('workspace_wallet_transfers')
           .select('*')
-          .or(orFilter)
-          .range(0, recordsToSkip + recordsNeeded + 100);
+          .in('from_transaction_id', batchIds);
 
         if (error) {
           console.error('Error fetching workspace_wallet_transfers:', error);
@@ -700,19 +665,46 @@ export const GET = withApiAuth<Params>(
           const key = `${row.from_transaction_id}:${row.to_transaction_id}`;
           if (!seenKeys.has(key)) {
             seenKeys.add(key);
-            if (recordsToSkip > 0) {
-              recordsToSkip--;
-            } else if (recordsNeeded > 0) {
-              allData.push(row);
-              recordsNeeded--;
-            }
+            allTransfers[key] = row;
           }
         }
       }
 
+      // Query by to_transaction_id in batches (only include if not already seen)
+      for (let i = 0; i < transactionIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchIds = transactionIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const { data, error } = await supabase
+          .from('workspace_wallet_transfers')
+          .select('*')
+          .in('to_transaction_id', batchIds);
+
+        if (error) {
+          console.error('Error fetching workspace_wallet_transfers:', error);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch records: ${error.message}`,
+            500,
+            'FETCH_ERROR'
+          );
+        }
+
+        for (const row of data ?? []) {
+          const key = `${row.from_transaction_id}:${row.to_transaction_id}`;
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            allTransfers[key] = row;
+          }
+        }
+      }
+
+      // Convert to array and apply pagination
+      const allData = Object.values(allTransfers);
+      const totalCount = allData.length;
+      const paginatedData = allData.slice(from, from + limit);
+
       return NextResponse.json({
         count: totalCount,
-        data: allData,
+        data: paginatedData,
       });
     }
 
