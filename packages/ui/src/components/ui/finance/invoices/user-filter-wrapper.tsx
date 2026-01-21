@@ -12,11 +12,17 @@ import { useCallback } from 'react';
 interface UserFilterWrapperProps {
   wsId: string;
   invoiceType?: 'created' | 'pending';
+  availableUsers?: Array<{
+    id: string;
+    display_name: string;
+    avatar_url?: string;
+  }>;
 }
 
 export function UserFilterWrapper({
   wsId,
   invoiceType = 'created',
+  availableUsers,
 }: UserFilterWrapperProps) {
   const [userIds, setUserIds] = useQueryState(
     'userIds',
@@ -47,6 +53,7 @@ export function UserFilterWrapper({
       selectedUserIds={userIds}
       onUsersChange={handleUsersChange}
       filterType={invoiceType === 'created' ? 'invoice_creators' : 'all'}
+      availableUsers={availableUsers}
     />
   );
 }
