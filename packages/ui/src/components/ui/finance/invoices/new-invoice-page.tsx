@@ -124,9 +124,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
                       id="print-after-create"
                       checked={printAfterCreate}
                       onCheckedChange={setPrintAfterCreate}
-                      disabled={
-                        createMultipleInvoices
-                      }
+                      disabled={createMultipleInvoices}
                     />
                   </div>
                   <div className="h-px bg-border" />
