@@ -175,22 +175,41 @@ export default function InvoiceCard({
     }
   }, [invoice.id, isDarkPreview]);
 
-  // Auto trigger print when URL contains ?print=true
+  // Auto trigger print or image download when URL contains ?print=true or ?image=true
   useEffect(() => {
     if (!isCompactInitialized) return;
 
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('print') === 'true') {
-        handlePrintExport();
-        const url = new URL(window.location.href);
-        url.searchParams.delete('print');
-        window.history.replaceState({}, '', url.toString());
+    const triggerExports = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const shouldPrint = params.get('print') === 'true';
+        const shouldDownloadImage = params.get('image') === 'true';
+
+        if (shouldPrint || shouldDownloadImage) {
+          try {
+            if (shouldPrint) {
+              handlePrintExport();
+            }
+
+            if (shouldDownloadImage) {
+              await handlePngExport();
+            }
+          } catch (error) {
+            console.error('Auto-export failed:', error);
+          }
+
+          const url = new URL(window.location.href);
+          url.searchParams.delete('print');
+          url.searchParams.delete('image');
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (error) {
+        console.error('Failed to trigger auto-export:', error);
       }
-    } catch (_) {
-      // no-op
-    }
-  }, [handlePrintExport, isCompactInitialized]);
+    };
+
+    triggerExports();
+  }, [handlePrintExport, handlePngExport, isCompactInitialized]);
 
   return (
     <div className="overflow-x-auto xl:flex-none">
