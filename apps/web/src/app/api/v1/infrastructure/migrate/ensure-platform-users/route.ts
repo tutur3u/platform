@@ -65,8 +65,7 @@ export async function POST(req: Request) {
     // We'll create records in the public.users table which is the profile table
     const placeholderUsers = missingIds.map((id) => ({
       id,
-      display_name: id,
-      full_name: `Migrated User (${id.substring(0, 8)}...)`,
+      display_name: `Migrated User (${id.substring(0, 8)}...)`,
     }));
 
     const { error: insertError } = await sbAdmin

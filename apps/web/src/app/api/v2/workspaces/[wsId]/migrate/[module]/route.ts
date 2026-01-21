@@ -93,7 +93,6 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
   'workspace_products',
   'workspace_promotions',
   'healthcare_vitals', // Indicator definitions (score-names)
-  'wallet_transactions',
   'workspace_settings',
   'workspace_configs',
 ]);
@@ -350,12 +349,95 @@ export const GET = withApiAuth<Params>(
       });
     }
 
-    // wallet_transaction_tags needs join via wallet_transactions
+    // wallet_transactions needs join via workspace_wallets
+    if (tableName === 'wallet_transactions') {
+      const { data: wallets, error: walletError } = await supabase
+        .from('workspace_wallets')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (walletError) {
+        console.error('Error fetching workspace_wallets:', walletError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch wallets: ${walletError.message}`,
+          500,
+          'WALLET_FETCH_ERROR'
+        );
+      }
+
+      const walletIds = wallets?.map((w) => w.id) ?? [];
+
+      if (walletIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      const { count: totalCount, error: countError } = await supabase
+        .from('wallet_transactions')
+        .select('*', { count: 'exact', head: true })
+        .in('wallet_id', walletIds);
+
+      if (countError) {
+        console.error('Error counting wallet_transactions:', countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .in('wallet_id', walletIds)
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error('Error fetching wallet_transactions:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
+
+    // wallet_transaction_tags needs join via wallet_transactions -> workspace_wallets
     if (tableName === 'wallet_transaction_tags') {
+      // First get wallet IDs for this workspace
+      const { data: wallets, error: walletError } = await supabase
+        .from('workspace_wallets')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (walletError) {
+        console.error('Error fetching workspace_wallets:', walletError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch wallets: ${walletError.message}`,
+          500,
+          'WALLET_FETCH_ERROR'
+        );
+      }
+
+      const walletIds = wallets?.map((w) => w.id) ?? [];
+
+      if (walletIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Then get transaction IDs for those wallets
       const { data: transactions, error: txError } = await supabase
         .from('wallet_transactions')
         .select('id')
-        .eq('ws_id', wsId);
+        .in('wallet_id', walletIds);
 
       if (txError) {
         console.error('Error fetching wallet_transactions:', txError);
@@ -410,12 +492,35 @@ export const GET = withApiAuth<Params>(
       });
     }
 
-    // workspace_wallet_transfers needs join via wallet_transactions
+    // workspace_wallet_transfers needs join via wallet_transactions -> workspace_wallets
     if (tableName === 'workspace_wallet_transfers') {
+      // First get wallet IDs for this workspace
+      const { data: wallets, error: walletError } = await supabase
+        .from('workspace_wallets')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (walletError) {
+        console.error('Error fetching workspace_wallets:', walletError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch wallets: ${walletError.message}`,
+          500,
+          'WALLET_FETCH_ERROR'
+        );
+      }
+
+      const walletIds = wallets?.map((w) => w.id) ?? [];
+
+      if (walletIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Then get transaction IDs for those wallets
       const { data: transactions, error: txError } = await supabase
         .from('wallet_transactions')
         .select('id')
-        .eq('ws_id', wsId);
+        .in('wallet_id', walletIds);
 
       if (txError) {
         console.error('Error fetching wallet_transactions:', txError);
