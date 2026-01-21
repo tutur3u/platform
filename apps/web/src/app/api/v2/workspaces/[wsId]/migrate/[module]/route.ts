@@ -102,6 +102,116 @@ const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
 ]);
 
+// Maximum number of IDs to use in a single .in() query
+// PostgREST/Supabase has limits on query size
+const MAX_IN_BATCH_SIZE = 500;
+
+/**
+ * Helper to batch .in() queries for large ID arrays
+ * Supabase/PostgREST has limits on .in() clause size
+ */
+async function batchedInQuery<T>(
+  supabase: Awaited<ReturnType<typeof createDynamicAdminClient>>,
+  tableName: string,
+  columnName: string,
+  ids: string[],
+  options: {
+    countOnly?: boolean;
+    from?: number;
+    limit?: number;
+  } = {}
+): Promise<{ count: number; data: T[]; error: Error | null }> {
+  const { countOnly = false, from = 0, limit = 500 } = options;
+
+  if (ids.length === 0) {
+    return { count: 0, data: [], error: null };
+  }
+
+  // If IDs fit in one batch, do a simple query
+  if (ids.length <= MAX_IN_BATCH_SIZE) {
+    if (countOnly) {
+      const { count, error } = await supabase
+        .from(tableName as 'workspace_users')
+        .select('*', { count: 'exact', head: true })
+        .in(columnName, ids);
+      return { count: count ?? 0, data: [], error: error as Error | null };
+    }
+
+    const { data, count, error } = await supabase
+      .from(tableName as 'workspace_users')
+      .select('*', { count: 'exact' })
+      .in(columnName, ids)
+      .range(from, from + limit - 1);
+    return {
+      count: count ?? 0,
+      data: (data ?? []) as T[],
+      error: error as Error | null,
+    };
+  }
+
+  // For large ID arrays, batch the queries
+  let totalCount = 0;
+
+  // First, get the total count by batching count queries
+  for (let i = 0; i < ids.length; i += MAX_IN_BATCH_SIZE) {
+    const batchIds = ids.slice(i, i + MAX_IN_BATCH_SIZE);
+    const { count, error } = await supabase
+      .from(tableName as 'workspace_users')
+      .select('*', { count: 'exact', head: true })
+      .in(columnName, batchIds);
+
+    if (error) {
+      return { count: 0, data: [], error: error as Error };
+    }
+    totalCount += count ?? 0;
+  }
+
+  if (countOnly) {
+    return { count: totalCount, data: [], error: null };
+  }
+
+  // For data fetching with pagination, we need to handle it differently
+  // We'll fetch from batches until we have enough records
+  const allData: T[] = [];
+  let recordsToSkip = from;
+  let recordsNeeded = limit;
+
+  for (let i = 0; i < ids.length && recordsNeeded > 0; i += MAX_IN_BATCH_SIZE) {
+    const batchIds = ids.slice(i, i + MAX_IN_BATCH_SIZE);
+
+    // First check how many records this batch has
+    const { count: batchCount } = await supabase
+      .from(tableName as 'workspace_users')
+      .select('*', { count: 'exact', head: true })
+      .in(columnName, batchIds);
+
+    const batchRecordCount = batchCount ?? 0;
+
+    if (recordsToSkip >= batchRecordCount) {
+      // Skip this entire batch
+      recordsToSkip -= batchRecordCount;
+      continue;
+    }
+
+    // Fetch from this batch
+    const { data, error } = await supabase
+      .from(tableName as 'workspace_users')
+      .select('*')
+      .in(columnName, batchIds)
+      .range(recordsToSkip, recordsToSkip + recordsNeeded - 1);
+
+    if (error) {
+      return { count: totalCount, data: allData, error: error as Error };
+    }
+
+    allData.push(...((data ?? []) as T[]));
+    recordsNeeded -= (data ?? []).length;
+    recordsToSkip = 0; // After first partial batch, start from 0
+  }
+
+  return { count: totalCount, data: allData, error: null };
+}
+
 /**
  * GET /api/v2/workspaces/[wsId]/migrate/[module]
  *
@@ -289,52 +399,47 @@ export const GET = withApiAuth<Params>(
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      // Get batch IDs for these warehouses
-      const { data: batches, error: batchError } = await supabase
-        .from('inventory_batches')
-        .select('id')
-        .in('warehouse_id', warehouseIds);
+      // Get all batch IDs for these warehouses (batch the warehouse IDs query)
+      const batchIds: string[] = [];
+      for (let i = 0; i < warehouseIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchWarehouseIds = warehouseIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const { data: batches, error: batchError } = await supabase
+          .from('inventory_batches')
+          .select('id')
+          .in('warehouse_id', batchWarehouseIds);
 
-      if (batchError) {
-        console.error('Error fetching batches:', batchError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to fetch batches: ${batchError.message}`,
-          500,
-          'BATCH_FETCH_ERROR'
-        );
+        if (batchError) {
+          console.error('Error fetching batches:', batchError);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch batches: ${batchError.message}`,
+            500,
+            'BATCH_FETCH_ERROR'
+          );
+        }
+
+        batchIds.push(...(batches?.map((b) => b.id) ?? []));
       }
-
-      const batchIds = batches?.map((b) => b.id) ?? [];
 
       if (batchIds.length === 0) {
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      // Count and fetch batch products
-      const { count: totalCount, error: countError } = await supabase
-        .from('inventory_batch_products')
-        .select('*', { count: 'exact', head: true })
-        .in('batch_id', batchIds);
-
-      if (countError) {
-        console.error('Error counting inventory_batch_products:', countError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to count records: ${countError.message}`,
-          500,
-          'COUNT_ERROR'
-        );
-      }
-
-      const { data, error } = await supabase
-        .from('inventory_batch_products')
-        .select('*')
-        .in('batch_id', batchIds)
-        .range(from, from + limit - 1);
+      // Use batched query for the final batch products query
+      const {
+        count: totalCount,
+        data,
+        error,
+      } = await batchedInQuery(
+        supabase,
+        'inventory_batch_products',
+        'batch_id',
+        batchIds,
+        { from, limit }
+      );
 
       if (error) {
-        console.error('Error fetching inventory_batch_products:', error);
+        console.error('Error querying inventory_batch_products:', error);
         return createErrorResponse(
           'Internal Server Error',
           `Failed to fetch records: ${error.message}`,
@@ -344,7 +449,7 @@ export const GET = withApiAuth<Params>(
       }
 
       return NextResponse.json({
-        count: totalCount ?? 0,
+        count: totalCount,
         data: data ?? [],
       });
     }
@@ -372,29 +477,21 @@ export const GET = withApiAuth<Params>(
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      const { count: totalCount, error: countError } = await supabase
-        .from('wallet_transactions')
-        .select('*', { count: 'exact', head: true })
-        .in('wallet_id', walletIds);
-
-      if (countError) {
-        console.error('Error counting wallet_transactions:', countError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to count records: ${countError.message}`,
-          500,
-          'COUNT_ERROR'
-        );
-      }
-
-      const { data, error } = await supabase
-        .from('wallet_transactions')
-        .select('*')
-        .in('wallet_id', walletIds)
-        .range(from, from + limit - 1);
+      // Use batched query to handle large wallet ID arrays
+      const {
+        count: totalCount,
+        data,
+        error,
+      } = await batchedInQuery(
+        supabase,
+        'wallet_transactions',
+        'wallet_id',
+        walletIds,
+        { from, limit }
+      );
 
       if (error) {
-        console.error('Error fetching wallet_transactions:', error);
+        console.error('Error querying wallet_transactions:', error);
         return createErrorResponse(
           'Internal Server Error',
           `Failed to fetch records: ${error.message}`,
@@ -404,7 +501,7 @@ export const GET = withApiAuth<Params>(
       }
 
       return NextResponse.json({
-        count: totalCount ?? 0,
+        count: totalCount,
         data: data ?? [],
       });
     }
@@ -433,51 +530,47 @@ export const GET = withApiAuth<Params>(
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      // Then get transaction IDs for those wallets
-      const { data: transactions, error: txError } = await supabase
-        .from('wallet_transactions')
-        .select('id')
-        .in('wallet_id', walletIds);
+      // Get all transaction IDs for those wallets (batch the wallet IDs query)
+      const transactionIds: string[] = [];
+      for (let i = 0; i < walletIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchWalletIds = walletIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const { data: transactions, error: txError } = await supabase
+          .from('wallet_transactions')
+          .select('id')
+          .in('wallet_id', batchWalletIds);
 
-      if (txError) {
-        console.error('Error fetching wallet_transactions:', txError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to fetch transactions: ${txError.message}`,
-          500,
-          'TRANSACTION_FETCH_ERROR'
-        );
+        if (txError) {
+          console.error('Error fetching wallet_transactions:', txError);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch transactions: ${txError.message}`,
+            500,
+            'TRANSACTION_FETCH_ERROR'
+          );
+        }
+
+        transactionIds.push(...(transactions?.map((t) => t.id) ?? []));
       }
-
-      const transactionIds = transactions?.map((t) => t.id) ?? [];
 
       if (transactionIds.length === 0) {
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      const { count: totalCount, error: countError } = await supabase
-        .from('wallet_transaction_tags')
-        .select('*', { count: 'exact', head: true })
-        .in('transaction_id', transactionIds);
-
-      if (countError) {
-        console.error('Error counting wallet_transaction_tags:', countError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to count records: ${countError.message}`,
-          500,
-          'COUNT_ERROR'
-        );
-      }
-
-      const { data, error } = await supabase
-        .from('wallet_transaction_tags')
-        .select('*')
-        .in('transaction_id', transactionIds)
-        .range(from, from + limit - 1);
+      // Use batched query for the final tags query (handles 13000+ transaction IDs)
+      const {
+        count: totalCount,
+        data,
+        error,
+      } = await batchedInQuery(
+        supabase,
+        'wallet_transaction_tags',
+        'transaction_id',
+        transactionIds,
+        { from, limit }
+      );
 
       if (error) {
-        console.error('Error fetching wallet_transaction_tags:', error);
+        console.error('Error querying wallet_transaction_tags:', error);
         return createErrorResponse(
           'Internal Server Error',
           `Failed to fetch records: ${error.message}`,
@@ -487,7 +580,7 @@ export const GET = withApiAuth<Params>(
       }
 
       return NextResponse.json({
-        count: totalCount ?? 0,
+        count: totalCount,
         data: data ?? [],
       });
     }
@@ -516,67 +609,110 @@ export const GET = withApiAuth<Params>(
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      // Then get transaction IDs for those wallets
-      const { data: transactions, error: txError } = await supabase
-        .from('wallet_transactions')
-        .select('id')
-        .in('wallet_id', walletIds);
+      // Get all transaction IDs for those wallets (batch the wallet IDs query)
+      const transactionIds: string[] = [];
+      for (let i = 0; i < walletIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchWalletIds = walletIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const { data: transactions, error: txError } = await supabase
+          .from('wallet_transactions')
+          .select('id')
+          .in('wallet_id', batchWalletIds);
 
-      if (txError) {
-        console.error('Error fetching wallet_transactions:', txError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to fetch transactions: ${txError.message}`,
-          500,
-          'TRANSACTION_FETCH_ERROR'
-        );
+        if (txError) {
+          console.error('Error fetching wallet_transactions:', txError);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch transactions: ${txError.message}`,
+            500,
+            'TRANSACTION_FETCH_ERROR'
+          );
+        }
+
+        transactionIds.push(...(transactions?.map((t) => t.id) ?? []));
       }
-
-      const transactionIds = transactions?.map((t) => t.id) ?? [];
 
       if (transactionIds.length === 0) {
         return NextResponse.json({ count: 0, data: [] });
       }
 
-      // Query transfers where either from or to transaction is in the workspace
-      const { count: totalCount, error: countError } = await supabase
-        .from('workspace_wallet_transfers')
-        .select('*', { count: 'exact', head: true })
-        .or(
-          `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
-        );
+      // For .or() queries with two columns, we need to batch differently
+      // Query in batches and deduplicate results by composite key
+      const seenKeys = new Set<string>();
+      let totalCount = 0;
+      const allData: unknown[] = [];
 
-      if (countError) {
-        console.error('Error counting workspace_wallet_transfers:', countError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to count records: ${countError.message}`,
-          500,
-          'COUNT_ERROR'
-        );
+      // First pass: count total (batched)
+      for (let i = 0; i < transactionIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchIds = transactionIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const orFilter = `from_transaction_id.in.(${batchIds.join(',')}),to_transaction_id.in.(${batchIds.join(',')})`;
+
+        const { count, error: countError } = await supabase
+          .from('workspace_wallet_transfers')
+          .select('*', { count: 'exact', head: true })
+          .or(orFilter);
+
+        if (countError) {
+          console.error(
+            'Error counting workspace_wallet_transfers:',
+            countError
+          );
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to count records: ${countError.message}`,
+            500,
+            'COUNT_ERROR'
+          );
+        }
+
+        totalCount += count ?? 0;
       }
 
-      const { data, error } = await supabase
-        .from('workspace_wallet_transfers')
-        .select('*')
-        .or(
-          `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
-        )
-        .range(from, from + limit - 1);
+      // Second pass: fetch data (batched), with deduplication
+      let recordsToSkip = from;
+      let recordsNeeded = limit;
 
-      if (error) {
-        console.error('Error fetching workspace_wallet_transfers:', error);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to fetch records: ${error.message}`,
-          500,
-          'FETCH_ERROR'
-        );
+      for (
+        let i = 0;
+        i < transactionIds.length && recordsNeeded > 0;
+        i += MAX_IN_BATCH_SIZE
+      ) {
+        const batchIds = transactionIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const orFilter = `from_transaction_id.in.(${batchIds.join(',')}),to_transaction_id.in.(${batchIds.join(',')})`;
+
+        // Fetch more than needed to account for possible duplicates
+        const { data, error } = await supabase
+          .from('workspace_wallet_transfers')
+          .select('*')
+          .or(orFilter)
+          .range(0, recordsToSkip + recordsNeeded + 100);
+
+        if (error) {
+          console.error('Error fetching workspace_wallet_transfers:', error);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch records: ${error.message}`,
+            500,
+            'FETCH_ERROR'
+          );
+        }
+
+        for (const row of data ?? []) {
+          const key = `${row.from_transaction_id}:${row.to_transaction_id}`;
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            if (recordsToSkip > 0) {
+              recordsToSkip--;
+            } else if (recordsNeeded > 0) {
+              allData.push(row);
+              recordsNeeded--;
+            }
+          }
+        }
       }
 
       return NextResponse.json({
-        count: totalCount ?? 0,
-        data: data ?? [],
+        count: totalCount,
+        data: allData,
       });
     }
 
@@ -612,31 +748,17 @@ export const GET = withApiAuth<Params>(
         });
       }
 
-      // Count records via join
-      const { count: totalCount, error: countError } = await supabase
-        .from(tableName as 'workspace_user_groups_users')
-        .select('*', { count: 'exact', head: true })
-        .in(joinConfig.joinColumn, parentIds);
-
-      if (countError) {
-        console.error(`Error counting ${tableName}:`, countError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to count records: ${countError.message}`,
-          500,
-          'COUNT_ERROR'
-        );
-      }
-
-      // Fetch paginated data via join
-      const { data, error } = await supabase
-        .from(tableName as 'workspace_user_groups_users')
-        .select('*')
-        .in(joinConfig.joinColumn, parentIds)
-        .range(from, from + limit - 1);
+      // Use batched query to handle large ID arrays
+      const { count: totalCount, data, error } = await batchedInQuery(
+        supabase,
+        tableName,
+        joinConfig.joinColumn,
+        parentIds,
+        { from, limit }
+      );
 
       if (error) {
-        console.error(`Error fetching ${tableName}:`, error);
+        console.error(`Error querying ${tableName}:`, error);
         return createErrorResponse(
           'Internal Server Error',
           `Failed to fetch records: ${error.message}`,
@@ -646,7 +768,7 @@ export const GET = withApiAuth<Params>(
       }
 
       return NextResponse.json({
-        count: totalCount ?? 0,
+        count: totalCount,
         data: data ?? [],
       });
     }

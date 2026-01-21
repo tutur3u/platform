@@ -26,11 +26,11 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const json = await req.json();
-  // Composite key: (platform_user_id, virtual_user_id) - unique per workspace
+  // Primary key is (platform_user_id, ws_id)
   const result = await batchUpsert({
     table: 'workspace_user_linked_users',
     data: json?.data || [],
-    onConflict: 'platform_user_id,virtual_user_id',
+    onConflict: 'platform_user_id,ws_id',
   });
   return createMigrationResponse(result, 'workspace-user-linked-users');
 }
