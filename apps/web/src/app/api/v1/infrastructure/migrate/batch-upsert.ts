@@ -3,6 +3,60 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 const BATCH_SIZE = 100;
+const FETCH_LIMIT = 500;
+
+// Batch fetch for GET requests
+interface BatchFetchOptions {
+  table: string;
+  wsId: string;
+  offset?: number;
+  limit?: number;
+  wsColumn?: string;
+  supabase?: TypedSupabaseClient;
+}
+
+export async function batchFetch({
+  table,
+  wsId,
+  offset = 0,
+  limit = FETCH_LIMIT,
+  wsColumn = 'ws_id',
+  supabase: providedSupabase,
+}: BatchFetchOptions) {
+  const supabase = providedSupabase ?? (await createClient());
+
+  const { data, error, count } = await supabase
+    .from(table as 'workspace_users')
+    .select('*', { count: 'exact' })
+    .eq(wsColumn, wsId)
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    return { data: null, error, count: 0 };
+  }
+
+  return { data: data ?? [], error: null, count: count ?? 0 };
+}
+
+export function createFetchResponse(
+  result: { data: unknown[] | null; error: unknown; count: number },
+  entityName: string
+) {
+  if (result.error) {
+    return NextResponse.json(
+      {
+        message: `Error fetching ${entityName}`,
+        error: result.error,
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    data: result.data,
+    count: result.count,
+  });
+}
 
 interface BatchUpsertOptions {
   table: string;

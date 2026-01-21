@@ -16,20 +16,20 @@ export async function GET(req: Request) {
   }
 
   const result = await batchFetch({
-    table: 'workspace_configs',
+    table: 'credit_wallets',
     wsId,
     offset,
     limit,
   });
-  return createFetchResponse(result, 'workspace-configs');
+  return createFetchResponse(result, 'credit-wallets');
 }
 
 export async function PUT(req: Request) {
   const json = await req.json();
   const result = await batchUpsert({
-    table: 'workspace_configs',
+    table: 'credit_wallets',
     data: json?.data || [],
-    onConflict: 'ws_id,id',
+    onConflict: 'id',
   });
-  return createMigrationResponse(result, 'workspace-configs');
+  return createMigrationResponse(result, 'credit-wallets');
 }
