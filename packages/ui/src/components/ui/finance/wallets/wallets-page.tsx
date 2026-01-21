@@ -21,6 +21,14 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
   const { data: rawData, count } = await getData(wsId, searchParams);
 
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
+  const canCreateWallets = containsPermission('create_wallets');
+  const canUpdateWallets = containsPermission('update_wallets');
+  const canDeleteWallets = containsPermission('delete_wallets');
+
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/finance/wallets/${d.id}`,
@@ -35,7 +43,7 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         description={t('ws-wallets.description')}
         createTitle={t('ws-wallets.create')}
         createDescription={t('ws-wallets.create_description')}
-        form={<WalletForm wsId={wsId} />}
+        form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -43,6 +51,10 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         columnGenerator={walletColumns}
         namespace="wallet-data-table"
         count={count}
+        extraData={{
+          canUpdateWallets,
+          canDeleteWallets,
+        }}
         defaultVisibility={{
           id: false,
           description: false,

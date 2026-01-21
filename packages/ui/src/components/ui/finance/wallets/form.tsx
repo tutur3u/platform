@@ -31,6 +31,7 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1).max(255),
+  description: z.string().max(500).optional(),
   balance: z.number().optional(),
   type: z.string(),
   // type: z.enum(['STANDARD', 'CREDIT']),
@@ -49,6 +50,7 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
     defaultValues: {
       id: data?.id,
       name: data?.name || '',
+      description: data?.description || '',
       balance: data?.balance || 0,
       type: data?.type || 'STANDARD',
       currency: data?.currency || 'VND',
@@ -92,6 +94,21 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
               <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
               <FormControl>
                 <Input placeholder="Cash" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          disabled={loading}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('wallet-data-table.description')}</FormLabel>
+              <FormControl>
+                <Input placeholder="Personal savings" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

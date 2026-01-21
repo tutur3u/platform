@@ -22,9 +22,16 @@ import { toast } from '../../sonner';
 interface WalletRowActionsProps {
   row: Row<Wallet>;
   href?: string;
+  canUpdateWallets?: boolean;
+  canDeleteWallets?: boolean;
 }
 
-export function WalletRowActions({ row, href }: WalletRowActionsProps) {
+export function WalletRowActions({
+  row,
+  href,
+  canUpdateWallets,
+  canDeleteWallets,
+}: WalletRowActionsProps) {
   const t = useTranslations();
 
   const router = useRouter();
@@ -61,26 +68,32 @@ export function WalletRowActions({ row, href }: WalletRowActionsProps) {
         </Link>
       )}
 
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          >
-            <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWallet}>
-            {t('common.delete')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {(canUpdateWallets || canDeleteWallets) && (
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            >
+              <Ellipsis className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            {canUpdateWallets && (
+              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                {t('common.edit')}
+              </DropdownMenuItem>
+            )}
+            {canUpdateWallets && canDeleteWallets && <DropdownMenuSeparator />}
+            {canDeleteWallets && (
+              <DropdownMenuItem onClick={deleteWallet}>
+                {t('common.delete')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       <ModifiableDialogTrigger
         data={data}

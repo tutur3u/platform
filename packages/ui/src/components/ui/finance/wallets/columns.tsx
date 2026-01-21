@@ -9,7 +9,8 @@ import moment from 'moment';
 
 export const walletColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  extraData?: any
 ): ColumnDef<Wallet>[] => {
   return [
     // {
@@ -141,7 +142,12 @@ export const walletColumns = (
     {
       id: 'actions',
       cell: ({ row }) => (
-        <WalletRowActions row={row} href={row.original.href} />
+        <WalletRowActions
+          row={row}
+          href={row.original.href}
+          canUpdateWallets={extraData?.canUpdateWallets}
+          canDeleteWallets={extraData?.canDeleteWallets}
+        />
       ),
     },
   ];

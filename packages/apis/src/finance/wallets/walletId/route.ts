@@ -16,8 +16,7 @@ export async function GET(_: Request, { params }: Params) {
     wsId,
   });
 
-  // TODO: Migrate to another permission
-  if (withoutPermission('manage_finance')) {
+  if (withoutPermission('update_wallets')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
@@ -44,7 +43,17 @@ export async function GET(_: Request, { params }: Params) {
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
-  const { walletId: id } = await params;
+  const { walletId: id, wsId } = await params;
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('update_wallets')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('workspace_wallets')
@@ -64,7 +73,18 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { walletId: id } = await params;
+  const { walletId: id, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('delete_wallets')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('workspace_wallets')
@@ -74,7 +94,7 @@ export async function DELETE(_: Request, { params }: Params) {
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error creating workspace wallets' },
+      { message: 'Error deleting workspace wallets' },
       { status: 500 }
     );
   }

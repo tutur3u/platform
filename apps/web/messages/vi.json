@@ -9723,7 +9723,13 @@
     "whitelisted_wallets": "Ví được Phép Truy cập",
     "without_roles": "Không có Vai trò",
     "workspace": "Không gian làm việc",
-    "workspace_description": "Quản lý không gian làm việc cốt lõi bao gồm thành viên, vai trò và cài đặt"
+    "workspace_description": "Quản lý không gian làm việc cốt lõi bao gồm thành viên, vai trò và cài đặt",
+    "create_wallets": "Tạo ví",
+    "create_wallets_description": "Cho phép người dùng tạo ví",
+    "update_wallets": "Cập nhật ví",
+    "update_wallets_description": "Cho phép người dùng cập nhật ví",
+    "delete_wallets": "Xóa ví",
+    "delete_wallets_description": "Cho phép người dùng xóa ví"
   },
   "ws-secrets": {
     "add_new_workspace_secret": "Thêm mã bí mật mới",

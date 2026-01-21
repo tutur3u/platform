@@ -132,8 +132,8 @@ export async function POST(req: Request, { params }: Params) {
   const { withoutPermission } = await getPermissions({
     wsId,
   });
-  // TODO: Migrate to another permission
-  if (withoutPermission('manage_finance')) {
+
+  if (withoutPermission('create_wallets')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }

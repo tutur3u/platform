@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Shield, Trash2 } from '@tuturuuu/icons';
+import { Loader2, Plus, Search, Shield, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceRoleWalletWhitelist } from '@tuturuuu/types/primitives/WorkspaceRoleWalletWhitelist';
 import { Button } from '@tuturuuu/ui/button';
@@ -377,9 +377,14 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                     {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={addRoleMutation.isPending}>
-                    {addRoleMutation.isPending
-                      ? t('common.processing')
-                      : t('common.add')}
+                    {addRoleMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('common.processing')}
+                      </>
+                    ) : (
+                      t('common.add')
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
@@ -404,7 +409,11 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
       <Separator />
 
       {/* Roles List */}
-      {filteredRoleAccess.length > 0 ? (
+      {roleAccessQuery.isLoading || availableRolesQuery.isLoading ? (
+        <div className="flex h-32 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : filteredRoleAccess.length > 0 ? (
         <div className="space-y-2">
           {filteredRoleAccess.map((item: WorkspaceRoleWalletWhitelist) => {
             const role = item.workspace_roles;
@@ -434,6 +443,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                 <div className="flex items-center gap-2">
                   <Select
                     value={item.viewing_window}
+                    disabled={updateRoleMutation.isPending}
                     onValueChange={(value) =>
                       handleUpdateWindow(
                         item.role_id,
@@ -462,7 +472,12 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                     onClick={() => deleteRoleMutation.mutate(item.role_id)}
                     disabled={deleteRoleMutation.isPending}
                   >
-                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    {deleteRoleMutation.isPending &&
+                    deleteRoleMutation.variables === item.role_id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    )}
                   </Button>
                 </div>
               </div>

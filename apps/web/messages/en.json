@@ -9621,7 +9621,13 @@
     "whitelisted_wallets": "Whitelisted Wallets",
     "without_roles": "Without Roles",
     "workspace": "Workspace",
-    "workspace_description": "Core workspace management including members, roles, and settings"
+    "workspace_description": "Core workspace management including members, roles, and settings",
+    "create_wallets": "Create Wallets",
+    "create_wallets_description": "Allow Users to Create Wallets",
+    "update_wallets": "Update Wallets",
+    "update_wallets_description": "Allows Users to Update Wallets",
+    "delete_wallets": "Delete Wallets",
+    "delete_wallets_description": "Allows Users to Delete Wallets"
   },
   "ws-secrets": {
     "add_new_workspace_secret": "Add a new secret for this workspace.",
