@@ -125,7 +125,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
                       checked={printAfterCreate}
                       onCheckedChange={setPrintAfterCreate}
                       disabled={
-                        createMultipleInvoices || downloadImageAfterCreate
+                        createMultipleInvoices
                       }
                     />
                   </div>
@@ -143,7 +143,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
                       id="download-image-after-create"
                       checked={downloadImageAfterCreate}
                       onCheckedChange={setDownloadImageAfterCreate}
-                      disabled={createMultipleInvoices || printAfterCreate}
+                      disabled={createMultipleInvoices}
                     />
                   </div>
                 </div>
