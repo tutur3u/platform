@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -72,11 +73,59 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
-  const { wallet_id, viewing_window, custom_days } = body;
 
-  if (!wallet_id || !viewing_window) {
+  const schema = z
+    .object({
+      wallet_id: z.string(),
+      viewing_window: z.enum([
+        '1_day',
+        '3_days',
+        '7_days',
+        '2_weeks',
+        '1_month',
+        '1_quarter',
+        '1_year',
+        'custom',
+      ]),
+      custom_days: z.number().int().positive().optional(),
+    })
+    .refine(
+      (data) =>
+        data.viewing_window !== 'custom' ||
+        (data.custom_days !== undefined && data.custom_days > 0),
+      {
+        message:
+          'custom_days must be a positive integer when viewing_window is "custom"',
+        path: ['custom_days'],
+      }
+    );
+
+  let wallet_id: string;
+  let viewing_window:
+    | '1_day'
+    | '3_days'
+    | '7_days'
+    | '2_weeks'
+    | '1_month'
+    | '1_quarter'
+    | '1_year'
+    | 'custom';
+  let custom_days: number | undefined;
+
+  try {
+    const validatedData = await schema.parseAsync(body);
+    wallet_id = validatedData.wallet_id;
+    viewing_window = validatedData.viewing_window;
+    custom_days = validatedData.custom_days;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: error.issues },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { message: 'wallet_id and viewing_window are required' },
+      { message: 'Invalid request body' },
       { status: 400 }
     );
   }

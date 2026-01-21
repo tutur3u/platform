@@ -9390,6 +9390,8 @@
     "current_members": "Current Members",
     "custom_days": "Custom Days",
     "custom_days_description": "Enter the number of days for the custom viewing window",
+    "custom_days_must_be_at_least_1": "Custom days must be at least 1",
+    "custom_days_placeholder": "Days",
     "default_permissions": "Default permissions",
     "default_permissions_description": "These permissions will be applied to all users in your workspace by default.",
     "default_permissions_only": "Default permissions only",

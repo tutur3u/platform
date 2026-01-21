@@ -75,6 +75,7 @@ DECLARE
   v_allowed_wallet_ids uuid[];
   v_wallet_access RECORD;
   v_wallet_windows JSONB := '{}';
+  v_filter_cte text;
 BEGIN
   -- Check user's permissions
   can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
@@ -90,34 +91,26 @@ BEGIN
 
   -- If user doesn't have manage_finance, enforce wallet-level access control
   IF NOT has_manage_finance THEN
-    -- Get all wallets in the workspace
-    FOR v_wallet_access IN 
-      SELECT ww.id as wallet_id
-      FROM public.workspace_wallets ww
-      WHERE ww.ws_id = p_ws_id
-    LOOP
-      DECLARE
-        v_access_info RECORD;
-      BEGIN
-        -- Check if user has access to this wallet via role whitelist
-        SELECT * INTO v_access_info
-        FROM public.user_has_wallet_access_via_role(p_user_id, v_wallet_access.wallet_id, p_ws_id);
-        
-        IF v_access_info.has_access THEN
-          -- Add to allowed wallets
-          v_allowed_wallet_ids := array_append(v_allowed_wallet_ids, v_wallet_access.wallet_id);
-          
-          -- Store the window start date for this wallet
-          v_wallet_windows := v_wallet_windows || jsonb_build_object(
-            v_wallet_access.wallet_id::text,
-            v_access_info.window_start_date
-          );
-        END IF;
-      END;
-    END LOOP;
+    -- Optimization: Single set-based query to get allowed wallets and windows
+    SELECT 
+      array_agg(ww.id),
+      jsonb_object_agg(ww.id::text, access_data.window_start_date)
+    INTO v_allowed_wallet_ids, v_wallet_windows
+    FROM public.workspace_wallets ww
+    JOIN (
+      SELECT 
+        wrww.wallet_id,
+        MIN(now() - (public.get_wallet_viewing_window_days(wrww.viewing_window, wrww.custom_days) || ' days')::interval) as window_start_date
+      FROM public.workspace_roles wr
+      JOIN public.workspace_role_members wrm ON wr.id = wrm.role_id
+      JOIN public.workspace_role_wallet_whitelist wrww ON wr.id = wrww.role_id
+      WHERE wr.ws_id = p_ws_id AND wrm.user_id = p_user_id
+      GROUP BY wrww.wallet_id
+    ) access_data ON ww.id = access_data.wallet_id
+    WHERE ww.ws_id = p_ws_id;
     
     -- If user has no wallet access, return empty result
-    IF v_allowed_wallet_ids IS NULL OR array_length(v_allowed_wallet_ids, 1) IS NULL THEN
+    IF v_allowed_wallet_ids IS NULL THEN
       RETURN;
     END IF;
     
@@ -157,43 +150,87 @@ BEGIN
     v_order_clause := format('wt.amount %s, wt.taken_at %s', p_order_direction, p_order_direction);
   END IF;
 
+  -- Prepare filtered CTE logic
+  v_filter_cte := '
+    WITH filtered_transactions AS (
+      SELECT 
+        wt.id,
+        wt.amount,
+        wt.category_id,
+        wt.created_at,
+        wt.creator_id,
+        wt.platform_creator_id,
+        wt.description,
+        wt.invoice_id,
+        wt.report_opt_in,
+        wt.taken_at,
+        wt.wallet_id,
+        wt.is_amount_confidential,
+        wt.is_description_confidential,
+        wt.is_category_confidential,
+        ww.name as wallet_name
+      FROM public.wallet_transactions wt
+      JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
+      WHERE ww.ws_id = $5
+        -- Wallet Access Restrictions
+        AND ($17 OR (wt.wallet_id = ANY($7) AND wt.taken_at >= COALESCE(($18->>wt.wallet_id::text)::timestamptz, ''-infinity''::timestamptz)))
+        -- Permission Logic (Expenses/Incomes)
+        AND (
+          (NOT $21 AND $20)
+          OR ($19 AND wt.amount < 0)
+          OR ($22 AND wt.amount > 0)
+        )
+        AND ($6::uuid[] IS NULL OR wt.id = ANY($6))
+        AND ($7::uuid[] IS NULL OR wt.wallet_id = ANY($7))
+        AND ($8::uuid[] IS NULL OR wt.category_id = ANY($8))
+        AND ($9::uuid[] IS NULL OR (wt.creator_id = ANY($9) OR wt.platform_creator_id = ANY($9)))
+        AND ($10::timestamp with time zone IS NULL OR wt.taken_at >= $10)
+        AND ($11::timestamp with time zone IS NULL OR wt.taken_at <= $11)
+        AND (
+          $12::text IS NULL 
+          OR wt.description ILIKE ''%%'' || $12 || ''%%''
+        )
+        AND (
+          $13::timestamp with time zone IS NULL 
+          OR $14::timestamp with time zone IS NULL
+          OR (
+            wt.taken_at < $13
+            OR (wt.taken_at = $13 AND wt.created_at < $14)
+          )
+        )
+    )';
+
   -- Get total count if requested (before pagination)
   IF p_include_count THEN
-    SELECT COUNT(*)
+    EXECUTE v_filter_cte || ' SELECT COUNT(*) FROM filtered_transactions'
     INTO v_total_count
-    FROM public.wallet_transactions wt
-    JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
-    WHERE ww.ws_id = p_ws_id
-      -- Wallet Access Restrictions
-      AND (has_manage_finance OR (wt.wallet_id = ANY(p_wallet_ids) AND wt.taken_at >= (v_wallet_windows->>wt.wallet_id::text)::timestamptz))
-      -- Permission Logic (Expenses/Incomes)
-      AND (
-        (NOT has_granular_permissions AND can_view_transactions)
-        OR (can_view_expenses AND wt.amount < 0)
-        OR (can_view_incomes AND wt.amount > 0)
-      )
-      AND (p_transaction_ids IS NULL OR wt.id = ANY(p_transaction_ids))
-      AND (p_wallet_ids IS NULL OR wt.wallet_id = ANY(p_wallet_ids))
-      AND (p_category_ids IS NULL OR wt.category_id = ANY(p_category_ids))
-      AND (p_creator_ids IS NULL OR (wt.creator_id = ANY(p_creator_ids) OR wt.platform_creator_id = ANY(p_creator_ids)))
-      AND (p_start_date IS NULL OR wt.taken_at >= p_start_date)
-      AND (p_end_date IS NULL OR wt.taken_at <= p_end_date)
-      AND (
-        p_search_query IS NULL 
-        OR wt.description ILIKE '%' || p_search_query || '%'
-      )
-      AND (
-        p_cursor_taken_at IS NULL 
-        OR p_cursor_created_at IS NULL
-        OR (
-          wt.taken_at < p_cursor_taken_at
-          OR (wt.taken_at = p_cursor_taken_at AND wt.created_at < p_cursor_created_at)
-        )
-      );
+    USING 
+      can_view_amount,              -- $1
+      can_view_category,            -- $2
+      can_view_description,         -- $3
+      v_total_count,                -- $4
+      p_ws_id,                      -- $5
+      p_transaction_ids,            -- $6
+      p_wallet_ids,                 -- $7
+      p_category_ids,               -- $8
+      p_creator_ids,                -- $9
+      p_start_date,                 -- $10
+      p_end_date,                   -- $11
+      p_search_query,               -- $12
+      p_cursor_taken_at,            -- $13
+      p_cursor_created_at,          -- $14
+      p_limit,                      -- $15
+      p_offset,                     -- $16
+      has_manage_finance,           -- $17
+      v_wallet_windows,             -- $18
+      can_view_expenses,            -- $19
+      can_view_transactions,        -- $20
+      has_granular_permissions,     -- $21
+      can_view_incomes;             -- $22
   END IF;
 
   -- Return query with all filters and pagination
-  RETURN QUERY EXECUTE format('
+  RETURN QUERY EXECUTE format(v_filter_cte || '
     SELECT
       wt.id,
       CASE 
@@ -215,7 +252,7 @@ BEGIN
       wt.report_opt_in,
       wt.taken_at,
       wt.wallet_id,
-      ww.name as wallet_name,
+      wt.wallet_name,
       COALESCE(
         u.display_name, 
         upd.full_name, 
@@ -244,8 +281,7 @@ BEGIN
       wt.is_description_confidential,
       wt.is_category_confidential,
       $4::bigint AS total_count
-    FROM public.wallet_transactions wt
-    JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
+    FROM filtered_transactions wt
     
     LEFT JOIN public.users u ON wt.platform_creator_id = u.id
     LEFT JOIN public.user_private_details upd ON wt.platform_creator_id = upd.user_id
@@ -256,33 +292,6 @@ BEGIN
     LEFT JOIN public.user_private_details upd_inv ON fi.platform_creator_id = upd_inv.user_id
     LEFT JOIN public.workspace_users wu_inv ON fi.creator_id = wu_inv.id
     
-    WHERE ww.ws_id = $5
-      -- Wallet Access Restrictions
-      AND ($17 OR (wt.wallet_id = ANY($7) AND wt.taken_at >= COALESCE(($18->>wt.wallet_id::text)::timestamptz, ''-infinity''::timestamptz)))
-      -- Permission Logic (Expenses/Incomes)
-      AND (
-        (NOT $21 AND $20)
-        OR ($19 AND wt.amount < 0)
-        OR ($22 AND wt.amount > 0)
-      )
-      AND ($6::uuid[] IS NULL OR wt.id = ANY($6))
-      AND ($7::uuid[] IS NULL OR wt.wallet_id = ANY($7))
-      AND ($8::uuid[] IS NULL OR wt.category_id = ANY($8))
-      AND ($9::uuid[] IS NULL OR (wt.creator_id = ANY($9) OR wt.platform_creator_id = ANY($9)))
-      AND ($10::timestamp with time zone IS NULL OR wt.taken_at >= $10)
-      AND ($11::timestamp with time zone IS NULL OR wt.taken_at <= $11)
-      AND (
-        $12::text IS NULL 
-        OR wt.description ILIKE ''%%'' || $12 || ''%%''
-      )
-      AND (
-        $13::timestamp with time zone IS NULL 
-        OR $14::timestamp with time zone IS NULL
-        OR (
-          wt.taken_at < $13
-          OR (wt.taken_at = $13 AND wt.created_at < $14)
-        )
-      )
     ORDER BY %s
     LIMIT $15
     OFFSET $16

@@ -108,12 +108,59 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Add viewing window info to wallets
-  const walletMap = new Map(
-    whitelistData.map((item) => [
-      item.wallet_id,
-      { viewing_window: item.viewing_window, custom_days: item.custom_days },
-    ])
-  );
+  const getViewingWindowDays = (
+    window: string | null,
+    customDays: number | null
+  ): number => {
+    if (!window) return 30;
+    switch (window) {
+      case '1_day':
+        return 1;
+      case '3_days':
+        return 3;
+      case '7_days':
+        return 7;
+      case '2_weeks':
+        return 14;
+      case '1_month':
+        return 30;
+      case '1_quarter':
+        return 90;
+      case '1_year':
+        return 365;
+      case 'custom':
+        return customDays && customDays >= 1 ? customDays : 30;
+      default:
+        return 30;
+    }
+  };
+
+  const walletMap = (whitelistData || []).reduce((acc, item) => {
+    const existing = acc.get(item.wallet_id);
+    if (!existing) {
+      acc.set(item.wallet_id, {
+        viewing_window: item.viewing_window,
+        custom_days: item.custom_days,
+      });
+    } else {
+      const existingDays = getViewingWindowDays(
+        existing.viewing_window,
+        existing.custom_days
+      );
+      const currentDays = getViewingWindowDays(
+        item.viewing_window,
+        item.custom_days
+      );
+
+      if (currentDays > existingDays) {
+        acc.set(item.wallet_id, {
+          viewing_window: item.viewing_window,
+          custom_days: item.custom_days,
+        });
+      }
+    }
+    return acc;
+  }, new Map<string, { viewing_window: string; custom_days: number | null }>());
 
   const walletsWithWindow = (wallets || []).map((wallet) => ({
     ...wallet,

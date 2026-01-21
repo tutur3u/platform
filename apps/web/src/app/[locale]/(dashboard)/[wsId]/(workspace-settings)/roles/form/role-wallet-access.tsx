@@ -53,20 +53,32 @@ const viewingWindowOptions = [
   { value: 'custom', labelKey: 'ws-roles.viewing_window_custom' },
 ] as const;
 
-const walletFormSchema = z.object({
-  wallet_id: z.string().min(1, 'Wallet is required'),
-  viewing_window: z.enum([
-    '1_day',
-    '3_days',
-    '7_days',
-    '2_weeks',
-    '1_month',
-    '1_quarter',
-    '1_year',
-    'custom',
-  ]),
-  custom_days: z.number().min(1).optional(),
-});
+const walletFormSchema = z
+  .object({
+    wallet_id: z.string().min(1, 'Wallet is required'),
+    viewing_window: z.enum([
+      '1_day',
+      '3_days',
+      '7_days',
+      '2_weeks',
+      '1_month',
+      '1_quarter',
+      '1_year',
+      'custom',
+    ]),
+    custom_days: z.number().min(1).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.viewing_window === 'custom') {
+      if (data.custom_days === undefined || data.custom_days < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['custom_days'],
+          message: 'Custom days must be at least 1',
+        });
+      }
+    }
+  });
 
 type WalletFormValues = z.infer<typeof walletFormSchema>;
 
@@ -481,6 +493,31 @@ export default function RoleFormWalletAccessSection({
                         ))}
                       </SelectContent>
                     </Select>
+                    {item.viewing_window === 'custom' && (
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder={t('ws-roles.custom_days_placeholder')}
+                        defaultValue={item.custom_days ?? ''}
+                        className="w-20"
+                        onBlur={(e) => {
+                          const days = parseInt(e.target.value, 10);
+                          if (!Number.isNaN(days) && days >= 1) {
+                            handleUpdateWindow(item.wallet_id, 'custom', days);
+                          } else if (e.target.value) {
+                            toast.error(
+                              t('ws-roles.custom_days_must_be_at_least_1')
+                            );
+                            e.target.value = String(item.custom_days ?? '');
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                          }
+                        }}
+                      />
+                    )}
                     <Button
                       type="button"
                       size="sm"

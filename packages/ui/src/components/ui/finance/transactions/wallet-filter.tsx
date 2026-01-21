@@ -17,6 +17,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import * as z from 'zod';
+
+const WorkspaceWalletSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().nullable(),
+    balance: z.number().nullable(),
+  })
+  .passthrough(); // Allow optional fields from API (viewing_window, custom_days)
+const WorkspaceWalletListSchema = z.array(WorkspaceWalletSchema);
 
 interface WorkspaceWallet {
   id: string;
@@ -35,7 +45,8 @@ interface WalletFilterProps {
 async function fetchWorkspaceWallets(wsId: string): Promise<WorkspaceWallet[]> {
   const res = await fetch(`/api/workspaces/${wsId}/wallets`);
   if (!res.ok) throw new Error('Failed to fetch wallets');
-  return res.json();
+  const data = await res.json();
+  return WorkspaceWalletListSchema.parse(data);
 }
 
 export function WalletFilter({

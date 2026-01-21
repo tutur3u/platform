@@ -30,7 +30,7 @@ export default async function WalletDetailsPage({
   locale,
 }: Props) {
   const t = await getTranslations();
-  const { wallet } = await getData(wsId, walletId);
+
   const { withoutPermission, containsPermission } = await getPermissions({
     wsId,
   });
@@ -54,6 +54,9 @@ export default async function WalletDetailsPage({
   const canViewConfidentialCategory = containsPermission(
     'view_confidential_category'
   );
+  const hasManageFinance = containsPermission('manage_finance');
+
+  const { wallet } = await getData(wsId, walletId, hasManageFinance);
 
   if (!wallet) notFound();
 
@@ -166,7 +169,11 @@ function DetailItem({
   );
 }
 
-async function getData(wsId: string, walletId: string) {
+async function getData(
+  _wsId: string,
+  walletId: string,
+  hasManageFinance: boolean
+) {
   const supabase = await createClient();
 
   const {
@@ -176,12 +183,6 @@ async function getData(wsId: string, walletId: string) {
   if (!user) {
     throw new Error('Unauthorized');
   }
-
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  const hasManageFinance = !withoutPermission('manage_finance');
 
   const { data: wallet, error: walletError } = await supabase
     .from('workspace_wallets')
