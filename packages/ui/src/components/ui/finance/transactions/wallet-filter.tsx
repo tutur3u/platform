@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Wallet, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -34,15 +33,9 @@ interface WalletFilterProps {
 
 // Function to fetch workspace wallets
 async function fetchWorkspaceWallets(wsId: string): Promise<WorkspaceWallet[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('workspace_wallets')
-    .select('id, name, balance')
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
+  const res = await fetch(`/api/workspaces/${wsId}/wallets`);
+  if (!res.ok) throw new Error('Failed to fetch wallets');
+  return res.json();
 }
 
 export function WalletFilter({

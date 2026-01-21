@@ -5,6 +5,7 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -65,13 +66,60 @@ async function getData(
 ) {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
+  const hasManageFinance = containsPermission('manage_finance');
+
   const queryBuilder = supabase
     .from('workspace_wallets')
     .select('*', {
       count: 'exact',
     })
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
+    .eq('ws_id', wsId);
+
+  if (!hasManageFinance) {
+    // Get user's role IDs
+    const { data: userRoles } = await supabase
+      .from('workspace_role_members')
+      .select('role_id')
+      .eq('user_id', user.id);
+
+    const roleIds = (userRoles || []).map((r) => r.role_id);
+
+    if (roleIds.length > 0) {
+      // Get whitelisted wallet IDs
+      const { data: whitelistData } = await supabase
+        .from('workspace_role_wallet_whitelist')
+        .select('wallet_id')
+        .in('role_id', roleIds);
+
+      const whitelistedWalletIds = (whitelistData || []).map(
+        (item) => item.wallet_id
+      );
+
+      if (whitelistedWalletIds.length > 0) {
+        queryBuilder.in('id', whitelistedWalletIds);
+      } else {
+        // No whitelisted wallets, return empty result
+        return { data: [], count: 0 };
+      }
+    } else {
+      // No roles, return empty result
+      return { data: [], count: 0 };
+    }
+  }
+
+  queryBuilder.order('name', { ascending: true });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 

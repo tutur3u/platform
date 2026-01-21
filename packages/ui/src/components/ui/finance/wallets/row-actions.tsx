@@ -13,11 +13,11 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { toast } from '../../sonner';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;
@@ -42,10 +42,7 @@ export function WalletRowActions({ row, href }: WalletRowActionsProps) {
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace wallet',
-        description: data.message,
-      });
+      toast.error(data.message || 'Failed to delete workspace wallet');
     }
   };
 
@@ -92,6 +89,7 @@ export function WalletRowActions({ row, href }: WalletRowActionsProps) {
         editDescription={t('ws-wallets.edit_description')}
         setOpen={setShowEditDialog}
         form={<WalletForm wsId={data.ws_id} data={data} />}
+        requireExpansion
       />
     </div>
   );

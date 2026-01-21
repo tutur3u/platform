@@ -13753,6 +13753,48 @@ export type Database = {
           },
         ];
       };
+      workspace_role_wallet_whitelist: {
+        Row: {
+          created_at: string;
+          custom_days: number | null;
+          id: string;
+          role_id: string;
+          viewing_window: string;
+          wallet_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          custom_days?: number | null;
+          id?: string;
+          role_id: string;
+          viewing_window?: string;
+          wallet_id: string;
+        };
+        Update: {
+          created_at?: string;
+          custom_days?: number | null;
+          id?: string;
+          role_id?: string;
+          viewing_window?: string;
+          wallet_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_role_wallet_whitelist_role_id_fkey';
+            columns: ['role_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_roles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_role_wallet_whitelist_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_roles: {
         Row: {
           created_at: string;
@@ -17957,6 +17999,10 @@ export type Database = {
           wallet_name: string;
         }[];
       };
+      get_wallet_viewing_window_days: {
+        Args: { p_custom_days?: number; p_viewing_window: string };
+        Returns: number;
+      };
       get_wau_count: { Args: never; Returns: number };
       get_weekly_invoice_totals:
         | {
@@ -18599,6 +18645,15 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      user_has_wallet_access_via_role: {
+        Args: { p_user_id: string; p_wallet_id: string; p_ws_id: string };
+        Returns: {
+          custom_days: number;
+          has_access: boolean;
+          viewing_window: string;
+          window_start_date: string;
+        }[];
       };
       user_is_in_channel: {
         Args: { p_channel_id: string; p_user_id: string };

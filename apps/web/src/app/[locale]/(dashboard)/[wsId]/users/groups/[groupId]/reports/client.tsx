@@ -6,7 +6,7 @@ import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox, type ComboboxOption} from '@tuturuuu/ui/custom/combobox';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
   Select,
   SelectContent,

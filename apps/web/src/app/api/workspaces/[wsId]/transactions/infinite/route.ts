@@ -55,11 +55,21 @@ export async function GET(req: Request, { params }: Params) {
     const finalWalletIds =
       walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
 
+    // Get current user to pass to RPC
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     // Use optimized RPC function with all filters at database level
     const { data, error } = await supabase.rpc(
       'get_wallet_transactions_with_permissions',
       {
         p_ws_id: wsId,
+        p_user_id: user.id, // Explicitly pass user ID
         p_wallet_ids: finalWalletIds,
         p_category_ids: categoryIds.length > 0 ? categoryIds : undefined,
         p_creator_ids: userIds.length > 0 ? userIds : undefined,

@@ -12,13 +12,15 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { toast } from '../../sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import WalletRoleAccess from './walletId/wallet-role-access';
 
 interface Props {
   wsId: string;
@@ -74,14 +76,11 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: 'Error creating wallet',
-        description: 'An error occurred while creating the wallet',
-      });
+      toast.error(t('ws-wallets.failed_to_create_wallet'));
     }
   }
 
-  return (
+  const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
         <FormField
@@ -205,5 +204,24 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
         </Button>
       </form>
     </Form>
+  );
+
+  if (!data?.id) return formContent;
+
+  return (
+    <Tabs defaultValue="general">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="general">{t('common.general')}</TabsTrigger>
+        <TabsTrigger value="role_access">
+          {t('ws-wallets.role_access')}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="general" className="mt-4">
+        {formContent}
+      </TabsContent>
+      <TabsContent value="role_access" className="mt-4">
+        <WalletRoleAccess wsId={wsId} walletId={data.id} />
+      </TabsContent>
+    </Tabs>
   );
 }

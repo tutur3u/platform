@@ -458,13 +458,13 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-finance-tabs.wallets'),
           href: `/${personalOrWsId}/finance/wallets`,
           icon: <Wallet className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
+          disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.invoices'),
           href: `/${personalOrWsId}/finance/invoices`,
           icon: <ReceiptText className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
+          disabled: withoutPermission('view_invoices'),
         },
         null,
         {
@@ -506,7 +506,11 @@ export async function WorkspaceNavigationLinks({
           disabled: true,
         },
       ],
-      disabled: ENABLE_AI_ONLY || withoutPermission('manage_finance'),
+      disabled:
+        ENABLE_AI_ONLY ||
+        (withoutPermission('manage_finance') &&
+          withoutPermission('view_invoices') &&
+          withoutPermission('view_transactions')),
     },
     {
       title: t('sidebar_tabs.users'),
