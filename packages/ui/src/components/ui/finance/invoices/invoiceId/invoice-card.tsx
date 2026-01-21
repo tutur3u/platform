@@ -179,28 +179,36 @@ export default function InvoiceCard({
   useEffect(() => {
     if (!isCompactInitialized) return;
 
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const shouldPrint = params.get('print') === 'true';
-      const shouldDownloadImage = params.get('image') === 'true';
+    const triggerExports = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const shouldPrint = params.get('print') === 'true';
+        const shouldDownloadImage = params.get('image') === 'true';
 
-      if (shouldPrint || shouldDownloadImage) {
-        if (shouldPrint) {
-          handlePrintExport();
+        if (shouldPrint || shouldDownloadImage) {
+          try {
+            if (shouldPrint) {
+              handlePrintExport();
+            }
+
+            if (shouldDownloadImage) {
+              await handlePngExport();
+            }
+          } catch (error) {
+            console.error('Auto-export failed:', error);
+          }
+
+          const url = new URL(window.location.href);
+          url.searchParams.delete('print');
+          url.searchParams.delete('image');
+          window.history.replaceState({}, '', url.toString());
         }
-
-        if (shouldDownloadImage) {
-          handlePngExport();
-        }
-
-        const url = new URL(window.location.href);
-        url.searchParams.delete('print');
-        url.searchParams.delete('image');
-        window.history.replaceState({}, '', url.toString());
+      } catch (error) {
+        console.error('Failed to trigger auto-export:', error);
       }
-    } catch (_) {
-      // no-op
-    }
+    };
+
+    triggerExports();
   }, [handlePrintExport, handlePngExport, isCompactInitialized]);
 
   return (
