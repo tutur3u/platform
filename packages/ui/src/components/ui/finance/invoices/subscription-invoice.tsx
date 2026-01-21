@@ -66,6 +66,7 @@ interface Props {
   prefillAmount?: number; // Total attendance days to prefill product quantities
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
+  downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
 }
 
@@ -235,6 +236,7 @@ export function SubscriptionInvoice({
   prefillAmount,
   createMultipleInvoices,
   printAfterCreate = false,
+  downloadImageAfterCreate = false,
   defaultWalletId,
 }: Props) {
   const t = useTranslations();
@@ -1112,7 +1114,13 @@ export function SubscriptionInvoice({
       }
 
       if (!createMultipleInvoices) {
-        const query = printAfterCreate ? '?print=true' : '';
+        const queryParams = new URLSearchParams();
+        if (printAfterCreate) queryParams.set('print', 'true');
+        if (downloadImageAfterCreate) queryParams.set('image', 'true');
+
+        const queryString = queryParams.toString();
+        const query = queryString ? `?${queryString}` : '';
+
         router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
       } else {
         // Reset form
