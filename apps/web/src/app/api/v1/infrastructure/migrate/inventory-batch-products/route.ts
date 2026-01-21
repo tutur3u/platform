@@ -1,9 +1,5 @@
-import {
-  batchFetch,
-  batchUpsert,
-  createFetchResponse,
-  createMigrationResponse,
-} from '../batch-upsert';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -15,21 +11,89 @@ export async function GET(req: Request) {
     return Response.json({ error: 'ws_id is required' }, { status: 400 });
   }
 
-  const result = await batchFetch({
-    table: 'inventory_batch_products',
-    wsId,
-    offset,
-    limit,
+  const supabase = await createClient();
+
+  // inventory_batch_products doesn't have ws_id
+  // Need to join: batch_products -> batches -> warehouses.ws_id
+
+  // First get all warehouse IDs for this workspace
+  const { data: warehouses, error: warehouseError } = await supabase
+    .from('inventory_warehouses')
+    .select('id')
+    .eq('ws_id', wsId);
+
+  if (warehouseError) {
+    return Response.json(
+      { error: 'Failed to fetch warehouses', details: warehouseError.message },
+      { status: 500 }
+    );
+  }
+
+  const warehouseIds = warehouses?.map((w) => w.id) ?? [];
+
+  if (warehouseIds.length === 0) {
+    return Response.json({ data: [], count: 0 });
+  }
+
+  // Get all batch IDs for these warehouses
+  const { data: batches, error: batchError } = await supabase
+    .from('inventory_batches')
+    .select('id')
+    .in('warehouse_id', warehouseIds);
+
+  if (batchError) {
+    return Response.json(
+      { error: 'Failed to fetch batches', details: batchError.message },
+      { status: 500 }
+    );
+  }
+
+  const batchIds = batches?.map((b) => b.id) ?? [];
+
+  if (batchIds.length === 0) {
+    return Response.json({ data: [], count: 0 });
+  }
+
+  // Count total records
+  const { count: totalCount, error: countError } = await supabase
+    .from('inventory_batch_products')
+    .select('*', { count: 'exact', head: true })
+    .in('batch_id', batchIds);
+
+  if (countError) {
+    return Response.json(
+      { error: 'Failed to count records', details: countError.message },
+      { status: 500 }
+    );
+  }
+
+  // Fetch paginated data
+  const { data, error } = await supabase
+    .from('inventory_batch_products')
+    .select('*')
+    .in('batch_id', batchIds)
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    return Response.json(
+      { error: 'Failed to fetch records', details: error.message },
+      { status: 500 }
+    );
+  }
+
+  return Response.json({
+    data: data ?? [],
+    count: totalCount ?? 0,
   });
-  return createFetchResponse(result, 'inventory-batch-products');
 }
 
 export async function PUT(req: Request) {
   const json = await req.json();
+  // Composite key: (batch_id, product_id, unit_id)
   const result = await batchUpsert({
     table: 'inventory_batch_products',
     data: json?.data || [],
-    onConflict: 'id',
+    onConflict: 'batch_id,product_id,unit_id',
   });
   return createMigrationResponse(result, 'inventory-batch-products');
 }

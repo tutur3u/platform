@@ -71,10 +71,9 @@ const MODULE_TABLE_MAP: Record<string, string> = {
 // Tables that need special handling for workspace scoping
 const WORKSPACE_COLUMN_MAP: Record<string, string> = {
   // Inventory tables
-  inventory_products: 'ws_id',
+  // Note: inventory_products, inventory_batches, inventory_batch_products don't have ws_id
+  // They're queried via warehouse join (handled separately)
   inventory_suppliers: 'ws_id',
-  inventory_batches: 'ws_id',
-  inventory_batch_products: 'ws_id',
   inventory_warehouses: 'ws_id',
   product_categories: 'ws_id',
   inventory_units: 'ws_id',
@@ -94,9 +93,9 @@ const WORKSPACE_COLUMN_MAP: Record<string, string> = {
   workspace_users: 'ws_id',
   workspace_user_fields: 'ws_id',
   workspace_user_groups: 'ws_id',
-  workspace_user_groups_users: 'ws_id',
+  // Junction tables: workspace_user_groups_users and workspace_user_group_tag_groups
+  // don't have ws_id - they're queried via joins (handled separately)
   workspace_user_group_tags: 'ws_id',
-  workspace_user_group_tag_groups: 'ws_id',
   workspace_user_linked_users: 'ws_id',
   workspace_user_status_changes: 'ws_id',
   // Other tables
@@ -165,6 +164,186 @@ export const GET = withApiAuth<Params>(
 
     // Use admin client for SDK API routes
     const supabase = await createDynamicAdminClient();
+
+    // Tables without ws_id need special handling via joins
+    const tablesWithoutWsId: Record<
+      string,
+      { parentTable: string; joinColumn: string }
+    > = {
+      // Junction tables
+      workspace_user_groups_users: {
+        parentTable: 'workspace_user_groups',
+        joinColumn: 'group_id',
+      },
+      workspace_user_group_tag_groups: {
+        parentTable: 'workspace_user_group_tags',
+        joinColumn: 'tag_id',
+      },
+      // Inventory tables without ws_id - query via warehouse
+      inventory_products: {
+        parentTable: 'inventory_warehouses',
+        joinColumn: 'warehouse_id',
+      },
+      inventory_batches: {
+        parentTable: 'inventory_warehouses',
+        joinColumn: 'warehouse_id',
+      },
+    };
+
+    // inventory_batch_products needs two-level join (batch -> warehouse)
+    if (tableName === 'inventory_batch_products') {
+      // First get warehouse IDs
+      const { data: warehouses, error: warehouseError } = await supabase
+        .from('inventory_warehouses')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (warehouseError) {
+        console.error('Error fetching warehouses:', warehouseError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch warehouses: ${warehouseError.message}`,
+          500,
+          'WAREHOUSE_FETCH_ERROR'
+        );
+      }
+
+      const warehouseIds = warehouses?.map((w) => w.id) ?? [];
+
+      if (warehouseIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Get batch IDs for these warehouses
+      const { data: batches, error: batchError } = await supabase
+        .from('inventory_batches')
+        .select('id')
+        .in('warehouse_id', warehouseIds);
+
+      if (batchError) {
+        console.error('Error fetching batches:', batchError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch batches: ${batchError.message}`,
+          500,
+          'BATCH_FETCH_ERROR'
+        );
+      }
+
+      const batchIds = batches?.map((b) => b.id) ?? [];
+
+      if (batchIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Count and fetch batch products
+      const { count: totalCount, error: countError } = await supabase
+        .from('inventory_batch_products')
+        .select('*', { count: 'exact', head: true })
+        .in('batch_id', batchIds);
+
+      if (countError) {
+        console.error('Error counting inventory_batch_products:', countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('inventory_batch_products')
+        .select('*')
+        .in('batch_id', batchIds)
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error('Error fetching inventory_batch_products:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
+
+    const joinConfig = tablesWithoutWsId[tableName];
+
+    if (joinConfig) {
+      // For tables without ws_id, query via join with parent table
+      // First get parent IDs that belong to this workspace
+      const { data: parentData, error: parentError } = await supabase
+        .from(joinConfig.parentTable as 'workspace_user_groups')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (parentError) {
+        console.error(
+          `Error fetching parent ${joinConfig.parentTable}:`,
+          parentError
+        );
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch parent records: ${parentError.message}`,
+          500,
+          'PARENT_FETCH_ERROR'
+        );
+      }
+
+      const parentIds = parentData?.map((p) => p.id) ?? [];
+
+      if (parentIds.length === 0) {
+        return NextResponse.json({
+          count: 0,
+          data: [],
+        });
+      }
+
+      // Count records via join
+      const { count: totalCount, error: countError } = await supabase
+        .from(tableName as 'workspace_user_groups_users')
+        .select('*', { count: 'exact', head: true })
+        .in(joinConfig.joinColumn, parentIds);
+
+      if (countError) {
+        console.error(`Error counting ${tableName}:`, countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      // Fetch paginated data via join
+      const { data, error } = await supabase
+        .from(tableName as 'workspace_user_groups_users')
+        .select('*')
+        .in(joinConfig.joinColumn, parentIds)
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error(`Error fetching ${tableName}:`, error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
 
     // Get workspace column name for this table
     const wsColumn = WORKSPACE_COLUMN_MAP[tableName] || 'ws_id';

@@ -41,7 +41,10 @@ export async function POST(req: Request) {
     if (fetchError) {
       console.error('Error fetching existing users:', fetchError);
       return Response.json(
-        { error: 'Failed to check existing users', details: fetchError.message },
+        {
+          error: 'Failed to check existing users',
+          details: fetchError.message,
+        },
         { status: 500 }
       );
     }
