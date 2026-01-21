@@ -27,6 +27,13 @@ interface UserFilterProps {
   onUsersChange: (userIds: string[]) => void;
   className?: string;
   filterType?: 'all' | 'transaction_creators' | 'invoice_creators';
+  availableUsers?: Array<{
+    id: string;
+    display_name: string;
+    avatar_url?: string;
+    full_name?: string;
+    email?: string;
+  }>;
 }
 
 async function fetchWorkspaceUsers(
@@ -69,13 +76,14 @@ export function UserFilter({
   onUsersChange,
   className,
   filterType = 'all',
+  availableUsers,
 }: UserFilterProps) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
   const hasActiveFilters = selectedUserIds.length > 0;
 
-  // Use React Query to fetch and cache workspace users
+  // Use React Query to fetch and cache workspace users (only if availableUsers not provided)
   const {
     data: users = [],
     isLoading,
@@ -85,8 +93,11 @@ export function UserFilter({
     queryFn: () => fetchWorkspaceUsers(wsId, filterType),
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    enabled: !!wsId, // Only run query if wsId is provided
+    enabled: !!wsId && !availableUsers, // Only run query if wsId is provided and availableUsers not provided
   });
+
+  // Use provided availableUsers if available, otherwise use fetched users
+  const displayUsers = availableUsers || users;
 
   const handleUserToggle = (userId: string) => {
     const newSelectedUserIds = selectedUserIds.includes(userId)
@@ -171,7 +182,7 @@ export function UserFilter({
             />
             <CommandList>
               <CommandEmpty>
-                {isLoading
+                {!availableUsers && isLoading
                   ? isCreatorFilter
                     ? t('finance.loading_creators')
                     : t('finance.loading_users')
@@ -180,7 +191,7 @@ export function UserFilter({
                     : t('finance.no_users_found')}
               </CommandEmpty>
 
-              {error && (
+              {!availableUsers && error && (
                 <CommandGroup>
                   <CommandItem disabled className="text-destructive">
                     {error instanceof Error
@@ -190,75 +201,76 @@ export function UserFilter({
                 </CommandGroup>
               )}
 
-              {!isLoading && !error && users.length > 0 && (
-                <CommandGroup>
-                  {users
-                    .sort((a, b) => {
-                      // Sort selected users to the top
-                      const aSelected = selectedUserIds.includes(a.id);
-                      const bSelected = selectedUserIds.includes(b.id);
+              {(!availableUsers ? !isLoading && !error : true) &&
+                displayUsers.length > 0 && (
+                  <CommandGroup>
+                    {displayUsers
+                      .sort((a, b) => {
+                        // Sort selected users to the top
+                        const aSelected = selectedUserIds.includes(a.id);
+                        const bSelected = selectedUserIds.includes(b.id);
 
-                      if (aSelected && !bSelected) return -1;
-                      if (!aSelected && bSelected) return 1;
+                        if (aSelected && !bSelected) return -1;
+                        if (!aSelected && bSelected) return 1;
 
-                      // For users with the same selection status, sort by name
-                      const aName =
-                        a.display_name || a.full_name || a.email || 'Unknown';
-                      const bName =
-                        b.display_name || b.full_name || b.email || 'Unknown';
-                      return aName.localeCompare(bName);
-                    })
-                    .map((user) => {
-                      const isSelected = selectedUserIds.includes(user.id);
-                      const displayName =
-                        user.display_name ||
-                        user.full_name ||
-                        user.email ||
-                        'Unknown User';
+                        // For users with the same selection status, sort by name
+                        const aName =
+                          a.display_name || a.full_name || a.email || 'Unknown';
+                        const bName =
+                          b.display_name || b.full_name || b.email || 'Unknown';
+                        return aName.localeCompare(bName);
+                      })
+                      .map((user) => {
+                        const isSelected = selectedUserIds.includes(user.id);
+                        const displayName =
+                          user.display_name ||
+                          user.full_name ||
+                          user.email ||
+                          'Unknown User';
 
-                      return (
-                        <CommandItem
-                          key={user.id}
-                          onSelect={() => handleUserToggle(user.id)}
-                          className="flex cursor-pointer items-center gap-2"
-                        >
-                          <div
-                            className={cn(
-                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                              isSelected
-                                ? 'bg-primary text-primary-foreground'
-                                : 'opacity-50 [&_svg]:invisible'
-                            )}
+                        return (
+                          <CommandItem
+                            key={user.id}
+                            onSelect={() => handleUserToggle(user.id)}
+                            className="flex cursor-pointer items-center gap-2"
                           >
-                            <Check className="h-4 w-4" />
-                          </div>
-                          <Avatar className="h-6 w-6 border">
-                            <AvatarImage
-                              src={
-                                user.avatar_url ||
-                                getAvatarPlaceholder(displayName)
-                              }
-                              alt={displayName}
-                            />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(displayName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-1 flex-col">
-                            <span className="font-medium text-sm">
-                              {displayName}
-                            </span>
-                            {user.email && (
-                              <span className="text-muted-foreground text-xs">
-                                {user.email}
+                            <div
+                              className={cn(
+                                'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                                isSelected
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'opacity-50 [&_svg]:invisible'
+                              )}
+                            >
+                              <Check className="h-4 w-4" />
+                            </div>
+                            <Avatar className="h-6 w-6 border">
+                              <AvatarImage
+                                src={
+                                  user.avatar_url ||
+                                  getAvatarPlaceholder(displayName)
+                                }
+                                alt={displayName}
+                              />
+                              <AvatarFallback className="text-xs">
+                                {getInitials(displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-1 flex-col">
+                              <span className="font-medium text-sm">
+                                {displayName}
                               </span>
-                            )}
-                          </div>
-                        </CommandItem>
-                      );
-                    })}
-                </CommandGroup>
-              )}
+                              {user.email && (
+                                <span className="text-muted-foreground text-xs">
+                                  {user.email}
+                                </span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        );
+                      })}
+                  </CommandGroup>
+                )}
 
               {hasActiveFilters && (
                 <>
