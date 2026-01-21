@@ -1,14 +1,14 @@
 'use client';
 
 import { ChevronDown } from '@tuturuuu/icons';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
