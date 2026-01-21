@@ -1,6 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { withApiAuth } from '@/lib/api-middleware';
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 interface Params {
   wsId: string;
@@ -20,16 +20,16 @@ export const GET = withApiAuth<Params>(
 
     // Verify the requested workspace matches the API key's workspace
     if (context.wsId !== wsId) {
-      return NextResponse.json(
-        {
-          error: 'Forbidden',
-          message: 'API key does not have access to this workspace',
-        },
-        { status: 403 }
+      return createErrorResponse(
+        'Forbidden',
+        'API key does not have access to this workspace',
+        403,
+        'WORKSPACE_MISMATCH'
       );
     }
 
-    const supabase = await createClient();
+    // Use admin client for SDK API routes (no user session cookies available)
+    const supabase = await createDynamicAdminClient();
 
     const { data: workspace, error } = await supabase
       .from('workspaces')
@@ -38,9 +38,11 @@ export const GET = withApiAuth<Params>(
       .single();
 
     if (error || !workspace) {
-      return NextResponse.json(
-        { error: 'Not Found', message: 'Workspace not found' },
-        { status: 404 }
+      return createErrorResponse(
+        'Not Found',
+        'Workspace not found',
+        404,
+        'WORKSPACE_NOT_FOUND'
       );
     }
 
