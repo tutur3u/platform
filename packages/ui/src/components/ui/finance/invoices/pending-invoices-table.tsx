@@ -69,6 +69,22 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
     userIds,
   });
 
+  // Extract distinct users from pending invoices data for filter
+  const availableUsers = data?.data
+    ? Array.from(
+        new Map(
+          data.data.map((invoice) => [
+            invoice.user_id,
+            {
+              id: invoice.user_id,
+              display_name: invoice.user_name,
+              avatar_url: invoice.user_avatar_url || undefined,
+            },
+          ])
+        ).values()
+      )
+    : [];
+
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;
 
@@ -145,7 +161,11 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
         filters={
           <div className="flex flex-wrap items-center gap-2">
             <Suspense fallback={<Skeleton className="h-8 w-32" />}>
-              <UserFilterWrapper wsId={wsId} invoiceType="pending" />
+              <UserFilterWrapper
+                wsId={wsId}
+                invoiceType="pending"
+                availableUsers={availableUsers}
+              />
             </Suspense>
           </div>
         }
