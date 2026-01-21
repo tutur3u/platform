@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -19126,7 +19126,12 @@ export type Database = {
         | 'manage_payroll'
         | 'view_workforce'
         | 'view_payroll'
-        | 'admin';
+        | 'admin'
+        | 'update_user_attendance'
+        | 'create_user_groups_reports'
+        | 'view_user_groups_reports'
+        | 'update_user_groups_reports'
+        | 'delete_user_groups_reports';
     };
     CompositeTypes: {
       email_block_status: {
@@ -19783,6 +19788,11 @@ export const Constants = {
         'view_workforce',
         'view_payroll',
         'admin',
+        'update_user_attendance',
+        'create_user_groups_reports',
+        'view_user_groups_reports',
+        'update_user_groups_reports',
+        'delete_user_groups_reports',
       ],
     },
   },

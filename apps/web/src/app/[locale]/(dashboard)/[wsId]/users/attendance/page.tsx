@@ -45,7 +45,7 @@ export default async function WorkspaceUserAttendancePage({ params }: Props) {
         }
 
         const hasManageUsers = containsPermission('manage_users');
-        const canUpdateAttendance = containsPermission('check_user_attendance');
+        const canUpdateAttendance = containsPermission('update_user_attendance');
 
         return (
           <>

@@ -9677,7 +9677,17 @@
     "view_workforce_description": "Cho phép thành viên xem hợp đồng lao động và thông tin nhân sự.",
     "without_roles": "Không có Vai trò",
     "workspace": "Không gian làm việc",
-    "workspace_description": "Quản lý không gian làm việc cốt lõi bao gồm thành viên, vai trò và cài đặt"
+    "workspace_description": "Quản lý không gian làm việc cốt lõi bao gồm thành viên, vai trò và cài đặt",
+    "update_user_attendance": "Cập nhật điểm danh của người dùng",
+    "update_user_attendance_description": "Cho phép thành viên cập nhật điểm danh của người dùng khác",
+    "view_user_groups_reports": "Xem Báo cáo ",
+    "create_user_groups_reports": "Tạo báo cáo",
+    "update_user_groups_reports": "Cập nhật báo cáo",
+    "delete_user_groups_reports": "Xóa báo cáo",
+    "view_user_groups_reports_description": "Cho phép người dùng xem các báo cáo hiện có",
+    "create_user_groups_reports_description": "Cho phép người dùng tạo báo cáo",
+    "update_user_groups_reports_description": "Cho phép người dùng cập nhật báo cáo",
+    "delete_user_groups_reports_description": "Cho phép người dùng xóa báo cáo"
   },
   "ws-secrets": {
     "add_new_workspace_secret": "Thêm mã bí mật mới",

@@ -9575,7 +9575,17 @@
     "view_workforce_description": "Allows members to view employee contracts and workforce information.",
     "without_roles": "Without Roles",
     "workspace": "Workspace",
-    "workspace_description": "Core workspace management including members, roles, and settings"
+    "workspace_description": "Core workspace management including members, roles, and settings",
+    "update_user_attendance": "Update User Attendance",
+    "update_user_attendance_description": "Allows members to update other users attendance",
+    "view_user_groups_reports": "View Reports",
+    "create_user_groups_reports": "Create Reports",
+    "update_user_groups_reports": "Update Reports",
+    "delete_user_groups_reports": "Delete Reports",
+    "view_user_groups_reports_description": "Allows users to view existing reports",
+    "create_user_groups_reports_description": "Allows users to create reports",
+    "update_user_groups_reports_description": "Allows users to update reports",
+    "delete_user_groups_reports_description": "Allows users to delete reports"
   },
   "ws-secrets": {
     "add_new_workspace_secret": "Add a new secret for this workspace.",
