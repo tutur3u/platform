@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
-import {
-  checkRateLimit,
-  type RateLimitConfig,
-} from '@/lib/api-middleware';
+import { checkRateLimit, type RateLimitConfig } from '@/lib/api-middleware';
 
 // Default Tuturuuu API endpoint (production v2)
 const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
