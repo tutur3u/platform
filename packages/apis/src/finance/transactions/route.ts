@@ -28,7 +28,11 @@ export async function GET(req: Request, { params }: Params) {
     wsId,
   });
 
-  if (withoutPermission('view_transactions')) {
+  if (
+    withoutPermission('view_transactions') &&
+    withoutPermission('view_expenses') &&
+    withoutPermission('view_incomes')
+  ) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }

@@ -9585,7 +9585,11 @@
     "view_user_groups_reports_description": "Allows users to view existing reports",
     "create_user_groups_reports_description": "Allows users to create reports",
     "update_user_groups_reports_description": "Allows users to update reports",
-    "delete_user_groups_reports_description": "Allows users to delete reports"
+    "delete_user_groups_reports_description": "Allows users to delete reports",
+    "view_expenses": "View Expenses",
+    "view_incomes": "View Income",
+    "view_expenses_description": "Allows members to view expenses",
+    "view_incomes_description": "Allows members to see income"
   },
   "ws-secrets": {
     "add_new_workspace_secret": "Add a new secret for this workspace.",

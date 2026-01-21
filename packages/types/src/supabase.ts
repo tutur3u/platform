@@ -19131,7 +19131,9 @@ export type Database = {
         | 'create_user_groups_reports'
         | 'view_user_groups_reports'
         | 'update_user_groups_reports'
-        | 'delete_user_groups_reports';
+        | 'delete_user_groups_reports'
+        | 'view_expenses'
+        | 'view_incomes';
     };
     CompositeTypes: {
       email_block_status: {
@@ -19793,6 +19795,8 @@ export const Constants = {
         'view_user_groups_reports',
         'update_user_groups_reports',
         'delete_user_groups_reports',
+        'view_expenses',
+        'view_incomes',
       ],
     },
   },

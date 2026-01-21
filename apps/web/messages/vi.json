@@ -9687,7 +9687,11 @@
     "view_user_groups_reports_description": "Cho phép người dùng xem các báo cáo hiện có",
     "create_user_groups_reports_description": "Cho phép người dùng tạo báo cáo",
     "update_user_groups_reports_description": "Cho phép người dùng cập nhật báo cáo",
-    "delete_user_groups_reports_description": "Cho phép người dùng xóa báo cáo"
+    "delete_user_groups_reports_description": "Cho phép người dùng xóa báo cáo",
+    "view_expenses": "Xem chi phí",
+    "view_incomes": "Xem thu nhập",
+    "view_expenses_description": "Cho phép thành viên xem chi phí",
+    "view_incomes_description": "Cho phép thành viên xem thu nhập"
   },
   "ws-secrets": {
     "add_new_workspace_secret": "Thêm mã bí mật mới",
