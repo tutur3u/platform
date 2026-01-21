@@ -741,7 +741,11 @@ export const GET = withApiAuth<Params>(
       }
 
       // Use batched query to handle large ID arrays
-      const { count: totalCount, data, error } = await batchedInQuery(
+      const {
+        count: totalCount,
+        data,
+        error,
+      } = await batchedInQuery(
         supabase,
         tableName,
         joinConfig.joinColumn,

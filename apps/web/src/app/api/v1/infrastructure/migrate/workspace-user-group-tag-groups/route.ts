@@ -1,8 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  batchUpsert,
-  createMigrationResponse,
-} from '../batch-upsert';
+import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
