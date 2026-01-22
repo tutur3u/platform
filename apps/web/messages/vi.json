@@ -1634,6 +1634,8 @@
     "explore": "Khám phá",
     "export": "Xuất dữ liệu",
     "export-content": "Xin hãy chọn định dạng thư mục",
+    "export-error": "Không thể xuất file. Vui lòng thử lại",
+    "export-success": "Xuất thành công",
     "failed_to_archive_tasks": "Không thể lưu trữ công việc. Vui lòng thử lại.",
     "failed_to_clear_assignees": "Không thể xóa người thực hiện.",
     "failed_to_clear_labels": "Không thể xóa nhãn.",

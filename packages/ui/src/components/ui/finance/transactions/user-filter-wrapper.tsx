@@ -1,45 +1,35 @@
 'use client';
 
 import { UserFilter } from '@tuturuuu/ui/finance/transactions/user-filter';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
+import { useFilterReset } from './hooks/use-filter-reset';
 
 interface UserFilterWrapperProps {
   wsId: string;
 }
 
 export function UserFilterWrapper({ wsId }: UserFilterWrapperProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const [currentUserIds, setUserIds] = useQueryState(
+    'userIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
 
-  // Get current user IDs from search params
-  const currentUserIds = searchParams.getAll('userIds');
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle user filter changes
-  const handleUsersChange = useCallback(
-    (userIds: string[]) => {
-      const params = new URLSearchParams(searchParams);
-
-      // Remove all existing userIds params
-      params.delete('userIds');
-
-      // Add new userIds params
-      if (userIds.length > 0) {
-        userIds.forEach((userId) => {
-          params.append('userIds', userId);
-        });
-      }
-
-      // Reset to first page when filtering
-      params.set('page', '1');
-
-      const newUrl = `${pathname}?${params.toString()}`;
-      router.push(newUrl);
-      router.refresh();
-    },
-    [router, searchParams, pathname]
-  );
+  const handleUsersChange = useFilterReset(setUserIds, setPage);
 
   return (
     <UserFilter

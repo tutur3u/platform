@@ -1,7 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -20,42 +18,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { XLSX } from '../../../../xlsx';
+import { getData, type TransactionExportRow } from './export-utils';
 
 export default function ExportDialogContent({
   wsId,
   exportType,
-  searchParams,
 }: {
   wsId: string;
   exportType: string;
-  searchParams: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
-    userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
-    start?: string;
-    end?: string;
-  };
 }) {
   const t = useTranslations();
+
+  const [q] = useQueryState(
+    'q',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+    })
+  );
+
+  const [userIds] = useQueryState(
+    'userIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [categoryIds] = useQueryState(
+    'categoryIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [walletIds] = useQueryState(
+    'walletIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [start] = useQueryState(
+    'start',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
+
+  const [end] = useQueryState(
+    'end',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
 
   const [exportFileType, setExportFileType] = useState('excel');
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [filename, setFilename] = useState('');
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const filenameId = useId();
   const fileTypeId = useId();
 
   const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
 
-  const downloadCSV = (data: Transaction[], filename: string) => {
+  const downloadCSV = (data: TransactionExportRow[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -66,7 +99,7 @@ export default function ExportDialogContent({
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: Transaction[], filename: string) => {
+  const downloadExcel = (data: TransactionExportRow[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -89,55 +122,67 @@ export default function ExportDialogContent({
   const handleExport = async () => {
     setIsExporting(true);
     setProgress(0);
+    setExportError(null);
 
-    const allData: Transaction[] = [];
-    let currentPage = 1;
-    const pageSize = 1000;
+    try {
+      const allData: TransactionExportRow[] = [];
+      let currentPage = 1;
+      const pageSize = 1000;
 
-    while (true) {
-      const { data, count } = await getData(wsId, {
-        q: searchParams.q,
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
-        userIds: searchParams.userIds,
-        categoryIds: searchParams.categoryIds,
-        walletIds: searchParams.walletIds,
-        start: searchParams.start,
-        end: searchParams.end,
-      });
+      while (true) {
+        const { data, count } = await getData(wsId, {
+          q: q || undefined,
+          page: currentPage.toString(),
+          pageSize: pageSize.toString(),
+          userIds,
+          categoryIds,
+          walletIds,
+          start: start || undefined,
+          end: end || undefined,
+        });
 
-      allData.push(...data);
+        allData.push(...data);
 
-      const totalPages = Math.ceil(count / pageSize);
-      const progressValue = (currentPage / totalPages) * 100;
-      setProgress(progressValue);
+        const totalPages = Math.ceil(count / pageSize);
+        // Guard against division by zero when no transactions match filters
+        const progressValue =
+          totalPages > 0 ? (currentPage / totalPages) * 100 : 100;
+        setProgress(progressValue);
 
-      if (data.length < pageSize) {
-        break;
+        if (data.length < pageSize) {
+          break;
+        }
+
+        currentPage++;
       }
 
-      currentPage++;
+      setProgress(100);
+
+      if (exportFileType === 'csv') {
+        downloadCSV(
+          allData,
+          `${(filename || defaultFilename)
+            // remove all .csv from the filename
+            .replace(/\.csv/g, '')}.csv`
+        );
+      } else if (exportFileType === 'excel') {
+        downloadExcel(
+          allData,
+          `${(filename || defaultFilename)
+            // remove all .xlsx from the filename
+            .replace(/\.xlsx/g, '')}.xlsx`
+        );
+      }
+
+      toast.success(t('common.export-success'));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : t('common.export-error');
+      setExportError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsExporting(false);
     }
-
-    setProgress(100);
-
-    if (exportFileType === 'csv') {
-      downloadCSV(
-        allData,
-        `${(filename || defaultFilename)
-          // remove all .csv from the filename
-          .replace(/\.csv/g, '')}.csv`
-      );
-    } else if (exportFileType === 'excel') {
-      downloadExcel(
-        allData,
-        `${(filename || defaultFilename)
-          // remove all .xlsx from the filename
-          .replace(/\.xlsx/g, '')}.xlsx`
-      );
-    }
-
-    setIsExporting(false);
   };
 
   function getFileExtension(fileType: string) {
@@ -194,6 +239,12 @@ export default function ExportDialogContent({
             <Progress value={progress} className="h-2 w-full" />
           </div>
         )}
+
+        {exportError && (
+          <div className="mt-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+            {exportError}
+          </div>
+        )}
       </div>
 
       <DialogFooter className="justify-between">
@@ -208,98 +259,4 @@ export default function ExportDialogContent({
       </DialogFooter>
     </>
   );
-}
-
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    userIds,
-    categoryIds,
-    walletIds,
-    start,
-    end,
-  }: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
-    userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
-    start?: string;
-    end?: string;
-  }
-) {
-  const supabase = createClient();
-
-  let queryBuilder = supabase
-    .from('wallet_transactions')
-    .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('workspace_wallets.ws_id', wsId)
-    .order('taken_at', { ascending: false })
-    .order('created_at', { ascending: false });
-
-  if (q) queryBuilder = queryBuilder.ilike('description', `%${q}%`);
-
-  // Filter by user IDs if provided
-  if (userIds) {
-    const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
-    if (userIdArray.length > 0) {
-      queryBuilder = queryBuilder.in('creator_id', userIdArray);
-    }
-  }
-
-  // Filter by category IDs if provided
-  if (categoryIds) {
-    const categoryIdArray = Array.isArray(categoryIds)
-      ? categoryIds
-      : [categoryIds];
-    if (categoryIdArray.length > 0) {
-      queryBuilder = queryBuilder.in('category_id', categoryIdArray);
-    }
-  }
-
-  // Filter by wallet IDs if provided
-  if (walletIds) {
-    const walletIdArray = Array.isArray(walletIds) ? walletIds : [walletIds];
-    if (walletIdArray.length > 0) {
-      queryBuilder = queryBuilder.in('wallet_id', walletIdArray);
-    }
-  }
-
-  // Filter by date range if provided
-  if (start && end) {
-    queryBuilder = queryBuilder.gte('taken_at', start).lte('taken_at', end);
-  }
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const startOffset = (parsedPage - 1) * parsedSize;
-    const endOffset = parsedPage * parsedSize - 1;
-    queryBuilder = queryBuilder.range(startOffset, endOffset);
-  }
-
-  const { data: rawData, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
-      ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
-    })
-  );
-
-  return { data, count } as {
-    data: Transaction[];
-    count: number;
-  };
 }

@@ -11,8 +11,8 @@ import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-love
 import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
 import { WalletFilterWrapper } from '@tuturuuu/ui/finance/transactions/wallet-filter-wrapper';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 
 interface TransactionsInfinitePageProps {
@@ -41,17 +41,16 @@ export function TransactionsInfinitePage({
   canViewConfidentialCategory,
 }: TransactionsInfinitePageProps) {
   const t = useTranslations();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [q, setQ] = useQueryState(
+    'q',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+      throttleMs: 300,
+    })
+  );
 
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams);
-    if (query) {
-      params.set('q', query);
-    } else {
-      params.delete('q');
-    }
-    router.push(`?${params.toString()}`);
+  const handleSearch = async (query: string) => {
+    await setQ(query || '');
   };
 
   return (
@@ -61,7 +60,7 @@ export function TransactionsInfinitePage({
         <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
           <SearchBar
             t={t}
-            defaultValue={searchParams.get('q') || ''}
+            defaultValue={q || ''}
             onSearch={handleSearch}
             className="col-span-full w-full bg-background md:col-span-1 md:max-w-xs"
           />

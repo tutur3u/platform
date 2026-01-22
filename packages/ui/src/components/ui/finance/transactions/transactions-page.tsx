@@ -9,19 +9,9 @@ import { getTranslations } from 'next-intl/server';
 
 interface Props {
   wsId: string;
-  searchParams: {
-    q: string;
-    page: string;
-    pageSize: string;
-    userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
-    start?: string;
-    end?: string;
-  };
 }
 
-export default async function TransactionsPage({ wsId, searchParams }: Props) {
+export default async function TransactionsPage({ wsId }: Props) {
   const t = await getTranslations();
 
   const { containsPermission } = await getPermissions({
@@ -79,11 +69,7 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
         wsId={wsId}
         canExport={canExportFinanceData}
         exportContent={
-          <ExportDialogContent
-            wsId={wsId}
-            exportType="transactions"
-            searchParams={searchParams}
-          />
+          <ExportDialogContent wsId={wsId} exportType="transactions" />
         }
         canUpdateTransactions={canUpdateTransactions}
         canDeleteTransactions={canDeleteTransactions}
