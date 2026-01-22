@@ -52,11 +52,12 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const json = await req.json();
-  // Primary key: (invoice_id, product_id, unit_id, warehouse_id)
+  // No unique constraint on this table - use plain insert
+  // Duplicates should be handled by reconciliation before syncing
   const result = await batchUpsert({
     table: 'finance_invoice_products',
     data: json?.data || [],
-    onConflict: 'invoice_id,product_id,unit_id,warehouse_id',
+    // No onConflict - table has no unique constraint
   });
   return createMigrationResponse(result, 'finance-invoice-products');
 }

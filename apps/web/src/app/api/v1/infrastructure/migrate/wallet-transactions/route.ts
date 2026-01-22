@@ -52,9 +52,55 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const json = await req.json();
+  // Strip invoice_id to break circular FK dependency with finance_invoices
+  // After both tables are migrated, use PATCH to update invoice_id
+  const dataWithoutInvoiceId = (json?.data || []).map(
+    (item: Record<string, unknown>) => {
+      const { invoice_id: _invoiceId, ...rest } = item;
+      return rest;
+    }
+  );
   const result = await batchUpsert({
     table: 'wallet_transactions',
-    data: json?.data || [],
+    data: dataWithoutInvoiceId,
   });
   return createMigrationResponse(result, 'wallet transactions');
+}
+
+// PATCH: Update invoice_id after finance_invoices are migrated
+// This resolves the circular FK dependency
+export async function PATCH(req: Request) {
+  const supabase = await createClient();
+  const json = await req.json();
+
+  // Expect array of { id, invoice_id } pairs
+  const updates = json?.data || [];
+
+  let successCount = 0;
+  let errorCount = 0;
+  const errors: unknown[] = [];
+
+  for (const item of updates) {
+    const { id, invoice_id } = item as { id: string; invoice_id: string };
+    if (!id || !invoice_id) continue;
+
+    const { error } = await supabase
+      .from('wallet_transactions')
+      .update({ invoice_id })
+      .eq('id', id);
+
+    if (error) {
+      errorCount++;
+      errors.push({ id, error });
+    } else {
+      successCount++;
+    }
+  }
+
+  return NextResponse.json({
+    message: errorCount === 0 ? 'success' : 'partial success',
+    successCount,
+    errorCount,
+    errors: errors.slice(0, 5), // Return first 5 errors
+  });
 }

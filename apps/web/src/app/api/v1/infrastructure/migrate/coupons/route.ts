@@ -5,6 +5,7 @@ export async function PUT(req: Request) {
   const result = await batchUpsert({
     table: 'workspace_promotions',
     data: json?.data || [],
+    onConflict: 'id',
   });
   return createMigrationResponse(result, 'coupons');
 }
