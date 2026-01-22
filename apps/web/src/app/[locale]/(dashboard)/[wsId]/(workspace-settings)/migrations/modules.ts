@@ -31,18 +31,55 @@ import {
 } from './module-mappings';
 
 const availableModules = [
-  // TUTURUUU-RELATED MODULES
+  // Users module - Legacy mode only (use workspace-users for Tuturuuu mode)
+  'users',
+
+  // TUTURUUU-RELATED MODULES (Workspace Users) - sync first
+  'workspace-users',
+  'workspace-user-fields',
+  'workspace-user-groups',
+  'workspace-user-groups-users',
+  'workspace-user-group-tags',
+  'workspace-user-group-tag-groups',
+  'workspace-user-linked-users',
+  'workspace-user-status-changes',
+
+  // TUTURUUU-RELATED MODULES (Inventory) - after users
+  // Order matters: warehouses, product-categories, product-units first (no FKs to other inventory tables)
+  // Then packages (workspace_products) which inventory-products references
+  // Then inventory-products, batches, batch-products
   'warehouses',
   'product-categories',
   'product-units',
+  'inventory-suppliers',
+  'packages',
+  'inventory-products',
+  'inventory-batches',
+  'inventory-batch-products',
   'transaction-categories',
 
-  // EXTERNAL MODULES
+  // TUTURUUU-RELATED MODULES (Wallets) - BEFORE finance (invoices reference transactions)
+  'workspace-wallets',
+  'wallet-transactions',
+  'credit-wallets',
+  'wallet-types',
+  'wallet-transaction-tags',
+  'workspace-wallet-transfers',
+
+  // TUTURUUU-RELATED MODULES (Finance) - after wallets
+  'finance-budgets',
+  'finance-invoices',
+  'finance-invoice-products',
+  'finance-invoice-promotions',
+
+  // Workspace settings - run BEFORE coupons to clear referral_promotion_id FK
+  // (target workspace may have auto-created settings with FK reference)
+  'workspace-settings',
+
+  // EXTERNAL/LEGACY MODULES
   'payment-methods',
   'roles',
-  'users',
   'classes',
-  'packages',
   'coupons',
   'wallets',
   'bills',
@@ -51,7 +88,7 @@ const availableModules = [
   'user-coupons',
   'lessons',
   'score-names',
-  'grouped-score-names', //! TUTURUUU-RELATED
+  'grouped-score-names',
   'class-scores',
   'class-members',
   'class-packages',
@@ -61,10 +98,10 @@ const availableModules = [
   'user-monthly-reports',
   'user-monthly-report-logs',
   'user-status-changes',
-  'wallet-transactions',
 
-  // TUTURUUU-RELATED MODULES
+  // TUTURUUU-RELATED MODULES (run last)
   'product-prices',
+  'workspace-configs',
 ] as const;
 
 export type MigrationModule = (typeof availableModules)[number];
@@ -79,6 +116,10 @@ export interface ModulePackage {
   mapping?: (wsId: string, data: any[]) => any[];
   skip?: boolean;
   disabled?: boolean;
+  /** If true, this module only works in Tuturuuu mode (1:1 sync) */
+  tuturuuuOnly?: boolean;
+  /** If true, this module only works in Legacy mode (not available for Tuturuuu 1:1 sync) */
+  legacyOnly?: boolean;
 }
 
 export const generateModules = (): ModulePackage[] => {
@@ -98,6 +139,7 @@ export const generateModules = (): ModulePackage[] => {
       case 'users':
         // baseModule.name = 'Virtual Users';
         baseModule.mapping = usersMapping;
+        baseModule.legacyOnly = true; // Use workspace-users for Tuturuuu mode
         break;
 
       case 'roles':
@@ -113,6 +155,7 @@ export const generateModules = (): ModulePackage[] => {
       case 'bills':
         // baseModule.name = 'Invoices';
         baseModule.mapping = billsMapping;
+        baseModule.legacyOnly = true; // Use finance-invoices for Tuturuuu mode
         break;
 
       case 'coupons':
@@ -128,11 +171,13 @@ export const generateModules = (): ModulePackage[] => {
       case 'bill-coupons':
         // baseModule.name = 'Invoice Promotions';
         baseModule.mapping = billCouponsMapping;
+        baseModule.legacyOnly = true; // Use finance-invoice-promotions for Tuturuuu mode
         break;
 
       case 'bill-packages':
         // baseModule.name = 'Invoice Products';
         baseModule.mapping = billPackagesMapping;
+        baseModule.legacyOnly = true; // Use finance-invoice-products for Tuturuuu mode
         break;
 
       case 'class-attendance':
@@ -144,6 +189,7 @@ export const generateModules = (): ModulePackage[] => {
         // baseModule.name = 'User Group Members';
         baseModule.externalPath = `/migrate/user-group-users`;
         baseModule.mapping = classMembersMapping;
+        baseModule.legacyOnly = true; // Not applicable for Tuturuuu 1:1 sync
         break;
 
       case 'class-packages':
@@ -152,7 +198,8 @@ export const generateModules = (): ModulePackage[] => {
         break;
 
       case 'class-scores':
-        // baseModule.name = 'User Group Indicators';
+        // baseModule.name = 'User Indicator Values';
+        // Maps to user_indicators table (user_id, indicator_id, value)
         baseModule.mapping = classScoresMapping;
         break;
 
@@ -164,6 +211,7 @@ export const generateModules = (): ModulePackage[] => {
       case 'payment-methods':
         // baseModule.name = 'Wallets';
         baseModule.mapping = paymentMethodsMapping;
+        baseModule.legacyOnly = true; // Not applicable for Tuturuuu 1:1 sync
         break;
 
       case 'packages':
@@ -177,10 +225,11 @@ export const generateModules = (): ModulePackage[] => {
         break;
 
       case 'grouped-score-names':
-        // baseModule.name = 'User Group Indicators';
+        // baseModule.name = 'Healthcare Vitals (grouped)';
+        // Maps to healthcare_vitals table, same as score-names
         baseModule.externalPath = `/migrate/score-names`;
         baseModule.mapping = groupedScoreNamesMapping;
-        baseModule.disabled = true; // Disabled: user_group_indicators table was dropped
+        baseModule.legacyOnly = true; // Not applicable for Tuturuuu 1:1 sync
         break;
 
       case 'student-feedbacks':
@@ -216,16 +265,127 @@ export const generateModules = (): ModulePackage[] => {
       case 'wallet-transactions':
         // baseModule.name = 'Wallet transactions';
         baseModule.mapping = walletTransactionsMapping;
-        baseModule.skip = true;
+        // No skip - needed before finance-invoices (FK constraint)
         break;
 
       case 'wallets':
         // baseModule.name = 'Wallets';
         baseModule.mapping = walletsMapping;
-        baseModule.skip = true;
+        baseModule.legacyOnly = true; // Use workspace-wallets for Tuturuuu mode
         break;
 
-      //* TUTURUUU-RELATED MODULES
+      //* TUTURUUU-RELATED MODULES (Inventory)
+
+      case 'inventory-products':
+        // Inventory products - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'inventory-suppliers':
+        // Inventory suppliers - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'inventory-batches':
+        // Inventory batches - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'inventory-batch-products':
+        // Inventory batch products - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      //* TUTURUUU-RELATED MODULES (Finance)
+
+      case 'finance-budgets':
+        // Finance budgets - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'finance-invoices':
+        // Finance invoices - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'finance-invoice-products':
+        // Finance invoice products - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'finance-invoice-promotions':
+        // Finance invoice promotions - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      //* TUTURUUU-RELATED MODULES (Wallets)
+
+      case 'credit-wallets':
+        // Credit wallets - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'wallet-types':
+        // Wallet types is a global lookup table - disable for Tuturuuu mode
+        baseModule.legacyOnly = true;
+        break;
+
+      case 'wallet-transaction-tags':
+        // Wallet transaction tags - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-wallets':
+        // Workspace wallets - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-wallet-transfers':
+        // Workspace wallet transfers - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      //* TUTURUUU-RELATED MODULES (Workspace Users)
+
+      case 'workspace-users':
+        // Workspace users - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-fields':
+        // Workspace user fields - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-groups':
+        // Workspace user groups - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-groups-users':
+        // Junction table (group_id, user_id) - no ws_id column, but RLS validates via related entities
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-group-tags':
+        // Workspace user group tags - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-group-tag-groups':
+        // Junction table (group_id, tag_id) - no ws_id column, but RLS validates via related entities
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-linked-users':
+        // Workspace user linked users - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-status-changes':
+        // Workspace user status changes - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
 
       case 'warehouses':
         // baseModule.name = 'Warehouses';
@@ -244,8 +404,20 @@ export const generateModules = (): ModulePackage[] => {
 
       case 'product-prices':
         // baseModule.name = 'Product Prices';
+        // Maps workspace_products → inventory_products (different schemas)
         baseModule.externalPath = `/migrate/packages`;
         baseModule.mapping = productPricesMapping;
+        baseModule.legacyOnly = true; // Different schemas - not suitable for 1:1 sync
+        break;
+
+      case 'workspace-settings':
+        // Workspace settings - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-configs':
+        // Workspace configs - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
         break;
 
       default:

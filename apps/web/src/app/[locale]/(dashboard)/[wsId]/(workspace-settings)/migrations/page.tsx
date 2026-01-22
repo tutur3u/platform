@@ -9,7 +9,7 @@ import MigrationDashboard from './migration-dashboard';
 export const metadata: Metadata = {
   title: 'Migrations',
   description:
-    'Manage Migrations in the Workspace Settings area of your Tuturuuu workspace.',
+    'Manage data migrations - import data from Tuturuuu production or custom external APIs.',
 };
 
 interface Props {
@@ -22,5 +22,5 @@ export default async function PlatformMigrationsPage({ params }: Props) {
   const { wsId: id } = await params;
   const wsId = resolveWorkspaceId(id);
   if (wsId !== ROOT_WORKSPACE_ID) redirect(`/${wsId}/settings`);
-  return <MigrationDashboard />;
+  return <MigrationDashboard wsId={wsId} />;
 }

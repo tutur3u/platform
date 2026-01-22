@@ -3,6 +3,7 @@
 import {
   AlertCircle,
   CheckCircle2,
+  Eye,
   Pause,
   Play,
   RefreshCcw,
@@ -11,15 +12,22 @@ import {
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useState } from 'react';
+import type { MigrationMode } from '../hooks/use-migration-state';
 import type { MigrationModule, ModulePackage } from '../modules';
 import type { ModuleState } from '../utils/types';
+import { DataPreviewDialog } from './data-preview-dialog';
 
 interface ModuleCardProps {
   module: ModulePackage;
   moduleState: ModuleState;
   healthCheckMode: boolean;
+  mode: MigrationMode;
+  isSkipped: boolean;
+  onToggleSkip: (module: MigrationModule) => void;
   onMigrate: (module: ModulePackage) => void;
   onPause: (module: MigrationModule) => void;
   onResume: (module: MigrationModule) => void;
@@ -31,13 +39,21 @@ export function ModuleCard({
   module,
   moduleState,
   healthCheckMode,
+  mode,
+  isSkipped,
+  onToggleSkip,
   onMigrate,
   onPause,
   onResume,
   onStop,
   onClear,
 }: ModuleCardProps) {
-  const { name, skip, disabled } = module;
+  const { name, skip, disabled, tuturuuuOnly, legacyOnly } = module;
+  // Module is effectively disabled if explicitly disabled OR if tuturuuuOnly in legacy mode OR if legacyOnly in tuturuuu mode
+  const isDisabled =
+    disabled ||
+    (tuturuuuOnly && mode !== 'tuturuuu') ||
+    (legacyOnly && mode === 'tuturuuu');
   const {
     externalData,
     internalData,
@@ -52,6 +68,8 @@ export function ModuleCard({
     newRecords,
     stage,
   } = moduleState;
+
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const hasExternalData = externalData !== null;
   const externalDataLength = (externalData as unknown[] | null)?.length ?? 0;
@@ -68,20 +86,55 @@ export function ModuleCard({
       ? 100
       : externalDataLength > 0
         ? (internalDataLength / externalDataLength) * 100
-        : 0
+        : externalTotal === 0
+          ? 100 // Nothing to sync (0/0) - show 100%
+          : 0
     : 0;
 
   return (
-    <Card className={disabled ? 'opacity-50' : ''}>
+    <Card className={isDisabled || isSkipped ? 'opacity-50' : ''}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <CardTitle className="text-base capitalize">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center">
+                  <Checkbox
+                    id={`skip-${module.module}`}
+                    checked={!isSkipped}
+                    onCheckedChange={() => onToggleSkip(module.module)}
+                    disabled={isDisabled || isLoading}
+                    className="mr-2"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isSkipped ? 'Enable this module' : 'Skip this module'}
+              </TooltipContent>
+            </Tooltip>
+            <CardTitle
+              className={`text-base capitalize ${isSkipped ? 'text-muted-foreground line-through' : ''}`}
+            >
               {name.replace(/-/g, ' ')}
             </CardTitle>
             {skip && (
               <span className="rounded bg-dynamic-yellow/10 px-2 py-0.5 font-medium text-dynamic-yellow text-xs">
-                Skip
+                Auto-Skip
+              </span>
+            )}
+            {isSkipped && !skip && (
+              <span className="rounded bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
+                Skipped
+              </span>
+            )}
+            {tuturuuuOnly && mode !== 'tuturuuu' && (
+              <span className="rounded bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
+                Tuturuuu Only
+              </span>
+            )}
+            {legacyOnly && mode === 'tuturuuu' && (
+              <span className="rounded bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
+                Legacy Only
               </span>
             )}
             {isLoading && isPaused && (
@@ -141,16 +194,27 @@ export function ModuleCard({
             )}
 
             {hasExternalData && (
-              <Button
-                onClick={() => onClear(module.module)}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                disabled={isLoading}
-                title="Clear data"
-              >
-                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-              </Button>
+              <>
+                <Button
+                  onClick={() => setPreviewOpen(true)}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title="Preview data"
+                >
+                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </Button>
+                <Button
+                  onClick={() => onClear(module.module)}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={isLoading}
+                  title="Clear data"
+                >
+                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                </Button>
+              </>
             )}
 
             {isLoading && (
@@ -188,7 +252,7 @@ export function ModuleCard({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              disabled={disabled || isLoading}
+              disabled={isDisabled || isLoading}
               title={hasExternalData ? 'Re-run migration' : 'Start migration'}
             >
               {hasExternalData ? (
@@ -229,7 +293,7 @@ export function ModuleCard({
           : null}
       </CardHeader>
 
-      {!disabled && hasExternalData && (
+      {!isDisabled && hasExternalData && (
         <CardContent className="space-y-3 pt-0">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
@@ -315,6 +379,14 @@ export function ModuleCard({
           )}
         </CardContent>
       )}
+
+      <DataPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={name.replace(/-/g, ' ')}
+        data={externalData as unknown[] | null}
+        totalCount={externalTotal}
+      />
     </Card>
   );
 }
