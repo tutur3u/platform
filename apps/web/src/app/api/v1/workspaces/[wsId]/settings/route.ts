@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createClient,
+  createAdminClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
@@ -11,7 +14,7 @@ export async function GET(_: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient();
-
+    const sbAdmin = await createAdminClient();
     // Get authenticated user
     const {
       data: { user },
@@ -44,7 +47,7 @@ export async function GET(_: NextRequest, { params }: Params) {
       .maybeSingle();
 
     // Fetch workspace settings
-    const { data: settings, error } = await supabase
+    const { data: settings, error } = await sbAdmin
       .from('workspace_settings')
       .select('*')
       .eq('ws_id', wsId)
