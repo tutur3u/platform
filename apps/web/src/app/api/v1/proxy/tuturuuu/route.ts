@@ -17,45 +17,8 @@ const ALLOWED_API_DOMAINS = [
   '127.0.0.1',
 ];
 
-// Allowed ports for local development
+// Allowed ports for local development to prevent SSRF to internal services
 const ALLOWED_LOCAL_PORTS = [3000, 7803, 8080];
-
-/**
- * Validate that a URL is safe and points to an allowed Tuturuuu domain.
- * Prevents SSRF attacks by ensuring only trusted domains can be proxied.
- */
-function isAllowedApiUrl(urlString: string): boolean {
-  try {
-    const url = new URL(urlString);
-
-    // Only allow HTTPS in production, allow HTTP for localhost
-    const isLocalhost =
-      url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-    if (url.protocol !== 'https:' && !(isLocalhost && DEV_MODE)) {
-      return false;
-    }
-
-    // For localhost, validate port is allowed
-    if (isLocalhost) {
-      const port = url.port ? parseInt(url.port, 10) : 80;
-      if (!ALLOWED_LOCAL_PORTS.includes(port)) {
-        return false;
-      }
-    }
-
-    // Check if hostname is in allowlist
-    const hostname = url.hostname.toLowerCase();
-    const isAllowed = ALLOWED_API_DOMAINS.some((domain) => {
-      // Exact match or subdomain match
-      return hostname === domain || hostname.endsWith(`.${domain}`);
-    });
-
-    return isAllowed;
-  } catch {
-    // Invalid URL
-    return false;
-  }
-}
 
 /**
  * Validate that the path parameter is safe and doesn't contain URL manipulation
@@ -188,7 +151,7 @@ export async function GET(request: Request) {
     // SECURITY: Parse and validate the base URL using a strict allowlist.
     // This prevents SSRF attacks where an attacker could make the server
     // fetch internal resources or arbitrary external URLs.
-    let base;
+    let base: URL;
     try {
       base = new URL(baseUrl);
     } catch {
@@ -202,6 +165,23 @@ export async function GET(request: Request) {
 
     const isLocalhost =
       base.hostname === 'localhost' || base.hostname === '127.0.0.1';
+
+    // For localhost, validate port is allowed to prevent SSRF to internal services
+    if (isLocalhost) {
+      const port = base.port
+        ? parseInt(base.port, 10)
+        : base.protocol === 'https:'
+          ? 443
+          : 80;
+      if (!ALLOWED_LOCAL_PORTS.includes(port)) {
+        return NextResponse.json(
+          {
+            message: 'Invalid API URL port for localhost.',
+          },
+          { status: 400, headers: rateLimitHeaders }
+        );
+      }
+    }
 
     // Only allow HTTPS for remote hosts; allow HTTP only for explicit localhost/127.0.0.1.
     if (
@@ -226,20 +206,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // Normalize and validate the path to avoid path traversal or malformed URLs.
-    // Ensure path starts with '/' and does not contain '..' segments.
-    const rawPath = path || '/';
-    if (rawPath.includes('..')) {
-      return NextResponse.json(
-        { message: 'Invalid path parameter' },
-        { status: 400, headers: rateLimitHeaders }
-      );
-    }
-    const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+    // Path is already validated by isValidApiPath (starts with '/', no '..' segments)
     // Construct the base API URL using origin (scheme + host + optional port).
     const baseOrigin = `${base.protocol}//${base.host}`;
-    const urlObject = new URL(normalizedPath, baseOrigin);
-
+    const urlObject = new URL(path, baseOrigin);
 
     // Forward any additional query parameters (except 'path', 'wsId', and 'apiUrl')
     const forwardParams = new URLSearchParams();
@@ -254,7 +224,6 @@ export async function GET(request: Request) {
       urlObject.searchParams.append(key, value);
     });
     const finalUrl = urlObject.toString();
-
 
     // Make the request to Tuturuuu API using Bearer token (SDK authentication)
     const response = await fetch(finalUrl, {
