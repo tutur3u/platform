@@ -1,14 +1,14 @@
 {
-  "name": "neo-league",
+  "name": "@ncthub/neo-league",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 7803 --turbopack",
+    "dev": "next dev -p 7804 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "next build",
     "start": "next start",
-    "preview": "next build && next start -p 7803 --turbopack",
+    "preview": "next build && next start -p 7804 --turbopack",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
