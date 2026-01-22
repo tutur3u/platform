@@ -78,7 +78,7 @@ DECLARE
   v_filter_cte text;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;
@@ -359,22 +359,11 @@ DECLARE
   v_can_view_amount boolean;
   v_has_manage_finance boolean;
   v_allowed_wallet_ids uuid[];
-  v_calling_user_id uuid;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
-  END IF;
-
-  v_calling_user_id := current_setting('jwt.claims.user_id', true)::uuid;
-  IF v_calling_user_id IS NULL THEN
-    RAISE EXCEPTION 'Permission denied';
-  END IF;
-
-  IF p_user_id != v_calling_user_id
-    AND NOT public.has_workspace_permission(p_ws_id, v_calling_user_id, 'manage_finance') THEN
-    RAISE EXCEPTION 'Permission denied';
   END IF;
 
   v_can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
@@ -424,7 +413,7 @@ DECLARE
   result numeric;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;
@@ -495,7 +484,7 @@ DECLARE
   result bigint;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;
@@ -565,7 +554,7 @@ DECLARE
   result numeric;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;
@@ -635,7 +624,7 @@ DECLARE
   result bigint;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;
@@ -707,7 +696,7 @@ DECLARE
   result numeric;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;
@@ -788,7 +777,7 @@ DECLARE
   result numeric;
 BEGIN
   IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
-    IF NOT public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_members') THEN
+    IF NOT public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles') THEN
       RAISE EXCEPTION 'Permission denied';
     END IF;
   END IF;

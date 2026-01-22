@@ -107,6 +107,7 @@ async function getData(
       .select(
         'wallet_id, workspace_roles!inner(workspace_role_members!inner(user_id))'
       )
+      .eq('workspace_roles.ws_id', wsId)
       .eq('workspace_roles.workspace_role_members.user_id', user.id);
 
     const whitelistedWalletIds = (whitelistData || []).map(

@@ -1,4 +1,5 @@
 import {
+  type Control,
   Controller,
   type ControllerProps,
   type FieldPath,
@@ -10,7 +11,6 @@ import {
   useFormContext,
   useFormState,
   useWatch,
-  type Control,
 } from 'react-hook-form';
 
 export {

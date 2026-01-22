@@ -16,7 +16,7 @@ export async function GET(_: Request, { params }: Params) {
     wsId,
   });
 
-  if (withoutPermission('update_wallets')) {
+  if (withoutPermission('view_transactions')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }

@@ -50,8 +50,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
-  roleFormSchema,
   type RoleFormValues,
+  roleFormSchema,
   viewingWindowOptions,
 } from '../wallet-form-schema';
 
@@ -121,6 +121,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
     },
     onSuccess: () => {
       toast.success(t('ws-wallets.role_added_successfully'));
+      form.reset();
       queryClient.invalidateQueries({
         queryKey: ['workspaces', wsId, 'wallets', walletId, 'roles'],
       });
@@ -208,6 +209,13 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
 
   const viewingWindow = form.watch('viewing_window');
 
+  const handleAddDialogOpenChange = (open: boolean) => {
+    setShowAddDialog(open);
+    if (!open) {
+      form.reset();
+    }
+  };
+
   const onSubmit = (data: RoleFormValues) => {
     addRoleMutation.mutate(data);
   };
@@ -248,7 +256,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
           <Shield className="h-4 w-4" />
           {t('ws-wallets.roles_with_access')} ({filteredRoleAccess.length})
         </Label>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={showAddDialog} onOpenChange={handleAddDialogOpenChange}>
           <DialogTrigger asChild>
             <Button
               type="button"
@@ -371,7 +379,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowAddDialog(false)}
+                    onClick={() => handleAddDialogOpenChange(false)}
                   >
                     {t('common.cancel')}
                   </Button>
@@ -481,11 +489,11 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                       className="w-20"
                       onBlur={(e) => {
                         const days = parseInt(e.target.value, 10);
-                        if (!Number.isNaN(days) && days >= 1) {
+                        if (!Number.isNaN(days) && days >= 1 && days <= 365) {
                           handleUpdateWindow(item.role_id, 'custom', days);
                         } else if (e.target.value) {
                           toast.error(
-                            t('ws-roles.custom_days_must_be_at_least_1')
+                            t('ws-roles.custom_days_must_be_between_1_and_365')
                           );
                           e.target.value = String(item.custom_days ?? '');
                         }

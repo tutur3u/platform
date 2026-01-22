@@ -9494,6 +9494,7 @@
     "custom_days": "Số Ngày Tùy chỉnh",
     "custom_days_description": "Nhập số ngày cho cửa sổ xem tùy chỉnh",
     "custom_days_must_be_at_least_1": "Số ngày tùy chỉnh phải ít nhất là 1",
+    "custom_days_must_be_between_1_and_365": "Số ngày tùy chỉnh phải trong khoảng 1 đến 365",
     "custom_days_placeholder": "Ngày",
     "default_permissions": "Quyền mặc định",
     "default_permissions_description": "Những quyền này mặc định sẽ được áp dụng cho tất cả người dùng trong không gian làm việc của bạn.",

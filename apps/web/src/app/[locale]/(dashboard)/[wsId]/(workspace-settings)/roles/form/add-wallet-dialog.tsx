@@ -12,6 +12,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import type { WalletFormValues } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
+import {
+  viewingWindowOptions,
+  walletFormSchema,
+} from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import {
   Form,
   FormControl,
@@ -21,7 +26,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
   Select,
   SelectContent,
@@ -30,15 +37,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import {
-  viewingWindowOptions,
-  walletFormSchema,
-} from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
-import type { WalletFormValues } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 
 interface AddWalletDialogProps {
   wsId: string;

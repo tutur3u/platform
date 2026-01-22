@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { viewingWindowBaseSchema } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -26,14 +27,16 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
-  const { viewing_window, custom_days } = body;
+  const result = viewingWindowBaseSchema.safeParse(body);
 
-  if (!viewing_window) {
+  if (!result.success) {
     return NextResponse.json(
-      { message: 'viewing_window is required' },
+      { message: result.error.issues[0]?.message || 'Invalid request body' },
       { status: 400 }
     );
   }
+
+  const { viewing_window, custom_days } = result.data;
 
   const { data, error } = await supabase
     .from('workspace_role_wallet_whitelist')

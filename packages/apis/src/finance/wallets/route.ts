@@ -31,9 +31,7 @@ export async function GET(_: Request, { params }: Params) {
     // User has full access - return all wallets
     const { data, error } = await supabase
       .from('workspace_wallets')
-      .select('*', {
-        count: 'exact',
-      })
+      .select('*')
       .eq('ws_id', wsId)
       .order('name', { ascending: true });
 

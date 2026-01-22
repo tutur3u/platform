@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { roleFormSchema } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -69,14 +70,16 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
-  const { role_id, viewing_window, custom_days } = body;
+  const result = roleFormSchema.safeParse(body);
 
-  if (!role_id || !viewing_window) {
+  if (!result.success) {
     return NextResponse.json(
-      { message: 'role_id and viewing_window are required' },
+      { message: result.error.issues[0]?.message || 'Invalid request body' },
       { status: 400 }
     );
   }
+
+  const { role_id, viewing_window, custom_days } = result.data;
 
   // Validate wallet belongs to workspace
   const { data: wallet, error: walletError } = await supabase
