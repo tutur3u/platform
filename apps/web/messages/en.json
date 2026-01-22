@@ -1616,7 +1616,7 @@
     "explore": "Explore",
     "export": "Export",
     "export-content": "Please choose file type to export",
-    "export-failed": " File export failed.",
+    "export-error": " File export failed due to an error. Please try again",
     "export-success": " File exported successfully.",
     "failed_to_archive_tasks": "Failed to archive tasks. Please try again.",
     "failed_to_clear_assignees": "Failed to clear assignees.",
