@@ -173,3 +173,32 @@ export function useWorkspaceUserFields(wsId: string) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
+
+/**
+ * Fetch default excluded groups for the workspace
+ */
+export function useDefaultExcludedGroups(wsId: string) {
+  return useQuery({
+    queryKey: ['workspace-default-excluded-groups', wsId],
+    queryFn: async (): Promise<string[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'DATABASE_DEFAULT_EXCLUDED_GROUPS')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return data?.value
+        ? data.value
+            .split(',')
+            .map((v: string) => v.trim())
+            .filter(Boolean)
+        : [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes
+  });
+}

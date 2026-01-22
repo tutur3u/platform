@@ -93,22 +93,6 @@ export default async function WorkspaceUsersPage({
 
   const { data: extraFields } = await getUserFields(wsId);
 
-  // Fetch default excluded groups from workspace config
-  const supabase = await createClient();
-  const { data: defaultExcludedConfig } = await supabase
-    .from('workspace_configs')
-    .select('value')
-    .eq('ws_id', wsId)
-    .eq('id', 'DATABASE_DEFAULT_EXCLUDED_GROUPS')
-    .maybeSingle();
-
-  const defaultExcludedGroups = defaultExcludedConfig?.value
-    ? defaultExcludedConfig.value
-        .split(',')
-        .map((v: string) => v.trim())
-        .filter(Boolean)
-    : [];
-
   // Add href for navigation
   const users = initialUsers.map((u) => ({
     ...u,
@@ -158,7 +142,6 @@ export default async function WorkspaceUsersPage({
               data: users,
               count: count,
             }}
-            defaultExcludedGroups={defaultExcludedGroups}
             toolbarImportContent={
               canExportUsers && <ImportDialogContent wsId={wsId} />
             }
