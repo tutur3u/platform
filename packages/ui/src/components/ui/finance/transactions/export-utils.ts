@@ -223,7 +223,13 @@ export async function getData(
     };
   });
 
-  return { data, count } as {
+  // Supabase can return null for count, so we need to handle that safely
+  const safeCount = count ?? 0;
+
+  return {
+    data,
+    count: safeCount,
+  } as {
     data: TransactionExportRow[];
     count: number;
   };

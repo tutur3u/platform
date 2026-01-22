@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useId, useState } from 'react';
@@ -80,6 +81,7 @@ export default function ExportDialogContent({
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [filename, setFilename] = useState('');
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const filenameId = useId();
   const fileTypeId = useId();
@@ -120,55 +122,65 @@ export default function ExportDialogContent({
   const handleExport = async () => {
     setIsExporting(true);
     setProgress(0);
+    setExportError(null);
 
-    const allData: TransactionExportRow[] = [];
-    let currentPage = 1;
-    const pageSize = 1000;
+    try {
+      const allData: TransactionExportRow[] = [];
+      let currentPage = 1;
+      const pageSize = 1000;
 
-    while (true) {
-      const { data, count } = await getData(wsId, {
-        q: q || undefined,
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
-        userIds,
-        categoryIds,
-        walletIds,
-        start: start || undefined,
-        end: end || undefined,
-      });
+      while (true) {
+        const { data, count } = await getData(wsId, {
+          q: q || undefined,
+          page: currentPage.toString(),
+          pageSize: pageSize.toString(),
+          userIds,
+          categoryIds,
+          walletIds,
+          start: start || undefined,
+          end: end || undefined,
+        });
 
-      allData.push(...data);
+        allData.push(...data);
 
-      const totalPages = Math.ceil(count / pageSize);
-      const progressValue = (currentPage / totalPages) * 100;
-      setProgress(progressValue);
+        const totalPages = Math.ceil(count / pageSize);
+        const progressValue = (currentPage / totalPages) * 100;
+        setProgress(progressValue);
 
-      if (data.length < pageSize) {
-        break;
+        if (data.length < pageSize) {
+          break;
+        }
+
+        currentPage++;
       }
 
-      currentPage++;
+      setProgress(100);
+
+      if (exportFileType === 'csv') {
+        downloadCSV(
+          allData,
+          `${(filename || defaultFilename)
+            // remove all .csv from the filename
+            .replace(/\.csv/g, '')}.csv`
+        );
+      } else if (exportFileType === 'excel') {
+        downloadExcel(
+          allData,
+          `${(filename || defaultFilename)
+            // remove all .xlsx from the filename
+            .replace(/\.xlsx/g, '')}.xlsx`
+        );
+      }
+
+      toast.success(t('common.export-success'));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : t('common.export-error');
+      setExportError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsExporting(false);
     }
-
-    setProgress(100);
-
-    if (exportFileType === 'csv') {
-      downloadCSV(
-        allData,
-        `${(filename || defaultFilename)
-          // remove all .csv from the filename
-          .replace(/\.csv/g, '')}.csv`
-      );
-    } else if (exportFileType === 'excel') {
-      downloadExcel(
-        allData,
-        `${(filename || defaultFilename)
-          // remove all .xlsx from the filename
-          .replace(/\.xlsx/g, '')}.xlsx`
-      );
-    }
-
-    setIsExporting(false);
   };
 
   function getFileExtension(fileType: string) {
@@ -223,6 +235,12 @@ export default function ExportDialogContent({
         {isExporting && (
           <div>
             <Progress value={progress} className="h-2 w-full" />
+          </div>
+        )}
+
+        {exportError && (
+          <div className="mt-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+            {exportError}
           </div>
         )}
       </div>
