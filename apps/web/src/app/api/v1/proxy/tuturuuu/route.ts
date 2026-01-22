@@ -5,6 +5,80 @@ import { checkRateLimit, type RateLimitConfig } from '@/lib/api-middleware';
 // Default Tuturuuu API endpoint (production v2)
 const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
 
+// Allowlist of trusted Tuturuuu API domains to prevent SSRF attacks
+const ALLOWED_API_DOMAINS = [
+  'tuturuuu.com',
+  'www.tuturuuu.com',
+  'api.tuturuuu.com',
+  'staging.tuturuuu.com',
+  'dev.tuturuuu.com',
+  // Local development
+  'localhost',
+  '127.0.0.1',
+];
+
+// Allowed ports for local development
+const ALLOWED_LOCAL_PORTS = [3000, 7803, 8080];
+
+/**
+ * Validate that a URL is safe and points to an allowed Tuturuuu domain.
+ * Prevents SSRF attacks by ensuring only trusted domains can be proxied.
+ */
+function isAllowedApiUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+
+    // Only allow HTTPS in production, allow HTTP for localhost
+    const isLocalhost =
+      url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    if (url.protocol !== 'https:' && !(isLocalhost && DEV_MODE)) {
+      return false;
+    }
+
+    // For localhost, validate port is allowed
+    if (isLocalhost) {
+      const port = url.port ? parseInt(url.port, 10) : 80;
+      if (!ALLOWED_LOCAL_PORTS.includes(port)) {
+        return false;
+      }
+    }
+
+    // Check if hostname is in allowlist
+    const hostname = url.hostname.toLowerCase();
+    const isAllowed = ALLOWED_API_DOMAINS.some((domain) => {
+      // Exact match or subdomain match
+      return hostname === domain || hostname.endsWith(`.${domain}`);
+    });
+
+    return isAllowed;
+  } catch {
+    // Invalid URL
+    return false;
+  }
+}
+
+/**
+ * Validate that the path parameter is safe and doesn't contain URL manipulation
+ */
+function isValidApiPath(path: string): boolean {
+  // Path must start with /
+  if (!path.startsWith('/')) {
+    return false;
+  }
+
+  // Prevent protocol-relative URLs and other bypass attempts
+  if (path.startsWith('//') || path.includes('://')) {
+    return false;
+  }
+
+  // Prevent path traversal
+  if (path.includes('..')) {
+    return false;
+  }
+
+  return true;
+}
+
 // Default rate limit for proxy: 60 requests per minute
 // Can be overridden via workspace secrets (RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS)
 const DEFAULT_PROXY_RATE_LIMIT: RateLimitConfig = {
@@ -99,9 +173,31 @@ export async function GET(request: Request) {
       );
     }
 
+    // Validate path to prevent URL manipulation attacks
+    if (!isValidApiPath(path)) {
+      return NextResponse.json(
+        { message: 'Invalid path parameter' },
+        { status: 400, headers: rateLimitHeaders }
+      );
+    }
+
     // Build the full URL to Tuturuuu API
     // Use custom apiUrl if provided, otherwise default to production v2
     const baseUrl = apiUrl || DEFAULT_TUTURUUU_API_ENDPOINT;
+
+    // SECURITY: Validate that the base URL is an allowed Tuturuuu domain
+    // This prevents SSRF attacks where an attacker could make the server
+    // fetch internal resources or arbitrary external URLs
+    if (!isAllowedApiUrl(baseUrl)) {
+      return NextResponse.json(
+        {
+          message:
+            'Invalid API URL. Only trusted Tuturuuu domains are allowed.',
+        },
+        { status: 400, headers: rateLimitHeaders }
+      );
+    }
+
     const tuturuuuUrl = `${baseUrl}${path}`;
 
     // Forward any additional query parameters (except 'path', 'wsId', and 'apiUrl')
