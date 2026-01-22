@@ -43,6 +43,7 @@ export * from './VitalGroup';
 export * from './Wallet';
 export * from './WalletTransfer';
 export * from './WorkspaceConfig';
+export * from './WorkspaceRoleWalletWhitelist';
 export * from './WorkspaceSecret';
 export * from './WorkspaceUser';
 export * from './WorkspaceUserField';

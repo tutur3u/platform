@@ -12,13 +12,15 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { toast } from '../../sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import WalletRoleAccess from './walletId/wallet-role-access';
 
 interface Props {
   wsId: string;
@@ -29,6 +31,7 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1).max(255),
+  description: z.string().max(500).optional(),
   balance: z.number().optional(),
   type: z.string(),
   // type: z.enum(['STANDARD', 'CREDIT']),
@@ -47,6 +50,7 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
     defaultValues: {
       id: data?.id,
       name: data?.name || '',
+      description: data?.description || '',
       balance: data?.balance || 0,
       type: data?.type || 'STANDARD',
       currency: data?.currency || 'VND',
@@ -74,14 +78,11 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: 'Error creating wallet',
-        description: 'An error occurred while creating the wallet',
-      });
+      toast.error(t('ws-wallets.failed_to_create_wallet'));
     }
   }
 
-  return (
+  const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
         <FormField
@@ -93,6 +94,21 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
               <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
               <FormControl>
                 <Input placeholder="Cash" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          disabled={loading}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('wallet-data-table.description')}</FormLabel>
+              <FormControl>
+                <Input placeholder="Personal savings" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -205,5 +221,24 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
         </Button>
       </form>
     </Form>
+  );
+
+  if (!data?.id) return formContent;
+
+  return (
+    <Tabs defaultValue="general">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="general">{t('common.general')}</TabsTrigger>
+        <TabsTrigger value="role_access">
+          {t('ws-wallets.role_access')}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="general" className="mt-4">
+        {formContent}
+      </TabsContent>
+      <TabsContent value="role_access" className="mt-4">
+        <WalletRoleAccess wsId={wsId} walletId={data.id} />
+      </TabsContent>
+    </Tabs>
   );
 }

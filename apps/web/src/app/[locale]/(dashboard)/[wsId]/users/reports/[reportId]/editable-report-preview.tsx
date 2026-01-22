@@ -219,7 +219,7 @@ export default function EditableReportPreview({
         content: raw.content,
         feedback: raw.feedback,
         score: raw.score,
-        scores: (raw as any).scores as number[] | null,
+        scores: raw.scores as number[] | null,
       })) as Array<{
         id: string;
         created_at: string;
@@ -999,7 +999,7 @@ export default function EditableReportPreview({
                                       content: log.content,
                                       feedback: log.feedback,
                                       score: log.score ?? null,
-                                      scores: (log as any).scores ?? null,
+                                      scores: log.scores ?? null,
                                     }
                               )
                             }

@@ -5,6 +5,7 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -18,7 +19,21 @@ interface Props {
 
 export default async function WalletsPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
-  const { data: rawData, count } = await getData(wsId, searchParams);
+
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
+  const canCreateWallets = containsPermission('create_wallets');
+  const canUpdateWallets = containsPermission('update_wallets');
+  const canDeleteWallets = containsPermission('delete_wallets');
+  const hasManageFinance = containsPermission('manage_finance');
+
+  const { data: rawData, count } = await getData(
+    wsId,
+    searchParams,
+    hasManageFinance
+  );
 
   const data = rawData.map((d) => ({
     ...d,
@@ -34,7 +49,7 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         description={t('ws-wallets.description')}
         createTitle={t('ws-wallets.create')}
         createDescription={t('ws-wallets.create_description')}
-        form={<WalletForm wsId={wsId} />}
+        form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -42,6 +57,10 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         columnGenerator={walletColumns}
         namespace="wallet-data-table"
         count={count}
+        extraData={{
+          canUpdateWallets,
+          canDeleteWallets,
+        }}
         defaultVisibility={{
           id: false,
           description: false,
@@ -61,7 +80,8 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+  }: { q?: string; page?: string; pageSize?: string },
+  hasManageFinance: boolean
 ) {
   const supabase = await createClient();
 
@@ -70,8 +90,39 @@ async function getData(
     .select('*', {
       count: 'exact',
     })
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
+    .eq('ws_id', wsId);
+
+  if (!hasManageFinance) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { data: [], count: 0 };
+    }
+
+    // Get whitelisted wallet IDs by joining role members and role wallet whitelist
+    const { data: whitelistData } = await supabase
+      .from('workspace_role_wallet_whitelist')
+      .select(
+        'wallet_id, workspace_roles!inner(workspace_role_members!inner(user_id))'
+      )
+      .eq('workspace_roles.ws_id', wsId)
+      .eq('workspace_roles.workspace_role_members.user_id', user.id);
+
+    const whitelistedWalletIds = (whitelistData || []).map(
+      (item) => item.wallet_id
+    );
+
+    if (whitelistedWalletIds.length > 0) {
+      queryBuilder.in('id', whitelistedWalletIds);
+    } else {
+      // No whitelisted wallets or roles, return empty result
+      return { data: [], count: 0 };
+    }
+  }
+
+  queryBuilder.order('name', { ascending: true });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 

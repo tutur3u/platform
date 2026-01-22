@@ -60,7 +60,9 @@ export default async function UserGroupAttendancePage({
         const canViewUserGroupsScores = containsPermission(
           'view_user_groups_scores'
         );
-        const canUpdateAttendance = containsPermission('update_user_groups');
+        const canUpdateAttendance = containsPermission(
+          'update_user_attendance'
+        );
         const sp = await searchParams;
 
         const requestedDateParam = sp?.date;

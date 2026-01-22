@@ -2,6 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -12,7 +16,8 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const wsId = await normalizeWorkspaceId(id);
 
   const apiKey = (await headers()).get('API_KEY');
   return apiKey
@@ -66,6 +71,14 @@ async function getDataWithApiKey({
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
   const supabase = await createClient();
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_invoices')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
 
   const { data, error } = await supabase
     .from('finance_invoices')
