@@ -49,7 +49,9 @@ export default async function UserGroupDetailsPage({
         const { containsPermission } = await getPermissions({
           wsId,
         });
-        const canViewUserGroupsReports = containsPermission('view_user_groups');
+        const canViewUserGroupsReports = containsPermission(
+          'view_user_groups_reports'
+        );
         if (!canViewUserGroupsReports) {
           notFound();
         }
@@ -64,9 +66,15 @@ export default async function UserGroupDetailsPage({
           'view_user_groups_scores'
         );
 
-        const canCreateReports = containsPermission('create_user_groups');
-        const canUpdateReports = containsPermission('update_user_groups');
-        const canDeleteReports = containsPermission('delete_user_groups');
+        const canCreateReports = containsPermission(
+          'create_user_groups_reports'
+        );
+        const canUpdateReports = containsPermission(
+          'update_user_groups_reports'
+        );
+        const canDeleteReports = containsPermission(
+          'delete_user_groups_reports'
+        );
 
         return (
           <>

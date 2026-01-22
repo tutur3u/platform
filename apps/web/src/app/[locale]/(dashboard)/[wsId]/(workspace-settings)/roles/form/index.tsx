@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Monitor, PencilRuler, Users } from '@tuturuuu/icons';
+import { Banknote, Monitor, PencilRuler, Users } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId, WorkspaceRole } from '@tuturuuu/types';
@@ -26,6 +26,7 @@ import * as z from 'zod';
 import RoleFormDisplaySection from './role-display';
 import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
+import RoleFormWalletAccessSection from './role-wallet-access';
 
 const FormSchema = z.object({
   id: z.string().optional(),
@@ -184,9 +185,9 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     : enabledPermissionsCount.reduce((acc, group) => acc + group.count, 0);
 
   const sectionProps = { wsId, user, roleId, form, enabledPermissionsCount };
-  const [tab, setTab] = useState<'display' | 'permissions' | 'members'>(
-    forceDefault ? 'permissions' : 'display'
-  );
+  const [tab, setTab] = useState<
+    'display' | 'permissions' | 'members' | 'wallets'
+  >(forceDefault ? 'permissions' : 'display');
 
   return (
     <Form {...form}>
@@ -196,11 +197,11 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
           className="w-full"
           value={tab}
           onValueChange={(value) =>
-            setTab(value as 'display' | 'permissions' | 'members')
+            setTab(value as 'display' | 'permissions' | 'members' | 'wallets')
           }
         >
           <TabsList
-            className={cn('grid h-fit w-full grid-cols-1 md:grid-cols-3')}
+            className={cn('grid h-fit w-full grid-cols-1 md:grid-cols-4')}
           >
             <TabsTrigger value="display" disabled={forceDefault}>
               <Monitor className="mr-1 h-5 w-5" />
@@ -214,6 +215,10 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
             <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />
               {t('ws-roles.members')} ({membersCount})
+            </TabsTrigger>
+            <TabsTrigger value="wallets" disabled={forceDefault || !isEdit}>
+              <Banknote className="mr-1 h-5 w-5" />
+              {t('ws-roles.wallet_access')}
             </TabsTrigger>
           </TabsList>
 
@@ -230,6 +235,9 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
                   {...sectionProps}
                   onUpdate={setRoleMembersCount}
                 />
+              </TabsContent>
+              <TabsContent value="wallets">
+                <RoleFormWalletAccessSection {...sectionProps} />
               </TabsContent>
             </div>
           </ScrollArea>

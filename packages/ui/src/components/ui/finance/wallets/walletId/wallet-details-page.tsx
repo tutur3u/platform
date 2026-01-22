@@ -4,12 +4,14 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
+import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
 interface Props {
   wsId: string;
@@ -28,7 +30,33 @@ export default async function WalletDetailsPage({
   locale,
 }: Props) {
   const t = await getTranslations();
-  const { wallet } = await getData(walletId);
+
+  const { withoutPermission, containsPermission } = await getPermissions({
+    wsId,
+  });
+  const canManageRoles = !withoutPermission('manage_workspace_roles');
+
+  // Transaction permissions
+  const canUpdateTransactions = containsPermission('update_transactions');
+  const canDeleteTransactions = containsPermission('delete_transactions');
+  const canUpdateConfidentialTransactions = containsPermission(
+    'update_confidential_transactions'
+  );
+  const canDeleteConfidentialTransactions = containsPermission(
+    'delete_confidential_transactions'
+  );
+  const canViewConfidentialAmount = containsPermission(
+    'view_confidential_amount'
+  );
+  const canViewConfidentialDescription = containsPermission(
+    'view_confidential_description'
+  );
+  const canViewConfidentialCategory = containsPermission(
+    'view_confidential_category'
+  );
+  const hasManageFinance = containsPermission('manage_finance');
+
+  const { wallet } = await getData(wsId, walletId, hasManageFinance);
 
   if (!wallet) notFound();
 
@@ -92,6 +120,12 @@ export default async function WalletDetailsPage({
         </Card>
       </div>
       <Separator className="my-4" />
+      {canManageRoles && (
+        <>
+          <WalletRoleAccessDialog wsId={wsId} walletId={walletId} />
+          <Separator className="my-4" />
+        </>
+      )}
       <Suspense
         fallback={
           <div className="space-y-3">
@@ -101,7 +135,17 @@ export default async function WalletDetailsPage({
           </div>
         }
       >
-        <InfiniteTransactionsList wsId={wsId} walletId={walletId} />
+        <InfiniteTransactionsList
+          wsId={wsId}
+          walletId={walletId}
+          canUpdateTransactions={canUpdateTransactions}
+          canDeleteTransactions={canDeleteTransactions}
+          canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
+          canDeleteConfidentialTransactions={canDeleteConfidentialTransactions}
+          canViewConfidentialAmount={canViewConfidentialAmount}
+          canViewConfidentialDescription={canViewConfidentialDescription}
+          canViewConfidentialCategory={canViewConfidentialCategory}
+        />
       </Suspense>
     </div>
   );
@@ -125,8 +169,20 @@ function DetailItem({
   );
 }
 
-async function getData(walletId: string) {
+async function getData(
+  _wsId: string,
+  walletId: string,
+  hasManageFinance: boolean
+) {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
 
   const { data: wallet, error: walletError } = await supabase
     .from('workspace_wallets')
@@ -135,6 +191,33 @@ async function getData(walletId: string) {
     .single();
 
   if (walletError) throw walletError;
+
+  if (!hasManageFinance) {
+    // Get user's role IDs
+    const { data: userRoles } = await supabase
+      .from('workspace_role_members')
+      .select('role_id')
+      .eq('user_id', user.id);
+
+    const roleIds = (userRoles || []).map((r) => r.role_id);
+
+    if (roleIds.length > 0) {
+      // Get whitelisted wallet IDs
+      const { data: whitelistData } = await supabase
+        .from('workspace_role_wallet_whitelist')
+        .select('wallet_id')
+        .eq('wallet_id', walletId)
+        .in('role_id', roleIds);
+
+      if (!whitelistData || whitelistData.length === 0) {
+        // No access
+        return { wallet: null };
+      }
+    } else {
+      // No roles, no access
+      return { wallet: null };
+    }
+  }
 
   return { wallet };
 }

@@ -6,7 +6,7 @@ import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
   Select,
   SelectContent,
@@ -94,7 +94,7 @@ export default function GroupReportsClient({
     },
   });
 
-  const userOptions: ComboboxOptions[] = useMemo(
+  const userOptions: ComboboxOption[] = useMemo(
     () =>
       usersQuery.data?.map((u) => ({
         value: u.id,
@@ -389,7 +389,7 @@ export default function GroupReportsClient({
   )?.creator_name;
   const effectiveCreatorName = selectedManagerName ?? selectedReportCreatorName;
 
-  const managerOptions: ComboboxOptions[] = useMemo(
+  const managerOptions: ComboboxOption[] = useMemo(
     () =>
       (groupManagersQuery.data ?? [])
         .map((m) => ({
