@@ -79,16 +79,18 @@ BEGIN
   -- Security gate: ensure caller can only query their own user_id or is a workspace admin
   v_calling_user_id := auth.uid();
   
-  IF v_calling_user_id != p_user_id THEN
-    -- Verify the caller is an admin for this workspace
-    IF NOT EXISTS (
-      SELECT 1
-      FROM public.workspace_members wm
-      WHERE wm.ws_id = p_ws_id
-        AND wm.user_id = v_calling_user_id
-        AND wm.role IN ('ADMIN', 'OWNER')
+  IF v_calling_user_id IS NULL OR v_calling_user_id != p_user_id THEN
+    IF v_calling_user_id IS NULL THEN
+      RAISE EXCEPTION 'Permission denied: unauthenticated caller';
+    END IF;
+
+    -- Verify the caller has the same permission as RLS
+    IF NOT public.has_workspace_permission(
+      v_calling_user_id,
+      p_ws_id,
+      'manage_workspace_roles'
     ) THEN
-      RAISE EXCEPTION 'Permission denied: you can only query your own wallet access or must be a workspace admin';
+      RAISE EXCEPTION 'Permission denied: you can only query your own wallet access or must have workspace role management permission';
     END IF;
   END IF;
 

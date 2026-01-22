@@ -528,7 +528,6 @@ export async function WorkspaceNavigationLinks({
       requiredWorkspaceTier: createTierRequirement('users', {
         alwaysShow: true,
       }),
-      href: `/${personalOrWsId}/users/database`,
       children: [
         {
           title: t('workspace-users-tabs.overview'),
@@ -577,7 +576,7 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-users-tabs.reports'),
           href: `/${personalOrWsId}/users/reports`,
           icon: <ClipboardList className="h-5 w-5" />,
-          disabled: withoutPermission('manage_users'),
+          disabled: withoutPermission('view_user_groups_reports'),
         },
         {
           title: t('workspace-users-tabs.metrics'),
@@ -601,7 +600,7 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-users-tabs.guest_leads'),
           href: `/${personalOrWsId}/users/guest-leads`,
           icon: <Mails className="h-5 w-5" />,
-          disabled: withoutPermission('manage_users'),
+          disabled: withoutPermission('create_lead_generations'),
         },
         null,
         {
@@ -621,7 +620,15 @@ export async function WorkspaceNavigationLinks({
       disabled:
         ENABLE_AI_ONLY ||
         !hasSecret('ENABLE_USERS', 'true') ||
-        withoutPermission('manage_users'),
+        (withoutPermission('manage_users') &&
+          withoutPermission('check_user_attendance') &&
+          withoutPermission('view_users_private_info') &&
+          withoutPermission('view_users_public_info') &&
+          withoutPermission('view_user_groups') &&
+          withoutPermission('view_user_groups_reports') &&
+          withoutPermission('view_user_groups_scores') &&
+          withoutPermission('send_user_group_post_emails') &&
+          withoutPermission('create_lead_generations')),
     },
     {
       title: t('sidebar_tabs.inventory'),

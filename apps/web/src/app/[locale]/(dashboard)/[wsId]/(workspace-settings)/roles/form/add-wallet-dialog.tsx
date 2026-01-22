@@ -34,8 +34,11 @@ import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { viewingWindowOptions, walletFormSchema } from './wallet-form-schema';
-import type { WalletFormValues } from './wallet-form-schema';
+import {
+  viewingWindowOptions,
+  walletFormSchema,
+} from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
+import type { WalletFormValues } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 
 interface AddWalletDialogProps {
   wsId: string;

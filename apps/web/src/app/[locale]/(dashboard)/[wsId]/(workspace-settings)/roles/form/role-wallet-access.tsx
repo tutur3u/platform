@@ -32,7 +32,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { AddWalletDialog } from './add-wallet-dialog';
 import type { SectionProps } from './index';
-import { viewingWindowOptions } from './wallet-form-schema';
+import { viewingWindowOptions } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 
 export default function RoleFormWalletAccessSection({
   wsId,

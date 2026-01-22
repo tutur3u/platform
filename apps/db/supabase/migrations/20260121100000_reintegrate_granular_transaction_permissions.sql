@@ -77,6 +77,12 @@ DECLARE
   v_wallet_windows JSONB := '{}';
   v_filter_cte text;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   -- Check user's permissions
   can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
   can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
@@ -189,7 +195,10 @@ BEGIN
         AND (
           $12::text IS NULL 
           OR wt.description ILIKE ''%%'' || $12 || ''%%''
-        )
+        )';
+
+  IF p_order_by = 'taken_at' THEN
+    v_filter_cte := v_filter_cte || '
         AND (
           $13::timestamp with time zone IS NULL 
           OR $14::timestamp with time zone IS NULL
@@ -197,7 +206,10 @@ BEGIN
             wt.taken_at < $13
             OR (wt.taken_at = $13 AND wt.created_at < $14)
           )
-        )
+        )';
+  END IF;
+
+  v_filter_cte := v_filter_cte || '
     )';
 
   -- Get total count if requested (before pagination)
@@ -347,7 +359,24 @@ DECLARE
   v_can_view_amount boolean;
   v_has_manage_finance boolean;
   v_allowed_wallet_ids uuid[];
+  v_calling_user_id uuid;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
+  v_calling_user_id := current_setting('jwt.claims.user_id', true)::uuid;
+  IF v_calling_user_id IS NULL THEN
+    RAISE EXCEPTION 'Permission denied';
+  END IF;
+
+  IF p_user_id != v_calling_user_id
+    AND NOT public.has_workspace_permission(p_ws_id, v_calling_user_id, 'manage_finance') THEN
+    RAISE EXCEPTION 'Permission denied';
+  END IF;
+
   v_can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
   v_can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
   v_can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
@@ -394,6 +423,12 @@ DECLARE
   allowed_wallet_ids uuid[];
   result numeric;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   SELECT
     ctx.can_view_transactions,
     ctx.can_view_incomes,
@@ -459,6 +494,12 @@ DECLARE
   allowed_wallet_ids uuid[];
   result bigint;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   SELECT
     ctx.can_view_transactions,
     ctx.can_view_incomes,
@@ -523,6 +564,12 @@ DECLARE
   allowed_wallet_ids uuid[];
   result numeric;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   SELECT
     ctx.can_view_transactions,
     ctx.can_view_expenses,
@@ -587,6 +634,12 @@ DECLARE
   allowed_wallet_ids uuid[];
   result bigint;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(p_ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   SELECT
     ctx.can_view_transactions,
     ctx.can_view_expenses,
@@ -653,6 +706,12 @@ DECLARE
   allowed_wallet_ids uuid[];
   result numeric;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   SELECT
     ctx.can_view_transactions,
     ctx.can_view_incomes,
@@ -728,6 +787,12 @@ DECLARE
   v_user_id uuid;
   result numeric;
 BEGIN
+  IF p_user_id IS NOT NULL AND p_user_id != auth.uid() THEN
+    IF NOT public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_members') THEN
+      RAISE EXCEPTION 'Permission denied';
+    END IF;
+  END IF;
+
   v_user_id := COALESCE(p_user_id, auth.uid());
 
   SELECT

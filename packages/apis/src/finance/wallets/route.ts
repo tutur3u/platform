@@ -160,7 +160,10 @@ export async function GET(_: Request, { params }: Params) {
       }
     }
     return acc;
-  }, new Map<string, { viewing_window: string; custom_days: number | null }>());
+  }, new Map<
+    string,
+    { viewing_window: string | null; custom_days: number | null }
+  >());
 
   const walletsWithWindow = (wallets || []).map((wallet) => ({
     ...wallet,
