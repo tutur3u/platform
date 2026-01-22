@@ -20,7 +20,12 @@
       "Bash(curl:*)",
       "Bash(bunx tsgo:*)",
       "Bash(bunx tsc:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr checkout:*)",
+      "Bash(gh api:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
