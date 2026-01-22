@@ -1,8 +1,13 @@
 'use client';
 
 import { UserFilter } from '@tuturuuu/ui/finance/transactions/user-filter';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useCallback } from 'react';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
+import { useFilterReset } from './hooks/use-filter-reset';
 
 interface UserFilterWrapperProps {
   wsId: string;
@@ -15,16 +20,16 @@ export function UserFilterWrapper({ wsId }: UserFilterWrapperProps) {
       shallow: true,
     })
   );
-  const [, setPage] = useQueryState('page', { shallow: true });
+
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle user filter changes
-  const handleUsersChange = useCallback(
-    async (userIds: string[]) => {
-      await setUserIds(userIds.length > 0 ? userIds : []);
-      await setPage('1');
-    },
-    [setUserIds, setPage]
-  );
+  const handleUsersChange = useFilterReset(setUserIds, setPage);
 
   return (
     <UserFilter
