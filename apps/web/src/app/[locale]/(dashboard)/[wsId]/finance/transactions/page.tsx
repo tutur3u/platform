@@ -12,28 +12,12 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-    userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
-    start?: string;
-    end?: string;
-  }>;
 }
 
-export default async function WorkspaceTransactionsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceTransactionsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const sp = await searchParams;
-        return <TransactionsPage wsId={wsId} searchParams={sp} />;
-      }}
+      {async ({ wsId }) => <TransactionsPage wsId={wsId} />}
     </WorkspaceWrapper>
   );
 }

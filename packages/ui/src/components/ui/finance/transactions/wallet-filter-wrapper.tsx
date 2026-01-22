@@ -1,7 +1,7 @@
 'use client';
 
 import { WalletFilter } from '@tuturuuu/ui/finance/transactions/wallet-filter';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
 
 interface WalletFilterWrapperProps {
@@ -9,36 +9,21 @@ interface WalletFilterWrapperProps {
 }
 
 export function WalletFilterWrapper({ wsId }: WalletFilterWrapperProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
-  // Get current wallet IDs from search params
-  const currentWalletIds = searchParams.getAll('walletIds');
+  const [currentWalletIds, setWalletIds] = useQueryState(
+    'walletIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+  const [, setPage] = useQueryState('page', { shallow: true });
 
   // Handle wallet filter changes
   const handleWalletsChange = useCallback(
-    (walletIds: string[]) => {
-      const params = new URLSearchParams(searchParams);
-
-      // Remove all existing walletIds params
-      params.delete('walletIds');
-
-      // Add new walletIds params
-      if (walletIds.length > 0) {
-        walletIds.forEach((walletId) => {
-          params.append('walletIds', walletId);
-        });
-      }
-
-      // Reset to first page when filtering
-      params.set('page', '1');
-
-      const newUrl = `${pathname}?${params.toString()}`;
-      router.push(newUrl);
-      router.refresh();
+    async (walletIds: string[]) => {
+      await setWalletIds(walletIds.length > 0 ? walletIds : []);
+      await setPage('1');
     },
-    [router, searchParams, pathname]
+    [setWalletIds, setPage]
   );
 
   return (

@@ -15,8 +15,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionCard } from './transaction-card';
 import { TransactionEditDialog } from './transaction-edit-dialog';
@@ -34,8 +34,14 @@ interface InfiniteTransactionsListProps {
   canViewConfidentialCategory?: boolean;
 }
 
+type TransactionWithConfidential = Transaction & {
+  is_amount_confidential?: boolean;
+  is_category_confidential?: boolean;
+  is_description_confidential?: boolean;
+};
+
 interface TransactionResponse {
-  data: Transaction[];
+  data: TransactionWithConfidential[];
   nextCursor: string | null;
   hasMore: boolean;
 }
@@ -43,7 +49,7 @@ interface TransactionResponse {
 interface GroupedTransactions {
   date: string;
   label: string;
-  transactions: Transaction[];
+  transactions: TransactionWithConfidential[];
   isExpanded?: boolean;
 }
 
@@ -60,11 +66,10 @@ export function InfiniteTransactionsList({
 }: InfiniteTransactionsListProps) {
   const t = useTranslations();
   const locale = useLocale();
-  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [selectedTransaction, setSelectedTransaction] =
-    useState<Transaction | null>(null);
+    useState<TransactionWithConfidential | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -73,7 +78,7 @@ export function InfiniteTransactionsList({
     moment.locale(locale);
   }, [locale]);
 
-  const handleTransactionClick = (transaction: Transaction) => {
+  const handleTransactionClick = (transaction: TransactionWithConfidential) => {
     setSelectedTransaction(transaction);
     setIsEditDialogOpen(true);
   };
@@ -104,12 +109,47 @@ export function InfiniteTransactionsList({
     });
   };
 
-  const q = searchParams.get('q') || '';
-  const userIds = searchParams.getAll('userIds');
-  const categoryIds = searchParams.getAll('categoryIds');
-  const walletIds = searchParams.getAll('walletIds');
-  const start = searchParams.get('start');
-  const end = searchParams.get('end');
+  const [q] = useQueryState(
+    'q',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+    })
+  );
+
+  const [userIds] = useQueryState(
+    'userIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [categoryIds] = useQueryState(
+    'categoryIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [walletIds] = useQueryState(
+    'walletIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [start] = useQueryState(
+    'start',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
+
+  const [end] = useQueryState(
+    'end',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
 
   const buildQueryString = (cursor?: string) => {
     const params = new URLSearchParams();
@@ -155,7 +195,19 @@ export function InfiniteTransactionsList({
         `/api/workspaces/${wsId}/transactions/infinite?${queryString}`
       );
       if (!response.ok) throw new Error('Failed to fetch transactions');
-      return response.json();
+
+      const json = (await response.json()) as TransactionResponse;
+
+      return {
+        ...json,
+        data: json.data.map((tx) => ({
+          ...tx,
+          is_amount_confidential: tx.is_amount_confidential ?? undefined,
+          is_category_confidential: tx.is_category_confidential ?? undefined,
+          is_description_confidential:
+            tx.is_description_confidential ?? undefined,
+        })),
+      } satisfies TransactionResponse;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
@@ -186,7 +238,7 @@ export function InfiniteTransactionsList({
       } else if (transactionDate.isSame(now, 'year')) {
         label = transactionDate.format('MMMM YYYY');
       } else {
-        label = transactionDate.format('YYYY');
+        label = transactionDate.format('dddd, DD MMMM YYYY');
       }
 
       let group = groups.find((g) => g.date === dateKey);
@@ -271,7 +323,7 @@ export function InfiniteTransactionsList({
         const dailyTotal = group.transactions.reduce((sum, transaction) => {
           if (
             transaction.amount === null &&
-            (transaction as any).is_amount_confidential
+            transaction.is_amount_confidential
           ) {
             return sum;
           }
@@ -280,10 +332,12 @@ export function InfiniteTransactionsList({
 
         const isPositive = dailyTotal >= 0;
         const hasRedactedAmounts = group.transactions.some(
-          (t: any) => t.amount === null && t.is_amount_confidential
+          (transaction) =>
+            transaction.amount === null && transaction.is_amount_confidential
         );
         const allAmountsRedacted = group.transactions.every(
-          (t: any) => t.amount === null && t.is_amount_confidential
+          (transaction) =>
+            transaction.amount === null && transaction.is_amount_confidential
         );
 
         const isExpanded = expandedGroups.has(group.date);
@@ -291,8 +345,14 @@ export function InfiniteTransactionsList({
 
         // Calculate stats for the group
         const amounts = group.transactions
-          .filter((t: any) => !(t.amount === null && t.is_amount_confidential))
-          .map((t) => t.amount || 0);
+          .filter(
+            (transaction) =>
+              !(
+                transaction.amount === null &&
+                transaction.is_amount_confidential
+              )
+          )
+          .map((transaction) => transaction.amount || 0);
         const income = amounts.filter((a) => a > 0).reduce((a, b) => a + b, 0);
         const expense = amounts.filter((a) => a < 0).reduce((a, b) => a + b, 0);
 
@@ -421,7 +481,15 @@ export function InfiniteTransactionsList({
                   className="cursor-pointer"
                 >
                   <TransactionCard
-                    transaction={transaction}
+                    transaction={{
+                      ...transaction,
+                      is_amount_confidential:
+                        transaction.is_amount_confidential ?? undefined,
+                      is_category_confidential:
+                        transaction.is_category_confidential ?? undefined,
+                      is_description_confidential:
+                        transaction.is_description_confidential ?? undefined,
+                    }}
                     wsId={wsId}
                     onEdit={() => handleTransactionClick(transaction)}
                     canEdit={canUpdateTransactions}

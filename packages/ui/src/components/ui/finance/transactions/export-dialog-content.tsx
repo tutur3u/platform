@@ -1,7 +1,6 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -21,29 +20,76 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { XLSX } from '../../../../xlsx';
 
+type TransactionExportRow = {
+  amount: number | null;
+  description: string | null;
+  category: string | null;
+  transaction_type: 'expense' | 'income' | null;
+  wallet: string | null;
+  taken_at: string | null;
+  created_at: string | null;
+  report_opt_in: boolean | null;
+  creator_name: string | null;
+  creator_email: string | null;
+  invoice_for_name: string | null;
+  invoice_for_email: string | null;
+};
+
 export default function ExportDialogContent({
   wsId,
   exportType,
-  searchParams,
 }: {
   wsId: string;
   exportType: string;
-  searchParams: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
-    userIds?: string | string[];
-    categoryIds?: string | string[];
-    walletIds?: string | string[];
-    start?: string;
-    end?: string;
-  };
 }) {
   const t = useTranslations();
+
+  const [q] = useQueryState(
+    'q',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+    })
+  );
+
+  const [userIds] = useQueryState(
+    'userIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [categoryIds] = useQueryState(
+    'categoryIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [walletIds] = useQueryState(
+    'walletIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [start] = useQueryState(
+    'start',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
+
+  const [end] = useQueryState(
+    'end',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
 
   const [exportFileType, setExportFileType] = useState('excel');
   const [progress, setProgress] = useState(0);
@@ -55,7 +101,7 @@ export default function ExportDialogContent({
 
   const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
 
-  const downloadCSV = (data: Transaction[], filename: string) => {
+  const downloadCSV = (data: TransactionExportRow[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -66,7 +112,7 @@ export default function ExportDialogContent({
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: Transaction[], filename: string) => {
+  const downloadExcel = (data: TransactionExportRow[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -90,20 +136,20 @@ export default function ExportDialogContent({
     setIsExporting(true);
     setProgress(0);
 
-    const allData: Transaction[] = [];
+    const allData: TransactionExportRow[] = [];
     let currentPage = 1;
     const pageSize = 1000;
 
     while (true) {
       const { data, count } = await getData(wsId, {
-        q: searchParams.q,
+        q: q || undefined,
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
-        userIds: searchParams.userIds,
-        categoryIds: searchParams.categoryIds,
-        walletIds: searchParams.walletIds,
-        start: searchParams.start,
-        end: searchParams.end,
+        userIds,
+        categoryIds,
+        walletIds,
+        start: start || undefined,
+        end: end || undefined,
       });
 
       allData.push(...data);
@@ -210,6 +256,51 @@ export default function ExportDialogContent({
   );
 }
 
+type ExportTransactionCreator = {
+  display_name: string | null;
+  full_name: string | null;
+  email: string | null;
+};
+
+type ExportWorkspaceWallet = {
+  name: string | null;
+  ws_id: string | null;
+};
+
+type ExportTransactionCategory = {
+  name: string | null;
+  is_expense: boolean | null;
+};
+
+type ExportWorkspaceUser = {
+  display_name: string | null;
+  full_name: string | null;
+  email: string | null;
+};
+
+type ExportFinanceInvoice = {
+  customer_id: string | null;
+  workspace_users: ExportWorkspaceUser | ExportWorkspaceUser[] | null;
+};
+
+type ExportWalletTransactionRow = {
+  amount: number | null;
+  description: string | null;
+  taken_at: string | null;
+  created_at: string | null;
+  report_opt_in: boolean | null;
+  workspace_wallets: ExportWorkspaceWallet | ExportWorkspaceWallet[] | null;
+  transaction_categories:
+    | ExportTransactionCategory
+    | ExportTransactionCategory[]
+    | null;
+  distinct_transaction_creators:
+    | ExportTransactionCreator
+    | ExportTransactionCreator[]
+    | null;
+  finance_invoices: ExportFinanceInvoice | ExportFinanceInvoice[] | null;
+};
+
 async function getData(
   wsId: string,
   {
@@ -237,7 +328,17 @@ async function getData(
   let queryBuilder = supabase
     .from('wallet_transactions')
     .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      [
+        'amount',
+        'description',
+        'taken_at',
+        'created_at',
+        'report_opt_in',
+        'workspace_wallets!inner(name, ws_id)',
+        'transaction_categories(name, is_expense)',
+        'distinct_transaction_creators(display_name, full_name, email)',
+        'finance_invoices!wallet_transactions_invoice_id_fkey(customer_id, workspace_users!finance_invoices_customer_id_fkey(display_name, full_name, email))',
+      ].join(','),
       {
         count: 'exact',
       }
@@ -287,19 +388,68 @@ async function getData(
     queryBuilder = queryBuilder.range(startOffset, endOffset);
   }
 
-  const { data: rawData, error, count } = await queryBuilder;
+  // The select string includes nested relationships and explicit foreign keys.
+  // Supabase's type-level select parser can produce a `GenericStringError` when
+  // it can't fully validate the query. We override the return type here to keep
+  // the export logic type-safe at the usage boundary.
+  const {
+    data: rawData,
+    error,
+    count,
+  } = await queryBuilder.returns<ExportWalletTransactionRow[]>();
   if (error) throw error;
 
-  const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
-      ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
-    })
-  );
+  const data = (rawData ?? []).map((row) => {
+    const creator = Array.isArray(row.distinct_transaction_creators)
+      ? (row.distinct_transaction_creators[0] ?? null)
+      : row.distinct_transaction_creators;
+
+    const invoice = Array.isArray(row.finance_invoices)
+      ? (row.finance_invoices[0] ?? null)
+      : row.finance_invoices;
+
+    const invoiceCustomer = invoice
+      ? Array.isArray(invoice.workspace_users)
+        ? (invoice.workspace_users[0] ?? null)
+        : invoice.workspace_users
+      : null;
+
+    const category = Array.isArray(row.transaction_categories)
+      ? (row.transaction_categories[0] ?? null)
+      : row.transaction_categories;
+
+    const wallet = Array.isArray(row.workspace_wallets)
+      ? (row.workspace_wallets[0] ?? null)
+      : row.workspace_wallets;
+
+    const creatorName = creator?.display_name || creator?.full_name || null;
+    const invoiceForName =
+      invoiceCustomer?.display_name || invoiceCustomer?.full_name || null;
+    const transactionType =
+      category?.is_expense === true
+        ? 'expense'
+        : category?.is_expense === false
+          ? 'income'
+          : null;
+
+    return {
+      amount: row.amount ?? null,
+      description: row.description ?? null,
+      category: category?.name ?? null,
+      transaction_type: transactionType,
+      wallet: wallet?.name ?? null,
+      taken_at: row.taken_at ?? null,
+      created_at: row.created_at ?? null,
+      report_opt_in: row.report_opt_in ?? null,
+      creator_name: creatorName,
+      creator_email: creator?.email ?? null,
+      invoice_for_name: invoiceForName,
+      invoice_for_email: invoiceCustomer?.email ?? null,
+    };
+  });
 
   return { data, count } as {
-    data: Transaction[];
+    data: TransactionExportRow[];
     count: number;
   };
 }
