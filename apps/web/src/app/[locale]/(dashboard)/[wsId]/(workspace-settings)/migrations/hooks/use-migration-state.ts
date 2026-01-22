@@ -13,25 +13,54 @@ import type {
 } from '../utils/types';
 import { DEFAULT_MODULE_STATE } from '../utils/types';
 
+export type MigrationMode = 'tuturuuu' | 'legacy';
+
 interface MigrationConfig {
-  apiEndpoint: string;
-  apiKey: string;
-  workspaceId: string;
+  mode: MigrationMode;
+  // Legacy mode settings
+  legacyApiEndpoint: string;
+  legacyApiKey: string;
+  // Tuturuuu mode settings
+  tuturuuuApiEndpoint: string;
+  tuturuuuApiKey: string;
+  sourceWorkspaceId: string;
+  // Target workspace ID (where to push data TO - current workspace)
+  targetWorkspaceId: string;
   healthCheckMode: boolean;
 }
+
+// Default Tuturuuu API endpoint (production v2)
+const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
 
 interface MigrationStateReturn {
   // Config
   config: MigrationConfig;
-  setApiEndpoint: (value: string) => void;
-  setApiKey: (value: string) => void;
-  setWorkspaceId: (value: string) => void;
+  configLoading: boolean; // True until localStorage values are loaded
+  setMode: (value: MigrationMode) => void;
+  setLegacyApiEndpoint: (value: string) => void;
+  setLegacyApiKey: (value: string) => void;
+  setTuturuuuApiEndpoint: (value: string) => void;
+  setTuturuuuApiKey: (value: string) => void;
+  setSourceWorkspaceId: (value: string) => void;
+  setTargetWorkspaceId: (value: string) => void;
   setHealthCheckMode: (value: boolean) => void;
   configComplete: boolean;
+  // User-defined skip modules (persisted in localStorage)
+  skippedModules: string[];
+  toggleSkipModule: (module: MigrationModule) => void;
+  isModuleSkipped: (module: MigrationModule) => boolean;
+  skipAllModules: (modules: MigrationModule[]) => void;
+  unskipAllModules: () => void;
+  // Effective API endpoint (computed based on mode)
+  effectiveApiEndpoint: string;
+  // Effective API key (computed based on mode)
+  effectiveApiKey: string;
 
-  // Workspace
-  workspaceName: string | null;
-  loadingWorkspaceName: boolean;
+  // Workspace names
+  sourceWorkspaceName: string | null;
+  loadingSourceWorkspaceName: boolean;
+  targetWorkspaceName: string | null;
+  loadingTargetWorkspaceName: boolean;
 
   // Migration data
   migrationData: MigrationData;
@@ -97,28 +126,124 @@ interface MigrationStateReturn {
   };
 }
 
-export function useMigrationState(): MigrationStateReturn {
+export function useMigrationState(
+  initialTargetWorkspaceId?: string
+): MigrationStateReturn {
   // Config with localStorage persistence
-  const [apiEndpoint, setApiEndpoint] = useLocalStorage({
-    key: 'migration-api-endpoint',
+  const [mode, setMode] = useLocalStorage<MigrationMode>({
+    key: 'migration-mode',
+    defaultValue: 'tuturuuu',
+  });
+  // Legacy mode settings
+  const [legacyApiEndpoint, setLegacyApiEndpoint] = useLocalStorage({
+    key: 'migration-legacy-api-endpoint',
     defaultValue: '',
   });
-  const [apiKey, setApiKey] = useLocalStorage({
-    key: 'migration-api-key',
+  const [legacyApiKey, setLegacyApiKey] = useLocalStorage({
+    key: 'migration-legacy-api-key',
     defaultValue: '',
   });
-  const [workspaceId, setWorkspaceId] = useLocalStorage({
-    key: 'migration-workspace-id',
+  // Tuturuuu mode settings
+  const [tuturuuuApiEndpoint, setTuturuuuApiEndpoint] = useLocalStorage({
+    key: 'migration-tuturuuu-api-endpoint',
+    defaultValue: DEFAULT_TUTURUUU_API_ENDPOINT,
+  });
+  const [tuturuuuApiKey, setTuturuuuApiKey] = useLocalStorage({
+    key: 'migration-tuturuuu-api-key',
     defaultValue: '',
+  });
+  const [sourceWorkspaceId, setSourceWorkspaceId] = useLocalStorage({
+    key: 'migration-source-workspace-id',
+    defaultValue: '',
+  });
+  // Shared settings
+  const [targetWorkspaceId, setTargetWorkspaceId] = useLocalStorage({
+    key: 'migration-target-workspace-id',
+    defaultValue: initialTargetWorkspaceId || '',
   });
   const [healthCheckMode, setHealthCheckMode] = useLocalStorage({
     key: 'migration-health-check-mode',
     defaultValue: false,
   });
 
-  // Workspace name
-  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
-  const [loadingWorkspaceName, setLoadingWorkspaceName] = useState(false);
+  // User-defined skip modules (persisted in localStorage)
+  const [skippedModules, setSkippedModules] = useLocalStorage<string[]>({
+    key: 'migration-skipped-modules',
+    defaultValue: [],
+  });
+
+  // Toggle skip state for a module
+  const toggleSkipModule = useCallback(
+    (module: MigrationModule) => {
+      setSkippedModules((prev) => {
+        if (prev.includes(module)) {
+          return prev.filter((m) => m !== module);
+        }
+        return [...prev, module];
+      });
+    },
+    [setSkippedModules]
+  );
+
+  // Check if a module is skipped
+  const isModuleSkipped = useCallback(
+    (module: MigrationModule) => {
+      return skippedModules.includes(module);
+    },
+    [skippedModules]
+  );
+
+  // Skip all modules
+  const skipAllModules = useCallback(
+    (modules: MigrationModule[]) => {
+      setSkippedModules(modules);
+    },
+    [setSkippedModules]
+  );
+
+  // Unskip all modules
+  const unskipAllModules = useCallback(() => {
+    setSkippedModules([]);
+  }, [setSkippedModules]);
+
+  // Track when localStorage values have been hydrated (client-side only)
+  const [configLoading, setConfigLoading] = useState(true);
+  useEffect(() => {
+    // After first render, localStorage values are available
+    setConfigLoading(false);
+  }, []);
+
+  // Set target workspace ID from initial value on mount only
+  // Using a ref to track if initial value has been applied to avoid
+  // resetting user edits when they manually change the field
+  const initializedTargetRef = useRef(false);
+  useEffect(() => {
+    if (initialTargetWorkspaceId && !initializedTargetRef.current) {
+      setTargetWorkspaceId(initialTargetWorkspaceId);
+      initializedTargetRef.current = true;
+    }
+  }, [initialTargetWorkspaceId, setTargetWorkspaceId]);
+
+  // Compute effective values based on mode
+  const effectiveApiEndpoint =
+    mode === 'tuturuuu'
+      ? tuturuuuApiEndpoint || DEFAULT_TUTURUUU_API_ENDPOINT
+      : legacyApiEndpoint;
+  const effectiveApiKey = mode === 'tuturuuu' ? tuturuuuApiKey : legacyApiKey;
+
+  // Source workspace name (for Tuturuuu mode, fetched from Tuturuuu production)
+  const [sourceWorkspaceName, setSourceWorkspaceName] = useState<string | null>(
+    null
+  );
+  const [loadingSourceWorkspaceName, setLoadingSourceWorkspaceName] =
+    useState(false);
+
+  // Target workspace name (current workspace)
+  const [targetWorkspaceName, setTargetWorkspaceName] = useState<string | null>(
+    null
+  );
+  const [loadingTargetWorkspaceName, setLoadingTargetWorkspaceName] =
+    useState(false);
 
   // Control sets
   const [cancelRequested, setCancelRequested] = useState<Set<MigrationModule>>(
@@ -145,20 +270,83 @@ export function useMigrationState(): MigrationStateReturn {
   const [migrationData, setMigrationData] = useState<MigrationData>({});
 
   // Computed values
-  const configComplete = !!(apiEndpoint && apiKey && workspaceId);
+  // For Tuturuuu mode: need API key, source workspace ID, and target workspace ID
+  // For Legacy mode: need API endpoint, API key, and target workspace ID
+  const configComplete =
+    mode === 'tuturuuu'
+      ? !!(tuturuuuApiKey && sourceWorkspaceId && targetWorkspaceId)
+      : !!(legacyApiEndpoint && legacyApiKey && targetWorkspaceId);
   const loading = Object.values(migrationData).some((v) => v?.loading);
 
-  // Fetch workspace name when ID changes
+  // Fetch source workspace name when ID changes (for Tuturuuu mode, uses proxy API)
   useEffect(() => {
-    const fetchWorkspaceName = async (wsId: string) => {
-      if (!wsId) {
-        setWorkspaceName(null);
-        setLoadingWorkspaceName(false);
+    const fetchSourceWorkspaceName = async (wsId: string) => {
+      if (!wsId || mode !== 'tuturuuu') {
+        setSourceWorkspaceName(null);
+        setLoadingSourceWorkspaceName(false);
         return;
       }
 
-      setLoadingWorkspaceName(true);
-      setWorkspaceName(null);
+      if (!tuturuuuApiKey) {
+        setSourceWorkspaceName(null);
+        setLoadingSourceWorkspaceName(false);
+        return;
+      }
+
+      setLoadingSourceWorkspaceName(true);
+      setSourceWorkspaceName(null);
+
+      try {
+        // Use proxy API to avoid CORS issues when fetching from Tuturuuu production
+        // Pass the configured API endpoint to the proxy
+        const apiUrlParam = tuturuuuApiEndpoint
+          ? `&apiUrl=${encodeURIComponent(tuturuuuApiEndpoint)}`
+          : '';
+        const response = await fetch(
+          `/api/v1/proxy/tuturuuu?path=/workspaces/${wsId}${apiUrlParam}`,
+          {
+            headers: {
+              'X-Tuturuuu-Api-Key': tuturuuuApiKey,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          setSourceWorkspaceName('');
+        } else {
+          const data = await response.json();
+          setSourceWorkspaceName(data.name || data.workspace?.name || '');
+        }
+      } catch {
+        setSourceWorkspaceName('');
+      } finally {
+        setLoadingSourceWorkspaceName(false);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (sourceWorkspaceId && mode === 'tuturuuu') {
+        fetchSourceWorkspaceName(sourceWorkspaceId);
+      } else {
+        setSourceWorkspaceName(null);
+        setLoadingSourceWorkspaceName(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [sourceWorkspaceId, mode, tuturuuuApiKey, tuturuuuApiEndpoint]);
+
+  // Fetch target workspace name (from local database)
+  useEffect(() => {
+    const fetchTargetWorkspaceName = async (wsId: string) => {
+      if (!wsId) {
+        setTargetWorkspaceName(null);
+        setLoadingTargetWorkspaceName(false);
+        return;
+      }
+
+      setLoadingTargetWorkspaceName(true);
+      setTargetWorkspaceName(null);
 
       try {
         const supabase = createClient();
@@ -169,28 +357,28 @@ export function useMigrationState(): MigrationStateReturn {
           .single();
 
         if (error || !data) {
-          setWorkspaceName('');
+          setTargetWorkspaceName('');
         } else {
-          setWorkspaceName(data.name || '');
+          setTargetWorkspaceName(data.name || '');
         }
       } catch {
-        setWorkspaceName('');
+        setTargetWorkspaceName('');
       } finally {
-        setLoadingWorkspaceName(false);
+        setLoadingTargetWorkspaceName(false);
       }
     };
 
     const timeoutId = setTimeout(() => {
-      if (workspaceId) {
-        fetchWorkspaceName(workspaceId);
+      if (targetWorkspaceId) {
+        fetchTargetWorkspaceName(targetWorkspaceId);
       } else {
-        setWorkspaceName(null);
-        setLoadingWorkspaceName(false);
+        setTargetWorkspaceName(null);
+        setLoadingTargetWorkspaceName(false);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [workspaceId]);
+  }, [targetWorkspaceId]);
 
   // Module state accessors
   const getModuleState = useCallback(
@@ -369,14 +557,37 @@ export function useMigrationState(): MigrationStateReturn {
   const hasData = stats.totalExternal > 0;
 
   return {
-    config: { apiEndpoint, apiKey, workspaceId, healthCheckMode },
-    setApiEndpoint,
-    setApiKey,
-    setWorkspaceId,
+    config: {
+      mode,
+      legacyApiEndpoint,
+      legacyApiKey,
+      tuturuuuApiEndpoint,
+      tuturuuuApiKey,
+      sourceWorkspaceId,
+      targetWorkspaceId,
+      healthCheckMode,
+    },
+    configLoading,
+    setMode,
+    setLegacyApiEndpoint,
+    setLegacyApiKey,
+    setTuturuuuApiEndpoint,
+    setTuturuuuApiKey,
+    setSourceWorkspaceId,
+    setTargetWorkspaceId,
     setHealthCheckMode,
     configComplete,
-    workspaceName,
-    loadingWorkspaceName,
+    skippedModules,
+    toggleSkipModule,
+    isModuleSkipped,
+    skipAllModules,
+    unskipAllModules,
+    effectiveApiEndpoint,
+    effectiveApiKey,
+    sourceWorkspaceName,
+    loadingSourceWorkspaceName,
+    targetWorkspaceName,
+    loadingTargetWorkspaceName,
     migrationData,
     loading,
     hasData,
