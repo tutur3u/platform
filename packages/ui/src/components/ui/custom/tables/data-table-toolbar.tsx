@@ -25,6 +25,7 @@ interface DataTableToolbarProps<TData> {
   importContent?: ReactNode;
   exportContent?: ReactNode;
   onRefresh: () => void;
+  selectedRowsActions?: (selectedRows: TData[]) => ReactNode;
 
   onSearch: (query: string) => void;
   resetParams: () => void;
@@ -45,6 +46,7 @@ export function DataTableToolbar<TData>({
   importContent,
   exportContent,
   onRefresh,
+  selectedRowsActions,
   onSearch,
   resetParams,
 }: DataTableToolbarProps<TData>) {
@@ -78,6 +80,13 @@ export function DataTableToolbar<TData>({
             {t?.('common.reset')}
             <RotateCcw className="h-4 w-4" />
           </Button>
+        )}
+        {table.getSelectedRowModel().rows.length > 0 && selectedRowsActions && (
+          <div className="flex items-center gap-2">
+            {selectedRowsActions(
+              table.getSelectedRowModel().rows.map((r) => r.original)
+            )}
+          </div>
         )}
       </div>
 

@@ -228,8 +228,32 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   private applyUpdate(update: Uint8Array, origin?: any) {
-    this.version++;
-    Y.applyUpdate(this.doc, update, origin);
+    try {
+      this.version++;
+      Y.applyUpdate(this.doc, update, origin);
+    } catch (error) {
+      // Handle DOM reconciliation errors during Yjs sync
+      // This happens when ProseMirror/Tiptap tries to manipulate DOM nodes
+      // that React has already cleaned up during reconnection scenarios
+      if (
+        error instanceof DOMException &&
+        error.name === 'NotFoundError' &&
+        error.message.includes('removeChild')
+      ) {
+        this.logger(
+          'DOM reconciliation error during Yjs update - this can happen after AFK reconnection'
+        );
+        console.warn(
+          '[SupabaseProvider] DOM reconciliation error during Yjs sync. ' +
+            'This is usually harmless and occurs when the editor reconnects after being idle.'
+        );
+        // Emit event so the component can handle recovery if needed
+        this.emit('dom-error', error);
+        return;
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   private disconnect() {
