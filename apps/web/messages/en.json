@@ -7553,6 +7553,7 @@
     "retry": "Retry",
     "revert_changes": "Revert Changes",
     "rows": "Rows",
+    "search_groups": "Search for groups",
     "search_person_to_refer_placeholder": "Search for a person to refer...",
     "select_all": "Select All",
     "select_person_to_refer_with_remaining": "Select person to refer ({remaining} remaining)",

@@ -878,7 +878,7 @@ export const usePendingInvoices = (
   const { page = 1, pageSize = 10, q = '', userIds = [] } = params;
 
   return useQuery({
-    queryKey: ['pending-invoices', wsId, {page, pageSize, q, userIds}],
+    queryKey: ['pending-invoices', wsId, { page, pageSize, q, userIds }],
     queryFn: async () => {
       const supabase = createClient();
 

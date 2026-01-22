@@ -29,8 +29,8 @@ import {
 } from 'nuqs';
 import { useCallback } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
-import { ClientFilters } from './client-filters';
 import { getUserColumns } from './columns';
+import Filters from './filters';
 import { useWorkspaceUsers, type WorkspaceUsersResponse } from './hooks';
 
 interface Props {
@@ -312,13 +312,7 @@ export function WorkspaceUsersTable({
                 </SelectItem>
               </SelectContent>
             </Select>
-            <ClientFilters
-              wsId={wsId}
-              includedGroups={includedGroups}
-              excludedGroups={excludedGroups}
-              setIncludedGroups={setIncludedGroups}
-              setExcludedGroups={setExcludedGroups}
-            />
+            <Filters wsId={wsId} />
           </div>
         }
         toolbarImportContent={toolbarImportContent}
