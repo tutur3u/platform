@@ -185,10 +185,38 @@ export async function GET(request: Request) {
     // Use custom apiUrl if provided, otherwise default to production v2
     const baseUrl = apiUrl || DEFAULT_TUTURUUU_API_ENDPOINT;
 
-    // SECURITY: Validate that the base URL is an allowed Tuturuuu domain
+    // SECURITY: Parse and validate the base URL using a strict allowlist.
     // This prevents SSRF attacks where an attacker could make the server
-    // fetch internal resources or arbitrary external URLs
-    if (!isAllowedApiUrl(baseUrl)) {
+    // fetch internal resources or arbitrary external URLs.
+    let base;
+    try {
+      base = new URL(baseUrl);
+    } catch {
+      return NextResponse.json(
+        {
+          message: 'Invalid API URL format.',
+        },
+        { status: 400, headers: rateLimitHeaders }
+      );
+    }
+
+    const isLocalhost =
+      base.hostname === 'localhost' || base.hostname === '127.0.0.1';
+
+    // Only allow HTTPS for remote hosts; allow HTTP only for explicit localhost/127.0.0.1.
+    if (
+      (!isLocalhost && base.protocol !== 'https:') ||
+      (isLocalhost && base.protocol !== 'http:' && base.protocol !== 'https:')
+    ) {
+      return NextResponse.json(
+        {
+          message: 'Invalid API URL protocol.',
+        },
+        { status: 400, headers: rateLimitHeaders }
+      );
+    }
+
+    if (!ALLOWED_API_DOMAINS.includes(base.hostname)) {
       return NextResponse.json(
         {
           message:
@@ -198,7 +226,20 @@ export async function GET(request: Request) {
       );
     }
 
-    const tuturuuuUrl = `${baseUrl}${path}`;
+    // Normalize and validate the path to avoid path traversal or malformed URLs.
+    // Ensure path starts with '/' and does not contain '..' segments.
+    const rawPath = path || '/';
+    if (rawPath.includes('..')) {
+      return NextResponse.json(
+        { message: 'Invalid path parameter' },
+        { status: 400, headers: rateLimitHeaders }
+      );
+    }
+    const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+    // Construct the base API URL using origin (scheme + host + optional port).
+    const baseOrigin = `${base.protocol}//${base.host}`;
+    const urlObject = new URL(normalizedPath, baseOrigin);
+
 
     // Forward any additional query parameters (except 'path', 'wsId', and 'apiUrl')
     const forwardParams = new URLSearchParams();
@@ -208,10 +249,12 @@ export async function GET(request: Request) {
       }
     });
 
-    const finalUrl =
-      forwardParams.toString().length > 0
-        ? `${tuturuuuUrl}?${forwardParams.toString()}`
-        : tuturuuuUrl;
+    // Append forwarded query parameters to the URL object.
+    forwardParams.forEach((value, key) => {
+      urlObject.searchParams.append(key, value);
+    });
+    const finalUrl = urlObject.toString();
+
 
     // Make the request to Tuturuuu API using Bearer token (SDK authentication)
     const response = await fetch(finalUrl, {
