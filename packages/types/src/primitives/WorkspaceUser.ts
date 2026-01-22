@@ -22,6 +22,7 @@ export interface WorkspaceUser {
   default_workspace_id?: string | null;
   archived?: boolean | null;
   archived_until?: string | null;
+  balance?: number | null;
   linked_users?: {
     id: string;
     display_name: string | null;

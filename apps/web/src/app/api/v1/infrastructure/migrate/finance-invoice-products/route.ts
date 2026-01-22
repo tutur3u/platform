@@ -2,7 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
-// wallet_transactions doesn't have ws_id - query via wallet_id -> workspace_wallets
+// finance_invoice_products doesn't have ws_id - query via invoice_id -> finance_invoices
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
@@ -15,34 +15,34 @@ export async function GET(req: Request) {
 
   const supabase = await createClient();
 
-  // Get wallet IDs for this workspace
-  const { data: wallets, error: walletError } = await supabase
-    .from('workspace_wallets')
+  // Get invoice IDs for this workspace
+  const { data: invoices, error: invoiceError } = await supabase
+    .from('finance_invoices')
     .select('id')
     .eq('ws_id', wsId);
 
-  if (walletError) {
+  if (invoiceError) {
     return NextResponse.json(
-      { message: 'Error fetching wallets', error: walletError },
+      { message: 'Error fetching invoices', error: invoiceError },
       { status: 500 }
     );
   }
 
-  const walletIds = wallets?.map((w) => w.id) ?? [];
-  if (walletIds.length === 0) {
+  const invoiceIds = invoices?.map((i) => i.id) ?? [];
+  if (invoiceIds.length === 0) {
     return NextResponse.json({ data: [], count: 0 });
   }
 
-  // Get transactions for those wallets
+  // Get products for those invoices
   const { data, error, count } = await supabase
-    .from('wallet_transactions')
+    .from('finance_invoice_products')
     .select('*', { count: 'exact' })
-    .in('wallet_id', walletIds)
+    .in('invoice_id', invoiceIds)
     .range(offset, offset + limit - 1);
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error fetching wallet-transactions', error },
+      { message: 'Error fetching finance-invoice-products', error },
       { status: 500 }
     );
   }
@@ -52,9 +52,11 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const json = await req.json();
+  // Primary key: (invoice_id, product_id, unit_id, warehouse_id)
   const result = await batchUpsert({
-    table: 'wallet_transactions',
+    table: 'finance_invoice_products',
     data: json?.data || [],
+    onConflict: 'invoice_id,product_id,unit_id,warehouse_id',
   });
-  return createMigrationResponse(result, 'wallet transactions');
+  return createMigrationResponse(result, 'finance-invoice-products');
 }

@@ -2,7 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { batchUpsert, createMigrationResponse } from '../batch-upsert';
 
-// wallet_transactions doesn't have ws_id - query via wallet_id -> workspace_wallets
+// workspace_wallet_transfers doesn't have ws_id - query via transaction_id -> wallet_id -> workspace_wallets
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
@@ -33,16 +33,36 @@ export async function GET(req: Request) {
     return NextResponse.json({ data: [], count: 0 });
   }
 
-  // Get transactions for those wallets
-  const { data, error, count } = await supabase
+  // Get transaction IDs for those wallets
+  const { data: transactions, error: txError } = await supabase
     .from('wallet_transactions')
+    .select('id')
+    .in('wallet_id', walletIds);
+
+  if (txError) {
+    return NextResponse.json(
+      { message: 'Error fetching transactions', error: txError },
+      { status: 500 }
+    );
+  }
+
+  const transactionIds = transactions?.map((t) => t.id) ?? [];
+  if (transactionIds.length === 0) {
+    return NextResponse.json({ data: [], count: 0 });
+  }
+
+  // Get transfers where either from or to transaction is in the workspace
+  const { data, error, count } = await supabase
+    .from('workspace_wallet_transfers')
     .select('*', { count: 'exact' })
-    .in('wallet_id', walletIds)
+    .or(
+      `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
+    )
     .range(offset, offset + limit - 1);
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error fetching wallet-transactions', error },
+      { message: 'Error fetching workspace-wallet-transfers', error },
       { status: 500 }
     );
   }
@@ -52,9 +72,11 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const json = await req.json();
+  // Composite key: (from_transaction_id, to_transaction_id)
   const result = await batchUpsert({
-    table: 'wallet_transactions',
+    table: 'workspace_wallet_transfers',
     data: json?.data || [],
+    onConflict: 'from_transaction_id,to_transaction_id',
   });
-  return createMigrationResponse(result, 'wallet transactions');
+  return createMigrationResponse(result, 'workspace-wallet-transfers');
 }

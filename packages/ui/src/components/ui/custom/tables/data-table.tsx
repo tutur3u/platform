@@ -53,6 +53,7 @@ export interface DataTableProps<TData, TValue> {
   className?: string;
   preserveParams?: string[];
   onRefresh?: () => void;
+  selectedRowsActions?: (selectedRows: TData[]) => ReactNode;
 
   onSearch?: (query: string) => void;
 
@@ -103,6 +104,7 @@ export function DataTable<TData, TValue>({
   toolbarExportContent,
   className,
   onRefresh,
+  selectedRowsActions,
   onSearch,
   onRowClick,
   onRowDoubleClick,
@@ -200,6 +202,7 @@ export function DataTable<TData, TValue>({
           onSearch={onSearch || (() => {})}
           onRefresh={onRefresh || (() => {})}
           resetParams={resetParams || (() => {})}
+          selectedRowsActions={selectedRowsActions}
           importContent={toolbarImportContent}
           exportContent={toolbarExportContent}
         />
@@ -282,7 +285,7 @@ export function DataTable<TData, TValue>({
               pageIndex={pageIndex}
               pageSize={pageSize}
               pageCount={Math.max(Math.ceil((count || 0) / pageSize), 1)}
-              className="rounded-lg border bg-foreground/[0.025] px-4 py-2 backdrop-blur-xl dark:bg-foreground/5"
+              className="rounded-lg border bg-foreground/2.5 px-4 py-2 backdrop-blur-xl dark:bg-foreground/5"
               setParams={setParams}
             />
             <div className="h-4" />

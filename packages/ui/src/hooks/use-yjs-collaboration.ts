@@ -132,6 +132,18 @@ export function useYjsCollaboration(
       setSynced(false);
     });
 
+    // Handle DOM reconciliation errors that can occur after AFK reconnection
+    // This happens when ProseMirror/Tiptap DOM state conflicts with React
+    provider.on('dom-error', (error: DOMException) => {
+      if (!mounted) return;
+      console.warn(
+        '⚠️ DOM reconciliation error handled gracefully:',
+        error.message
+      );
+      // The error has been caught and logged - the editor should continue working
+      // The user may need to click in the editor to re-sync cursor position
+    });
+
     // Cleanup
     return () => {
       mounted = false;
