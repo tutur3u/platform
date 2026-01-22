@@ -6,9 +6,7 @@ interface Props {
   }>;
 }
 
-export default async function WorkspaceTransactionsPage({
-  params
-}: Props) {
+export default async function WorkspaceTransactionsPage({ params }: Props) {
   const { wsId } = await params;
 
   return <TransactionsPage wsId={wsId} />;

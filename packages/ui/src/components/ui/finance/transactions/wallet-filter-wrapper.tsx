@@ -1,8 +1,13 @@
 'use client';
 
 import { WalletFilter } from '@tuturuuu/ui/finance/transactions/wallet-filter';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useCallback } from 'react';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
+import { useFilterReset } from './hooks/use-filter-reset';
 
 interface WalletFilterWrapperProps {
   wsId: string;
@@ -15,16 +20,16 @@ export function WalletFilterWrapper({ wsId }: WalletFilterWrapperProps) {
       shallow: true,
     })
   );
-  const [, setPage] = useQueryState('page', { shallow: true });
+
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle wallet filter changes
-  const handleWalletsChange = useCallback(
-    async (walletIds: string[]) => {
-      await setWalletIds(walletIds.length > 0 ? walletIds : []);
-      await setPage('1');
-    },
-    [setWalletIds, setPage]
-  );
+  const handleWalletsChange = useFilterReset(setWalletIds, setPage);
 
   return (
     <WalletFilter

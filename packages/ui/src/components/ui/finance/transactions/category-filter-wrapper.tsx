@@ -1,8 +1,13 @@
 'use client';
 
 import { CategoryFilter } from '@tuturuuu/ui/finance/transactions/category-filter';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useCallback } from 'react';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
+import { useFilterReset } from './hooks/use-filter-reset';
 
 interface CategoryFilterWrapperProps {
   wsId: string;
@@ -15,16 +20,16 @@ export function CategoryFilterWrapper({ wsId }: CategoryFilterWrapperProps) {
       shallow: true,
     })
   );
-  const [, setPage] = useQueryState('page', { shallow: true });
+
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle category filter changes
-  const handleCategoriesChange = useCallback(
-    async (categoryIds: string[]) => {
-      await setCategoryIds(categoryIds.length > 0 ? categoryIds : []);
-      await setPage('1');
-    },
-    [setCategoryIds, setPage]
-  );
+  const handleCategoriesChange = useFilterReset(setCategoryIds, setPage);
 
   return (
     <CategoryFilter
