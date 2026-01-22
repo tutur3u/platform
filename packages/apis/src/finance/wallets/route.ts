@@ -135,7 +135,7 @@ export async function GET(_: Request, { params }: Params) {
     }
   };
 
-  const walletMap = (whitelistData || []).reduce((acc, item) => {
+  const walletMap = whitelistData.reduce((acc, item) => {
     const existing = acc.get(item.wallet_id);
     if (!existing) {
       acc.set(item.wallet_id, {

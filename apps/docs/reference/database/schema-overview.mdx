@@ -1,7 +1,7 @@
 ---
 title: 'Database Schema Overview'
 description: 'Complete reference for the Tuturuuu platform database schema'
-updatedAt: '2025-11-16'
+updatedAt: '2026-01-22'
 ---
 
 The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
@@ -303,6 +303,29 @@ Financial transaction history.
 - `category_id` (uuid, FK → transaction_categories)
 - `created_at` (timestamptz)
 
+#### `workspace_role_wallet_whitelist`
+Role-based wallet access control with time-bounded viewing windows.
+
+**Purpose:** Controls which workspace roles can access specific wallets and defines the historical data viewing window for each role-wallet pairing.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `role_id` (uuid, FK → workspace_roles) - the role granted access
+- `wallet_id` (uuid, FK → workspace_wallets) - the wallet being accessed
+- `viewing_window` (text) - allowed values: `1_day`, `3_days`, `7_days`, `2_weeks`, `1_month`, `1_quarter`, `1_year`, `custom`
+- `custom_days` (integer) - required when `viewing_window = 'custom'`; must be > 0; must be NULL otherwise
+- `created_at` (timestamptz)
+
+**Constraints:**
+- Unique constraint on `(role_id, wallet_id)` - one whitelist entry per role-wallet pair
+- CHECK constraint on `viewing_window` - enforces allowed literal values
+- CHECK constraint on `custom_days` - ensures presence/positivity when `viewing_window = 'custom'` and NULL otherwise
+
+**Access Control:**
+- RLS policies restrict access to users with `manage_workspace_roles` permission
+- INSERT policy validates wallet belongs to the same workspace as the role
+- UPDATE policy enforces wallet-workspace consistency via WITH CHECK clause
+
 ### Meeting Management
 
 #### `meeting_plans`
@@ -578,6 +601,102 @@ The schema includes several PostgreSQL functions for complex operations:
 Atomically updates calendar sync tokens to prevent race conditions.
 
 **Usage:** Calendar synchronization coordination
+
+### `get_wallet_viewing_window_days`
+Converts viewing window literals to day counts for wallet access control.
+
+**Signature:**
+```sql
+public.get_wallet_viewing_window_days(
+  p_viewing_window TEXT,
+  p_custom_days INTEGER DEFAULT NULL
+) RETURNS INTEGER
+```
+
+**Return Type:** INTEGER - number of days in the viewing window
+
+**Semantics:**
+- Maps viewing window literals (`1_day`, `3_days`, `7_days`, `2_weeks`, `1_month`, `1_quarter`, `1_year`) to day counts
+- For `viewing_window = 'custom'`, returns `p_custom_days` value (defaults to 30 if invalid)
+- Defaults to 30 days for unknown `viewing_window` values
+- Function is `IMMUTABLE` - safe for indexing and optimization
+
+**Example:**
+```sql
+SELECT public.get_wallet_viewing_window_days('1_month', NULL); -- Returns 30
+SELECT public.get_wallet_viewing_window_days('custom', 45);    -- Returns 45
+SELECT public.get_wallet_viewing_window_days('1_year', NULL);  -- Returns 365
+```
+
+### `user_has_wallet_access_via_role`
+Checks if a user has wallet access through role whitelisting and returns viewing window details.
+
+**Signature:**
+```sql
+public.user_has_wallet_access_via_role(
+  p_user_id UUID,
+  p_wallet_id UUID,
+  p_ws_id UUID
+) RETURNS TABLE (
+  has_access BOOLEAN,
+  viewing_window TEXT,
+  custom_days INTEGER,
+  window_start_date TIMESTAMPTZ
+)
+```
+
+**Parameters:**
+- `p_user_id` - the user to check (caller can only query their own ID unless they are a workspace admin)
+- `p_wallet_id` - the wallet to check access for
+- `p_ws_id` - the workspace context
+
+**Return Columns:**
+- `has_access` - `TRUE` if user has access via any role whitelist, `FALSE` otherwise
+- `viewing_window` - the viewing window setting from the whitelist (e.g., `1_month`, `custom`)
+- `custom_days` - the custom day count (NULL if not using `custom` window)
+- `window_start_date` - calculated start of the viewing window (rolling from current timestamp)
+
+**Security:**
+- Function is `SECURITY DEFINER` - runs with elevated privileges
+- **Authorization gate:** Callers can only query their own `user_id` OR must be a workspace admin (ADMIN/OWNER role)
+- Raises exception `Permission denied` if caller attempts to query another user without admin privileges
+
+**Access Logic:**
+- When multiple roles grant access to the same wallet, selects the **widest access window** (most days)
+- Tie-breaking: uses highest `custom_days` value, then `id` for deterministic ordering
+- Calculates rolling window start date by subtracting window days from current timestamp
+
+**Example Usage:**
+```sql
+-- Check if current user has access to a specific wallet
+SELECT * FROM public.user_has_wallet_access_via_role(
+  auth.uid(),
+  '550e8400-e29b-41d4-a716-446655440000'::uuid,
+  'workspace-123'::text
+);
+
+-- Admin checking access for another user
+SELECT * FROM public.user_has_wallet_access_via_role(
+  '123e4567-e89b-12d3-a456-426614174000'::uuid,  -- another user
+  '550e8400-e29b-41d4-a716-446655440000'::uuid,  -- wallet
+  'workspace-123'::text
+);
+
+-- Filter transactions by viewing window
+WITH access AS (
+  SELECT * FROM public.user_has_wallet_access_via_role(
+    auth.uid(),
+    '550e8400-e29b-41d4-a716-446655440000'::uuid,
+    'workspace-123'::text
+  )
+)
+SELECT t.*
+FROM wallet_transactions t
+CROSS JOIN access a
+WHERE t.wallet_id = '550e8400-e29b-41d4-a716-446655440000'::uuid
+  AND a.has_access = TRUE
+  AND t.created_at >= a.window_start_date;
+```
 
 ### User Creation Triggers
 Automatically create related records when new users are added.

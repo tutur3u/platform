@@ -19,7 +19,6 @@ interface Props {
 
 export default async function WalletsPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
-  const { data: rawData, count } = await getData(wsId, searchParams);
 
   const { containsPermission } = await getPermissions({
     wsId,
@@ -28,6 +27,13 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');
   const canDeleteWallets = containsPermission('delete_wallets');
+  const hasManageFinance = containsPermission('manage_finance');
+
+  const { data: rawData, count } = await getData(
+    wsId,
+    searchParams,
+    hasManageFinance
+  );
 
   const data = rawData.map((d) => ({
     ...d,
@@ -74,23 +80,10 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+  }: { q?: string; page?: string; pageSize?: string },
+  hasManageFinance: boolean
 ) {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Unauthorized');
-  }
-
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
-
-  const hasManageFinance = containsPermission('manage_finance');
 
   const queryBuilder = supabase
     .from('workspace_wallets')
@@ -100,33 +93,30 @@ async function getData(
     .eq('ws_id', wsId);
 
   if (!hasManageFinance) {
-    // Get user's role IDs
-    const { data: userRoles } = await supabase
-      .from('workspace_role_members')
-      .select('role_id')
-      .eq('user_id', user.id);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const roleIds = (userRoles || []).map((r) => r.role_id);
+    if (!user) {
+      return { data: [], count: 0 };
+    }
 
-    if (roleIds.length > 0) {
-      // Get whitelisted wallet IDs
-      const { data: whitelistData } = await supabase
-        .from('workspace_role_wallet_whitelist')
-        .select('wallet_id')
-        .in('role_id', roleIds);
+    // Get whitelisted wallet IDs by joining role members and role wallet whitelist
+    const { data: whitelistData } = await supabase
+      .from('workspace_role_wallet_whitelist')
+      .select(
+        'wallet_id, workspace_roles!inner(workspace_role_members!inner(user_id))'
+      )
+      .eq('workspace_roles.workspace_role_members.user_id', user.id);
 
-      const whitelistedWalletIds = (whitelistData || []).map(
-        (item) => item.wallet_id
-      );
+    const whitelistedWalletIds = (whitelistData || []).map(
+      (item) => item.wallet_id
+    );
 
-      if (whitelistedWalletIds.length > 0) {
-        queryBuilder.in('id', whitelistedWalletIds);
-      } else {
-        // No whitelisted wallets, return empty result
-        return { data: [], count: 0 };
-      }
+    if (whitelistedWalletIds.length > 0) {
+      queryBuilder.in('id', whitelistedWalletIds);
     } else {
-      // No roles, return empty result
+      // No whitelisted wallets or roles, return empty result
       return { data: [], count: 0 };
     }
   }

@@ -17958,6 +17958,18 @@ export type Database = {
             };
             Returns: number;
           };
+      get_wallet_permission_context: {
+        Args: { p_user_id: string; p_ws_id: string };
+        Returns: {
+          allowed_wallet_ids: string[];
+          can_view_amount: boolean;
+          can_view_expenses: boolean;
+          can_view_incomes: boolean;
+          can_view_transactions: boolean;
+          has_granular: boolean;
+          has_manage_finance: boolean;
+        }[];
+      };
       get_wallet_transactions_with_permissions: {
         Args: {
           p_category_ids?: string[];
@@ -18179,6 +18191,16 @@ export type Database = {
       get_workspace_wallets_count: { Args: { ws_id: string }; Returns: number };
       get_workspace_wallets_expense:
         | {
+            Args: {
+              end_date?: string;
+              include_confidential?: boolean;
+              p_user_id?: string;
+              start_date?: string;
+              ws_id: string;
+            };
+            Returns: number;
+          }
+        | {
             Args: { end_date?: string; start_date?: string; ws_id: string };
             Returns: number;
           }
@@ -18192,6 +18214,16 @@ export type Database = {
             Returns: number;
           };
       get_workspace_wallets_income:
+        | {
+            Args: {
+              end_date?: string;
+              include_confidential?: boolean;
+              p_user_id?: string;
+              start_date?: string;
+              ws_id: string;
+            };
+            Returns: number;
+          }
         | {
             Args: { end_date?: string; start_date?: string; ws_id: string };
             Returns: number;

@@ -9,7 +9,16 @@ CREATE TABLE IF NOT EXISTS public.workspace_role_wallet_whitelist (
   viewing_window TEXT NOT NULL DEFAULT '1_month',
   custom_days INTEGER,  -- Only used when viewing_window = 'custom'
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(role_id, wallet_id)
+  UNIQUE(role_id, wallet_id),
+  -- Enforce allowed viewing_window values
+  CONSTRAINT chk_viewing_window_values CHECK (
+    viewing_window IN ('1_day', '3_days', '7_days', '2_weeks', '1_month', '1_quarter', '1_year', 'custom')
+  ),
+  -- Enforce custom_days requirements based on viewing_window
+  CONSTRAINT chk_custom_days_when_custom CHECK (
+    (viewing_window = 'custom' AND custom_days IS NOT NULL AND custom_days > 0) OR
+    (viewing_window != 'custom' AND custom_days IS NULL)
+  )
 );
 
 -- 2. Add indexes for performance
@@ -65,8 +74,26 @@ AS $$
 DECLARE
   v_whitelist_record RECORD;
   v_window_days INTEGER;
+  v_calling_user_id UUID;
 BEGIN
+  -- Security gate: ensure caller can only query their own user_id or is a workspace admin
+  v_calling_user_id := auth.uid();
+  
+  IF v_calling_user_id != p_user_id THEN
+    -- Verify the caller is an admin for this workspace
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.workspace_members wm
+      WHERE wm.ws_id = p_ws_id
+        AND wm.user_id = v_calling_user_id
+        AND wm.role IN ('ADMIN', 'OWNER')
+    ) THEN
+      RAISE EXCEPTION 'Permission denied: you can only query your own wallet access or must be a workspace admin';
+    END IF;
+  END IF;
+
   -- Check if user is a member of any role that has this wallet whitelisted
+  -- Order by widest access window (earliest start date) for deterministic selection
   SELECT 
     wrww.viewing_window,
     wrww.custom_days
@@ -77,6 +104,10 @@ BEGIN
   WHERE wrm.user_id = p_user_id
     AND wrww.wallet_id = p_wallet_id
     AND wr.ws_id = p_ws_id
+  ORDER BY 
+    public.get_wallet_viewing_window_days(wrww.viewing_window, wrww.custom_days) DESC,
+    wrww.custom_days DESC NULLS LAST,
+    wrww.id
   LIMIT 1;
 
   IF v_whitelist_record IS NULL THEN
@@ -152,7 +183,9 @@ WITH CHECK (
   EXISTS (
     SELECT 1
     FROM public.workspace_roles wr
+    JOIN public.workspace_wallets w ON w.id = workspace_role_wallet_whitelist.wallet_id
     WHERE wr.id = workspace_role_wallet_whitelist.role_id
+      AND w.ws_id = wr.ws_id
       AND public.has_workspace_permission(wr.ws_id, auth.uid(), 'manage_workspace_roles')
   )
 );

@@ -33,44 +33,17 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import * as z from 'zod';
-
-const viewingWindowOptions = [
-  { value: '1_day', labelKey: 'ws-roles.viewing_window_1_day' },
-  { value: '3_days', labelKey: 'ws-roles.viewing_window_3_days' },
-  { value: '7_days', labelKey: 'ws-roles.viewing_window_7_days' },
-  { value: '2_weeks', labelKey: 'ws-roles.viewing_window_2_weeks' },
-  { value: '1_month', labelKey: 'ws-roles.viewing_window_1_month' },
-  { value: '1_quarter', labelKey: 'ws-roles.viewing_window_1_quarter' },
-  { value: '1_year', labelKey: 'ws-roles.viewing_window_1_year' },
-  { value: 'custom', labelKey: 'ws-roles.viewing_window_custom' },
-] as const;
-
-const walletFormSchema = z.object({
-  wallet_id: z.string().min(1, 'Wallet is required'),
-  viewing_window: z.enum([
-    '1_day',
-    '3_days',
-    '7_days',
-    '2_weeks',
-    '1_month',
-    '1_quarter',
-    '1_year',
-    'custom',
-  ]),
-  custom_days: z.number().min(1).optional(),
-});
-
-type WalletFormValues = z.infer<typeof walletFormSchema>;
+import { useState } from 'react';
+import { viewingWindowOptions, walletFormSchema } from './wallet-form-schema';
+import type { WalletFormValues } from './wallet-form-schema';
 
 interface AddWalletDialogProps {
   wsId: string;
   roleId: string;
   availableWallets: Array<{
     id: string;
-    name: string;
-    balance?: number;
+    name: string | null;
+    balance?: number | null;
     currency?: string;
     type?: string;
   }>;
@@ -97,13 +70,8 @@ export function AddWalletDialog({
   const viewingWindow = useWatch({
     control: form.control,
     name: 'viewing_window',
+    defaultValue: '1_month',
   });
-
-  useEffect(() => {
-    if (viewingWindow !== 'custom') {
-      form.setValue('custom_days', undefined);
-    }
-  }, [viewingWindow, form]);
 
   const addWalletMutation = useMutation({
     mutationFn: async (data: WalletFormValues) => {
@@ -201,7 +169,15 @@ export function AddWalletDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('ws-roles.viewing_window')}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      if (value !== 'custom') {
+                        form.setValue('custom_days', undefined);
+                      }
+                    }}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />

@@ -323,6 +323,58 @@ END;
 $$;
 
 -- 2. Restore/Update Sum and Count functions to respect permissions
+CREATE OR REPLACE FUNCTION public.get_wallet_permission_context(
+  p_ws_id uuid,
+  p_user_id uuid
+)
+RETURNS TABLE (
+  can_view_transactions boolean,
+  can_view_expenses boolean,
+  can_view_incomes boolean,
+  can_view_amount boolean,
+  has_manage_finance boolean,
+  has_granular boolean,
+  allowed_wallet_ids uuid[]
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+DECLARE
+  v_can_view_transactions boolean;
+  v_can_view_expenses boolean;
+  v_can_view_incomes boolean;
+  v_can_view_amount boolean;
+  v_has_manage_finance boolean;
+  v_allowed_wallet_ids uuid[];
+BEGIN
+  v_can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
+  v_can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
+  v_can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
+  v_can_view_amount := public.has_workspace_permission(p_ws_id, p_user_id, 'view_confidential_amount');
+  v_has_manage_finance := public.has_workspace_permission(p_ws_id, p_user_id, 'manage_finance');
+
+  IF NOT v_has_manage_finance THEN
+    SELECT array_agg(DISTINCT wrww.wallet_id)
+    INTO v_allowed_wallet_ids
+    FROM public.workspace_role_wallet_whitelist wrww
+    JOIN public.workspace_role_members wrm ON wrm.role_id = wrww.role_id
+    JOIN public.workspace_roles wr ON wr.id = wrww.role_id
+    WHERE wr.ws_id = p_ws_id
+      AND wrm.user_id = p_user_id;
+  END IF;
+
+  RETURN QUERY SELECT
+    v_can_view_transactions,
+    v_can_view_expenses,
+    v_can_view_incomes,
+    v_can_view_amount,
+    v_has_manage_finance,
+    (v_can_view_expenses OR v_can_view_incomes),
+    v_allowed_wallet_ids;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.get_wallet_income_sum(
   p_ws_id uuid,
   p_user_id uuid DEFAULT auth.uid(),
@@ -335,20 +387,28 @@ STABLE
 AS $$
 DECLARE
   can_view_transactions boolean;
-  can_view_expenses boolean;
   can_view_incomes boolean;
   can_view_amount boolean;
   has_manage_finance boolean;
   has_granular boolean;
+  allowed_wallet_ids uuid[];
   result numeric;
 BEGIN
-  can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
-  can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
-  can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
-  can_view_amount := public.has_workspace_permission(p_ws_id, p_user_id, 'view_confidential_amount');
-  has_manage_finance := public.has_workspace_permission(p_ws_id, p_user_id, 'manage_finance');
-
-  has_granular := can_view_expenses OR can_view_incomes;
+  SELECT
+    ctx.can_view_transactions,
+    ctx.can_view_incomes,
+    ctx.can_view_amount,
+    ctx.has_manage_finance,
+    ctx.has_granular,
+    ctx.allowed_wallet_ids
+  INTO
+    can_view_transactions,
+    can_view_incomes,
+    can_view_amount,
+    has_manage_finance,
+    has_granular,
+    allowed_wallet_ids
+  FROM public.get_wallet_permission_context(p_ws_id, p_user_id) AS ctx;
 
   -- Permission Check
   IF NOT has_manage_finance THEN
@@ -359,11 +419,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NOT has_manage_finance AND (allowed_wallet_ids IS NULL OR array_length(allowed_wallet_ids, 1) IS NULL) THEN
+    RETURN 0;
+  END IF;
+
   SELECT COALESCE(SUM(wt.amount), 0)
   INTO result
   FROM public.wallet_transactions wt
   JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
   WHERE ww.ws_id = p_ws_id
+    AND (has_manage_finance OR ww.id = ANY(allowed_wallet_ids))
     AND wt.amount > 0
     AND (
       (NOT p_include_confidential AND NOT wt.is_amount_confidential)
@@ -387,20 +452,28 @@ STABLE
 AS $$
 DECLARE
   can_view_transactions boolean;
-  can_view_expenses boolean;
   can_view_incomes boolean;
   can_view_amount boolean;
   has_manage_finance boolean;
   has_granular boolean;
+  allowed_wallet_ids uuid[];
   result bigint;
 BEGIN
-  can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
-  can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
-  can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
-  can_view_amount := public.has_workspace_permission(p_ws_id, p_user_id, 'view_confidential_amount');
-  has_manage_finance := public.has_workspace_permission(p_ws_id, p_user_id, 'manage_finance');
-  
-  has_granular := can_view_expenses OR can_view_incomes;
+  SELECT
+    ctx.can_view_transactions,
+    ctx.can_view_incomes,
+    ctx.can_view_amount,
+    ctx.has_manage_finance,
+    ctx.has_granular,
+    ctx.allowed_wallet_ids
+  INTO
+    can_view_transactions,
+    can_view_incomes,
+    can_view_amount,
+    has_manage_finance,
+    has_granular,
+    allowed_wallet_ids
+  FROM public.get_wallet_permission_context(p_ws_id, p_user_id) AS ctx;
 
   IF NOT has_manage_finance THEN
     IF has_granular AND NOT can_view_incomes THEN
@@ -410,11 +483,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NOT has_manage_finance AND (allowed_wallet_ids IS NULL OR array_length(allowed_wallet_ids, 1) IS NULL) THEN
+    RETURN 0;
+  END IF;
+
   SELECT COUNT(*)
   INTO result
   FROM public.wallet_transactions wt
   JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
   WHERE ww.ws_id = p_ws_id
+    AND (has_manage_finance OR ww.id = ANY(allowed_wallet_ids))
     AND wt.amount > 0
     AND (
       (NOT p_include_confidential AND NOT wt.is_amount_confidential)
@@ -439,19 +517,27 @@ AS $$
 DECLARE
   can_view_transactions boolean;
   can_view_expenses boolean;
-  can_view_incomes boolean;
   can_view_amount boolean;
   has_manage_finance boolean;
   has_granular boolean;
+  allowed_wallet_ids uuid[];
   result numeric;
 BEGIN
-  can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
-  can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
-  can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
-  can_view_amount := public.has_workspace_permission(p_ws_id, p_user_id, 'view_confidential_amount');
-  has_manage_finance := public.has_workspace_permission(p_ws_id, p_user_id, 'manage_finance');
-
-  has_granular := can_view_expenses OR can_view_incomes;
+  SELECT
+    ctx.can_view_transactions,
+    ctx.can_view_expenses,
+    ctx.can_view_amount,
+    ctx.has_manage_finance,
+    ctx.has_granular,
+    ctx.allowed_wallet_ids
+  INTO
+    can_view_transactions,
+    can_view_expenses,
+    can_view_amount,
+    has_manage_finance,
+    has_granular,
+    allowed_wallet_ids
+  FROM public.get_wallet_permission_context(p_ws_id, p_user_id) AS ctx;
 
   IF NOT has_manage_finance THEN
     IF has_granular AND NOT can_view_expenses THEN
@@ -461,11 +547,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NOT has_manage_finance AND (allowed_wallet_ids IS NULL OR array_length(allowed_wallet_ids, 1) IS NULL) THEN
+    RETURN 0;
+  END IF;
+
   SELECT COALESCE(SUM(wt.amount), 0)
   INTO result
   FROM public.wallet_transactions wt
   JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
   WHERE ww.ws_id = p_ws_id
+    AND (has_manage_finance OR ww.id = ANY(allowed_wallet_ids))
     AND wt.amount < 0
     AND (
       (NOT p_include_confidential AND NOT wt.is_amount_confidential)
@@ -490,19 +581,27 @@ AS $$
 DECLARE
   can_view_transactions boolean;
   can_view_expenses boolean;
-  can_view_incomes boolean;
   can_view_amount boolean;
   has_manage_finance boolean;
   has_granular boolean;
+  allowed_wallet_ids uuid[];
   result bigint;
 BEGIN
-  can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
-  can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
-  can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
-  can_view_amount := public.has_workspace_permission(p_ws_id, p_user_id, 'view_confidential_amount');
-  has_manage_finance := public.has_workspace_permission(p_ws_id, p_user_id, 'manage_finance');
-  
-  has_granular := can_view_expenses OR can_view_incomes;
+  SELECT
+    ctx.can_view_transactions,
+    ctx.can_view_expenses,
+    ctx.can_view_amount,
+    ctx.has_manage_finance,
+    ctx.has_granular,
+    ctx.allowed_wallet_ids
+  INTO
+    can_view_transactions,
+    can_view_expenses,
+    can_view_amount,
+    has_manage_finance,
+    has_granular,
+    allowed_wallet_ids
+  FROM public.get_wallet_permission_context(p_ws_id, p_user_id) AS ctx;
 
   IF NOT has_manage_finance THEN
     IF has_granular AND NOT can_view_expenses THEN
@@ -512,11 +611,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NOT has_manage_finance AND (allowed_wallet_ids IS NULL OR array_length(allowed_wallet_ids, 1) IS NULL) THEN
+    RETURN 0;
+  END IF;
+
   SELECT COUNT(*)
   INTO result
   FROM public.wallet_transactions wt
   JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
   WHERE ww.ws_id = p_ws_id
+    AND (has_manage_finance OR ww.id = ANY(allowed_wallet_ids))
     AND wt.amount < 0
     AND (
       (NOT p_include_confidential AND NOT wt.is_amount_confidential)
@@ -530,6 +634,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.get_workspace_wallets_income(
   ws_id uuid,
+  p_user_id uuid DEFAULT auth.uid(),
   start_date timestamp with time zone DEFAULT NULL::timestamp with time zone,
   end_date timestamp with time zone DEFAULT NULL::timestamp with time zone,
   include_confidential boolean DEFAULT true
@@ -541,20 +646,28 @@ STABLE
 AS $$
 DECLARE
   can_view_transactions boolean;
-  can_view_expenses boolean;
   can_view_incomes boolean;
   can_view_amount boolean;
   has_manage_finance boolean;
   has_granular boolean;
+  allowed_wallet_ids uuid[];
   result numeric;
 BEGIN
-  can_view_transactions := public.has_workspace_permission(ws_id, auth.uid(), 'view_transactions');
-  can_view_expenses := public.has_workspace_permission(ws_id, auth.uid(), 'view_expenses');
-  can_view_incomes := public.has_workspace_permission(ws_id, auth.uid(), 'view_incomes');
-  can_view_amount := public.has_workspace_permission(ws_id, auth.uid(), 'view_confidential_amount');
-  has_manage_finance := public.has_workspace_permission(ws_id, auth.uid(), 'manage_finance');
-
-  has_granular := can_view_expenses OR can_view_incomes;
+  SELECT
+    ctx.can_view_transactions,
+    ctx.can_view_incomes,
+    ctx.can_view_amount,
+    ctx.has_manage_finance,
+    ctx.has_granular,
+    ctx.allowed_wallet_ids
+  INTO
+    can_view_transactions,
+    can_view_incomes,
+    can_view_amount,
+    has_manage_finance,
+    has_granular,
+    allowed_wallet_ids
+  FROM public.get_wallet_permission_context(ws_id, p_user_id) AS ctx;
 
   IF NOT has_manage_finance THEN
     IF has_granular AND NOT can_view_incomes THEN
@@ -564,11 +677,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NOT has_manage_finance AND (allowed_wallet_ids IS NULL OR array_length(allowed_wallet_ids, 1) IS NULL) THEN
+    RETURN 0;
+  END IF;
+
   SELECT COALESCE(SUM(wt.amount), 0)
   INTO result
   FROM public.wallet_transactions wt
   JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
-  WHERE ww.ws_id = $1
+  WHERE ww.ws_id = ws_id
+    AND (has_manage_finance OR ww.id = ANY(allowed_wallet_ids))
     AND wt.report_opt_in = true
     AND ww.report_opt_in = true
     AND wt.amount > 0
@@ -579,9 +697,9 @@ BEGIN
     )
     AND (
       (start_date IS NULL AND end_date IS NULL)
-      OR (start_date IS NULL AND wt.taken_at <= $3)
-      OR (end_date IS NULL AND wt.taken_at >= $2)
-      OR (wt.taken_at BETWEEN $2 AND $3)
+      OR (start_date IS NULL AND wt.taken_at <= end_date)
+      OR (end_date IS NULL AND wt.taken_at >= start_date)
+      OR (wt.taken_at BETWEEN start_date AND end_date)
     );
 
   RETURN result;
@@ -590,6 +708,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.get_workspace_wallets_expense(
   ws_id uuid,
+  p_user_id uuid DEFAULT NULL,
   start_date timestamp with time zone DEFAULT NULL::timestamp with time zone,
   end_date timestamp with time zone DEFAULT NULL::timestamp with time zone,
   include_confidential boolean DEFAULT true
@@ -602,19 +721,30 @@ AS $$
 DECLARE
   can_view_transactions boolean;
   can_view_expenses boolean;
-  can_view_incomes boolean;
   can_view_amount boolean;
   has_manage_finance boolean;
   has_granular boolean;
+  allowed_wallet_ids uuid[];
+  v_user_id uuid;
   result numeric;
 BEGIN
-  can_view_transactions := public.has_workspace_permission(ws_id, auth.uid(), 'view_transactions');
-  can_view_expenses := public.has_workspace_permission(ws_id, auth.uid(), 'view_expenses');
-  can_view_incomes := public.has_workspace_permission(ws_id, auth.uid(), 'view_incomes');
-  can_view_amount := public.has_workspace_permission(ws_id, auth.uid(), 'view_confidential_amount');
-  has_manage_finance := public.has_workspace_permission(ws_id, auth.uid(), 'manage_finance');
+  v_user_id := COALESCE(p_user_id, auth.uid());
 
-  has_granular := can_view_expenses OR can_view_incomes;
+  SELECT
+    ctx.can_view_transactions,
+    ctx.can_view_expenses,
+    ctx.can_view_amount,
+    ctx.has_manage_finance,
+    ctx.has_granular,
+    ctx.allowed_wallet_ids
+  INTO
+    can_view_transactions,
+    can_view_expenses,
+    can_view_amount,
+    has_manage_finance,
+    has_granular,
+    allowed_wallet_ids
+  FROM public.get_wallet_permission_context(ws_id, v_user_id) AS ctx;
 
   IF NOT has_manage_finance THEN
     IF has_granular AND NOT can_view_expenses THEN
@@ -624,11 +754,16 @@ BEGIN
     END IF;
   END IF;
 
+  IF NOT has_manage_finance AND (allowed_wallet_ids IS NULL OR array_length(allowed_wallet_ids, 1) IS NULL) THEN
+    RETURN 0;
+  END IF;
+
   SELECT COALESCE(SUM(wt.amount), 0)
   INTO result
   FROM public.wallet_transactions wt
   JOIN public.workspace_wallets ww ON wt.wallet_id = ww.id
-  WHERE ww.ws_id = $1
+  WHERE ww.ws_id = ws_id
+    AND (has_manage_finance OR ww.id = ANY(allowed_wallet_ids))
     AND wt.report_opt_in = true
     AND ww.report_opt_in = true
     AND wt.amount < 0
@@ -639,9 +774,9 @@ BEGIN
     )
     AND (
       (start_date IS NULL AND end_date IS NULL)
-      OR (start_date IS NULL AND wt.taken_at <= $3)
-      OR (end_date IS NULL AND wt.taken_at >= $2)
-      OR (wt.taken_at BETWEEN $2 AND $3)
+      OR (start_date IS NULL AND wt.taken_at <= end_date)
+      OR (end_date IS NULL AND wt.taken_at >= start_date)
+      OR (wt.taken_at BETWEEN start_date AND end_date)
     );
 
   RETURN result;

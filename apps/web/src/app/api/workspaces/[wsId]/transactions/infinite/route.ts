@@ -91,7 +91,7 @@ export async function GET(req: Request, { params }: Params) {
     const hasMore = (data || []).length > limit;
     const rawTransactions = hasMore ? data.slice(0, limit) : data || [];
 
-    const transactions = rawTransactions.map((t: any) => ({
+    const transactions = rawTransactions.map((t) => ({
       ...t,
       wallet: t.wallet_name,
       user: {

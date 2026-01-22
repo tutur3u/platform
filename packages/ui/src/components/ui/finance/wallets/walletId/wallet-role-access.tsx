@@ -4,6 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Search, Shield, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceRoleWalletWhitelist } from '@tuturuuu/types/primitives/WorkspaceRoleWalletWhitelist';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -502,20 +513,46 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                       }}
                     />
                   )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteRoleMutation.mutate(item.role_id)}
-                    disabled={deleteRoleMutation.isPending}
-                  >
-                    {deleteRoleMutation.isPending &&
-                    deleteRoleMutation.variables === item.role_id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    )}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        disabled={deleteRoleMutation.isPending}
+                      >
+                        {deleteRoleMutation.isPending &&
+                        deleteRoleMutation.variables === item.role_id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {t('ws-wallets.confirm_remove_role')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('ws-wallets.remove_role_description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>
+                          {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            deleteRoleMutation.mutate(item.role_id)
+                          }
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t('common.remove')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             );
