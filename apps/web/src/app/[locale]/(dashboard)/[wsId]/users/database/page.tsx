@@ -58,6 +58,7 @@ export default async function WorkspaceUsersPage({
   const canDeleteUsers = containsPermission('delete_users');
   const canCheckUserAttendance = containsPermission('check_user_attendance');
   const canExportUsers = containsPermission('export_users_data');
+  const canMergeUsers = containsPermission('merge_users');
 
   // User must have at least one permission to view users
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -106,6 +107,7 @@ export default async function WorkspaceUsersPage({
     canUpdateUsers,
     canDeleteUsers,
     canCheckUserAttendance,
+    canMergeUsers,
   };
 
   return (

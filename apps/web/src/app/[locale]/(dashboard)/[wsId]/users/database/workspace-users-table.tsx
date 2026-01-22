@@ -5,13 +5,16 @@ import {
   Activity,
   Archive,
   Clock,
+  GitMerge,
   Layers,
   Link,
   Link2Off,
   Loader2,
   Users,
 } from '@tuturuuu/icons';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import { Button } from '@tuturuuu/ui/button';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Select,
@@ -27,11 +30,13 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { ClientFilters } from './client-filters';
 import { getUserColumns } from './columns';
+import { DuplicateDetectionDialog } from './duplicate-detection-dialog';
 import { useWorkspaceUsers, type WorkspaceUsersResponse } from './hooks';
+import { MergePreviewDialog } from './merge-preview-dialog';
 
 interface Props {
   wsId: string;
@@ -44,6 +49,7 @@ interface Props {
     canUpdateUsers: boolean;
     canDeleteUsers: boolean;
     canCheckUserAttendance: boolean;
+    canMergeUsers: boolean;
   };
   initialData: WorkspaceUsersResponse;
   toolbarImportContent?: React.ReactNode;
@@ -62,6 +68,13 @@ export function WorkspaceUsersTable({
   const t = useTranslations();
   const userStatusLabels = useUserStatusLabels(wsId);
   const queryClient = useQueryClient();
+
+  // State for merge selected users dialog
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [selectedForMerge, setSelectedForMerge] = useState<{
+    keepUser: WorkspaceUser;
+    deleteUser: WorkspaceUser;
+  } | null>(null);
 
   // Use nuqs for URL state management (shallow: true for client-side only)
   const [q, setQ] = useQueryState(
@@ -163,6 +176,7 @@ export function WorkspaceUsersTable({
     canUpdateUsers: permissions.canUpdateUsers,
     canDeleteUsers: permissions.canDeleteUsers,
     canCheckUserAttendance: permissions.canCheckUserAttendance,
+    canMergeUsers: permissions.canMergeUsers,
   };
 
   // Handler for search - uses nuqs setQ
@@ -319,6 +333,12 @@ export function WorkspaceUsersTable({
               setIncludedGroups={setIncludedGroups}
               setExcludedGroups={setExcludedGroups}
             />
+            {permissions.hasPrivateInfo && (
+              <DuplicateDetectionDialog
+                wsId={wsId}
+                canMerge={permissions.canMergeUsers}
+              />
+            )}
           </div>
         }
         toolbarImportContent={toolbarImportContent}
@@ -355,7 +375,59 @@ export function WorkspaceUsersTable({
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
+        selectedRowsActions={
+          permissions.canMergeUsers
+            ? (selectedRows) => {
+                // Only show merge button when exactly 2 users are selected
+                if (selectedRows.length !== 2) return null;
+
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => {
+                      const [a, b] = selectedRows as WorkspaceUser[];
+                      // Older user (by created_at) becomes "keep", newer becomes "delete"
+                      const aDate = new Date(a?.created_at || 0);
+                      const bDate = new Date(b?.created_at || 0);
+                      const keepUser = aDate < bDate ? a : b;
+                      const deleteUser = keepUser === a ? b : a;
+                      if (keepUser && deleteUser) {
+                        setSelectedForMerge({ keepUser, deleteUser });
+                        setMergeDialogOpen(true);
+                      }
+                    }}
+                  >
+                    <GitMerge className="mr-2 h-4 w-4" />
+                    {t('ws-users.duplicates.merge_selected')}
+                  </Button>
+                );
+              }
+            : undefined
+        }
       />
+
+      {/* Merge Preview Dialog for selected users */}
+      {selectedForMerge && (
+        <MergePreviewDialog
+          wsId={wsId}
+          open={mergeDialogOpen}
+          onOpenChange={(open) => {
+            setMergeDialogOpen(open);
+            if (!open) setSelectedForMerge(null);
+          }}
+          keepUser={selectedForMerge.keepUser}
+          deleteUser={selectedForMerge.deleteUser}
+          onMergeComplete={() => {
+            queryClient.invalidateQueries({
+              queryKey: ['workspace-users', wsId],
+            });
+            setMergeDialogOpen(false);
+            setSelectedForMerge(null);
+          }}
+        />
+      )}
     </div>
   );
 }

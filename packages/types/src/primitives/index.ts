@@ -47,3 +47,4 @@ export * from './WorkspaceRoleWalletWhitelist';
 export * from './WorkspaceSecret';
 export * from './WorkspaceUser';
 export * from './WorkspaceUserField';
+export * from './WorkspaceUserMerge';

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
+    PostgrestVersion: '14.1';
   };
   public: {
     Tables: {
@@ -14836,6 +14836,7 @@ export type Database = {
           birthday: string | null;
           created_at: string | null;
           created_by: string | null;
+          deleted: boolean | null;
           display_name: string | null;
           email: string | null;
           ethnicity: string | null;
@@ -14860,6 +14861,7 @@ export type Database = {
           birthday?: string | null;
           created_at?: string | null;
           created_by?: string | null;
+          deleted?: boolean | null;
           display_name?: string | null;
           email?: string | null;
           ethnicity?: string | null;
@@ -14884,6 +14886,7 @@ export type Database = {
           birthday?: string | null;
           created_at?: string | null;
           created_by?: string | null;
+          deleted?: boolean | null;
           display_name?: string | null;
           email?: string | null;
           ethnicity?: string | null;
@@ -16909,6 +16912,15 @@ export type Database = {
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
+      find_duplicate_workspace_users: {
+        Args: { duplicate_type?: string; target_ws_id: string };
+        Returns: {
+          duplicate_field: string;
+          duplicate_key: string;
+          user_ids: string[];
+          users: Json;
+        }[];
+      };
       generate_cross_app_token:
         | {
             Args: {
@@ -18380,6 +18392,15 @@ export type Database = {
           start_date: string;
         }[];
       };
+      merge_workspace_users: {
+        Args: {
+          balance_strategy?: string;
+          delete_user_id: string;
+          field_strategy?: Json;
+          keep_user_id: string;
+        };
+        Returns: Json;
+      };
       normalize_task_sort_keys: { Args: never; Returns: undefined };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
@@ -18423,6 +18444,10 @@ export type Database = {
             };
             Returns: Json;
           };
+      preview_workspace_user_merge: {
+        Args: { delete_user_id: string; keep_user_id: string };
+        Returns: Json;
+      };
       process_notification_batches: { Args: never; Returns: undefined };
       process_recurring_transactions: {
         Args: never;
@@ -19223,7 +19248,8 @@ export type Database = {
         | 'view_incomes'
         | 'create_wallets'
         | 'update_wallets'
-        | 'delete_wallets';
+        | 'delete_wallets'
+        | 'merge_users';
     };
     CompositeTypes: {
       email_block_status: {
@@ -19890,6 +19916,7 @@ export const Constants = {
         'create_wallets',
         'update_wallets',
         'delete_wallets',
+        'merge_users',
       ],
     },
   },

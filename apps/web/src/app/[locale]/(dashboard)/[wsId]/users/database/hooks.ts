@@ -1,10 +1,25 @@
 'use client';
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type {
+  BalanceStrategy,
+  BulkMergePair,
+  BulkMergePreview,
+  BulkMergeResult,
+  DuplicatesResponse,
+  FieldStrategy,
+  MergePreview,
+  MergeResult,
+} from '@tuturuuu/types/primitives/WorkspaceUserMerge';
 
 /**
  * Shared helper to fetch all workspace user groups
@@ -171,5 +186,192 @@ export function useWorkspaceUserFields(wsId: string) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+// ============================================================================
+// Duplicate Detection & Merge Hooks
+// ============================================================================
+
+/**
+ * Fetch duplicate workspace users by email or phone
+ */
+export function useDuplicateWorkspaceUsers(
+  wsId: string,
+  type: 'email' | 'phone' | 'all' = 'all',
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['workspace-user-duplicates', wsId, type],
+    queryFn: async (): Promise<DuplicatesResponse> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/duplicates?type=${type}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch duplicates');
+      }
+
+      return response.json();
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Fetch merge preview for two users
+ */
+export function useWorkspaceUserMergePreview(
+  wsId: string,
+  keepUserId: string | null,
+  deleteUserId: string | null,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['workspace-user-merge-preview', wsId, keepUserId, deleteUserId],
+    queryFn: async (): Promise<MergePreview> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/merge/preview`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keepUserId, deleteUserId }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch merge preview');
+      }
+
+      return response.json();
+    },
+    enabled:
+      options?.enabled !== false &&
+      keepUserId !== null &&
+      deleteUserId !== null,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Mutation to merge two workspace users
+ */
+export function useMergeWorkspaceUsers(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      keepUserId: string;
+      deleteUserId: string;
+      fieldStrategy?: FieldStrategy;
+      balanceStrategy?: BalanceStrategy;
+    }): Promise<MergeResult> => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/users/merge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          error.message || error.error || 'Failed to merge users'
+        );
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries after successful merge
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-users', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-user-duplicates', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-user-merge-preview', wsId],
+      });
+    },
+  });
+}
+
+/**
+ * Fetch bulk merge preview for multiple user pairs
+ */
+export function useBulkMergePreview(
+  wsId: string,
+  pairs: BulkMergePair[],
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['workspace-user-bulk-merge-preview', wsId, pairs],
+    queryFn: async (): Promise<BulkMergePreview> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/merge/bulk/preview`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pairs }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch bulk merge preview');
+      }
+
+      return response.json();
+    },
+    enabled: options?.enabled !== false && pairs.length > 0,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Mutation to bulk merge multiple user pairs
+ */
+export function useBulkMergeWorkspaceUsers(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      pairs: BulkMergePair[];
+      balanceStrategy?: BalanceStrategy;
+    }): Promise<BulkMergeResult> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/merge/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to bulk merge users');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries after successful bulk merge
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-users', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-user-duplicates', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-user-bulk-merge-preview', wsId],
+      });
+    },
   });
 }
