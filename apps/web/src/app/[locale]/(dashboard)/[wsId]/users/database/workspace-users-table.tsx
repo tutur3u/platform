@@ -27,7 +27,7 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { getUserColumns } from './columns';
 import Filters from './filters';
@@ -46,6 +46,7 @@ interface Props {
     canCheckUserAttendance: boolean;
   };
   initialData: WorkspaceUsersResponse;
+  defaultExcludedGroups?: string[];
   toolbarImportContent?: React.ReactNode;
   toolbarExportContent?: React.ReactNode;
 }
@@ -56,6 +57,7 @@ export function WorkspaceUsersTable({
   extraFields,
   permissions,
   initialData,
+  defaultExcludedGroups,
   toolbarImportContent,
   toolbarExportContent,
 }: Props) {
@@ -113,6 +115,22 @@ export function WorkspaceUsersTable({
       shallow: true,
     })
   );
+
+  // Apply default excluded groups to URL state on mount if no exclusions set
+  useEffect(() => {
+    // Only apply defaults if:
+    // 1. URL has no excluded groups set
+    // 2. Defaults exist
+    // 3. Haven't applied defaults yet (run once)
+    if (
+      excludedGroups.length === 0 &&
+      defaultExcludedGroups &&
+      defaultExcludedGroups.length > 0
+    ) {
+      setExcludedGroups(defaultExcludedGroups);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;

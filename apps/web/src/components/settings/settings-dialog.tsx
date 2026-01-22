@@ -83,6 +83,7 @@ import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
+import UsersManagementSettings from './users/users-management-settings';
 import MembersSettings from './workspace/members-settings';
 import UserStatusSettings from './workspace/user-status-settings';
 
@@ -283,6 +284,30 @@ export function SettingsDialog({
         },
       ],
     },
+    ...(wsId
+      ? [
+          {
+            label: t('settings.user_management.title'),
+            items: [
+              {
+                name: 'database_filters',
+                label: t('settings.user_management.database_filters'),
+                icon: Users,
+                description: t(
+                  'settings.user_management.database_filters_description'
+                ),
+                keywords: [
+                  'Users',
+                  'Database',
+                  'Filters',
+                  'Groups',
+                  'Excluded',
+                ],
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: t('settings.workspaces.title'),
       items: [
@@ -728,6 +753,12 @@ export function SettingsDialog({
                 {activeTab === 'user_status' && wsId && (
                   <div className="h-full">
                     <UserStatusSettings wsId={wsId} />
+                  </div>
+                )}
+
+                {activeTab === 'database_filters' && wsId && (
+                  <div className="h-full">
+                    <UsersManagementSettings wsId={wsId} />
                   </div>
                 )}
 
