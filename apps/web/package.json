@@ -11,7 +11,7 @@
     "preview": "next build && next start -p 7803 --turbopack",
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "NODE_OPTIONS='--max-old-space-size=4096' tsc --noEmit",
+    "type-check": "tsc --noEmit",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",

@@ -1,0 +1,19 @@
+{
+  "extends": "@ncthub/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "module": "ESNext",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}
