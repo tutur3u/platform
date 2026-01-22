@@ -144,7 +144,9 @@ export default function ExportDialogContent({
         allData.push(...data);
 
         const totalPages = Math.ceil(count / pageSize);
-        const progressValue = (currentPage / totalPages) * 100;
+        // Guard against division by zero when no transactions match filters
+        const progressValue =
+          totalPages > 0 ? (currentPage / totalPages) * 100 : 100;
         setProgress(progressValue);
 
         if (data.length < pageSize) {
