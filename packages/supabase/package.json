@@ -9,10 +9,10 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.3.5",
+  "packageManager": "bun@1.3.6",
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.90.1",
+    "@supabase/supabase-js": "^2.91.0",
     "@ncthub/types": "workspace:*",
     "next": "16.1.1",
     "react": "^19.2.3",
@@ -21,10 +21,10 @@
   },
   "devDependencies": {
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^25.0.6",
-    "@types/react": "^19.2.8",
+    "@types/node": "^25.0.10",
+    "@types/react": "^19.2.9",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   },
   "exports": {
     "./*": "./src/*.ts"
