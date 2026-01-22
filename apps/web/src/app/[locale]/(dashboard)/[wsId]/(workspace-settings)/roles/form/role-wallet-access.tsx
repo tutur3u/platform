@@ -41,6 +41,9 @@ export default function RoleFormWalletAccessSection({
   const t = useTranslations();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingViewingWindows, setPendingViewingWindows] = useState<
+    Record<string, string>
+  >({});
 
   const whitelistedWalletsQuery = useQuery({
     queryKey: ['workspaces', wsId, 'roles', roleId, 'wallets'],
@@ -101,10 +104,16 @@ export default function RoleFormWalletAccessSection({
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       toast.success(t('ws-roles.wallet_updated_successfully'));
       queryClient.invalidateQueries({
         queryKey: ['workspaces', wsId, 'roles', roleId, 'wallets'],
+      });
+      setPendingViewingWindows((current) => {
+        if (!variables?.walletId) return current;
+        const next = { ...current };
+        delete next[variables.walletId];
+        return next;
       });
     },
     onError: (error: Error) => {
@@ -150,6 +159,9 @@ export default function RoleFormWalletAccessSection({
       },
     });
   };
+
+  const getEffectiveViewingWindow = (item: WorkspaceRoleWalletWhitelist) =>
+    pendingViewingWindows[item.wallet_id] ?? item.viewing_window;
 
   const getViewingWindowLabel = (window: string, customDays?: number) => {
     const option = viewingWindowOptions.find((opt) => opt.value === window);
@@ -239,7 +251,7 @@ export default function RoleFormWalletAccessSection({
                       </div>
                       <div className="truncate text-muted-foreground text-xs sm:text-sm">
                         {getViewingWindowLabel(
-                          item.viewing_window,
+                          getEffectiveViewingWindow(item),
                           item.custom_days ?? undefined
                         )}
                       </div>
@@ -247,16 +259,23 @@ export default function RoleFormWalletAccessSection({
                   </div>
                   <div className="flex items-center gap-2">
                     <Select
-                      value={item.viewing_window}
-                      onValueChange={(value) =>
-                        handleUpdateWindow(
-                          item.wallet_id,
-                          value,
-                          value === 'custom'
-                            ? (item.custom_days ?? undefined)
-                            : undefined
-                        )
-                      }
+                      value={getEffectiveViewingWindow(item)}
+                      onValueChange={(value) => {
+                        if (value === 'custom') {
+                          setPendingViewingWindows((current) => ({
+                            ...current,
+                            [item.wallet_id]: 'custom',
+                          }));
+                          return;
+                        }
+
+                        setPendingViewingWindows((current) => {
+                          const next = { ...current };
+                          delete next[item.wallet_id];
+                          return next;
+                        });
+                        handleUpdateWindow(item.wallet_id, value, undefined);
+                      }}
                     >
                       <SelectTrigger className="w-35">
                         <SelectValue />
@@ -269,7 +288,7 @@ export default function RoleFormWalletAccessSection({
                         ))}
                       </SelectContent>
                     </Select>
-                    {item.viewing_window === 'custom' && (
+                    {getEffectiveViewingWindow(item) === 'custom' && (
                       <Input
                         type="number"
                         min="1"

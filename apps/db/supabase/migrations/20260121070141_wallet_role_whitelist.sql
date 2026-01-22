@@ -86,8 +86,8 @@ BEGIN
 
     -- Verify the caller has the same permission as RLS
     IF NOT public.has_workspace_permission(
-      v_calling_user_id,
       p_ws_id,
+      v_calling_user_id,
       'manage_workspace_roles'
     ) THEN
       RAISE EXCEPTION 'Permission denied: you can only query your own wallet access or must have workspace role management permission';

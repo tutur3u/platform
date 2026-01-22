@@ -65,6 +65,9 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [pendingViewingWindows, setPendingViewingWindows] = useState<
+    Record<string, string>
+  >({});
 
   const roleAccessQuery = useQuery({
     queryKey: ['workspaces', wsId, 'wallets', walletId, 'roles'],
@@ -152,10 +155,16 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       toast.success(t('ws-wallets.role_updated_successfully'));
       queryClient.invalidateQueries({
         queryKey: ['workspaces', wsId, 'wallets', walletId, 'roles'],
+      });
+      setPendingViewingWindows((current) => {
+        if (!variables?.roleId) return current;
+        const next = { ...current };
+        delete next[variables.roleId];
+        return next;
       });
     },
     onError: (error: Error) => {
@@ -227,6 +236,9 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
     }
     return option ? t(option.labelKey) : window;
   };
+
+  const getEffectiveViewingWindow = (item: WorkspaceRoleWalletWhitelist) =>
+    pendingViewingWindows[item.role_id] ?? item.viewing_window;
 
   return (
     <div className="space-y-4">
@@ -421,7 +433,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                     </div>
                     <div className="truncate text-muted-foreground text-xs sm:text-sm">
                       {getViewingWindowLabel(
-                        item.viewing_window,
+                        getEffectiveViewingWindow(item),
                         item.custom_days
                       )}
                     </div>
@@ -429,17 +441,24 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Select
-                    value={item.viewing_window}
+                    value={getEffectiveViewingWindow(item)}
                     disabled={updateRoleMutation.isPending}
-                    onValueChange={(value) =>
-                      handleUpdateWindow(
-                        item.role_id,
-                        value,
-                        value === 'custom'
-                          ? (item.custom_days ?? undefined)
-                          : undefined
-                      )
-                    }
+                    onValueChange={(value) => {
+                      if (value === 'custom') {
+                        setPendingViewingWindows((current) => ({
+                          ...current,
+                          [item.role_id]: 'custom',
+                        }));
+                        return;
+                      }
+
+                      setPendingViewingWindows((current) => {
+                        const next = { ...current };
+                        delete next[item.role_id];
+                        return next;
+                      });
+                      handleUpdateWindow(item.role_id, value, undefined);
+                    }}
                   >
                     <SelectTrigger className="w-35">
                       <SelectValue />
@@ -452,10 +471,11 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
-                  {item.viewing_window === 'custom' && (
+                  {getEffectiveViewingWindow(item) === 'custom' && (
                     <Input
                       type="number"
                       min="1"
+                      max="365"
                       placeholder={t('ws-roles.custom_days_placeholder')}
                       defaultValue={item.custom_days ?? ''}
                       className="w-20"
