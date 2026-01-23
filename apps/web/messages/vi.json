@@ -1684,6 +1684,7 @@
     "improvements": "Cải tiến",
     "incomplete": "Chưa hoàn thành",
     "indigo": "Chàm",
+    "initializing": "Đang khởi tạo",
     "insufficient_permissions": "Bạn không có đủ quyền để thực hiện hành động này",
     "invalid-file-type": "Loại tệp không hợp lệ",
     "inventory": "Quản kho",
@@ -5258,6 +5259,22 @@
       "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
       "title": "Cài đặt người dùng"
     },
+    "user_management": {
+      "database_filters": "Bộ lọc Cơ sở dữ liệu",
+      "database_filters_description": "Cấu hình bộ lọc nhóm mặc định cho cơ sở dữ liệu người dùng",
+      "default_excluded_groups_help": "Các nhóm được chọn ở đây sẽ bị loại trừ theo mặc định khi bạn truy cập trang cơ sở dữ liệu. Bạn vẫn có thể thay đổi bộ lọc trên trang.",
+      "default_excluded_groups_label": "Nhóm Loại trừ Mặc định",
+      "no_excluded_groups": "Không có nhóm nào bị loại trừ theo mặc định",
+      "no_groups_found": "Không tìm thấy nhóm nào.",
+      "save": "Lưu Thay đổi",
+      "saving": "Đang lưu...",
+      "search_groups": "Tìm kiếm nhóm...",
+      "select_groups_placeholder": "Chọn nhóm...",
+      "selected_groups_count": "{count, plural, =0 {Không có nhóm nào được chọn} one {# nhóm được chọn} other {# nhóm được chọn}}",
+      "title": "Quản lý Người dùng",
+      "update_error": "Không thể cập nhật cài đặt quản lý người dùng",
+      "update_success": "Cập nhật cài đặt quản lý người dùng thành công"
+    },
     "workspace_not_found": "Không tìm thấy không gian làm việc",
     "workspace_not_found_or_no_access": "Không tìm thấy không gian làm việc hoặc bạn không có quyền truy cập",
     "workspaces": {
@@ -7632,6 +7649,7 @@
     "retry": "Thử lại",
     "revert_changes": "Hoàn tác",
     "rows": "Dòng",
+    "search_groups": "Tìm nhóm",
     "search_person_to_refer_placeholder": "Tìm người để giới thiệu...",
     "select_all": "Chọn tất cả",
     "select_person_to_refer_with_remaining": "Chọn người để giới thiệu (còn {remaining})",
@@ -8702,7 +8720,8 @@
     "save": "Lưu thay đổi",
     "saving": "Đang lưu...",
     "search_groups": "Tìm kiếm nhóm...",
-    "select_default_wallet": "Chọn một ví",
+    "select_default_wallet": "Chọn ví",
+    "selected_groups_count": "Đã chọn {count} nhóm",
     "title": "Cài đặt tài chính",
     "update_error": "Cập nhật cài đặt thất bại",
     "update_success": "Cập nhật cài đặt thành công"

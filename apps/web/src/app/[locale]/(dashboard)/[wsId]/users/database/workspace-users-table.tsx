@@ -27,11 +27,15 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
-import { ClientFilters } from './client-filters';
 import { getUserColumns } from './columns';
-import { useWorkspaceUsers, type WorkspaceUsersResponse } from './hooks';
+import Filters from './filters';
+import {
+  useDefaultExcludedGroups,
+  useWorkspaceUsers,
+  type WorkspaceUsersResponse,
+} from './hooks';
 
 interface Props {
   wsId: string;
@@ -109,10 +113,33 @@ export function WorkspaceUsersTable({
 
   const [excludedGroups, setExcludedGroups] = useQueryState(
     'excludedGroups',
-    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+    parseAsArrayOf(parseAsString).withOptions({
       shallow: true,
     })
   );
+
+  const { data: defaultExcludedGroups, isLoading: isLoadingDefaults } =
+    useDefaultExcludedGroups(wsId);
+
+  const shouldApplyDefaultExcludedGroups =
+    !isLoadingDefaults &&
+    excludedGroups === null &&
+    !!defaultExcludedGroups &&
+    defaultExcludedGroups.length > 0;
+
+  const isInitialized =
+    !isLoadingDefaults &&
+    (excludedGroups !== null || !defaultExcludedGroups?.length);
+
+  // Apply default excluded groups to URL state on mount if no exclusions set
+  useEffect(() => {
+    if (!shouldApplyDefaultExcludedGroups) return;
+    void setExcludedGroups(defaultExcludedGroups);
+  }, [
+    defaultExcludedGroups,
+    setExcludedGroups,
+    shouldApplyDefaultExcludedGroups,
+  ]);
 
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;
@@ -125,18 +152,20 @@ export function WorkspaceUsersTable({
       page,
       pageSize,
       includedGroups,
-      excludedGroups,
+      excludedGroups: excludedGroups || [],
       status: status as 'active' | 'archived' | 'archived_until' | 'all',
       linkStatus: linkStatus as 'all' | 'linked' | 'virtual',
     },
     {
+      enabled: isInitialized,
       // Use initial data for first render (SSR hydration)
       initialData:
+        isInitialized &&
         !q &&
         page === 1 &&
         pageSize === 10 &&
         includedGroups.length === 0 &&
-        excludedGroups.length === 0 &&
+        (!excludedGroups || excludedGroups.length === 0) &&
         status === 'active' &&
         linkStatus === 'all'
           ? initialData
@@ -217,7 +246,7 @@ export function WorkspaceUsersTable({
   }
 
   // Show loading overlay when fetching new data (but not on initial load)
-  const showLoadingOverlay = isFetching && !isLoading;
+  const showLoadingOverlay = (isFetching && !isLoading) || !isInitialized;
 
   return (
     <div className="relative">
@@ -226,7 +255,9 @@ export function WorkspaceUsersTable({
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
           <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-muted-foreground text-sm">Loading...</span>
+            <span className="text-muted-foreground text-sm">
+              {!isInitialized ? t('common.initializing') : t('common.loading')}
+            </span>
           </div>
         </div>
       )}
@@ -312,13 +343,7 @@ export function WorkspaceUsersTable({
                 </SelectItem>
               </SelectContent>
             </Select>
-            <ClientFilters
-              wsId={wsId}
-              includedGroups={includedGroups}
-              excludedGroups={excludedGroups}
-              setIncludedGroups={setIncludedGroups}
-              setExcludedGroups={setExcludedGroups}
-            />
+            <Filters wsId={wsId} />
           </div>
         }
         toolbarImportContent={toolbarImportContent}
@@ -331,7 +356,7 @@ export function WorkspaceUsersTable({
           status !== 'active' ||
           linkStatus !== 'all' ||
           includedGroups.length > 0 ||
-          excludedGroups.length > 0
+          (!!excludedGroups && excludedGroups.length > 0)
         }
         onRefresh={() => {
           queryClient.invalidateQueries({

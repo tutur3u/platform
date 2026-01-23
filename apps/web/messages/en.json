@@ -1664,6 +1664,7 @@
     "import": "Import",
     "improvements": "Improvements",
     "incomplete": "Incomplete",
+    "initializing": "Initializing",
     "insufficient_permissions": "Insufficient Permissions",
     "invalid-file-type": "Invalid file type",
     "inventory": "Inventory",
@@ -5220,6 +5221,22 @@
       "sessions_description": "Manage your active sessions and devices",
       "title": "User Settings"
     },
+    "user_management": {
+      "database_filters": "Database Filters",
+      "database_filters_description": "Configure default group filters for the user database",
+      "default_excluded_groups_help": "Groups selected here will be excluded by default when you visit the database page. You can still change filters on the page.",
+      "default_excluded_groups_label": "Default Excluded Groups",
+      "no_excluded_groups": "No groups excluded by default",
+      "no_groups_found": "No groups found.",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "search_groups": "Search groups...",
+      "select_groups_placeholder": "Select groups...",
+      "selected_groups_count": "{count, plural, =0 {No groups selected} one {# group selected} other {# groups selected}}",
+      "title": "User Management",
+      "update_error": "Failed to update user management settings",
+      "update_success": "User management settings updated successfully"
+    },
     "workspace_not_found": "Workspace not found",
     "workspace_not_found_or_no_access": "Workspace not found or you do not have access",
     "workspaces": {
@@ -7555,6 +7572,7 @@
     "retry": "Retry",
     "revert_changes": "Revert Changes",
     "rows": "Rows",
+    "search_groups": "Search for groups",
     "search_person_to_refer_placeholder": "Search for a person to refer...",
     "select_all": "Select All",
     "select_person_to_refer_with_remaining": "Select person to refer ({remaining} remaining)",
@@ -8611,6 +8629,7 @@
     "saving": "Saving...",
     "search_groups": "Search groups...",
     "select_default_wallet": "Select a wallet",
+    "selected_groups_count": "{count, plural, one {# group selected} other {# groups selected}}",
     "title": "Finance Settings",
     "update_error": "Failed to update settings",
     "update_success": "Settings updated successfully"
