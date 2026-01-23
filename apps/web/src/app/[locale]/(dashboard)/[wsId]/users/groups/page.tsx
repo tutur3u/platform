@@ -7,9 +7,12 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UserGroupForm from './form';
-import type { ManagerUser } from './hooks';
 import { UserGroupsTable } from './user-groups-table';
-import { getUserGroupMemberships } from './utils';
+import {
+  escapeLikeWildcards,
+  fetchManagersForGroups,
+  getUserGroupMemberships,
+} from './utils';
 
 export const metadata: Metadata = {
   title: 'Groups',
@@ -59,7 +62,7 @@ export default async function WorkspaceUserGroupsPage({
           );
         }
 
-        const { data, count } = await getInitialData(
+        const initialData = await getInitialData(
           wsId,
           sp,
           containsPermission('manage_users')
@@ -97,7 +100,7 @@ export default async function WorkspaceUserGroupsPage({
             <Separator className="my-4" />
             <UserGroupsTable
               wsId={wsId}
-              initialData={{ data, count }}
+              initialData={initialData}
               permissions={permissions}
             />
           </>
@@ -130,12 +133,15 @@ async function getInitialData(
       .eq('ws_id', wsId)
       .order('name');
 
-    if (q) queryBuilder.ilike('name', `%${q}%`);
+    if (q) {
+      const escapedSearch = escapeLikeWildcards(q);
+      queryBuilder.ilike('name', `%${escapedSearch}%`);
+    }
 
     if (!hasManageUsers) {
       const groupIds = await getUserGroupMemberships(wsId);
       if (groupIds.length === 0) {
-        return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+        return { data: [], count: 0 };
       }
       queryBuilder.in('id', groupIds);
     }
@@ -165,43 +171,21 @@ async function getInitialData(
     // Fetch managers for the fetched groups
     if (groups.length > 0) {
       const groupIds = groups.map((g) => g.id);
-      const { data: managersData, error: managersError } = await supabase
-        .from('workspace_user_groups_users')
-        .select(
-          'group_id, user:workspace_users!inner(id, full_name, avatar_url, display_name, email)'
-        )
-        .in('group_id', groupIds)
-        .eq('role', 'TEACHER');
-
-      if (!managersError && managersData) {
-        const managersByGroup = managersData.reduce(
-          (acc, item) => {
-            if (!item.group_id) return acc;
-
-            const groupId = item.group_id;
-            if (!acc[groupId]) {
-              acc[groupId] = [];
-            }
-            const groupManagers = acc[groupId];
-
-            if (item.user) {
-              groupManagers.push(item.user as ManagerUser);
-            }
-            return acc;
-          },
-          {} as Record<string, ManagerUser[]>
-        );
-
-        groups = groups.map((g) => ({
-          ...g,
-          managers: managersByGroup[g.id] ?? [],
-        }));
-      }
+      const managersByGroup = await fetchManagersForGroups(supabase, groupIds);
+      groups = groups.map((g) => ({
+        ...g,
+        managers: managersByGroup[g.id] ?? [],
+      }));
     }
 
     return { data: groups, count: count ?? 0 };
   } catch (error) {
     console.error('Error fetching initial user groups:', error);
-    return { data: [], count: 0 };
+    return {
+      data: [],
+      count: 0,
+      error: true,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    };
   }
 }

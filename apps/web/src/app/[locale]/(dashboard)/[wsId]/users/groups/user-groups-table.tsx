@@ -98,11 +98,14 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
     setPageSize(null);
   }, [setQ, setPage, setPageSize]);
 
-  if (error) {
+  const hasError = Boolean(error || data?.error);
+  const errorMessage = data?.errorMessage;
+
+  if (hasError) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
         <p className="text-destructive">
-          Error loading user groups. Please try again.
+          {errorMessage || 'Error loading user groups. Please try again.'}
         </p>
         <Button
           onClick={() => refetch()}

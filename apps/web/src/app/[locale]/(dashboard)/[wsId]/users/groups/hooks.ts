@@ -12,6 +12,8 @@ export interface UserGroupsParams {
 export interface UserGroupsResponse {
   data: UserGroup[];
   count: number;
+  error?: boolean;
+  errorMessage?: string;
 }
 
 /**
@@ -53,7 +55,13 @@ export function useUserGroups(
         throw new Error('Failed to fetch workspace user groups');
       }
 
-      return response.json();
+      const json = (await response.json()) as UserGroupsResponse;
+      if (json.error) {
+        const errorMessage =
+          json.errorMessage || 'Failed to fetch workspace user groups';
+        throw new Error(errorMessage);
+      }
+      return json;
     },
     enabled: options?.enabled !== false,
     initialData: options?.initialData,
