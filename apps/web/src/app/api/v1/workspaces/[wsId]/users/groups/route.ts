@@ -42,7 +42,18 @@ export async function GET(request: Request, { params }: Params) {
 
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const sp = SearchParamsSchema.parse(Object.fromEntries(searchParams));
+    const spResult = SearchParamsSchema.safeParse(
+      Object.fromEntries(searchParams)
+    );
+
+    if (!spResult.success) {
+      return NextResponse.json(
+        { message: 'Invalid query parameters', issues: spResult.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const sp = spResult.data;
 
     const hasManageUsers = containsPermission('manage_users');
 
