@@ -37,7 +37,6 @@ export function InvoiceAnalytics({
 }: InvoiceAnalyticsProps) {
   const t = useTranslations('invoice-analytics');
 
-
   // Use nuqs for URL state management (shallow: true for client-side only)
   const [start] = useQueryState(
     'start',

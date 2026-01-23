@@ -34,9 +34,6 @@ interface TransactionCardProps {
       email: string;
       avatar_url: string | null;
     } | null;
-    is_amount_confidential?: boolean;
-    is_description_confidential?: boolean;
-    is_category_confidential?: boolean;
   };
   wsId: string;
   onEdit?: () => void;

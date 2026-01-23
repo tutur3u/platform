@@ -17356,46 +17356,26 @@ export type Database = {
           id: string;
         }[];
       };
-      get_invoice_totals_by_date_range:
-        | {
-            Args: {
-              _ws_id: string;
-              end_date?: string;
-              group_by_creator?: boolean;
-              start_date?: string;
-              user_ids?: string[];
-              wallet_ids?: string[];
-              week_start_day?: number;
-            };
-            Returns: {
-              group_avatar_url: string;
-              group_id: string;
-              group_name: string;
-              invoice_count: number;
-              period: string;
-              total_amount: number;
-            }[];
-          }
-        | {
-            Args: {
-              _ws_id: string;
-              end_date?: string;
-              group_by_creator?: boolean;
-              interval_type?: string;
-              start_date?: string;
-              user_ids?: string[];
-              wallet_ids?: string[];
-              week_start_day?: number;
-            };
-            Returns: {
-              group_avatar_url: string;
-              group_id: string;
-              group_name: string;
-              invoice_count: number;
-              period: string;
-              total_amount: number;
-            }[];
-          };
+      get_invoice_totals_by_date_range: {
+        Args: {
+          _ws_id: string;
+          end_date?: string;
+          group_by_creator?: boolean;
+          interval_type?: string;
+          start_date?: string;
+          user_ids?: string[];
+          wallet_ids?: string[];
+          week_start_day?: number;
+        };
+        Returns: {
+          group_avatar_url: string;
+          group_id: string;
+          group_name: string;
+          invoice_count: number;
+          period: string;
+          total_amount: number;
+        }[];
+      };
       get_ip_block_level: { Args: { p_ip_address: string }; Returns: number };
       get_joined_workspace_count: {
         Args: { user_id: string };
@@ -17831,6 +17811,25 @@ export type Database = {
           email: string;
           full_name: string;
           id: string;
+        }[];
+      };
+      get_transaction_stats: {
+        Args: {
+          p_category_ids?: string[];
+          p_creator_ids?: string[];
+          p_end_date?: string;
+          p_search_query?: string;
+          p_start_date?: string;
+          p_user_id?: string;
+          p_wallet_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          has_redacted_amounts: boolean;
+          net_total: number;
+          total_expense: number;
+          total_income: number;
+          total_transactions: number;
         }[];
       };
       get_upcoming_recurring_transactions: {

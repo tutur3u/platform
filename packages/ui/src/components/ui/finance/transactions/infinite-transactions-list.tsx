@@ -1,6 +1,10 @@
 'use client';
 
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   Calendar,
   ChevronDown,
@@ -35,14 +39,8 @@ interface InfiniteTransactionsListProps {
   canViewConfidentialCategory?: boolean;
 }
 
-type TransactionWithConfidential = Transaction & {
-  is_amount_confidential?: boolean;
-  is_category_confidential?: boolean;
-  is_description_confidential?: boolean;
-};
-
 interface TransactionResponse {
-  data: TransactionWithConfidential[];
+  data: Transaction[];
   nextCursor: string | null;
   hasMore: boolean;
 }
@@ -50,7 +48,7 @@ interface TransactionResponse {
 interface GroupedTransactions {
   date: string;
   label: string;
-  transactions: TransactionWithConfidential[];
+  transactions: Transaction[];
   isExpanded?: boolean;
 }
 
@@ -70,7 +68,7 @@ export function InfiniteTransactionsList({
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionWithConfidential | null>(null);
+    useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -79,7 +77,7 @@ export function InfiniteTransactionsList({
     moment.locale(locale);
   }, [locale]);
 
-  const handleTransactionClick = (transaction: TransactionWithConfidential) => {
+  const handleTransactionClick = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setIsEditDialogOpen(true);
   };
@@ -226,6 +224,28 @@ export function InfiniteTransactionsList({
     !!end ||
     !!walletId;
 
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: [
+      `/api/workspaces/${wsId}/transactions/stats`,
+      q,
+      userIds,
+      categoryIds,
+      walletIds,
+      walletId,
+      start,
+      end,
+    ],
+    queryFn: async () => {
+      const queryString = buildQueryString();
+      const response = await fetch(
+        `/api/workspaces/${wsId}/transactions/stats?${queryString}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch transaction stats');
+      return response.json();
+    },
+    enabled: hasActiveFilter && !isLoading && !error,
+  });
+
   // Group transactions by date
   const groupedTransactions = useMemo(() => {
     const groups: GroupedTransactions[] = [];
@@ -331,8 +351,12 @@ export function InfiniteTransactionsList({
   return (
     <div className="space-y-6">
       {/* Statistics Summary - Only show when filters are active */}
-      {hasActiveFilter && allTransactions.length > 0 && (
-        <TransactionStatistics transactions={allTransactions} />
+      {hasActiveFilter && (stats || isStatsLoading) && (
+        <TransactionStatistics
+          transactions={allTransactions}
+          stats={stats}
+          isLoading={isStatsLoading}
+        />
       )}
 
       {groupedTransactions.map((group, groupIndex) => {

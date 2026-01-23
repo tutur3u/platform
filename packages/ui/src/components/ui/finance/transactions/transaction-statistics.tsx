@@ -1,6 +1,12 @@
 'use client';
 
-import { Calculator, TrendingDown, TrendingUp, Wallet } from '@tuturuuu/icons';
+import {
+  Calculator,
+  Loader2,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
@@ -9,22 +15,31 @@ import { useMemo } from 'react';
 
 interface TransactionStatisticsProps {
   transactions: Transaction[];
+  stats?: {
+    totalTransactions: number;
+    totalIncome: number;
+    totalExpense: number;
+    netTotal: number;
+    hasRedactedAmounts: boolean;
+  };
+  isLoading?: boolean;
 }
 
 export function TransactionStatistics({
   transactions,
+  stats,
+  isLoading,
 }: TransactionStatisticsProps) {
   const t = useTranslations();
   const locale = useLocale();
 
-  const statistics = useMemo(() => {
+  const localStatistics = useMemo(() => {
+    if (stats) return stats;
+
     const amounts = transactions
       .filter(
         (transaction) =>
-          !(
-            transaction.amount === null &&
-            (transaction as any).is_amount_confidential
-          )
+          !(transaction.amount === null && transaction.is_amount_confidential)
       )
       .map((transaction) => transaction.amount || 0);
 
@@ -37,8 +52,7 @@ export function TransactionStatistics({
 
     const hasRedactedAmounts = transactions.some(
       (transaction) =>
-        transaction.amount === null &&
-        (transaction as any).is_amount_confidential
+        transaction.amount === null && transaction.is_amount_confidential
     );
 
     return {
@@ -48,9 +62,20 @@ export function TransactionStatistics({
       netTotal,
       hasRedactedAmounts,
     };
-  }, [transactions]);
+  }, [transactions, stats]);
 
+  const statistics = stats || localStatistics;
   const isNetPositive = statistics.netTotal >= 0;
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:shadow-md">
+        <div className="flex h-50 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:shadow-md">

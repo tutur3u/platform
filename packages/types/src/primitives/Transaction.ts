@@ -9,6 +9,9 @@ export interface Transaction {
   wallet?: string;
   ws_id?: string;
   taken_at?: string;
+  is_amount_confidential?: boolean;
+  is_description_confidential?: boolean;
+  is_category_confidential?: boolean;
   report_opt_in?: boolean;
   created_at?: string;
   user?: {
