@@ -8,6 +8,8 @@
 -- Drop the old get_invoice_totals_by_date_range without week_start_day parameter
 DROP FUNCTION IF EXISTS get_invoice_totals_by_date_range(UUID, DATE, DATE, UUID[], UUID[], BOOLEAN);
 
+DROP FUNCTION IF EXISTS get_invoice_totals_by_date_range(UUID, DATE, DATE, UUID[], UUID[], BOOLEAN, INT);
+
 CREATE OR REPLACE FUNCTION get_invoice_totals_by_date_range(
   _ws_id UUID,
   start_date TIMESTAMPTZ DEFAULT NULL,
