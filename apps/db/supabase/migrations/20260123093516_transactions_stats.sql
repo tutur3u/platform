@@ -96,3 +96,5 @@ BEGIN
   FROM filtered_data;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.get_transaction_stats(uuid, uuid, uuid[], uuid[], uuid[], text, timestamp with time zone, timestamp with time zone) TO authenticated;
