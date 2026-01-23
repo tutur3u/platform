@@ -61,6 +61,23 @@ export async function fetchManagersForGroups(
 ): Promise<Record<string, ManagerUser[]>> {
   if (groupIds.length === 0) return {};
 
+  const toManagerUser = (user: {
+    id?: string | null;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    display_name?: string | null;
+    email?: string | null;
+  }): ManagerUser | null => {
+    if (!user.id) return null;
+    return {
+      id: user.id,
+      full_name: user.full_name ?? null,
+      avatar_url: user.avatar_url ?? null,
+      display_name: user.display_name ?? null,
+      email: user.email ?? null,
+    };
+  };
+
   const { data: managersData, error: managersError } = await supabase
     .from('workspace_user_groups_users')
     .select(
@@ -86,9 +103,16 @@ export async function fetchManagersForGroups(
       }
       const groupManagers = acc[groupId];
 
-      if (item.user) {
-        groupManagers.push(item.user as ManagerUser);
-      }
+      const users = Array.isArray(item.user)
+        ? item.user
+        : item.user
+          ? [item.user]
+          : [];
+
+      users.forEach((user) => {
+        const manager = toManagerUser(user ?? {});
+        if (manager) groupManagers.push(manager);
+      });
       return acc;
     },
     {} as Record<string, ManagerUser[]>
