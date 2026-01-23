@@ -14,6 +14,8 @@ interface Params {
 }
 
 type WeekStartsOn = 0 | 1 | 6;
+type IntervalType = 'day' | 'week' | 'month';
+type Granularity = 'daily' | 'weekly' | 'monthly';
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
@@ -31,11 +33,20 @@ export async function GET(req: Request, { params }: Params) {
   const userIds = searchParams.getAll('userIds').filter(Boolean);
   const start = searchParams.get('start');
   const end = searchParams.get('end');
+  const granularity = searchParams.get('granularity') as Granularity | null;
   const weekStartsOn = (Number(searchParams.get('weekStartsOn')) ||
     1) as WeekStartsOn;
 
   try {
     const hasDateRange = !!(start && end);
+
+    const intervalType: IntervalType | undefined = granularity
+      ? granularity === 'daily'
+        ? 'day'
+        : granularity === 'weekly'
+          ? 'week'
+          : 'month'
+      : undefined;
 
     if (hasDateRange) {
       // Fetch data grouped by wallet and by creator for the date range
@@ -47,6 +58,7 @@ export async function GET(req: Request, { params }: Params) {
           endDate: end!,
           groupByCreator: false,
           weekStartsOn,
+          intervalType,
         }),
         getInvoiceTotalsByDateRange(wsId, {
           walletIds: walletIds.length > 0 ? walletIds : undefined,
@@ -55,6 +67,7 @@ export async function GET(req: Request, { params }: Params) {
           endDate: end!,
           groupByCreator: true,
           weekStartsOn,
+          intervalType,
         }),
       ]);
 
@@ -140,6 +153,7 @@ interface DateRangeParams {
   endDate: string;
   groupByCreator: boolean;
   weekStartsOn?: WeekStartsOn;
+  intervalType?: IntervalType;
 }
 
 async function getInvoiceTotalsByDateRange(
@@ -158,6 +172,7 @@ async function getInvoiceTotalsByDateRange(
       user_ids: params.userIds?.length ? params.userIds : null,
       group_by_creator: params.groupByCreator,
       week_start_day: params.weekStartsOn ?? 1,
+      interval_type: params.intervalType ?? null,
     } as any
   );
 

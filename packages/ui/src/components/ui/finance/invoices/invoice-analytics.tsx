@@ -1,10 +1,8 @@
 'use client';
 
-import { X } from '@tuturuuu/icons';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useMemo } from 'react';
-import { Badge } from '../../badge';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '../../card';
 import {
   InvoiceTotalsChart,
@@ -38,25 +36,26 @@ export function InvoiceAnalytics({
   weekStartsOn = 1,
 }: InvoiceAnalyticsProps) {
   const t = useTranslations('invoice-analytics');
-  const locale = useLocale();
+
 
   // Use nuqs for URL state management (shallow: true for client-side only)
-  const [start, setStart] = useQueryState(
+  const [start] = useQueryState(
     'start',
     parseAsString.withOptions({ shallow: true })
   );
-  const [end, setEnd] = useQueryState(
+  const [end] = useQueryState(
     'end',
     parseAsString.withOptions({ shallow: true })
   );
-  const [userIds, setUserIds] = useQueryState(
+  const [userIds] = useQueryState(
     'userIds',
     parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true })
   );
-  const [walletIds, setWalletIds] = useQueryState(
+  const [walletIds] = useQueryState(
     'walletIds',
     parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true })
   );
+  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Build filters object
   const filters = useMemo(
@@ -65,8 +64,9 @@ export function InvoiceAnalytics({
       userIds: userIds.length > 0 ? userIds : undefined,
       startDate: start || undefined,
       endDate: end || undefined,
+      granularity: start && end ? period : undefined,
     }),
-    [walletIds, userIds, start, end]
+    [walletIds, userIds, start, end, period]
   );
 
   // Fetch analytics data with React Query
@@ -85,6 +85,30 @@ export function InvoiceAnalytics({
     isLoading,
     error,
   } = useInvoiceAnalytics(wsId, filters, weekStartsOn);
+
+  const inferredPeriod = useMemo((): 'daily' | 'weekly' | 'monthly' => {
+    // Use URL params (start/end) for initial calculation, not API response (startDate/endDate)
+    if (!start || !end) return 'daily';
+    const startValue = new Date(start);
+    const endValue = new Date(end);
+    const dayCount = Math.ceil(
+      (endValue.getTime() - startValue.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (dayCount <= 31) return 'daily';
+    if (dayCount <= 90) return 'weekly';
+    return 'monthly';
+  }, [start, end]);
+
+  // Set period to inferred value when date range changes
+  useEffect(() => {
+    if (start && end) {
+      setPeriod(inferredPeriod);
+    }
+  }, [start, end, inferredPeriod]);
+
+  const handlePeriodChange = (nextPeriod: 'daily' | 'weekly' | 'monthly') => {
+    setPeriod(nextPeriod);
+  };
 
   // Handle loading state
   if (isLoading) {
@@ -110,7 +134,10 @@ export function InvoiceAnalytics({
         hasDateRange: true,
         startDate: startDate!,
         endDate: endDate!,
+        period,
+        setPeriod: handlePeriodChange,
         className,
+        showPeriodTabs: true, // Always show period tabs
       }
     : {
         dailyWalletData: dailyWalletData || [],
@@ -120,95 +147,14 @@ export function InvoiceAnalytics({
         weeklyCreatorData: weeklyCreatorData || [],
         monthlyCreatorData: monthlyCreatorData || [],
         hasDateRange: false,
+        period,
+        setPeriod: handlePeriodChange,
         className,
+        showPeriodTabs: true,
       };
-
-  // Check if any filters are active
-  const hasActiveFilters = !!(
-    start ||
-    userIds.length > 0 ||
-    walletIds.length > 0
-  );
-
-  // Clear all filters handler
-  const handleClearAll = () => {
-    setStart(null);
-    setEnd(null);
-    setUserIds(null);
-    setWalletIds(null);
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string, includeYear = false) => {
-    try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat(locale, {
-        month: 'short',
-        day: 'numeric',
-        ...(includeYear && { year: 'numeric' }),
-      }).format(date);
-    } catch {
-      return dateString;
-    }
-  };
 
   return (
     <>
-      {/* Active filters display - only show when filters are active */}
-      {hasActiveFilters && (
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {start && end && (
-            <Badge variant="secondary" className="gap-1.5">
-              {formatDate(start)} – {formatDate(end, true)}
-              <button
-                type="button"
-                onClick={() => {
-                  setStart(null);
-                  setEnd(null);
-                }}
-                className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
-                aria-label={t('clear_filter')}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          {userIds.length > 0 && (
-            <Badge variant="secondary" className="gap-1.5">
-              {t('users_filter')}: {userIds.length}
-              <button
-                type="button"
-                onClick={() => setUserIds(null)}
-                className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
-                aria-label={t('clear_filter')}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          {walletIds.length > 0 && (
-            <Badge variant="secondary" className="gap-1.5">
-              {t('wallets_filter')}: {walletIds.length}
-              <button
-                type="button"
-                onClick={() => setWalletIds(null)}
-                className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
-                aria-label={t('clear_filter')}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          <button
-            type="button"
-            onClick={handleClearAll}
-            className="text-muted-foreground text-xs underline hover:text-foreground"
-          >
-            {t('clear_all_filters')}
-          </button>
-        </div>
-      )}
-
       {/* Chart component */}
       <InvoiceTotalsChart {...chartProps} />
     </>

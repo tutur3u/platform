@@ -83,7 +83,10 @@ interface DateRangeProps {
   hasDateRange: true;
   startDate: string;
   endDate: string;
+  period: InvoiceAnalyticsPeriod;
+  setPeriod: (period: InvoiceAnalyticsPeriod) => void;
   className?: string;
+  showPeriodTabs?: boolean;
 }
 
 // Props for default mode (no date range, period tabs)
@@ -95,7 +98,10 @@ interface DefaultModeProps {
   weeklyCreatorData: InvoiceTotalsByGroup[];
   monthlyCreatorData: InvoiceTotalsByGroup[];
   hasDateRange: false;
+  period: InvoiceAnalyticsPeriod;
+  setPeriod: (period: InvoiceAnalyticsPeriod) => void;
   className?: string;
+  showPeriodTabs?: boolean;
 }
 
 export type InvoiceTotalsChartProps = DateRangeProps | DefaultModeProps;
@@ -106,7 +112,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
-  const [period, setPeriod] = useState<InvoiceAnalyticsPeriod>('daily');
+  const { period, setPeriod } = props;
   const [metric, setMetric] = useState<InvoiceAnalyticsMetric>('amount');
   const [groupBy, setGroupBy] = useState<InvoiceAnalyticsGroupBy>('wallet');
   const [chartMode, setChartMode] = useState<ChartMode>('stacked');
@@ -204,6 +210,11 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     const periodMap = new Map<string, Record<string, number | string>>();
 
     rawData.forEach((item) => {
+      // Skip periods with no data (zero invoices and zero amount)
+      if (Number(item.invoice_count) === 0 && Number(item.total_amount) === 0) {
+        return;
+      }
+
       if (!periodMap.has(item.period)) {
         periodMap.set(item.period, { period: item.period });
       }
@@ -234,19 +245,10 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   }, [rawData]);
 
   // Determine inferred period type for date range mode
+  // Note: We now respect the user's selected period even in date range mode
   const inferredPeriod = useMemo((): InvoiceAnalyticsPeriod => {
-    if (!props.hasDateRange) return period;
-
-    const start = new Date(props.startDate);
-    const end = new Date(props.endDate);
-    const dayCount = Math.ceil(
-      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (dayCount <= 31) return 'daily';
-    if (dayCount <= 90) return 'weekly';
-    return 'monthly';
-  }, [props, period]);
+    return period; // Always use the period prop - it's controlled by the parent
+  }, [period]);
 
   const formatValue = (value: number) => {
     if (isConfidential && metric === 'amount') return '******';
@@ -432,7 +434,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                 />
               </div>
             </div>
-            {!props.hasDateRange && (
+            {props.showPeriodTabs && (
               <div className="flex flex-wrap items-center gap-2">
                 <PeriodTabs period={period} setPeriod={setPeriod} t={t} />
               </div>
@@ -507,16 +509,9 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
             </div>
           </div>
 
-          {/* Second row: Period tabs + Metric toggle (only when no date range) */}
+          {/* Second row: Period tabs + Metric toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            {!props.hasDateRange && (
-              <PeriodTabs period={period} setPeriod={setPeriod} t={t} />
-            )}
-            {props.hasDateRange && (
-              <Badge variant="outline" className="text-muted-foreground">
-                {t(`auto_${inferredPeriod}`)}
-              </Badge>
-            )}
+            <PeriodTabs period={period} setPeriod={setPeriod} t={t} />
             <MetricToggle metric={metric} setMetric={setMetric} t={t} />
             {groupBy === 'creator' && (
               <ChartModeToggle

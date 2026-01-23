@@ -6,6 +6,7 @@ interface InvoiceAnalyticsFilters {
   userIds?: string[];
   startDate?: string;
   endDate?: string;
+  granularity?: 'daily' | 'weekly' | 'monthly';
 }
 
 interface InvoiceAnalyticsResponseDateRange {
@@ -60,21 +61,32 @@ export function useInvoiceAnalytics(
   filters: InvoiceAnalyticsFilters = {},
   weekStartsOn: 0 | 1 | 6 = 1
 ): UseInvoiceAnalyticsResult {
-  const { walletIds = [], userIds = [], startDate, endDate } = filters;
+  const {
+    walletIds = [],
+    userIds = [],
+    startDate,
+    endDate,
+    granularity,
+  } = filters;
 
   const query = useQuery({
     queryKey: [
       'invoice-analytics',
       wsId,
-      { walletIds, userIds, startDate, endDate, weekStartsOn },
+      { walletIds, userIds, startDate, endDate, weekStartsOn, granularity },
     ],
     queryFn: async (): Promise<InvoiceAnalyticsResponse> => {
       const searchParams = new URLSearchParams();
 
-      walletIds.forEach((id) => searchParams.append('walletIds', id));
-      userIds.forEach((id) => searchParams.append('userIds', id));
+      walletIds.forEach((id) => {
+        searchParams.append('walletIds', id);
+      });
+      userIds.forEach((id) => {
+        searchParams.append('userIds', id);
+      });
       if (startDate) searchParams.set('start', startDate);
       if (endDate) searchParams.set('end', endDate);
+      if (granularity) searchParams.set('granularity', granularity);
       searchParams.set('weekStartsOn', String(weekStartsOn));
 
       const response = await fetch(
