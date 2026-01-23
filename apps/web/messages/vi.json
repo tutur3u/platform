@@ -3246,7 +3246,15 @@
     "total_amount": "Tổng số tiền",
     "total_invoices": "Tổng số hóa đơn",
     "weekly": "Theo tuần",
-    "weekly_invoice_totals": "Tổng hóa đơn theo tuần (12 tuần)"
+    "weekly_invoice_totals": "Tổng hóa đơn theo tuần (12 tuần)",
+    "active_filters": "Bộ lọc đang áp dụng",
+    "date_filter": "{start} đến {end}",
+    "users_filter": "Người dùng",
+    "wallets_filter": "Ví",
+    "clear_filter": "Xóa",
+    "clear_all_filters": "Xóa tất cả",
+    "loading": "Đang tải phân tích...",
+    "error_loading": "Không thể tải dữ liệu phân tích. Vui lòng thử lại."
   },
   "invoice-data-table": {
     "created_at": "Tạo lúc",

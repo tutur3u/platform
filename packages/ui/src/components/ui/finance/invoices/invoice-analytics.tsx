@@ -1,7 +1,17 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import dayjs from 'dayjs';
-import type { InvoiceTotalsChartProps } from './charts/invoice-totals-chart';
-import { InvoiceTotalsChart } from './charts/invoice-totals-chart';
+'use client';
+
+import { X } from '@tuturuuu/icons';
+import { useLocale, useTranslations } from 'next-intl';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
+import { useMemo } from 'react';
+import { Badge } from '../../badge';
+import { Card, CardContent } from '../../card';
+import {
+  InvoiceTotalsChart,
+  type InvoiceTotalsChartProps,
+  InvoiceTotalsChartSkeleton,
+} from './charts/invoice-totals-chart';
+import { useInvoiceAnalytics } from './hooks/use-invoice-analytics';
 
 /**
  * weekStartsOn values (JavaScript convention, matching useCalendarPreferences):
@@ -11,26 +21,8 @@ import { InvoiceTotalsChart } from './charts/invoice-totals-chart';
  */
 type WeekStartsOn = 0 | 1 | 6;
 
-// Local type definition until types package is picked up
-interface InvoiceTotalsByGroup {
-  period: string;
-  group_id: string;
-  group_name: string;
-  group_avatar_url?: string | null;
-  total_amount: number;
-  invoice_count: number;
-}
-
-interface InvoiceAnalyticsFilters {
-  walletIds?: string[];
-  userIds?: string[];
-  startDate?: string;
-  endDate?: string;
-}
-
 interface InvoiceAnalyticsProps {
   wsId: string;
-  filters?: InvoiceAnalyticsFilters;
   className?: string;
   /**
    * First day of week preference (0=Sunday, 1=Monday, 6=Saturday)
@@ -40,359 +32,185 @@ interface InvoiceAnalyticsProps {
   weekStartsOn?: WeekStartsOn;
 }
 
-export async function InvoiceAnalytics({
+export function InvoiceAnalytics({
   wsId,
-  filters,
   className,
   weekStartsOn = 1,
 }: InvoiceAnalyticsProps) {
-  const { walletIds, userIds, startDate, endDate } = filters || {};
+  const t = useTranslations('invoice-analytics');
+  const locale = useLocale();
 
-  // If we have a date range, use the unified function that auto-determines granularity
-  // Otherwise, fetch all three periods for the toggleable view
-  const hasDateRange = !!(startDate && endDate);
+  // Use nuqs for URL state management (shallow: true for client-side only)
+  const [start, setStart] = useQueryState(
+    'start',
+    parseAsString.withOptions({ shallow: true })
+  );
+  const [end, setEnd] = useQueryState(
+    'end',
+    parseAsString.withOptions({ shallow: true })
+  );
+  const [userIds, setUserIds] = useQueryState(
+    'userIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true })
+  );
+  const [walletIds, setWalletIds] = useQueryState(
+    'walletIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true })
+  );
 
-  if (hasDateRange) {
-    // Fetch data grouped by wallet and by creator for the date range
-    const [walletData, creatorData] = await Promise.all([
-      getInvoiceTotalsByDateRange(wsId, {
-        walletIds,
-        userIds,
-        startDate: startDate!,
-        endDate: endDate!,
-        groupByCreator: false,
-        weekStartsOn,
-      }),
-      getInvoiceTotalsByDateRange(wsId, {
-        walletIds,
-        userIds,
-        startDate: startDate!,
-        endDate: endDate!,
-        groupByCreator: true,
-        weekStartsOn,
-      }),
-    ]);
+  // Build filters object
+  const filters = useMemo(
+    () => ({
+      walletIds: walletIds.length > 0 ? walletIds : undefined,
+      userIds: userIds.length > 0 ? userIds : undefined,
+      startDate: start || undefined,
+      endDate: end || undefined,
+    }),
+    [walletIds, userIds, start, end]
+  );
 
-    const chartProps: InvoiceTotalsChartProps = {
-      walletData,
-      creatorData,
-      hasDateRange: true,
-      startDate: startDate!,
-      endDate: endDate!,
-      className,
-    };
+  // Fetch analytics data with React Query
+  const {
+    walletData,
+    creatorData,
+    dailyWalletData,
+    weeklyWalletData,
+    monthlyWalletData,
+    dailyCreatorData,
+    weeklyCreatorData,
+    monthlyCreatorData,
+    hasDateRange,
+    startDate,
+    endDate,
+    isLoading,
+    error,
+  } = useInvoiceAnalytics(wsId, filters, weekStartsOn);
 
-    return <InvoiceTotalsChart {...chartProps} />;
+  // Handle loading state
+  if (isLoading) {
+    return <InvoiceTotalsChartSkeleton className={className} />;
   }
 
-  // No date range: fetch all periods for both wallet and creator grouping
-  const [
-    dailyWalletData,
-    weeklyWalletData,
-    monthlyWalletData,
-    dailyCreatorData,
-    weeklyCreatorData,
-    monthlyCreatorData,
-  ] = await Promise.all([
-    getDailyInvoiceTotals(wsId, walletIds, userIds),
-    getWeeklyInvoiceTotals(wsId, walletIds, userIds, weekStartsOn),
-    getMonthlyInvoiceTotals(wsId, walletIds, userIds),
-    getDailyInvoiceTotalsByCreator(wsId, walletIds, userIds, weekStartsOn),
-    getWeeklyInvoiceTotalsByCreator(wsId, walletIds, userIds, weekStartsOn),
-    getMonthlyInvoiceTotalsByCreator(wsId, walletIds, userIds),
-  ]);
+  // Handle error state
+  if (error) {
+    return (
+      <Card className={className}>
+        <CardContent className="flex h-[280px] items-center justify-center">
+          <p className="text-destructive text-sm">{t('error_loading')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const chartProps: InvoiceTotalsChartProps = {
-    dailyWalletData,
-    weeklyWalletData,
-    monthlyWalletData,
-    dailyCreatorData,
-    weeklyCreatorData,
-    monthlyCreatorData,
-    hasDateRange: false,
-    className,
+  // Build chart props based on data mode
+  const chartProps: InvoiceTotalsChartProps = hasDateRange
+    ? {
+        walletData: walletData || [],
+        creatorData: creatorData || [],
+        hasDateRange: true,
+        startDate: startDate!,
+        endDate: endDate!,
+        className,
+      }
+    : {
+        dailyWalletData: dailyWalletData || [],
+        weeklyWalletData: weeklyWalletData || [],
+        monthlyWalletData: monthlyWalletData || [],
+        dailyCreatorData: dailyCreatorData || [],
+        weeklyCreatorData: weeklyCreatorData || [],
+        monthlyCreatorData: monthlyCreatorData || [],
+        hasDateRange: false,
+        className,
+      };
+
+  // Check if any filters are active
+  const hasActiveFilters = !!(
+    start ||
+    userIds.length > 0 ||
+    walletIds.length > 0
+  );
+
+  // Clear all filters handler
+  const handleClearAll = () => {
+    setStart(null);
+    setEnd(null);
+    setUserIds(null);
+    setWalletIds(null);
   };
 
-  return <InvoiceTotalsChart {...chartProps} />;
-}
+  // Format date for display
+  const formatDate = (dateString: string, includeYear = false) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        ...(includeYear && { year: 'numeric' }),
+      }).format(date);
+    } catch {
+      return dateString;
+    }
+  };
 
-// ============================================================================
-// Data fetching functions
-// ============================================================================
+  return (
+    <>
+      {/* Active filters display - only show when filters are active */}
+      {hasActiveFilters && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {start && end && (
+            <Badge variant="secondary" className="gap-1.5">
+              {formatDate(start)} – {formatDate(end, true)}
+              <button
+                type="button"
+                onClick={() => {
+                  setStart(null);
+                  setEnd(null);
+                }}
+                className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
+                aria-label={t('clear_filter')}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {userIds.length > 0 && (
+            <Badge variant="secondary" className="gap-1.5">
+              {t('users_filter')}: {userIds.length}
+              <button
+                type="button"
+                onClick={() => setUserIds(null)}
+                className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
+                aria-label={t('clear_filter')}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {walletIds.length > 0 && (
+            <Badge variant="secondary" className="gap-1.5">
+              {t('wallets_filter')}: {walletIds.length}
+              <button
+                type="button"
+                onClick={() => setWalletIds(null)}
+                className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
+                aria-label={t('clear_filter')}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          <button
+            type="button"
+            onClick={handleClearAll}
+            className="text-muted-foreground text-xs underline hover:text-foreground"
+          >
+            {t('clear_all_filters')}
+          </button>
+        </div>
+      )}
 
-interface DateRangeParams {
-  walletIds?: string[];
-  userIds?: string[];
-  startDate: string;
-  endDate: string;
-  groupByCreator: boolean;
-  weekStartsOn?: WeekStartsOn;
-}
-
-async function getInvoiceTotalsByDateRange(
-  wsId: string,
-  params: DateRangeParams
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc(
-    'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      start_date: params.startDate,
-      end_date: params.endDate,
-      wallet_ids: params.walletIds?.length ? params.walletIds : null,
-      user_ids: params.userIds?.length ? params.userIds : null,
-      group_by_creator: params.groupByCreator,
-      week_start_day: params.weekStartsOn ?? 1,
-    } as any
+      {/* Chart component */}
+      <InvoiceTotalsChart {...chartProps} />
+    </>
   );
-
-  if (error) {
-    console.error('Error fetching invoice totals by date range:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.group_id,
-    group_name: item.group_name || 'Unknown',
-    group_avatar_url: item.group_avatar_url,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
-}
-
-async function getDailyInvoiceTotals(
-  wsId: string,
-  walletIds?: string[],
-  userIds?: string[]
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc(
-    'get_daily_invoice_totals' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      past_days: 14,
-      wallet_ids: walletIds?.length ? walletIds : null,
-      user_ids: userIds?.length ? userIds : null,
-    } as any
-  );
-
-  if (error) {
-    console.error('Error fetching daily invoice totals:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.wallet_id,
-    group_name: item.wallet_name || 'Unknown',
-    group_avatar_url: null,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
-}
-
-async function getWeeklyInvoiceTotals(
-  wsId: string,
-  walletIds?: string[],
-  userIds?: string[],
-  weekStartsOn: WeekStartsOn = 1
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc(
-    'get_weekly_invoice_totals' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      past_weeks: 12,
-      wallet_ids: walletIds?.length ? walletIds : null,
-      user_ids: userIds?.length ? userIds : null,
-      week_start_day: weekStartsOn,
-    } as any
-  );
-
-  if (error) {
-    console.error('Error fetching weekly invoice totals:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.wallet_id,
-    group_name: item.wallet_name || 'Unknown',
-    group_avatar_url: null,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
-}
-
-async function getMonthlyInvoiceTotals(
-  wsId: string,
-  walletIds?: string[],
-  userIds?: string[]
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc(
-    'get_monthly_invoice_totals' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      past_months: 12,
-      wallet_ids: walletIds?.length ? walletIds : null,
-      user_ids: userIds?.length ? userIds : null,
-    } as any
-  );
-
-  if (error) {
-    console.error('Error fetching monthly invoice totals:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.wallet_id,
-    group_name: item.wallet_name || 'Unknown',
-    group_avatar_url: null,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
-}
-
-// ============================================================================
-// Creator-grouped versions
-// ============================================================================
-
-/**
- * Helper to calculate start of week based on weekStartsOn preference
- * weekStartsOn: 0=Sunday, 1=Monday, 6=Saturday
- */
-function getStartOfWeek(
-  date: dayjs.Dayjs,
-  weekStartsOn: WeekStartsOn
-): dayjs.Dayjs {
-  const dow = date.day(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-  const daysToSubtract = (dow - weekStartsOn + 7) % 7;
-  return date.subtract(daysToSubtract, 'day').startOf('day');
-}
-
-async function getDailyInvoiceTotalsByCreator(
-  wsId: string,
-  walletIds?: string[],
-  userIds?: string[],
-  weekStartsOn: WeekStartsOn = 1
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  // Match SQL: CURRENT_DATE - INTERVAL '13 days' to CURRENT_DATE (14 days total)
-  const endDate = dayjs();
-  const startDate = endDate.subtract(13, 'day');
-
-  const { data, error } = await supabase.rpc(
-    'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      start_date: startDate.format('YYYY-MM-DD'),
-      end_date: endDate.format('YYYY-MM-DD'),
-      wallet_ids: walletIds?.length ? walletIds : null,
-      user_ids: userIds?.length ? userIds : null,
-      group_by_creator: true,
-      week_start_day: weekStartsOn,
-    } as any
-  );
-
-  if (error) {
-    console.error('Error fetching daily invoice totals by creator:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.group_id,
-    group_name: item.group_name || 'Unknown',
-    group_avatar_url: item.group_avatar_url,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
-}
-
-async function getWeeklyInvoiceTotalsByCreator(
-  wsId: string,
-  walletIds?: string[],
-  userIds?: string[],
-  weekStartsOn: WeekStartsOn = 1
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  // Calculate week-aligned start date based on user's preference
-  const endDate = dayjs();
-  const startOfCurrentWeek = getStartOfWeek(endDate, weekStartsOn);
-  const startDate = startOfCurrentWeek.subtract(11, 'week');
-
-  const { data, error } = await supabase.rpc(
-    'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      start_date: startDate.format('YYYY-MM-DD'),
-      end_date: endDate.format('YYYY-MM-DD'),
-      wallet_ids: walletIds?.length ? walletIds : null,
-      user_ids: userIds?.length ? userIds : null,
-      group_by_creator: true,
-      week_start_day: weekStartsOn,
-    } as any
-  );
-
-  if (error) {
-    console.error('Error fetching weekly invoice totals by creator:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.group_id,
-    group_name: item.group_name || 'Unknown',
-    group_avatar_url: item.group_avatar_url,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
-}
-
-async function getMonthlyInvoiceTotalsByCreator(
-  wsId: string,
-  walletIds?: string[],
-  userIds?: string[]
-): Promise<InvoiceTotalsByGroup[]> {
-  const supabase = await createClient();
-
-  // Match SQL: date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' * 11 to CURRENT_DATE
-  const endDate = dayjs();
-  const startDate = endDate.startOf('month').subtract(11, 'month');
-
-  const { data, error } = await supabase.rpc(
-    'get_invoice_totals_by_date_range' as 'get_daily_income_expense',
-    {
-      _ws_id: wsId,
-      start_date: startDate.format('YYYY-MM-DD'),
-      end_date: endDate.format('YYYY-MM-DD'),
-      wallet_ids: walletIds?.length ? walletIds : null,
-      user_ids: userIds?.length ? userIds : null,
-      group_by_creator: true,
-    } as any
-  );
-
-  if (error) {
-    console.error('Error fetching monthly invoice totals by creator:', error);
-    return [];
-  }
-
-  return (data || []).map((item: any) => ({
-    period: item.period,
-    group_id: item.group_id,
-    group_name: item.group_name || 'Unknown',
-    group_avatar_url: item.group_avatar_url,
-    total_amount: Number(item.total_amount) || 0,
-    invoice_count: Number(item.invoice_count) || 0,
-  }));
 }

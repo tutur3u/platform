@@ -3223,7 +3223,15 @@
     "total_amount": "Total amount",
     "total_invoices": "Total invoices",
     "weekly": "Weekly",
-    "weekly_invoice_totals": "Weekly Invoice Totals (12 Weeks)"
+    "weekly_invoice_totals": "Weekly Invoice Totals (12 Weeks)",
+    "active_filters": "Active Filters",
+    "date_filter": "{start} to {end}",
+    "users_filter": "Users",
+    "wallets_filter": "Wallets",
+    "clear_filter": "Clear",
+    "clear_all_filters": "Clear all",
+    "loading": "Loading analytics...",
+    "error_loading": "Failed to load analytics data. Please try again."
   },
   "invoice-data-table": {
     "created_at": "Created at",
