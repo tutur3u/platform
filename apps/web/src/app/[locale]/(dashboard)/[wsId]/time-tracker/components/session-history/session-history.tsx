@@ -75,10 +75,7 @@ export function SessionHistory({
   }, [currentDate, viewMode, userTimezone]);
 
   // Fetch sessions for the current period
-  const {
-    data: sessionsData,
-    isLoading: isLoadingSessions,
-  } = useQuery({
+  const { data: sessionsData, isLoading: isLoadingSessions } = useQuery({
     queryKey: [
       'time-tracking-sessions',
       wsId,
@@ -111,10 +108,7 @@ export function SessionHistory({
   });
 
   // Extract sessions from response
-  const sessions = useMemo(
-    () => sessionsData?.sessions ?? [],
-    [sessionsData]
-  );
+  const sessions = useMemo(() => sessionsData?.sessions ?? [], [sessionsData]);
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
