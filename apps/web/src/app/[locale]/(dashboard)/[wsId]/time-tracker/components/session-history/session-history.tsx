@@ -1,6 +1,7 @@
 'use client';
 
-import { Clock, History, Plus } from '@tuturuuu/icons';
+import { useQuery } from '@tanstack/react-query';
+import { Clock, History, Loader2, Plus } from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ import type {
   SessionHistoryProps,
   ViewMode,
 } from './session-types';
+import type { SessionWithRelations } from '../../types';
 import {
   calculatePeriodStats,
   getDurationCategory,
@@ -50,13 +52,69 @@ dayjs.extend(isoWeek);
 
 export function SessionHistory({
   wsId,
-  sessions,
+  userId,
   categories,
   workspace,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
   const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
+
+  // View state - moved before query so it can be used in query key
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [currentDate, setCurrentDate] = useState(dayjs());
+
+  const userTimezone = dayjs.tz.guess();
+
+  // Calculate period bounds for API query
+  const { startOfPeriod, endOfPeriod } = useMemo(() => {
+    const view = viewMode === 'week' ? 'isoWeek' : viewMode;
+    const start = currentDate.tz(userTimezone).startOf(view);
+    const end = currentDate.tz(userTimezone).endOf(view);
+    return { startOfPeriod: start, endOfPeriod: end };
+  }, [currentDate, viewMode, userTimezone]);
+
+  // Fetch sessions for the current period
+  const {
+    data: sessionsData,
+    isLoading: isLoadingSessions,
+  } = useQuery({
+    queryKey: [
+      'time-tracking-sessions',
+      wsId,
+      userId,
+      'history',
+      startOfPeriod.toISOString(),
+      endOfPeriod.toISOString(),
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        type: 'history',
+        limit: '500', // Fetch enough for a month view
+        offset: '0',
+        dateFrom: startOfPeriod.toISOString(),
+        dateTo: endOfPeriod.toISOString(),
+      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?${params}`
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch sessions');
+      }
+      return response.json() as Promise<{
+        sessions: SessionWithRelations[];
+        total: number;
+        hasMore: boolean;
+      }>;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  // Extract sessions from response
+  const sessions = useMemo(
+    () => sessionsData?.sessions ?? [],
+    [sessionsData]
+  );
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -69,12 +127,6 @@ export function SessionHistory({
     sessionQuality: 'all',
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-
-  // View state
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
-  const [currentDate, setCurrentDate] = useState(dayjs());
-
-  const userTimezone = dayjs.tz.guess();
 
   // Session actions hook
   const {
@@ -210,13 +262,7 @@ export function SessionHistory({
     [sessions, filters, userTimezone, getProjectContext]
   );
 
-  // Period calculations
-  const { startOfPeriod, endOfPeriod } = useMemo(() => {
-    const view = viewMode === 'week' ? 'isoWeek' : viewMode;
-    const start = currentDate.tz(userTimezone).startOf(view);
-    const end = currentDate.tz(userTimezone).endOf(view);
-    return { startOfPeriod: start, endOfPeriod: end };
-  }, [currentDate, viewMode, userTimezone]);
+  // Note: startOfPeriod and endOfPeriod are already calculated at the top for the query
 
   const sessionsForPeriod = useMemo(
     () =>
@@ -330,7 +376,14 @@ export function SessionHistory({
         </CardHeader>
 
         <CardContent className="p-4 md:p-6">
-          {sessionsForPeriod?.length === 0 ? (
+          {isLoadingSessions ? (
+            <div className="flex flex-col items-center justify-center py-12 md:py-16">
+              <Loader2 className="h-10 w-10 animate-spin text-dynamic-orange md:h-12 md:w-12" />
+              <p className="mt-4 text-muted-foreground text-sm">
+                Loading sessions...
+              </p>
+            </div>
+          ) : sessionsForPeriod?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 md:py-16">
               <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-orange/10 to-dynamic-orange/5 ring-1 ring-dynamic-orange/20 md:h-24 md:w-24">
                 <Clock className="h-10 w-10 text-dynamic-orange md:h-12 md:w-12" />

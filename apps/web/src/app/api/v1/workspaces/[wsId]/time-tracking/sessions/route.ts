@@ -153,34 +153,57 @@ export async function GET(
         .eq('user_id', queryUserId)
         .eq('pending_approval', false);
 
+      // Build count query with same filters
+      let countQuery = supabase
+        .from('time_tracking_sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('ws_id', normalizedWsId)
+        .eq('user_id', queryUserId)
+        .eq('pending_approval', false);
+
       if (type === 'recent') {
         query = query.eq('is_running', false);
+        countQuery = countQuery.eq('is_running', false);
       }
 
       // Apply filters
       if (categoryId) {
         query = query.eq('category_id', categoryId);
+        countQuery = countQuery.eq('category_id', categoryId);
       }
 
       if (taskId) {
         query = query.eq('task_id', taskId);
+        countQuery = countQuery.eq('task_id', taskId);
       }
 
       if (dateFrom) {
         query = query.gte('start_time', dateFrom);
+        countQuery = countQuery.gte('start_time', dateFrom);
       }
 
       if (dateTo) {
         query = query.lte('start_time', dateTo);
+        countQuery = countQuery.lte('start_time', dateTo);
       }
+
+      // Execute count query
+      const { count: total } = await countQuery;
 
       // Apply pagination and ordering
       const { data, error } = await query
-        .order('created_at', { ascending: false })
+        .order('start_time', { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
-      return NextResponse.json({ sessions: data });
+
+      const hasMore = total !== null && offset + limit < total;
+
+      return NextResponse.json({
+        sessions: data,
+        total: total ?? 0,
+        hasMore,
+      });
     }
 
     if (type === 'stats') {
