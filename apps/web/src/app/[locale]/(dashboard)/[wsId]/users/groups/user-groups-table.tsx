@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
+import { Loader2, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
@@ -115,7 +115,10 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
               {t('common.loading')}
             </>
           ) : (
-            t('ws-user-groups.retry')
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t('common.retry')}
+            </>
           )}
         </Button>
       </div>

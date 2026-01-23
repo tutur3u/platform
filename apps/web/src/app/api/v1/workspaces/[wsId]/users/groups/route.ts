@@ -112,7 +112,10 @@ export async function GET(request: Request, { params }: Params) {
             if (!item.group_id) return acc;
 
             const groupId = item.group_id;
-            const groupManagers = acc[groupId] ?? (acc[groupId] = []);
+            if (!acc[groupId]) {
+              acc[groupId] = [];
+            }
+            const groupManagers = acc[groupId];
 
             if (item.user) {
               groupManagers.push(item.user as ManagerUser);

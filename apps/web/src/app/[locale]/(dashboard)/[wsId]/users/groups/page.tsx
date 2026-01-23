@@ -145,10 +145,12 @@ async function getInitialData(
     const parsedSize = parseInt(pageSize, 10);
 
     // Default to page 1 if invalid (NaN or <=0)
-    const validPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const validPage =
+      !Number.isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
     // Default to 10 if invalid, enforce max of 100
-    let validPageSize = !isNaN(parsedSize) && parsedSize > 0 ? parsedSize : 10;
+    let validPageSize =
+      !Number.isNaN(parsedSize) && parsedSize > 0 ? parsedSize : 10;
     validPageSize = Math.min(validPageSize, 100);
 
     const start = (validPage - 1) * validPageSize;
@@ -177,7 +179,10 @@ async function getInitialData(
             if (!item.group_id) return acc;
 
             const groupId = item.group_id;
-            const groupManagers = acc[groupId] ?? (acc[groupId] = []);
+            if (!acc[groupId]) {
+              acc[groupId] = [];
+            }
+            const groupManagers = acc[groupId];
 
             if (item.user) {
               groupManagers.push(item.user as ManagerUser);
