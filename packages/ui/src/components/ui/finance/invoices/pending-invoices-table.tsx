@@ -72,7 +72,7 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
   const [allUsers, setAllUsers] = useState<
     { id: string; display_name: string; avatar_url?: string }[]
   >([]);
-  
+
   const currentUsers = useMemo(() => {
     if (!data?.data) return [];
 
@@ -97,7 +97,9 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
 
     setAllUsers((prev) => {
       const merged = new Map(prev.map((user) => [user.id, user]));
-      currentUsers.forEach((user) => merged.set(user.id, user));
+      for (const user of currentUsers) {
+        merged.set(user.id, user);
+      }
       return Array.from(merged.values());
     });
   }, [currentUsers, isUnfiltered]);
