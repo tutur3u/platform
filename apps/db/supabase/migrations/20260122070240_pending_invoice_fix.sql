@@ -42,10 +42,16 @@ begin
 
 	-- Fetch workspace config for groups that should be excluded from pending invoices
 	-- Value is stored as a comma-separated list of UUIDs
+	-- Safe split-and-filter: validate each token is a valid UUID before casting
 	select
 		case
 			when value is null or trim(value) = '' then null
-			else string_to_array(replace(value, ' ', ''), ',')::uuid[]
+			else (
+				select array_agg(v::uuid)
+				from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
+				where trim(v) != ''
+					and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+			)
 		end
 	into v_blocked_pending_group_ids
 	from workspace_configs
@@ -177,7 +183,7 @@ begin
 		)::numeric as potential_total
 	from combined_pending cp
 	where cp.total_attendance_days > 0  -- Only show users with actual attendance
-	order by cp.user_name, cp.group_name
+	order by cp.user_name asc, cp.group_name asc, cp.user_id asc, cp.group_id asc
 	limit p_limit
 	offset p_offset;
 end;
@@ -216,10 +222,16 @@ begin
 
 	-- Fetch workspace config for groups that should be excluded from pending invoices
 	-- Value is stored as a comma-separated list of UUIDs
+	-- Safe split-and-filter: validate each token is a valid UUID before casting
 	select
 		case
 			when value is null or trim(value) = '' then null
-			else string_to_array(replace(value, ' ', ''), ',')::uuid[]
+			else (
+				select array_agg(v::uuid)
+				from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
+				where trim(v) != ''
+					and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+			)
 		end
 	into v_blocked_pending_group_ids
 	from workspace_configs

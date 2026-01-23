@@ -1662,6 +1662,7 @@
     "import": "Import",
     "improvements": "Improvements",
     "incomplete": "Incomplete",
+    "initializing": "Initializing",
     "insufficient_permissions": "Insufficient Permissions",
     "invalid-file-type": "Invalid file type",
     "inventory": "Inventory",
@@ -8626,7 +8627,7 @@
     "saving": "Saving...",
     "search_groups": "Search groups...",
     "select_default_wallet": "Select a wallet",
-    "selected_groups_count": "{count} groups selected",
+    "selected_groups_count": "{count, plural, one {# group selected} other {# groups selected}}",
     "title": "Finance Settings",
     "update_error": "Failed to update settings",
     "update_success": "Settings updated successfully"

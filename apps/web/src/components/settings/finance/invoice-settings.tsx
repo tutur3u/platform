@@ -1,9 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -27,6 +26,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
+import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 import BlockedCreationGroups from './blocked-creation-groups';
 import BlockedPendingGroups from './blocked-pending-groups';
 
@@ -78,34 +78,8 @@ export default function InvoiceSettings({ wsId }: Props) {
     null
   );
 
-  const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
-    queryKey: ['workspace-user-groups', wsId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups')
-        .select('id, name, archived, is_guest')
-        .eq('ws_id', wsId)
-        .order('name', { ascending: true });
-
-      if (error) {
-        console.error(
-          'Error fetching workspace user groups for invoice settings:',
-          error
-        );
-        throw error;
-      }
-
-      return (data || []) as {
-        id: string;
-        name: string;
-        archived: boolean | null;
-        is_guest: boolean | null;
-      }[];
-    },
-    enabled: !!wsId,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: groupsData, isLoading: isLoadingGroups } =
+    useWorkspaceUserGroups(wsId, { includeGuest: true });
 
   const availableGroups = useMemo(() => groupsData || [], [groupsData]);
 

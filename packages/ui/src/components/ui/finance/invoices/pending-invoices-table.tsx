@@ -11,7 +11,7 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
-import { Suspense, useCallback } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import ExportDialogContent from './export-dialog-content';
 import { usePendingInvoices } from './hooks';
 import { pendingInvoiceColumns } from './pending-columns';
@@ -69,21 +69,40 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
     userIds,
   });
 
-  // Extract distinct users from pending invoices data for filter
-  const availableUsers = data?.data
-    ? Array.from(
-        new Map(
-          data.data.map((invoice) => [
-            invoice.user_id,
-            {
-              id: invoice.user_id,
-              display_name: invoice.user_name,
-              avatar_url: invoice.user_avatar_url || undefined,
-            },
-          ])
-        ).values()
-      )
-    : [];
+  const [allUsers, setAllUsers] = useState<
+    { id: string; display_name: string; avatar_url?: string }[]
+  >([]);
+  
+  const currentUsers = useMemo(() => {
+    if (!data?.data) return [];
+
+    return Array.from(
+      new Map(
+        data.data.map((invoice) => [
+          invoice.user_id,
+          {
+            id: invoice.user_id,
+            display_name: invoice.user_name,
+            avatar_url: invoice.user_avatar_url || undefined,
+          },
+        ])
+      ).values()
+    );
+  }, [data?.data]);
+
+  const isUnfiltered = q === '' && userIds.length === 0;
+
+  useEffect(() => {
+    if (!isUnfiltered || currentUsers.length === 0) return;
+
+    setAllUsers((prev) => {
+      const merged = new Map(prev.map((user) => [user.id, user]));
+      currentUsers.forEach((user) => merged.set(user.id, user));
+      return Array.from(merged.values());
+    });
+  }, [currentUsers, isUnfiltered]);
+
+  const availableUsers = allUsers.length > 0 ? allUsers : currentUsers;
 
   // Compute pageIndex from 1-based page
   const pageIndex = page > 0 ? page - 1 : 0;

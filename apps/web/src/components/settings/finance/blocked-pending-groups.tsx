@@ -1,8 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
   FormControl,
@@ -14,6 +12,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { type Control, useWatch } from 'react-hook-form';
+import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface Props {
   wsId: string;
@@ -24,33 +23,8 @@ interface Props {
 export default function BlockedPendingGroups({ wsId, control }: Props) {
   const t = useTranslations('ws-finance-settings');
 
-  const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
-    queryKey: ['workspace-user-groups', wsId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups')
-        .select('id, name, archived')
-        .eq('ws_id', wsId)
-        .order('name', { ascending: true });
-
-      if (error) {
-        console.error(
-          'Error fetching workspace user groups for blocked pending settings:',
-          error
-        );
-        throw error;
-      }
-
-      return (data || []) as {
-        id: string;
-        name: string;
-        archived: boolean | null;
-      }[];
-    },
-    enabled: !!wsId,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: groupsData, isLoading: isLoadingGroups } =
+    useWorkspaceUserGroups(wsId);
 
   const selectedGroupIds =
     useWatch({

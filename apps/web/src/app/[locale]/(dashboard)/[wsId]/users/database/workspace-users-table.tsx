@@ -256,7 +256,7 @@ export function WorkspaceUsersTable({
           <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="text-muted-foreground text-sm">
-              {!isInitialized ? 'Initializing...' : 'Loading...'}
+              {!isInitialized ? t('common.initializing') : t('common.loading')}
             </span>
           </div>
         </div>
