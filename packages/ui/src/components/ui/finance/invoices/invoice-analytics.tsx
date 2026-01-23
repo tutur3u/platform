@@ -125,14 +125,21 @@ export function InvoiceAnalytics({
     );
   }
 
+  const fallbackEndDate = new Date().toISOString().slice(0, 10);
+  const fallbackStartDate = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const resolvedStartDate = startDate ?? start ?? fallbackStartDate;
+  const resolvedEndDate = endDate ?? end ?? fallbackEndDate;
+
   // Build chart props based on data mode
   const chartProps: InvoiceTotalsChartProps = hasDateRange
     ? {
         walletData: walletData || [],
         creatorData: creatorData || [],
         hasDateRange: true,
-        startDate: startDate!,
-        endDate: endDate!,
+        startDate: resolvedStartDate,
+        endDate: resolvedEndDate,
         period,
         setPeriod: handlePeriodChange,
         className,
@@ -152,10 +159,5 @@ export function InvoiceAnalytics({
         showPeriodTabs: true,
       };
 
-  return (
-    <>
-      {/* Chart component */}
-      <InvoiceTotalsChart {...chartProps} />
-    </>
-  );
+  return <InvoiceTotalsChart {...chartProps} />;
 }

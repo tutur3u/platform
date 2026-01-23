@@ -30,6 +30,7 @@ interface InfiniteTransactionsListProps {
   wsId: string;
   walletId?: string;
   initialData?: Transaction[];
+  currency?: string;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
@@ -55,6 +56,7 @@ interface GroupedTransactions {
 export function InfiniteTransactionsList({
   wsId,
   walletId,
+  currency,
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
@@ -356,6 +358,7 @@ export function InfiniteTransactionsList({
           transactions={allTransactions}
           stats={stats}
           isLoading={isStatsLoading}
+          currency={currency}
         />
       )}
 

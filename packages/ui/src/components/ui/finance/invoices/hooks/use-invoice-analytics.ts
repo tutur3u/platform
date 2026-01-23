@@ -1,13 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import type { InvoiceTotalsByGroup } from '@tuturuuu/types/primitives/Invoice';
-
-interface InvoiceAnalyticsFilters {
-  walletIds?: string[];
-  userIds?: string[];
-  startDate?: string;
-  endDate?: string;
-  granularity?: 'daily' | 'weekly' | 'monthly';
-}
+import type {
+  InvoiceAnalyticsFilters,
+  InvoiceTotalsByGroup,
+} from '@tuturuuu/types/primitives/Invoice';
 
 interface InvoiceAnalyticsResponseDateRange {
   walletData: InvoiceTotalsByGroup[];

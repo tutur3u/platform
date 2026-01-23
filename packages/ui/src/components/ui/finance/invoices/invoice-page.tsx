@@ -284,7 +284,7 @@ async function getInitialData(
   const selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`;
 
   const startRange = (parsedPage - 1) * parsedSize;
-  const endRange = parsedPage * parsedSize;
+  const endRange = startRange + parsedSize - 1;
 
   const {
     data: rawData,

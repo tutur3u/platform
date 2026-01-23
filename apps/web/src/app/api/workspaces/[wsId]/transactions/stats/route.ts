@@ -1,5 +1,17 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+
+const querySchema = z.object({
+  q: z.string().optional().nullable(),
+  userIds: z.array(z.string()).optional().default([]),
+  categoryIds: z.array(z.string()).optional().default([]),
+  walletIds: z.array(z.string()).optional().default([]),
+  walletId: z.string().optional().nullable(),
+  start: z.string().optional().nullable(),
+  end: z.string().optional().nullable(),
+});
 
 interface Params {
   params: Promise<{
@@ -7,19 +19,42 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params
+): Promise<NextResponse> {
   try {
     const { wsId } = await params;
     const supabase = await createClient();
     const { searchParams } = new URL(req.url);
 
-    const q = searchParams.get('q');
-    const userIds = searchParams.getAll('userIds');
-    const categoryIds = searchParams.getAll('categoryIds');
-    const walletIds = searchParams.getAll('walletIds');
-    const walletId = searchParams.get('walletId');
-    const startDate = searchParams.get('start');
-    const endDate = searchParams.get('end');
+    // Validate query parameters
+    const parsed = querySchema.safeParse({
+      q: searchParams.get('q'),
+      userIds: searchParams.getAll('userIds'),
+      categoryIds: searchParams.getAll('categoryIds'),
+      walletIds: searchParams.getAll('walletIds'),
+      walletId: searchParams.get('walletId'),
+      start: searchParams.get('start'),
+      end: searchParams.get('end'),
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid query parameters' },
+        { status: 400 }
+      );
+    }
+
+    const {
+      q,
+      userIds,
+      categoryIds,
+      walletIds,
+      walletId,
+      start: startDate,
+      end: endDate,
+    } = parsed.data;
 
     // Combine wallet filters
     const finalWalletIds =
@@ -34,9 +69,12 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+
     // Use dedicated RPC for stats
     const { data, error } = await supabase.rpc('get_transaction_stats', {
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
       p_user_id: user.id,
       p_wallet_ids: finalWalletIds,
       p_category_ids: categoryIds.length > 0 ? categoryIds : undefined,
@@ -67,10 +105,7 @@ export async function GET(req: Request, { params }: Params) {
     console.error('Error fetching transaction stats:', error);
     return NextResponse.json(
       {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to fetch transaction stats',
+        message: 'Internal server error while fetching transaction stats',
       },
       { status: 500 }
     );

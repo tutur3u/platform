@@ -244,12 +244,6 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     return { totalAmount, totalCount };
   }, [rawData]);
 
-  // Determine inferred period type for date range mode
-  // Note: We now respect the user's selected period even in date range mode
-  const inferredPeriod = useMemo((): InvoiceAnalyticsPeriod => {
-    return period; // Always use the period prop - it's controlled by the parent
-  }, [period]);
-
   const formatValue = (value: number) => {
     if (isConfidential && metric === 'amount') return '******';
     if (metric === 'count') {
@@ -278,8 +272,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const formatPeriodLabel = (value: string) => {
     try {
       const date = new Date(value);
-      const activePeriod = props.hasDateRange ? inferredPeriod : period;
-      switch (activePeriod) {
+      switch (period) {
         case 'daily':
           return Intl.DateTimeFormat(locale, {
             month: 'short',
@@ -306,8 +299,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const formatPeriodTooltip = (value: string) => {
     try {
       const date = new Date(value);
-      const activePeriod = props.hasDateRange ? inferredPeriod : period;
-      switch (activePeriod) {
+      switch (period) {
         case 'daily':
           return Intl.DateTimeFormat(locale, {
             weekday: 'long',

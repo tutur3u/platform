@@ -44,10 +44,10 @@ BEGIN
   _day_count := (_end_date::DATE - _start_date::DATE) + 1;
 
   -- Determine interval type
-  IF interval_type IS NOT NULL THEN
+  IF interval_type IS NOT NULL AND interval_type IN ('day', 'week', 'month') THEN
     _interval_type := interval_type;
   ELSE
-    -- Auto-detect based on duration
+    -- Auto-detect based on duration if interval_type is NULL or invalid
     IF _day_count <= 31 THEN
       _interval_type := 'day';
     ELSIF _day_count <= 90 THEN
@@ -191,8 +191,9 @@ BEGIN
         SUM(fi.price)::NUMERIC AS total_amount,
         COUNT(*)::BIGINT AS invoice_count
       FROM finance_invoices fi
-      INNER JOIN wallet_transactions wt ON fi.transaction_id = wt.id
-      INNER JOIN workspace_wallets ww ON wt.wallet_id = ww.id
+      -- Use LEFT JOIN to consistently include invoices even if they lack linked transactions/wallets
+      LEFT JOIN wallet_transactions wt ON fi.transaction_id = wt.id
+      LEFT JOIN workspace_wallets ww ON wt.wallet_id = ww.id
       LEFT JOIN workspace_user_linked_users wulu ON wulu.virtual_user_id = fi.creator_id
       WHERE fi.ws_id = _ws_id
         AND fi.created_at >= _start_date

@@ -23,12 +23,14 @@ interface TransactionStatisticsProps {
     hasRedactedAmounts: boolean;
   };
   isLoading?: boolean;
+  currency?: string;
 }
 
 export function TransactionStatistics({
   transactions,
   stats,
   isLoading,
+  currency = 'VND',
 }: TransactionStatisticsProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -39,9 +41,12 @@ export function TransactionStatistics({
     const amounts = transactions
       .filter(
         (transaction) =>
-          !(transaction.amount === null && transaction.is_amount_confidential)
+          !(
+            transaction.amount === undefined &&
+            transaction.is_amount_confidential
+          )
       )
-      .map((transaction) => transaction.amount || 0);
+      .map((transaction) => transaction.amount ?? 0);
 
     const totalTransactions = transactions.length;
     const totalIncome = amounts.filter((a) => a > 0).reduce((a, b) => a + b, 0);
@@ -52,7 +57,7 @@ export function TransactionStatistics({
 
     const hasRedactedAmounts = transactions.some(
       (transaction) =>
-        transaction.amount === null && transaction.is_amount_confidential
+        transaction.amount === undefined && transaction.is_amount_confidential
     );
 
     return {
@@ -131,7 +136,7 @@ export function TransactionStatistics({
               {statistics.hasRedactedAmounts && '≈ '}
               {Intl.NumberFormat(locale, {
                 style: 'currency',
-                currency: 'VND',
+                currency,
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               }).format(statistics.totalIncome)}
@@ -152,7 +157,7 @@ export function TransactionStatistics({
               {statistics.hasRedactedAmounts && '≈ '}
               {Intl.NumberFormat(locale, {
                 style: 'currency',
-                currency: 'VND',
+                currency,
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               }).format(Math.abs(statistics.totalExpense))}
@@ -194,7 +199,7 @@ export function TransactionStatistics({
               {statistics.hasRedactedAmounts && '≈ '}
               {Intl.NumberFormat(locale, {
                 style: 'currency',
-                currency: 'VND',
+                currency,
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
                 signDisplay: 'always',
