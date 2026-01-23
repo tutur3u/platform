@@ -8131,9 +8131,14 @@
     "confidential-toggle-disabled": "Bạn cần quyền để tạo hoặc cập nhật giao dịch bảo mật",
     "description": "Mô tả",
     "description-redacted": "[BẢO MẬT]",
+    "filtered-results": "Dựa trên bộ lọc hiện tại",
     "mark-as-confidential": "Đánh dấu là bảo mật",
     "net-total": "Tổng ròng",
-    "no-transactions-found": "Không tìm thấy giao dịch nào. Tạo giao dịch đầu tiên của bạn để bắt đầu."
+    "no-transactions-found": "Không tìm thấy giao dịch nào. Tạo giao dịch đầu tiên của bạn để bắt đầu.",
+    "statistics-summary": "Thống kê tổng hợp",
+    "total-expenses": "Tổng chi",
+    "total-income": "Tổng thu",
+    "total-transactions": "Tổng giao dịch"
   },
   "workspace-inventory-tabs": {
     "batches": "Lô hàng",

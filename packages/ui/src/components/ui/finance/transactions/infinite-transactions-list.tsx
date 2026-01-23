@@ -20,6 +20,7 @@ import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionCard } from './transaction-card';
 import { TransactionEditDialog } from './transaction-edit-dialog';
+import { TransactionStatistics } from './transaction-statistics';
 
 interface InfiniteTransactionsListProps {
   wsId: string;
@@ -215,6 +216,16 @@ export function InfiniteTransactionsList({
 
   const allTransactions = data?.pages.flatMap((page) => page.data) || [];
 
+  // Check if any filter is active
+  const hasActiveFilter =
+    !!q ||
+    userIds.length > 0 ||
+    categoryIds.length > 0 ||
+    walletIds.length > 0 ||
+    !!start ||
+    !!end ||
+    !!walletId;
+
   // Group transactions by date
   const groupedTransactions = useMemo(() => {
     const groups: GroupedTransactions[] = [];
@@ -319,6 +330,11 @@ export function InfiniteTransactionsList({
 
   return (
     <div className="space-y-6">
+      {/* Statistics Summary - Only show when filters are active */}
+      {hasActiveFilter && allTransactions.length > 0 && (
+        <TransactionStatistics transactions={allTransactions} />
+      )}
+
       {groupedTransactions.map((group, groupIndex) => {
         const dailyTotal = group.transactions.reduce((sum, transaction) => {
           if (

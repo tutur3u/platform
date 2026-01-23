@@ -8054,9 +8054,14 @@
     "confidential-toggle-disabled": "You need permission to create or update confidential transactions",
     "description": "Description",
     "description-redacted": "[CONFIDENTIAL]",
+    "filtered-results": "Based on your current filters",
     "mark-as-confidential": "Mark as Confidential",
     "net-total": "Net Total",
-    "no-transactions-found": "No transactions found. Create your first transaction to get started."
+    "no-transactions-found": "No transactions found. Create your first transaction to get started.",
+    "statistics-summary": "Statistics Summary",
+    "total-expenses": "Total Expenses",
+    "total-income": "Total Income",
+    "total-transactions": "Total Transactions"
   },
   "workspace-inventory-tabs": {
     "batches": "Batches",
