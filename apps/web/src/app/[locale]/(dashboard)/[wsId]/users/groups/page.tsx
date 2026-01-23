@@ -5,11 +5,9 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getUserGroupColumns } from './columns';
-import Filters from './filters';
 import UserGroupForm from './form';
+import { UserGroupsTable } from './user-groups-table';
 import { getUserGroupMemberships } from './utils';
 
 export const metadata: Metadata = {
@@ -40,10 +38,13 @@ export default async function WorkspaceUserGroupsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const t = await getTranslations();
+        const sp = await searchParams;
+
         // Check permissions
         const { withoutPermission, containsPermission } = await getPermissions({
           wsId,
         });
+
         if (withoutPermission('view_user_groups')) {
           return (
             <div className="flex h-96 items-center justify-center">
@@ -57,9 +58,9 @@ export default async function WorkspaceUserGroupsPage({
           );
         }
 
-        const { data, count } = await getData(
+        const { data, count } = await getInitialData(
           wsId,
-          await searchParams,
+          sp,
           containsPermission('manage_users')
         );
 
@@ -68,11 +69,12 @@ export default async function WorkspaceUserGroupsPage({
         const canUpdate = containsPermission('update_user_groups');
         const canDelete = containsPermission('delete_user_groups');
 
-        const groups = data.map((g) => ({
-          ...g,
-          ws_id: wsId,
-          href: `/${wsId}/users/groups/${g.id}`,
-        }));
+        const permissions = {
+          canCreate,
+          canUpdate,
+          canDelete,
+        };
+
         return (
           <>
             <FeatureSummary
@@ -92,24 +94,10 @@ export default async function WorkspaceUserGroupsPage({
               }
             />
             <Separator className="my-4" />
-            <CustomDataTable
-              data={groups}
-              columnGenerator={getUserGroupColumns}
-              namespace="user-group-data-table"
-              count={count}
-              filters={
-                <Filters wsId={wsId} searchParams={await searchParams} />
-              }
-              extraData={{
-                canCreateUserGroups: canCreate,
-                canUpdateUserGroups: canUpdate,
-                canDeleteUserGroups: canDelete,
-              }}
-              defaultVisibility={{
-                id: false,
-                locked: false,
-                created_at: false,
-              }}
+            <UserGroupsTable
+              wsId={wsId}
+              initialData={{ data, count }}
+              permissions={permissions}
             />
           </>
         );
@@ -118,60 +106,22 @@ export default async function WorkspaceUserGroupsPage({
   );
 }
 
-async function getData(
+async function getInitialData(
   wsId: string,
   {
     q,
     page = '1',
     pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {},
+  }: { q?: string; page?: string; pageSize?: string } = {},
   hasManageUsers: boolean = false
 ) {
   try {
     const supabase = await createClient();
 
-    // Users with manage_users permission can see all groups.
-    // Otherwise, restrict visibility to groups they're a member of.
-    if (!hasManageUsers) {
-      const groupIds = await getUserGroupMemberships(wsId);
-      if (groupIds.length === 0) {
-        return { data: [], count: 0 } as { data: UserGroup[]; count: number };
-      }
-
-      const queryBuilder = supabase
-        .from('workspace_user_groups_with_guest')
-        .select(
-          'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
-          {
-            count: 'exact',
-          }
-        )
-        .eq('ws_id', wsId)
-        .in('id', groupIds)
-        .order('name');
-
-      if (q) queryBuilder.ilike('name', `%${q}%`);
-
-      if (page && pageSize) {
-        const parsedPage = parseInt(page, 10);
-        const parsedSize = parseInt(pageSize, 10);
-        const start = (parsedPage - 1) * parsedSize;
-        const end = start + parsedSize - 1;
-        queryBuilder.range(start, end);
-      }
-
-      const { data, error, count } = await queryBuilder;
-      if (error) throw error;
-
-      return { data, count } as { data: UserGroup[]; count: number };
-    }
-
-    // For users with manage_users permission, show all groups
     const queryBuilder = supabase
       .from('workspace_user_groups_with_guest')
       .select(
-        'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
+        'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest, amount, created_at',
         {
           count: 'exact',
         }
@@ -181,20 +131,61 @@ async function getData(
 
     if (q) queryBuilder.ilike('name', `%${q}%`);
 
-    if (page && pageSize) {
-      const parsedPage = parseInt(page, 10);
-      const parsedSize = parseInt(pageSize, 10);
-      const start = (parsedPage - 1) * parsedSize;
-      const end = start + parsedSize - 1;
-      queryBuilder.range(start, end);
+    if (!hasManageUsers) {
+      const groupIds = await getUserGroupMemberships(wsId);
+      if (groupIds.length === 0) {
+        return { data: [], count: 0 } as { data: UserGroup[]; count: number };
+      }
+      queryBuilder.in('id', groupIds);
     }
 
-    const { data, error, count } = await queryBuilder;
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = start + parsedSize - 1;
+    queryBuilder.range(start, end);
+
+    const { data: fetchedData, error, count } = await queryBuilder;
     if (error) throw error;
 
-    return { data, count } as { data: UserGroup[]; count: number };
+    let groups = fetchedData as UserGroup[];
+
+    // Fetch managers for the fetched groups
+    if (groups.length > 0) {
+      const groupIds = groups.map((g) => g.id);
+      const { data: managersData, error: managersError } = await supabase
+        .from('workspace_user_groups_users')
+        .select(
+          'group_id, user:workspace_users!inner(id, full_name, avatar_url, display_name, email)'
+        )
+        .in('group_id', groupIds)
+        .eq('role', 'TEACHER');
+
+      if (!managersError && managersData) {
+        const managersByGroup = managersData.reduce(
+          (acc, item) => {
+            if (!acc[item.group_id]) {
+              acc[item.group_id] = [];
+            }
+            if (item.user) {
+              // @ts-expect-error
+              acc[item.group_id].push(item.user);
+            }
+            return acc;
+          },
+          {} as Record<string, NonNullable<UserGroup['managers']>>
+        );
+
+        groups = groups.map((g) => ({
+          ...g,
+          managers: managersByGroup[g.id] || [],
+        }));
+      }
+    }
+
+    return { data: groups, count: count ?? 0 };
   } catch (error) {
-    if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false }, hasManageUsers);
+    console.error('Error fetching initial user groups:', error);
+    return { data: [], count: 0 };
   }
 }
