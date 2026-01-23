@@ -1,7 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  getPermissions,
+} from '@tuturuuu/utils/workspace-helper';
 
 const querySchema = z.object({
   q: z.string().optional().nullable(),
@@ -68,9 +71,15 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-
     // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
     const normalizedWsId = await normalizeWorkspaceId(wsId);
+
+    const { withoutPermission } = await getPermissions({
+      wsId: normalizedWsId,
+    });
+    if (withoutPermission('view_transactions')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
 
     // Use dedicated RPC for stats
     const { data, error } = await supabase.rpc('get_transaction_stats', {
