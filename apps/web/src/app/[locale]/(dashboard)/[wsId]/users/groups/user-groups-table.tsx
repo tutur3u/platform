@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
@@ -48,7 +49,7 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
 
   const pageIndex = page > 0 ? page - 1 : 0;
 
-  const { data, isLoading, isFetching, error } = useUserGroups(
+  const { data, isLoading, isFetching, error, refetch } = useUserGroups(
     wsId,
     {
       q,
@@ -99,10 +100,24 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
         <p className="text-destructive">
           Error loading user groups. Please try again.
         </p>
+        <Button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          aria-label="Retry loading user groups"
+        >
+          {isFetching ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </>
+          ) : (
+            t('ws-user-groups.retry')
+          )}
+        </Button>
       </div>
     );
   }

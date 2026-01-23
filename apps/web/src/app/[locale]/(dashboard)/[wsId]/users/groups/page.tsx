@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UserGroupForm from './form';
+import type { ManagerUser } from './hooks';
 import { UserGroupsTable } from './user-groups-table';
 import { getUserGroupMemberships } from './utils';
 
@@ -139,10 +140,19 @@ async function getInitialData(
       queryBuilder.in('id', groupIds);
     }
 
+    // Validate and clamp page and pageSize parameters
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = start + parsedSize - 1;
+
+    // Default to page 1 if invalid (NaN or <=0)
+    const validPage = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+
+    // Default to 10 if invalid, enforce max of 100
+    let validPageSize = !isNaN(parsedSize) && parsedSize > 0 ? parsedSize : 10;
+    validPageSize = Math.min(validPageSize, 100);
+
+    const start = (validPage - 1) * validPageSize;
+    const end = start + validPageSize - 1;
     queryBuilder.range(start, end);
 
     const { data: fetchedData, error, count } = await queryBuilder;
@@ -164,21 +174,22 @@ async function getInitialData(
       if (!managersError && managersData) {
         const managersByGroup = managersData.reduce(
           (acc, item) => {
-            if (!acc[item.group_id]) {
-              acc[item.group_id] = [];
-            }
+            if (!item.group_id) return acc;
+
+            const groupId = item.group_id;
+            const groupManagers = acc[groupId] ?? (acc[groupId] = []);
+
             if (item.user) {
-              // @ts-expect-error
-              acc[item.group_id].push(item.user);
+              groupManagers.push(item.user as ManagerUser);
             }
             return acc;
           },
-          {} as Record<string, NonNullable<UserGroup['managers']>>
+          {} as Record<string, ManagerUser[]>
         );
 
         groups = groups.map((g) => ({
           ...g,
-          managers: managersByGroup[g.id] || [],
+          managers: managersByGroup[g.id] ?? [],
         }));
       }
     }

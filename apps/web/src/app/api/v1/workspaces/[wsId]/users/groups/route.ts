@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { ManagerUser } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/hooks';
 import { getUserGroupMemberships } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 
 const SearchParamsSchema = z.object({
@@ -18,6 +19,14 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+/**
+ * Escapes SQL LIKE wildcard characters (%, _, \) in a search string.
+ * This prevents users from injecting wildcard patterns.
+ */
+function escapeLikeWildcards(str: string): string {
+  return str.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -56,7 +65,10 @@ export async function GET(request: Request, { params }: Params) {
       .eq('ws_id', wsId)
       .order('name');
 
-    if (sp.q) queryBuilder.ilike('name', `%${sp.q}%`);
+    if (sp.q) {
+      const escapedSearch = escapeLikeWildcards(sp.q);
+      queryBuilder.ilike('name', `%${escapedSearch}%`);
+    }
 
     if (!hasManageUsers) {
       const groupIds = await getUserGroupMemberships(wsId);
@@ -94,24 +106,25 @@ export async function GET(request: Request, { params }: Params) {
       if (managersError) {
         console.error('Error fetching managers:', managersError);
         // We continue without managers if this fails, or we could throw
-      } else {
+      } else if (managersData) {
         const managersByGroup = managersData.reduce(
           (acc, item) => {
-            if (!acc[item.group_id]) {
-              acc[item.group_id] = [];
-            }
+            if (!item.group_id) return acc;
+
+            const groupId = item.group_id;
+            const groupManagers = acc[groupId] ?? (acc[groupId] = []);
+
             if (item.user) {
-              // @ts-expect-error
-              acc[item.group_id].push(item.user);
+              groupManagers.push(item.user as ManagerUser);
             }
             return acc;
           },
-          {} as Record<string, NonNullable<UserGroup['managers']>>
+          {} as Record<string, ManagerUser[]>
         );
 
         data = data.map((g) => ({
           ...g,
-          managers: managersByGroup[g.id] || [],
+          managers: managersByGroup[g.id] ?? [],
         }));
       }
     }

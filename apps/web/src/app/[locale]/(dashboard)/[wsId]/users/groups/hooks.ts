@@ -14,6 +14,18 @@ export interface UserGroupsResponse {
   count: number;
 }
 
+/**
+ * Type for manager user data from workspace_users table.
+ * Used when fetching group managers.
+ */
+export type ManagerUser = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  display_name: string | null;
+  email: string | null;
+};
+
 export function useUserGroups(
   wsId: string,
   params: UserGroupsParams = {},
