@@ -3244,7 +3244,8 @@
     "note": "Note",
     "notice": "Description",
     "price": "Original Price",
-    "total_diff": "Price difference"
+    "total_diff": "Price difference",
+    "wallet": "Wallet"
   },
   "invoices": {
     "add_promotion": "Add promotion",
