@@ -185,7 +185,7 @@ export function PlanList({
         text: t('downgrade-to', { plan: plan.name }),
         icon: ArrowDownCircle,
         variant: 'outline' as const,
-        disabled: false,
+        disabled: plan.isFree, // Disable downgrade to Free plan via button
       };
     }
 
@@ -444,7 +444,7 @@ export function PlanList({
                             wsId={wsId}
                             productId={plan.id}
                             onPlanChange={
-                              !plan.isFree
+                              currentPlan.tier === 'FREE'
                                 ? undefined
                                 : () => handlePlanChange(plan)
                             }
