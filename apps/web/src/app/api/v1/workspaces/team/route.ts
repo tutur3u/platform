@@ -7,7 +7,7 @@ import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getOrCreatePolarCustomer } from '@/utils/customer-session';
-import { createSubscription } from '@/utils/subscription-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 
 const CreateTeamWorkspaceSchema = z.object({
   name: z.string().min(1).max(100),
@@ -105,12 +105,11 @@ export async function POST(req: Request) {
     });
 
     // Create free subscription for the workspace
-    const subscription = await createSubscription(
+    const subscription = await createFreeSubscription(
       polar,
       sbAdmin,
       workspace.id,
-      customerId,
-      'FREE'
+      customerId
     );
 
     if (subscription) {

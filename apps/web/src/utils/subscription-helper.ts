@@ -1,16 +1,12 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceProductTier } from 'tuturuuu/types';
 
 // Helper function to get the FREE tier product from the database
-export async function getProduct(
-  sbAdmin: SupabaseClient,
-  tier: WorkspaceProductTier
-) {
+export async function getFreeProduct(sbAdmin: SupabaseClient) {
   const { data: freeProduct, error } = await sbAdmin
     .from('workspace_subscription_products')
     .select('id, name, tier')
-    .eq('tier', tier)
+    .eq('tier', 'FREE')
     .eq('archived', false)
     .limit(1)
     .maybeSingle();
@@ -46,15 +42,14 @@ export async function hasActiveSubscription(
 }
 
 // Helper function to create a free subscription for a workspace in Polar
-export async function createSubscription(
+export async function createFreeSubscription(
   polar: Polar,
   sbAdmin: SupabaseClient,
   ws_id: string,
-  customerId: string,
-  tier: WorkspaceProductTier
+  customerId: string
 ) {
   // Get the FREE tier product
-  const freeProduct = await getProduct(sbAdmin, tier);
+  const freeProduct = await getFreeProduct(sbAdmin);
   if (!freeProduct) {
     console.error(
       'Webhook: No FREE tier product found, cannot create free subscription'

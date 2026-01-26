@@ -6,7 +6,7 @@ import {
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 import { getOrCreatePolarCustomer } from '@/utils/customer-session';
-import { createSubscription } from '@/utils/subscription-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function POST() {
   const supabase = await createClient();
@@ -80,12 +80,11 @@ export async function POST() {
     });
 
     // Create free subscription for the workspace
-    const subscription = await createSubscription(
+    const subscription = await createFreeSubscription(
       polar,
       sbAdmin,
       data.id,
-      customerId,
-      'FREE'
+      customerId
     );
 
     if (subscription) {

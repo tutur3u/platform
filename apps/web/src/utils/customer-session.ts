@@ -42,57 +42,14 @@ export async function createCustomerSessionWithFallback({
         : 'Unknown error'
     );
 
-    // Get user email from user_private_details
-    const { data: userDetails, error: emailError } = await supabase
-      .from('user_private_details')
-      .select('email, full_name, ...users(display_name)')
-      .eq('user_id', userId)
-      .single();
-
-    if (emailError || !userDetails?.email) {
-      throw new Error('Unable to retrieve user email for customer lookup');
-    }
-
-    // Search for customer by email in Polar
-    const customersResponse = await polar.customers.list({
-      email: userDetails.email,
+    // Fall back to get-or-create by email, then create session
+    const customerId = await getOrCreatePolarCustomer({
+      polar,
+      supabase,
+      userId,
     });
 
-    const customers = customersResponse.result?.items || [];
-
-    if (customers.length === 0) {
-      // Create new customer if not found
-      console.log(
-        'Customer not found in Polar by email, creating new customer...'
-      );
-      const newCustomer = await polar.customers.create({
-        email: userDetails.email,
-        name: userDetails.full_name || userDetails.display_name || undefined,
-        externalId: userId,
-      });
-
-      if (!newCustomer) {
-        throw new Error('Failed to create new customer in Polar');
-      }
-
-      console.log('Created new Polar customer:', newCustomer.id);
-
-      // Create session with new customer ID
-      return await polar.customerSessions.create({
-        customerId: newCustomer.id,
-      });
-    }
-
-    // Use the first matching customer's ID to create session
-    const polarCustomerId = customers[0]?.id;
-    if (!polarCustomerId) {
-      throw new Error('Customer not found in Polar by email or external ID');
-    }
-    const session = await polar.customerSessions.create({
-      customerId: polarCustomerId,
-    });
-
-    return session;
+    return await polar.customerSessions.create({ customerId });
   }
 }
 
