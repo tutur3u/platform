@@ -4,6 +4,10 @@ import { useLocalStorage } from '@mantine/hooks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MigrationModule } from '../modules';
+import {
+  DEFAULT_TUTURUUU_API_ENDPOINT,
+  fetchFromTuturuuu,
+} from '../utils/api-path';
 import type {
   ConfirmDialogState,
   DataSource,
@@ -28,9 +32,6 @@ interface MigrationConfig {
   targetWorkspaceId: string;
   healthCheckMode: boolean;
 }
-
-// Default Tuturuuu API endpoint (production v2)
-const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
 
 interface MigrationStateReturn {
   // Config
@@ -297,19 +298,11 @@ export function useMigrationState(
       setSourceWorkspaceName(null);
 
       try {
-        // Use proxy API to avoid CORS issues when fetching from Tuturuuu production
-        // Pass the configured API endpoint to the proxy
-        const apiUrlParam = tuturuuuApiEndpoint
-          ? `&apiUrl=${encodeURIComponent(tuturuuuApiEndpoint)}`
-          : '';
-        const response = await fetch(
-          `/api/v1/proxy/tuturuuu?path=/workspaces/${wsId}${apiUrlParam}`,
-          {
-            headers: {
-              'X-Tuturuuu-Api-Key': tuturuuuApiKey,
-            },
-          }
-        );
+        const response = await fetchFromTuturuuu({
+          path: `workspaces/${wsId}`,
+          apiKey: tuturuuuApiKey,
+          apiEndpoint: tuturuuuApiEndpoint,
+        });
 
         if (!response.ok) {
           setSourceWorkspaceName('');
