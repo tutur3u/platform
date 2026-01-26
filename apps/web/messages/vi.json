@@ -4969,7 +4969,13 @@
     "stock": "Tồn kho",
     "unit": "Đơn vị",
     "usage": "Cách dùng",
-    "warehouse": "Kho"
+    "warehouse": "Kho",
+    "unlimited_stock": "Tồn kho không giới hạn",
+    "min_amount": "Số lượng tối thiểu",
+    "price_by_warehouse": "Giá theo kho hàng",
+    "stock_by_warehouse": "Tồn kho theo kho hàng",
+    "unknown_warehouse": "Kho hàng không xác định",
+    "warehouses": "kho hàng"
   },
   "promotion-data-table": {
     "code": "Mã giảm giá",

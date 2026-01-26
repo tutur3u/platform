@@ -1,8 +1,11 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Warehouse } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
+import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import moment from 'moment';
 import { ProductRowActions } from './row-actions';
 
@@ -101,6 +104,174 @@ export const productColumns = (
       />
     ),
     cell: ({ row }) => <div>{row.getValue('usage') || '-'}</div>,
+  },
+  {
+    accessorKey: 'stock',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.stock`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const stock = row.original.stock;
+      const isUnlimited =
+        !stock || stock.length === 0 || stock.some((s) => s.amount == null);
+
+      if (isUnlimited) {
+        return (
+          <div className="flex items-center gap-2">
+            <span className="line-clamp-1 font-medium text-dynamic-blue">
+              {t(`${namespace}.unlimited_stock`)}
+            </span>
+          </div>
+        );
+      }
+
+      if (stock.length === 1) {
+        const s = stock[0];
+        if (!s) return null;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="line-clamp-1">
+              {s.amount ?? '-'} {s.unit || ''}
+            </span>
+          </div>
+        );
+      }
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-2 px-2"
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <Warehouse className="h-4 w-4" />
+              <span>
+                {stock.length}
+                <span className="ml-1 hidden sm:inline">
+                  {t(`${namespace}.warehouses`)}
+                </span>
+              </span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-80 p-0"
+            align="start"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex flex-col gap-2 p-4">
+              <h4 className="font-medium leading-none">
+                {t(`${namespace}.stock_by_warehouse`)}
+              </h4>
+              <div className="grid gap-2">
+                {stock.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col gap-1 border-b pb-2 last:border-b-0"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">
+                        {s.warehouse || t(`${namespace}.unknown_warehouse`)}
+                      </span>
+                      <span className="text-sm">
+                        {s.amount === null
+                          ? t(`${namespace}.labels.unlimited_stock`)
+                          : `${s.amount ?? '-'} ${s.unit || ''}`}
+                      </span>
+                    </div>
+                    {s.amount !== null && (
+                      <div className="text-muted-foreground text-xs">
+                        {t(`${namespace}.min_amount`)}: {s.min_amount ?? 0}{' '}
+                        {s.unit || ''}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      );
+    },
+  },
+  {
+    accessorKey: 'price',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.price`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const stock = row.original.stock;
+      if (!stock || stock.length === 0) return <div>-</div>;
+      if (stock.length === 1) {
+        const s = stock[0];
+        if (!s) return null;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="line-clamp-1">
+              {s.price?.toLocaleString() || '-'}
+            </span>
+          </div>
+        );
+      }
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-2 px-2"
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <Warehouse className="h-4 w-4" />
+              <span>
+                {stock.length}
+                <span className="ml-1 hidden sm:inline">
+                  {t(`${namespace}.warehouses`)}
+                </span>
+              </span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-80 p-0"
+            align="start"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex flex-col gap-2 p-4">
+              <h4 className="font-medium leading-none">
+                {t(`${namespace}.price_by_warehouse`)}
+              </h4>
+              <div className="grid gap-2">
+                {stock.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between border-b pb-2 last:border-b-0"
+                  >
+                    <span className="font-medium text-sm">
+                      {s.warehouse || t(`${namespace}.unknown_warehouse`)}
+                    </span>
+                    <span className="text-sm">
+                      {s.price?.toLocaleString() || '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      );
+    },
   },
   {
     accessorKey: 'created_at',

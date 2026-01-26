@@ -4939,7 +4939,13 @@
     "stock": "Stock",
     "unit": "Unit",
     "usage": "Usage",
-    "warehouse": "Warehouse"
+    "warehouse": "Warehouse",
+    "unlimited_stock": "Unlimited Stock",
+    "min_amount": "Min amount",
+    "price_by_warehouse": "Price by Warehouse",
+    "stock_by_warehouse": "Stock by Warehouse",
+    "unknown_warehouse": "Unknown Warehouse",
+    "warehouses": "warehouses"
   },
   "promotion-data-table": {
     "code": "Code",
