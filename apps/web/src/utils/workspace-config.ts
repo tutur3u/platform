@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspaceConfig } from '@/lib/workspace-helper';
 
 export async function isPromotionAllowedForWorkspace(
   wsId: string,
@@ -9,16 +9,13 @@ export async function isPromotionAllowedForWorkspace(
     return true;
   }
 
-  const supabase = await createClient();
-  const { data: config } = await supabase
-    .from('workspace_configs')
-    .select('value')
-    .eq('ws_id', wsId)
-    .eq('id', 'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD')
-    .single();
+  const value = await getWorkspaceConfig(
+    wsId,
+    'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD'
+  );
 
   // Default to true for backward compatibility
-  return config?.value?.toLowerCase() !== 'false';
+  return value?.toLowerCase() !== 'false';
 }
 
 /**
@@ -30,22 +27,17 @@ export async function isGroupBlockedForSubscriptionInvoices(
   wsId: string,
   groupId: string
 ): Promise<boolean> {
-  const supabase = await createClient();
+  const value = await getWorkspaceConfig(
+    wsId,
+    'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION'
+  );
 
-  const { data: config } = await supabase
-    .from('workspace_configs')
-    .select('value')
-    .eq('ws_id', wsId)
-    .eq('id', 'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION')
-    .single();
-
-  const raw = config?.value;
-  if (!raw) {
+  if (!value) {
     return false;
   }
 
   // Normalize and split into UUID list
-  const ids = raw
+  const ids = value
     .split(',')
     .map((v) => v.trim())
     .filter(Boolean);

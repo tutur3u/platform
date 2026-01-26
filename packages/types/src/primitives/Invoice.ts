@@ -19,6 +19,9 @@ export interface Invoice {
     avatar_url?: string | null;
   } | null;
   platform_creator_id?: string;
+  wallet?: {
+    name: string | null;
+  } | null;
   ws_id?: string;
   completed_at?: string;
   transaction_id?: string;

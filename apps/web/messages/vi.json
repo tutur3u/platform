@@ -3267,7 +3267,8 @@
     "note": "Ghi chú",
     "notice": "Mô tả",
     "price": "Tổng tiền gốc",
-    "total_diff": "Chênh lệch giá"
+    "total_diff": "Chênh lệch giá",
+    "wallet": "Ví"
   },
   "invoices": {
     "add_promotion": "Thêm khuyến mãi",
@@ -5257,9 +5258,17 @@
       "title": "Nhiệm vụ"
     },
     "time_tracker": {
+      "allow_future_sessions": "Cho phép phiên tương lai",
+      "allow_future_sessions_description": "Cho phép tạo các phiên theo dõi thời gian với thời gian bắt đầu hoặc kết thúc trong tương lai",
       "break_types": "Loại nghỉ",
       "break_types_description": "Quản lý và tùy chỉnh các loại nghỉ cho không gian làm việc",
-      "title": "Theo dõi thời gian"
+      "general": "Chung",
+      "general_description": "Cấu hình các cài đặt chung cho trình theo dõi thời gian",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "title": "Theo dõi thời gian",
+      "update_error": "Cập nhật cài đặt trình theo dõi thời gian thất bại",
+      "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công"
     },
     "user": {
       "profile": "Hồ sơ",
@@ -5956,10 +5965,13 @@
       "all_tasks_linked": "Tất cả nhiệm vụ trong không gian làm việc đã được liên kết với dự án này.",
       "close": "Đóng",
       "description": "Liên kết các nhiệm vụ hiện có với dự án này hoặc xóa chúng.",
+      "end_of_list": "Hết danh sách",
       "link_a_task": "Liên Kết Nhiệm Vụ",
       "link_task": "Liên Kết Nhiệm Vụ",
       "linked_tasks": "Nhiệm Vụ Đã Liên Kết",
       "linking": "Đang liên kết...",
+      "load_more": "Tải thêm",
+      "loading_more": "Đang tải thêm",
       "loading_tasks": "Đang tải nhiệm vụ...",
       "no_available_tasks": "Không có nhiệm vụ khả dụng",
       "no_tasks_linked": "Chưa có nhiệm vụ nào được liên kết.",
@@ -7342,6 +7354,7 @@
       "edit": "Chỉnh sửa",
       "edit_session": "Chỉnh Sửa Phiên",
       "edit_session_title": "Chỉnh Sửa Phiên",
+      "end_of_list": "Hết danh sách",
       "end_time": "Thời Gian Kết Thúc",
       "end_time_before_start": "Thời gian kết thúc không thể trước thời gian bắt đầu",
       "evening": "🌇 Tối (18h - 24h)",
@@ -7361,6 +7374,9 @@
       "individual_sessions": "Phiên Cá Nhân ({count})",
       "interrupted": "⚡ Bị Gián Đoạn (< 15 phút)",
       "learning": "📚 Học Tập",
+      "load_more": "Tải thêm",
+      "loading_more": "Đang tải thêm",
+      "loading_sessions": "Đang tải phiên",
       "loading_tasks": "Đang tải nhiệm vụ...",
       "long_duration": "🏔️ Dài (2+ giờ)",
       "longest_session": "🏆 Phiên Dài Nhất",

@@ -3244,7 +3244,8 @@
     "note": "Note",
     "notice": "Description",
     "price": "Original Price",
-    "total_diff": "Price difference"
+    "total_diff": "Price difference",
+    "wallet": "Wallet"
   },
   "invoices": {
     "add_promotion": "Add promotion",
@@ -5219,9 +5220,17 @@
       "title": "Tasks"
     },
     "time_tracker": {
+      "allow_future_sessions": "Allow Future Sessions",
+      "allow_future_sessions_description": "Allow time tracking sessions to be created with start or end times in the future",
       "break_types": "Break Types",
       "break_types_description": "Manage and customize break types for your workspace",
-      "title": "Time Tracker"
+      "general": "General",
+      "general_description": "Configure general settings for the time tracker",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "title": "Time Tracker",
+      "update_error": "Failed to update time tracker settings",
+      "update_success": "Time tracker settings updated successfully"
     },
     "user": {
       "profile": "Profile",
@@ -5911,10 +5920,13 @@
       "all_tasks_linked": "All workspace tasks are already linked to this project.",
       "close": "Close",
       "description": "Link existing tasks to this project or remove them.",
+      "end_of_list": "End of list",
       "link_a_task": "Link a Task",
       "link_task": "Link Task",
       "linked_tasks": "Linked Tasks",
       "linking": "Linking...",
+      "load_more": "Load more",
+      "loading_more": "Loading more",
       "loading_tasks": "Loading tasks...",
       "no_available_tasks": "No available tasks",
       "no_tasks_linked": "No tasks linked yet.",
@@ -7265,6 +7277,7 @@
       "edit": "Edit",
       "edit_session": "Edit Session",
       "edit_session_title": "Edit Session",
+      "end_of_list": "End of list",
       "end_time": "End Time",
       "end_time_before_start": "End time cannot be before start time",
       "evening": "🌇 Evening (6 PM - 12 AM)",
@@ -7284,6 +7297,9 @@
       "individual_sessions": "Individual Sessions ({count})",
       "interrupted": "⚡ Interrupted (< 15 min)",
       "learning": "📚 Learning",
+      "load_more": "Load more",
+      "loading_more": "Loading more",
+      "loading_sessions": "Loading sessions",
       "loading_tasks": "Loading tasks...",
       "long_duration": "🏔️ Long (2+ hours)",
       "longest_session": "🏆 Longest Session",
