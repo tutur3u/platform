@@ -1,11 +1,17 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getOrCreatePolarCustomer } from '@/utils/customer-session';
+import { createSubscription } from '@/utils/subscription-helper';
 
 const CreateTeamWorkspaceSchema = z.object({
   name: z.string().min(1).max(100),
-  avatar_url: z.string().url().optional(),
+  avatar_url: z.url().optional(),
 });
 
 export async function POST(req: Request) {
@@ -84,6 +90,42 @@ export async function POST(req: Request) {
   if (progressError) {
     console.error('Error updating onboarding progress:', progressError);
     // Don't fail the workspace creation for this
+  }
+
+  // Create Polar customer and free subscription for the new workspace
+  try {
+    const polar = createPolarClient();
+    const sbAdmin = await createAdminClient();
+
+    // Get or create Polar customer using user ID as external customer ID
+    const customerId = await getOrCreatePolarCustomer({
+      polar,
+      supabase,
+      userId: user.id,
+    });
+
+    // Create free subscription for the workspace
+    const subscription = await createSubscription(
+      polar,
+      sbAdmin,
+      workspace.id,
+      customerId,
+      'FREE'
+    );
+
+    if (subscription) {
+      console.log(
+        `Created free subscription ${subscription.id} for workspace ${workspace.id}`
+      );
+    } else {
+      console.log(
+        `Skipped free subscription creation for workspace ${workspace.id} (may already have active subscription)`
+      );
+    }
+  } catch (error) {
+    // Log the error but don't fail workspace creation
+    console.error('Error creating Polar subscription:', error);
+    // Workspace creation succeeded, subscription creation is best-effort
   }
 
   return NextResponse.json({

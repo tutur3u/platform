@@ -1,13 +1,19 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceSubscriptionWithProduct } from '@tuturuuu/types/db';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getOrCreatePolarCustomer } from '@/utils/customer-session';
+import { createSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
+import { NoSubscriptionFound } from './no-subscription-found';
 
 export const metadata: Metadata = {
   title: 'Billing',
@@ -53,18 +59,16 @@ const fetchSubscription = async (wsId: string) => {
     return null;
   }
 
-  const typedSub = dbSub as WorkspaceSubscriptionWithProduct;
-
-  if (!typedSub.workspace_subscription_products) return null;
+  if (!dbSub.workspace_subscription_products) return null;
 
   return {
-    id: typedSub.id,
-    status: typedSub.status,
-    createdAt: typedSub.created_at,
-    currentPeriodStart: typedSub.current_period_start,
-    currentPeriodEnd: typedSub.current_period_end,
-    cancelAtPeriodEnd: typedSub.cancel_at_period_end,
-    product: typedSub.workspace_subscription_products,
+    id: dbSub.id,
+    status: dbSub.status,
+    createdAt: dbSub.created_at,
+    currentPeriodStart: dbSub.current_period_start,
+    currentPeriodEnd: dbSub.current_period_end,
+    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
+    product: dbSub.workspace_subscription_products,
   };
 };
 
@@ -126,6 +130,55 @@ const checkCreator = async (wsId: string) => {
   return data.creator_id === user?.id;
 };
 
+const ensureSubscription = async (wsId: string, userId: string) => {
+  // Check for existing subscription first
+  const existing = await fetchSubscription(wsId);
+  if (existing) return { subscription: existing, error: null };
+
+  // No subscription found - attempt to create one
+  try {
+    const supabase = await createClient();
+    const polar = createPolarClient();
+    const sbAdmin = await createAdminClient();
+
+    // Get or create Polar customer
+    const customerId = await getOrCreatePolarCustomer({
+      polar,
+      supabase,
+      userId,
+    });
+
+    // Create free tier subscription
+    const subscription = await createSubscription(
+      polar,
+      sbAdmin,
+      wsId,
+      customerId,
+      'FREE' // Always start with FREE tier
+    );
+
+    if (!subscription) {
+      return {
+        subscription: null,
+        error: 'SUBSCRIPTION_CREATE_FAILED',
+      };
+    }
+
+    // Wait briefly for webhook to process
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // Fetch the newly created subscription from DB
+    const newSubscription = await fetchSubscription(wsId);
+    return { subscription: newSubscription, error: null };
+  } catch (error) {
+    console.error('Error ensuring subscription:', error);
+    return {
+      subscription: null,
+      error: error instanceof Error ? error.message : 'UNKNOWN_ERROR',
+    };
+  }
+};
+
 export default async function BillingPage({
   params,
 }: {
@@ -134,53 +187,56 @@ export default async function BillingPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const [products, subscription, orders, isCreator, locale, t] =
+        // Get user first
+        const supabase = await createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return notFound();
+
+        const [products, subscriptionResult, orders, isCreator, locale, t] =
           await Promise.all([
             fetchProducts(),
-            fetchSubscription(wsId),
+            ensureSubscription(wsId, user.id), // Try to ensure subscription exists
             fetchWorkspaceOrders(wsId),
             checkCreator(wsId),
             getLocale(),
             getTranslations('billing'),
           ]);
 
+        // Handle subscription creation failure
+        if (!subscriptionResult.subscription) {
+          return (
+            <NoSubscriptionFound wsId={wsId} error={subscriptionResult.error} />
+          );
+        }
+
+        const subscription = subscriptionResult.subscription;
+
         const dateLocale = locale === 'vi' ? vi : enUS;
         const formatDate = (date: string) =>
           format(new Date(date), 'd MMM, yyyy', { locale: dateLocale });
 
-        const currentPlan = subscription
-          ? {
-              id: subscription.id,
-              productId: subscription.product.id,
-              name: subscription.product.name || t('no-plan'),
-              tier: subscription.product.tier,
-              price: subscription.product.price ?? 0,
-              billingCycle: subscription.product.recurring_interval,
-              startDate: subscription.createdAt
-                ? formatDate(subscription.createdAt)
-                : '-',
-              nextBillingDate: subscription.currentPeriodEnd
-                ? formatDate(subscription.currentPeriodEnd)
-                : '-',
-              cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
-              status: subscription.status || 'unknown',
-              features: subscription.product.description
-                ? [subscription.product.description]
-                : [t('premium-features')],
-            }
-          : {
-              id: null,
-              productId: null,
-              name: t('free-plan'),
-              tier: null,
-              price: 0,
-              billingCycle: 'month',
-              startDate: '-',
-              nextBillingDate: '-',
-              cancelAtPeriodEnd: false,
-              status: 'active',
-              features: [t('basic-features'), t('limited-usage')],
-            };
+        const currentPlan = {
+          id: subscription.id,
+          productId: subscription.product.id,
+          name: subscription.product.name || t('no-plan'),
+          tier: subscription.product.tier,
+          price: subscription.product.price ?? 0,
+          billingCycle: subscription.product.recurring_interval,
+          startDate: subscription.createdAt
+            ? formatDate(subscription.createdAt)
+            : '-',
+          nextBillingDate: subscription.currentPeriodEnd
+            ? formatDate(subscription.currentPeriodEnd)
+            : '-',
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+          status: subscription.status || 'unknown',
+          features: subscription.product.description
+            ? [subscription.product.description]
+            : [t('premium-features')],
+        };
 
         return (
           <div className="container mx-auto max-w-6xl px-4 py-8">

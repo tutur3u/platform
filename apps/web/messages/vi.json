@@ -909,7 +909,36 @@
     "view-order-details": "Xem chi tiết đơn hàng",
     "what-happens-next": "Điều gì xảy ra tiếp theo?",
     "yearly-plans": "Hàng năm",
-    "yr": "năm"
+    "yr": "năm",
+    "no-subscription": {
+      "dev": {
+        "title": "Cần Thiết Lập Gói Dịch Vụ",
+        "description": "Không tìm thấy gói dịch vụ cho workspace này. Chúng tôi đã thử tạo tự động nhưng thất bại.",
+        "polar-config": {
+          "title": "1. Đảm bảo Polar Sandbox đã được cấu hình:",
+          "sandbox": "Đặt POLAR_SANDBOX=true trong file .env",
+          "token": "Đặt POLAR_ACCESS_TOKEN với token sandbox của bạn"
+        },
+        "webhook-config": {
+          "title": "2. Cấu hình xử lý webhook:",
+          "ngrok": "Cài đặt ngrok:",
+          "url": "Chạy: ngrok http 7803 và sao chép URL HTTPS vào cài đặt webhook Polar",
+          "secret": "Đặt POLAR_WEBHOOK_SECRET trong file .env"
+        },
+        "reload": {
+          "title": "3. Tải lại trang này",
+          "description": "Sau khi hoàn thành thiết lập ở trên, tải lại trang này để thử lại việc tạo gói dịch vụ."
+        }
+      },
+      "prod": {
+        "title": "Không Tìm Thấy Gói Dịch Vụ",
+        "description": "Chúng tôi không thể tìm thấy hoặc tạo gói dịch vụ cho workspace này. Vui lòng liên hệ hỗ trợ để được trợ giúp.",
+        "error-code": "Mã Lỗi",
+        "workspace-id": "ID Workspace"
+      },
+      "retry": "Thử Lại",
+      "contact-support": "Liên Hệ Hỗ Trợ"
+    }
   },
   "blocked-ips": {
     "actions": "Hành động",

@@ -24,8 +24,8 @@ import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
 export interface Plan {
-  id: string | null;
-  productId: string | null;
+  id: string;
+  productId: string;
   name: string;
   tier: WorkspaceProductTier | null;
   price: number;
@@ -64,7 +64,7 @@ export function BillingClient({
   const t = useTranslations('billing');
   const router = useRouter();
 
-  const isPaidPlan = currentPlan.tier !== null;
+  const isPaidPlan = currentPlan.tier && currentPlan.tier !== 'FREE';
   const isEnterprisePlan = currentPlan.tier === 'ENTERPRISE';
   const isProPlan = currentPlan.tier === 'PRO';
   const isPlusPlan = currentPlan.tier === 'PLUS';

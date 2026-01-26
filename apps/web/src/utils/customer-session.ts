@@ -7,6 +7,12 @@ interface CreateCustomerSessionOptions {
   userId: string;
 }
 
+interface GetOrCreateCustomerOptions {
+  polar: Polar;
+  supabase: TypedSupabaseClient;
+  userId: string;
+}
+
 /**
  * Create a Polar customer session with automatic fallback.
  *
@@ -88,4 +94,61 @@ export async function createCustomerSessionWithFallback({
 
     return session;
   }
+}
+
+/**
+ * Get or create a Polar customer for the given user ID.
+ *
+ * Searches for an existing customer by email.
+ * If no customer exists, creates a new one with the user's email and external ID.
+ *
+ * Returns the Polar customer ID.
+ */
+export async function getOrCreatePolarCustomer({
+  polar,
+  supabase,
+  userId,
+}: GetOrCreateCustomerOptions): Promise<string> {
+  // Get user email from user_private_details
+  const { data: userDetails, error: emailError } = await supabase
+    .from('user_private_details')
+    .select('email, full_name, ...users(display_name)')
+    .eq('user_id', userId)
+    .single();
+
+  if (emailError || !userDetails?.email) {
+    throw new Error('Unable to retrieve user email for customer lookup');
+  }
+
+  // Search for customer by email in Polar
+  const customersResponse = await polar.customers.list({
+    email: userDetails.email,
+  });
+
+  const customers = customersResponse.result?.items || [];
+
+  if (customers.length === 0) {
+    // Create new customer if not found
+    console.log('Customer not found in Polar, creating new customer...');
+    const newCustomer = await polar.customers.create({
+      email: userDetails.email,
+      name: userDetails.full_name || userDetails.display_name || undefined,
+      externalId: userId,
+    });
+
+    if (!newCustomer?.id) {
+      throw new Error('Failed to create new customer in Polar');
+    }
+
+    console.log('Created new Polar customer:', newCustomer.id);
+    return newCustomer.id;
+  }
+
+  // Return the first matching customer's ID
+  const polarCustomerId = customers[0]?.id;
+  if (!polarCustomerId) {
+    throw new Error('Customer not found in Polar by email');
+  }
+
+  return polarCustomerId;
 }
