@@ -1,4 +1,5 @@
 import {
+  createAdminClient,
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
@@ -21,6 +22,7 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
     const storageClient = await createDynamicClient();
 
     // Get authenticated user
@@ -65,6 +67,31 @@ export async function POST(
         { error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Fetch workspace configuration for future sessions
+    const { data: futureSessionsConfig } = await sbAdmin
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', wsId)
+      .eq('id', 'ALLOW_FUTURE_SESSIONS')
+      .maybeSingle();
+
+    const allowFutureSessions = futureSessionsConfig?.value === 'true';
+
+    // Prevent future sessions (unless allowed by config)
+    const now = new Date();
+    if (!allowFutureSessions) {
+      const start = new Date(startTime);
+      if (start > now) {
+        return NextResponse.json(
+          {
+            error:
+              'Cannot create a time tracking request with a start time in the future.',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const requestId = uuidv4();

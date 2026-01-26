@@ -466,9 +466,22 @@ export async function POST(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // CRITICAL: Prevent future start times - this check cannot be bypassed
+    // Use service role client for secure operations
+    const sbAdmin = await createAdminClient(); // This should use service role
+
+    // Fetch workspace configuration for future sessions
+    const { data: futureSessionsConfig } = await sbAdmin
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', normalizedWsId)
+      .eq('id', 'ALLOW_FUTURE_SESSIONS')
+      .maybeSingle();
+
+    const allowFutureSessions = futureSessionsConfig?.value === 'true';
+
+    // CRITICAL: Prevent future start times (unless allowed by config)
     const now = new Date();
-    if (startTime) {
+    if (!allowFutureSessions && startTime) {
       const start = new Date(startTime);
       if (start > now) {
         return NextResponse.json(
@@ -480,9 +493,6 @@ export async function POST(
         );
       }
     }
-
-    // Use service role client for secure operations
-    const sbAdmin = await createAdminClient(); // This should use service role
 
     // If this is a manual entry (missed entry), handle differently
     if (startTime && endTime) {

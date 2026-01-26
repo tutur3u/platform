@@ -5257,9 +5257,17 @@
       "title": "Nhiệm vụ"
     },
     "time_tracker": {
+      "allow_future_sessions": "Cho phép phiên tương lai",
+      "allow_future_sessions_description": "Cho phép tạo các phiên theo dõi thời gian với thời gian bắt đầu hoặc kết thúc trong tương lai",
       "break_types": "Loại nghỉ",
       "break_types_description": "Quản lý và tùy chỉnh các loại nghỉ cho không gian làm việc",
-      "title": "Theo dõi thời gian"
+      "general": "Chung",
+      "general_description": "Cấu hình các cài đặt chung cho trình theo dõi thời gian",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "title": "Theo dõi thời gian",
+      "update_error": "Cập nhật cài đặt trình theo dõi thời gian thất bại",
+      "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công"
     },
     "user": {
       "profile": "Hồ sơ",
