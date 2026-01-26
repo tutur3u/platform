@@ -307,25 +307,25 @@ values
         '00000000-0000-0000-0000-000000000001',
         'Prototype All',
         'prototype-all',
-        null
+        '00000000-0000-0000-0000-000000000001'
     ),
     (
         '00000000-0000-0000-0000-000000000002',
         'Prototype General',
         'prototype-general',
-        null
+        '00000000-0000-0000-0000-000000000001'
     ),
     (
         '00000000-0000-0000-0000-000000000003',
         'Prototype Pharmacy',
         'prototype-pharmacy',
-        null
+        '00000000-0000-0000-0000-000000000001'
     ),
     (
         '00000000-0000-0000-0000-000000000004',
         'Prototype School',
         'prototype-school',
-        null
+        '00000000-0000-0000-0000-000000000001'
     );
 
 -- Populate workspace_secrets
