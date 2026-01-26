@@ -470,12 +470,18 @@ export async function POST(
     const sbAdmin = await createAdminClient(); // This should use service role
 
     // Fetch workspace configuration for future sessions
-    const { data: futureSessionsConfig } = await sbAdmin
+    const { data: futureSessionsConfig, error: configError } = await sbAdmin
       .from('workspace_configs')
       .select('value')
       .eq('ws_id', normalizedWsId)
       .eq('id', 'ALLOW_FUTURE_SESSIONS')
       .maybeSingle();
+
+    if (configError) {
+      throw new Error(
+        `Failed to fetch workspace config: ${configError.message}`
+      );
+    }
 
     const allowFutureSessions = futureSessionsConfig?.value === 'true';
 

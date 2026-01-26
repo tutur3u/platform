@@ -11,6 +11,7 @@ CREATE OR REPLACE FUNCTION public.check_time_tracking_session_insert()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public
 AS $function$
 DECLARE
     threshold_days INTEGER;
@@ -18,19 +19,20 @@ DECLARE
 BEGIN
     -- Check if future sessions are allowed for this workspace
     -- Since this is SECURITY DEFINER, it bypasses RLS on workspace_configs
-    SELECT value = 'true' INTO allow_future
+    SELECT COALESCE(value = 'true', false) INTO allow_future
     FROM workspace_configs
     WHERE ws_id = NEW.ws_id AND id = 'ALLOW_FUTURE_SESSIONS';
 
-    -- Default to false if config not found
-    IF allow_future IS NULL THEN
-        allow_future := false;
-    END IF;
-
-    -- Allow start times up to 5 minutes in the future regardless of config for clock sync
+    -- Allow start and end times up to 5 minutes in the future regardless of config for clock sync
     -- If allow_future is true, allow any future start time
-    IF NOT allow_future AND NEW.start_time > NOW() + INTERVAL '5 minutes' THEN
-        RAISE EXCEPTION 'Cannot create a time tracking session with a start time more than 5 minutes in the future.';
+    IF NOT allow_future THEN
+        IF NEW.start_time > NOW() + INTERVAL '5 minutes' THEN
+            RAISE EXCEPTION 'Cannot create a time tracking session with a start time more than 5 minutes in the future.';
+        END IF;
+
+        IF NEW.end_time > NOW() + INTERVAL '5 minutes' THEN
+            RAISE EXCEPTION 'Cannot create a time tracking session with an end time more than 5 minutes in the future.';
+        END IF;
     END IF;
 
     -- Check for the bypass flag set in the current session.
@@ -69,6 +71,7 @@ CREATE OR REPLACE FUNCTION public.check_time_tracking_session_update()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path = public
 AS $function$
 DECLARE
     threshold_days INTEGER;
@@ -78,16 +81,18 @@ BEGIN
     IF NEW.start_time IS DISTINCT FROM OLD.start_time OR NEW.end_time IS DISTINCT FROM OLD.end_time THEN
         -- Check if future sessions are allowed for this workspace
         -- Since this is SECURITY DEFINER, it bypasses RLS on workspace_configs
-        SELECT value = 'true' INTO allow_future
+        SELECT COALESCE(value = 'true', false) INTO allow_future
         FROM workspace_configs
         WHERE ws_id = NEW.ws_id AND id = 'ALLOW_FUTURE_SESSIONS';
 
-        IF allow_future IS NULL THEN
-            allow_future := false;
-        END IF;
+        IF NOT allow_future THEN
+            IF NEW.start_time > NOW() + INTERVAL '5 minutes' THEN
+                RAISE EXCEPTION 'Cannot update a time tracking session to have a start time more than 5 minutes in the future.';
+            END IF;
 
-        IF NOT allow_future AND NEW.start_time > NOW() + INTERVAL '5 minutes' THEN
-            RAISE EXCEPTION 'Cannot update a time tracking session to have a start time more than 5 minutes in the future.';
+            IF NEW.end_time > NOW() + INTERVAL '5 minutes' THEN
+                RAISE EXCEPTION 'Cannot update a time tracking session to have an end time more than 5 minutes in the future.';
+            END IF;
         END IF;
     END IF;
 
