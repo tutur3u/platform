@@ -303,7 +303,7 @@ export function useMigrationState(
           ? `&apiUrl=${encodeURIComponent(tuturuuuApiEndpoint)}`
           : '';
         const response = await fetch(
-          `/api/v1/proxy/tuturuuu?path=/workspaces/${wsId}${apiUrlParam}`,
+          `/api/v1/proxy/tuturuuu?path=/api/v2/workspaces/${wsId}${apiUrlParam}`,
           {
             headers: {
               'X-Tuturuuu-Api-Key': tuturuuuApiKey,

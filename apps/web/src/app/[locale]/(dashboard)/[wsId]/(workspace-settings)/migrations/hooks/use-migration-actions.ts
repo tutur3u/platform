@@ -110,7 +110,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         const apiUrlParam = effectiveApiEndpoint
           ? `&apiUrl=${encodeURIComponent(effectiveApiEndpoint)}`
           : '';
-        fetchUrl = `/api/v1/proxy/tuturuuu?path=${encodeURIComponent(relativePath)}${wsIdParam}${apiUrlParam}${queryString ? `&${queryString.slice(1)}` : ''}`;
+        fetchUrl = `/api/v1/proxy/tuturuuu?path=/api/v2/${encodeURIComponent(relativePath)}${wsIdParam}${apiUrlParam}${queryString ? `&${queryString.slice(1)}` : ''}`;
         headers['X-Tuturuuu-Api-Key'] = effectiveApiKey;
       } else {
         // Legacy mode uses TTR-API-KEY header
