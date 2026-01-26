@@ -127,16 +127,15 @@ export function NoSubscriptionFound({ wsId, error }: NoSubscriptionFoundProps) {
               <RefreshCw className="mr-2 h-4 w-4" />
               {t('retry')}
             </Button>
-            <Link
-              href="mailto:support@tuturuuu.com"
-              rel="noopener noreferrer"
-              className="flex-1"
-            >
-              <Button className="w-full">
+            <Button asChild className="flex-1">
+              <Link
+                href="mailto:support@tuturuuu.com"
+                rel="noopener noreferrer"
+              >
                 <Mail className="mr-2 h-4 w-4" />
                 {t('contact-support')}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

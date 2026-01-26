@@ -37,6 +37,7 @@ export async function POST(
     .from('workspace_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
+    .eq('ws_id', wsId)
     .maybeSingle();
 
   if (subscriptionError) {
