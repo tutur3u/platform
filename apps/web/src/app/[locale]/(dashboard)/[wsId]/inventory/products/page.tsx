@@ -65,10 +65,13 @@ export default async function WorkspaceProductsPage({
         const canUpdateInventory = permissions.includes('update_inventory');
         const canDeleteInventory = permissions.includes('delete_inventory');
 
-        const { data, count } = await getData(wsId, await searchParams);
-        const categories = await getCategories(wsId);
-        const warehouses = await getWarehouses(wsId);
-        const units = await getUnits(wsId);
+        const resolvedSearchParams = await searchParams;
+        const [initialData, categories, warehouses, units] = await Promise.all([
+          getInitialData(wsId, resolvedSearchParams),
+          getCategories(wsId),
+          getWarehouses(wsId),
+          getUnits(wsId),
+        ]);
 
         return (
           <>
@@ -80,7 +83,7 @@ export default async function WorkspaceProductsPage({
               createDescription={t('ws-inventory-products.create_description')}
               action={
                 canCreateInventory ? (
-                  <Link href="./products/new">
+                  <Link href={`/${wsId}/inventory/products/new`}>
                     <Button className="cursor-pointer">
                       <Plus className="mr-2 h-4 w-4" />
                       <span>{t('ws-inventory-products.create')}</span>
@@ -91,8 +94,7 @@ export default async function WorkspaceProductsPage({
             />
             <Separator className="my-4" />
             <ProductsPageClient
-              data={data}
-              count={count}
+              initialData={initialData}
               categories={categories}
               warehouses={warehouses}
               units={units}
@@ -108,7 +110,7 @@ export default async function WorkspaceProductsPage({
   );
 }
 
-async function getData(
+async function getInitialData(
   wsId: string,
   {
     q,
@@ -142,7 +144,7 @@ async function getData(
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
+    const end = parsedPage * parsedSize - 1;
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
@@ -158,7 +160,7 @@ async function getData(
 
   if (error) throw error;
 
-  const data = rawData.map((item) => ({
+  const data = (rawData || []).map((item) => ({
     id: item.id,
     name: item.name,
     manufacturer: item.manufacturer,
