@@ -6,15 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
 
 interface NoSubscriptionFoundProps {
   wsId: string;
   error: string | null;
 }
 
-const isDevelopment =
-  process.env.NODE_ENV === 'development' ||
-  process.env.POLAR_SANDBOX === 'true';
+const isDevelopment = DEV_MODE === true;
 
 export function NoSubscriptionFound({ wsId, error }: NoSubscriptionFoundProps) {
   const t = useTranslations('billing.no-subscription');
