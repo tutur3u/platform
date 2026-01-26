@@ -4,7 +4,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import {
+  getWorkspaceConfig,
+  normalizeWorkspaceId,
+} from '@/lib/workspace-helper';
 
 const cursorSchema = z.object({
   lastStartTime: z.iso.datetime({ offset: true }),
@@ -483,21 +486,9 @@ export async function POST(
     // Use service role client for secure operations
     const sbAdmin = await createAdminClient(); // This should use service role
 
-    // Fetch workspace configuration for future sessions
-    const { data: futureSessionsConfig, error: configError } = await sbAdmin
-      .from('workspace_configs')
-      .select('value')
-      .eq('ws_id', normalizedWsId)
-      .eq('id', 'ALLOW_FUTURE_SESSIONS')
-      .maybeSingle();
-
-    if (configError) {
-      throw new Error(
-        `Failed to fetch workspace config: ${configError.message}`
-      );
-    }
-
-    const allowFutureSessions = futureSessionsConfig?.value === 'true';
+    const allowFutureSessions =
+      (await getWorkspaceConfig(normalizedWsId, 'ALLOW_FUTURE_SESSIONS')) ===
+      'true';
 
     // CRITICAL: Prevent future start times (unless allowed by config)
     const now = new Date();

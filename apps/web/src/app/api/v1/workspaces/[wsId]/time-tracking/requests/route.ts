@@ -1,5 +1,4 @@
 import {
-  createAdminClient,
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
@@ -7,7 +6,10 @@ import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import {
+  getWorkspaceConfig,
+  normalizeWorkspaceId,
+} from '@/lib/workspace-helper';
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const ALLOWED_MIME_TYPES = [
@@ -31,7 +33,6 @@ export async function POST(
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
     const storageClient = await createDynamicClient();
 
     // Get authenticated user
@@ -90,23 +91,9 @@ export async function POST(
       title: validatedTitle,
     } = validationResult.data;
 
-    // Fetch workspace configuration for future sessions
-    const { data: futureSessionsConfig, error: configError } = await sbAdmin
-      .from('workspace_configs')
-      .select('value')
-      .eq('ws_id', normalizedWsId)
-      .eq('id', 'ALLOW_FUTURE_SESSIONS')
-      .maybeSingle();
-
-    if (configError) {
-      console.error('Failed to fetch workspace config:', configError);
-      return NextResponse.json(
-        { error: 'Failed to fetch workspace configuration' },
-        { status: 500 }
-      );
-    }
-
-    const allowFutureSessions = futureSessionsConfig?.value === 'true';
+    const allowFutureSessions =
+      (await getWorkspaceConfig(normalizedWsId, 'ALLOW_FUTURE_SESSIONS')) ===
+      'true';
 
     // Prevent future sessions (unless allowed by config)
     const now = new Date();
