@@ -3337,6 +3337,25 @@
     "update-invoice": "Update invoice"
   },
   "landing": {
+    "ai": {
+      "mira": {
+        "capabilities": {
+          "contextAware": "Context-Aware",
+          "learning": "Always Learning",
+          "proactive": "Proactive AI"
+        },
+        "description": "Mira is your proactive AI companion. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, and communications to surface proactive recommendations.",
+        "prompts": [
+          "Schedule my standup for tomorrow at 9am",
+          "Summarize my tasks for this week",
+          "Help me prioritize my project deadlines"
+        ],
+        "title": "Mira: Your AI Partner",
+        "tryAsking": "Try asking Mira..."
+      },
+      "subtitle": "Meet Mira, your AI assistant that understands your work.",
+      "title": "Powered by intelligent AI"
+    },
     "aiCore": {
       "aurora": {
         "description": "Contextual engine that links related emails, tasks, files, and events",
@@ -3375,8 +3394,11 @@
       "description": "Join thousands of professionals who've eliminated digital friction and regained focus. Start with our free plan—no credit card required.",
       "getStarted": "Get Started Free",
       "learnStory": "Learn Our Story",
+      "note": "No credit card required. Free forever plan available.",
+      "primary": "Get Started Free",
+      "secondary": "Talk to Sales",
       "starGitHub": "Star on GitHub",
-      "title": "Ready to Reclaim Your Time?",
+      "title": "Ready to work smarter?",
       "trust": {
         "openSource": "Open Source & Transparent",
         "security": "Enterprise-Grade Security",
@@ -3397,11 +3419,13 @@
           "title": "Context-Aware"
         },
         "cta": "Chat with Mira",
+        "inputPlaceholder": "Ask Mira anything...",
         "quickActions": {
           "reminder": "Create reminder",
           "summary": "Weekly summary",
           "tasks": "Show my tasks"
         },
+        "status": "Online",
         "subtitle": "Your proactive AI companion",
         "title": "AI Assistant (Mira)",
         "userMessage1": "What's on my agenda for tomorrow?",
@@ -3536,6 +3560,19 @@
         "title": "Smart Calendar",
         "todaySchedule": "Today's Schedule"
       },
+      "calendarGrid": {
+        "events": {
+          "clientCall": "Client Call",
+          "focusTime": "Focus: Deep Work",
+          "oneOnOne": "1:1 Meeting",
+          "planning": "Sprint Planning",
+          "review": "Code Review",
+          "standup": "Team Standup",
+          "teamOffsite": "Team Offsite",
+          "teamSync": "Team Sync",
+          "weeklyReview": "Weekly Review"
+        }
+      },
       "demoTexts": {
         "aiChat": {
           "aiResponse1Intro": "You have 4 meetings and 2 focus blocks scheduled:",
@@ -3622,7 +3659,49 @@
           "title": "Smart Task Management"
         }
       },
+      "kanban": {
+        "columns": {
+          "done": "Done",
+          "inProgress": "In Progress",
+          "todo": "To Do"
+        },
+        "tasks": {
+          "task1": {
+            "dueDate": "Tomorrow",
+            "label": "Marketing",
+            "name": "Review Q1 marketing strategy"
+          },
+          "task2": {
+            "label": "Design",
+            "name": "Update landing page mockups"
+          },
+          "task3": {
+            "dueDate": "Today",
+            "label": "Development",
+            "name": "Implement user authentication"
+          },
+          "task4": {
+            "label": "Testing",
+            "name": "Write unit tests for API"
+          },
+          "task5": {
+            "label": "Development",
+            "name": "Fix navbar responsiveness"
+          },
+          "task6": {
+            "label": "Documentation",
+            "name": "Update API documentation"
+          }
+        }
+      },
       "subtitle": "Experience the future of work with our interactive demos. These are real, production-ready features you can use today.",
+      "tabs": {
+        "analytics": "Analytics",
+        "calendar": "Calendar",
+        "chat": "AI Chat",
+        "meeting": "Meeting",
+        "tasks": "Tasks"
+      },
       "taskManagement": {
         "aiInsight": {
           "description": "You have 3 high-priority tasks due this week. Consider blocking 2 hours tomorrow morning for focused work.",
@@ -3654,6 +3733,54 @@
       "title": {
         "highlight": "In Action",
         "part1": "See It"
+      },
+      "video": {
+        "badge": "Watch Demo",
+        "thumbnail": "Tuturuuu Platform Demo",
+        "title": "Tuturuuu Platform Demo Video",
+        "watchNow": "Click to watch the full demo"
+      },
+      "videoMeeting": {
+        "aiFeatures": {
+          "actionItems": {
+            "description": "Auto-extract tasks and assign owners",
+            "title": "Action Items"
+          },
+          "liveNotes": {
+            "description": "Real-time meeting notes & highlights",
+            "title": "Live Notes"
+          },
+          "summary": {
+            "description": "Instant AI-generated meeting recap",
+            "title": "Smart Summary"
+          }
+        },
+        "cta": "Try Smart Meetings",
+        "duration": "32:15",
+        "header": {
+          "participants": "4 participants",
+          "recording": "Recording",
+          "title": "Weekly Product Sync"
+        },
+        "insights": {
+          "actionItems": "3 action items detected",
+          "sentiment": "Positive sentiment",
+          "topics": "5 topics discussed"
+        },
+        "participants": {
+          "alex": "Alex Chen",
+          "mira": "Mira AI",
+          "sarah": "Sarah Kim",
+          "you": "You"
+        },
+        "subtitle": "AI-powered meetings with auto-transcription",
+        "title": "Smart Video Meetings",
+        "transcript": {
+          "alex": "I've finished the API integration. We can start testing tomorrow.",
+          "mira": "I'll create tasks for the testing phase and schedule a follow-up meeting.",
+          "sarah": "The design mockups are ready for review. Should we go through them now?",
+          "title": "Live Transcript"
+        }
       }
     },
     "demoSection": {
@@ -3763,11 +3890,8 @@
         "subtitle": "Learning Platform",
         "title": "Nova"
       },
-      "subtitle": "Tuturuuu brings together all your productivity tools with intelligent AI integration",
-      "title": {
-        "highlight": "One Platform",
-        "part1": "Everything You Need,"
-      },
+      "subtitle": "One platform for your entire workflow",
+      "title": "Everything you need",
       "tuchat": {
         "description": "Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.",
         "feature1": "Team chat",
@@ -3810,102 +3934,242 @@
       }
     },
     "hero": {
-      "badge": "The Intelligent OS for Modern Work",
+      "badge": "Intelligent Workspace Platform",
       "cta": {
         "exploreFeatures": "Explore Features",
         "getStarted": "Get Started Free",
+        "primary": "Get Started Free",
+        "secondary": "Watch Demo",
         "viewGitHub": "View on GitHub"
       },
-      "description": {
-        "part1": "Stop juggling apps. Start focusing on what matters.",
-        "part2": "unifies your calendar, tasks, meetings, and communications—powered by AI that actually understands your work."
-      },
+      "description": "The all-in-one workspace that brings your tasks, calendar, documents, and team together.",
       "title": {
+        "line1": "Work Smarter.",
+        "line2": "Live Better.",
         "part1": "Your Life,",
         "part2": "In Sync"
       },
       "trust": {
         "commits": "10,000+ Commits",
         "contributors": "30+ Contributors",
+        "free": "Free Forever",
         "freePlan": "Free Forever Plan",
         "openSource": "Open Source"
+      },
+      "video": {
+        "floatingCards": {
+          "aiCard": {
+            "message": "\"3 hours of focus time blocked for tomorrow.\"",
+            "title": "Mira AI"
+          },
+          "calendarCard": {
+            "event": "Team Standup",
+            "time": "in 25 minutes",
+            "title": "Next Meeting"
+          },
+          "productivityCard": {
+            "change": "+12% this week",
+            "stat": "87%",
+            "title": "Productivity"
+          },
+          "taskCard": {
+            "description": "Design review finished",
+            "points": "+15 points",
+            "title": "Task Completed"
+          }
+        },
+        "thumbnail": "Tuturuuu Platform Demo",
+        "title": "Tuturuuu Platform Demo Video",
+        "watchNow": "Watch the demo"
       }
     },
     "pricing": {
-      "earlyBird": {
-        "badge": "Early Bird",
-        "cta": "Get Started Free",
-        "description": "Full access to all core features during our early bird phase. We believe in earning your trust first.",
-        "features": {
-          "feature1": "Unlimited workspaces",
-          "feature2": "All productivity apps (TuPlan, TuDo, TuMeet, etc.)",
-          "feature3": "AI-powered insights",
-          "feature4": "Calendar sync & auto-scheduling",
-          "feature5": "Task management & collaboration",
-          "feature6": "Meeting transcriptions",
-          "feature7": "Analytics & reports",
-          "feature8": "Community support"
-        },
-        "note": "No credit card required",
-        "period": "forever",
-        "price": "$0",
-        "subtitle": "Everything you need to get started",
-        "title": "Free Forever"
-      },
-      "experimental": {
-        "badge": "Beta Access",
-        "cta": "Contact for Beta Access",
-        "description": "Get early access to experimental features by contacting our team. Help shape the future of Tuturuuu.",
-        "features": {
-          "feature1": "Advanced AI models integration",
-          "feature2": "Custom automation workflows",
-          "feature3": "API access & webhooks",
-          "feature4": "Priority feature requests",
-          "feature5": "Direct team support",
-          "feature6": "Early access to new features",
-          "feature7": "Beta testing opportunities",
-          "feature8": "Dedicated account manager"
-        },
-        "note": "Available by request",
-        "period": "beta access",
-        "price": "On Request",
-        "subtitle": "Cutting-edge capabilities",
-        "title": "Experimental Features"
-      },
+      "compare": "Compare all features",
       "faq": {
         "q1": {
-          "answer": "Yes! During our early bird stage, all core features are completely free. We want to build the best product with your feedback before introducing paid plans.",
-          "question": "Is it really free?"
+          "answer": "Yes! The Free tier is completely free forever with basic features. Upgrade anytime for more capabilities.",
+          "question": "Is there really a free plan?"
         },
         "q2": {
-          "answer": "No. If you sign up during the early bird stage, you'll keep free access to core features even after we introduce paid plans. Plus, you'll get special pricing on future premium features.",
-          "question": "Will my free access change?"
+          "answer": "Yes! Annual billing saves you approximately 17% compared to monthly billing.",
+          "question": "Do I save money with annual billing?"
         },
         "q3": {
-          "answer": "Contact our team to request beta access. We're selectively granting access to users who want to help test and provide feedback on cutting-edge features.",
-          "question": "How do I get experimental features?"
+          "answer": "Paid plans are billed per user, per workspace. The Free tier is available for all workspaces by default.",
+          "question": "How does pricing work per workspace?"
         },
         "q4": {
-          "answer": "We haven't set a date yet. We're focused on building the best product first. Early bird users will be notified well in advance and receive special pricing.",
-          "question": "When will paid plans launch?"
+          "answer": "Contact our sales team for custom pricing, dedicated support, and enterprise features tailored to your organization.",
+          "question": "What about enterprise pricing?"
         },
         "title": "Frequently Asked Questions"
       },
-      "future": {
-        "benefits": {
-          "benefit1": "Lock in early bird pricing forever",
-          "benefit2": "First access to premium features",
-          "benefit3": "Lifetime discount for early supporters"
+      "matrix": {
+        "categories": {
+          "advanced": "Advanced",
+          "collaboration": "Collaboration",
+          "core": "Core Features",
+          "enterprise": "Enterprise",
+          "tools": "Products & Tools"
         },
-        "description": "We're building paid plans with advanced features. As an early bird user, you'll get special grandfathered pricing when we launch.",
-        "title": "What's Coming?"
+        "featuresLabel": "Features",
+        "featuresList": {
+          "advancedAI": "Unlimited AI",
+          "aiChat": "AI Chat",
+          "analytics": "Reports & Analytics",
+          "calendar": "Calendar Sync",
+          "crmInventory": "CRM & Inventory",
+          "customIntegrations": "Custom Integrations",
+          "customSolutions": "Custom Solutions",
+          "dedicatedSupport": "Dedicated Support",
+          "drive": "Drive Storage",
+          "granularRoles": "Granular Permissions",
+          "prioritySupport": "Priority Support",
+          "qrGenerator": "QR Generator",
+          "selfHosting": "Self-Hosting",
+          "sla": "SLA Guarantees",
+          "tasks": "Task Management",
+          "timeTracker": "Time Tracker",
+          "tuchat": "Tuchat (Messaging)",
+          "tumeet": "Tumeet (Video Calls)",
+          "tuwrite": "Tuwrite (Documents)",
+          "whiteboards": "Whiteboards",
+          "workspaces": "Workspaces"
+        },
+        "values": {
+          "advanced": "advanced",
+          "limited": "limited",
+          "soon": "Soon",
+          "unlimited": "unlimited"
+        }
       },
-      "subtitle": "Get started for free during our early bird stage. All core features are included—no credit card required.",
-      "title": {
-        "highlight": "Transparent",
-        "part1": "Simple,",
-        "part2": "Pricing"
+      "payAsYouGo": {
+        "badge": "Coming Soon",
+        "description": "Need more? Extend your usage with flexible options.",
+        "features": [
+          "Extended AI usage",
+          "Workflow processing time",
+          "Priority queue access"
+        ],
+        "title": "Pay As You Go"
+      },
+      "subtitle": "Per workspace, per user on paid plans. Start free, scale as you grow.",
+      "tiers": {
+        "enterprise": {
+          "cta": "Contact Sales",
+          "description": "For large organizations",
+          "features": [
+            "Everything in Pro",
+            "Custom solutions",
+            "Dedicated support",
+            "SLA guarantees",
+            "Self-hosting options"
+          ],
+          "name": "Enterprise",
+          "price": "Custom"
+        },
+        "free": {
+          "cta": "Get Started",
+          "description": "For individuals exploring Tuturuuu",
+          "features": [
+            "Basic task management",
+            "Calendar sync (limited)",
+            "AI chat (limited tokens)",
+            "QR Generator",
+            "CRM & Inventory (beta)"
+          ],
+          "name": "Free",
+          "period": "forever",
+          "price": "$0"
+        },
+        "plus": {
+          "badge": "Best Value",
+          "cta": "Get Plus",
+          "description": "For teams that need collaboration",
+          "features": [
+            "Everything in Free +",
+            "Unlimited Whiteboards",
+            "Drive storage",
+            "Time Tracker & Requests",
+            "Granular permissions",
+            "Tuwrite & Tuchat (coming soon)",
+            "Tumeet—Video calls (coming soon)"
+          ],
+          "name": "Plus",
+          "period": {
+            "monthly": "/user/mo",
+            "yearly": "/user/yr"
+          },
+          "price": {
+            "monthly": "$8",
+            "yearly": "$80"
+          }
+        },
+        "pro": {
+          "badge": "Most Powerful",
+          "cta": "Get Pro",
+          "description": "For teams that need full power",
+          "features": [
+            "Everything in Plus +",
+            "Unlimited AI",
+            "Priority support",
+            "Reports & Analytics",
+            "Custom integrations"
+          ],
+          "name": "Pro",
+          "period": {
+            "monthly": "/user/mo",
+            "yearly": "/user/yr"
+          },
+          "price": {
+            "monthly": "$15",
+            "yearly": "$150"
+          }
+        }
+      },
+      "title": "Simple pricing. No surprises.",
+      "toggle": {
+        "monthly": "Monthly",
+        "save": "Save 17%",
+        "yearly": "Yearly"
       }
+    },
+    "problem": {
+      "stats": {
+        "apps": {
+          "label": "apps used daily",
+          "value": "12+"
+        },
+        "context": {
+          "label": "context lost",
+          "value": "47%"
+        },
+        "hours": {
+          "label": "wasted per day",
+          "value": "3 hrs"
+        }
+      },
+      "subtitle": "Tuturuuu brings everything into one place.",
+      "title": "You're drowning in tools. We get it."
+    },
+    "socialProof": {
+      "backedBy": "Powered by",
+      "cta": "View on GitHub",
+      "stats": {
+        "commits": {
+          "label": "Commits",
+          "value": "10,000+"
+        },
+        "contributors": {
+          "label": "Contributors",
+          "value": "30+"
+        },
+        "years": {
+          "label": "Years of Innovation",
+          "value": "3.5+"
+        }
+      },
+      "title": "Built in the open"
     },
     "womenInTechBanner": {
       "cta": "Learn More",

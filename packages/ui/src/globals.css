@@ -398,6 +398,21 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-aurora: aurora 80s linear infinite;
+}
+
+/* Aurora animation - must be outside @theme block */
+@keyframes aurora {
+  from {
+    background-position:
+      50% 50%,
+      50% 50%;
+  }
+  to {
+    background-position:
+      350% 50%,
+      350% 50%;
+  }
 }
 
 /* Custom animations */
