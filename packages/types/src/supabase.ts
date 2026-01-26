@@ -17361,6 +17361,7 @@ export type Database = {
           _ws_id: string;
           end_date?: string;
           group_by_creator?: boolean;
+          interval_type?: string;
           start_date?: string;
           user_ids?: string[];
           wallet_ids?: string[];
@@ -17810,6 +17811,25 @@ export type Database = {
           email: string;
           full_name: string;
           id: string;
+        }[];
+      };
+      get_transaction_stats: {
+        Args: {
+          p_category_ids?: string[];
+          p_creator_ids?: string[];
+          p_end_date?: string;
+          p_search_query?: string;
+          p_start_date?: string;
+          p_user_id?: string;
+          p_wallet_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          has_redacted_amounts: boolean;
+          net_total: number;
+          total_expense: number;
+          total_income: number;
+          total_transactions: number;
         }[];
       };
       get_upcoming_recurring_transactions: {

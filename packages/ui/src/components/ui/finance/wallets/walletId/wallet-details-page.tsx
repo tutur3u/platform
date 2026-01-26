@@ -138,6 +138,7 @@ export default async function WalletDetailsPage({
         <InfiniteTransactionsList
           wsId={wsId}
           walletId={walletId}
+          currency={wallet.currency ?? 'VND'}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
