@@ -25,7 +25,8 @@
       "Bash(gh pr checkout:*)",
       "Bash(gh api:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch"
     ]
   }
 }
