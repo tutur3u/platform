@@ -1,9 +1,6 @@
-'use client';
-
 import { ArrowRight, Sparkles } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { TrustBadges } from './trust-badges';
@@ -48,12 +45,7 @@ export function HeroSection() {
 
       <div className="mx-auto max-w-6xl">
         {/* Compact Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-8 text-center sm:mb-10"
-        >
+        <div className="mb-8 text-center sm:mb-10">
           {/* Badge */}
           <div>
             <Badge
@@ -91,26 +83,15 @@ export function HeroSection() {
               </Link>
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Video - The Star of the Show */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.99 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-8 sm:mb-10"
-        >
+        <div className="mb-8 sm:mb-10">
           <VideoHero />
-        </motion.div>
+        </div>
 
         {/* Trust Badges */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
-          <TrustBadges />
-        </motion.div>
+        <TrustBadges />
       </div>
     </section>
   );
