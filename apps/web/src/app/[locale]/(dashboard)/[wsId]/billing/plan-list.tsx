@@ -440,10 +440,14 @@ export function PlanList({
                           </Button>
                         ) : (
                           <PurchaseLink
+                            subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
-                            subscriptionId={currentPlan.id}
-                            onPlanChange={() => handlePlanChange(plan)}
+                            onPlanChange={
+                              !plan.isFree
+                                ? undefined
+                                : () => handlePlanChange(plan)
+                            }
                             className={cn(
                               'w-full transition-all hover:scale-[1.02]',
                               !plan.isFree &&

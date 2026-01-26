@@ -27,16 +27,19 @@ export default function PurchaseLink({
   const mutation = useMutation({
     mutationFn: async () => {
       // Create new checkout session for new subscriptions
-      const response = await fetch('/api/payment/checkouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          wsId,
-          productId,
-        }),
-      });
+      const response = await fetch(
+        `/api/payment/subscriptions/${subscriptionId}/checkouts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            wsId,
+            productId,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to create checkout session');
@@ -60,7 +63,7 @@ export default function PurchaseLink({
     e.preventDefault();
     // If onPlanChange is provided and there's an existing subscription,
     // call the callback directly instead of using mutation
-    if (subscriptionId !== null && onPlanChange) {
+    if (onPlanChange) {
       onPlanChange();
       return;
     }
