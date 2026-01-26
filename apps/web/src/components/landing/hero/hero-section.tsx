@@ -28,7 +28,7 @@ export function HeroSection() {
         }
       >
         <div
-          className="absolute -inset-[10px] opacity-50 blur-[8px] invert filter motion-reduce:animate-none [background-image:var(--white-gradient),var(--aurora)] [background-position:50%_50%,50%_50%] [background-size:300%,_200%] after:absolute after:inset-0 after:animate-aurora after:mix-blend-difference after:content-[''] after:motion-reduce:animate-none dark:invert-0 after:[background-attachment:fixed] after:[background-image:var(--white-gradient),var(--aurora)] after:[background-size:200%,_100%]"
+          className="absolute -inset-[10px] opacity-50 blur-[8px] invert filter [background-image:var(--white-gradient),var(--aurora)] [background-position:50%_50%,50%_50%] [background-size:300%,_200%] after:absolute after:inset-0 after:animate-aurora after:mix-blend-difference after:content-[''] motion-reduce:animate-none after:motion-reduce:animate-none dark:invert-0 after:[background-attachment:fixed] after:[background-image:var(--white-gradient),var(--aurora)] after:[background-size:200%,_100%]"
           style={
             {
               '--aurora':
