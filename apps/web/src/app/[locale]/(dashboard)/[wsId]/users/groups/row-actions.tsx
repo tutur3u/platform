@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye, Loader2 } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -42,6 +43,7 @@ export function UserGroupRowActions({
   canCreate = false,
 }: UserGroupRowActionsProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations();
 
   const data = row.original;
@@ -60,6 +62,9 @@ export function UserGroupRowActions({
       if (res.ok) {
         toast.success(t('ws-user-groups.delete_success'));
         setShowDeleteDialog(false);
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-groups', data.ws_id],
+        });
         router.refresh();
       } else {
         const data = await res.json();

@@ -1,6 +1,10 @@
 'use client';
 
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   Calendar,
   ChevronDown,
@@ -20,11 +24,13 @@ import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionCard } from './transaction-card';
 import { TransactionEditDialog } from './transaction-edit-dialog';
+import { TransactionStatistics } from './transaction-statistics';
 
 interface InfiniteTransactionsListProps {
   wsId: string;
   walletId?: string;
   initialData?: Transaction[];
+  currency?: string;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
@@ -34,14 +40,8 @@ interface InfiniteTransactionsListProps {
   canViewConfidentialCategory?: boolean;
 }
 
-type TransactionWithConfidential = Transaction & {
-  is_amount_confidential?: boolean;
-  is_category_confidential?: boolean;
-  is_description_confidential?: boolean;
-};
-
 interface TransactionResponse {
-  data: TransactionWithConfidential[];
+  data: Transaction[];
   nextCursor: string | null;
   hasMore: boolean;
 }
@@ -49,13 +49,14 @@ interface TransactionResponse {
 interface GroupedTransactions {
   date: string;
   label: string;
-  transactions: TransactionWithConfidential[];
+  transactions: Transaction[];
   isExpanded?: boolean;
 }
 
 export function InfiniteTransactionsList({
   wsId,
   walletId,
+  currency,
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
@@ -69,7 +70,7 @@ export function InfiniteTransactionsList({
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionWithConfidential | null>(null);
+    useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -78,7 +79,7 @@ export function InfiniteTransactionsList({
     moment.locale(locale);
   }, [locale]);
 
-  const handleTransactionClick = (transaction: TransactionWithConfidential) => {
+  const handleTransactionClick = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setIsEditDialogOpen(true);
   };
@@ -215,6 +216,38 @@ export function InfiniteTransactionsList({
 
   const allTransactions = data?.pages.flatMap((page) => page.data) || [];
 
+  // Check if any filter is active
+  const hasActiveFilter =
+    !!q ||
+    userIds.length > 0 ||
+    categoryIds.length > 0 ||
+    walletIds.length > 0 ||
+    !!start ||
+    !!end ||
+    !!walletId;
+
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: [
+      `/api/workspaces/${wsId}/transactions/stats`,
+      q,
+      userIds,
+      categoryIds,
+      walletIds,
+      walletId,
+      start,
+      end,
+    ],
+    queryFn: async () => {
+      const queryString = buildQueryString();
+      const response = await fetch(
+        `/api/workspaces/${wsId}/transactions/stats?${queryString}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch transaction stats');
+      return response.json();
+    },
+    enabled: hasActiveFilter && !isLoading && !error,
+  });
+
   // Group transactions by date
   const groupedTransactions = useMemo(() => {
     const groups: GroupedTransactions[] = [];
@@ -319,6 +352,16 @@ export function InfiniteTransactionsList({
 
   return (
     <div className="space-y-6">
+      {/* Statistics Summary - Only show when filters are active */}
+      {hasActiveFilter && (stats || isStatsLoading) && (
+        <TransactionStatistics
+          transactions={allTransactions}
+          stats={stats}
+          isLoading={isStatsLoading}
+          currency={currency}
+        />
+      )}
+
       {groupedTransactions.map((group, groupIndex) => {
         const dailyTotal = group.transactions.reduce((sum, transaction) => {
           if (

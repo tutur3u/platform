@@ -12,4 +12,11 @@ export interface UserGroup extends Entity {
   starting_date?: string | null;
   ending_date?: string | null;
   notes?: string | null;
+  managers?: {
+    id: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    display_name?: string | null;
+    email?: string | null;
+  }[];
 }
