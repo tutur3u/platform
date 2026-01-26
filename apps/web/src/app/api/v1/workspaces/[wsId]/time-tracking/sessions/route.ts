@@ -49,7 +49,7 @@ export async function GET(
       parseInt(url.searchParams.get('limit') || '10', 10),
       50
     );
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+    const cursor = url.searchParams.get('cursor');
 
     // Determine which user's data to fetch (current user or specified user)
     const queryUserId = targetUserId || user.id;
@@ -192,19 +192,41 @@ export async function GET(
 
       if (countError) throw countError;
 
+      // Apply filters for cursor-based pagination
+      if (cursor) {
+        try {
+          const [lastStartTime, lastId] = cursor.split('|');
+          if (lastStartTime && lastId) {
+            query = query.or(
+              `start_time.lt."${lastStartTime}",and(start_time.eq."${lastStartTime}",id.lt."${lastId}")`
+            );
+          }
+        } catch (e) {
+          console.error('Error parsing cursor:', e);
+        }
+      }
+
       // Apply pagination and ordering
       const { data, error } = await query
         .order('start_time', { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order('id', { ascending: false })
+        .limit(limit + 1);
 
       if (error) throw error;
 
-      const hasMore = total !== null && offset + limit < total;
+      const hasMore = (data?.length || 0) > limit;
+      const sessions = hasMore ? data?.slice(0, limit) : data;
+      const lastSession =
+        hasMore && data && data[limit - 1] ? data[limit - 1] : null;
+      const nextCursor = lastSession
+        ? `${lastSession.start_time}|${lastSession.id}`
+        : null;
 
       return NextResponse.json({
-        sessions: data,
+        sessions,
         total: total ?? 0,
         hasMore,
+        nextCursor,
       });
     }
 

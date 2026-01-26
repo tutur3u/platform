@@ -1,7 +1,14 @@
 'use client';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ChevronDown, Clock, History, Loader2, Plus } from '@tuturuuu/icons';
+import {
+  ChevronDown,
+  Clock,
+  History,
+  Loader2,
+  PartyPopper,
+  Plus,
+} from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +96,7 @@ export function SessionHistory({
     sessions: SessionWithRelations[];
     total: number;
     hasMore: boolean;
+    nextCursor: string | null;
   }>({
     queryKey: [
       'time-tracking-sessions',
@@ -99,15 +107,16 @@ export function SessionHistory({
       endOfPeriod.toISOString(),
     ],
     queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
       const params = new URLSearchParams({
         type: 'history',
         limit: PAGINATION_LIMIT.toString(),
-        offset: offset.toString(),
         dateFrom: startOfPeriod.toISOString(),
         dateTo: endOfPeriod.toISOString(),
         userId: userId,
       });
+      if (pageParam) {
+        params.set('cursor', pageParam as string);
+      }
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?${params}`
       );
@@ -116,10 +125,9 @@ export function SessionHistory({
       }
       return response.json();
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage.hasMore) return undefined;
-      return allPages.length * PAGINATION_LIMIT;
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => {
+      return lastPage.nextCursor;
     },
     staleTime: 30 * 1000, // 30 seconds
   });
@@ -412,7 +420,7 @@ export function SessionHistory({
             <div className="flex flex-col items-center justify-center py-12 md:py-16">
               <Loader2 className="h-10 w-10 animate-spin text-dynamic-orange md:h-12 md:w-12" />
               <p className="mt-4 text-muted-foreground text-sm">
-                Loading sessions...
+                {t('loading_sessions')}
               </p>
             </div>
           ) : sessionsForPeriod?.length === 0 ? (
@@ -497,42 +505,43 @@ export function SessionHistory({
                   }
                 )}
               </div>
-
-              {/* Auto-load trigger */}
-              <div ref={loadMoreRef} className="py-6">
-                {isFetchingNextPage && (
-                  <div className="flex items-center justify-center gap-3">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <span className="text-muted-foreground text-sm">
-                      {t('loading_more')}...
-                    </span>
-                  </div>
-                )}
-
-                {hasNextPage && !isFetchingNextPage && (
-                  <div className="flex justify-center">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => fetchNextPage()}
-                      className="w-full transition-all hover:scale-105 md:w-auto"
-                    >
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                      {t('load_more')}
-                    </Button>
-                  </div>
-                )}
-
-                {!hasNextPage && (sessionsForPeriod?.length || 0) > 10 && (
-                  <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      🎉 {t('end_of_list')}
-                    </p>
-                  </div>
-                )}
-              </div>
             </>
           )}
+
+          {/* Auto-load trigger */}
+          <div ref={loadMoreRef} className="py-6">
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="text-muted-foreground text-sm">
+                  {t('loading_more')}...
+                </span>
+              </div>
+            )}
+
+            {hasNextPage && !isFetchingNextPage && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => fetchNextPage()}
+                  className="w-full transition-all hover:scale-105 md:w-auto"
+                >
+                  <ChevronDown className="mr-2 h-4 w-4" />
+                  {t('load_more')}
+                </Button>
+              </div>
+            )}
+
+            {!hasNextPage && (sessionsForPeriod?.length || 0) > 10 && (
+              <div className="mt-8 flex items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/20 p-6 text-center">
+                <PartyPopper className="h-5 w-5" />
+                <p className="text-muted-foreground text-sm">
+                  {t('end_of_list')}
+                </p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
