@@ -87,11 +87,6 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
-    start: string;
-    end: string;
-    userIds: string | string[];
-    walletIds: string | string[];
-    walletId: string; // Keep for backward compat or singular case
   }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
@@ -122,36 +117,6 @@ export default async function InvoicesPage({
 
   const canExportFinanceData = containsPermission('export_finance_data');
 
-  // Parse wallet IDs for analytics chart
-  const walletIdsArray = (() => {
-    const { walletIds, walletId } = resolvedSearchParams;
-    const wallets = Array.isArray(walletIds)
-      ? walletIds
-      : walletIds
-        ? [walletIds]
-        : [];
-    if (walletId) wallets.push(walletId);
-    return Array.from(new Set(wallets.filter(Boolean)));
-  })();
-
-  // Parse user IDs for analytics chart
-  const userIdsArray = (() => {
-    const { userIds } = resolvedSearchParams;
-    const users = Array.isArray(userIds) ? userIds : userIds ? [userIds] : [];
-    return Array.from(new Set(users.filter(Boolean)));
-  })();
-
-  // Get date range from search params
-  const { start: startDate, end: endDate } = resolvedSearchParams;
-
-  // Build analytics filters object
-  const analyticsFilters = {
-    walletIds: walletIdsArray.length > 0 ? walletIdsArray : undefined,
-    userIds: userIdsArray.length > 0 ? userIdsArray : undefined,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-  };
-
   return (
     <>
       <FeatureSummary
@@ -178,9 +143,8 @@ export default async function InvoicesPage({
       <Suspense fallback={<InvoiceTotalsChartSkeleton className="mb-4" />}>
         <InvoiceAnalytics
           wsId={wsId}
-          filters={analyticsFilters}
-          className="mb-4"
           weekStartsOn={weekStartsOn}
+          className="mb-4"
         />
       </Suspense>
 
@@ -228,32 +192,13 @@ async function getInitialData(
     q,
     page = '1',
     pageSize = '10',
-    start,
-    end,
-    userIds,
-    walletIds,
-    walletId,
   }: {
     q?: string;
     page?: string;
     pageSize?: string;
-    start?: string;
-    end?: string;
-    userIds?: string | string[];
-    walletIds?: string | string[];
-    walletId?: string;
   }
 ) {
   const supabase = await createClient();
-
-  // Combine walletId and walletIds
-  let wallets = Array.isArray(walletIds)
-    ? walletIds
-    : walletIds
-      ? [walletIds]
-      : [];
-  if (walletId) wallets.push(walletId);
-  wallets = Array.from(new Set(wallets.filter(Boolean)));
 
   // Validate and coerce pagination parameters
   const paginationSchema = z.object({
@@ -291,21 +236,15 @@ async function getInitialData(
 
   // If there's a search query, use the RPC function for customer name search
   if (q) {
-    const userIdsArray = userIds
-      ? Array.isArray(userIds)
-        ? userIds
-        : [userIds]
-      : [];
-
     const { data: searchResults, error: rpcError } = await supabase.rpc(
       'search_finance_invoices',
       {
         p_ws_id: wsId,
         p_search_query: q,
-        p_start_date: start || undefined,
-        p_end_date: end || undefined,
-        p_user_ids: userIdsArray.length > 0 ? userIdsArray : undefined,
-        p_wallet_ids: wallets.length > 0 ? wallets : undefined,
+        p_start_date: undefined,
+        p_end_date: undefined,
+        p_user_ids: undefined,
+        p_wallet_ids: undefined,
         p_limit: parsedSize,
         p_offset: (parsedPage - 1) * parsedSize,
       }
@@ -342,42 +281,24 @@ async function getInitialData(
   }
 
   // No search query - use regular query builder
-  let selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))`;
+  const selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`;
 
-  const walletJoinType = wallets.length > 0 ? '!inner' : '';
-  selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
+  const startRange = (parsedPage - 1) * parsedSize;
+  const endRange = startRange + parsedSize - 1;
 
-  let queryBuilder = supabase
+  const {
+    data: rawData,
+    error,
+    count,
+  } = await supabase
     .from('finance_invoices')
     .select(selectQuery, {
       count: 'exact',
     })
-    .eq('ws_id', wsId);
-
-  queryBuilder = queryBuilder.order('created_at', { ascending: false });
-
-  if (start && end) {
-    queryBuilder = queryBuilder.gte('created_at', start).lte('created_at', end);
-  }
-
-  if (userIds) {
-    const ids = Array.isArray(userIds) ? userIds : [userIds];
-    if (ids.length > 0) {
-      queryBuilder = queryBuilder.in('creator_id', ids);
-    }
-  }
-
-  if (wallets.length > 0) {
-    queryBuilder = queryBuilder.in('wallet_transactions.wallet_id', wallets);
-  }
-
-  if (page && pageSize) {
-    const startRange = (parsedPage - 1) * parsedSize;
-    const endRange = parsedPage * parsedSize;
-    queryBuilder = queryBuilder.range(startRange, endRange).limit(parsedSize);
-  }
-
-  const { data: rawData, error, count } = await queryBuilder;
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false })
+    .range(startRange, endRange)
+    .limit(parsedSize);
   if (error) throw error;
 
   const data = rawData.map(

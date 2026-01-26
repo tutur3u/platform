@@ -12,7 +12,7 @@
     "type-check": "tsgo --project tsconfig.build.json"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^4.0.29",
+    "@ai-sdk/amazon-bedrock": "^4.0.30",
     "@ai-sdk/anthropic": "^3.0.23",
     "@ai-sdk/azure": "^3.0.18",
     "@ai-sdk/cerebras": "^2.0.20",
@@ -35,21 +35,21 @@
     "@ai-sdk/openai": "^3.0.18",
     "@ai-sdk/openai-compatible": "^2.0.18",
     "@ai-sdk/perplexity": "^3.0.11",
-    "@ai-sdk/react": "^3.0.50",
+    "@ai-sdk/react": "^3.0.51",
     "@ai-sdk/replicate": "^2.0.11",
     "@ai-sdk/revai": "^2.0.11",
     "@ai-sdk/togetherai": "^2.0.20",
-    "@ai-sdk/xai": "^3.0.33",
+    "@ai-sdk/xai": "^3.0.34",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "ai": "^6.0.48",
+    "ai": "^6.0.49",
     "dayjs": "^1.11.19",
     "next": "^16.1.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "streamdown": "^2.1.0",
     "uuid": "^13.0.0",
-    "zod": "^4.3.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",

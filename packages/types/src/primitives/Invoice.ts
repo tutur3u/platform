@@ -74,4 +74,5 @@ export interface InvoiceAnalyticsFilters {
   userIds?: string[];
   startDate?: string;
   endDate?: string;
+  granularity?: InvoiceAnalyticsPeriod;
 }
