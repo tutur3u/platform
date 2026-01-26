@@ -3267,7 +3267,8 @@
     "note": "Ghi chú",
     "notice": "Mô tả",
     "price": "Tổng tiền gốc",
-    "total_diff": "Chênh lệch giá"
+    "total_diff": "Chênh lệch giá",
+    "wallet": "Ví"
   },
   "invoices": {
     "add_promotion": "Thêm khuyến mãi",
