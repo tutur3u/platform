@@ -3,7 +3,16 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { z } from 'zod';
+import {
+  getWorkspaceConfig,
+  normalizeWorkspaceId,
+} from '@/lib/workspace-helper';
+
+const cursorSchema = z.object({
+  lastStartTime: z.iso.datetime({ offset: true }),
+  lastId: z.uuid().or(z.string().regex(/^\d+$/)),
+});
 
 export async function GET(
   request: NextRequest,
@@ -49,7 +58,7 @@ export async function GET(
       parseInt(url.searchParams.get('limit') || '10', 10),
       50
     );
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+    const cursor = url.searchParams.get('cursor');
 
     // Determine which user's data to fetch (current user or specified user)
     const queryUserId = targetUserId || user.id;
@@ -153,34 +162,89 @@ export async function GET(
         .eq('user_id', queryUserId)
         .eq('pending_approval', false);
 
+      // Build count query with same filters
+      let countQuery = supabase
+        .from('time_tracking_sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('ws_id', normalizedWsId)
+        .eq('user_id', queryUserId)
+        .eq('pending_approval', false);
+
       if (type === 'recent') {
         query = query.eq('is_running', false);
+        countQuery = countQuery.eq('is_running', false);
       }
 
       // Apply filters
       if (categoryId) {
         query = query.eq('category_id', categoryId);
+        countQuery = countQuery.eq('category_id', categoryId);
       }
 
       if (taskId) {
         query = query.eq('task_id', taskId);
+        countQuery = countQuery.eq('task_id', taskId);
       }
 
       if (dateFrom) {
         query = query.gte('start_time', dateFrom);
+        countQuery = countQuery.gte('start_time', dateFrom);
       }
 
       if (dateTo) {
         query = query.lte('start_time', dateTo);
+        countQuery = countQuery.lte('start_time', dateTo);
+      }
+
+      // Execute count query
+      const { count: total, error: countError } = await countQuery;
+
+      if (countError) throw countError;
+
+      // Apply filters for cursor-based pagination
+      if (cursor) {
+        const [lastStartTime, lastId] = cursor.split('|');
+        const validation = cursorSchema.safeParse({ lastStartTime, lastId });
+
+        if (!validation.success) {
+          return NextResponse.json(
+            { error: 'Invalid cursor format' },
+            { status: 400 }
+          );
+        }
+
+        const esc = (str: string) =>
+          str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const escapedStartTime = esc(validation.data.lastStartTime);
+        const escapedId = esc(validation.data.lastId);
+
+        query = query.or(
+          `start_time.lt."${escapedStartTime}",and(start_time.eq."${escapedStartTime}",id.lt."${escapedId}")`
+        );
       }
 
       // Apply pagination and ordering
       const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order('start_time', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(limit + 1);
 
       if (error) throw error;
-      return NextResponse.json({ sessions: data });
+
+      const hasMore = (data?.length || 0) > limit;
+      const sessions = hasMore ? data?.slice(0, limit) : data;
+      const lastSession =
+        hasMore && data && data[limit - 1] ? data[limit - 1] : null;
+      const nextCursor = lastSession
+        ? `${lastSession.start_time}|${lastSession.id}`
+        : null;
+
+      return NextResponse.json({
+        sessions,
+        total: total ?? 0,
+        hasMore,
+        nextCursor,
+      });
     }
 
     if (type === 'stats') {
@@ -419,9 +483,16 @@ export async function POST(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // CRITICAL: Prevent future start times - this check cannot be bypassed
+    // Use service role client for secure operations
+    const sbAdmin = await createAdminClient(); // This should use service role
+
+    const allowFutureSessions =
+      (await getWorkspaceConfig(normalizedWsId, 'ALLOW_FUTURE_SESSIONS')) ===
+      'true';
+
+    // CRITICAL: Prevent future start times (unless allowed by config)
     const now = new Date();
-    if (startTime) {
+    if (!allowFutureSessions && startTime) {
       const start = new Date(startTime);
       if (start > now) {
         return NextResponse.json(
@@ -433,9 +504,6 @@ export async function POST(
         );
       }
     }
-
-    // Use service role client for secure operations
-    const sbAdmin = await createAdminClient(); // This should use service role
 
     // If this is a manual entry (missed entry), handle differently
     if (startTime && endTime) {

@@ -29,12 +29,14 @@ export interface ThresholdValidationResult extends TimeValidationResult {
 }
 
 /**
- * Validates that a date/time is not in the future
+ * Validates that a date/time is not in the future (unless allowed)
  * @param dateTimeString - ISO date time string or datetime-local input value
+ * @param allowFuture - Whether future dates are allowed
  * @returns Object with validation result and error code if invalid
  */
 export function validateNotFuture(
-  dateTimeString: string | null | undefined
+  dateTimeString: string | null | undefined,
+  allowFuture = false
 ): TimeValidationResult {
   if (!dateTimeString) {
     return { isValid: true }; // Empty is considered valid (required validation should be separate)
@@ -49,6 +51,10 @@ export function validateNotFuture(
       errorCode: 'INVALID_DATE_TIME',
       errorParams: { input: dateTimeString },
     };
+  }
+
+  if (allowFuture) {
+    return { isValid: true };
   }
 
   const now = dayjs();
@@ -68,12 +74,14 @@ export function validateNotFuture(
 /**
  * Validates that start time is not in the future
  * @param startTimeString - Start time string
+ * @param allowFuture - Whether future dates are allowed
  * @returns Object with validation result and error code if invalid
  */
 export function validateStartTime(
-  startTimeString: string | null | undefined
+  startTimeString: string | null | undefined,
+  allowFuture = false
 ): TimeValidationResult {
-  const result = validateNotFuture(startTimeString);
+  const result = validateNotFuture(startTimeString, allowFuture);
   if (!result.isValid) {
     const formattedDateTime = dayjs(startTimeString).format(
       'MMM D, YYYY [at] h:mm A'
@@ -90,12 +98,14 @@ export function validateStartTime(
 /**
  * Validates that end time is not in the future
  * @param endTimeString - End time string
+ * @param allowFuture - Whether future dates are allowed
  * @returns Object with validation result and error code if invalid
  */
 export function validateEndTime(
-  endTimeString: string | null | undefined
+  endTimeString: string | null | undefined,
+  allowFuture = false
 ): TimeValidationResult {
-  const result = validateNotFuture(endTimeString);
+  const result = validateNotFuture(endTimeString, allowFuture);
   if (!result.isValid) {
     const formattedDateTime = dayjs(endTimeString).format(
       'MMM D, YYYY [at] h:mm A'
@@ -113,19 +123,21 @@ export function validateEndTime(
  * Validates time range (end is after start and both are not future)
  * @param startTimeString - Start time string
  * @param endTimeString - End time string
+ * @param allowFuture - Whether future dates are allowed
  * @returns Object with validation result and error code if invalid
  */
 export function validateTimeRange(
   startTimeString: string | null | undefined,
-  endTimeString: string | null | undefined
+  endTimeString: string | null | undefined,
+  allowFuture = false
 ): TimeValidationResult {
   // Validate individual times first
-  const startValidation = validateStartTime(startTimeString);
+  const startValidation = validateStartTime(startTimeString, allowFuture);
   if (!startValidation.isValid) {
     return startValidation;
   }
 
-  const endValidation = validateEndTime(endTimeString);
+  const endValidation = validateEndTime(endTimeString, allowFuture);
   if (!endValidation.isValid) {
     return endValidation;
   }
@@ -158,11 +170,13 @@ export function validateTimeRange(
  * Validates that start time is within the allowed threshold for missed entries
  * @param startTimeString - Start time string
  * @param thresholdDays - Number of days allowed (null means no restriction, 0 means all require approval)
+ * @param allowFuture - Whether future dates are allowed
  * @returns Object with validation result and error code if invalid
  */
 export function validateMissedEntryThreshold(
   startTimeString: string | null | undefined,
-  thresholdDays: number | null
+  thresholdDays: number | null,
+  allowFuture = false
 ): ThresholdValidationResult {
   if (!startTimeString) {
     return { isValid: true, requiresApproval: false };
@@ -171,8 +185,8 @@ export function validateMissedEntryThreshold(
   const startTime = dayjs(startTimeString);
   const now = dayjs();
 
-  // First check if it's a future time (never allowed)
-  if (startTime.isAfter(now)) {
+  // First check if it's a future time (allowed based on allowFuture)
+  if (!allowFuture && startTime.isAfter(now)) {
     const formattedDateTime = startTime.format('MMM D, YYYY [at] h:mm A');
     return {
       isValid: false,
@@ -211,12 +225,14 @@ export function validateMissedEntryThreshold(
  * @param originalStartTime - Original start time of the session
  * @param newStartTime - New start time (optional)
  * @param thresholdDays - Number of days allowed for editing
+ * @param allowFuture - Whether future dates are allowed
  * @returns Object with validation result and error code if invalid
  */
 export function validateSessionEdit(
   originalStartTime: string,
   newStartTime: string | undefined,
-  thresholdDays: number | null
+  thresholdDays: number | null,
+  allowFuture = false
 ): TimeValidationResult {
   const now = dayjs();
   const originalStart = dayjs(originalStartTime);
@@ -224,7 +240,7 @@ export function validateSessionEdit(
   // If threshold is null, no restrictions
   if (thresholdDays === null) {
     // Still need to check for future times
-    if (newStartTime && dayjs(newStartTime).isAfter(now)) {
+    if (!allowFuture && newStartTime && dayjs(newStartTime).isAfter(now)) {
       const futureTime = dayjs(newStartTime);
       const formattedDateTime = futureTime.format('MMM D, YYYY [at] h:mm A');
       return {
@@ -266,7 +282,7 @@ export function validateSessionEdit(
     }
 
     // Check for future times
-    if (newStart.isAfter(now)) {
+    if (!allowFuture && newStart.isAfter(now)) {
       const formattedDateTime = newStart.format('MMM D, YYYY [at] h:mm A');
       return {
         isValid: false,

@@ -82,6 +82,7 @@ import InvoiceSettings from './finance/invoice-settings';
 import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
+import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import MembersSettings from './workspace/members-settings';
@@ -387,6 +388,13 @@ export function SettingsDialog({
           {
             label: t('settings.time_tracker.title'),
             items: [
+              {
+                name: 'time_tracker_general',
+                label: t('settings.time_tracker.general'),
+                icon: Clock,
+                description: t('settings.time_tracker.general_description'),
+                keywords: ['Time Tracker', 'General', 'Future'],
+              },
               {
                 name: 'break_types',
                 label: t('settings.time_tracker.break_types'),
@@ -792,6 +800,10 @@ export function SettingsDialog({
 
                 {activeTab === 'break_types' && wsId && (
                   <WorkspaceBreakTypesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_general' && wsId && (
+                  <TimeTrackerGeneralSettings wsId={wsId} />
                 )}
 
                 {activeTab === 'attendance_display' && wsId && (

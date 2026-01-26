@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getWorkspaceConfig } from '@/lib/workspace-helper';
 
 interface Params {
   params: Promise<{
@@ -37,25 +38,12 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId, configId: id } = await params;
+  const value = await getWorkspaceConfig(wsId, id);
 
-  const { data, error } = await supabase
-    .from('workspace_configs')
-    .select('value')
-    .eq('ws_id', wsId)
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return NextResponse.json({}, { status: 404 });
-    }
-    return NextResponse.json(
-      { message: 'Error fetching workspace config' },
-      { status: 500 }
-    );
+  if (value === null) {
+    return NextResponse.json({}, { status: 404 });
   }
 
-  return NextResponse.json({ value: data.value });
+  return NextResponse.json({ value });
 }
