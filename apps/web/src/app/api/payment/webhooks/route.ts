@@ -4,7 +4,7 @@ import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import {
-  createSubscription,
+  createFreeSubscription,
   hasActiveSubscription,
 } from '@/utils/subscription-helper';
 
@@ -320,12 +320,11 @@ export const POST = Webhooks({
           );
 
           // Create a free subscription for this workspace
-          const freeSubscription = await createSubscription(
+          const freeSubscription = await createFreeSubscription(
             polar,
             sbAdmin,
             ws_id,
-            payload.data.customer.id,
-            'FREE'
+            payload.data.customer.id
           );
 
           if (freeSubscription) {

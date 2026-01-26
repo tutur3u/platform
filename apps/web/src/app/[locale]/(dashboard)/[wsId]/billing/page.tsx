@@ -10,7 +10,7 @@ import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getOrCreatePolarCustomer } from '@/utils/customer-session';
-import { createSubscription } from '@/utils/subscription-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
@@ -149,12 +149,11 @@ const ensureSubscription = async (wsId: string, userId: string) => {
     });
 
     // Create free tier subscription
-    const subscription = await createSubscription(
+    const subscription = await createFreeSubscription(
       polar,
       sbAdmin,
       wsId,
-      customerId,
-      'FREE' // Always start with FREE tier
+      customerId
     );
 
     if (!subscription) {
