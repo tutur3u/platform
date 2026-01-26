@@ -31,11 +31,11 @@ export default function NavbarSeparator() {
 
     if (scroll > 0) {
       navbarContent.classList.remove('bg-transparent');
-      navbarContent.classList.add('bg-background/90');
-      navbarContent.classList.add('backdrop-blur-md');
+      navbarContent.classList.add('bg-background/80');
+      navbarContent.classList.add('backdrop-blur-xl');
     } else {
-      navbarContent.classList.remove('bg-background/90');
-      navbarContent.classList.remove('backdrop-blur-md');
+      navbarContent.classList.remove('bg-background/80');
+      navbarContent.classList.remove('backdrop-blur-xl');
       navbarContent.classList.add('bg-transparent');
     }
   }, [scroll]);
