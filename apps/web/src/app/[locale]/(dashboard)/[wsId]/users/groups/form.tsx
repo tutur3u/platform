@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { CalendarIcon } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
@@ -67,6 +68,7 @@ export default function UserGroupForm({
   const tCommon = useTranslations('common');
   const tSchedule = useTranslations('ws-user-group-schedule');
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -120,6 +122,9 @@ export default function UserGroupForm({
 
       if (res.ok) {
         onFinish?.(data);
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-groups', wsId],
+        });
         router.refresh();
       } else {
         const errorData = await res.json();

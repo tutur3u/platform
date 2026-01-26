@@ -1869,6 +1869,7 @@
     "result(s)": "kết quả",
     "retail": "Bán lẻ",
     "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
+    "retry": "Thử lại",
     "retry_save": "Thử lưu lại",
     "return": "Quay lại",
     "rewise-description": "Truy cập một loạt các công cụ hỗ trợ AI dành cho doanh nghiệp.",
@@ -7700,6 +7701,7 @@
     "incomplete": "Chưa hoàn thành",
     "is_guest": "Là khách",
     "locked": "Bị khoá",
+    "managers": "Quản lý nhóm",
     "name": "Tên",
     "no_attendance_today": "Không cần điểm danh hôm nay",
     "special_users": "Người dùng đặc biệt"

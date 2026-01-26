@@ -1847,6 +1847,7 @@
     "result(s)": "result(s)",
     "retail": "Retail",
     "retail-description": "Solutions tailored for retail businesses.",
+    "retry": "Retry",
     "retry_save": "Retry saving",
     "return": "Return",
     "rewise-description": "Access a wide-range of enterprise AI-powered tools.",
@@ -7623,6 +7624,7 @@
     "incomplete": "Incomplete",
     "is_guest": "Is Guest",
     "locked": "Locked",
+    "managers": "Managers",
     "name": "Name",
     "no_attendance_today": "No attendance today",
     "special_users": "Special users"
