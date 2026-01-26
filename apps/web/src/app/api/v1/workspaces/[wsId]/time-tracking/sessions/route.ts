@@ -3,7 +3,13 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+const cursorSchema = z.object({
+  lastStartTime: z.iso.datetime({ offset: true }),
+  lastId: z.uuid().or(z.string().regex(/^\d+$/)),
+});
 
 export async function GET(
   request: NextRequest,
@@ -194,16 +200,24 @@ export async function GET(
 
       // Apply filters for cursor-based pagination
       if (cursor) {
-        try {
-          const [lastStartTime, lastId] = cursor.split('|');
-          if (lastStartTime && lastId) {
-            query = query.or(
-              `start_time.lt."${lastStartTime}",and(start_time.eq."${lastStartTime}",id.lt."${lastId}")`
-            );
-          }
-        } catch (e) {
-          console.error('Error parsing cursor:', e);
+        const [lastStartTime, lastId] = cursor.split('|');
+        const validation = cursorSchema.safeParse({ lastStartTime, lastId });
+
+        if (!validation.success) {
+          return NextResponse.json(
+            { error: 'Invalid cursor format' },
+            { status: 400 }
+          );
         }
+
+        const escape = (str: string) =>
+          str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const escapedStartTime = escape(validation.data.lastStartTime);
+        const escapedId = escape(validation.data.lastId);
+
+        query = query.or(
+          `start_time.lt."${escapedStartTime}",and(start_time.eq."${escapedStartTime}",id.lt."${escapedId}")`
+        );
       }
 
       // Apply pagination and ordering
