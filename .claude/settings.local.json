@@ -28,7 +28,10 @@
       "Bash(git commit:*)",
       "WebSearch",
       "Bash(bunx biome:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh workflow view:*)",
+      "Bash(npx @biomejs/biome@latest lint:*)"
     ]
   }
 }
