@@ -222,13 +222,20 @@ export function BillingClient({
                   <Button
                     variant="ghost"
                     size="lg"
-                    className="text-muted-foreground hover:text-destructive"
+                    className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
                     onClick={() => setShowConfirmationDialog(true)}
                   >
-                    <X className="mr-2 h-4 w-4" />
-                    {currentPlan.cancelAtPeriodEnd
-                      ? t('continue-subscription')
-                      : t('cancel-subscription')}
+                    {currentPlan.cancelAtPeriodEnd ? (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        {t('continue-subscription')}
+                      </>
+                    ) : (
+                      <>
+                        <X className="mr-2 h-4 w-4" />
+                        {t('cancel-subscription')}
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
