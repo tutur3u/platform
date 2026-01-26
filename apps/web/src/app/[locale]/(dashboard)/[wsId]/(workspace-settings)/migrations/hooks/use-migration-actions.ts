@@ -7,6 +7,7 @@ import {
   type MigrationModule,
   type ModulePackage,
 } from '../modules';
+import { buildProxyUrl, parseUrlForProxy } from '../utils/api-path';
 import { reconcileData, usesCompositeKey } from '../utils/reconciliation';
 import type { useMigrationState } from './use-migration-state';
 
@@ -86,31 +87,17 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
 
       if (mode === 'tuturuuu') {
         // Route through local proxy to avoid CORS
-        // Parse the URL to separate path and query params
-        const urlObj = new URL(
+        const { relativePath, queryString } = parseUrlForProxy(
           url,
-          effectiveApiEndpoint || 'https://tuturuuu.com'
+          effectiveApiEndpoint
         );
-        const fullPath = urlObj.pathname;
-        const queryString = urlObj.search;
 
-        // Strip the API base path (e.g., /api/v2) from the pathname
-        // to avoid duplication when proxy combines apiUrl + path
-        const apiBasePath = effectiveApiEndpoint
-          ? new URL(effectiveApiEndpoint).pathname
-          : '/api/v2';
-        const relativePath = fullPath.startsWith(apiBasePath)
-          ? fullPath.slice(apiBasePath.length)
-          : fullPath;
-
-        // Build proxy URL with path, wsId (for rate limit config), and apiUrl (for custom endpoints)
-        const wsIdParam = targetWorkspaceId
-          ? `&wsId=${encodeURIComponent(targetWorkspaceId)}`
-          : '';
-        const apiUrlParam = effectiveApiEndpoint
-          ? `&apiUrl=${encodeURIComponent(effectiveApiEndpoint)}`
-          : '';
-        fetchUrl = `/api/v1/proxy/tuturuuu?path=/api/v2/${encodeURIComponent(relativePath)}${wsIdParam}${apiUrlParam}${queryString ? `&${queryString.slice(1)}` : ''}`;
+        fetchUrl = buildProxyUrl({
+          path: relativePath,
+          wsId: targetWorkspaceId,
+          apiEndpoint: effectiveApiEndpoint,
+          queryString,
+        });
         headers['X-Tuturuuu-Api-Key'] = effectiveApiKey;
       } else {
         // Legacy mode uses TTR-API-KEY header
