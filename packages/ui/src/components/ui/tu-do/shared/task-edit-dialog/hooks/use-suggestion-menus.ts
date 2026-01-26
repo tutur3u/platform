@@ -440,7 +440,6 @@ export function useSuggestionMenus({
     closeSlashMenu,
     closeMentionMenu,
     showCustomDatePicker,
-    suggestionMenuWidth,
   ]);
 
   // Blur editor when custom date picker opens
