@@ -14,6 +14,24 @@ vi.mock('framer-motion', async () => {
   };
 });
 
+// Mock heavy visual background components
+vi.mock('../components/night-sky', () => ({
+  NightSky: () => <div data-testid="night-sky" />,
+}));
+
+vi.mock('../components/pack-background', () => ({
+  PackBackground: () => <div data-testid="pack-background" />,
+}));
+
+vi.mock('../components/atmospheric-pass', () => ({
+  AtmosphericPass: () => <div data-testid="atmospheric-pass" />,
+}));
+
+// Mock Scene I because it has 90+ motion components and complex logic
+vi.mock('../components/scene-i-tundra', () => ({
+  SceneITundra: () => <div>Find your pack</div>,
+}));
+
 // Mock ScalingNetwork because it uses useScroll and complex layout
 vi.mock('../components/scaling-network', () => ({
   ScalingNetwork: () => <div>ScalingNetwork Component</div>,
