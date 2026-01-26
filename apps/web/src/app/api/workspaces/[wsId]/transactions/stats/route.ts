@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  normalizeWorkspaceId,
-  getPermissions,
-} from '@tuturuuu/utils/workspace-helper';
 
 const querySchema = z.object({
   q: z.string().optional().nullable(),
