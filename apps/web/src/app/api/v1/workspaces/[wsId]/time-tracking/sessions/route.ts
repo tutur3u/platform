@@ -188,7 +188,9 @@ export async function GET(
       }
 
       // Execute count query
-      const { count: total } = await countQuery;
+      const { count: total, error: countError } = await countQuery;
+
+      if (countError) throw countError;
 
       // Apply pagination and ordering
       const { data, error } = await query

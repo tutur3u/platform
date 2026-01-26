@@ -1,7 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { Clock, History, Loader2, Plus } from '@tuturuuu/icons';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { ChevronDown, Clock, History, Loader2, Plus } from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,9 +19,10 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
+import type { SessionWithRelations } from '../../types';
 import MissedEntryDialog from '../missed-entry-dialog';
 import { WorkspaceSelectDialog } from '../workspace-select-dialog';
 import { EditSessionDialog } from './edit-session-dialog';
@@ -34,7 +35,6 @@ import type {
   SessionHistoryProps,
   ViewMode,
 } from './session-types';
-import type { SessionWithRelations } from '../../types';
 import {
   calculatePeriodStats,
   getDurationCategory,
@@ -49,6 +49,8 @@ import { useSessionActions } from './use-session-actions';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
+
+const PAGINATION_LIMIT = 5;
 
 export function SessionHistory({
   wsId,
@@ -74,8 +76,20 @@ export function SessionHistory({
     return { startOfPeriod: start, endOfPeriod: end };
   }, [currentDate, viewMode, userTimezone]);
 
-  // Fetch sessions for the current period
-  const { data: sessionsData, isLoading: isLoadingSessions } = useQuery({
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Fetch sessions for the current period with infinite query
+  const {
+    data: sessionsInfiniteData,
+    isLoading: isLoadingSessions,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<{
+    sessions: SessionWithRelations[];
+    total: number;
+    hasMore: boolean;
+  }>({
     queryKey: [
       'time-tracking-sessions',
       wsId,
@@ -84,13 +98,15 @@ export function SessionHistory({
       startOfPeriod.toISOString(),
       endOfPeriod.toISOString(),
     ],
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : 0;
       const params = new URLSearchParams({
         type: 'history',
-        limit: '500', // Fetch enough for a month view
-        offset: '0',
+        limit: PAGINATION_LIMIT.toString(),
+        offset: offset.toString(),
         dateFrom: startOfPeriod.toISOString(),
         dateTo: endOfPeriod.toISOString(),
+        userId: userId,
       });
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?${params}`
@@ -98,17 +114,39 @@ export function SessionHistory({
       if (!response.ok) {
         throw new Error('Failed to fetch sessions');
       }
-      return response.json() as Promise<{
-        sessions: SessionWithRelations[];
-        total: number;
-        hasMore: boolean;
-      }>;
+      return response.json();
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.length * PAGINATION_LIMIT;
     },
     staleTime: 30 * 1000, // 30 seconds
   });
 
   // Extract sessions from response
-  const sessions = useMemo(() => sessionsData?.sessions ?? [], [sessionsData]);
+  const sessions = useMemo(
+    () => sessionsInfiniteData?.pages.flatMap((page) => page.sessions) ?? [],
+    [sessionsInfiniteData]
+  );
+
+  // Intersection Observer for auto-loading
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -457,6 +495,40 @@ export function SessionHistory({
                       </div>
                     );
                   }
+                )}
+              </div>
+
+              {/* Auto-load trigger */}
+              <div ref={loadMoreRef} className="py-6">
+                {isFetchingNextPage && (
+                  <div className="flex items-center justify-center gap-3">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="text-muted-foreground text-sm">
+                      {t('loading_more')}...
+                    </span>
+                  </div>
+                )}
+
+                {hasNextPage && !isFetchingNextPage && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => fetchNextPage()}
+                      className="w-full transition-all hover:scale-105 md:w-auto"
+                    >
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                      {t('load_more')}
+                    </Button>
+                  </div>
+                )}
+
+                {!hasNextPage && (sessionsForPeriod?.length || 0) > 10 && (
+                  <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      🎉 {t('end_of_list')}
+                    </p>
+                  </div>
                 )}
               </div>
             </>
