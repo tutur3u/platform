@@ -210,10 +210,10 @@ export async function GET(
           );
         }
 
-        const escape = (str: string) =>
+        const esc = (str: string) =>
           str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        const escapedStartTime = escape(validation.data.lastStartTime);
-        const escapedId = escape(validation.data.lastId);
+        const escapedStartTime = esc(validation.data.lastStartTime);
+        const escapedId = esc(validation.data.lastId);
 
         query = query.or(
           `start_time.lt."${escapedStartTime}",and(start_time.eq."${escapedStartTime}",id.lt."${escapedId}")`
