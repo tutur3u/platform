@@ -24,8 +24,8 @@ import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
 export interface Plan {
-  id: string | null;
-  productId: string | null;
+  id: string;
+  productId: string;
   name: string;
   tier: WorkspaceProductTier | null;
   price: number;
@@ -64,7 +64,7 @@ export function BillingClient({
   const t = useTranslations('billing');
   const router = useRouter();
 
-  const isPaidPlan = currentPlan.tier !== null;
+  const isPaidPlan = currentPlan.tier && currentPlan.tier !== 'FREE';
   const isEnterprisePlan = currentPlan.tier === 'ENTERPRISE';
   const isProPlan = currentPlan.tier === 'PRO';
   const isPlusPlan = currentPlan.tier === 'PLUS';
@@ -222,13 +222,20 @@ export function BillingClient({
                   <Button
                     variant="ghost"
                     size="lg"
-                    className="text-muted-foreground hover:text-destructive"
+                    className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
                     onClick={() => setShowConfirmationDialog(true)}
                   >
-                    <X className="mr-2 h-4 w-4" />
-                    {currentPlan.cancelAtPeriodEnd
-                      ? t('continue-subscription')
-                      : t('cancel-subscription')}
+                    {currentPlan.cancelAtPeriodEnd ? (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        {t('continue-subscription')}
+                      </>
+                    ) : (
+                      <>
+                        <X className="mr-2 h-4 w-4" />
+                        {t('cancel-subscription')}
+                      </>
+                    )}
                   </Button>
                 )}
               </div>

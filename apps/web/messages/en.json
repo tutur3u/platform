@@ -825,6 +825,35 @@
     "next-billing-info": "Next billing: {date} ({amount})",
     "no-orders-title": "No Orders Yet",
     "no-plan": "No Plan",
+    "no-subscription": {
+      "contact-support": "Contact Support",
+      "dev": {
+        "description": "No subscription found for this workspace. We attempted to create one automatically, but it failed.",
+        "polar-config": {
+          "sandbox": "Set POLAR_SANDBOX=true in your .env",
+          "title": "1. Ensure Polar Sandbox is configured:",
+          "token": "Set POLAR_ACCESS_TOKEN to your sandbox token"
+        },
+        "reload": {
+          "description": "After completing the setup above, reload this page to retry subscription creation.",
+          "title": "3. Reload this page"
+        },
+        "title": "Subscription Setup Required",
+        "webhook-config": {
+          "ngrok": "Install ngrok:",
+          "secret": "Set POLAR_WEBHOOK_SECRET in your .env",
+          "title": "2. Configure webhook handling:",
+          "url": "Run: ngrok http 7803 and copy the HTTPS URL to your Polar webhook settings"
+        }
+      },
+      "prod": {
+        "description": "We couldn't find or create a subscription for this workspace. Please contact support for assistance.",
+        "error-code": "Error Code",
+        "title": "Subscription Not Found",
+        "workspace-id": "Workspace ID"
+      },
+      "retry": "Retry Setup"
+    },
     "order-history": "Order History",
     "order-history-desc": "No subscription history available.",
     "order-history-limit": "Showing up to 10 recent orders",

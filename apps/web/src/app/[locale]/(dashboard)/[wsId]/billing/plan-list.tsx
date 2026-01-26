@@ -185,7 +185,7 @@ export function PlanList({
         text: t('downgrade-to', { plan: plan.name }),
         icon: ArrowDownCircle,
         variant: 'outline' as const,
-        disabled: false,
+        disabled: plan.isFree, // Disable downgrade to Free plan via button
       };
     }
 
@@ -440,10 +440,14 @@ export function PlanList({
                           </Button>
                         ) : (
                           <PurchaseLink
+                            subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
-                            subscriptionId={currentPlan.id}
-                            onPlanChange={() => handlePlanChange(plan)}
+                            onPlanChange={
+                              currentPlan.tier === 'FREE'
+                                ? undefined
+                                : () => handlePlanChange(plan)
+                            }
                             className={cn(
                               'w-full transition-all hover:scale-[1.02]',
                               !plan.isFree &&

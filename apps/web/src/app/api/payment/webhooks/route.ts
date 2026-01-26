@@ -3,6 +3,10 @@ import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
+import {
+  createFreeSubscription,
+  hasActiveSubscription,
+} from '@/utils/subscription-helper';
 
 // Helper function to report initial seat usage to Polar
 async function reportInitialUsage(ws_id: string, customerId: string) {
@@ -295,6 +299,47 @@ export const POST = Webhooks({
           await reportInitialUsage(ws_id, payload.data.customer.id);
         } catch (e) {
           console.error('Webhook: Failed to report usage on activation', e);
+        }
+      }
+
+      // If subscription is fully canceled, check if workspace needs a free subscription
+      if (payload.data.status === 'canceled') {
+        console.log(
+          `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${ws_id} needs a free subscription`
+        );
+
+        const sbAdmin = await createAdminClient();
+        const polar = createPolarClient();
+
+        // Check if workspace has any other active subscriptions
+        const hasActive = await hasActiveSubscription(sbAdmin, ws_id);
+
+        if (!hasActive) {
+          console.log(
+            `Webhook: Workspace ${ws_id} has no active subscriptions, creating free subscription`
+          );
+
+          // Create a free subscription for this workspace
+          const freeSubscription = await createFreeSubscription(
+            polar,
+            sbAdmin,
+            ws_id,
+            payload.data.customer.id
+          );
+
+          if (freeSubscription) {
+            console.log(
+              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${ws_id}`
+            );
+          } else {
+            console.warn(
+              `Webhook: Could not create free subscription for workspace ${ws_id}`
+            );
+          }
+        } else {
+          console.log(
+            `Webhook: Workspace ${ws_id} still has active subscriptions, no free subscription needed`
+          );
         }
       }
 

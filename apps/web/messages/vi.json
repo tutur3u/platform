@@ -839,6 +839,35 @@
     "next-billing-info": "Thanh toán tiếp theo: {date} ({amount})",
     "no-orders-title": "Chưa có đơn hàng",
     "no-plan": "Chưa có gói",
+    "no-subscription": {
+      "contact-support": "Liên Hệ Hỗ Trợ",
+      "dev": {
+        "description": "Không tìm thấy gói dịch vụ cho workspace này. Chúng tôi đã thử tạo tự động nhưng thất bại.",
+        "polar-config": {
+          "sandbox": "Đặt POLAR_SANDBOX=true trong file .env",
+          "title": "1. Đảm bảo Polar Sandbox đã được cấu hình:",
+          "token": "Đặt POLAR_ACCESS_TOKEN với token sandbox của bạn"
+        },
+        "reload": {
+          "description": "Sau khi hoàn thành thiết lập ở trên, tải lại trang này để thử lại việc tạo gói dịch vụ.",
+          "title": "3. Tải lại trang này"
+        },
+        "title": "Cần Thiết Lập Gói Dịch Vụ",
+        "webhook-config": {
+          "ngrok": "Cài đặt ngrok:",
+          "secret": "Đặt POLAR_WEBHOOK_SECRET trong file .env",
+          "title": "2. Cấu hình xử lý webhook:",
+          "url": "Chạy: ngrok http 7803 và sao chép URL HTTPS vào cài đặt webhook Polar"
+        }
+      },
+      "prod": {
+        "description": "Chúng tôi không thể tìm thấy hoặc tạo gói dịch vụ cho workspace này. Vui lòng liên hệ hỗ trợ để được trợ giúp.",
+        "error-code": "Mã Lỗi",
+        "title": "Không Tìm Thấy Gói Dịch Vụ",
+        "workspace-id": "ID Workspace"
+      },
+      "retry": "Thử Lại"
+    },
     "order-history": "Lịch sử thanh toán",
     "order-history-desc": "Không có lịch sử đăng ký nào.",
     "order-history-limit": "Hiển thị tối đa 10 đơn hàng gần đây",

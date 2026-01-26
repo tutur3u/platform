@@ -15216,7 +15216,7 @@ export type Database = {
         Row: {
           avatar_url: string | null;
           created_at: string | null;
-          creator_id: string | null;
+          creator_id: string;
           deleted: boolean | null;
           energy_profile: string | null;
           first_day_of_week: string | null;
@@ -15231,7 +15231,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null;
           created_at?: string | null;
-          creator_id?: string | null;
+          creator_id?: string;
           deleted?: boolean | null;
           energy_profile?: string | null;
           first_day_of_week?: string | null;
@@ -15246,7 +15246,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null;
           created_at?: string | null;
-          creator_id?: string | null;
+          creator_id?: string;
           deleted?: boolean | null;
           energy_profile?: string | null;
           first_day_of_week?: string | null;
