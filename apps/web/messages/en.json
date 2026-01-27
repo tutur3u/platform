@@ -849,6 +849,7 @@
       "prod": {
         "description": "We couldn't find or create a subscription for this workspace. Please contact support for assistance.",
         "error-code": "Error Code",
+        "timeout-description": "Your subscription is being set up. Please refresh the page in a moment to see your subscription details.",
         "title": "Subscription Not Found",
         "workspace-id": "Workspace ID"
       },
