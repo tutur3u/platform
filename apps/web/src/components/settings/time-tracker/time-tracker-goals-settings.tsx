@@ -49,25 +49,11 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
+import type { TimeTrackingGoalWithCategory } from '@tuturuuu/types';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
-
-// Goal tracking interface
-export interface TimeTrackingGoal {
-  id: string;
-  ws_id: string;
-  user_id: string;
-  category_id: string | null;
-  daily_goal_minutes: number;
-  weekly_goal_minutes: number | null;
-  is_active: boolean | null;
-  category: {
-    id: string;
-    name: string;
-    color?: string;
-  } | null;
-}
+import { formatMinutes, getCategoryColor } from './time-tracker-utils';
 
 interface TimeTrackerGoalsSettingsProps {
   wsId: string;
@@ -94,16 +80,16 @@ export function TimeTrackerGoalsSettings({
       );
       if (!response.ok) throw new Error('Failed to fetch goals');
       const data = await response.json();
-      return data.goals as TimeTrackingGoal[];
+      return data.goals as TimeTrackingGoalWithCategory[];
     },
   });
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [goalToDelete, setGoalToDelete] = useState<TimeTrackingGoal | null>(
-    null
-  );
-  const [goalToEdit, setGoalToEdit] = useState<TimeTrackingGoal | null>(null);
+  const [goalToDelete, setGoalToDelete] =
+    useState<TimeTrackingGoalWithCategory | null>(null);
+  const [goalToEdit, setGoalToEdit] =
+    useState<TimeTrackingGoalWithCategory | null>(null);
 
   // Form state
   const [categoryId, setCategoryId] = useState<string>('general');
@@ -123,12 +109,12 @@ export function TimeTrackerGoalsSettings({
     setIsAddDialogOpen(true);
   };
 
-  const openEditDialog = (goal: TimeTrackingGoal) => {
+  const openEditDialog = (goal: TimeTrackingGoalWithCategory) => {
     setGoalToEdit(goal);
     setCategoryId(goal.category_id || 'general');
     setDailyGoalMinutes(goal.daily_goal_minutes);
     setWeeklyGoalMinutes(goal.weekly_goal_minutes || 2400);
-    setIsActive(goal.is_active || true);
+    setIsActive(goal.is_active ?? true);
     setIsEditDialogOpen(true);
   };
 
@@ -220,31 +206,6 @@ export function TimeTrackerGoalsSettings({
     },
   });
 
-  const getCategoryColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      RED: 'bg-red-500',
-      BLUE: 'bg-blue-500',
-      GREEN: 'bg-green-500',
-      YELLOW: 'bg-yellow-500',
-      ORANGE: 'bg-orange-500',
-      PURPLE: 'bg-purple-500',
-      PINK: 'bg-pink-500',
-      INDIGO: 'bg-indigo-500',
-      CYAN: 'bg-cyan-500',
-      GRAY: 'bg-gray-500',
-    };
-    return colorMap[color] || 'bg-blue-500';
-  };
-
-  const formatMinutes = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
-
   if (isLoadingGoals) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -265,8 +226,7 @@ export function TimeTrackerGoalsSettings({
             <DialogTrigger asChild>
               <Button onClick={openAddDialog} className="shrink-0">
                 <Plus className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">{t('add_goal')}</span>
-                <span className="sm:hidden">{t('add_goal')}</span>
+                <span>{t('add_goal')}</span>
               </Button>
             </DialogTrigger>
           </Dialog>

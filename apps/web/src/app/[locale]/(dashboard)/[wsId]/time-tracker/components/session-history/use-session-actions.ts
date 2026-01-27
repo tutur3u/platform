@@ -151,6 +151,23 @@ export function useSessionActions({
     []
   );
 
+  const invalidateTimeTrackerQueries = useCallback(
+    async (workspaceId: string) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', workspaceId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracking-sessions', workspaceId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', workspaceId],
+        }),
+      ]);
+    },
+    [queryClient]
+  );
+
   const resumeSession = useCallback(
     async (session: SessionWithRelations | undefined) => {
       if (!session) return;
@@ -168,15 +185,7 @@ export function useSessionActions({
         }
 
         // Invalidate relevant queries
-        queryClient.invalidateQueries({
-          queryKey: ['running-time-session', wsId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracking-sessions', wsId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracker-stats', wsId],
-        });
+        await invalidateTimeTrackerQueries(wsId);
 
         router.refresh();
         toast.success(t('started_new_session', { title: session.title }));
@@ -184,7 +193,9 @@ export function useSessionActions({
         setPendingResumeSession(null);
       } catch (error) {
         console.error('Error resuming session:', error);
-        toast.error(t('failed_to_start_session'));
+        const errorMessage =
+          error instanceof Error ? error.message : t('failed_to_start_session');
+        toast.error(errorMessage);
       } finally {
         setActionStates((prev) => ({
           ...prev,
@@ -192,7 +203,7 @@ export function useSessionActions({
         }));
       }
     },
-    [wsId, router, queryClient, t]
+    [wsId, router, t, invalidateTimeTrackerQueries]
   );
 
   const openEditDialog = useCallback(
@@ -380,15 +391,7 @@ export function useSessionActions({
       }
 
       // Invalidate relevant queries
-      queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['time-tracking-sessions', wsId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId],
-      });
+      await invalidateTimeTrackerQueries(wsId);
 
       router.refresh();
       closeEditDialog();
@@ -410,39 +413,38 @@ export function useSessionActions({
     t,
     closeEditDialog,
     getValidationErrorMessage,
-    queryClient,
+    invalidateTimeTrackerQueries,
   ]);
 
   const deleteSession = useCallback(async () => {
     if (!sessionToDelete) return;
     setIsDeleting(true);
     try {
-      await fetch(
+      const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToDelete.id}`,
         { method: 'DELETE' }
       );
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete session');
+      }
+
       // Invalidate relevant queries
-      queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['time-tracking-sessions', wsId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['time-tracker-stats', wsId],
-      });
+      await invalidateTimeTrackerQueries(wsId);
 
       setSessionToDelete(null);
       router.refresh();
       toast.success(t('session_deleted_successfully'));
     } catch (error) {
       console.error('Error deleting session:', error);
-      toast.error(t('failed_to_delete_session'));
+      const errorMessage =
+        error instanceof Error ? error.message : t('failed_to_delete_session');
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
-  }, [sessionToDelete, wsId, router, queryClient, t]);
+  }, [sessionToDelete, wsId, router, t, invalidateTimeTrackerQueries]);
 
   const openMoveDialog = useCallback(
     (session: SessionWithRelations | undefined) => {
@@ -487,18 +489,10 @@ export function useSessionActions({
         const result = await response.json();
 
         // Invalidate queries for both source and target workspaces
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracking-sessions', wsId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracker-stats', wsId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracking-sessions', targetWorkspaceId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracker-stats', targetWorkspaceId],
-        });
+        await Promise.all([
+          invalidateTimeTrackerQueries(wsId),
+          invalidateTimeTrackerQueries(targetWorkspaceId),
+        ]);
 
         router.refresh();
         setSessionToMove(null);
@@ -512,7 +506,7 @@ export function useSessionActions({
         setIsMoving(false);
       }
     },
-    [sessionToMove, wsId, router, t, queryClient]
+    [sessionToMove, wsId, router, t, invalidateTimeTrackerQueries]
   );
 
   const openMissedEntryDialog = useCallback(() => {

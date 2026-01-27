@@ -2696,6 +2696,10 @@
       "seconds": "Giây",
       "status": {
         "active": "Đang hoạt động",
+        "tabs": {
+          "goals": "Mục tiêu",
+          "stats": "Thống kê"
+        },
         "completed": "Đã hoàn thành",
         "upcoming": "Sắp tới",
         "week_of": "Tuần {current} trên {total}"
@@ -6468,12 +6472,20 @@
     "date_yesterday": "Hôm Qua",
     "failed_to_update_task": "Cập nhật nhiệm vụ thất bại",
     "goals": {
+      "categoryGoalLabel": "Mục tiêu {category}",
       "create_error": "Không thể tạo mục tiêu",
       "create_success": "Đã tạo mục tiêu thành công",
+      "dailyProgress": "Tiến độ hằng ngày",
       "delete_error": "Không thể xóa mục tiêu",
       "delete_success": "Đã xóa mục tiêu thành công",
+      "defaultCategory": "Chung",
+      "emptyState": {
+        "subtitle": "Hãy đặt mục tiêu trong cài đặt Theo dõi thời gian.",
+        "title": "Chưa có mục tiêu nào đang hoạt động."
+      },
       "update_error": "Không thể cập nhật mục tiêu",
-      "update_success": "Đã cập nhật mục tiêu thành công"
+      "update_success": "Đã cập nhật mục tiêu thành công",
+      "weeklyProgress": "Tiến độ hằng tuần"
     },
     "history": {
       "activity": "Lịch sử",
@@ -7117,7 +7129,15 @@
       "delete_error": "Không thể xóa mục tiêu",
       "delete_success": "Đã xóa mục tiêu thành công",
       "update_error": "Không thể cập nhật mục tiêu",
-      "update_success": "Đã cập nhật mục tiêu thành công"
+      "update_success": "Đã cập nhật mục tiêu thành công",
+      "categoryGoalLabel": "Mục tiêu {category}",
+      "defaultCategory": "Tổng quan",
+      "dailyProgress": "Tiến độ theo ngày",
+      "weeklyProgress": "Tiến độ theo tuần",
+      "emptyState": {
+        "title": "Không có mục tiêu hoạt động nào được đặt ra.",
+        "subtitle": "Đặt mục tiêu trong cài đặt Trình theo dõi thời gian."
+      }
     },
     "heatmap": {
       "activeDays": "{count, plural, =0 {Không có ngày hoạt động} =1 {1 ngày hoạt động} other {# ngày hoạt động}}",
@@ -7938,6 +7958,10 @@
         "messageActive": "Tuần tuyệt vời!",
         "messageEmpty": "Tiếp tục cố gắng",
         "title": "Tuần này"
+      },
+      "tabs": {
+        "stats": "Thống kê",
+        "goals": "Mục tiêu"
       }
     },
     "workspace_select_dialog": {

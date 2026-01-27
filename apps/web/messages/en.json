@@ -7832,6 +7832,10 @@
     },
     "stats": {
       "description": "Track your productivity metrics ",
+      "tabs": {
+        "goals": "Goals",
+        "stats": "Stats"
+      },
       "month": {
         "title": "This Month"
       },
@@ -7854,6 +7858,22 @@
         "messageEmpty": "Keep going strong",
         "title": "This Week"
       }
+    },
+    "goals": {
+      "categoryGoalLabel": "{category} Goal",
+      "create_error": "Failed to create goal",
+      "create_success": "Goal created successfully",
+      "dailyProgress": "Daily Progress",
+      "delete_error": "Failed to delete goal",
+      "delete_success": "Goal deleted successfully",
+      "defaultCategory": "General",
+      "emptyState": {
+        "subtitle": "Set goals in the Time Tracker settings.",
+        "title": "No active goals set."
+      },
+      "update_error": "Failed to update goal",
+      "update_success": "Goal updated successfully",
+      "weeklyProgress": "Weekly Progress"
     },
     "workspace_select_dialog": {
       "actions": {

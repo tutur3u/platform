@@ -52,22 +52,23 @@ import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 import { CopyFromWorkspaceDialog } from './copy-from-workspace-dialog';
+import { getCategoryColor } from './time-tracker-utils';
 
 interface TimeTrackerCategoriesSettingsProps {
   wsId: string;
 }
 
 const CATEGORY_COLORS = [
-  { value: 'BLUE', label: 'Blue', class: 'bg-blue-500' },
-  { value: 'GREEN', label: 'Green', class: 'bg-green-500' },
-  { value: 'RED', label: 'Red', class: 'bg-red-500' },
-  { value: 'YELLOW', label: 'Yellow', class: 'bg-yellow-500' },
-  { value: 'ORANGE', label: 'Orange', class: 'bg-orange-500' },
-  { value: 'PURPLE', label: 'Purple', class: 'bg-purple-500' },
-  { value: 'PINK', label: 'Pink', class: 'bg-pink-500' },
-  { value: 'INDIGO', label: 'Indigo', class: 'bg-indigo-500' },
-  { value: 'CYAN', label: 'Cyan', class: 'bg-cyan-500' },
-  { value: 'GRAY', label: 'Gray', class: 'bg-gray-500' },
+  { value: 'BLUE', label: 'Blue', class: getCategoryColor('BLUE') },
+  { value: 'GREEN', label: 'Green', class: getCategoryColor('GREEN') },
+  { value: 'RED', label: 'Red', class: getCategoryColor('RED') },
+  { value: 'YELLOW', label: 'Yellow', class: getCategoryColor('YELLOW') },
+  { value: 'ORANGE', label: 'Orange', class: getCategoryColor('ORANGE') },
+  { value: 'PURPLE', label: 'Purple', class: getCategoryColor('PURPLE') },
+  { value: 'PINK', label: 'Pink', class: getCategoryColor('PINK') },
+  { value: 'INDIGO', label: 'Indigo', class: getCategoryColor('INDIGO') },
+  { value: 'CYAN', label: 'Cyan', class: getCategoryColor('CYAN') },
+  { value: 'GRAY', label: 'Gray', class: getCategoryColor('GRAY') },
 ];
 
 export function TimeTrackerCategoriesSettings({
@@ -200,11 +201,6 @@ export function TimeTrackerCategoriesSettings({
       toast.error(t('delete_error'));
     },
   });
-
-  const getCategoryColor = (color: string) => {
-    const colorConfig = CATEGORY_COLORS.find((c) => c.value === color);
-    return colorConfig?.class || 'bg-blue-500';
-  };
 
   if (isLoadingCategories) {
     return (

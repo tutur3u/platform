@@ -24,10 +24,12 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
+import { getCategoryColor } from '@/components/settings/time-tracker/time-tracker-utils';
 import { formatDuration } from '@/lib/time-format';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
-import type { TimeTrackingGoal } from '../types';
+import type { Workspace } from '@tuturuuu/types';
 import { cn } from '@tuturuuu/utils/format';
+import type { TimeTrackingGoal } from '../types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -45,6 +47,7 @@ type StatsCardClientProps = {
   userId: string;
   isPersonal: boolean;
   locale: string;
+  workspace?: Workspace | null;
 };
 
 export function StatsCardClient({
@@ -52,18 +55,20 @@ export function StatsCardClient({
   userId,
   isPersonal,
   locale,
+  workspace,
 }: StatsCardClientProps) {
   const t = useTranslations('time-tracker');
+  const workspaceId = workspace?.id ?? wsId;
 
   // Detect client-side timezone
   const userTimezone = dayjs.tz.guess();
 
   // Fetch stats with proper timezone
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['time-tracker-stats', wsId, userId, userTimezone],
+    queryKey: ['time-tracker-stats', workspaceId, userId, userTimezone],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}`
+        `/api/v1/workspaces/${workspaceId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}`
       );
       if (!response.ok) {
         throw new Error('Failed to fetch time tracking stats');
@@ -75,10 +80,10 @@ export function StatsCardClient({
 
   // Fetch goals
   const { data: goals, isLoading: isLoadingGoals } = useQuery({
-    queryKey: ['time-tracking-goals', wsId, userId],
+    queryKey: ['time-tracking-goals', workspaceId, userId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/goals?userId=${userId}`
+        `/api/v1/workspaces/${workspaceId}/time-tracking/goals?userId=${userId}`
       );
       if (!response.ok) {
         throw new Error('Failed to fetch goals');
@@ -108,7 +113,7 @@ export function StatsCardClient({
     actualSeconds: number,
     goalMinutes: number
   ): number => {
-    const actualMinutes = Math.floor(actualSeconds / 60);
+    const actualMinutes = actualSeconds / 60;
     return Math.min((actualMinutes / goalMinutes) * 100, 100);
   };
 
@@ -148,11 +153,11 @@ export function StatsCardClient({
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="stats" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              <span>Stats</span>
+              <span>{t('stats.tabs.stats')}</span>
             </TabsTrigger>
             <TabsTrigger value="goals" className="flex items-center gap-2">
               <Goal className="h-4 w-4" />
-              <span>Goals</span>
+              <span>{t('stats.tabs.goals')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -266,6 +271,9 @@ export function StatsCardClient({
             {activeGoals.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {activeGoals.map((goal) => {
+                  const categoryColorClass = goal.category?.color
+                    ? getCategoryColor(goal.category.color)
+                    : null;
                   const dailyProgress = calculateProgress(
                     stats.todayTime,
                     goal.daily_goal_minutes
@@ -287,38 +295,23 @@ export function StatsCardClient({
                           <div
                             className={cn(
                               'h-3 w-3 rounded-full',
-                              goal.category.color === 'RED'
-                                ? 'bg-red-500'
-                                : goal.category.color === 'BLUE'
-                                  ? 'bg-blue-500'
-                                  : goal.category.color === 'GREEN'
-                                    ? 'bg-green-500'
-                                    : goal.category.color === 'YELLOW'
-                                      ? 'bg-yellow-500'
-                                      : goal.category.color === 'ORANGE'
-                                        ? 'bg-orange-500'
-                                        : goal.category.color === 'PURPLE'
-                                          ? 'bg-purple-500'
-                                          : goal.category.color === 'PINK'
-                                            ? 'bg-pink-500'
-                                            : goal.category.color === 'INDIGO'
-                                              ? 'bg-indigo-500'
-                                              : goal.category.color === 'CYAN'
-                                                ? 'bg-cyan-500'
-                                                : 'bg-gray-500'
+                              categoryColorClass || 'bg-dynamic-gray'
                             )}
                           />
                         ) : (
-                          <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
+                          <div className="h-3 w-3 rounded-full bg-linear-to-br from-dynamic-blue to-dynamic-purple/80" />
                         )}
                         <span className="font-medium text-sm">
-                          {goal.category?.name || 'General'} Goal
+                          {t('goals.categoryGoalLabel', {
+                            category:
+                              goal.category?.name || t('goals.defaultCategory'),
+                          })}
                         </span>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-muted-foreground text-xs">
-                          <span>Daily Progress</span>
+                          <span>{t('goals.dailyProgress')}</span>
                           <span>{Math.round(dailyProgress)}%</span>
                         </div>
                         <Progress value={dailyProgress} className="h-2" />
@@ -331,7 +324,7 @@ export function StatsCardClient({
                       {goal.weekly_goal_minutes && (
                         <div className="space-y-2 pt-1">
                           <div className="flex items-center justify-between text-muted-foreground text-xs">
-                            <span>Weekly Progress</span>
+                            <span>{t('goals.weeklyProgress')}</span>
                             <span>{Math.round(weeklyProgress || 0)}%</span>
                           </div>
                           <Progress
@@ -354,10 +347,10 @@ export function StatsCardClient({
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Goal className="mb-2 h-10 w-10 text-muted-foreground/50" />
                 <p className="text-muted-foreground text-sm">
-                  No active goals set.
+                  {t('goals.emptyState.title')}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  Set goals in the Time Tracker settings.
+                  {t('goals.emptyState.subtitle')}
                 </p>
               </div>
             )}

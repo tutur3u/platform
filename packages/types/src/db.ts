@@ -255,6 +255,9 @@ export type InternalEmail = Tables<'internal_emails'>;
 export type TimeTrackingCategory = Tables<'time_tracking_categories'>;
 export type TimeTrackingSession = Tables<'time_tracking_sessions'>;
 export type TimeTrackingGoal = Tables<'time_tracking_goals'>;
+export type TimeTrackingGoalWithCategory = TimeTrackingGoal & {
+  category: TimeTrackingCategory | null;
+};
 
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
 export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;

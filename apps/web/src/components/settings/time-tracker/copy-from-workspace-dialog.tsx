@@ -69,6 +69,7 @@ export function CopyFromWorkspaceDialog({
       return response.json();
     },
     enabled: open,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const filteredWorkspaces = useMemo(
