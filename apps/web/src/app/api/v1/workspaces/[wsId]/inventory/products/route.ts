@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Tables } from '@tuturuuu/types/supabase';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -91,32 +92,15 @@ export async function GET(request: Request, { params }: Params) {
 
     if (error) throw error;
 
-    interface InventoryProduct {
-      amount: number | null;
-      min_amount: number;
-      price: number;
-      unit_id: string;
-      warehouse_id: string;
-      inventory_warehouses: {
-        name: string | null;
-      } | null;
-      inventory_units: {
-        name: string | null;
-      } | null;
-    }
+    type InventoryProduct = Tables<'inventory_products'> & {
+      inventory_warehouses: { name: string | null } | null;
+      inventory_units: { name: string | null } | null;
+    };
 
-    interface ProductStockChange {
-      amount: number;
-      created_at: string;
-      beneficiary: {
-        full_name: string | null;
-        email: string | null;
-      } | null;
-      creator: {
-        full_name: string | null;
-        email: string | null;
-      } | null;
-    }
+    type ProductStockChange = Tables<'product_stock_changes'> & {
+      beneficiary: { full_name: string | null; email: string | null } | null;
+      creator: { full_name: string | null; email: string | null } | null;
+    };
 
     const data = (rawData || []).map((item) => ({
       id: item.id,

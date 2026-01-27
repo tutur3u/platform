@@ -15,6 +15,16 @@ import {
 import moment from 'moment';
 import { ProductRowActions } from './row-actions';
 
+const isLowStock = (s: {
+  amount?: number | null;
+  min_amount?: number | null;
+}) =>
+  s.amount !== null &&
+  s.amount !== undefined &&
+  s.min_amount !== null &&
+  s.min_amount !== undefined &&
+  s.amount < s.min_amount;
+
 export const productColumns = (
   t: any,
   namespace: string | undefined,
@@ -92,6 +102,7 @@ export const productColumns = (
   },
   {
     accessorKey: 'stock',
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
@@ -118,12 +129,7 @@ export const productColumns = (
         const s = stock[0];
         if (!s) return null;
 
-        const isLowStock =
-          s.amount !== null &&
-          s.amount !== undefined &&
-          s.min_amount !== null &&
-          s.min_amount !== undefined &&
-          (s.amount as number) < (s.min_amount as number);
+        const isLowStockStatus = isLowStock(s);
 
         return (
           <TooltipProvider>
@@ -131,18 +137,20 @@ export const productColumns = (
               <TooltipTrigger asChild>
                 <div
                   className={`flex w-fit items-center gap-2 rounded-md px-2 py-1 transition-colors ${
-                    isLowStock ? 'text-dynamic-red hover:bg-dynamic-red/10' : ''
+                    isLowStockStatus
+                      ? 'text-dynamic-red hover:bg-dynamic-red/10'
+                      : ''
                   }`}
                 >
                   <span className="line-clamp-1 font-medium">
                     {s.amount ?? '-'} {s.unit || ''}
                   </span>
-                  {isLowStock && (
+                  {isLowStockStatus && (
                     <AlertTriangle className="h-4 w-4 text-dynamic-red" />
                   )}
                 </div>
               </TooltipTrigger>
-              {isLowStock && (
+              {isLowStockStatus && (
                 <TooltipContent>
                   {t('ws-inventory-products.messages.stock_low_warning')}
                 </TooltipContent>
@@ -152,14 +160,7 @@ export const productColumns = (
         );
       }
 
-      const hasLowStockInAnyWarehouse = stock.some(
-        (s) =>
-          s.amount !== null &&
-          s.amount !== undefined &&
-          s.min_amount !== null &&
-          s.min_amount !== undefined &&
-          (s.amount as number) < (s.min_amount as number)
-      );
+      const hasLowStockInAnyWarehouse = stock.some((s) => isLowStock(s));
 
       return (
         <TooltipProvider>
@@ -200,12 +201,7 @@ export const productColumns = (
                     </h4>
                     <div className="grid gap-2">
                       {stock.map((s, idx) => {
-                        const isLowStock =
-                          s.amount !== null &&
-                          s.amount !== undefined &&
-                          s.min_amount !== null &&
-                          s.min_amount !== undefined &&
-                          (s.amount as number) < (s.min_amount as number);
+                        const isLowStockStatus = isLowStock(s);
 
                         return (
                           <div
@@ -216,19 +212,19 @@ export const productColumns = (
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`font-medium text-sm ${
-                                    isLowStock ? 'text-dynamic-red' : ''
+                                    isLowStockStatus ? 'text-dynamic-red' : ''
                                   }`}
                                 >
                                   {s.warehouse ||
                                     t(`${namespace}.unknown_warehouse`)}
                                 </span>
-                                {isLowStock && (
+                                {isLowStockStatus && (
                                   <AlertTriangle className="h-3 w-3 text-dynamic-red" />
                                 )}
                               </div>
                               <span
                                 className={`text-sm ${
-                                  isLowStock
+                                  isLowStockStatus
                                     ? 'rounded-md px-1 font-medium text-dynamic-red hover:bg-dynamic-red/10'
                                     : ''
                                 }`}
@@ -264,6 +260,7 @@ export const productColumns = (
   },
   {
     accessorKey: 'price',
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
@@ -354,6 +351,7 @@ export const productColumns = (
   },
   {
     id: 'actions',
+    enableSorting: false,
     cell: ({ row }) => (
       <ProductRowActions
         row={row}

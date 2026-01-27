@@ -8,7 +8,12 @@ import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
-import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
+import {
+  parseAsInteger,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from 'nuqs';
 import { useCallback, useState } from 'react';
 import { productColumns } from './columns';
 import { useWorkspaceProducts } from './hooks';
@@ -27,6 +32,18 @@ interface Props {
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
 }
+
+const sortByValues = [
+  'id',
+  'name',
+  'manufacturer',
+  'description',
+  'usage',
+  'category_id',
+  'created_at',
+] as const;
+
+const sortOrderValues = ['asc', 'desc'] as const;
 
 export function ProductsPageClient({
   initialData,
@@ -67,14 +84,14 @@ export function ProductsPageClient({
 
   const [sortBy, setSortBy] = useQueryState(
     'sortBy',
-    parseAsString.withOptions({
+    parseAsStringLiteral(sortByValues).withOptions({
       shallow: true,
     })
   );
 
   const [sortOrder, setSortOrder] = useQueryState(
     'sortOrder',
-    parseAsString.withOptions({
+    parseAsStringLiteral(sortOrderValues).withOptions({
       shallow: true,
     })
   );
@@ -86,7 +103,7 @@ export function ProductsPageClient({
       page,
       pageSize,
       sortBy: sortBy || undefined,
-      sortOrder: (sortOrder as 'asc' | 'desc') || undefined,
+      sortOrder: sortOrder || undefined,
     },
     {
       initialData:
@@ -125,9 +142,20 @@ export function ProductsPageClient({
     }) => {
       if (params.page !== undefined) setPage(params.page);
       if (params.pageSize !== undefined) setPageSize(Number(params.pageSize));
-      if (params.sortBy !== undefined) setSortBy(params.sortBy || null);
+      if (params.sortBy !== undefined)
+        setSortBy(
+          sortByValues.includes(params.sortBy as (typeof sortByValues)[number])
+            ? (params.sortBy as (typeof sortByValues)[number])
+            : null
+        );
       if (params.sortOrder !== undefined)
-        setSortOrder(params.sortOrder || null);
+        setSortOrder(
+          sortOrderValues.includes(
+            params.sortOrder as (typeof sortOrderValues)[number]
+          )
+            ? (params.sortOrder as (typeof sortOrderValues)[number])
+            : null
+        );
     },
     [setPage, setPageSize, setSortBy, setSortOrder]
   );
@@ -169,7 +197,7 @@ export function ProductsPageClient({
         onRowClick={handleRowClick}
         enableServerSideSorting={true}
         currentSortBy={sortBy || undefined}
-        currentSortOrder={(sortOrder as 'asc' | 'desc') || undefined}
+        currentSortOrder={sortOrder || undefined}
         extraData={{
           canUpdateInventory,
           canDeleteInventory,
