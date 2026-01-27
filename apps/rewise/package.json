@@ -73,7 +73,7 @@
     "@types/lodash": "^4.17.23",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^25.0.10",
-    "@types/react": "^19.2.9",
+    "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.1.2",
