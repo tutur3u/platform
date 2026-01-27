@@ -9518,6 +9518,59 @@ export type Database = {
           },
         ];
       };
+      user_configs: {
+        Row: {
+          created_at: string;
+          id: string;
+          updated_at: string;
+          user_id: string;
+          value: string;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          updated_at?: string;
+          user_id: string;
+          value: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          updated_at?: string;
+          user_id?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_configs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_configs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_configs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_configs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_feedbacks: {
         Row: {
           content: string;

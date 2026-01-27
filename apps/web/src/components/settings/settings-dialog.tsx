@@ -63,6 +63,7 @@ import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import UserAvatar from '../../app/[locale]/settings-avatar';
@@ -105,6 +106,12 @@ export function SettingsDialog({
   const { isMac, modKey } = usePlatform();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // User preference for expanding all settings accordions
+  const { value: expandAllAccordions } = useUserBooleanConfig(
+    'EXPAND_SETTINGS_ACCORDIONS',
+    false
+  );
 
   // Fetch workspace data if not provided (using TanStack Query)
   const {
@@ -508,10 +515,13 @@ export function SettingsDialog({
           <SidebarContent className="overflow-y-auto p-4">
             {filteredNavItems.map((group) => (
               <Collapsible
-                key={`${group.label}-${searchQuery ? 'search' : 'browse'}`}
+                key={`${group.label}-${searchQuery ? 'search' : 'browse'}-${expandAllAccordions ? 'expanded' : 'collapsed'}`}
                 defaultOpen={
-                  !!searchQuery || group.label === navItems[0]?.label
+                  expandAllAccordions ||
+                  !!searchQuery ||
+                  group.label === navItems[0]?.label
                 }
+                open={expandAllAccordions ? true : undefined}
                 className="group/collapsible"
               >
                 <SidebarGroup className="p-0">

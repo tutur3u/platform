@@ -5496,6 +5496,8 @@
     "preferences": {
       "appearance": "Appearance & Theme",
       "appearance_ws_description": "Customize the look and feel of your interface and calendar",
+      "expand_settings_accordions": "Expand All Settings Sections",
+      "expand_settings_accordions_description": "Always keep all accordion sections in the settings dialog open",
       "notifications": "Notifications",
       "notifications_ws_description": "Manage your notification preferences including calendar notifications",
       "sidebar": "Sidebar",

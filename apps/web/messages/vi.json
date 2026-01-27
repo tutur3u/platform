@@ -5534,6 +5534,8 @@
     "preferences": {
       "appearance": "Giao diện & Chủ đề",
       "appearance_ws_description": "Tùy chỉnh giao diện hiển thị và lịch",
+      "expand_settings_accordions": "Mở rộng tất cả phần cài đặt",
+      "expand_settings_accordions_description": "Luôn giữ tất cả các phần accordion trong hộp thoại cài đặt mở",
       "notifications": "Thông báo",
       "notifications_ws_description": "Quản lý tùy chọn thông báo bao gồm thông báo lịch",
       "sidebar": "Thanh bên",
