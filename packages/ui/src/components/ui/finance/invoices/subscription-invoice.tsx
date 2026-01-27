@@ -35,7 +35,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useQueryState } from 'nuqs';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {
@@ -252,6 +252,12 @@ export function SubscriptionInvoice({
     defaultValue: '',
     shallow: false,
   });
+  const [selectedGroupIds, setSelectedGroupIds] = useQueryState(
+    'group_ids',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: false,
+    })
+  );
   const [selectedMonth, setSelectedMonth] = useQueryState('month', {
     defaultValue: new Date().toISOString().slice(0, 7),
     shallow: false,
@@ -270,6 +276,30 @@ export function SubscriptionInvoice({
     },
     [setSelectedUserId, setSelectedGroupId, setSelectedMonth]
   );
+
+  useEffect(() => {
+    if (selectedGroupIds.length === 0) return;
+
+    if (selectedGroupId && selectedGroupIds.includes(selectedGroupId)) {
+      return;
+    }
+
+    updateSearchParam('group_id', selectedGroupIds[0] || '');
+  }, [selectedGroupIds, selectedGroupId, updateSearchParam]);
+
+  useEffect(() => {
+    if (!selectedGroupId) return;
+
+    setSelectedGroupIds((prev) => {
+      if (prev.includes(selectedGroupId)) return prev;
+      return [...prev, selectedGroupId];
+    });
+  }, [selectedGroupId, setSelectedGroupIds]);
+
+  const selectedGroupIdsForCreate = useMemo(() => {
+    if (selectedGroupIds.length > 0) return selectedGroupIds;
+    return selectedGroupId ? [selectedGroupId] : [];
+  }, [selectedGroupIds, selectedGroupId]);
 
   // Data queries
   const {
@@ -294,8 +324,13 @@ export function SubscriptionInvoice({
   const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
 
   const isBlocked = useMemo(() => {
+    if (selectedGroupIds.length > 0) {
+      return selectedGroupIds.some((groupId) =>
+        blockedGroupIds.includes(groupId)
+      );
+    }
     return !!selectedGroupId && blockedGroupIds.includes(selectedGroupId);
-  }, [selectedGroupId, blockedGroupIds]);
+  }, [selectedGroupIds, selectedGroupId, blockedGroupIds]);
 
   // State management
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
@@ -800,14 +835,21 @@ export function SubscriptionInvoice({
     // Clear group_id and month using nuqs setters
     // The month will be auto-set when a new group is selected
     setSelectedGroupId(null);
+    setSelectedGroupIds(null);
     setSelectedMonth(null);
-  }, [selectedUserId, setSelectedGroupId, setSelectedMonth]);
+  }, [
+    selectedUserId,
+    setSelectedGroupId,
+    setSelectedGroupIds,
+    setSelectedMonth,
+  ]);
 
   // Auto-select the first group when userGroups are loaded
   useEffect(() => {
     if (
       userGroups.length > 0 &&
       !selectedGroupId &&
+      selectedGroupIds.length === 0 &&
       !userGroupsLoading &&
       selectedUserId
     ) {
@@ -819,6 +861,7 @@ export function SubscriptionInvoice({
   }, [
     userGroups,
     selectedGroupId,
+    selectedGroupIds.length,
     userGroupsLoading,
     selectedUserId,
     updateSearchParam,
@@ -1016,7 +1059,7 @@ export function SubscriptionInvoice({
   const handleCreateSubscriptionInvoice = async () => {
     if (
       !selectedUser ||
-      !selectedGroupId ||
+      selectedGroupIdsForCreate.length === 0 ||
       (subscriptionSelectedProducts.length === 0 &&
         subscriptionProducts.length === 0) ||
       !selectedWalletId ||
@@ -1048,7 +1091,7 @@ export function SubscriptionInvoice({
     try {
       const requestPayload = {
         customer_id: selectedUserId,
-        group_id: selectedGroupId,
+        group_ids: selectedGroupIdsForCreate,
         selected_month: selectedMonth,
         content: invoiceContent,
         notes: invoiceNotes,
@@ -1133,6 +1176,7 @@ export function SubscriptionInvoice({
         setSelectedWalletId('');
         setSelectedCategoryId('');
         updateSearchParam('group_id', '');
+        setSelectedGroupIds(null);
       }
     } catch (error) {
       console.error('Error creating subscription invoice:', error);
@@ -1243,6 +1287,8 @@ export function SubscriptionInvoice({
                     const group = groupItem.workspace_user_groups;
                     if (!group) return null;
 
+                    const isSelected = selectedGroupIds.includes(group.id);
+
                     return (
                       <button
                         type="button"
@@ -1252,7 +1298,27 @@ export function SubscriptionInvoice({
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted/50'
                         }`}
-                        onClick={() => updateSearchParam('group_id', group.id)}
+                        onClick={() => {
+                          setSelectedGroupIds((prev) => {
+                            const isAlreadySelected = prev.includes(group.id);
+                            const updated = isAlreadySelected
+                              ? prev.filter((id) => id !== group.id)
+                              : [...prev, group.id];
+
+                            if (updated.length === 0) {
+                              updateSearchParam('group_id', '');
+                            } else if (
+                              isAlreadySelected &&
+                              selectedGroupId === group.id
+                            ) {
+                              updateSearchParam('group_id', updated[0] || '');
+                            } else {
+                              updateSearchParam('group_id', group.id);
+                            }
+
+                            return updated;
+                          });
+                        }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
@@ -1283,9 +1349,16 @@ export function SubscriptionInvoice({
                             </div>
                           </div>
                           <div className="ml-4">
-                            {selectedGroupId === group.id && (
-                              <div className="h-4 w-4 rounded-full bg-primary" />
-                            )}
+                            <div className="flex items-center gap-2">
+                              {isSelected && (
+                                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 font-medium text-[10px] text-primary uppercase tracking-wide">
+                                  {t('common.selected')}
+                                </span>
+                              )}
+                              {selectedGroupId === group.id && (
+                                <div className="h-4 w-4 rounded-full bg-primary" />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </button>

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -2648,6 +2648,81 @@ export type Database = {
           },
         ];
       };
+      finance_invoice_user_groups: {
+        Row: {
+          created_at: string;
+          invoice_id: string;
+          user_group_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          invoice_id: string;
+          user_group_id: string;
+        };
+        Update: {
+          created_at?: string;
+          invoice_id?: string;
+          user_group_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_invoice_user_groups_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       finance_invoices: {
         Row: {
           category_id: string;
@@ -2663,7 +2738,6 @@ export type Database = {
           price: number;
           total_diff: number;
           transaction_id: string | null;
-          user_group_id: string | null;
           valid_until: string | null;
           wallet_id: string;
           ws_id: string;
@@ -2682,7 +2756,6 @@ export type Database = {
           price: number;
           total_diff?: number;
           transaction_id?: string | null;
-          user_group_id?: string | null;
           valid_until?: string | null;
           wallet_id: string;
           ws_id: string;
@@ -2701,7 +2774,6 @@ export type Database = {
           price?: number;
           total_diff?: number;
           transaction_id?: string | null;
-          user_group_id?: string | null;
           valid_until?: string | null;
           wallet_id?: string;
           ws_id?: string;
@@ -2845,55 +2917,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
         ];
@@ -3762,6 +3785,7 @@ export type Database = {
           created_at: string | null;
           min_amount: number;
           price: number;
+          price_override: boolean | null;
           product_id: string;
           unit_id: string;
           warehouse_id: string;
@@ -3771,6 +3795,7 @@ export type Database = {
           created_at?: string | null;
           min_amount?: number;
           price?: number;
+          price_override?: boolean | null;
           product_id: string;
           unit_id: string;
           warehouse_id: string;
@@ -3780,6 +3805,7 @@ export type Database = {
           created_at?: string | null;
           min_amount?: number;
           price?: number;
+          price_override?: boolean | null;
           product_id?: string;
           unit_id?: string;
           warehouse_id?: string;
@@ -6277,6 +6303,48 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      product_global_inventory: {
+        Row: {
+          created_at: string | null;
+          global_amount: number;
+          global_price: number;
+          product_id: string;
+          unit_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          global_amount?: number;
+          global_price?: number;
+          product_id: string;
+          unit_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          global_amount?: number;
+          global_price?: number;
+          product_id?: string;
+          unit_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fk_product_global_inventory_product';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_product_global_inventory_unit';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
         ];
@@ -15938,6 +16006,35 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      product_inventory_overview: {
+        Row: {
+          allocated_amount: number | null;
+          available_amount: number | null;
+          created_at: string | null;
+          global_amount: number | null;
+          global_price: number | null;
+          product_id: string | null;
+          unit_id: string | null;
+          updated_at: string | null;
+          warehouse_count: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fk_product_global_inventory_product';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_product_global_inventory_unit';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
         ];

@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Database } from '@tuturuuu/types';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
@@ -104,6 +105,15 @@ const invoiceSchema = z.object({
     .optional()
     .transform((v) => v ?? undefined),
 });
+
+type FinanceInvoiceRow =
+  Database['public']['Tables']['finance_invoices']['Row'];
+type FinanceInvoiceUserGroupRow = {
+  finance_invoices: Pick<
+    FinanceInvoiceRow,
+    'valid_until' | 'created_at'
+  > | null;
+};
 
 const invoicesResponseSchema = z.object({
   data: z.array(invoiceSchema),
@@ -644,11 +654,11 @@ export const useUserLatestSubscriptionInvoice = (
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('finance_invoices')
-        .select('valid_until')
-        .eq('customer_id', userId)
+        .from('finance_invoice_user_groups')
+        .select('finance_invoices!inner(valid_until, created_at)')
         .eq('user_group_id', groupId)
-        .order('created_at', { ascending: false })
+        .eq('finance_invoices.customer_id', userId)
+        .order('finance_invoices.created_at', { ascending: false })
         .limit(1);
 
       if (error) {
@@ -659,7 +669,16 @@ export const useUserLatestSubscriptionInvoice = (
         throw error;
       }
 
-      return data || [];
+      const invoices = (data ?? [])
+        .map((row: FinanceInvoiceUserGroupRow) => row.finance_invoices)
+        .filter(
+          (
+            invoice
+          ): invoice is Pick<FinanceInvoiceRow, 'valid_until' | 'created_at'> =>
+            !!invoice
+        );
+
+      return invoices;
     },
     enabled: !!userId && !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes

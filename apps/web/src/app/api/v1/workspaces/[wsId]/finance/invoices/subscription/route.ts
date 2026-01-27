@@ -21,7 +21,8 @@ interface InvoiceProduct {
 
 interface CreateSubscriptionInvoiceRequest {
   customer_id: string;
-  group_id: string;
+  group_id?: string;
+  group_ids?: string[];
   selected_month: string; // YYYY-MM
   content: string;
   notes?: string;
@@ -50,6 +51,7 @@ export async function POST(req: Request, { params }: Params) {
     const {
       customer_id,
       group_id,
+      group_ids,
       selected_month,
       content,
       notes,
@@ -62,9 +64,15 @@ export async function POST(req: Request, { params }: Params) {
       frontend_total,
     }: CreateSubscriptionInvoiceRequest = await req.json();
 
+    const groupIds = Array.isArray(group_ids)
+      ? Array.from(new Set(group_ids.filter(Boolean)))
+      : group_id
+        ? [group_id]
+        : [];
+
     if (
       !customer_id ||
-      !group_id ||
+      groupIds.length === 0 ||
       !selected_month ||
       !products ||
       products.length === 0 ||
@@ -74,21 +82,23 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json(
         {
           message:
-            'Missing required fields: customer_id, group_id, selected_month, products, wallet_id, and category_id',
+            'Missing required fields: customer_id, group_id(s), selected_month, products, wallet_id, and category_id',
         },
         { status: 400 }
       );
     }
 
     // Block creating subscription invoices for groups configured as blocked
-    if (await isGroupBlockedForSubscriptionInvoices(wsId, group_id)) {
-      return NextResponse.json(
-        {
-          message:
-            'Creating subscription invoices is disabled for this group in workspace settings.',
-        },
-        { status: 403 }
-      );
+    for (const groupId of groupIds) {
+      if (await isGroupBlockedForSubscriptionInvoices(wsId, groupId)) {
+        return NextResponse.json(
+          {
+            message:
+              'Creating subscription invoices is disabled for one or more groups in workspace settings.',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Calculate values using backend logic (shared)
@@ -147,7 +157,6 @@ export async function POST(req: Request, { params }: Params) {
     const invoiceData: any = {
       ws_id: wsId,
       customer_id,
-      user_group_id: group_id,
       price: roundedPrice, // Calculate from rounded values for consistency
       total_diff: roundedRounding,
       note: notes,
@@ -182,6 +191,33 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const invoiceId = invoice.id;
+
+    const invoiceGroupRows = groupIds.map((groupId) => ({
+      invoice_id: invoiceId,
+      user_group_id: groupId,
+    }));
+
+    const { error: invoiceGroupsError } = await supabase
+      .from('finance_invoice_user_groups')
+      .insert(invoiceGroupRows);
+
+    if (invoiceGroupsError) {
+      console.error('Error creating invoice groups:', invoiceGroupsError);
+      await Promise.all([
+        supabase
+          .from('finance_invoice_user_groups')
+          .delete()
+          .eq('invoice_id', invoiceId),
+        supabase.from('finance_invoices').delete().eq('id', invoiceId),
+      ]);
+      return NextResponse.json(
+        {
+          message: 'Error linking invoice to groups',
+          details: invoiceGroupsError.message,
+        },
+        { status: 500 }
+      );
+    }
 
     // Deduplicate products
     const productMap = new Map<string, InvoiceProduct>();
@@ -259,6 +295,10 @@ export async function POST(req: Request, { params }: Params) {
         invoiceProductsError
       );
       await Promise.all([
+        supabase
+          .from('finance_invoice_user_groups')
+          .delete()
+          .eq('invoice_id', invoiceId),
         supabase.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
       return NextResponse.json(
@@ -296,6 +336,10 @@ export async function POST(req: Request, { params }: Params) {
           await Promise.all([
             supabase
               .from('finance_invoice_products')
+              .delete()
+              .eq('invoice_id', invoiceId),
+            supabase
+              .from('finance_invoice_user_groups')
               .delete()
               .eq('invoice_id', invoiceId),
             supabase.from('finance_invoices').delete().eq('id', invoiceId),
@@ -336,6 +380,10 @@ export async function POST(req: Request, { params }: Params) {
           .from('finance_invoice_products')
           .delete()
           .eq('invoice_id', invoiceId),
+        supabase
+          .from('finance_invoice_user_groups')
+          .delete()
+          .eq('invoice_id', invoiceId),
         supabase.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
       return NextResponse.json(
@@ -353,7 +401,7 @@ export async function POST(req: Request, { params }: Params) {
       data: {
         id: invoiceId,
         customer_id,
-        group_id,
+        group_ids: groupIds,
         selected_month,
         total,
         subtotal,
