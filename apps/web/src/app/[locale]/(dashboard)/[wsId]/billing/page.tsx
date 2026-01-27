@@ -1,8 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
@@ -10,7 +7,11 @@ import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getOrCreatePolarCustomer } from '@/utils/customer-session';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import {
+  createFreeSubscription,
+  fetchSubscription,
+  waitForSubscriptionSync,
+} from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
@@ -30,48 +31,6 @@ const fetchProducts = async () => {
     console.error('Failed to fetch products:', err);
     return [];
   }
-};
-
-const fetchSubscription = async (wsId: string) => {
-  const supabase = await createClient();
-
-  const { data: dbSub, error } = await supabase
-    .from('workspace_subscriptions')
-    .select(
-      `
-      *,
-      workspace_subscription_products (
-        id,
-        name,
-        description,
-        price,
-        recurring_interval,
-        tier
-      )
-    `
-    )
-    .eq('ws_id', wsId)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !dbSub) {
-    console.error('Error fetching subscription:', error);
-    return null;
-  }
-
-  if (!dbSub.workspace_subscription_products) return null;
-
-  return {
-    id: dbSub.id,
-    status: dbSub.status,
-    createdAt: dbSub.created_at,
-    currentPeriodStart: dbSub.current_period_start,
-    currentPeriodEnd: dbSub.current_period_end,
-    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
-    product: dbSub.workspace_subscription_products,
-  };
 };
 
 const fetchWorkspaceOrders = async (wsId: string) => {
@@ -141,7 +100,6 @@ const ensureSubscription = async (wsId: string, userId: string) => {
   try {
     const supabase = await createClient();
     const polar = createPolarClient();
-    const sbAdmin = await createAdminClient();
 
     // Get or create Polar customer
     const customerId = await getOrCreatePolarCustomer({
@@ -153,7 +111,7 @@ const ensureSubscription = async (wsId: string, userId: string) => {
     // Create free tier subscription
     const subscription = await createFreeSubscription(
       polar,
-      sbAdmin,
+      supabase,
       wsId,
       customerId
     );
@@ -165,11 +123,17 @@ const ensureSubscription = async (wsId: string, userId: string) => {
       };
     }
 
-    // Wait briefly for webhook to process
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Poll database until webhook processes (max 5 seconds)
+    // This replaces the previous 3-second setTimeout with a more reliable polling mechanism
+    const newSubscription = await waitForSubscriptionSync(wsId, 10, 500);
 
-    // Fetch the newly created subscription from DB
-    const newSubscription = await fetchSubscription(wsId);
+    if (!newSubscription) {
+      return {
+        subscription: null,
+        error: 'SUBSCRIPTION_SYNC_TIMEOUT',
+      };
+    }
+
     return { subscription: newSubscription, error: null };
   } catch (error) {
     console.error('Error ensuring subscription:', error);

@@ -863,6 +863,7 @@
       "prod": {
         "description": "Chúng tôi không thể tìm thấy hoặc tạo gói dịch vụ cho workspace này. Vui lòng liên hệ hỗ trợ để được trợ giúp.",
         "error-code": "Mã Lỗi",
+        "timeout-description": "Gói dịch vụ của bạn đang được thiết lập. Vui lòng làm mới trang sau giây lát để xem thông tin gói dịch vụ.",
         "title": "Không Tìm Thấy Gói Dịch Vụ",
         "workspace-id": "ID Workspace"
       },

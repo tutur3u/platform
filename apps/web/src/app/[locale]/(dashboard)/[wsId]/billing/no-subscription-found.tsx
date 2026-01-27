@@ -23,6 +23,36 @@ export function NoSubscriptionFound({ wsId, error }: NoSubscriptionFoundProps) {
     router.refresh();
   };
 
+  // Determine error message based on error type
+  const getErrorDetails = () => {
+    switch (error) {
+      case 'SUBSCRIPTION_SYNC_TIMEOUT':
+        return {
+          code: 'SUB_SYNC_TIMEOUT',
+          devDescription: isDevelopment
+            ? 'Subscription created in Polar but webhook not processed within 5 seconds. This might indicate webhook configuration issues or slow network.'
+            : undefined,
+          prodDescription: t('prod.timeout-description'),
+        };
+      case 'SUBSCRIPTION_CREATE_FAILED':
+        return {
+          code: 'SUB_CREATE_FAILED',
+          devDescription: isDevelopment
+            ? 'Failed to create subscription via Polar API. Check Polar configuration and product setup.'
+            : undefined,
+          prodDescription: t('prod.description'),
+        };
+      default:
+        return {
+          code: 'UNKNOWN_ERROR',
+          devDescription: isDevelopment ? error : undefined,
+          prodDescription: t('prod.description'),
+        };
+    }
+  };
+
+  const errorDetails = getErrorDetails();
+
   if (isDevelopment) {
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -39,8 +69,13 @@ export function NoSubscriptionFound({ wsId, error }: NoSubscriptionFoundProps) {
             {error && (
               <div className="rounded-lg bg-dynamic-red/10 p-4">
                 <p className="font-mono text-dynamic-red text-sm">
-                  Error: {error}
+                  Error Code: {errorDetails.code}
                 </p>
+                {errorDetails.devDescription && (
+                  <p className="mt-2 text-dynamic-foreground/70 text-sm">
+                    {errorDetails.devDescription}
+                  </p>
+                )}
               </div>
             )}
 
@@ -105,7 +140,9 @@ export function NoSubscriptionFound({ wsId, error }: NoSubscriptionFoundProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-dynamic-foreground/80">{t('prod.description')}</p>
+          <p className="text-dynamic-foreground/80">
+            {errorDetails.prodDescription}
+          </p>
 
           <div className="space-y-2 rounded-lg bg-dynamic-surface p-4">
             <div className="flex justify-between text-sm">
