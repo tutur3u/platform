@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   Clock,
+  Goal,
   Star,
   TreePalm,
   TrendingUp,
@@ -17,12 +18,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from '@/lib/time-format';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
+import type { TimeTrackingGoal } from '../types';
+import { cn } from '@tuturuuu/utils/format';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -68,9 +73,44 @@ export function StatsCardClient({
     staleTime: 30 * 1000, // 30 seconds
   });
 
-  if (isLoading || !stats) {
+  // Fetch goals
+  const { data: goals, isLoading: isLoadingGoals } = useQuery({
+    queryKey: ['time-tracking-goals', wsId, userId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/goals?userId=${userId}`
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch goals');
+      }
+      const data = await response.json();
+      return data.goals as TimeTrackingGoal[];
+    },
+    staleTime: 60 * 1000, // 1 minute
+  });
+
+  if (isLoading || isLoadingGoals || !stats) {
     return <StatsCardSkeleton />;
   }
+
+  const activeGoals = goals?.filter((goal) => goal.is_active) || [];
+
+  const formatMinutes = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  const calculateProgress = (
+    actualSeconds: number,
+    goalMinutes: number
+  ): number => {
+    const actualMinutes = Math.floor(actualSeconds / 60);
+    return Math.min((actualMinutes / goalMinutes) * 100, 100);
+  };
 
   // Cache date formatting calculations
   const now = new Date();
@@ -90,119 +130,239 @@ export function StatsCardClient({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
-            <TrendingUp className="h-5 w-5 text-dynamic-blue" />
-          </div>
-          <div>
-            <CardTitle className="text-xl">{t('stats.title')}</CardTitle>
-            <CardDescription>{t('stats.description')}</CardDescription>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
+              <TrendingUp className="h-5 w-5 text-dynamic-blue" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">{t('stats.title')}</CardTitle>
+              <CardDescription>{t('stats.description')}</CardDescription>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Today */}
-          <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
-            <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
-              <Calendar className="h-4 w-4 text-dynamic-green" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-muted-foreground text-xs">
-                  {t('stats.today.title')}
-                </p>
-                {isWeekend && <TreePalm className="h-4 w-4" />}
+        <Tabs defaultValue="stats" className="w-full">
+          <TabsList className="mb-4 grid w-full grid-cols-2">
+            <TabsTrigger value="stats" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              <span>Stats</span>
+            </TabsTrigger>
+            <TabsTrigger value="goals" className="flex items-center gap-2">
+              <Goal className="h-4 w-4" />
+              <span>Goals</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="stats" className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Today */}
+              <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
+                <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
+                  <Calendar className="h-4 w-4 text-dynamic-green" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-muted-foreground text-xs">
+                      {t('stats.today.title')}
+                    </p>
+                    {isWeekend && <TreePalm className="h-4 w-4" />}
+                  </div>
+                  <p className="text-muted-foreground/80 text-xs">
+                    {weekdayName}
+                  </p>
+                  <p className="font-bold text-lg">
+                    {formatDuration(stats.todayTime)}
+                  </p>
+                </div>
               </div>
-              <p className="text-muted-foreground/80 text-xs">{weekdayName}</p>
-              <p className="font-bold text-lg">
-                {formatDuration(stats.todayTime)}
-              </p>
-            </div>
-          </div>
 
-          {/* Week */}
-          <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
-            <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
-              <Calendar className="h-4 w-4 text-dynamic-blue" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
-                {t('stats.week.title')}
-              </p>
-              <p className="text-muted-foreground/80 text-xs">
-                {weekStart.toLocaleDateString(locale, {
-                  month: 'short',
-                  day: 'numeric',
-                })}{' '}
-                -{' '}
-                {weekEnd.toLocaleDateString(locale, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-              <p className="font-bold text-lg">
-                {formatDuration(stats.weekTime)}
-              </p>
-            </div>
-          </div>
-
-          {/* Month */}
-          <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
-            <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
-              <Zap className="h-4 w-4 text-dynamic-purple" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
-                {t('stats.month.title')}
-              </p>
-              <p className="text-muted-foreground/80 text-xs">
-                {monthStart.toLocaleDateString(locale, {
-                  month: 'short',
-                  day: 'numeric',
-                })}{' '}
-                -{' '}
-                {monthEnd.toLocaleDateString(locale, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-              <p className="font-bold text-lg">
-                {formatDuration(stats.monthTime)}
-              </p>
-            </div>
-          </div>
-
-          {/* Streak */}
-          <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
-            <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
-              <Clock className="h-4 w-4 text-dynamic-orange" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-muted-foreground text-xs">
-                  {t('stats.streak.title')}
-                </p>
-                <span className="text-sm">
-                  {stats.streak >= 7 ? (
-                    <Trophy className="h-3.5 w-3.5 text-dynamic-yellow" />
-                  ) : (
-                    <Star className="h-3.5 w-3.5 text-dynamic-yellow" />
-                  )}
-                </span>
+              {/* Week */}
+              <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
+                <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
+                  <Calendar className="h-4 w-4 text-dynamic-blue" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    {t('stats.week.title')}
+                  </p>
+                  <p className="text-muted-foreground/80 text-xs">
+                    {weekStart.toLocaleDateString(locale, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}{' '}
+                    -{' '}
+                    {weekEnd.toLocaleDateString(locale, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <p className="font-bold text-lg">
+                    {formatDuration(stats.weekTime)}
+                  </p>
+                </div>
               </div>
-              <p className="text-muted-foreground/80 text-xs">
-                {stats.streak > 0
-                  ? t('stats.streak.statusActive')
-                  : t('stats.streak.statusEmpty')}
-              </p>
-              <p className="font-bold text-lg">
-                {t('stats.streak.count', { count: stats.streak })}
-              </p>
+
+              {/* Month */}
+              <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
+                <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
+                  <Zap className="h-4 w-4 text-dynamic-purple" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    {t('stats.month.title')}
+                  </p>
+                  <p className="text-muted-foreground/80 text-xs">
+                    {monthStart.toLocaleDateString(locale, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}{' '}
+                    -{' '}
+                    {monthEnd.toLocaleDateString(locale, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <p className="font-bold text-lg">
+                    {formatDuration(stats.monthTime)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Streak */}
+              <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
+                <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
+                  <Clock className="h-4 w-4 text-dynamic-orange" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-muted-foreground text-xs">
+                      {t('stats.streak.title')}
+                    </p>
+                    <span className="text-sm">
+                      {stats.streak >= 7 ? (
+                        <Trophy className="h-3.5 w-3.5 text-dynamic-yellow" />
+                      ) : (
+                        <Star className="h-3.5 w-3.5 text-dynamic-yellow" />
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground/80 text-xs">
+                    {stats.streak > 0
+                      ? t('stats.streak.statusActive')
+                      : t('stats.streak.statusEmpty')}
+                  </p>
+                  <p className="font-bold text-lg">
+                    {t('stats.streak.count', { count: stats.streak })}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="goals" className="space-y-4">
+            {activeGoals.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {activeGoals.map((goal) => {
+                  const dailyProgress = calculateProgress(
+                    stats.todayTime,
+                    goal.daily_goal_minutes
+                  );
+                  const weeklyProgress = goal.weekly_goal_minutes
+                    ? calculateProgress(
+                        stats.weekTime,
+                        goal.weekly_goal_minutes
+                      )
+                    : null;
+
+                  return (
+                    <div
+                      key={goal.id}
+                      className="space-y-3 rounded-lg border p-4 shadow-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        {goal.category ? (
+                          <div
+                            className={cn(
+                              'h-3 w-3 rounded-full',
+                              goal.category.color === 'RED'
+                                ? 'bg-red-500'
+                                : goal.category.color === 'BLUE'
+                                  ? 'bg-blue-500'
+                                  : goal.category.color === 'GREEN'
+                                    ? 'bg-green-500'
+                                    : goal.category.color === 'YELLOW'
+                                      ? 'bg-yellow-500'
+                                      : goal.category.color === 'ORANGE'
+                                        ? 'bg-orange-500'
+                                        : goal.category.color === 'PURPLE'
+                                          ? 'bg-purple-500'
+                                          : goal.category.color === 'PINK'
+                                            ? 'bg-pink-500'
+                                            : goal.category.color === 'INDIGO'
+                                              ? 'bg-indigo-500'
+                                              : goal.category.color === 'CYAN'
+                                                ? 'bg-cyan-500'
+                                                : 'bg-gray-500'
+                            )}
+                          />
+                        ) : (
+                          <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
+                        )}
+                        <span className="font-medium text-sm">
+                          {goal.category?.name || 'General'} Goal
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-muted-foreground text-xs">
+                          <span>Daily Progress</span>
+                          <span>{Math.round(dailyProgress)}%</span>
+                        </div>
+                        <Progress value={dailyProgress} className="h-2" />
+                        <div className="flex justify-between text-[10px] text-muted-foreground">
+                          <span>{formatDuration(stats.todayTime)}</span>
+                          <span>{formatMinutes(goal.daily_goal_minutes)}</span>
+                        </div>
+                      </div>
+
+                      {goal.weekly_goal_minutes && (
+                        <div className="space-y-2 pt-1">
+                          <div className="flex items-center justify-between text-muted-foreground text-xs">
+                            <span>Weekly Progress</span>
+                            <span>{Math.round(weeklyProgress || 0)}%</span>
+                          </div>
+                          <Progress
+                            value={weeklyProgress || 0}
+                            className="h-2"
+                          />
+                          <div className="flex justify-between text-[10px] text-muted-foreground">
+                            <span>{formatDuration(stats.weekTime)}</span>
+                            <span>
+                              {formatMinutes(goal.weekly_goal_minutes)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Goal className="mb-2 h-10 w-10 text-muted-foreground/50" />
+                <p className="text-muted-foreground text-sm">
+                  No active goals set.
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Set goals in the Time Tracker settings.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

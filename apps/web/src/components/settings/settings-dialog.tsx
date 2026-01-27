@@ -11,6 +11,7 @@ import {
   Clock,
   Coffee,
   CreditCard,
+  Goal,
   Laptop,
   LayoutGrid,
   Paintbrush,
@@ -85,6 +86,7 @@ import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
+import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import MembersSettings from './workspace/members-settings';
@@ -403,6 +405,13 @@ export function SettingsDialog({
                 icon: LayoutGrid,
                 description: t('settings.time_tracker.categories_description'),
                 keywords: ['Time Tracker', 'Categories'],
+              },
+              {
+                name: 'time_tracker_goals',
+                label: t('settings.time_tracker.goals'),
+                icon: Goal,
+                description: t('settings.time_tracker.goals_description'),
+                keywords: ['Time Tracker', 'Goals', 'Productivity'],
               },
               {
                 name: 'break_types',
@@ -813,6 +822,10 @@ export function SettingsDialog({
 
                 {activeTab === 'time_tracker_categories' && wsId && (
                   <TimeTrackerCategoriesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_goals' && wsId && (
+                  <TimeTrackerGoalsSettings wsId={wsId} />
                 )}
 
                 {activeTab === 'time_tracker_general' && wsId && (

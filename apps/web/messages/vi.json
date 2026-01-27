@@ -5563,7 +5563,16 @@
       "update_error": "Cập nhật cài đặt trình theo dõi thời gian thất bại",
       "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công",
       "categories": "Danh mục",
-      "categories_description": "Quản lý và tùy chỉnh các danh mục theo dõi thời gian cho không gian làm việc của bạn"
+      "categories_description": "Quản lý và tùy chỉnh các danh mục theo dõi thời gian cho không gian làm việc của bạn",
+      "goals": "Mục tiêu",
+      "goals_description": "Quản lý các mục tiêu theo dõi thời gian hàng ngày và hàng tuần của bạn",
+      "add_goal": "Thêm mục tiêu",
+      "no_goals_title": "Chưa có mục tiêu nào được thiết lập",
+      "no_goals_description": "Thiết lập mục tiêu theo dõi thời gian để giám sát năng suất của bạn",
+      "create_first_goal": "Tạo mục tiêu đầu tiên của bạn",
+      "edit_goal": "Chỉnh sửa mục tiêu",
+      "delete_goal": "Xóa mục tiêu",
+      "create_new_goal": "Tạo mục tiêu mới"
     },
     "user": {
       "profile": "Hồ sơ",
@@ -7123,6 +7132,14 @@
         "hybrid": "Kết Hợp (Năm + Lịch)",
         "original_grid": "Lưới Gốc"
       }
+    },
+    "goals": {
+      "create_error": "Không thể tạo mục tiêu",
+      "create_success": "Đã tạo mục tiêu thành công",
+      "delete_error": "Không thể xóa mục tiêu",
+      "delete_success": "Đã xóa mục tiêu thành công",
+      "update_error": "Không thể cập nhật mục tiêu",
+      "update_success": "Đã cập nhật mục tiêu thành công"
     },
     "loading": "Đang tải trình theo dõi thời gian...",
     "management": {

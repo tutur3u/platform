@@ -307,7 +307,6 @@ export default function TimeTrackerContent({
 
       try {
         const userParam = currentUserId ? `&userId=${currentUserId}` : '';
-        const goalsUserParam = currentUserId ? `?userId=${currentUserId}` : '';
 
         // Individual API calls with error handling for each
         const apiCalls = [
@@ -344,14 +343,6 @@ export default function TimeTrackerContent({
             },
           },
           {
-            name: 'goals',
-            call: () =>
-              apiCall(
-                `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
-              ),
-            fallback: { goals: [] },
-          },
-          {
             name: 'tasks',
             call: () => apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
             fallback: { tasks: [] },
@@ -364,32 +355,26 @@ export default function TimeTrackerContent({
         );
 
         // Process results with fallbacks for failed calls
-        const [
-          categoriesRes,
-          runningRes,
-          recentRes,
-          _statsRes,
-          _goalsRes,
-          tasksRes,
-        ] = results.map((result, index) => {
-          if (result.status === 'fulfilled') {
-            return result.value;
-          } else {
-            if (!apiCalls[index]) return null;
-            const { name, fallback } = apiCalls[index];
-            console.warn(`API call for ${name} failed:`, result.reason);
-            // Only show error toast for critical failures, not for tasks
-            if (name !== 'tasks') {
-              toast.error(
-                t('errors.failedToLoad', {
-                  name,
-                  message: result.reason.message || 'Unknown error',
-                })
-              );
+        const [categoriesRes, runningRes, recentRes, _statsRes, tasksRes] =
+          results.map((result, index) => {
+            if (result.status === 'fulfilled') {
+              return result.value;
+            } else {
+              if (!apiCalls[index]) return null;
+              const { name, fallback } = apiCalls[index];
+              console.warn(`API call for ${name} failed:`, result.reason);
+              // Only show error toast for critical failures, not for tasks
+              if (name !== 'tasks') {
+                toast.error(
+                  t('errors.failedToLoad', {
+                    name,
+                    message: result.reason.message || 'Unknown error',
+                  })
+                );
+              }
+              return fallback;
             }
-            return fallback;
-          }
-        });
+          });
 
         if (!isMountedRef.current) return;
 

@@ -5525,7 +5525,16 @@
       "update_error": "Failed to update time tracker settings",
       "update_success": "Time tracker settings updated successfully",
       "categories": "Categories",
-      "categories_description": "Manage and customize time tracking categories for your workspace"
+      "categories_description": "Manage and customize time tracking categories for your workspace",
+      "goals": "Goals",
+      "goals_description": "Manage your daily and weekly time tracking goals",
+      "add_goal": "Add Goal",
+      "no_goals_title": "No goals set",
+      "no_goals_description": "Set time tracking goals to monitor your productivity",
+      "create_first_goal": "Create your first goal",
+      "edit_goal": "Edit Goal",
+      "delete_goal": "Delete Goal",
+      "create_new_goal": "Create New Goal"
     },
     "user": {
       "profile": "Profile",
@@ -6321,6 +6330,14 @@
     "date_tomorrow": "Tomorrow",
     "date_yesterday": "Yesterday",
     "failed_to_update_task": "Failed to update task",
+    "goals": {
+      "create_error": "Failed to create goal",
+      "create_success": "Goal created successfully",
+      "delete_error": "Failed to delete goal",
+      "delete_success": "Goal deleted successfully",
+      "update_error": "Failed to update goal",
+      "update_success": "Goal updated successfully"
+    },
     "history": {
       "activity": "History",
       "assignee_added": "Assigned user",
