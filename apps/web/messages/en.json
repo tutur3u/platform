@@ -5229,12 +5229,18 @@
     "description": "Description",
     "id": "ID",
     "manufacturer": "Manufacturer",
+    "min_amount": "Min amount",
     "name": "Name",
     "price": "Price",
+    "price_by_warehouse": "Price by Warehouse",
     "stock": "Stock",
+    "stock_by_warehouse": "Stock by Warehouse",
     "unit": "Unit",
+    "unknown_warehouse": "Unknown Warehouse",
+    "unlimited_stock": "Unlimited Stock",
     "usage": "Usage",
-    "warehouse": "Warehouse"
+    "warehouse": "Warehouse",
+    "warehouses": "warehouses"
   },
   "promotion-data-table": {
     "code": "Code",
@@ -9082,6 +9088,7 @@
       "product_deleted_successfully": "Product deleted successfully",
       "product_updated_successfully": "Product updated successfully",
       "recently": "Recently",
+      "stock_low_warning": "Stock is below minimum amount",
       "unlimited_stock_available": "This product has unlimited stock available."
     },
     "no_changes_detected": "No changes detected",
