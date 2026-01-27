@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { canCreateInvitation } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -46,6 +47,19 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Email is required.' },
       { status: 400 }
+    );
+  }
+
+  // Check if seat limit allows creating invitations
+  const inviteCheck = await canCreateInvitation(supabase, wsId);
+  if (!inviteCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: 'seat_limit_reached',
+        message: inviteCheck.message,
+        seatStatus: inviteCheck.status,
+      },
+      { status: 403 }
     );
   }
 

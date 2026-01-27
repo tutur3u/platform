@@ -13,7 +13,7 @@ async function reportInitialUsage(ws_id: string, customerId: string) {
   const sbAdmin = await createAdminClient();
 
   const { count: initialUserCount, error: countError } = await sbAdmin
-    .from('workspace_users')
+    .from('workspace_members')
     .select('*', { count: 'exact', head: true })
     .eq('ws_id', ws_id);
 
@@ -50,6 +50,16 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
     });
   }
 
+  // Check if product is seat-based
+  const { data: product } = await sbAdmin
+    .from('workspace_subscription_products')
+    .select('pricing_model, price_per_seat')
+    .eq('id', subscription.product.id)
+    .single();
+
+  const isSeatBased = product?.pricing_model === 'seat_based';
+  const seatCount = isSeatBased ? (subscription.seats ?? 1) : null;
+
   const subscriptionData = {
     ws_id: ws_id,
     status: subscription.status as any,
@@ -76,6 +86,10 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
         : subscription.modifiedAt
           ? new Date(subscription.modifiedAt).toISOString()
           : null,
+    // Seat-based pricing fields
+    pricing_model: isSeatBased ? ('seat_based' as const) : ('fixed' as const),
+    seat_count: seatCount,
+    price_per_seat: product?.price_per_seat ?? null,
   };
 
   // Update existing subscription
@@ -91,7 +105,7 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
     throw new Error(`Database Error: ${dbError.message}`);
   }
 
-  return { ws_id, subscriptionData };
+  return { ws_id, subscriptionData, isSeatBased };
 }
 
 // Helper function to sync order data from Polar to DB
@@ -170,6 +184,16 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
+      // Check if product is seat-based (from metadata)
+      const isSeatBased = product.metadata?.pricing_model === 'seat_based';
+      const pricePerSeat = isSeatBased
+        ? product.prices.length > 0 &&
+          product.prices[0] &&
+          'priceAmount' in product.prices[0]
+          ? product.prices[0].priceAmount
+          : null
+        : null;
+
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
         .insert({
@@ -185,6 +209,9 @@ export const POST = Webhooks({
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
+          // Seat-based pricing fields
+          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          price_per_seat: pricePerSeat,
         });
 
       if (dbError) {
@@ -226,6 +253,16 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
+      // Check if product is seat-based (from metadata)
+      const isSeatBased = product.metadata?.pricing_model === 'seat_based';
+      const pricePerSeat = isSeatBased
+        ? product.prices.length > 0 &&
+          product.prices[0] &&
+          'priceAmount' in product.prices[0]
+          ? product.prices[0].priceAmount
+          : null
+        : null;
+
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
         .update({
@@ -240,6 +277,9 @@ export const POST = Webhooks({
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
+          // Seat-based pricing fields
+          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          price_per_seat: pricePerSeat,
         })
         .eq('id', product.id);
 

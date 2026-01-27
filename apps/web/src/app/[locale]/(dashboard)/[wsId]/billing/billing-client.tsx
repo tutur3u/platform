@@ -7,7 +7,9 @@ import {
   CheckCircle,
   Clock,
   Package,
+  Plus,
   Sparkles,
+  Users,
   X,
   Zap,
 } from '@tuturuuu/icons';
@@ -20,6 +22,9 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
+import type { SeatStatus } from '@/utils/seat-limits';
+import { AddSeatsDialog } from './add-seats-dialog';
+import { MigrateToSeatsDialog } from './migrate-to-seats-dialog';
 import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
@@ -35,6 +40,10 @@ export interface Plan {
   cancelAtPeriodEnd: boolean;
   status: string;
   features?: string[];
+  // Seat-based pricing fields
+  pricingModel?: 'fixed' | 'seat_based' | null;
+  seatCount?: number | null;
+  pricePerSeat?: number | null;
 }
 
 interface BillingClientProps {
@@ -43,6 +52,7 @@ interface BillingClientProps {
   products: Product[];
   product_id: string;
   isCreator: boolean;
+  seatStatus?: SeatStatus;
 }
 
 function getSimplePlanName(name: string): string {
@@ -58,9 +68,12 @@ export function BillingClient({
   products,
   wsId,
   isCreator,
+  seatStatus,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [showAddSeatsDialog, setShowAddSeatsDialog] = useState(false);
+  const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const t = useTranslations('billing');
   const router = useRouter();
 
@@ -69,6 +82,8 @@ export function BillingClient({
   const isProPlan = currentPlan.tier === 'PRO';
   const isPlusPlan = currentPlan.tier === 'PLUS';
   const simplePlanName = getSimplePlanName(currentPlan.name);
+  const isSeatBased = seatStatus?.isSeatBased ?? false;
+  const isFixedPricing = currentPlan.pricingModel === 'fixed' && isPaidPlan;
 
   // Dynamic color configuration per tier
   const tierConfig = isEnterprisePlan
@@ -189,12 +204,73 @@ export function BillingClient({
                 </span>
                 {currentPlan.billingCycle && (
                   <span className="text-lg text-muted-foreground">
+                    {isSeatBased ? t('per-seat') + ' ' : ''}
                     {currentPlan.billingCycle === 'month'
                       ? t('per-month')
                       : t('per-year')}
                   </span>
                 )}
               </div>
+
+              {/* Seat Usage - Only show for seat-based pricing */}
+              {isSeatBased && seatStatus && (
+                <div className="rounded-lg border border-border/50 bg-background/50 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">
+                        {t('seat-usage')}
+                      </span>
+                    </div>
+                    {isCreator && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowAddSeatsDialog(true)}
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        {t('add-seats')}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {t('members')}
+                    </span>
+                    <span className="font-medium">
+                      {seatStatus.memberCount} / {seatStatus.seatCount}
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all',
+                        seatStatus.availableSeats === 0
+                          ? 'bg-destructive'
+                          : seatStatus.availableSeats <= 2
+                            ? 'bg-dynamic-orange'
+                            : 'bg-dynamic-green'
+                      )}
+                      style={{
+                        width: `${Math.min(100, (seatStatus.memberCount / seatStatus.seatCount) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  {seatStatus.availableSeats === 0 && (
+                    <p className="mt-2 text-destructive text-xs">
+                      {t('seat-limit-reached')}
+                    </p>
+                  )}
+                  {seatStatus.availableSeats > 0 &&
+                    seatStatus.availableSeats <= 2 && (
+                      <p className="mt-2 text-dynamic-orange text-xs">
+                        {t('seats-running-low', {
+                          count: seatStatus.availableSeats,
+                        })}
+                      </p>
+                    )}
+                </div>
+              )}
 
               {/* Features */}
               {currentPlan.features && currentPlan.features.length > 0 && (
@@ -222,7 +298,11 @@ export function BillingClient({
                   <Button
                     variant="ghost"
                     size="lg"
-                    className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
+                    className={`text-muted-foreground ${
+                      currentPlan.cancelAtPeriodEnd
+                        ? 'hover:text-dynamic-green'
+                        : 'hover:text-dynamic-red'
+                    }`}
                     onClick={() => setShowConfirmationDialog(true)}
                   >
                     {currentPlan.cancelAtPeriodEnd ? (
@@ -286,6 +366,39 @@ export function BillingClient({
         </div>
       </div>
 
+      {/* Migration Option - Show for fixed-pricing paid plans */}
+      {isFixedPricing && isCreator && (
+        <div className="mb-8 overflow-hidden rounded-2xl border border-dynamic-blue/50 border-dashed bg-card">
+          <div className="bg-linear-to-r from-dynamic-blue/10 via-dynamic-blue/5 to-dynamic-blue/10 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-dynamic-blue" />
+                  <h3 className="font-semibold text-lg">
+                    {t('switch-to-seat-based')}
+                  </h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {t('switch-to-seat-based-description')}
+                </p>
+                <ul className="ml-6 list-disc space-y-1 text-muted-foreground text-sm">
+                  <li>{t('pay-per-member')}</li>
+                  <li>{t('add-seats-anytime')}</li>
+                  <li>{t('ideal-for-growing-teams')}</li>
+                </ul>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowMigrationDialog(true)}
+                className="border-dynamic-blue/50 hover:bg-dynamic-blue/10"
+              >
+                {t('learn-more')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dialogs */}
       <PlanList
         currentPlan={currentPlan}
@@ -308,6 +421,29 @@ export function BillingClient({
           }
         }}
       />
+
+      {/* Add Seats Dialog - Only for seat-based subscriptions */}
+      {isSeatBased && seatStatus && (
+        <AddSeatsDialog
+          open={showAddSeatsDialog}
+          onOpenChange={setShowAddSeatsDialog}
+          wsId={wsId}
+          currentSeats={seatStatus.seatCount}
+          pricePerSeat={
+            seatStatus.pricePerSeat ?? currentPlan.pricePerSeat ?? 0
+          }
+          billingCycle={currentPlan.billingCycle}
+        />
+      )}
+
+      {/* Migration Dialog - Only for fixed-pricing subscriptions */}
+      {isFixedPricing && isCreator && (
+        <MigrateToSeatsDialog
+          open={showMigrationDialog}
+          onOpenChange={setShowMigrationDialog}
+          wsId={wsId}
+        />
+      )}
     </>
   );
 }

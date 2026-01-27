@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getOrCreatePolarCustomer } from '@/utils/customer-session';
+import { getSeatStatus } from '@/utils/seat-limits';
 import {
   createFreeSubscription,
   fetchSubscription,
@@ -178,6 +179,9 @@ export default async function BillingPage({
 
         const subscription = subscriptionResult.subscription;
 
+        // Get seat status for the workspace
+        const seatStatus = await getSeatStatus(supabase, wsId);
+
         const dateLocale = locale === 'vi' ? vi : enUS;
         const formatDate = (date: string) =>
           format(new Date(date), 'd MMM, yyyy', { locale: dateLocale });
@@ -200,6 +204,10 @@ export default async function BillingPage({
           features: subscription.product.description
             ? [subscription.product.description]
             : [t('premium-features')],
+          // Seat-based pricing fields
+          pricingModel: subscription.pricingModel,
+          seatCount: subscription.seatCount,
+          pricePerSeat: subscription.pricePerSeat,
         };
 
         return (
@@ -210,6 +218,7 @@ export default async function BillingPage({
               product_id={subscription?.product.id || ''}
               wsId={wsId}
               isCreator={isCreator}
+              seatStatus={seatStatus}
             />
 
             <BillingHistory orders={orders} />

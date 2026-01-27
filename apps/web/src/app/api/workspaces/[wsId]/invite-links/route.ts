@@ -5,6 +5,7 @@ import {
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
+import { canCreateInvitation } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -58,6 +59,19 @@ export async function POST(req: Request, { params }: Params) {
     if (disableInvite) {
       return NextResponse.json(
         { error: 'Invitations are disabled for this workspace' },
+        { status: 403 }
+      );
+    }
+
+    // Check if seat limit allows creating invitations
+    const inviteCheck = await canCreateInvitation(sbAdmin, wsId);
+    if (!inviteCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: 'seat_limit_reached',
+          message: inviteCheck.message,
+          seatStatus: inviteCheck.status,
+        },
         { status: 403 }
       );
     }
