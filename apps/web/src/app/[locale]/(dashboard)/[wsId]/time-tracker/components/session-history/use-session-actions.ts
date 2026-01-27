@@ -167,9 +167,15 @@ export function useSessionActions({
           throw new Error(errorData.error || 'Failed to resume session');
         }
 
-        // Invalidate the running session query to update sidebar
+        // Invalidate relevant queries
         queryClient.invalidateQueries({
           queryKey: ['running-time-session', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracking-sessions', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', wsId],
         });
 
         router.refresh();
@@ -373,6 +379,17 @@ export function useSessionActions({
         throw new Error(errorData.error || 'Failed to update session');
       }
 
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-sessions', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId],
+      });
+
       router.refresh();
       closeEditDialog();
       toast.success(t('session_updated_successfully'));
@@ -393,6 +410,7 @@ export function useSessionActions({
     t,
     closeEditDialog,
     getValidationErrorMessage,
+    queryClient,
   ]);
 
   const deleteSession = useCallback(async () => {
@@ -404,9 +422,15 @@ export function useSessionActions({
         { method: 'DELETE' }
       );
 
-      // Invalidate the running session query to update sidebar in case an active session was deleted
+      // Invalidate relevant queries
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracking-sessions', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['time-tracker-stats', wsId],
       });
 
       setSessionToDelete(null);
@@ -462,6 +486,20 @@ export function useSessionActions({
 
         const result = await response.json();
 
+        // Invalidate queries for both source and target workspaces
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracking-sessions', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracking-sessions', targetWorkspaceId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracker-stats', targetWorkspaceId],
+        });
+
         router.refresh();
         setSessionToMove(null);
         toast.success(result.message || t('session_moved_successfully'));
@@ -474,7 +512,7 @@ export function useSessionActions({
         setIsMoving(false);
       }
     },
-    [sessionToMove, wsId, router, t]
+    [sessionToMove, wsId, router, t, queryClient]
   );
 
   const openMissedEntryDialog = useCallback(() => {
