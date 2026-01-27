@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Edit,
   Eye,
@@ -108,6 +109,7 @@ export function ProductQuickDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
   const computeUnlimitedStock = useCallback(
     (p?: Product) =>
       !p?.stock ||
@@ -339,6 +341,9 @@ export function ProductQuickDialog({
       toast.success(
         t('ws-inventory-products.messages.product_updated_successfully')
       );
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-products', wsId],
+      });
       router.refresh();
     } catch (error) {
       setIsSaving(false);
@@ -377,6 +382,9 @@ export function ProductQuickDialog({
         toast.success(
           t('ws-inventory-products.messages.product_deleted_successfully')
         );
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-products', wsId],
+        });
         setShowDeleteDialog(false);
         onOpenChange(false);
         router.refresh();
