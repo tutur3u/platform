@@ -5,6 +5,11 @@ import {
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+import {
+  getWorkspaceConfig,
+  normalizeWorkspaceId,
+} from '@/lib/workspace-helper';
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const ALLOWED_MIME_TYPES = [
@@ -14,12 +19,19 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
+const TimeTrackingRequestSchema = z.object({
+  title: z.string().min(1),
+  startTime: z.iso.datetime(),
+  endTime: z.iso.datetime(),
+});
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
     const storageClient = await createDynamicClient();
 
@@ -36,7 +48,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -59,12 +71,43 @@ export async function POST(
     const breakTypeName = formData.get('breakTypeName') as string | null;
     const linkedSessionId = formData.get('linkedSessionId') as string | null;
 
-    // Validate required fields
-    if (!title || !startTime || !endTime) {
+    // Validate using Zod
+    const validationResult = TimeTrackingRequestSchema.safeParse({
+      title,
+      startTime,
+      endTime: endTime || undefined,
+    });
+
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid input', details: validationResult.error.format() },
         { status: 400 }
       );
+    }
+
+    const {
+      startTime: validatedStartTime,
+      endTime: validatedEndTime,
+      title: validatedTitle,
+    } = validationResult.data;
+
+    const allowFutureSessions =
+      (await getWorkspaceConfig(normalizedWsId, 'ALLOW_FUTURE_SESSIONS')) ===
+      'true';
+
+    // Prevent future sessions (unless allowed by config)
+    const now = new Date();
+    if (!allowFutureSessions) {
+      const start = new Date(validatedStartTime);
+      if (start > now) {
+        return NextResponse.json(
+          {
+            error:
+              'Cannot create a time tracking request with a start time in the future.',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const requestId = uuidv4();
@@ -142,14 +185,14 @@ export async function POST(
       .from('time_tracking_requests')
       .insert({
         id: requestId,
-        workspace_id: wsId,
+        workspace_id: normalizedWsId,
         user_id: user.id,
         task_id: taskId || null,
         category_id: categoryId || null,
-        title,
+        title: validatedTitle,
         description: description || null,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: validatedStartTime,
+        end_time: validatedEndTime,
         break_type_id: breakTypeId || null,
         break_type_name: breakTypeName || null,
         linked_session_id: linkedSessionId || null,

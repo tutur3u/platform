@@ -2,7 +2,10 @@ import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getWorkspace,
+  getWorkspaceConfig as getWorkspaceConfigUtil,
+} from '@tuturuuu/utils/workspace-helper';
 
 /**
  * Normalizes a workspace identifier (slug or special keyword) into a UUID.
@@ -24,4 +27,18 @@ export const normalizeWorkspaceId = async (
   }
 
   return resolveWorkspaceId(wsIdParam);
+};
+
+/**
+ * Fetches a workspace configuration by ID.
+ *
+ * @param wsId - The workspace ID
+ * @param configId - The configuration ID
+ * @returns The configuration value or null if not found
+ */
+export const getWorkspaceConfig = async (
+  wsId: string,
+  configId: string
+): Promise<string | null> => {
+  return getWorkspaceConfigUtil(wsId, configId);
 };

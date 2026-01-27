@@ -62,7 +62,7 @@ export async function fetchWorkspaces() {
   // For personal workspaces, override the name and avatar with the user's data
   return workspaces.map((ws) => {
     // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
-    const activeSubscriptions = (ws.workspace_subscriptions || [])
+    const activeSubscriptions = ws.workspace_subscriptions
       .filter((sub: any) => sub?.status === 'active')
       .sort(
         (a: any, b: any) =>

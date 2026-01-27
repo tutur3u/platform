@@ -29,20 +29,10 @@ export default async function TimeTrackerHistoryPage({
           .select('*')
           .eq('ws_id', wsId);
 
-        // Filter out sessions with pending_approval=true (they haven't been approved yet)
-        const { data: sessions } = await supabase
-          .from('time_tracking_sessions')
-          .select('*, category:time_tracking_categories(*), task:tasks(*)')
-          .eq('ws_id', wsId)
-          .eq('user_id', user.id)
-          .eq('pending_approval', false)
-          .order('start_time', { ascending: false })
-          .limit(100);
-
         return (
           <SessionHistory
             wsId={wsId}
-            sessions={sessions}
+            userId={user.id}
             categories={categories}
             workspace={workspace}
           />

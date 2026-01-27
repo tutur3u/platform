@@ -23,7 +23,7 @@ export interface StackedSession {
 
 export interface SessionHistoryProps {
   wsId: string;
-  sessions: SessionWithRelations[] | null;
+  userId: string;
   categories: TimeTrackingCategory[] | null;
   tasks: TaskWithDetails[] | null;
   workspace: Workspace;

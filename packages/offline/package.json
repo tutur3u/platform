@@ -22,8 +22,8 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
-    "next": "^16.1.4",
-    "react": "^19.2.3",
+    "next": "^16.1.5",
+    "react": "^19.2.4",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },

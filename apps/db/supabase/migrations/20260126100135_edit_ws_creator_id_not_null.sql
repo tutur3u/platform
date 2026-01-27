@@ -1,0 +1,1 @@
+alter table "public"."workspaces" alter column "creator_id" set not null;

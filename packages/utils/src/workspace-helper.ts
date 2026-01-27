@@ -710,6 +710,39 @@ export async function isPersonalWorkspace(
   return data?.personal === true;
 }
 
+/**
+ * Fetches a workspace configuration by ID.
+ *
+ * @param wsId - The workspace ID
+ * @param configId - The configuration ID
+ * @returns The configuration value or null if not found
+ */
+export async function getWorkspaceConfig(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const sbAdmin = await createAdminClient();
+  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  const { data, error } = await sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', resolvedWorkspaceId)
+    .eq('id', configId)
+    .maybeSingle();
+
+  if (error) {
+    logWorkspaceError('Failed to fetch workspace config', error, {
+      workspaceId: wsId,
+      configId,
+      errorCode: error.code,
+    });
+    return null;
+  }
+
+  return data?.value || null;
+}
+
 export async function normalizeWorkspaceId(wsId: string): Promise<string> {
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
     const supabase = await createClient();

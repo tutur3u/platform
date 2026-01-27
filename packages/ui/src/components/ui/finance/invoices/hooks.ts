@@ -72,6 +72,12 @@ const invoiceSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => v ?? undefined),
+  wallet: z
+    .object({
+      name: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
   ws_id: z
     .string()
     .nullable()

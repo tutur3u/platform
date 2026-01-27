@@ -6,6 +6,7 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 import { validateEndTime, validateStartTime } from '@/lib/time-validation';
 import { useImageUpload } from '../../hooks/use-image-upload';
 import { useSessionActions } from '../session-history/use-session-actions';
@@ -57,6 +58,15 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
 
   // Determine effective workspace ID for operations
   const effectiveWsId = isNormalMode ? selectedWorkspaceId : wsId;
+
+  // Fetch workspace configuration for future sessions
+  const configId = 'ALLOW_FUTURE_SESSIONS';
+  const { data: configValue } = useWorkspaceConfig<string>(
+    effectiveWsId,
+    configId,
+    'false'
+  );
+  const allowFutureSessions = configValue === 'true';
 
   // Validation helper
   const { getValidationErrorMessage } = useSessionActions({
@@ -222,12 +232,18 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
   const validationErrors = useMemo(() => {
     const errors: Record<string, string> = {};
 
-    const startValidation = validateStartTime(missedEntryStartTime);
+    const startValidation = validateStartTime(
+      missedEntryStartTime,
+      allowFutureSessions
+    );
     if (!startValidation.isValid) {
       errors.startTime = getValidationErrorMessage(startValidation);
     }
 
-    const endValidation = validateEndTime(missedEntryEndTime);
+    const endValidation = validateEndTime(
+      missedEntryEndTime,
+      allowFutureSessions
+    );
     if (!endValidation.isValid) {
       errors.endTime = getValidationErrorMessage(endValidation);
     }
@@ -255,7 +271,12 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
     }
 
     return errors;
-  }, [missedEntryStartTime, missedEntryEndTime, getValidationErrorMessage]);
+  }, [
+    missedEntryStartTime,
+    missedEntryEndTime,
+    allowFutureSessions,
+    getValidationErrorMessage,
+  ]);
 
   const closeMissedEntryDialog = () => {
     onOpenChange(false);
@@ -432,6 +453,19 @@ export function useMissedEntryForm(props: MissedEntryDialogProps) {
           const errorData = await response.json();
           throw new Error(errorData.error || t('errors.createSessionFailed'));
         }
+
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', effectiveWsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracking-sessions', effectiveWsId],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'paused-time-session' &&
+            query.queryKey[1] === effectiveWsId,
+        });
 
         router.refresh();
         closeMissedEntryDialog();
