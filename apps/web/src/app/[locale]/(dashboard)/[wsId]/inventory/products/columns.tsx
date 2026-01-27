@@ -229,7 +229,7 @@ export const productColumns = (
                               <span
                                 className={`text-sm ${
                                   isLowStock
-                                    ? 'font-medium text-dynamic-red hover:bg-dynamic-red/10 rounded-md px-1'
+                                    ? 'rounded-md px-1 font-medium text-dynamic-red hover:bg-dynamic-red/10'
                                     : ''
                                 }`}
                               >
