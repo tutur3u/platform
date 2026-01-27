@@ -10,7 +10,17 @@ const SearchParamsSchema = z.object({
   q: z.string().default(''),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(1000).default(10),
-  sortBy: z.string().optional(),
+  sortBy: z
+    .enum([
+      'id',
+      'name',
+      'manufacturer',
+      'description',
+      'usage',
+      'category_id',
+      'created_at',
+    ])
+    .optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
@@ -81,41 +91,77 @@ export async function GET(request: Request, { params }: Params) {
 
     if (error) throw error;
 
+    interface InventoryProduct {
+      amount: number | null;
+      min_amount: number;
+      price: number;
+      unit_id: string;
+      warehouse_id: string;
+      inventory_warehouses: {
+        name: string | null;
+      } | null;
+      inventory_units: {
+        name: string | null;
+      } | null;
+    }
+
+    interface ProductStockChange {
+      amount: number;
+      created_at: string;
+      beneficiary: {
+        full_name: string | null;
+        email: string | null;
+      } | null;
+      creator: {
+        full_name: string | null;
+        email: string | null;
+      } | null;
+    }
+
     const data = (rawData || []).map((item) => ({
       id: item.id,
       name: item.name,
       manufacturer: item.manufacturer,
       description: item.description,
       usage: item.usage,
-      unit: item.inventory_products?.[0]?.inventory_units?.name,
-      stock: (item.inventory_products || []).map((inventory: any) => ({
-        amount: inventory.amount,
-        min_amount: inventory.min_amount,
-        unit: inventory.inventory_units?.name,
-        warehouse: inventory.inventory_warehouses?.name,
-        price: inventory.price,
-      })),
+      unit: (item.inventory_products as InventoryProduct[])?.[0]
+        ?.inventory_units?.name,
+      stock: ((item.inventory_products as InventoryProduct[] | null) || []).map(
+        (inventory: InventoryProduct) => ({
+          amount: inventory.amount,
+          min_amount: inventory.min_amount,
+          unit: inventory.inventory_units?.name,
+          warehouse: inventory.inventory_warehouses?.name,
+          price: inventory.price,
+        })
+      ),
       // Inventory with ids for editing
-      inventory: (item.inventory_products || []).map((inventory: any) => ({
+      inventory: (
+        (item.inventory_products as InventoryProduct[] | null) || []
+      ).map((inventory: InventoryProduct) => ({
         unit_id: inventory.unit_id,
         warehouse_id: inventory.warehouse_id,
         amount: inventory.amount,
         min_amount: inventory.min_amount,
         price: inventory.price,
       })),
-      min_amount: item.inventory_products?.[0]?.min_amount || 0,
-      warehouse: item.inventory_products?.[0]?.inventory_warehouses?.name,
+      min_amount:
+        (item.inventory_products as InventoryProduct[])?.[0]?.min_amount || 0,
+      warehouse: (item.inventory_products as InventoryProduct[])?.[0]
+        ?.inventory_warehouses?.name,
       category: item.product_categories?.name,
       category_id: item.category_id,
       ws_id: item.ws_id,
       created_at: item.created_at,
       stock_changes:
-        item.product_stock_changes?.map((change: any) => ({
-          amount: change.amount,
-          creator: change.creator,
-          beneficiary: change.beneficiary,
-          created_at: change.created_at,
-        })) || [],
+        (item.product_stock_changes as ProductStockChange[])?.map(
+          (change: ProductStockChange) => ({
+            amount: change.amount,
+            creator: change.creator,
+            beneficiary: change.beneficiary,
+            created_at: change.created_at,
+          })
+        ) || [],
     }));
 
     return NextResponse.json({
