@@ -107,7 +107,9 @@ export function AddSeatsDialog({
               <span className="font-medium">{currentSeats}</span>
             </div>
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">{t('price-per-seat')}</span>
+              <span className="text-muted-foreground">
+                {t('price-per-seat')}
+              </span>
               <span className="font-medium">
                 ${centToDollar(pricePerSeat)}
                 {billingCycle === 'month' ? t('per-month') : t('per-year')}
