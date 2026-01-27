@@ -151,6 +151,7 @@ export default async function TimeTrackerPage({
                   userId={user.id}
                   isPersonal={isPersonal}
                   locale={locale}
+                  workspace={workspace}
                 />
               </Suspense>
 

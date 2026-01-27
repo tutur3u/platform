@@ -2698,6 +2698,10 @@
       "status": {
         "active": "Đang hoạt động",
         "completed": "Đã hoàn thành",
+        "tabs": {
+          "goals": "Mục tiêu",
+          "stats": "Thống kê"
+        },
         "upcoming": "Sắp tới",
         "week_of": "Tuần {current} trên {total}"
       },
@@ -5560,17 +5564,118 @@
       "title": "Nhiệm vụ"
     },
     "time_tracker": {
+      "active": "Hoạt động",
+      "active_goal": "Mục tiêu đang hoạt động",
+      "add_goal": "Thêm mục tiêu",
       "allow_future_sessions": "Cho phép phiên tương lai",
       "allow_future_sessions_description": "Cho phép tạo các phiên theo dõi thời gian với thời gian bắt đầu hoặc kết thúc trong tương lai",
       "break_types": "Loại nghỉ",
       "break_types_description": "Quản lý và tùy chỉnh các loại nghỉ cho không gian làm việc",
+      "categories": "Danh mục",
+      "categories_description": "Quản lý và tùy chỉnh các danh mục theo dõi thời gian cho không gian làm việc của bạn",
+      "categories_management": {
+        "add_category": "Thêm danh mục",
+        "add_short": "Thêm",
+        "cancel": "Hủy",
+        "color": "Màu sắc",
+        "colors": {
+          "blue": "Xanh dương",
+          "cyan": "Xanh lơ",
+          "gray": "Xám",
+          "green": "Xanh lá",
+          "indigo": "Chàm",
+          "orange": "Cam",
+          "pink": "Hồng",
+          "purple": "Tím",
+          "red": "Đỏ",
+          "yellow": "Vàng"
+        },
+        "copy_dialog": {
+          "already_exist": "đã tồn tại",
+          "already_exist_prefix": " Các danh mục đã tồn tại: ",
+          "already_exist_title": "Đã tồn tại",
+          "already_exists_label": "(Đã tồn tại)",
+          "available": "có sẵn",
+          "available_to_copy": "Có sẵn để sao chép",
+          "can_be_copied": "có thể sao chép",
+          "categories_from": "Danh mục từ {name}",
+          "choose_workspace": "Chọn một không gian làm việc để sao chép",
+          "copy_button": "Sao chép danh mục",
+          "copy_no_categories": "Không có danh mục nào được sao chép.",
+          "copy_success_full": "Sao chép thành công {copiedCount} danh mục!",
+          "copy_success_partial": "Đã sao chép {copiedCount} danh mục. {skippedCount} danh mục đã bị bỏ qua (đã tồn tại).",
+          "copying": "Đang sao chép...",
+          "deselect_all": "Bỏ chọn tất cả",
+          "load_categories_error": "Không thể tải danh mục từ không gian làm việc đã chọn",
+          "load_workspaces_error": "Không thể tải danh mục",
+          "loading_categories": "Đang tải danh mục...",
+          "loading_workspaces": "Đang tải không gian làm việc...",
+          "no_categories_found": "Không tìm thấy danh mục nào trong không gian làm việc này",
+          "no_workspaces": "Không có không gian làm việc khác",
+          "personal": "(Cá nhân)",
+          "select_all": "Chọn tất cả có sẵn",
+          "select_error": "Vui lòng chọn một không gian làm việc và ít nhất một danh mục",
+          "select_workspace": "Chọn không gian làm việc",
+          "selected_count": "Đã chọn {count} danh mục để sao chép",
+          "title": "Sao chép danh mục từ không gian làm việc khác"
+        },
+        "copy_from_workspace": "Sao chép từ không gian làm việc",
+        "copy_short": "Sao chép",
+        "create_button": "Tạo danh mục",
+        "create_error": "Không thể tạo danh mục",
+        "create_first": "Tạo danh mục đầu tiên",
+        "create_success": "Tạo danh mục thành công",
+        "create_title": "Tạo danh mục mới",
+        "creating": "Đang tạo...",
+        "delete": "Xóa danh mục",
+        "delete_confirm_description": "Bạn có chắc chắn muốn xóa danh mục \"{name}\"? Hành động này không thể hoàn tác và sẽ xóa danh mục khỏi tất cả các phiên làm việc hiện có.",
+        "delete_confirm_title": "Xóa danh mục",
+        "delete_error": "Không thể xóa danh mục",
+        "delete_success": "Xóa danh mục thành công",
+        "deleting": "Đang xóa...",
+        "description": "Mô tả (tùy chọn)",
+        "description_placeholder": "Nhập mô tả danh mục",
+        "edit": "Chỉnh sửa danh mục",
+        "enter_name_error": "Vui lòng nhập tên danh mục",
+        "name": "Tên",
+        "name_placeholder": "Nhập tên danh mục",
+        "no_categories": "Chưa có danh mục nào được tạo",
+        "no_categories_description": "Tạo danh mục để sắp xếp các phiên theo dõi thời gian của bạn",
+        "title": "Quản lý danh mục",
+        "update_button": "Cập nhật danh mục",
+        "update_error": "Không thể cập nhật danh mục",
+        "update_success": "Cập nhật danh mục thành công",
+        "updating": "Đang cập nhật..."
+      },
+      "create_first_goal": "Tạo mục tiêu đầu tiên của bạn",
+      "create_new_goal": "Tạo mục tiêu mới",
+      "creating": "Đang tạo...",
+      "daily": "Hàng ngày",
+      "daily_goal_min": "Mục tiêu hàng ngày (phút)",
+      "delete_goal": "Xóa mục tiêu",
+      "delete_goal_description": "Bạn có chắc chắn muốn xóa mục tiêu này? Hành động này không thể hoàn tác.",
+      "deleting": "Đang xóa...",
+      "edit_goal": "Chỉnh sửa mục tiêu",
       "general": "Chung",
       "general_description": "Cấu hình các cài đặt chung cho trình theo dõi thời gian",
+      "general_goal": "Mục tiêu chung",
+      "goal_type": "Loại mục tiêu",
+      "goals": "Mục tiêu",
+      "goals_description": "Quản lý các mục tiêu theo dõi thời gian hàng ngày và hàng tuần của bạn",
+      "inactive": "Không hoạt động",
+      "no_goals_description": "Thiết lập mục tiêu theo dõi thời gian để giám sát năng suất của bạn",
+      "no_goals_title": "Chưa có mục tiêu nào được thiết lập",
       "save": "Lưu thay đổi",
       "saving": "Đang lưu...",
+      "select_goal_type": "Chọn loại mục tiêu",
+      "target_per_day": "Mục tiêu: {time} mỗi ngày",
+      "target_per_week": "Mục tiêu: {time} mỗi tuần",
       "title": "Theo dõi thời gian",
       "update_error": "Cập nhật cài đặt trình theo dõi thời gian thất bại",
-      "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công"
+      "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công",
+      "updating": "Đang cập nhật...",
+      "weekly": "Hàng tuần",
+      "weekly_goal_min": "Mục tiêu hàng tuần (phút, tùy chọn)"
     },
     "user": {
       "profile": "Hồ sơ",
@@ -6375,6 +6480,22 @@
     "date_tomorrow": "Ngày Mai",
     "date_yesterday": "Hôm Qua",
     "failed_to_update_task": "Cập nhật nhiệm vụ thất bại",
+    "goals": {
+      "categoryGoalLabel": "Mục tiêu {category}",
+      "create_error": "Không thể tạo mục tiêu",
+      "create_success": "Đã tạo mục tiêu thành công",
+      "dailyProgress": "Tiến độ hằng ngày",
+      "defaultCategory": "Chung",
+      "delete_error": "Không thể xóa mục tiêu",
+      "delete_success": "Đã xóa mục tiêu thành công",
+      "emptyState": {
+        "subtitle": "Hãy đặt mục tiêu trong cài đặt Theo dõi thời gian.",
+        "title": "Chưa có mục tiêu nào đang hoạt động."
+      },
+      "update_error": "Không thể cập nhật mục tiêu",
+      "update_success": "Đã cập nhật mục tiêu thành công",
+      "weeklyProgress": "Tiến độ hằng tuần"
+    },
     "history": {
       "activity": "Lịch sử",
       "assignee_added": "Đã giao cho người dùng",
@@ -6878,6 +6999,14 @@
       "free_form_entry": "Nhập tự do",
       "getting_started": "Bắt đầu",
       "go_to_tasks_tab": "Đi đến tab Nhiệm vụ",
+      "goals": {
+        "create_error": "Không thể tạo mục tiêu",
+        "create_success": "Đã tạo mục tiêu thành công",
+        "delete_error": "Không thể xóa mục tiêu",
+        "delete_success": "Đã xóa mục tiêu thành công",
+        "update_error": "Không thể cập nhật mục tiêu",
+        "update_success": "Đã cập nhật mục tiêu thành công"
+      },
       "healthy_snack": "Ăn nhẹ lành mạnh",
       "hydrate": "Uống nước",
       "in_the_flow": "Đang ở trạng thái",
@@ -7003,6 +7132,22 @@
       "what_are_you_working_on": "Bạn đang làm gì?",
       "work_duration": "Thời gian làm việc"
     },
+    "goals": {
+      "categoryGoalLabel": "Mục tiêu {category}",
+      "create_error": "Không thể tạo mục tiêu",
+      "create_success": "Đã tạo mục tiêu thành công",
+      "dailyProgress": "Tiến độ theo ngày",
+      "defaultCategory": "Tổng quan",
+      "delete_error": "Không thể xóa mục tiêu",
+      "delete_success": "Đã xóa mục tiêu thành công",
+      "emptyState": {
+        "subtitle": "Đặt mục tiêu trong cài đặt Trình theo dõi thời gian.",
+        "title": "Không có mục tiêu hoạt động nào được đặt ra."
+      },
+      "update_error": "Không thể cập nhật mục tiêu",
+      "update_success": "Đã cập nhật mục tiêu thành công",
+      "weeklyProgress": "Tiến độ theo tuần"
+    },
     "heatmap": {
       "activeDays": "{count, plural, =0 {Không có ngày hoạt động} =1 {1 ngày hoạt động} other {# ngày hoạt động}}",
       "aria": {
@@ -7111,7 +7256,9 @@
     "heatmap_settings": {
       "activity_heatmap_display": "Hiển Thị Bản Đồ Nhiệt Hoạt Động",
       "heatmap_view_style": "Kiểu Hiển Thị Bản Đồ Nhiệt",
+      "heatmap_view_style_description": "Tùy chỉnh cách bản đồ nhiệt hoạt động của bạn được hiển thị trong trình theo dõi thời gian.",
       "show_onboarding_tips": "Hiển thị mẹo hướng dẫn",
+      "show_onboarding_tips_description": "Hiển thị các mẹo và hướng dẫn hữu ích khi sử dụng trình theo dõi thời gian.",
       "time_reference": "Tham Chiếu Thời Gian",
       "time_reference_modes": {
         "absolute": "Tuyệt Đối (\"15 Tháng 1, 2024\")",
@@ -7809,6 +7956,10 @@
         "statusActive": "ngày liên tiếp",
         "statusEmpty": "Bắt đầu ngay hôm nay!",
         "title": "Chuỗi ngày"
+      },
+      "tabs": {
+        "goals": "Mục tiêu",
+        "stats": "Thống kê"
       },
       "title": "Tiến độ của bạn",
       "today": {

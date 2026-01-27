@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -19,6 +20,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
+import { HeatmapDisplaySettings } from './heatmap-display-settings';
 
 interface Props {
   wsId: string;
@@ -138,6 +140,10 @@ export function TimeTrackerGeneralSettings({ wsId }: Props) {
           </Button>
         </form>
       </Form>
+
+      <Separator />
+
+      <HeatmapDisplaySettings />
     </div>
   );
 }
