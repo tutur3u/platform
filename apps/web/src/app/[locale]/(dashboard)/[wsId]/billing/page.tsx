@@ -52,7 +52,9 @@ const fetchSubscription = async (wsId: string) => {
     )
     .eq('ws_id', wsId)
     .eq('status', 'active')
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (error || !dbSub) {
     console.error('Error fetching subscription:', error);
