@@ -123,9 +123,8 @@ const ensureSubscription = async (wsId: string, userId: string) => {
       };
     }
 
-    // Poll database until webhook processes (max 5 seconds)
-    // This replaces the previous 3-second setTimeout with a more reliable polling mechanism
-    const newSubscription = await waitForSubscriptionSync(wsId, 10, 500);
+    // Poll database until webhook processes (max 30 seconds)
+    const newSubscription = await waitForSubscriptionSync(wsId, 10, 3000);
 
     if (!newSubscription) {
       return {
