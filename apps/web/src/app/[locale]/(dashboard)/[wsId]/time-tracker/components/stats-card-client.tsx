@@ -11,6 +11,7 @@ import {
   Trophy,
   Zap,
 } from '@tuturuuu/icons';
+import type { Workspace } from '@tuturuuu/types';
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -27,8 +29,6 @@ import { useTranslations } from 'next-intl';
 import { getCategoryColor } from '@/components/settings/time-tracker/time-tracker-utils';
 import { formatDuration } from '@/lib/time-format';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
-import type { Workspace } from '@tuturuuu/types';
-import { cn } from '@tuturuuu/utils/format';
 import type { TimeTrackingGoal } from '../types';
 
 dayjs.extend(utc);

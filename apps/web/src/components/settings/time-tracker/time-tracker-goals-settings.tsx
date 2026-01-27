@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
 } from '@tuturuuu/icons';
+import type { TimeTrackingGoalWithCategory } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +50,6 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
-import type { TimeTrackingGoalWithCategory } from '@tuturuuu/types';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
