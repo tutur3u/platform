@@ -18,6 +18,7 @@ CREATE OR REPLACE FUNCTION public.get_invoice_totals_by_date_range(
 )
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+ SET search_path = public
 AS $function$
 DECLARE
   _start_date TIMESTAMPTZ;
@@ -232,6 +233,7 @@ CREATE OR REPLACE FUNCTION public.get_daily_invoice_totals(
 )
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+ SET search_path = public
 AS $function$
 DECLARE
   _start_date DATE;
@@ -267,8 +269,8 @@ BEGIN
       SUM(fi.price)::NUMERIC AS total_amount,
       COUNT(*)::BIGINT AS invoice_count
     FROM finance_invoices fi
-    INNER JOIN wallet_transactions wt ON fi.transaction_id = wt.id
-    INNER JOIN workspace_wallets ww ON wt.wallet_id = ww.id
+    LEFT JOIN wallet_transactions wt ON fi.transaction_id = wt.id
+    LEFT JOIN workspace_wallets ww ON wt.wallet_id = ww.id
     LEFT JOIN workspace_user_linked_users wulu ON wulu.virtual_user_id = fi.creator_id
     WHERE fi.ws_id = _ws_id
       AND fi.created_at::DATE >= _start_date
@@ -310,6 +312,7 @@ CREATE OR REPLACE FUNCTION public.get_weekly_invoice_totals(
 )
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+ SET search_path = public
 AS $function$
 DECLARE
   _start_date DATE;
@@ -349,8 +352,8 @@ BEGIN
       SUM(fi.price)::NUMERIC AS total_amount,
       COUNT(*)::BIGINT AS invoice_count
     FROM finance_invoices fi
-    INNER JOIN wallet_transactions wt ON fi.transaction_id = wt.id
-    INNER JOIN workspace_wallets ww ON wt.wallet_id = ww.id
+    LEFT JOIN wallet_transactions wt ON fi.transaction_id = wt.id
+    LEFT JOIN workspace_wallets ww ON wt.wallet_id = ww.id
     LEFT JOIN workspace_user_linked_users wulu ON wulu.virtual_user_id = fi.creator_id
     WHERE fi.ws_id = _ws_id
       AND fi.created_at >= _start_date
@@ -393,6 +396,7 @@ CREATE OR REPLACE FUNCTION public.get_weekly_invoice_totals(
 )
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+ SET search_path = public
 AS $function$
 DECLARE
   _start_date DATE;
@@ -432,8 +436,8 @@ BEGIN
       SUM(fi.price)::NUMERIC AS total_amount,
       COUNT(*)::BIGINT AS invoice_count
     FROM finance_invoices fi
-    INNER JOIN wallet_transactions wt ON fi.transaction_id = wt.id
-    INNER JOIN workspace_wallets ww ON wt.wallet_id = ww.id
+    LEFT JOIN wallet_transactions wt ON fi.transaction_id = wt.id
+    LEFT JOIN workspace_wallets ww ON wt.wallet_id = ww.id
     LEFT JOIN workspace_user_linked_users wulu ON wulu.virtual_user_id = fi.creator_id
     WHERE fi.ws_id = _ws_id
       AND fi.created_at >= _start_date
@@ -475,6 +479,7 @@ CREATE OR REPLACE FUNCTION public.get_monthly_invoice_totals(
 )
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+  SET search_path = public
 AS $function$
 DECLARE
   _start_date DATE;
@@ -514,8 +519,8 @@ BEGIN
       SUM(fi.price)::NUMERIC AS total_amount,
       COUNT(*)::BIGINT AS invoice_count
     FROM finance_invoices fi
-    INNER JOIN wallet_transactions wt ON fi.transaction_id = wt.id
-    INNER JOIN workspace_wallets ww ON wt.wallet_id = ww.id
+    LEFT JOIN wallet_transactions wt ON fi.transaction_id = wt.id
+    LEFT JOIN workspace_wallets ww ON wt.wallet_id = ww.id
     LEFT JOIN workspace_user_linked_users wulu ON wulu.virtual_user_id = fi.creator_id
     WHERE fi.ws_id = _ws_id
       AND fi.created_at >= _start_date
