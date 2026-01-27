@@ -312,11 +312,6 @@ export async function WorkspaceNavigationLinks({
           icon: <ClipboardClock className="h-5 w-5" />,
         },
         {
-          title: t('sidebar_tabs.categories'),
-          href: `/${personalOrWsId}/time-tracker/categories`,
-          icon: <Tags className="h-5 w-5" />,
-        },
-        {
           title: t('sidebar_tabs.goals'),
           href: `/${personalOrWsId}/time-tracker/goals`,
           icon: <Goal className="h-5 w-5" />,
@@ -349,7 +344,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker`,
         `/${personalOrWsId}/time-tracker/timer`,
         `/${personalOrWsId}/time-tracker/history`,
-        `/${personalOrWsId}/time-tracker/categories`,
         `/${personalOrWsId}/time-tracker/goals`,
         `/${personalOrWsId}/time-tracker/management`,
         `/${personalOrWsId}/time-tracker/requests`,

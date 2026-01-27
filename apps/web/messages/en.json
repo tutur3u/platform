@@ -5523,7 +5523,9 @@
       "saving": "Saving...",
       "title": "Time Tracker",
       "update_error": "Failed to update time tracker settings",
-      "update_success": "Time tracker settings updated successfully"
+      "update_success": "Time tracker settings updated successfully",
+      "categories": "Categories",
+      "categories_description": "Manage and customize time tracking categories for your workspace"
     },
     "user": {
       "profile": "Profile",

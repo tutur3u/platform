@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -20,7 +21,6 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 interface Workspace {
@@ -53,7 +53,7 @@ export function CopyFromWorkspaceDialog({
   open,
   onOpenChange,
 }: CopyFromWorkspaceDialogProps) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
@@ -218,7 +218,9 @@ export function CopyFromWorkspaceDialog({
 
       toast.success(message);
       onOpenChange(false);
-      router.refresh();
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-categories', wsId],
+      });
     } catch (error) {
       console.error('Error copying categories:', error);
       toast.error(

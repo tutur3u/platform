@@ -12,6 +12,7 @@ import {
   Coffee,
   CreditCard,
   Laptop,
+  LayoutGrid,
   Paintbrush,
   Palette,
   PanelLeft,
@@ -82,6 +83,7 @@ import InvoiceSettings from './finance/invoice-settings';
 import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
+import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
@@ -394,6 +396,13 @@ export function SettingsDialog({
                 icon: Clock,
                 description: t('settings.time_tracker.general_description'),
                 keywords: ['Time Tracker', 'General', 'Future'],
+              },
+              {
+                name: 'time_tracker_categories',
+                label: t('settings.time_tracker.categories'),
+                icon: LayoutGrid,
+                description: t('settings.time_tracker.categories_description'),
+                keywords: ['Time Tracker', 'Categories'],
               },
               {
                 name: 'break_types',
@@ -800,6 +809,10 @@ export function SettingsDialog({
 
                 {activeTab === 'break_types' && wsId && (
                   <WorkspaceBreakTypesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_categories' && wsId && (
+                  <TimeTrackerCategoriesSettings wsId={wsId} />
                 )}
 
                 {activeTab === 'time_tracker_general' && wsId && (

@@ -5561,7 +5561,9 @@
       "saving": "Đang lưu...",
       "title": "Theo dõi thời gian",
       "update_error": "Cập nhật cài đặt trình theo dõi thời gian thất bại",
-      "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công"
+      "update_success": "Cập nhật cài đặt trình theo dõi thời gian thành công",
+      "categories": "Danh mục",
+      "categories_description": "Quản lý và tùy chỉnh các danh mục theo dõi thời gian cho không gian làm việc của bạn"
     },
     "user": {
       "profile": "Hồ sơ",

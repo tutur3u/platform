@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Copy,
   Edit,
@@ -20,7 +21,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -47,13 +48,12 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
+import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 import { CopyFromWorkspaceDialog } from './copy-from-workspace-dialog';
 
-interface CategoryManagerProps {
+interface TimeTrackerCategoriesSettingsProps {
   wsId: string;
-  categories: TimeTrackingCategory[] | null;
 }
 
 const CATEGORY_COLORS = [
@@ -69,8 +69,13 @@ const CATEGORY_COLORS = [
   { value: 'GRAY', label: 'Gray', class: 'bg-gray-500' },
 ];
 
-export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
-  const router = useRouter();
+export function TimeTrackerCategoriesSettings({
+  wsId,
+}: TimeTrackerCategoriesSettingsProps) {
+  const queryClient = useQueryClient();
+  const { data: categories, isLoading: isLoadingCategories } =
+    useWorkspaceCategories({ wsId });
+
   const categoryNameId = useId();
   const categoryDescriptionId = useId();
   const editCategoryNameId = useId();
@@ -88,8 +93,6 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('BLUE');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const resetForm = () => {
     setName('');
@@ -110,46 +113,40 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
     setIsEditDialogOpen(true);
   };
 
-  const createCategory = async () => {
-    if (!name.trim()) {
-      toast.error('Please enter a category name');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      await fetch(`/api/v1/workspaces/${wsId}/time-tracking/categories`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          color,
-        }),
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/categories`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim() || null,
+            color,
+          }),
+        }
+      );
+      if (!response.ok) throw new Error('Failed to create category');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-categories', wsId],
       });
-
       setIsAddDialogOpen(false);
       resetForm();
-      router.refresh();
       toast.success('Category created successfully');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating category:', error);
       toast.error('Failed to create category');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
-  const updateCategory = async () => {
-    if (!categoryToEdit || !name.trim()) {
-      toast.error('Please enter a category name');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      await fetch(
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!categoryToEdit) return;
+      const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/categories/${categoryToEdit.id}`,
         {
           method: 'PATCH',
@@ -160,83 +157,94 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
           }),
         }
       );
-
+      if (!response.ok) throw new Error('Failed to update category');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-categories', wsId],
+      });
       setIsEditDialogOpen(false);
       setCategoryToEdit(null);
       resetForm();
-      router.refresh();
       toast.success('Category updated successfully');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error updating category:', error);
       toast.error('Failed to update category');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
-  const deleteCategory = async () => {
-    if (!categoryToDelete) return;
-
-    setIsDeleting(true);
-
-    try {
-      await fetch(
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!categoryToDelete) return;
+      const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/categories/${categoryToDelete.id}`,
         {
           method: 'DELETE',
         }
       );
-
+      if (!response.ok) throw new Error('Failed to delete category');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-categories', wsId],
+      });
       setCategoryToDelete(null);
-      router.refresh();
       toast.success('Category deleted successfully');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete category');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+    },
+  });
 
   const getCategoryColor = (color: string) => {
     const colorConfig = CATEGORY_COLORS.find((c) => c.value === color);
     return colorConfig?.class || 'bg-blue-500';
   };
 
+  if (isLoadingCategories) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <CardTitle className="flex items-center gap-2">
-              <LayoutGrid className="h-5 w-5 shrink-0" />
-              <span>Category Management</span>
-            </CardTitle>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsCopyDialogOpen(true)}
-                className="shrink-0"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Copy from Workspace</span>
-                <span className="sm:hidden">Copy</span>
-              </Button>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={openAddDialog} className="shrink-0">
-                    <Plus className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Add Category</span>
-                    <span className="sm:hidden">Add</span>
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-            </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="h-5 w-5 shrink-0" />
+            <h3 className="font-medium text-lg">Category Management</h3>
           </div>
-        </CardHeader>
-        <CardContent>
-          {categories?.length === 0 ? (
-            <div className="py-12 text-center">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsCopyDialogOpen(true)}
+              className="shrink-0"
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Copy from Workspace</span>
+              <span className="sm:hidden">Copy</span>
+            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openAddDialog} className="shrink-0">
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Add Category</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+          </div>
+        </div>
+
+        {categories?.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
               <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-lg text-muted-foreground">
                 No categories created yet
@@ -252,67 +260,67 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
                 <Plus className="mr-2 h-4 w-4" />
                 Create First Category
               </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {categories?.map((category) => (
-                <Card key={category.id} className="group relative">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex min-w-0 flex-1 items-start gap-3">
-                        <div
-                          className={cn(
-                            'h-6 w-6 shrink-0 rounded-full',
-                            getCategoryColor(category.color || 'BLUE')
-                          )}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-medium">
-                            {category.name}
-                          </h3>
-                          {category.description && (
-                            <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
-                              {category.description}
-                            </p>
-                          )}
-                        </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {categories?.map((category) => (
+              <Card key={category.id} className="group relative">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div
+                        className={cn(
+                          'h-6 w-6 shrink-0 rounded-full',
+                          getCategoryColor(category.color || 'BLUE')
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate font-medium">
+                          {category.name}
+                        </h3>
+                        {category.description && (
+                          <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
+                            {category.description}
+                          </p>
+                        )}
                       </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openEditDialog(category)}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Category
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setCategoryToDelete(category)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Category
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(category)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Category
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setCategoryToDelete(category)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Category
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Add Category Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -380,11 +388,11 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
                 Cancel
               </Button>
               <Button
-                onClick={createCategory}
-                disabled={isLoading || !name.trim()}
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending || !name.trim()}
                 className="flex-1"
               >
-                {isLoading ? 'Creating...' : 'Create Category'}
+                {createMutation.isPending ? 'Creating...' : 'Create Category'}
               </Button>
             </div>
           </div>
@@ -457,11 +465,11 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
                 Cancel
               </Button>
               <Button
-                onClick={updateCategory}
-                disabled={isLoading || !name.trim()}
+                onClick={() => updateMutation.mutate()}
+                disabled={updateMutation.isPending || !name.trim()}
                 className="flex-1"
               >
-                {isLoading ? 'Updating...' : 'Update Category'}
+                {updateMutation.isPending ? 'Updating...' : 'Update Category'}
               </Button>
             </div>
           </div>
@@ -483,13 +491,15 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={deleteCategory}
-              disabled={isDeleting}
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : 'Delete Category'}
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete Category'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
