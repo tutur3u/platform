@@ -496,6 +496,48 @@ export const useUserAttendance = (
   });
 };
 
+// Get multiple groups' attendance combined (for multi-group selection)
+export const useMultiGroupUserAttendance = (
+  groupIds: string[],
+  userId: string,
+  month: string
+) => {
+  return useQuery({
+    queryKey: ['multi-group-user-attendance', groupIds, userId, month],
+    queryFn: async () => {
+      if (groupIds.length === 0) return [];
+
+      const supabase = createClient();
+
+      // Parse the month to get start and end dates
+      const startOfMonth = new Date(`${month}-01`);
+      const nextMonth = new Date(startOfMonth);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      const { data, error } = await supabase
+        .from('user_group_attendance')
+        .select('date, status, group_id')
+        .in('group_id', groupIds)
+        .eq('user_id', userId)
+        .gte('date', startOfMonth.toISOString().split('T')[0])
+        .lt('date', nextMonth.toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('❌ Multi-group user attendance fetch error:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: groupIds.length > 0 && !!userId && !!month,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
 // Get workspace config for attendance-based invoice calculation
 // Returns true if attendance-based calculation should be used (default), false if all sessions should be included
 export const useInvoiceAttendanceConfig = (wsId: string) => {
@@ -644,6 +686,36 @@ export const useUserGroupProducts = (groupId: string) => {
   });
 };
 
+// Get multiple groups' linked products combined (for multi-group selection)
+export const useMultiGroupProducts = (groupIds: string[]) => {
+  return useQuery({
+    queryKey: ['multi-group-products', groupIds],
+    queryFn: async () => {
+      if (groupIds.length === 0) return [];
+
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('user_group_linked_products')
+        .select(
+          'group_id, workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
+        )
+        .in('group_id', groupIds);
+
+      if (error) {
+        console.error('❌ Multi-group products fetch error:', error);
+        throw error;
+      }
+      return (data || []) as (UserGroupProducts & { group_id?: string })[];
+    },
+    enabled: groupIds.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
 // Get User's Latest Subscription Invoice
 export const useUserLatestSubscriptionInvoice = (
   userId: string,
@@ -658,7 +730,10 @@ export const useUserLatestSubscriptionInvoice = (
         .select('finance_invoices!inner(valid_until, created_at)')
         .eq('user_group_id', groupId)
         .eq('finance_invoices.customer_id', userId)
-        .order('finance_invoices.created_at', { ascending: false })
+        .order('created_at', {
+          referencedTable: 'finance_invoices',
+          ascending: false,
+        })
         .limit(1);
 
       if (error) {
@@ -681,6 +756,55 @@ export const useUserLatestSubscriptionInvoice = (
       return invoices;
     },
     enabled: !!userId && !!groupId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
+// Get User's Latest Subscription Invoice for multiple groups
+export const useMultiGroupLatestSubscriptionInvoice = (
+  userId: string,
+  groupIds: string[]
+) => {
+  return useQuery({
+    queryKey: ['multi-group-latest-subscription-invoice', userId, groupIds],
+    queryFn: async () => {
+      if (groupIds.length === 0) return [];
+
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('finance_invoice_user_groups')
+        .select(
+          'user_group_id, finance_invoices!inner(valid_until, created_at)'
+        )
+        .in('user_group_id', groupIds)
+        .eq('finance_invoices.customer_id', userId)
+        .order('created_at', {
+          referencedTable: 'finance_invoices',
+          ascending: false,
+        });
+
+      if (error) {
+        console.error(
+          '❌ Multi-group latest subscription invoice fetch error:',
+          error
+        );
+        throw error;
+      }
+
+      const invoices = (data ?? []).map(
+        (row: FinanceInvoiceUserGroupRow & { user_group_id?: string }) => ({
+          group_id: row.user_group_id,
+          valid_until: row.finance_invoices?.valid_until,
+          created_at: row.finance_invoices?.created_at,
+        })
+      );
+
+      return invoices;
+    },
+    enabled: !!userId && groupIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,

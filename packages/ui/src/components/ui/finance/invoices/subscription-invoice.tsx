@@ -43,11 +43,11 @@ import {
   useCategories,
   useInvoiceAttendanceConfig,
   useInvoiceBlockedGroups,
+  useMultiGroupLatestSubscriptionInvoice,
+  useMultiGroupProducts,
+  useMultiGroupUserAttendance,
   useProducts,
-  useUserAttendance,
-  useUserGroupProducts,
   useUserGroups,
-  useUserLatestSubscriptionInvoice,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
   useUsersWithSelectableGroups,
@@ -231,6 +231,25 @@ const getEffectiveDays = (
   return totalSessions;
 };
 
+// Helper to get aggregated total sessions from multiple groups for a month
+const getTotalSessionsForGroups = (
+  userGroups: any[],
+  groupIds: string[],
+  selectedMonth: string
+): number => {
+  let total = 0;
+  for (const groupId of groupIds) {
+    const group = userGroups.find(
+      (g) => g.workspace_user_groups?.id === groupId
+    );
+    if (group) {
+      const sessionsArray = group.workspace_user_groups?.sessions || [];
+      total += getSessionsForMonth(sessionsArray, selectedMonth);
+    }
+  }
+  return total;
+};
+
 export function SubscriptionInvoice({
   wsId,
   prefillAmount,
@@ -248,7 +267,7 @@ export function SubscriptionInvoice({
     defaultValue: '',
     shallow: false,
   });
-  const [selectedGroupId, setSelectedGroupId] = useQueryState('group_id', {
+  const [legacyGroupId, setLegacyGroupId] = useQueryState('group_id', {
     defaultValue: '',
     shallow: false,
   });
@@ -263,43 +282,45 @@ export function SubscriptionInvoice({
     shallow: false,
   });
 
+  const [activeGroupId, setActiveGroupId] = useState<string>('');
+
   // Helper to update URL params (for backward compatibility with existing code)
   const updateSearchParam = useCallback(
     (key: string, value: string) => {
       if (key === 'user_id') {
         setSelectedUserId(value || null);
-      } else if (key === 'group_id') {
-        setSelectedGroupId(value || null);
       } else if (key === 'month') {
         setSelectedMonth(value || null);
       }
     },
-    [setSelectedUserId, setSelectedGroupId, setSelectedMonth]
+    [setSelectedUserId, setSelectedMonth]
   );
+
+  useEffect(() => {
+    if (!legacyGroupId) return;
+
+    setSelectedGroupIds((prev) => {
+      if (prev.includes(legacyGroupId)) return prev;
+      return [...prev, legacyGroupId];
+    });
+    setActiveGroupId(legacyGroupId);
+    setLegacyGroupId(null);
+  }, [legacyGroupId, setSelectedGroupIds, setLegacyGroupId]);
 
   useEffect(() => {
     if (selectedGroupIds.length === 0) return;
 
-    if (selectedGroupId && selectedGroupIds.includes(selectedGroupId)) {
+    if (activeGroupId && selectedGroupIds.includes(activeGroupId)) {
       return;
     }
 
-    updateSearchParam('group_id', selectedGroupIds[0] || '');
-  }, [selectedGroupIds, selectedGroupId, updateSearchParam]);
-
-  useEffect(() => {
-    if (!selectedGroupId) return;
-
-    setSelectedGroupIds((prev) => {
-      if (prev.includes(selectedGroupId)) return prev;
-      return [...prev, selectedGroupId];
-    });
-  }, [selectedGroupId, setSelectedGroupIds]);
+    setActiveGroupId(selectedGroupIds[0] || '');
+  }, [selectedGroupIds, activeGroupId]);
 
   const selectedGroupIdsForCreate = useMemo(() => {
     if (selectedGroupIds.length > 0) return selectedGroupIds;
-    return selectedGroupId ? [selectedGroupId] : [];
-  }, [selectedGroupIds, selectedGroupId]);
+    return activeGroupId ? [activeGroupId] : [];
+  }, [selectedGroupIds, activeGroupId]);
 
   // Data queries
   const {
@@ -329,8 +350,8 @@ export function SubscriptionInvoice({
         blockedGroupIds.includes(groupId)
       );
     }
-    return !!selectedGroupId && blockedGroupIds.includes(selectedGroupId);
-  }, [selectedGroupIds, selectedGroupId, blockedGroupIds]);
+    return !!activeGroupId && blockedGroupIds.includes(activeGroupId);
+  }, [selectedGroupIds, activeGroupId, blockedGroupIds]);
 
   // State management
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
@@ -375,22 +396,38 @@ export function SubscriptionInvoice({
     data: userAttendance = [],
     isLoading: userAttendanceLoading,
     error: userAttendanceError,
-  } = useUserAttendance(selectedGroupId, selectedUserId, selectedMonth);
+  } = useMultiGroupUserAttendance(
+    selectedGroupIds,
+    selectedUserId,
+    selectedMonth
+  );
   const { data: groupProducts = [], isLoading: groupProductsLoading } =
-    useUserGroupProducts(selectedGroupId);
+    useMultiGroupProducts(selectedGroupIds);
 
   // Fetch workspace config for attendance-based calculation
   const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
 
-  // Latest subscription invoice for paid state
-  const { data: latestSubscriptionInvoice = [] } =
-    useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
+  // Latest subscription invoice for paid state (check across all selected groups)
+  const { data: latestSubscriptionInvoices = [] } =
+    useMultiGroupLatestSubscriptionInvoice(selectedUserId, selectedGroupIds);
 
   const latestValidUntil: Date | null = useMemo(() => {
-    const raw = latestSubscriptionInvoice[0]?.valid_until;
-    const d = raw ? new Date(raw) : null;
-    return d && !Number.isNaN(d.getTime()) ? d : null;
-  }, [latestSubscriptionInvoice]);
+    if (latestSubscriptionInvoices.length === 0) return null;
+
+    // Find the most recent valid_until date across all selected groups
+    const validDates = latestSubscriptionInvoices
+      .map((invoice) =>
+        invoice.valid_until ? new Date(invoice.valid_until) : null
+      )
+      .filter((d): d is Date => d !== null && !Number.isNaN(d.getTime()));
+
+    if (validDates.length === 0) return null;
+
+    // Return the latest date
+    return validDates.reduce((latest, current) =>
+      current > latest ? current : latest
+    );
+  }, [latestSubscriptionInvoices]);
 
   const isSelectedMonthPaid = useMemo(() => {
     if (!latestValidUntil || !selectedMonth) return false;
@@ -445,24 +482,29 @@ export function SubscriptionInvoice({
    */
 
   useEffect(() => {
-    if (!selectedGroupId || !groupProducts || groupProducts.length === 0) {
+    if (
+      selectedGroupIds.length === 0 ||
+      !groupProducts ||
+      groupProducts.length === 0
+    ) {
       return;
     }
 
-    const isGroupChanged = previousGroupIdRef.current !== selectedGroupId;
-    previousGroupIdRef.current = selectedGroupId;
+    const currentGroupIdsKey = selectedGroupIds.sort().join(',');
+    const isGroupChanged = previousGroupIdRef.current !== currentGroupIdsKey;
+    previousGroupIdRef.current = currentGroupIdsKey;
 
     if (!isGroupChanged) return;
 
     // Reset one-time fallback toast when switching groups
     fallbackToastShownRef.current = false;
 
-    // Get total sessions for the selected month
-    const selectedGroup = userGroups.find(
-      (group) => group.workspace_user_groups?.id === selectedGroupId
+    // Get total sessions for the selected month across all groups
+    const totalSessions = getTotalSessionsForGroups(
+      userGroups,
+      selectedGroupIds,
+      selectedMonth
     );
-    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
-    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
 
     // Use prefillAmount if provided AND not yet used, otherwise calculate based on config
     const shouldUsePrefill =
@@ -495,7 +537,7 @@ export function SubscriptionInvoice({
       fallbackToastShownRef.current = true;
     }
   }, [
-    selectedGroupId,
+    selectedGroupIds,
     selectedMonth,
     prefillAmount,
     userAttendance,
@@ -508,7 +550,11 @@ export function SubscriptionInvoice({
 
   // Auto-add group products based on attendance when group is selected
   useEffect(() => {
-    if (!selectedGroupId || !groupProducts || groupProducts.length === 0) {
+    if (
+      selectedGroupIds.length === 0 ||
+      !groupProducts ||
+      groupProducts.length === 0
+    ) {
       return;
     }
 
@@ -517,12 +563,12 @@ export function SubscriptionInvoice({
       return;
     }
 
-    // Get total sessions for the selected month
-    const selectedGroup = userGroups.find(
-      (group) => group.workspace_user_groups?.id === selectedGroupId
+    // Get total sessions for the selected month across all groups
+    const totalSessions = getTotalSessionsForGroups(
+      userGroups,
+      selectedGroupIds,
+      selectedMonth
     );
-    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
-    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
 
     // Use prefillAmount if provided AND already used (for updates), otherwise calculate based on config
     const shouldUsePrefill =
@@ -594,7 +640,7 @@ export function SubscriptionInvoice({
       fallbackToastShownRef.current = true;
     }
   }, [
-    selectedGroupId,
+    selectedGroupIds,
     selectedMonth,
     userAttendance?.length,
     prefillAmount,
@@ -766,7 +812,7 @@ export function SubscriptionInvoice({
   // Calculate subscription products based on attendance
   useEffect(() => {
     if (
-      !selectedGroupId ||
+      selectedGroupIds.length === 0 ||
       !groupProducts ||
       groupProducts.length === 0 ||
       !userAttendance
@@ -776,11 +822,11 @@ export function SubscriptionInvoice({
       return;
     }
 
-    const selectedGroup = userGroups.find(
-      (group) => group.workspace_user_groups?.id === selectedGroupId
+    const totalSessions = getTotalSessionsForGroups(
+      userGroups,
+      selectedGroupIds,
+      selectedMonth
     );
-    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
-    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
     const attendanceDays = getEffectiveDays(
       userAttendance,
       totalSessions,
@@ -796,7 +842,7 @@ export function SubscriptionInvoice({
 
     setSubscriptionProducts(calculatedProducts);
   }, [
-    selectedGroupId,
+    selectedGroupIds,
     selectedMonth,
     userAttendance,
     groupProducts,
@@ -832,81 +878,91 @@ export function SubscriptionInvoice({
     // Reset prefill tracking when user manually changes
     initialPrefillUsedRef.current = false;
 
-    // Clear group_id and month using nuqs setters
+    // Clear group_ids and month using nuqs setters
     // The month will be auto-set when a new group is selected
-    setSelectedGroupId(null);
     setSelectedGroupIds(null);
     setSelectedMonth(null);
-  }, [
-    selectedUserId,
-    setSelectedGroupId,
-    setSelectedGroupIds,
-    setSelectedMonth,
-  ]);
+  }, [selectedUserId, setSelectedGroupIds, setSelectedMonth]);
 
   // Auto-select the first group when userGroups are loaded
   useEffect(() => {
     if (
       userGroups.length > 0 &&
-      !selectedGroupId &&
       selectedGroupIds.length === 0 &&
       !userGroupsLoading &&
       selectedUserId
     ) {
       const firstGroup = userGroups[0];
       if (firstGroup?.workspace_user_groups?.id) {
-        updateSearchParam('group_id', firstGroup.workspace_user_groups.id);
+        setSelectedGroupIds([firstGroup.workspace_user_groups.id]);
+        setActiveGroupId(firstGroup.workspace_user_groups.id);
       }
     }
   }, [
     userGroups,
-    selectedGroupId,
     selectedGroupIds.length,
     userGroupsLoading,
     selectedUserId,
-    updateSearchParam,
+    setSelectedGroupIds,
   ]);
 
-  // Validate and reset selectedMonth when group changes
+  // Validate and reset selectedMonth when groups change
   useEffect(() => {
-    if (!selectedGroupId || !userGroups.length) return;
+    if (selectedGroupIds.length === 0 || !userGroups.length) return;
 
-    const selectedGroup = userGroups.find(
-      (g) => g.workspace_user_groups?.id === selectedGroupId
+    // Get union of all selected groups' date ranges
+    const selectedGroupsData = userGroups.filter((g) =>
+      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
     );
-    const group = selectedGroup?.workspace_user_groups;
 
-    if (!group) return;
+    if (selectedGroupsData.length === 0) return;
 
-    const startDate = group.starting_date
-      ? new Date(group.starting_date)
-      : new Date();
-    const endDate = group.ending_date
-      ? new Date(group.ending_date)
-      : new Date();
+    // Find the earliest start date and latest end date across all selected groups
+    let earliestStart: Date | null = null;
+    let latestEnd: Date | null = null;
+
+    for (const selectedGroupItem of selectedGroupsData) {
+      const group = selectedGroupItem.workspace_user_groups;
+      if (!group) continue;
+
+      const startDate = group.starting_date
+        ? new Date(group.starting_date)
+        : null;
+      const endDate = group.ending_date ? new Date(group.ending_date) : null;
+
+      if (startDate && (!earliestStart || startDate < earliestStart)) {
+        earliestStart = startDate;
+      }
+      if (endDate && (!latestEnd || endDate > latestEnd)) {
+        latestEnd = endDate;
+      }
+    }
+
+    if (!earliestStart || !latestEnd) return;
+
     const currentMonth = new Date(`${selectedMonth}-01`);
 
-    // Check if current selected month is within group date range
-    if (currentMonth < startDate || currentMonth > endDate) {
+    // Check if current selected month is within the union date range
+    if (currentMonth < earliestStart || currentMonth > latestEnd) {
       // Set to the most recent valid month within the range
       const now = new Date();
       let defaultMonth: Date;
 
-      if (now >= startDate && now <= endDate) {
+      if (now >= earliestStart && now <= latestEnd) {
         // Current month is within range
         defaultMonth = now;
-      } else if (now > endDate) {
-        // Current month is after group ended, use end month
-        defaultMonth = endDate;
+      } else if (now > latestEnd) {
+        // Current month is after groups ended, use end month
+        defaultMonth = latestEnd;
       } else {
-        // Current month is before group started, use start month
-        defaultMonth = startDate;
+        // Current month is before groups started, use start month
+        defaultMonth = earliestStart;
       }
 
       updateSearchParam('month', defaultMonth.toISOString().slice(0, 7));
     }
   }, [
-    selectedGroupId,
+    selectedGroupIds,
     userGroups.length,
     selectedMonth,
     updateSearchParam,
@@ -921,11 +977,17 @@ export function SubscriptionInvoice({
     )
       return;
 
-    const selectedGroup = userGroups.find(
-      (group) => group.workspace_user_groups?.id === selectedGroupId
+    // Get names of all selected groups
+    const selectedGroupsData = userGroups.filter((g) =>
+      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
     );
-    const groupName =
-      selectedGroup?.workspace_user_groups?.name || 'Unknown Group';
+
+    const groupNames =
+      selectedGroupsData
+        .map((g) => g.workspace_user_groups?.name)
+        .filter(Boolean)
+        .join(', ') || 'Unknown Group(s)';
+
     const monthName = new Date(`${selectedMonth}-01`).toLocaleDateString(
       locale,
       {
@@ -935,10 +997,16 @@ export function SubscriptionInvoice({
     );
 
     const contentParts = [
-      t('ws-invoices.subscription_invoice_for_group_month', {
-        groupName,
-        monthName,
-      }),
+      selectedGroupIds.length === 1
+        ? t('ws-invoices.subscription_invoice_for_group_month', {
+            groupName: groupNames,
+            monthName,
+          })
+        : t('ws-invoices.subscription_invoice_for_groups_month', {
+            groupNames,
+            monthName,
+            default: `Subscription invoice for groups: ${groupNames} - ${monthName}`,
+          }),
     ];
 
     // Build auto-notes for attendance instead of putting it in content
@@ -956,7 +1024,7 @@ export function SubscriptionInvoice({
       });
     }
 
-    // Only count additional products that are NOT associated with the selected group
+    // Only count additional products that are NOT associated with any selected group
     if (subscriptionSelectedProducts.length > 0) {
       const groupProductIds = (groupProducts || [])
         .map((item) => item.workspace_products?.id)
@@ -984,7 +1052,7 @@ export function SubscriptionInvoice({
   }, [
     subscriptionProducts,
     subscriptionSelectedProducts,
-    selectedGroupId,
+    selectedGroupIds,
     selectedMonth,
     userGroups,
     groupProducts,
@@ -996,20 +1064,37 @@ export function SubscriptionInvoice({
 
   // Month navigation handlers
   const navigateMonth = (direction: 'prev' | 'next') => {
-    const selectedGroup = userGroups.find(
-      (g) => g.workspace_user_groups?.id === selectedGroupId
+    if (selectedGroupIds.length === 0) return;
+
+    // Get union of date ranges from all selected groups
+    const selectedGroupsData = userGroups.filter((g) =>
+      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
     );
-    const group = selectedGroup?.workspace_user_groups;
 
-    if (!group) return;
+    if (selectedGroupsData.length === 0) return;
 
-    // Get group start and end dates
-    const startDate = group.starting_date
-      ? new Date(group.starting_date)
-      : new Date();
-    const endDate = group.ending_date
-      ? new Date(group.ending_date)
-      : new Date();
+    // Find the earliest start date and latest end date
+    let earliestStart: Date | null = null;
+    let latestEnd: Date | null = null;
+
+    for (const groupItem of selectedGroupsData) {
+      const group = groupItem.workspace_user_groups;
+      if (!group) continue;
+
+      const startDate = group.starting_date
+        ? new Date(group.starting_date)
+        : null;
+      const endDate = group.ending_date ? new Date(group.ending_date) : null;
+
+      if (startDate && (!earliestStart || startDate < earliestStart)) {
+        earliestStart = startDate;
+      }
+      if (endDate && (!latestEnd || endDate > latestEnd)) {
+        latestEnd = endDate;
+      }
+    }
+
+    if (!earliestStart || !latestEnd) return;
 
     // Calculate new month
     const currentMonth = new Date(`${selectedMonth}-01`);
@@ -1021,27 +1106,44 @@ export function SubscriptionInvoice({
       newMonth.setMonth(newMonth.getMonth() + 1);
     }
 
-    // Check if new month is within group date range
-    if (newMonth >= startDate && newMonth <= endDate) {
+    // Check if new month is within the union date range
+    if (newMonth >= earliestStart && newMonth <= latestEnd) {
       updateSearchParam('month', newMonth.toISOString().slice(0, 7));
     }
   };
 
   const canNavigateMonth = (direction: 'prev' | 'next') => {
-    const selectedGroup = userGroups.find(
-      (g) => g.workspace_user_groups?.id === selectedGroupId
+    if (selectedGroupIds.length === 0) return false;
+
+    // Get union of date ranges from all selected groups
+    const selectedGroupsData = userGroups.filter((g) =>
+      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
     );
-    const group = selectedGroup?.workspace_user_groups;
 
-    if (!group) return false;
+    if (selectedGroupsData.length === 0) return false;
 
-    // Get group start and end dates
-    const startDate = group.starting_date
-      ? new Date(group.starting_date)
-      : new Date();
-    const endDate = group.ending_date
-      ? new Date(group.ending_date)
-      : new Date();
+    // Find the earliest start date and latest end date
+    let earliestStart: Date | null = null;
+    let latestEnd: Date | null = null;
+
+    for (const groupItem of selectedGroupsData) {
+      const group = groupItem.workspace_user_groups;
+      if (!group) continue;
+
+      const startDate = group.starting_date
+        ? new Date(group.starting_date)
+        : null;
+      const endDate = group.ending_date ? new Date(group.ending_date) : null;
+
+      if (startDate && (!earliestStart || startDate < earliestStart)) {
+        earliestStart = startDate;
+      }
+      if (endDate && (!latestEnd || endDate > latestEnd)) {
+        latestEnd = endDate;
+      }
+    }
+
+    if (!earliestStart || !latestEnd) return false;
 
     // Calculate target month
     const currentMonth = new Date(`${selectedMonth}-01`);
@@ -1053,7 +1155,7 @@ export function SubscriptionInvoice({
       targetMonth.setMonth(targetMonth.getMonth() + 1);
     }
 
-    return targetMonth >= startDate && targetMonth <= endDate;
+    return targetMonth >= earliestStart && targetMonth <= latestEnd;
   };
 
   const handleCreateSubscriptionInvoice = async () => {
@@ -1294,7 +1396,7 @@ export function SubscriptionInvoice({
                         type="button"
                         key={group.id}
                         className={`w-full cursor-pointer rounded-lg border p-4 text-left transition-colors ${
-                          selectedGroupId === group.id
+                          activeGroupId === group.id
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted/50'
                         }`}
@@ -1305,15 +1407,16 @@ export function SubscriptionInvoice({
                               ? prev.filter((id) => id !== group.id)
                               : [...prev, group.id];
 
-                            if (updated.length === 0) {
-                              updateSearchParam('group_id', '');
-                            } else if (
-                              isAlreadySelected &&
-                              selectedGroupId === group.id
-                            ) {
-                              updateSearchParam('group_id', updated[0] || '');
-                            } else {
-                              updateSearchParam('group_id', group.id);
+                            // Update active group
+                            if (updated.length > 0) {
+                              if (!isAlreadySelected) {
+                                setActiveGroupId(group.id);
+                              } else if (
+                                activeGroupId === group.id &&
+                                updated.length > 0
+                              ) {
+                                setActiveGroupId(updated[0] || '');
+                              }
                             }
 
                             return updated;
@@ -1325,7 +1428,7 @@ export function SubscriptionInvoice({
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium">{group.name}</h3>
                               {isLoadingSubscriptionData &&
-                                selectedGroupId === group.id && (
+                                activeGroupId === group.id && (
                                   <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                                 )}
                             </div>
@@ -1355,7 +1458,7 @@ export function SubscriptionInvoice({
                                   {t('common.selected')}
                                 </span>
                               )}
-                              {selectedGroupId === group.id && (
+                              {activeGroupId === group.id && (
                                 <div className="h-4 w-4 rounded-full bg-primary" />
                               )}
                             </div>
@@ -1370,7 +1473,7 @@ export function SubscriptionInvoice({
           </Card>
         )}
         {/* Product Selection */}
-        {selectedGroupId && !isSelectedMonthPaid && !isBlocked && (
+        {selectedGroupIds.length > 0 && !isSelectedMonthPaid && !isBlocked && (
           <ProductSelection
             products={products}
             selectedProducts={subscriptionSelectedProducts}
@@ -1403,7 +1506,7 @@ export function SubscriptionInvoice({
         ) : (
           <>
             {/* Attendance Summary */}
-            {selectedGroupId && selectedMonth && (
+            {selectedGroupIds.length > 0 && selectedMonth && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div className="flex flex-col gap-1">
@@ -1418,14 +1521,30 @@ export function SubscriptionInvoice({
                       )}
                     </div>
                     <CardDescription>
-                      {t('ws-invoices.attendance_for_month', {
-                        month: new Date(
-                          `${selectedMonth}-01`
-                        ).toLocaleDateString(locale, {
-                          year: 'numeric',
-                          month: 'long',
-                        }),
-                      })}
+                      {selectedGroupIds.length === 1
+                        ? t('ws-invoices.attendance_for_month', {
+                            month: new Date(
+                              `${selectedMonth}-01`
+                            ).toLocaleDateString(locale, {
+                              year: 'numeric',
+                              month: 'long',
+                            }),
+                          })
+                        : t('ws-invoices.combined_attendance_for_month', {
+                            count: selectedGroupIds.length,
+                            month: new Date(
+                              `${selectedMonth}-01`
+                            ).toLocaleDateString(locale, {
+                              year: 'numeric',
+                              month: 'long',
+                            }),
+                            default: `Combined attendance from ${selectedGroupIds.length} groups for ${new Date(
+                              `${selectedMonth}-01`
+                            ).toLocaleDateString(locale, {
+                              year: 'numeric',
+                              month: 'long',
+                            })}`,
+                          })}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1452,28 +1571,52 @@ export function SubscriptionInvoice({
                       </SelectTrigger>
                       <SelectContent>
                         {(() => {
-                          const selectedGroup = userGroups.find(
-                            (g) =>
-                              g.workspace_user_groups?.id === selectedGroupId
+                          // Generate months based on union of all selected groups' date ranges
+                          const selectedGroupsData = userGroups.filter((g) =>
+                            selectedGroupIds.includes(
+                              g.workspace_user_groups?.id || ''
+                            )
                           );
-                          const group = selectedGroup?.workspace_user_groups;
 
-                          if (!group) return null;
+                          if (selectedGroupsData.length === 0) return null;
 
-                          // Get group start and end dates
-                          const startDate = group.starting_date
-                            ? new Date(group.starting_date)
-                            : new Date();
-                          const endDate = group.ending_date
-                            ? new Date(group.ending_date)
-                            : new Date();
+                          // Find the earliest start date and latest end date
+                          let earliestStart: Date | null = null;
+                          let latestEnd: Date | null = null;
+
+                          for (const groupItem of selectedGroupsData) {
+                            const group = groupItem.workspace_user_groups;
+                            if (!group) continue;
+
+                            const startDate = group.starting_date
+                              ? new Date(group.starting_date)
+                              : null;
+                            const endDate = group.ending_date
+                              ? new Date(group.ending_date)
+                              : null;
+
+                            if (
+                              startDate &&
+                              (!earliestStart || startDate < earliestStart)
+                            ) {
+                              earliestStart = startDate;
+                            }
+                            if (
+                              endDate &&
+                              (!latestEnd || endDate > latestEnd)
+                            ) {
+                              latestEnd = endDate;
+                            }
+                          }
+
+                          if (!earliestStart || !latestEnd) return null;
 
                           // Generate months between start and end date
                           const months = [];
-                          const currentDate = new Date(startDate);
+                          const currentDate = new Date(earliestStart);
                           currentDate.setDate(1); // Set to first day of month
 
-                          while (currentDate <= endDate) {
+                          while (currentDate <= latestEnd) {
                             const value = currentDate.toISOString().slice(0, 7);
                             const label = currentDate.toLocaleDateString(
                               locale,
@@ -1546,13 +1689,9 @@ export function SubscriptionInvoice({
                       {(() => {
                         const attendanceStats =
                           getAttendanceStats(userAttendance);
-                        const selectedGroup = userGroups.find(
-                          (g) => g.workspace_user_groups?.id === selectedGroupId
-                        );
-                        const sessionsArray =
-                          selectedGroup?.workspace_user_groups?.sessions || [];
-                        const totalSessions = getSessionsForMonth(
-                          sessionsArray,
+                        const totalSessions = getTotalSessionsForGroups(
+                          userGroups,
+                          selectedGroupIds,
                           selectedMonth
                         );
 
@@ -1613,13 +1752,9 @@ export function SubscriptionInvoice({
                       {(() => {
                         const attendanceDays =
                           getEffectiveAttendanceDays(userAttendance);
-                        const selectedGroup = userGroups.find(
-                          (g) => g.workspace_user_groups?.id === selectedGroupId
-                        );
-                        const sessionsArray =
-                          selectedGroup?.workspace_user_groups?.sessions || [];
-                        const totalSessions = getSessionsForMonth(
-                          sessionsArray,
+                        const totalSessions = getTotalSessionsForGroups(
+                          userGroups,
+                          selectedGroupIds,
                           selectedMonth
                         );
                         const attendanceRate =
@@ -1647,37 +1782,50 @@ export function SubscriptionInvoice({
                         );
                       })()}
 
-                      {/* Attendance Calendar */}
-                      {userAttendance && userAttendance.length > 0 && (
-                        <div className="space-y-2">
-                          <Label>{t('ws-invoices.attendance_calendar')}</Label>
-                          <AttendanceCalendar
-                            userAttendance={userAttendance}
-                            selectedMonth={selectedMonth}
-                            selectedGroup={userGroups.find(
-                              (g) =>
-                                g.workspace_user_groups?.id === selectedGroupId
-                            )}
-                            locale={locale}
-                          />
-                          <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                            <div className="flex items-center gap-1">
-                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                              <span>{t('ws-invoices.present')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                              <span>{t('ws-invoices.late')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                              <span>{t('ws-invoices.absent')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className="h-2 w-2 rounded-full bg-gray-300"></div>
-                              <span>{t('ws-invoices.no_session')}</span>
+                      {/* Attendance Calendar - Only show for single group */}
+                      {selectedGroupIds.length === 1 &&
+                        userAttendance &&
+                        userAttendance.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>
+                              {t('ws-invoices.attendance_calendar')}
+                            </Label>
+                            <AttendanceCalendar
+                              userAttendance={userAttendance}
+                              selectedMonth={selectedMonth}
+                              selectedGroup={userGroups.find(
+                                (g) =>
+                                  g.workspace_user_groups?.id ===
+                                  selectedGroupIds[0]
+                              )}
+                              locale={locale}
+                            />
+                            <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                              <div className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                <span>{t('ws-invoices.present')}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                                <span>{t('ws-invoices.late')}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                <span>{t('ws-invoices.absent')}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                                <span>{t('ws-invoices.no_session')}</span>
+                              </div>
                             </div>
                           </div>
+                        )}
+                      {selectedGroupIds.length > 1 && (
+                        <div className="text-muted-foreground text-sm italic">
+                          {t('ws-invoices.calendar_hidden_multiple_groups', {
+                            default:
+                              'Calendar view hidden for multiple group selection',
+                          })}
                         </div>
                       )}
                     </div>
@@ -2014,7 +2162,7 @@ export function SubscriptionInvoice({
                       onClick={handleCreateSubscriptionInvoice}
                       disabled={
                         !selectedUser ||
-                        !selectedGroupId ||
+                        selectedGroupIds.length === 0 ||
                         (subscriptionProducts.length === 0 &&
                           subscriptionSelectedProducts.length === 0) ||
                         !selectedWalletId ||
