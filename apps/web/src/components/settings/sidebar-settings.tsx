@@ -8,6 +8,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useSidebar } from '@/context/sidebar-context';
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 
 export default function SidebarSettings() {
   const t = useTranslations();
@@ -17,6 +18,12 @@ export default function SidebarSettings() {
     'sidebar-hide-experimental',
     false
   );
+
+  const {
+    value: expandSettingsAccordions,
+    setValue: setExpandSettingsAccordions,
+    isLoading: isLoadingExpandAccordions,
+  } = useUserBooleanConfig('EXPAND_SETTINGS_ACCORDIONS', false);
 
   return (
     <div className="space-y-8">
@@ -67,6 +74,23 @@ export default function SidebarSettings() {
             </Label>
           </div>
         </RadioGroup>
+      </SettingItemTab>
+
+      <Separator />
+
+      <SettingItemTab
+        title={t('settings.preferences.expand_settings_accordions')}
+        description={t(
+          'settings.preferences.expand_settings_accordions_description'
+        )}
+      >
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={expandSettingsAccordions}
+            onCheckedChange={setExpandSettingsAccordions}
+            disabled={isLoadingExpandAccordions}
+          />
+        </div>
       </SettingItemTab>
 
       <Separator />

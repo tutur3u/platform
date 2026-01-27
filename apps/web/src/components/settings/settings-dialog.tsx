@@ -11,7 +11,9 @@ import {
   Clock,
   Coffee,
   CreditCard,
+  Goal,
   Laptop,
+  LayoutGrid,
   Paintbrush,
   Palette,
   PanelLeft,
@@ -63,6 +65,7 @@ import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import UserAvatar from '../../app/[locale]/settings-avatar';
@@ -82,7 +85,9 @@ import InvoiceSettings from './finance/invoice-settings';
 import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
+import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
+import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import MembersSettings from './workspace/members-settings';
@@ -105,6 +110,12 @@ export function SettingsDialog({
   const { isMac, modKey } = usePlatform();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // User preference for expanding all settings accordions
+  const { value: expandAllAccordions } = useUserBooleanConfig(
+    'EXPAND_SETTINGS_ACCORDIONS',
+    false
+  );
 
   // Fetch workspace data if not provided (using TanStack Query)
   const {
@@ -396,6 +407,20 @@ export function SettingsDialog({
                 keywords: ['Time Tracker', 'General', 'Future'],
               },
               {
+                name: 'time_tracker_categories',
+                label: t('settings.time_tracker.categories'),
+                icon: LayoutGrid,
+                description: t('settings.time_tracker.categories_description'),
+                keywords: ['Time Tracker', 'Categories'],
+              },
+              {
+                name: 'time_tracker_goals',
+                label: t('settings.time_tracker.goals'),
+                icon: Goal,
+                description: t('settings.time_tracker.goals_description'),
+                keywords: ['Time Tracker', 'Goals', 'Productivity'],
+              },
+              {
                 name: 'break_types',
                 label: t('settings.time_tracker.break_types'),
                 icon: Coffee,
@@ -508,10 +533,13 @@ export function SettingsDialog({
           <SidebarContent className="overflow-y-auto p-4">
             {filteredNavItems.map((group) => (
               <Collapsible
-                key={`${group.label}-${searchQuery ? 'search' : 'browse'}`}
+                key={`${group.label}-${searchQuery ? 'search' : 'browse'}-${expandAllAccordions ? 'expanded' : 'collapsed'}`}
                 defaultOpen={
-                  !!searchQuery || group.label === navItems[0]?.label
+                  expandAllAccordions ||
+                  !!searchQuery ||
+                  group.label === navItems[0]?.label
                 }
+                open={expandAllAccordions ? true : undefined}
                 className="group/collapsible"
               >
                 <SidebarGroup className="p-0">
@@ -800,6 +828,14 @@ export function SettingsDialog({
 
                 {activeTab === 'break_types' && wsId && (
                   <WorkspaceBreakTypesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_categories' && wsId && (
+                  <TimeTrackerCategoriesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_goals' && wsId && (
+                  <TimeTrackerGoalsSettings wsId={wsId} />
                 )}
 
                 {activeTab === 'time_tracker_general' && wsId && (

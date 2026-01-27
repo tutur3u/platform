@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -20,8 +21,9 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
+import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 
 interface Workspace {
   id: string;
@@ -53,111 +55,150 @@ export function CopyFromWorkspaceDialog({
   open,
   onOpenChange,
 }: CopyFromWorkspaceDialogProps) {
-  const router = useRouter();
+  const t = useTranslations('settings.time_tracker.categories_management');
+  const queryClient = useQueryClient();
 
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
-  const [categories, setCategories] = useState<TimeTrackingCategory[]>([]);
-  const [existingCategories, setExistingCategories] = useState<
-    TimeTrackingCategory[]
-  >([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(true);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [isCopying, setIsCopying] = useState(false);
 
-  const fetchWorkspaces = useCallback(async () => {
-    setIsLoadingWorkspaces(true);
-    try {
+  const { data: workspaces = [], isLoading: isLoadingWorkspaces } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: async () => {
       const response = await fetch('/api/v1/workspaces');
-      if (!response.ok) throw new Error('Failed to fetch workspaces');
-
-      const data = await response.json();
-      // Filter out current workspace
-      const filteredWorkspaces = data.filter((ws: Workspace) => ws.id !== wsId);
-      setWorkspaces(filteredWorkspaces);
-    } catch (error) {
-      console.error('Error fetching workspaces:', error);
-      toast.error('Failed to load workspaces');
-    } finally {
-      setIsLoadingWorkspaces(false);
-    }
-  }, [wsId]);
-
-  const fetchCategories = useCallback(
-    async (workspaceId: string) => {
-      setIsLoadingCategories(true);
-      try {
-        // Fetch categories from source workspace and current workspace
-        const [sourceResponse, currentResponse] = await Promise.all([
-          fetch(`/api/v1/workspaces/${workspaceId}/time-tracking/categories`),
-          fetch(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
-        ]);
-
-        if (!sourceResponse.ok || !currentResponse.ok) {
-          throw new Error('Failed to fetch categories');
-        }
-
-        const [sourceData, currentData] = await Promise.all([
-          sourceResponse.json(),
-          currentResponse.json(),
-        ]);
-
-        const sourceCategories = sourceData.categories || [];
-        const currentCategories = currentData.categories || [];
-
-        // Create a map of existing categories by name (case-insensitive)
-        const existingCategoriesMap = new Map(
-          currentCategories.map((cat: TimeTrackingCategory) => [
-            cat.name.toLowerCase(),
-            cat,
-          ])
-        );
-
-        // Separate categories into existing and new
-        const existingInCurrent: TimeTrackingCategory[] = [];
-        const newCategories: TimeTrackingCategory[] = [];
-
-        sourceCategories.forEach((cat: TimeTrackingCategory) => {
-          const existingCat = existingCategoriesMap.get(cat.name.toLowerCase());
-          if (existingCat) {
-            existingInCurrent.push(cat);
-          } else {
-            newCategories.push(cat);
-          }
-        });
-
-        setCategories(newCategories);
-        setExistingCategories(existingInCurrent);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        toast.error('Failed to load categories from selected workspace');
-        setCategories([]);
-        setExistingCategories([]);
-      } finally {
-        setIsLoadingCategories(false);
-      }
+      if (!response.ok) throw new Error(t('copy_dialog.load_workspaces_error'));
+      return response.json();
     },
-    [wsId]
+    enabled: open,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const filteredWorkspaces = useMemo(
+    () => workspaces.filter((ws: Workspace) => ws.id !== wsId),
+    [workspaces, wsId]
   );
 
-  // Load workspaces when dialog opens
-  useEffect(() => {
-    if (open) {
-      fetchWorkspaces();
-    }
-  }, [open, fetchWorkspaces]);
+  const {
+    data: currentCategories = [],
+    isLoading: isLoadingCurrentCategories,
+  } = useWorkspaceCategories({
+    wsId,
+    enabled: open,
+  });
 
-  // Load categories when workspace is selected
-  useEffect(() => {
-    if (selectedWorkspaceId) {
-      fetchCategories(selectedWorkspaceId);
-    } else {
-      setCategories([]);
-      setExistingCategories([]);
-      setSelectedCategoryIds([]);
+  const { data: sourceCategories = [], isLoading: isLoadingSourceCategories } =
+    useWorkspaceCategories({
+      wsId: selectedWorkspaceId,
+      enabled: !!selectedWorkspaceId && open,
+    });
+
+  const { categories, existingCategories } = useMemo(() => {
+    if (!selectedWorkspaceId) return { categories: [], existingCategories: [] };
+
+    // Create a map of existing categories by name (case-insensitive)
+    const existingCategoriesMap = new Map(
+      currentCategories.map((cat: TimeTrackingCategory) => [
+        cat.name.toLowerCase(),
+        cat,
+      ])
+    );
+
+    // Separate categories into existing and new
+    const existingInCurrent: TimeTrackingCategory[] = [];
+    const newCategories: TimeTrackingCategory[] = [];
+
+    sourceCategories.forEach((cat: TimeTrackingCategory) => {
+      const existingCat = existingCategoriesMap.get(cat.name.toLowerCase());
+      if (existingCat) {
+        existingInCurrent.push(cat);
+      } else {
+        newCategories.push(cat);
+      }
+    });
+
+    return { categories: newCategories, existingCategories: existingInCurrent };
+  }, [selectedWorkspaceId, sourceCategories, currentCategories]);
+
+  const isLoadingCategories =
+    isLoadingSourceCategories || isLoadingCurrentCategories;
+
+  const copyMutation = useMutation({
+    mutationFn: async ({
+      sourceWorkspaceId,
+      categoryIds,
+    }: {
+      sourceWorkspaceId: string;
+      categoryIds: string[];
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/categories/copy`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sourceWorkspaceId,
+            categoryIds,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || t('copy_dialog.load_categories_error'));
+      }
+
+      return response.json();
+    },
+    onSuccess: (result) => {
+      let message = '';
+      if (result.copiedCount > 0 && result.skippedCount > 0) {
+        message = t('copy_dialog.copy_success_partial', {
+          copiedCount: result.copiedCount,
+          skippedCount: result.skippedCount,
+        });
+      } else if (result.copiedCount > 0) {
+        message = t('copy_dialog.copy_success_full', {
+          copiedCount: result.copiedCount,
+        });
+      } else {
+        message = result.message || t('copy_dialog.copy_no_categories');
+      }
+
+      if (result.existingCategories && result.existingCategories.length > 0) {
+        const existingNames = result.existingCategories
+          .map((cat: { name: string }) => cat.name)
+          .join(', ');
+        message += `${t('copy_dialog.already_exist_prefix')}${existingNames}`;
+      }
+
+      toast.success(message);
+      onOpenChange(false);
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-categories', wsId],
+      });
+    },
+    onError: (error) => {
+      console.error('Error copying categories:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('copy_dialog.load_categories_error')
+      );
+    },
+  });
+
+  const isCopying = copyMutation.isPending;
+
+  const handleCopy = async () => {
+    if (!selectedWorkspaceId || selectedCategoryIds.length === 0) {
+      toast.error(t('copy_dialog.select_error'));
+      return;
     }
-  }, [selectedWorkspaceId, fetchCategories]);
+
+    copyMutation.mutate({
+      sourceWorkspaceId: selectedWorkspaceId,
+      categoryIds: selectedCategoryIds,
+    });
+  };
 
   const handleCategoryToggle = (categoryId: string, checked: boolean) => {
     setSelectedCategoryIds((prev) =>
@@ -173,66 +214,8 @@ export function CopyFromWorkspaceDialog({
     }
   };
 
-  const handleCopy = async () => {
-    if (!selectedWorkspaceId || selectedCategoryIds.length === 0) {
-      toast.error('Please select a workspace and at least one category');
-      return;
-    }
-
-    setIsCopying(true);
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/categories/copy`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sourceWorkspaceId: selectedWorkspaceId,
-            categoryIds: selectedCategoryIds,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to copy categories');
-      }
-
-      const result = await response.json();
-
-      let message = '';
-      if (result.copiedCount > 0 && result.skippedCount > 0) {
-        message = `Copied ${result.copiedCount} categories. ${result.skippedCount} categories were skipped (already exist).`;
-      } else if (result.copiedCount > 0) {
-        message = `Successfully copied ${result.copiedCount} categories!`;
-      } else {
-        message = result.message || 'No categories were copied.';
-      }
-
-      if (result.existingCategories && result.existingCategories.length > 0) {
-        const existingNames = result.existingCategories
-          .map((cat: { name: string }) => cat.name)
-          .join(', ');
-        message += ` Categories that already exist: ${existingNames}`;
-      }
-
-      toast.success(message);
-      onOpenChange(false);
-      router.refresh();
-    } catch (error) {
-      console.error('Error copying categories:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to copy categories'
-      );
-    } finally {
-      setIsCopying(false);
-    }
-  };
-
   const resetDialog = () => {
     setSelectedWorkspaceId('');
-    setCategories([]);
-    setExistingCategories([]);
     setSelectedCategoryIds([]);
   };
 
@@ -241,8 +224,8 @@ export function CopyFromWorkspaceDialog({
     return colorConfig?.class || 'bg-blue-500';
   };
 
-  const selectedWorkspace = workspaces.find(
-    (ws) => ws.id === selectedWorkspaceId
+  const selectedWorkspace = filteredWorkspaces.find(
+    (ws: Workspace) => ws.id === selectedWorkspaceId
   );
 
   return (
@@ -257,14 +240,14 @@ export function CopyFromWorkspaceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Copy className="h-5 w-5" />
-            Copy Categories from Another Workspace
+            {t('copy_dialog.title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 space-y-6 overflow-y-auto">
           {/* Workspace Selection */}
           <div className="space-y-2">
-            <Label>Select Workspace</Label>
+            <Label>{t('copy_dialog.select_workspace')}</Label>
             <Select
               value={selectedWorkspaceId}
               onValueChange={setSelectedWorkspaceId}
@@ -274,27 +257,27 @@ export function CopyFromWorkspaceDialog({
                 <SelectValue
                   placeholder={
                     isLoadingWorkspaces
-                      ? 'Loading workspaces...'
-                      : 'Choose a workspace to copy from'
+                      ? t('copy_dialog.loading_workspaces')
+                      : t('copy_dialog.choose_workspace')
                   }
                 />
               </SelectTrigger>
               <SelectContent>
-                {workspaces.map((workspace) => (
+                {filteredWorkspaces.map((workspace: Workspace) => (
                   <SelectItem key={workspace.id} value={workspace.id}>
                     <div className="flex items-center gap-2">
                       <span>{workspace.name}</span>
                       {workspace.personal && (
                         <span className="text-muted-foreground text-xs">
-                          (Personal)
+                          {t('copy_dialog.personal')}
                         </span>
                       )}
                     </div>
                   </SelectItem>
                 ))}
-                {workspaces.length === 0 && !isLoadingWorkspaces && (
+                {filteredWorkspaces.length === 0 && !isLoadingWorkspaces && (
                   <SelectItem value="__empty__" disabled>
-                    No other workspaces available
+                    {t('copy_dialog.no_workspaces')}
                   </SelectItem>
                 )}
               </SelectContent>
@@ -306,14 +289,17 @@ export function CopyFromWorkspaceDialog({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>
-                  Categories from {selectedWorkspace?.name}
+                  {t('copy_dialog.categories_from', {
+                    name: selectedWorkspace?.name || '',
+                  })}
                   {(categories.length > 0 || existingCategories.length > 0) && (
                     <span className="ml-2 text-muted-foreground text-sm">
-                      ({categories.length + existingCategories.length} available
+                      ({categories.length + existingCategories.length}{' '}
+                      {t('copy_dialog.available')}
                       {categories.length > 0 &&
-                        `, ${categories.length} can be copied`}
+                        `, ${categories.length} ${t('copy_dialog.can_be_copied')}`}
                       {existingCategories.length > 0 &&
-                        `, ${existingCategories.length} already exist`}
+                        `, ${existingCategories.length} ${t('copy_dialog.already_exist')}`}
                       )
                     </span>
                   )}
@@ -326,8 +312,8 @@ export function CopyFromWorkspaceDialog({
                     disabled={isLoadingCategories}
                   >
                     {selectedCategoryIds.length === categories.length
-                      ? 'Deselect All'
-                      : 'Select All Available'}
+                      ? t('copy_dialog.deselect_all')
+                      : t('copy_dialog.select_all')}
                   </Button>
                 )}
               </div>
@@ -335,11 +321,13 @@ export function CopyFromWorkspaceDialog({
               {isLoadingCategories ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Loading categories...</span>
+                  <span className="ml-2">
+                    {t('copy_dialog.loading_categories')}
+                  </span>
                 </div>
               ) : categories.length === 0 && existingCategories.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
-                  No categories found in this workspace
+                  {t('copy_dialog.no_categories_found')}
                 </div>
               ) : (
                 <div className="max-h-80 space-y-1 overflow-y-auto rounded-md border">
@@ -349,7 +337,8 @@ export function CopyFromWorkspaceDialog({
                       <div className="sticky top-0 border-b bg-background px-3 py-2">
                         <h4 className="flex items-center gap-2 font-medium text-green-600 text-sm dark:text-green-400">
                           <CheckCircle className="h-4 w-4" />
-                          Available to Copy ({categories.length})
+                          {t('copy_dialog.available_to_copy')} (
+                          {categories.length})
                         </h4>
                       </div>
                       {categories.map((category) => (
@@ -402,7 +391,8 @@ export function CopyFromWorkspaceDialog({
                       <div className="sticky top-0 border-b bg-background px-3 py-2">
                         <h4 className="flex items-center gap-2 font-medium text-sm text-yellow-600 dark:text-yellow-400">
                           <AlertCircle className="h-4 w-4" />
-                          Already Exist ({existingCategories.length})
+                          {t('copy_dialog.already_exist_title')} (
+                          {existingCategories.length})
                         </h4>
                       </div>
                       {existingCategories.map((category) => (
@@ -427,7 +417,7 @@ export function CopyFromWorkspaceDialog({
                               <div className="font-medium text-sm leading-relaxed">
                                 {category.name}
                                 <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400">
-                                  (Already exists)
+                                  {t('copy_dialog.already_exists_label')}
                                 </span>
                               </div>
                               {category.description && (
@@ -447,8 +437,9 @@ export function CopyFromWorkspaceDialog({
               {selectedCategoryIds.length > 0 && (
                 <div className="rounded-md bg-muted/50 p-3">
                   <p className="text-sm">
-                    <strong>{selectedCategoryIds.length}</strong> categories
-                    selected for copying
+                    {t('copy_dialog.selected_count', {
+                      count: selectedCategoryIds.length,
+                    })}
                   </p>
                 </div>
               )}
@@ -464,7 +455,7 @@ export function CopyFromWorkspaceDialog({
             className="flex-1"
             disabled={isCopying}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             onClick={handleCopy}
@@ -479,12 +470,12 @@ export function CopyFromWorkspaceDialog({
             {isCopying ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Copying...
+                {t('copy_dialog.copying')}
               </>
             ) : (
               <>
                 <Copy className="mr-2 h-4 w-4" />
-                Copy Categories
+                {t('copy_dialog.copy_button')}
               </>
             )}
           </Button>

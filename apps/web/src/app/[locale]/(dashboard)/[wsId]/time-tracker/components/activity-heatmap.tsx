@@ -34,13 +34,13 @@ import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { formatDuration } from '@/lib/time-format';
-import classes from '@/style/mantine-heatmap.module.css';
 import {
   DEFAULT_SETTINGS,
   type HeatmapSettings,
   type HeatmapViewMode,
-} from '../settings/heatmap-settings-form';
+} from '@/components/settings/time-tracker/heatmap-display-settings';
+import { formatDuration } from '@/lib/time-format';
+import classes from '@/style/mantine-heatmap.module.css';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
