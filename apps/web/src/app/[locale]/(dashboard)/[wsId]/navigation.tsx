@@ -325,12 +325,6 @@ export async function WorkspaceNavigationLinks({
           icon: <ClockCheck className="h-5 w-5" />,
           disabled: isPersonal,
         },
-        null,
-        {
-          title: t('sidebar_tabs.settings'),
-          href: `/${personalOrWsId}/time-tracker/settings`,
-          icon: <Settings className="h-5 w-5" />,
-        },
       ],
       icon: <ClockFading className="h-5 w-5" />,
       // disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
@@ -341,7 +335,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker/history`,
         `/${personalOrWsId}/time-tracker/management`,
         `/${personalOrWsId}/time-tracker/requests`,
-        `/${personalOrWsId}/time-tracker/settings`,
       ],
     },
     {

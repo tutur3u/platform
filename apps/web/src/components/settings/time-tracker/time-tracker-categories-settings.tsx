@@ -48,6 +48,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 import { CopyFromWorkspaceDialog } from './copy-from-workspace-dialog';
@@ -72,6 +73,7 @@ const CATEGORY_COLORS = [
 export function TimeTrackerCategoriesSettings({
   wsId,
 }: TimeTrackerCategoriesSettingsProps) {
+  const t = useTranslations('settings.time_tracker.categories_management');
   const queryClient = useQueryClient();
   const { data: categories, isLoading: isLoadingCategories } =
     useWorkspaceCategories({ wsId });
@@ -126,7 +128,7 @@ export function TimeTrackerCategoriesSettings({
           }),
         }
       );
-      if (!response.ok) throw new Error('Failed to create category');
+      if (!response.ok) throw new Error(t('create_error'));
       return response.json();
     },
     onSuccess: () => {
@@ -135,11 +137,11 @@ export function TimeTrackerCategoriesSettings({
       });
       setIsAddDialogOpen(false);
       resetForm();
-      toast.success('Category created successfully');
+      toast.success(t('create_success'));
     },
     onError: (error) => {
       console.error('Error creating category:', error);
-      toast.error('Failed to create category');
+      toast.error(t('create_error'));
     },
   });
 
@@ -157,7 +159,7 @@ export function TimeTrackerCategoriesSettings({
           }),
         }
       );
-      if (!response.ok) throw new Error('Failed to update category');
+      if (!response.ok) throw new Error(t('update_error'));
       return response.json();
     },
     onSuccess: () => {
@@ -167,11 +169,11 @@ export function TimeTrackerCategoriesSettings({
       setIsEditDialogOpen(false);
       setCategoryToEdit(null);
       resetForm();
-      toast.success('Category updated successfully');
+      toast.success(t('update_success'));
     },
     onError: (error) => {
       console.error('Error updating category:', error);
-      toast.error('Failed to update category');
+      toast.error(t('update_error'));
     },
   });
 
@@ -184,18 +186,18 @@ export function TimeTrackerCategoriesSettings({
           method: 'DELETE',
         }
       );
-      if (!response.ok) throw new Error('Failed to delete category');
+      if (!response.ok) throw new Error(t('delete_error'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['workspace-categories', wsId],
       });
       setCategoryToDelete(null);
-      toast.success('Category deleted successfully');
+      toast.success(t('delete_success'));
     },
     onError: (error) => {
       console.error('Error deleting category:', error);
-      toast.error('Failed to delete category');
+      toast.error(t('delete_error'));
     },
   });
 
@@ -218,7 +220,7 @@ export function TimeTrackerCategoriesSettings({
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <LayoutGrid className="h-5 w-5 shrink-0" />
-            <h3 className="font-medium text-lg">Category Management</h3>
+            <h3 className="font-medium text-lg">{t('title')}</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -227,15 +229,17 @@ export function TimeTrackerCategoriesSettings({
               className="shrink-0"
             >
               <Copy className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Copy from Workspace</span>
-              <span className="sm:hidden">Copy</span>
+              <span className="hidden sm:inline">
+                {t('copy_from_workspace')}
+              </span>
+              <span className="sm:hidden">{t('copy_short')}</span>
             </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={openAddDialog} className="shrink-0">
                   <Plus className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Add Category</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="hidden sm:inline">{t('add_category')}</span>
+                  <span className="sm:hidden">{t('add_short')}</span>
                 </Button>
               </DialogTrigger>
             </Dialog>
@@ -247,10 +251,10 @@ export function TimeTrackerCategoriesSettings({
             <CardContent className="py-12 text-center">
               <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-lg text-muted-foreground">
-                No categories created yet
+                {t('no_categories')}
               </p>
               <p className="mt-1 text-muted-foreground text-sm">
-                Create categories to organize your time tracking sessions
+                {t('no_categories_description')}
               </p>
               <Button
                 onClick={openAddDialog}
@@ -258,7 +262,7 @@ export function TimeTrackerCategoriesSettings({
                 className="mt-4"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Create First Category
+                {t('create_first')}
               </Button>
             </CardContent>
           </Card>
@@ -267,7 +271,7 @@ export function TimeTrackerCategoriesSettings({
             {categories?.map((category) => (
               <Card key={category.id} className="group relative">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <div
                         className={cn(
@@ -302,7 +306,7 @@ export function TimeTrackerCategoriesSettings({
                           onClick={() => openEditDialog(category)}
                         >
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit Category
+                          {t('edit')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -310,7 +314,7 @@ export function TimeTrackerCategoriesSettings({
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Category
+                          {t('delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -328,33 +332,31 @@ export function TimeTrackerCategoriesSettings({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Create New Category
+              {t('create_title')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor={categoryNameId}>Name</Label>
+              <Label htmlFor={categoryNameId}>{t('name')}</Label>
               <Input
                 id={categoryNameId}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter category name"
+                placeholder={t('name_placeholder')}
               />
             </div>
             <div>
-              <Label htmlFor={categoryDescriptionId}>
-                Description (optional)
-              </Label>
+              <Label htmlFor={categoryDescriptionId}>{t('description')}</Label>
               <Textarea
                 id={categoryDescriptionId}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter category description"
+                placeholder={t('description_placeholder')}
                 rows={3}
               />
             </div>
             <div>
-              <Label htmlFor="category-color">Color</Label>
+              <Label htmlFor="category-color">{t('color')}</Label>
               <Select value={color} onValueChange={setColor}>
                 <SelectTrigger>
                   <SelectValue />
@@ -372,7 +374,7 @@ export function TimeTrackerCategoriesSettings({
                             colorOption.class
                           )}
                         />
-                        {colorOption.label}
+                        {t(`colors.${colorOption.value.toLowerCase()}` as any)}
                       </div>
                     </SelectItem>
                   ))}
@@ -385,14 +387,20 @@ export function TimeTrackerCategoriesSettings({
                 onClick={() => setIsAddDialogOpen(false)}
                 className="flex-1"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
-                onClick={() => createMutation.mutate()}
+                onClick={() => {
+                  if (!name.trim()) {
+                    toast.error(t('enter_name_error'));
+                    return;
+                  }
+                  createMutation.mutate();
+                }}
                 disabled={createMutation.isPending || !name.trim()}
                 className="flex-1"
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Category'}
+                {createMutation.isPending ? t('creating') : t('create_button')}
               </Button>
             </div>
           </div>
@@ -405,33 +413,33 @@ export function TimeTrackerCategoriesSettings({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
-              Edit Category
+              {t('edit')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor={editCategoryNameId}>Name</Label>
+              <Label htmlFor={editCategoryNameId}>{t('name')}</Label>
               <Input
                 id={editCategoryNameId}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter category name"
+                placeholder={t('name_placeholder')}
               />
             </div>
             <div>
               <Label htmlFor={editCategoryDescriptionId}>
-                Description (optional)
+                {t('description')}
               </Label>
               <Textarea
                 id={editCategoryDescriptionId}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter category description"
+                placeholder={t('description_placeholder')}
                 rows={3}
               />
             </div>
             <div>
-              <Label htmlFor="edit-category-color">Color</Label>
+              <Label htmlFor="edit-category-color">{t('color')}</Label>
               <Select value={color} onValueChange={setColor}>
                 <SelectTrigger>
                   <SelectValue />
@@ -449,7 +457,7 @@ export function TimeTrackerCategoriesSettings({
                             colorOption.class
                           )}
                         />
-                        {colorOption.label}
+                        {t(`colors.${colorOption.value.toLowerCase()}` as any)}
                       </div>
                     </SelectItem>
                   ))}
@@ -462,14 +470,20 @@ export function TimeTrackerCategoriesSettings({
                 onClick={() => setIsEditDialogOpen(false)}
                 className="flex-1"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
-                onClick={() => updateMutation.mutate()}
+                onClick={() => {
+                  if (!name.trim()) {
+                    toast.error(t('enter_name_error'));
+                    return;
+                  }
+                  updateMutation.mutate();
+                }}
                 disabled={updateMutation.isPending || !name.trim()}
                 className="flex-1"
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update Category'}
+                {updateMutation.isPending ? t('updating') : t('update_button')}
               </Button>
             </div>
           </div>
@@ -483,23 +497,23 @@ export function TimeTrackerCategoriesSettings({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogTitle>{t('delete_confirm_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the category "
-              {categoryToDelete?.name}"? This action cannot be undone and will
-              remove the category from all existing time sessions.
+              {t('delete_confirm_description', {
+                name: categoryToDelete?.name || '',
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>
-              Cancel
+              {t('cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate()}
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Category'}
+              {deleteMutation.isPending ? t('deleting') : t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

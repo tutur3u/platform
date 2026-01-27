@@ -10,7 +10,6 @@ import {
   Plus,
   Trash2,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,8 +51,23 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import type { TimeTrackingGoal } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
+
+// Goal tracking interface
+export interface TimeTrackingGoal {
+  id: string;
+  ws_id: string;
+  user_id: string;
+  category_id: string | null;
+  daily_goal_minutes: number;
+  weekly_goal_minutes: number | null;
+  is_active: boolean | null;
+  category: {
+    id: string;
+    name: string;
+    color?: string;
+  } | null;
+}
 
 interface TimeTrackerGoalsSettingsProps {
   wsId: string;
@@ -141,11 +155,11 @@ export function TimeTrackerGoalsSettings({
       });
       setIsAddDialogOpen(false);
       resetForm();
-      toast.success(tTracker('goals.create_success'));
+      toast.success(tTracker('goals.create_success' as any));
     },
     onError: (error) => {
       console.error('Error creating goal:', error);
-      toast.error(tTracker('goals.create_error'));
+      toast.error(tTracker('goals.create_error' as any));
     },
   });
 
@@ -174,11 +188,11 @@ export function TimeTrackerGoalsSettings({
       setIsEditDialogOpen(false);
       setGoalToEdit(null);
       resetForm();
-      toast.success(tTracker('goals.update_success'));
+      toast.success(tTracker('goals.update_success' as any));
     },
     onError: (error) => {
       console.error('Error updating goal:', error);
-      toast.error(tTracker('goals.update_error'));
+      toast.error(tTracker('goals.update_error' as any));
     },
   });
 
@@ -198,11 +212,11 @@ export function TimeTrackerGoalsSettings({
         queryKey: ['time-tracking-goals', wsId],
       });
       setGoalToDelete(null);
-      toast.success(tTracker('goals.delete_success'));
+      toast.success(tTracker('goals.delete_success' as any));
     },
     onError: (error) => {
       console.error('Error deleting goal:', error);
-      toast.error(tTracker('goals.delete_error'));
+      toast.error(tTracker('goals.delete_error' as any));
     },
   });
 
@@ -297,31 +311,33 @@ export function TimeTrackerGoalsSettings({
                           <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
                         )}
                         <h3 className="truncate font-medium">
-                          {goal.category?.name || 'General'}
+                          {goal.category?.name || t('general_goal')}
                         </h3>
                         {goal.is_active ? (
                           <Badge
                             variant="secondary"
                             className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                           >
-                            Active
+                            {t('active')}
                           </Badge>
                         ) : (
-                          <Badge variant="outline">Inactive</Badge>
+                          <Badge variant="outline">{t('inactive')}</Badge>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           <span>
-                            Daily: {formatMinutes(goal.daily_goal_minutes)}
+                            {t('daily')}:{' '}
+                            {formatMinutes(goal.daily_goal_minutes)}
                           </span>
                         </div>
                         {goal.weekly_goal_minutes && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             <span>
-                              Weekly: {formatMinutes(goal.weekly_goal_minutes)}
+                              {t('weekly')}:{' '}
+                              {formatMinutes(goal.weekly_goal_minutes)}
                             </span>
                           </div>
                         )}
@@ -372,16 +388,16 @@ export function TimeTrackerGoalsSettings({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="goal-category">Goal Type</Label>
+              <Label htmlFor="goal-category">{t('goal_type')}</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select goal type" />
+                  <SelectValue placeholder={t('select_goal_type')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="general">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
-                      <span>General Goal</span>
+                      <span>{t('general_goal')}</span>
                     </div>
                   </SelectItem>
                   {categories?.map((category) => (
@@ -401,7 +417,7 @@ export function TimeTrackerGoalsSettings({
               </Select>
             </div>
             <div>
-              <Label htmlFor={dailyGoalId}>Daily Goal (minutes)</Label>
+              <Label htmlFor={dailyGoalId}>{t('daily_goal_min')}</Label>
               <Input
                 id={dailyGoalId}
                 type="number"
@@ -411,13 +427,13 @@ export function TimeTrackerGoalsSettings({
                 max="1440"
               />
               <p className="mt-1 text-muted-foreground text-xs">
-                Target: {formatMinutes(dailyGoalMinutes)} per day
+                {t('target_per_day', {
+                  time: formatMinutes(dailyGoalMinutes),
+                })}
               </p>
             </div>
             <div>
-              <Label htmlFor={weeklyGoalId}>
-                Weekly Goal (minutes, optional)
-              </Label>
+              <Label htmlFor={weeklyGoalId}>{t('weekly_goal_min')}</Label>
               <Input
                 id={weeklyGoalId}
                 type="number"
@@ -427,7 +443,9 @@ export function TimeTrackerGoalsSettings({
                 max="10080"
               />
               <p className="mt-1 text-muted-foreground text-xs">
-                Target: {formatMinutes(weeklyGoalMinutes)} per week
+                {t('target_per_week', {
+                  time: formatMinutes(weeklyGoalMinutes),
+                })}
               </p>
             </div>
             <div className="flex items-center space-x-2 pt-2">
@@ -436,7 +454,7 @@ export function TimeTrackerGoalsSettings({
                 checked={isActive}
                 onCheckedChange={setIsActive}
               />
-              <Label htmlFor="goal-active">Active goal</Label>
+              <Label htmlFor="goal-active">{t('active_goal')}</Label>
             </div>
             <div className="flex gap-2 pt-4">
               <Button
@@ -444,14 +462,16 @@ export function TimeTrackerGoalsSettings({
                 onClick={() => setIsAddDialogOpen(false)}
                 className="flex-1"
               >
-                Cancel
+                {t('categories_management.cancel')}
               </Button>
               <Button
                 onClick={() => createMutation.mutate()}
                 disabled={createMutation.isPending}
                 className="flex-1"
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Goal'}
+                {createMutation.isPending
+                  ? t('creating')
+                  : t('create_new_goal')}
               </Button>
             </div>
           </div>
@@ -469,16 +489,16 @@ export function TimeTrackerGoalsSettings({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-goal-category">Goal Type</Label>
+              <Label htmlFor="edit-goal-category">{t('goal_type')}</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select goal type" />
+                  <SelectValue placeholder={t('select_goal_type')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="general">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
-                      <span>General Goal</span>
+                      <span>{t('general_goal')}</span>
                     </div>
                   </SelectItem>
                   {categories?.map((category) => (
@@ -498,7 +518,7 @@ export function TimeTrackerGoalsSettings({
               </Select>
             </div>
             <div>
-              <Label htmlFor={editDailyGoalId}>Daily Goal (minutes)</Label>
+              <Label htmlFor={editDailyGoalId}>{t('daily_goal_min')}</Label>
               <Input
                 id={editDailyGoalId}
                 type="number"
@@ -508,13 +528,13 @@ export function TimeTrackerGoalsSettings({
                 max="1440"
               />
               <p className="mt-1 text-muted-foreground text-xs">
-                Target: {formatMinutes(dailyGoalMinutes)} per day
+                {t('target_per_day', {
+                  time: formatMinutes(dailyGoalMinutes),
+                })}
               </p>
             </div>
             <div>
-              <Label htmlFor={editWeeklyGoalId}>
-                Weekly Goal (minutes, optional)
-              </Label>
+              <Label htmlFor={editWeeklyGoalId}>{t('weekly_goal_min')}</Label>
               <Input
                 id={editWeeklyGoalId}
                 type="number"
@@ -524,7 +544,9 @@ export function TimeTrackerGoalsSettings({
                 max="10080"
               />
               <p className="mt-1 text-muted-foreground text-xs">
-                Target: {formatMinutes(weeklyGoalMinutes)} per week
+                {t('target_per_week', {
+                  time: formatMinutes(weeklyGoalMinutes),
+                })}
               </p>
             </div>
             <div className="flex items-center space-x-2 pt-2">
@@ -533,7 +555,7 @@ export function TimeTrackerGoalsSettings({
                 checked={isActive}
                 onCheckedChange={setIsActive}
               />
-              <Label htmlFor="edit-goal-active">Active goal</Label>
+              <Label htmlFor="edit-goal-active">{t('active_goal')}</Label>
             </div>
             <div className="flex gap-2 pt-4">
               <Button
@@ -541,14 +563,14 @@ export function TimeTrackerGoalsSettings({
                 onClick={() => setIsEditDialogOpen(false)}
                 className="flex-1"
               >
-                Cancel
+                {t('categories_management.cancel')}
               </Button>
               <Button
                 onClick={() => updateMutation.mutate()}
                 disabled={updateMutation.isPending}
                 className="flex-1"
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update Goal'}
+                {updateMutation.isPending ? t('updating') : t('edit_goal')}
               </Button>
             </div>
           </div>
@@ -564,20 +586,19 @@ export function TimeTrackerGoalsSettings({
           <AlertDialogHeader>
             <AlertDialogTitle>{t('delete_goal')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this goal? This action cannot be
-              undone.
+              {t('delete_goal_description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>
-              Cancel
+              {t('categories_management.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate()}
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Goal'}
+              {deleteMutation.isPending ? t('deleting') : t('delete_goal')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
