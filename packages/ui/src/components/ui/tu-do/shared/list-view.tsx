@@ -62,7 +62,7 @@ import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useBulkOperations } from '../boards/boardId/kanban-bulk-operations';
+import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 
