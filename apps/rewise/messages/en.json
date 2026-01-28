@@ -14,7 +14,12 @@
       "chat_visibility": "Chat Visibility",
       "chat_visibility_description": "Choose who can view and edit this chat.",
       "link_copied": "Link copied to clipboard",
+      "only_me": "Only me",
+      "only_me_desc": "Only you can access this chat",
       "public_edit": "Public - Anyone can edit",
+      "public_edit_desc": "Anyone with the link can view and edit this chat",
+      "public_read": "Public (Read-only)",
+      "public_read_desc": "Anyone with the link can view this chat",
       "qr_code": "Scan QR Code",
       "qr_code_description": "Scan this QR code to access the chat"
     },

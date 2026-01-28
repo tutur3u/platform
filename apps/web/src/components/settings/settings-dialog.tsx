@@ -6,6 +6,7 @@ import {
   Building,
   CalendarDays,
   CheckSquare,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Clock,
@@ -35,17 +36,35 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@tuturuuu/ui/drawer';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Sidebar,
@@ -108,13 +127,15 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const { isMac, modKey } = usePlatform();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // User preference for expanding all settings accordions
   const { value: expandAllAccordions } = useUserBooleanConfig(
     'EXPAND_SETTINGS_ACCORDIONS',
-    false
+    true
   );
 
   // Fetch workspace data if not provided (using TanStack Query)
@@ -581,24 +602,93 @@ export function SettingsDialog({
           </SidebarContent>
         </Sidebar>
         <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2">
-              <Breadcrumb>
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 pr-12 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6 md:pr-6">
+            <div className="flex flex-1 items-center gap-2 md:flex-initial">
+              {/* Mobile navigation button */}
+              {isMobile && (
+                <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={mobileNavOpen}
+                      className="w-full flex-1 justify-between gap-2"
+                    >
+                      {activeItem && (
+                        <>
+                          <activeItem.icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 truncate text-left">
+                            {activeItem.label}
+                          </span>
+                        </>
+                      )}
+                      <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader className="sr-only">
+                      <DrawerTitle>{t('common.settings')}</DrawerTitle>
+                      <DrawerDescription>
+                        {t('search.search')}
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <Command className="rounded-none border-0">
+                      <CommandInput placeholder={t('search.search')} />
+                      <CommandList className="max-h-[50vh]">
+                        <CommandEmpty>
+                          {t('common.no_results_found')}
+                        </CommandEmpty>
+                        {navItems.map((group) => (
+                          <CommandGroup key={group.label} heading={group.label}>
+                            {group.items.map((item) => (
+                              <CommandItem
+                                key={item.name}
+                                value={`${group.label} ${item.label} ${item.keywords?.join(' ') || ''}`}
+                                onSelect={() => {
+                                  setActiveTab(item.name);
+                                  setMobileNavOpen(false);
+                                }}
+                                className={cn(
+                                  'flex items-center gap-2',
+                                  activeTab === item.name && 'bg-accent'
+                                )}
+                              >
+                                <item.icon className="h-4 w-4" />
+                                <div className="flex flex-col">
+                                  <span>{item.label}</span>
+                                  {item.description && (
+                                    <span className="line-clamp-1 text-muted-foreground text-xs">
+                                      {item.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </DrawerContent>
+                </Drawer>
+              )}
+
+              {/* Desktop breadcrumb navigation */}
+              <Breadcrumb className="hidden md:flex">
                 <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbItem>
                     <BreadcrumbLink href="#" className="pointer-events-none">
                       {t('common.settings')}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbSeparator />
                   {activeGroup && (
                     <>
-                      <BreadcrumbItem className="hidden md:block">
+                      <BreadcrumbItem>
                         <BreadcrumbPage className="text-muted-foreground">
                           {activeGroup.label}
                         </BreadcrumbPage>
                       </BreadcrumbItem>
-                      <BreadcrumbSeparator className="hidden md:block" />
+                      <BreadcrumbSeparator />
                     </>
                   )}
                   <BreadcrumbItem>
