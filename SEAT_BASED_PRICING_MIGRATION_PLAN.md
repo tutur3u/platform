@@ -117,10 +117,11 @@ WHERE pricing_model = 'seat_based';
 **Product Metadata:**
 ```json
 {
-  "product_tier": "PLUS",
-  "pricing_model": "seat_based"
+  "product_tier": "PLUS"
 }
 ```
+
+**Note:** `pricing_model` is now automatically detected from the Polar product's price configuration (amount type: `seat_based`) instead of being manually specified in metadata.
 
 ---
 
@@ -191,7 +192,8 @@ export async function POST(req: Request, { params }: Params) {
 **File:** `apps/web/src/app/api/payment/webhooks/route.ts`
 
 **Implementation Details:**
-- Tracks `pricing_model` from product metadata
+- Automatically detects `pricing_model` from Polar product price configuration
+- Extracts `price_per_seat`, `min_seats`, and `max_seats` from Polar `seatTiers`
 - Stores `seat_count` from subscription quantity
 - Handles both subscription creation and updates
 - Properly maps seat-based vs fixed pricing

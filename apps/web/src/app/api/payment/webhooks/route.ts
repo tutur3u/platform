@@ -184,14 +184,28 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
-      // Check if product is seat-based (from metadata)
-      const isSeatBased = product.metadata?.pricing_model === 'seat_based';
+      // Extract price from first price entry
+      const firstPrice =
+        product.prices.length > 0 ? (product.prices[0] as any) : null;
+
+      const price =
+        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+
+      const isSeatBased =
+        firstPrice &&
+        'amountType' in firstPrice &&
+        firstPrice.amountType === 'seat_based';
+
       const pricePerSeat = isSeatBased
-        ? product.prices.length > 0 &&
-          product.prices[0] &&
-          'priceAmount' in product.prices[0]
-          ? product.prices[0].priceAmount
-          : null
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        : null;
+
+      const minSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+
+      const maxSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
         : null;
 
       const { error: dbError } = await sbAdmin
@@ -200,18 +214,15 @@ export const POST = Webhooks({
           id: product.id,
           name: product.name,
           description: product.description || '',
-          price:
-            product.prices.length > 0
-              ? product.prices[0] && 'priceAmount' in product.prices[0]
-                ? product.prices[0].priceAmount
-                : 0
-              : 0,
+          price,
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
           // Seat-based pricing fields
           pricing_model: isSeatBased ? 'seat_based' : 'fixed',
           price_per_seat: pricePerSeat,
+          min_seats: minSeats,
+          max_seats: maxSeats,
         });
 
       if (dbError) {
@@ -253,14 +264,30 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
-      // Check if product is seat-based (from metadata)
-      const isSeatBased = product.metadata?.pricing_model === 'seat_based';
+      // Extract price from first price entry
+      const firstPrice = product.prices[0] as any;
+
+      const price =
+        product.prices.length > 0
+          ? firstPrice && 'priceAmount' in firstPrice
+            ? firstPrice.priceAmount
+            : 0
+          : 0;
+
+      const isSeatBased = product.prices.some(
+        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
+      );
+
       const pricePerSeat = isSeatBased
-        ? product.prices.length > 0 &&
-          product.prices[0] &&
-          'priceAmount' in product.prices[0]
-          ? product.prices[0].priceAmount
-          : null
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        : null;
+
+      const minSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+
+      const maxSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
         : null;
 
       const { error: dbError } = await sbAdmin
@@ -268,18 +295,15 @@ export const POST = Webhooks({
         .update({
           name: product.name,
           description: product.description || '',
-          price:
-            product.prices.length > 0
-              ? product.prices[0] && 'priceAmount' in product.prices[0]
-                ? product.prices[0].priceAmount
-                : 0
-              : 0,
+          price,
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
           // Seat-based pricing fields
           pricing_model: isSeatBased ? 'seat_based' : 'fixed',
           price_per_seat: pricePerSeat,
+          min_seats: minSeats,
+          max_seats: maxSeats,
         })
         .eq('id', product.id);
 
