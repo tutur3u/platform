@@ -9518,6 +9518,494 @@ export type Database = {
           },
         ];
       };
+      tuna_accessories: {
+        Row: {
+          category: Database['public']['Enums']['tuna_accessory_category'];
+          code: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_premium: boolean;
+          name: string;
+          sort_order: number;
+          unlock_condition: Json | null;
+        };
+        Insert: {
+          category: Database['public']['Enums']['tuna_accessory_category'];
+          code: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_premium?: boolean;
+          name: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+        };
+        Update: {
+          category?: Database['public']['Enums']['tuna_accessory_category'];
+          code?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_premium?: boolean;
+          name?: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+        };
+        Relationships: [];
+      };
+      tuna_achievements: {
+        Row: {
+          category: Database['public']['Enums']['tuna_achievement_category'];
+          code: string;
+          created_at: string;
+          description: string;
+          icon: string;
+          id: string;
+          name: string;
+          sort_order: number;
+          unlock_condition: Json | null;
+          xp_reward: number;
+        };
+        Insert: {
+          category: Database['public']['Enums']['tuna_achievement_category'];
+          code: string;
+          created_at?: string;
+          description: string;
+          icon: string;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+          xp_reward?: number;
+        };
+        Update: {
+          category?: Database['public']['Enums']['tuna_achievement_category'];
+          code?: string;
+          created_at?: string;
+          description?: string;
+          icon?: string;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+          xp_reward?: number;
+        };
+        Relationships: [];
+      };
+      tuna_daily_stats: {
+        Row: {
+          created_at: string;
+          date: string;
+          focus_minutes: number;
+          focus_sessions_completed: number;
+          id: string;
+          interactions: number;
+          streak_day: number;
+          tasks_completed: number;
+          updated_at: string;
+          user_id: string;
+          xp_earned: number;
+        };
+        Insert: {
+          created_at?: string;
+          date?: string;
+          focus_minutes?: number;
+          focus_sessions_completed?: number;
+          id?: string;
+          interactions?: number;
+          streak_day?: number;
+          tasks_completed?: number;
+          updated_at?: string;
+          user_id: string;
+          xp_earned?: number;
+        };
+        Update: {
+          created_at?: string;
+          date?: string;
+          focus_minutes?: number;
+          focus_sessions_completed?: number;
+          id?: string;
+          interactions?: number;
+          streak_day?: number;
+          tasks_completed?: number;
+          updated_at?: string;
+          user_id?: string;
+          xp_earned?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tuna_daily_stats_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_daily_stats_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_daily_stats_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_daily_stats_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tuna_focus_sessions: {
+        Row: {
+          actual_duration: number | null;
+          completed: boolean;
+          created_at: string;
+          ended_at: string | null;
+          goal: string | null;
+          id: string;
+          notes: string | null;
+          planned_duration: number;
+          started_at: string;
+          user_id: string;
+          xp_earned: number;
+        };
+        Insert: {
+          actual_duration?: number | null;
+          completed?: boolean;
+          created_at?: string;
+          ended_at?: string | null;
+          goal?: string | null;
+          id?: string;
+          notes?: string | null;
+          planned_duration: number;
+          started_at?: string;
+          user_id: string;
+          xp_earned?: number;
+        };
+        Update: {
+          actual_duration?: number | null;
+          completed?: boolean;
+          created_at?: string;
+          ended_at?: string | null;
+          goal?: string | null;
+          id?: string;
+          notes?: string | null;
+          planned_duration?: number;
+          started_at?: string;
+          user_id?: string;
+          xp_earned?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tuna_focus_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_focus_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_focus_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_focus_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tuna_memories: {
+        Row: {
+          category: Database['public']['Enums']['tuna_memory_category'];
+          confidence: number;
+          created_at: string;
+          id: string;
+          key: string;
+          last_referenced_at: string | null;
+          source: string | null;
+          updated_at: string;
+          user_id: string;
+          value: string;
+        };
+        Insert: {
+          category: Database['public']['Enums']['tuna_memory_category'];
+          confidence?: number;
+          created_at?: string;
+          id?: string;
+          key: string;
+          last_referenced_at?: string | null;
+          source?: string | null;
+          updated_at?: string;
+          user_id: string;
+          value: string;
+        };
+        Update: {
+          category?: Database['public']['Enums']['tuna_memory_category'];
+          confidence?: number;
+          created_at?: string;
+          id?: string;
+          key?: string;
+          last_referenced_at?: string | null;
+          source?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tuna_memories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_memories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_memories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_memories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tuna_pets: {
+        Row: {
+          created_at: string;
+          health: number;
+          hunger: number;
+          id: string;
+          last_fed_at: string;
+          last_interaction_at: string;
+          level: number;
+          mood: Database['public']['Enums']['tuna_mood'];
+          name: string;
+          streak_days: number;
+          total_conversations: number;
+          total_focus_minutes: number;
+          updated_at: string;
+          user_id: string;
+          xp: number;
+          xp_to_next_level: number;
+        };
+        Insert: {
+          created_at?: string;
+          health?: number;
+          hunger?: number;
+          id?: string;
+          last_fed_at?: string;
+          last_interaction_at?: string;
+          level?: number;
+          mood?: Database['public']['Enums']['tuna_mood'];
+          name?: string;
+          streak_days?: number;
+          total_conversations?: number;
+          total_focus_minutes?: number;
+          updated_at?: string;
+          user_id: string;
+          xp?: number;
+          xp_to_next_level?: number;
+        };
+        Update: {
+          created_at?: string;
+          health?: number;
+          hunger?: number;
+          id?: string;
+          last_fed_at?: string;
+          last_interaction_at?: string;
+          level?: number;
+          mood?: Database['public']['Enums']['tuna_mood'];
+          name?: string;
+          streak_days?: number;
+          total_conversations?: number;
+          total_focus_minutes?: number;
+          updated_at?: string;
+          user_id?: string;
+          xp?: number;
+          xp_to_next_level?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tuna_pets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_pets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_pets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_pets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tuna_user_accessories: {
+        Row: {
+          accessory_id: string;
+          id: string;
+          is_equipped: boolean;
+          unlocked_at: string;
+          user_id: string;
+        };
+        Insert: {
+          accessory_id: string;
+          id?: string;
+          is_equipped?: boolean;
+          unlocked_at?: string;
+          user_id: string;
+        };
+        Update: {
+          accessory_id?: string;
+          id?: string;
+          is_equipped?: boolean;
+          unlocked_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tuna_user_accessories_accessory_id_fkey';
+            columns: ['accessory_id'];
+            isOneToOne: false;
+            referencedRelation: 'tuna_accessories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_accessories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_accessories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_accessories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_accessories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tuna_user_achievements: {
+        Row: {
+          achievement_id: string;
+          id: string;
+          unlocked_at: string;
+          user_id: string;
+        };
+        Insert: {
+          achievement_id: string;
+          id?: string;
+          unlocked_at?: string;
+          user_id: string;
+        };
+        Update: {
+          achievement_id?: string;
+          id?: string;
+          unlocked_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tuna_user_achievements_achievement_id_fkey';
+            columns: ['achievement_id'];
+            isOneToOne: false;
+            referencedRelation: 'tuna_achievements';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tuna_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_configs: {
         Row: {
           created_at: string;
@@ -16797,6 +17285,33 @@ export type Database = {
           sync_token: string;
         }[];
       };
+      award_tuna_xp: {
+        Args: { p_source?: string; p_user_id: string; p_xp: number };
+        Returns: {
+          created_at: string;
+          health: number;
+          hunger: number;
+          id: string;
+          last_fed_at: string;
+          last_interaction_at: string;
+          level: number;
+          mood: Database['public']['Enums']['tuna_mood'];
+          name: string;
+          streak_days: number;
+          total_conversations: number;
+          total_focus_minutes: number;
+          updated_at: string;
+          user_id: string;
+          xp: number;
+          xp_to_next_level: number;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'tuna_pets';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       calculate_next_occurrence: {
         Args: {
           frequency: Database['public']['Enums']['recurring_frequency'];
@@ -16846,6 +17361,28 @@ export type Database = {
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
+      complete_tuna_focus_session: {
+        Args: { p_notes?: string; p_session_id: string };
+        Returns: {
+          actual_duration: number | null;
+          completed: boolean;
+          created_at: string;
+          ended_at: string | null;
+          goal: string | null;
+          id: string;
+          notes: string | null;
+          planned_duration: number;
+          started_at: string;
+          user_id: string;
+          xp_earned: number;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'tuna_focus_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       compute_ai_cost_usd: {
         Args: {
           p_input_tokens: number;
@@ -17544,6 +18081,33 @@ export type Database = {
             };
             Returns: string;
           };
+      get_or_create_tuna_pet: {
+        Args: { p_user_id: string };
+        Returns: {
+          created_at: string;
+          health: number;
+          hunger: number;
+          id: string;
+          last_fed_at: string;
+          last_interaction_at: string;
+          level: number;
+          mood: Database['public']['Enums']['tuna_mood'];
+          name: string;
+          streak_days: number;
+          total_conversations: number;
+          total_focus_minutes: number;
+          updated_at: string;
+          user_id: string;
+          xp: number;
+          xp_to_next_level: number;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'tuna_pets';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       get_pending_event_participants: {
         Args: { _event_id: string };
         Returns: number;
@@ -18525,6 +19089,33 @@ export type Database = {
         };
         Returns: string;
       };
+      record_tuna_interaction: {
+        Args: { p_user_id: string };
+        Returns: {
+          created_at: string;
+          health: number;
+          hunger: number;
+          id: string;
+          last_fed_at: string;
+          last_interaction_at: string;
+          level: number;
+          mood: Database['public']['Enums']['tuna_mood'];
+          name: string;
+          streak_days: number;
+          total_conversations: number;
+          total_focus_minutes: number;
+          updated_at: string;
+          user_id: string;
+          xp: number;
+          xp_to_next_level: number;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'tuna_pets';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       revoke_all_cross_app_tokens: {
         Args: { p_user_id: string };
@@ -18882,6 +19473,19 @@ export type Database = {
         | 'APPROVED'
         | 'REJECTED'
         | 'NEEDS_INFO';
+      tuna_accessory_category: 'hat' | 'glasses' | 'background' | 'decoration';
+      tuna_achievement_category:
+        | 'productivity'
+        | 'social'
+        | 'milestones'
+        | 'special';
+      tuna_memory_category:
+        | 'preference'
+        | 'fact'
+        | 'conversation_topic'
+        | 'event'
+        | 'person';
+      tuna_mood: 'happy' | 'neutral' | 'tired' | 'sad' | 'excited' | 'focused';
       workforce_benefit_type:
         | 'health_insurance'
         | 'dental_insurance'
@@ -19547,6 +20151,21 @@ export const Constants = {
         'REJECTED',
         'NEEDS_INFO',
       ],
+      tuna_accessory_category: ['hat', 'glasses', 'background', 'decoration'],
+      tuna_achievement_category: [
+        'productivity',
+        'social',
+        'milestones',
+        'special',
+      ],
+      tuna_memory_category: [
+        'preference',
+        'fact',
+        'conversation_topic',
+        'event',
+        'person',
+      ],
+      tuna_mood: ['happy', 'neutral', 'tired', 'sad', 'excited', 'focused'],
       workforce_benefit_type: [
         'health_insurance',
         'dental_insurance',
