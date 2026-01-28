@@ -5557,6 +5557,8 @@
       "always_enabled_personal": "This is always enabled for personal workspaces",
       "auto_assign_to_self": "Auto-assign to self",
       "auto_assign_to_self_description": "Automatically assign yourself to tasks you create when no other assignees are selected",
+      "expand_tuna_sections": "Expand Tuna task sections",
+      "expand_tuna_sections_description": "Automatically expand all task sections (Overdue, Today, Upcoming) in the Tuna panel",
       "fade_completed_tasks": "Fade completed task items",
       "fade_completed_tasks_description": "Lower the opacity of completed task list items in the editor to visually distinguish them from active items",
       "general": "General",

@@ -14,6 +14,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { useCompleteTunaTask, useTunaTasks } from '../../hooks/use-tasks';
 import type { TunaTask } from '../../types/tuna';
 import { TasksPanelItem } from './tasks-panel-item';
@@ -101,6 +102,8 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(
     new Set()
   );
+  const { value: expandAllTunaTasks, isLoading: expandConfigLoading } =
+    useUserBooleanConfig('TUNA_EXPAND_ALL_TASK_SECTIONS', true);
 
   const handleCompleteTask = useCallback(
     (taskId: string) => {
@@ -145,8 +148,8 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
     [router, tasksData, wsId]
   );
 
-  // Loading state
-  if (isLoading) {
+  // Loading state (wait for both tasks and expand config to load)
+  if (isLoading || expandConfigLoading) {
     return (
       <div className={cn('space-y-4', className)}>
         {[...Array(3)].map((_, i) => (
@@ -226,7 +229,7 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
             icon={<AlertCircle className="h-4 w-4" />}
             count={overdue.length}
             tasks={overdue}
-            defaultOpen={true}
+            defaultOpen={expandAllTunaTasks}
             completingTaskIds={completingTaskIds}
             onCompleteTask={handleCompleteTask}
             onClickTask={handleClickTask}
@@ -239,7 +242,7 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
             icon={<Clock className="h-4 w-4 text-dynamic-orange" />}
             count={today.length}
             tasks={today}
-            defaultOpen={true}
+            defaultOpen={expandAllTunaTasks}
             completingTaskIds={completingTaskIds}
             onCompleteTask={handleCompleteTask}
             onClickTask={handleClickTask}
@@ -251,7 +254,7 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
             icon={<Calendar className="h-4 w-4 text-dynamic-blue" />}
             count={upcoming.length}
             tasks={upcoming}
-            defaultOpen={false}
+            defaultOpen={expandAllTunaTasks}
             completingTaskIds={completingTaskIds}
             onCompleteTask={handleCompleteTask}
             onClickTask={handleClickTask}
