@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS: HeatmapSettings = {
   showOnboardingTips: true,
 };
 
-export function HeatmapSettingsForm() {
+export function HeatmapDisplaySettings() {
   const t = useTranslations('time-tracker.heatmap_settings');
 
   const [heatmapSettings, setHeatmapSettings] =
@@ -45,13 +45,20 @@ export function HeatmapSettingsForm() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <h4 className="font-medium">{t('activity_heatmap_display')}</h4>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-medium text-lg">
+            {t('activity_heatmap_display')}
+          </h3>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          {t('heatmap_view_style_description')}
+        </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-6">
         <div className="space-y-2">
           <Label htmlFor="heatmap-view">{t('heatmap_view_style')}</Label>
           <Select
@@ -68,25 +75,25 @@ export function HeatmapSettingsForm() {
             <SelectContent>
               <SelectItem value="original">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-sm bg-blue-500" />
+                  <div className="h-2 w-2 rounded-sm bg-dynamic-blue" />
                   <span>{t('view_modes.original_grid')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="hybrid">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-sm bg-green-500" />
+                  <div className="h-2 w-2 rounded-sm bg-dynamic-green" />
                   <span>{t('view_modes.hybrid')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="calendar-only">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-sm bg-purple-500" />
+                  <div className="h-2 w-2 rounded-sm bg-dynamic-purple" />
                   <span>{t('view_modes.calendar_only')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="compact-cards">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-sm bg-orange-500" />
+                  <div className="h-2 w-2 rounded-sm bg-dynamic-orange" />
                   <span>{t('view_modes.compact_cards')}</span>
                 </div>
               </SelectItem>
@@ -129,7 +136,15 @@ export function HeatmapSettingsForm() {
           </Select>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+          <div className="space-y-0.5">
+            <Label htmlFor="onboarding-tips" className="text-base">
+              {t('show_onboarding_tips')}
+            </Label>
+            <p className="text-muted-foreground text-sm">
+              {t('show_onboarding_tips_description')}
+            </p>
+          </div>
           <Switch
             id="onboarding-tips"
             checked={heatmapSettings.showOnboardingTips}
@@ -137,9 +152,6 @@ export function HeatmapSettingsForm() {
               updateSettings({ showOnboardingTips: checked });
             }}
           />
-          <Label htmlFor="onboarding-tips" className="text-sm">
-            {t('show_onboarding_tips')}
-          </Label>
         </div>
       </div>
     </div>

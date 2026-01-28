@@ -6,12 +6,15 @@ import {
   Building,
   CalendarDays,
   CheckSquare,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Clock,
   Coffee,
   CreditCard,
+  Goal,
   Laptop,
+  LayoutGrid,
   Paintbrush,
   Palette,
   PanelLeft,
@@ -33,17 +36,35 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@tuturuuu/ui/drawer';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Sidebar,
@@ -63,6 +84,7 @@ import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import UserAvatar from '../../app/[locale]/settings-avatar';
@@ -82,7 +104,9 @@ import InvoiceSettings from './finance/invoice-settings';
 import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
+import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
+import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import MembersSettings from './workspace/members-settings';
@@ -103,8 +127,16 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const { isMac, modKey } = usePlatform();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // User preference for expanding all settings accordions
+  const { value: expandAllAccordions } = useUserBooleanConfig(
+    'EXPAND_SETTINGS_ACCORDIONS',
+    true
+  );
 
   // Fetch workspace data if not provided (using TanStack Query)
   const {
@@ -396,6 +428,20 @@ export function SettingsDialog({
                 keywords: ['Time Tracker', 'General', 'Future'],
               },
               {
+                name: 'time_tracker_categories',
+                label: t('settings.time_tracker.categories'),
+                icon: LayoutGrid,
+                description: t('settings.time_tracker.categories_description'),
+                keywords: ['Time Tracker', 'Categories'],
+              },
+              {
+                name: 'time_tracker_goals',
+                label: t('settings.time_tracker.goals'),
+                icon: Goal,
+                description: t('settings.time_tracker.goals_description'),
+                keywords: ['Time Tracker', 'Goals', 'Productivity'],
+              },
+              {
                 name: 'break_types',
                 label: t('settings.time_tracker.break_types'),
                 icon: Coffee,
@@ -508,10 +554,13 @@ export function SettingsDialog({
           <SidebarContent className="overflow-y-auto p-4">
             {filteredNavItems.map((group) => (
               <Collapsible
-                key={`${group.label}-${searchQuery ? 'search' : 'browse'}`}
+                key={`${group.label}-${searchQuery ? 'search' : 'browse'}-${expandAllAccordions ? 'expanded' : 'collapsed'}`}
                 defaultOpen={
-                  !!searchQuery || group.label === navItems[0]?.label
+                  expandAllAccordions ||
+                  !!searchQuery ||
+                  group.label === navItems[0]?.label
                 }
+                open={expandAllAccordions ? true : undefined}
                 className="group/collapsible"
               >
                 <SidebarGroup className="p-0">
@@ -553,24 +602,93 @@ export function SettingsDialog({
           </SidebarContent>
         </Sidebar>
         <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2">
-              <Breadcrumb>
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 pr-12 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6 md:pr-6">
+            <div className="flex flex-1 items-center gap-2 md:flex-initial">
+              {/* Mobile navigation button */}
+              {isMobile && (
+                <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={mobileNavOpen}
+                      className="w-full flex-1 justify-between gap-2"
+                    >
+                      {activeItem && (
+                        <>
+                          <activeItem.icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 truncate text-left">
+                            {activeItem.label}
+                          </span>
+                        </>
+                      )}
+                      <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader className="sr-only">
+                      <DrawerTitle>{t('common.settings')}</DrawerTitle>
+                      <DrawerDescription>
+                        {t('search.search')}
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <Command className="rounded-none border-0">
+                      <CommandInput placeholder={t('search.search')} />
+                      <CommandList className="max-h-[50vh]">
+                        <CommandEmpty>
+                          {t('common.no_results_found')}
+                        </CommandEmpty>
+                        {navItems.map((group) => (
+                          <CommandGroup key={group.label} heading={group.label}>
+                            {group.items.map((item) => (
+                              <CommandItem
+                                key={item.name}
+                                value={`${group.label} ${item.label} ${item.keywords?.join(' ') || ''}`}
+                                onSelect={() => {
+                                  setActiveTab(item.name);
+                                  setMobileNavOpen(false);
+                                }}
+                                className={cn(
+                                  'flex items-center gap-2',
+                                  activeTab === item.name && 'bg-accent'
+                                )}
+                              >
+                                <item.icon className="h-4 w-4" />
+                                <div className="flex flex-col">
+                                  <span>{item.label}</span>
+                                  {item.description && (
+                                    <span className="line-clamp-1 text-muted-foreground text-xs">
+                                      {item.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </DrawerContent>
+                </Drawer>
+              )}
+
+              {/* Desktop breadcrumb navigation */}
+              <Breadcrumb className="hidden md:flex">
                 <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbItem>
                     <BreadcrumbLink href="#" className="pointer-events-none">
                       {t('common.settings')}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbSeparator />
                   {activeGroup && (
                     <>
-                      <BreadcrumbItem className="hidden md:block">
+                      <BreadcrumbItem>
                         <BreadcrumbPage className="text-muted-foreground">
                           {activeGroup.label}
                         </BreadcrumbPage>
                       </BreadcrumbItem>
-                      <BreadcrumbSeparator className="hidden md:block" />
+                      <BreadcrumbSeparator />
                     </>
                   )}
                   <BreadcrumbItem>
@@ -800,6 +918,14 @@ export function SettingsDialog({
 
                 {activeTab === 'break_types' && wsId && (
                   <WorkspaceBreakTypesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_categories' && wsId && (
+                  <TimeTrackerCategoriesSettings wsId={wsId} />
+                )}
+
+                {activeTab === 'time_tracker_goals' && wsId && (
+                  <TimeTrackerGoalsSettings wsId={wsId} />
                 )}
 
                 {activeTab === 'time_tracker_general' && wsId && (

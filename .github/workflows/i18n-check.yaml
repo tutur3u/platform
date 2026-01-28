@@ -106,10 +106,56 @@ jobs:
           # Fail the step if there are issues
           exit $i18n_exit_code
 
+  i18n-key-parity-check:
+    name: Key Parity Check (en ↔ vi)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_issues: ${{ steps.parity-check.outputs.has_issues }}
+      missing_in_vi: ${{ steps.parity-check.outputs.missing_in_vi }}
+      missing_in_en: ${{ steps.parity-check.outputs.missing_in_en }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run key parity check
+        id: parity-check
+        run: |
+          set +e
+          parity_output=$(node scripts/i18n-key-parity.js 2>&1)
+          parity_exit_code=$?
+          set -e
+
+          echo "$parity_output"
+
+          if [ "$parity_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+            # Extract counts from output
+            missing_vi=$(echo "$parity_output" | grep -o '[0-9]* key(s) missing in vi.json' | grep -o '[0-9]*' | head -1 || echo "0")
+            missing_en=$(echo "$parity_output" | grep -o '[0-9]* key(s) missing in en.json' | grep -o '[0-9]*' | head -1 || echo "0")
+            echo "missing_in_vi=${missing_vi:-0}" >> $GITHUB_OUTPUT
+            echo "missing_in_en=${missing_en:-0}" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+            echo "missing_in_vi=0" >> $GITHUB_OUTPUT
+            echo "missing_in_en=0" >> $GITHUB_OUTPUT
+          fi
+
+          exit $parity_exit_code
+
   comment:
     name: Comment on PR
     runs-on: ubuntu-latest
-    needs: [i18n-sort-check, i18n-translation-check]
+    needs: [i18n-sort-check, i18n-translation-check, i18n-key-parity-check]
     if: always() && github.event_name == 'pull_request'
     permissions:
       contents: read
@@ -129,12 +175,24 @@ jobs:
             const isSorted = '${{ needs.i18n-sort-check.outputs.is_sorted }}';
             const hasTranslationIssues = '${{ needs.i18n-translation-check.outputs.has_issues }}';
             const issueCount = '${{ needs.i18n-translation-check.outputs.issue_count }}';
+            const hasParityIssues = '${{ needs.i18n-key-parity-check.outputs.has_issues }}';
+            const missingInVi = '${{ needs.i18n-key-parity-check.outputs.missing_in_vi }}';
+            const missingInEn = '${{ needs.i18n-key-parity-check.outputs.missing_in_en }}';
 
             const timestamp = new Date().toLocaleString();
 
             const sortStatus = isSorted === 'true' ? '✅ Sorted' : '❌ Not sorted';
             const translationStatus = hasTranslationIssues === 'true' ? '❌ Issues found' : '✅ All in sync';
-            const overallSuccess = isSorted === 'true' && hasTranslationIssues !== 'true';
+            const parityStatus = hasParityIssues === 'true' ? '❌ Keys mismatch' : '✅ Keys in sync';
+            const overallSuccess = isSorted === 'true' && hasTranslationIssues !== 'true' && hasParityIssues !== 'true';
+
+            let parityDetails = '';
+            if (hasParityIssues === 'true') {
+              const details = [];
+              if (parseInt(missingInVi) > 0) details.push(`${missingInVi} missing in vi.json`);
+              if (parseInt(missingInEn) > 0) details.push(`${missingInEn} missing in en.json`);
+              parityDetails = details.length > 0 ? ` (${details.join(', ')})` : '';
+            }
 
             let nextSteps = '';
             if (!overallSuccess) {
@@ -143,7 +201,11 @@ jobs:
                 nextSteps += '**Sorting Issues:**\n```bash\nbun i18n:sort\n```\n\n';
               }
               if (hasTranslationIssues === 'true') {
-                nextSteps += '**Translation Issues:**\n```bash\nbun i18n:check\n```\n';
+                nextSteps += '**Translation Issues:**\n```bash\nbun i18n:check\n```\n\n';
+              }
+              if (hasParityIssues === 'true') {
+                nextSteps += '**Key Parity Issues (en ↔ vi):**\n```bash\nbun i18n:key-parity\n```\n\n';
+                nextSteps += '> 💡 Use `bun i18n:sync` to auto-sync missing keys.\n';
               }
             }
 
@@ -160,6 +222,7 @@ jobs:
             |-------|--------|
             | 🔤 **Translation Sorting** | ${sortStatus} |
             | 🔑 **Translation Keys** | ${translationStatus} ${hasTranslationIssues === 'true' ? `(${issueCount} issues)` : ''} |
+            | 🔄 **Key Parity (en ↔ vi)** | ${parityStatus}${parityDetails} |
 
             ${nextSteps}
 

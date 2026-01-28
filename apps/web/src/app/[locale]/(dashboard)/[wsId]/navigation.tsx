@@ -311,16 +311,6 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/time-tracker/history`,
           icon: <ClipboardClock className="h-5 w-5" />,
         },
-        {
-          title: t('sidebar_tabs.categories'),
-          href: `/${personalOrWsId}/time-tracker/categories`,
-          icon: <Tags className="h-5 w-5" />,
-        },
-        {
-          title: t('sidebar_tabs.goals'),
-          href: `/${personalOrWsId}/time-tracker/goals`,
-          icon: <Goal className="h-5 w-5" />,
-        },
         null,
         {
           title: t('sidebar_tabs.time_tracker_management'),
@@ -335,12 +325,6 @@ export async function WorkspaceNavigationLinks({
           icon: <ClockCheck className="h-5 w-5" />,
           disabled: isPersonal,
         },
-        null,
-        {
-          title: t('sidebar_tabs.settings'),
-          href: `/${personalOrWsId}/time-tracker/settings`,
-          icon: <Settings className="h-5 w-5" />,
-        },
       ],
       icon: <ClockFading className="h-5 w-5" />,
       // disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
@@ -349,11 +333,8 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker`,
         `/${personalOrWsId}/time-tracker/timer`,
         `/${personalOrWsId}/time-tracker/history`,
-        `/${personalOrWsId}/time-tracker/categories`,
-        `/${personalOrWsId}/time-tracker/goals`,
         `/${personalOrWsId}/time-tracker/management`,
         `/${personalOrWsId}/time-tracker/requests`,
-        `/${personalOrWsId}/time-tracker/settings`,
       ],
     },
     {
