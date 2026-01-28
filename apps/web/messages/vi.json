@@ -8152,13 +8152,29 @@
       "achievements": "Thành tựu",
       "focus": "Tập trung",
       "history": "Lịch sử",
-      "home": "Trang chủ"
+      "home": "Trang chủ",
+      "tasks": "Công việc"
+    },
+    "tasks": {
+      "all_caught_up": "Đã xong hết!",
+      "done_today": "Xong hôm nay",
+      "no_tasks_description": "Bạn không có công việc nào đến hạn sớm. Tuyệt vời!",
+      "overdue": "Quá hạn",
+      "overview": "Tổng quan công việc",
+      "task_completed": "Hoàn thành công việc!",
+      "title": "Công việc của tôi",
+      "today": "Hôm nay",
+      "upcoming": "Sắp tới",
+      "xp_earned": "+{amount} XP"
     },
     "title": "Tuna",
     "voice": {
+      "close": "Đóng",
+      "connect_to_chat": "Kết nối để trò chuyện...",
       "end_call": "Kết thúc cuộc gọi",
       "preparing": "Đang chuẩn bị trò chuyện bằng giọng nói...",
       "retry": "Thử lại",
+      "send_message": "Gửi tin nhắn",
       "status": {
         "connecting": "Đang kết nối...",
         "listening": "Đang lắng nghe...",
@@ -8168,6 +8184,9 @@
         "tuna_speaking": "Tuna đang nói..."
       },
       "talk_to_tuna": "Trò chuyện với Tuna",
+      "talking_to_tuna": "Đang trò chuyện với Tuna",
+      "toggle_text_chat": "Bật/tắt trò chuyện văn bản",
+      "type_message": "Nhập tin nhắn...",
       "unavailable": "Trò chuyện bằng giọng nói không khả dụng"
     }
   },
@@ -11229,6 +11248,8 @@
     "add_role_to_wallet_description": "Chọn một vai trò và cấu hình cửa sổ xem cho ví này",
     "add_roles_to_get_started": "Nhấp 'Thêm vai trò' ở trên để cấp quyền truy cập ví này cho các vai trò",
     "all_wallets": "Tất cả ví",
+    "confirm_delete_wallet": "Bạn có chắc chắn muốn xóa ví này không? Hành động này không thể hoàn tác và tất cả các giao dịch liên quan sẽ bị ảnh hưởng.",
+    "confirm_delete_wallet_named": "Bạn có chắc chắn muốn xóa \"{name}\" không? Hành động này không thể hoàn tác và tất cả các giao dịch liên quan sẽ bị ảnh hưởng.",
     "confirm_remove_role": "Xác nhận xóa vai trò",
     "create": "Tạo ví",
     "create_description": "Tạo một ví mới",
@@ -11237,6 +11258,7 @@
     "edit_description": "Chỉnh sửa ví hiện có",
     "failed_to_add_role": "Không thể thêm vai trò",
     "failed_to_create_wallet": "Không tạo được ví",
+    "failed_to_delete_wallet": "Không thể xóa ví",
     "failed_to_remove_role": "Không thể xóa vai trò",
     "failed_to_update_role": "Không thể cập nhật vai trò",
     "filter_by_wallet": "Lọc theo ví",
@@ -11257,6 +11279,7 @@
     "singular": "Ví",
     "try_different_search_term": "Thử từ khóa tìm kiếm khác",
     "unnamed_wallet": "Ví không tên",
-    "wallet": "Phương thức thanh toán"
+    "wallet": "Phương thức thanh toán",
+    "wallet_deleted": "Đã xóa ví thành công"
   }
 }

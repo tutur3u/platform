@@ -8152,13 +8152,29 @@
       "achievements": "Achievements",
       "focus": "Focus",
       "history": "History",
-      "home": "Home"
+      "home": "Home",
+      "tasks": "Tasks"
+    },
+    "tasks": {
+      "all_caught_up": "All caught up!",
+      "done_today": "Done Today",
+      "no_tasks_description": "You have no pending tasks due soon. Great job!",
+      "overdue": "Overdue",
+      "overview": "Task Overview",
+      "task_completed": "Task completed!",
+      "title": "My Tasks",
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "xp_earned": "+{amount} XP"
     },
     "title": "Tuna",
     "voice": {
+      "close": "Close",
+      "connect_to_chat": "Connect to chat...",
       "end_call": "End Call",
       "preparing": "Preparing voice chat...",
       "retry": "Retry",
+      "send_message": "Send message",
       "status": {
         "connecting": "Connecting...",
         "listening": "Listening...",
@@ -8168,6 +8184,9 @@
         "tuna_speaking": "Tuna is speaking..."
       },
       "talk_to_tuna": "Talk to Tuna",
+      "talking_to_tuna": "Talking to Tuna",
+      "toggle_text_chat": "Toggle text chat",
+      "type_message": "Type a message...",
       "unavailable": "Voice chat unavailable"
     }
   },
@@ -11229,6 +11248,8 @@
     "add_role_to_wallet_description": "Select a role and configure the viewing window for this wallet",
     "add_roles_to_get_started": "Click 'Add Role' above to grant roles access to this wallet",
     "all_wallets": "All wallets",
+    "confirm_delete_wallet": "Are you sure you want to delete this wallet? This action cannot be undone and all associated transactions will be affected.",
+    "confirm_delete_wallet_named": "Are you sure you want to delete \"{name}\"? This action cannot be undone and all associated transactions will be affected.",
     "confirm_remove_role": "Remove Role Confirmation",
     "create": "Create wallet",
     "create_description": "Create a new wallet",
@@ -11237,6 +11258,7 @@
     "edit_description": "Edit an existing wallet",
     "failed_to_add_role": "Failed to add role",
     "failed_to_create_wallet": "Failed to create wallet",
+    "failed_to_delete_wallet": "Failed to delete wallet",
     "failed_to_remove_role": "Failed to remove role",
     "failed_to_update_role": "Failed to update role",
     "filter_by_wallet": "Filter by wallet",
@@ -11257,6 +11279,7 @@
     "singular": "Wallet",
     "try_different_search_term": "Try a different search term",
     "unnamed_wallet": "Unnamed Wallet",
-    "wallet": "Payment Method"
+    "wallet": "Payment Method",
+    "wallet_deleted": "Wallet deleted successfully"
   }
 }
