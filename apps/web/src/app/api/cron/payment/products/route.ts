@@ -64,12 +64,30 @@ export async function GET(req: NextRequest) {
                 : null;
 
             // Extract price from first price entry
+            const firstPrice =
+              product.prices.length > 0 ? (product.prices[0] as any) : null;
+
             const price =
-              product.prices.length > 0
-                ? product.prices[0] && 'priceAmount' in product.prices[0]
-                  ? product.prices[0].priceAmount
-                  : 0
+              firstPrice && 'priceAmount' in firstPrice
+                ? firstPrice.priceAmount
                 : 0;
+
+            const isSeatBased =
+              firstPrice &&
+              'amountType' in firstPrice &&
+              firstPrice.amountType === 'seat_based';
+
+            const pricePerSeat = isSeatBased
+              ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+              : null;
+
+            const minSeats = isSeatBased
+              ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+              : null;
+
+            const maxSeats = isSeatBased
+              ? (firstPrice?.seatTiers?.maximumSeats ?? null)
+              : null;
 
             // Prepare product data
             const productData = {
@@ -80,6 +98,12 @@ export async function GET(req: NextRequest) {
               recurring_interval: product.recurringInterval || 'month',
               tier,
               archived: product.isArchived ?? false,
+              pricing_model: isSeatBased
+                ? ('seat_based' as const)
+                : ('fixed' as const),
+              price_per_seat: pricePerSeat,
+              min_seats: minSeats,
+              max_seats: maxSeats,
             };
 
             // Upsert product

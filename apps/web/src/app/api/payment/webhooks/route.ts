@@ -9,11 +9,11 @@ import {
 } from '@/utils/subscription-helper';
 
 // Helper function to report initial seat usage to Polar
-async function reportInitialUsage(ws_id: string, customerId: string) {
+export async function reportInitialUsage(ws_id: string, customerId: string) {
   const sbAdmin = await createAdminClient();
 
   const { count: initialUserCount, error: countError } = await sbAdmin
-    .from('workspace_users')
+    .from('workspace_members')
     .select('*', { count: 'exact', head: true })
     .eq('ws_id', ws_id);
 
@@ -39,7 +39,7 @@ async function reportInitialUsage(ws_id: string, customerId: string) {
 }
 
 // Helper function to sync subscription data from Polar to DB
-async function syncSubscriptionToDatabase(subscription: Subscription) {
+export async function syncSubscriptionToDatabase(subscription: Subscription) {
   const sbAdmin = await createAdminClient();
   const ws_id = subscription.metadata?.wsId;
 
@@ -49,6 +49,16 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
       status: 400,
     });
   }
+
+  // Check if product is seat-based
+  const { data: product } = await sbAdmin
+    .from('workspace_subscription_products')
+    .select('pricing_model, price_per_seat')
+    .eq('id', subscription.product.id)
+    .single();
+
+  const isSeatBased = product?.pricing_model === 'seat_based';
+  const seatCount = isSeatBased ? (subscription.seats ?? 1) : null;
 
   const subscriptionData = {
     ws_id: ws_id,
@@ -76,6 +86,10 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
         : subscription.modifiedAt
           ? new Date(subscription.modifiedAt).toISOString()
           : null,
+    // Seat-based pricing fields
+    pricing_model: isSeatBased ? ('seat_based' as const) : ('fixed' as const),
+    seat_count: seatCount,
+    price_per_seat: product?.price_per_seat ?? null,
   };
 
   // Update existing subscription
@@ -91,11 +105,11 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
     throw new Error(`Database Error: ${dbError.message}`);
   }
 
-  return { ws_id, subscriptionData };
+  return { ws_id, subscriptionData, isSeatBased };
 }
 
 // Helper function to sync order data from Polar to DB
-async function syncOrderToDatabase(order: Order) {
+export async function syncOrderToDatabase(order: Order) {
   const sbAdmin = await createAdminClient();
   const ws_id = order.metadata?.wsId;
 
@@ -170,21 +184,45 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
+      // Extract price from first price entry
+      const firstPrice =
+        product.prices.length > 0 ? (product.prices[0] as any) : null;
+
+      const price =
+        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+
+      const isSeatBased =
+        firstPrice &&
+        'amountType' in firstPrice &&
+        firstPrice.amountType === 'seat_based';
+
+      const pricePerSeat = isSeatBased
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        : null;
+
+      const minSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+
+      const maxSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
+        : null;
+
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
         .insert({
           id: product.id,
           name: product.name,
           description: product.description || '',
-          price:
-            product.prices.length > 0
-              ? product.prices[0] && 'priceAmount' in product.prices[0]
-                ? product.prices[0].priceAmount
-                : 0
-              : 0,
+          price,
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
+          // Seat-based pricing fields
+          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          price_per_seat: pricePerSeat,
+          min_seats: minSeats,
+          max_seats: maxSeats,
         });
 
       if (dbError) {
@@ -226,20 +264,46 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
+      // Extract price from first price entry
+      const firstPrice = product.prices[0] as any;
+
+      const price =
+        product.prices.length > 0
+          ? firstPrice && 'priceAmount' in firstPrice
+            ? firstPrice.priceAmount
+            : 0
+          : 0;
+
+      const isSeatBased = product.prices.some(
+        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
+      );
+
+      const pricePerSeat = isSeatBased
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        : null;
+
+      const minSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+
+      const maxSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
+        : null;
+
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
         .update({
           name: product.name,
           description: product.description || '',
-          price:
-            product.prices.length > 0
-              ? product.prices[0] && 'priceAmount' in product.prices[0]
-                ? product.prices[0].priceAmount
-                : 0
-              : 0,
+          price,
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
+          // Seat-based pricing fields
+          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          price_per_seat: pricePerSeat,
+          min_seats: minSeats,
+          max_seats: maxSeats,
         })
         .eq('id', product.id);
 

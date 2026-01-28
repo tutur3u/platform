@@ -21,7 +21,9 @@ export async function fetchSubscription(wsId: string) {
         description,
         price,
         recurring_interval,
-        tier
+        tier,
+        pricing_model,
+        price_per_seat
       )
     `
     )
@@ -46,6 +48,10 @@ export async function fetchSubscription(wsId: string) {
     currentPeriodEnd: dbSub.current_period_end,
     cancelAtPeriodEnd: dbSub.cancel_at_period_end,
     product: dbSub.workspace_subscription_products,
+    // Seat-based pricing fields
+    pricingModel: dbSub.pricing_model,
+    seatCount: dbSub.seat_count,
+    pricePerSeat: dbSub.price_per_seat,
   };
 }
 

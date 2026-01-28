@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -76,10 +77,18 @@ export async function GET(_: Request, { params }: Params) {
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', inviteLink.ws_id as string);
 
+    // Check seat availability for the workspace
+    const seatCheck = await enforceSeatLimit(
+      sbAdmin,
+      inviteLink.ws_id as string
+    );
+
     return NextResponse.json(
       {
         workspace: inviteLink.workspaces,
         memberCount: memberCount || 0,
+        seatLimitReached: !seatCheck.allowed,
+        seatStatus: seatCheck.status,
       },
       { status: 200 }
     );
@@ -140,9 +149,22 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
+    // Check seat limit BEFORE adding member
+    const wsId = inviteLink.ws_id as string;
+    const seatCheck = await enforceSeatLimit(sbAdmin, wsId);
+    if (!seatCheck.allowed) {
+      return NextResponse.json(
+        {
+          errorCode: 'SEAT_LIMIT_REACHED',
+          message: seatCheck.message,
+          seatStatus: seatCheck.status,
+        },
+        { status: 403 }
+      );
+    }
+
     // Add user to workspace first - this will fail if they're already a member (unique constraint)
     // ws_id is already validated above to exist
-    const wsId = inviteLink.ws_id as string;
     const { error: memberError } = await sbAdmin
       .from('workspace_members')
       .insert({

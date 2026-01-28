@@ -14574,8 +14574,14 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          max_seats: number | null;
+          min_seats: number | null;
           name: string | null;
           price: number | null;
+          price_per_seat: number | null;
+          pricing_model:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           recurring_interval: string | null;
           tier: Database['public']['Enums']['workspace_product_tier'] | null;
         };
@@ -14584,8 +14590,14 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id: string;
+          max_seats?: number | null;
+          min_seats?: number | null;
           name?: string | null;
           price?: number | null;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           recurring_interval?: string | null;
           tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
@@ -14594,8 +14606,14 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          max_seats?: number | null;
+          min_seats?: number | null;
           name?: string | null;
           price?: number | null;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           recurring_interval?: string | null;
           tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
@@ -14609,7 +14627,12 @@ export type Database = {
           current_period_start: string | null;
           id: string;
           polar_subscription_id: string;
+          price_per_seat: number | null;
+          pricing_model:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           product_id: string | null;
+          seat_count: number | null;
           status: Database['public']['Enums']['subscription_status'] | null;
           updated_at: string | null;
           ws_id: string;
@@ -14621,7 +14644,12 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id: string;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           product_id?: string | null;
+          seat_count?: number | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
           updated_at?: string | null;
           ws_id: string;
@@ -14633,7 +14661,12 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id?: string;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           product_id?: string | null;
+          seat_count?: number | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
           updated_at?: string | null;
           ws_id?: string;
@@ -19871,6 +19904,7 @@ export type Database = {
         | 'BellRing'
         | 'BellOff';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
+      workspace_pricing_model: 'fixed' | 'seat_based';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -20552,6 +20586,7 @@ export const Constants = {
         'BellOff',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
+      workspace_pricing_model: ['fixed', 'seat_based'],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',
