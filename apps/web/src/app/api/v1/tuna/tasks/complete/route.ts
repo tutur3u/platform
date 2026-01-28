@@ -121,6 +121,21 @@ export async function POST(request: Request) {
       listInfo = listData as unknown as TaskList;
     }
 
+    // Find a "done" or "closed" list to move the task to
+    let doneListId: string | null = null;
+    if (listInfo?.board?.id) {
+      const { data: boardLists } = await supabase
+        .from('task_lists')
+        .select('id, status, position')
+        .eq('board_id', listInfo.board.id)
+        .eq('deleted', false)
+        .order('position');
+
+      const doneList = boardLists?.find((l) => l.status === 'done');
+      const closedList = boardLists?.find((l) => l.status === 'closed');
+      doneListId = doneList?.id || closedList?.id || null;
+    }
+
     // Calculate XP based on priority and whether it was overdue
     const isOverdue =
       taskFromRpc.task_end_date &&
@@ -130,22 +145,35 @@ export async function POST(request: Request) {
       !!isOverdue
     );
 
-    // Complete the task by setting closed_at and completed_at
+    // Move task to done list - the database trigger handles completed_at/closed_at automatically
     const now = new Date().toISOString();
-    const { error: updateError } = await supabase
-      .from('tasks')
-      .update({
-        closed_at: now,
-        completed_at: now,
-      })
-      .eq('id', task_id);
+    if (doneListId && doneListId !== taskFromRpc.task_list_id) {
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ list_id: doneListId })
+        .eq('id', task_id);
 
-    if (updateError) {
-      console.error('Error completing task:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to complete task' },
-        { status: 500 }
-      );
+      if (updateError) {
+        console.error('Error completing task:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to complete task' },
+          { status: 500 }
+        );
+      }
+    } else {
+      // No done/closed list found, manually set completed_at as fallback
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ completed_at: now })
+        .eq('id', task_id);
+
+      if (updateError) {
+        console.error('Error completing task:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to complete task' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get current pet state for level comparison
