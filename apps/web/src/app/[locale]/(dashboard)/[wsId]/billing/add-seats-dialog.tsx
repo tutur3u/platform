@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Loader2, Minus, Plus, Users } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,7 +17,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
-import type { SeatStatus } from '@/utils/seat-limits';
 
 interface AddSeatsDialogProps {
   open: boolean;
@@ -37,7 +36,6 @@ export function AddSeatsDialog({
   billingCycle,
 }: AddSeatsDialogProps) {
   const [additionalSeats, setAdditionalSeats] = useState(1);
-  const queryClient = useQueryClient();
   const t = useTranslations('billing');
   const router = useRouter();
 
@@ -69,40 +67,7 @@ export function AddSeatsDialog({
 
       return data;
     },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches
-      // (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({
-        queryKey: ['workspace-seat-status', wsId],
-      });
-
-      // Snapshot the previous value
-      const previousSeatStatus = queryClient.getQueryData<SeatStatus>([
-        'workspace-seat-status',
-        wsId,
-      ]);
-
-      // Optimistically update to the new value
-      if (previousSeatStatus) {
-        queryClient.setQueryData<SeatStatus>(['workspace-seat-status', wsId], {
-          ...previousSeatStatus,
-          seatCount: previousSeatStatus.seatCount + variables.additionalSeats,
-          availableSeats:
-            previousSeatStatus.availableSeats + variables.additionalSeats,
-        });
-      }
-
-      return { previousSeatStatus };
-    },
-    onError: (error, _variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousSeatStatus) {
-        queryClient.setQueryData(
-          ['workspace-seat-status', wsId],
-          context.previousSeatStatus
-        );
-      }
-
+    onError: (error, _variables, _context) => {
       console.error('Error purchasing seats:', error);
       toast.error(t('seats-purchased-error'), {
         description:
@@ -119,12 +84,6 @@ export function AddSeatsDialog({
 
       onOpenChange(false);
       router.refresh();
-    },
-    onSettled: () => {
-      // Always refetch after error or success to ensure we have the correct data
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-seat-status', wsId],
-      });
     },
   });
 
