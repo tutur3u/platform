@@ -1,6 +1,13 @@
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import type {
   Product,
   ProductInventory,
@@ -31,7 +38,7 @@ interface UseSubscriptionAutoSelectionProps {
     valid_until?: string | null;
     created_at?: string | null;
   }[];
-  onSelectedProductsChange: (products: SelectedProductItem[]) => void;
+  onSelectedProductsChange: Dispatch<SetStateAction<SelectedProductItem[]>>;
 }
 
 export type UseSubscriptionAutoSelectionResult = undefined;
@@ -115,6 +122,25 @@ const buildAutoSelectedProductsForGroup = (
   return { autoSelected: results, fallbackTriggered };
 };
 
+const areSelectedProductsEqual = (
+  current: SelectedProductItem[],
+  next: SelectedProductItem[]
+) => {
+  if (current.length !== next.length) return false;
+
+  const toKey = (item: SelectedProductItem) =>
+    `${item.product.id}|${item.inventory.unit_id}|${item.inventory.warehouse_id}|${item.quantity}`;
+
+  const currentKeys = new Set(current.map(toKey));
+  if (currentKeys.size !== next.length) return false;
+
+  for (const item of next) {
+    if (!currentKeys.has(toKey(item))) return false;
+  }
+
+  return true;
+};
+
 const computeGroupAttendanceDaysMap = (
   selectedGroupIds: string[],
   userGroups: UserGroup[],
@@ -193,9 +219,13 @@ export function useSubscriptionAutoSelection({
   const previousGroupIdRef = useRef<string>('');
   const fallbackToastShownRef = useRef<boolean>(false);
   const initialPrefillUsedRef = useRef<boolean>(false);
-  const sortedSelectedGroupIds = useMemo(
-    () => [...selectedGroupIds].sort(),
+  const selectedGroupIdsKey = useMemo(
+    () => [...selectedGroupIds].sort().join(','),
     [selectedGroupIds]
+  );
+  const sortedSelectedGroupIds = useMemo(
+    () => (selectedGroupIdsKey ? selectedGroupIdsKey.split(',') : []),
+    [selectedGroupIdsKey]
   );
   const groupAttendanceDaysMap = useMemo(
     () =>
@@ -230,7 +260,9 @@ export function useSubscriptionAutoSelection({
           groupAttendanceDaysMap
         );
 
-      onSelectedProductsChange(autoSelected);
+      onSelectedProductsChange((prev) =>
+        areSelectedProductsEqual(prev, autoSelected) ? prev : autoSelected
+      );
 
       if (fallbackTriggered && !fallbackToastShownRef.current) {
         toast(
@@ -336,7 +368,9 @@ export function useSubscriptionAutoSelection({
 
     if (autoSelected.length === 0) return;
 
-    onSelectedProductsChange(autoSelected);
+    onSelectedProductsChange((prev) =>
+      areSelectedProductsEqual(prev, autoSelected) ? prev : autoSelected
+    );
 
     if (fallbackTriggered && !fallbackToastShownRef.current) {
       toast(

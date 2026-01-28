@@ -404,8 +404,17 @@ export function SubscriptionInvoice({
     if (!earliestStart || !latestEnd) return;
 
     const currentMonth = new Date(`${selectedMonth}-01`);
+    const currentMonthStart = new Date(currentMonth);
+    currentMonthStart.setDate(1);
+    const earliestMonthStart = new Date(earliestStart);
+    earliestMonthStart.setDate(1);
+    const latestMonthStart = new Date(latestEnd);
+    latestMonthStart.setDate(1);
 
-    if (currentMonth < earliestStart || currentMonth > latestEnd) {
+    if (
+      currentMonthStart < earliestMonthStart ||
+      currentMonthStart > latestMonthStart
+    ) {
       const now = new Date();
       let defaultMonth: Date;
 
@@ -413,7 +422,10 @@ export function SubscriptionInvoice({
       else if (now > latestEnd) defaultMonth = latestEnd;
       else defaultMonth = earliestStart;
 
-      updateSearchParam('month', defaultMonth.toISOString().slice(0, 7));
+      const nextMonth = defaultMonth.toISOString().slice(0, 7);
+      if (nextMonth !== selectedMonth) {
+        updateSearchParam('month', nextMonth);
+      }
     }
   }, [
     selectedGroupIds,
