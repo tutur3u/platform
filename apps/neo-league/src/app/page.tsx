@@ -1,4 +1,144 @@
+import { Calendar, MapPin } from '@ncthub/ui/icons';
+import Image from 'next/image';
+import Link from 'next/link';
+
 export default function Home() {
+  const stats = [
+    { number: '80+', label: 'Club Members' },
+    { number: '30+', label: 'Completed Projects' },
+    { number: '20', label: 'Teams Advancing' },
+    { number: '5', label: 'Finalists' },
+  ];
+
+  const phases = [
+    {
+      round: '01',
+      title: 'PROPOSAL',
+      description:
+        'Submit a 10-slide digital IoT solution proposal targeting specific SDGs. Present your innovative idea and technical approach.',
+      icon: (
+        <svg
+          className="h-8 w-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      ),
+    },
+    {
+      round: '02',
+      title: 'PROTOTYPE',
+      description:
+        'Top 20 teams develop a functional physical prototype, technical documentation, and a 5-minute demo video.',
+      icon: (
+        <svg
+          className="h-8 w-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+      ),
+    },
+    {
+      round: '03',
+      title: 'FINAL PITCH',
+      description:
+        'Top 5 finalists perform a live pitch and product demonstration at RMIT Saigon South Campus.',
+      icon: (
+        <svg
+          className="h-8 w-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+          />
+        </svg>
+      ),
+    },
+  ];
+
+  const importantDates = [
+    {
+      round: '01',
+      date: 'March 28',
+      event: 'OPENING CEREMONY',
+      type: 'Virtual',
+      description: 'Kickoff event introducing the competition and guidelines',
+    },
+    {
+      round: '02',
+      date: 'April 24',
+      event: 'TOP 20 SELECTION',
+      type: 'Virtual',
+      description: 'Announcement of top 20 teams advancing to prototype phase',
+    },
+    {
+      round: '03',
+      date: 'May 16',
+      event: 'TOP 5 SELECTION',
+      type: 'Virtual',
+      description: 'Announcement of top 5 finalists for the grand finale',
+    },
+    {
+      round: '04',
+      date: 'May 29',
+      event: 'FINALE - EXHIBITION',
+      type: 'RMIT Auditorium',
+      description: 'Live pitch, product demonstration, and award ceremony',
+    },
+  ];
+
+  const mentors = [
+    {
+      name: 'DR. BYRON MASON',
+      field: 'Robotics & Mechatronics Engineering',
+    },
+    {
+      name: 'DR. DINH-SON VU',
+      field: 'Robotics & Mechatronics Engineering',
+    },
+    {
+      name: 'DR. HUNG PHAM VIET',
+      field: 'Electronic Computer Systems & Robotics',
+    },
+    { name: 'DR. GINEL DORLEON', field: 'Artificial Intelligence' },
+    { name: 'DR. MINH VU', field: 'Information Technology' },
+    {
+      name: 'DR. THANH TRAN',
+      field: 'Electronic & Computer Systems Engineering',
+    },
+    { name: 'DR. LINH TRAN', field: 'Software Engineering' },
+    { name: 'DR. HOANG PHAN', field: 'Food Technology & Nutrition' },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
@@ -53,7 +193,7 @@ export default function Home() {
             className="mb-12 flex animate-slide-up flex-col justify-center gap-4 sm:flex-row"
             style={{ animationDelay: '0.4s' }}
           >
-            <a href="#register" className="btn-primary animate-pulse-glow">
+            <Link href="#register" className="btn-primary animate-pulse-glow">
               Register Now
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -68,21 +208,25 @@ export default function Home() {
                   clipRule="evenodd"
                 />
               </svg>
-            </a>
-            <a href="#about" className="btn-secondary">
+            </Link>
+            <Link href="#about" className="btn-secondary">
               Learn More
-            </a>
+            </Link>
           </div>
 
           <div
             className="glass inline-block animate-slide-up rounded-2xl px-8 py-4"
             style={{ animationDelay: '0.5s' }}
           >
-            <p className="font-bold text-lg">
-              <span className="text-primary">📅</span> March 2 – May 29, 2026
+            <div className="flex gap-2 font-bold text-lg">
+              <div className="flex items-center gap-1 text-primary">
+                <Calendar className="h-6 w-6" /> March 2 – May 29, 2026
+              </div>
               <span className="mx-4 text-muted">|</span>
-              <span className="text-primary">📍</span> Ho Chi Minh City
-            </p>
+              <div className="flex items-center gap-1 text-primary">
+                <MapPin className="h-6 w-6" /> Ho Chi Minh City
+              </div>
+            </div>
           </div>
         </div>
 
@@ -112,10 +256,10 @@ export default function Home() {
       >
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 text-center">
-            <h2 className="mb-4 font-black text-3xl drop-shadow-text md:text-4xl">
+            <h2 className="mb-4 font-black text-3xl md:text-5xl">
               ABOUT <span className="text-secondary">NEO LEAGUE</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
               A student-led competition challenging Ho Chi Minh City
               undergraduates to engineer integrated IoT solutions.
             </p>
@@ -177,12 +321,7 @@ export default function Home() {
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {[
-              { number: '80+', label: 'Club Members' },
-              { number: '30+', label: 'Completed Projects' },
-              { number: '20', label: 'Teams Advancing' },
-              { number: '5', label: 'Finalists' },
-            ].map((stat, index) => (
+            {stats.map((stat, index) => (
               <div
                 key={index}
                 className="glass-card card-hover rounded-xl p-6 text-center"
@@ -204,87 +343,14 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               COMPETITION <span className="text-secondary">PHASES</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
               Three challenging rounds designed to test your innovation,
               technical skills, and presentation abilities.
             </p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                round: '01',
-                title: 'PROPOSAL',
-                description:
-                  'Submit a 10-slide digital IoT solution proposal targeting specific SDGs. Present your innovative idea and technical approach.',
-                icon: (
-                  <svg
-                    className="h-8 w-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                ),
-              },
-              {
-                round: '02',
-                title: 'PROTOTYPE',
-                description:
-                  'Top 20 teams develop a functional physical prototype, technical documentation, and a 5-minute demo video.',
-                icon: (
-                  <svg
-                    className="h-8 w-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                ),
-              },
-              {
-                round: '03',
-                title: 'FINAL PITCH',
-                description:
-                  'Top 5 finalists perform a live pitch and product demonstration at RMIT Saigon South Campus.',
-                icon: (
-                  <svg
-                    className="h-8 w-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                    />
-                  </svg>
-                ),
-              },
-            ].map((phase, index) => (
+            {phases.map((phase, index) => (
               <div key={index} className="group relative">
                 <div className="glass-card card-hover h-full rounded-2xl p-8">
                   <div className="gradient-bg absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full font-black text-white text-xl shadow-lg">
@@ -312,9 +378,6 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               IMPORTANT <span className="text-secondary">DATES</span>
             </h2>
-            <p className="font-bold text-lg text-muted">
-              Mark your calendar for these key milestones in 2026.
-            </p>
           </div>
 
           {/* Vertical Timeline */}
@@ -323,40 +386,7 @@ export default function Home() {
             <div className="absolute top-0 bottom-0 left-6 w-0.5 bg-linear-to-b from-primary via-secondary to-primary md:left-1/2 md:-translate-x-1/2" />
 
             <div className="space-y-12">
-              {[
-                {
-                  round: '01',
-                  date: 'March 28',
-                  event: 'OPENING CEREMONY',
-                  type: 'Virtual',
-                  description:
-                    'Kickoff event introducing the competition and guidelines',
-                },
-                {
-                  round: '02',
-                  date: 'April 24',
-                  event: 'TOP 20 SELECTION',
-                  type: 'Virtual',
-                  description:
-                    'Announcement of top 20 teams advancing to prototype phase',
-                },
-                {
-                  round: '03',
-                  date: 'May 16',
-                  event: 'TOP 5 SELECTION',
-                  type: 'Virtual',
-                  description:
-                    'Announcement of top 5 finalists for the grand finale',
-                },
-                {
-                  round: '04',
-                  date: 'May 29',
-                  event: 'FINALE - EXHIBITION',
-                  type: 'RMIT Auditorium',
-                  description:
-                    'Live pitch, product demonstration, and award ceremony',
-                },
-              ].map((item, index) => (
+              {importantDates.map((item, index) => (
                 <div
                   key={index}
                   className={`relative flex items-center ${
@@ -411,9 +441,6 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               ELIGIBILITY & <span className="text-secondary">RULES</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-muted">
-              Make sure your team meets all requirements before registering.
-            </p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-2">
@@ -508,35 +535,14 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               MENTORS & <span className="text-secondary">JUDGES</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
               Learn from and be evaluated by distinguished faculty from RMIT
               School of Science, Engineering & Technology.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {[
-              {
-                name: 'DR. BYRON MASON',
-                field: 'Robotics & Mechatronics Engineering',
-              },
-              {
-                name: 'DR. DINH-SON VU',
-                field: 'Robotics & Mechatronics Engineering',
-              },
-              {
-                name: 'DR. HUNG PHAM VIET',
-                field: 'Electronic Computer Systems & Robotics',
-              },
-              { name: 'DR. GINEL DORLEON', field: 'Artificial Intelligence' },
-              { name: 'DR. MINH VU', field: 'Information Technology' },
-              {
-                name: 'DR. THANH TRAN',
-                field: 'Electronic & Computer Systems Engineering',
-              },
-              { name: 'DR. LINH TRAN', field: 'Software Engineering' },
-              { name: 'DR. HOANG PHAN', field: 'Food Technology & Nutrition' },
-            ].map((mentor, index) => (
+            {mentors.map((mentor, index) => (
               <div
                 key={index}
                 className="glass-card card-hover rounded-xl p-6 text-center"
@@ -548,6 +554,89 @@ export default function Home() {
                 <p className="text-muted text-sm">{mentor.field}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Our Supporters Section */}
+      <section id="supporters" className="px-6 py-20 md:px-8 md:py-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 font-black text-3xl md:text-4xl">
+              OUR <span className="text-secondary">SUPPORTERS</span>
+            </h2>
+            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
+              Proudly supported by leading institutions committed to fostering
+              innovation and student excellence.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* RMIT SSET */}
+            <div className="glass-card card-hover group relative overflow-hidden rounded-2xl p-8">
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-secondary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-6 flex h-32 w-full items-center justify-center rounded-xl bg-white p-4 shadow-sm transition-transform duration-300 group-hover:scale-105">
+                  <Image
+                    width={200}
+                    height={100}
+                    src="/rmit_sset.png"
+                    alt="RMIT School of Science, Engineering & Technology"
+                    className="w-auto object-contain"
+                  />
+                </div>
+                <h3 className="mb-2 font-black text-lg">
+                  RMIT School of Science,
+                  <br />
+                  Engineering & Technology
+                </h3>
+                <p className="text-muted text-sm">Academic Partner</p>
+              </div>
+            </div>
+
+            {/* NCT */}
+            <div className="glass-card card-hover group relative overflow-hidden rounded-2xl p-8">
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-secondary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-6 flex h-32 w-full items-center justify-center rounded-xl bg-white p-4 shadow-sm transition-transform duration-300 group-hover:scale-105">
+                  <Image
+                    width={200}
+                    height={100}
+                    src="/rmit_nct.png"
+                    alt="NEO Culture Technology Club"
+                    className="w-auto object-contain"
+                  />
+                </div>
+                <h3 className="mb-2 font-black text-lg">
+                  NEO Culture Technology
+                  <br />
+                  Club
+                </h3>
+                <p className="text-muted text-sm">Organizer</p>
+              </div>
+            </div>
+
+            {/* RMIT Student Club Program */}
+            <div className="glass-card card-hover group relative overflow-hidden rounded-2xl p-8">
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-secondary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-6 flex h-32 w-full items-center justify-center rounded-xl bg-white p-4 shadow-sm transition-transform duration-300 group-hover:scale-105">
+                  <Image
+                    width={200}
+                    height={100}
+                    src="/rmit_student_club_program.png"
+                    alt="RMIT Student Club Program"
+                    className="w-auto object-contain"
+                  />
+                </div>
+                <h3 className="mb-2 font-black text-lg">
+                  RMIT Student Club
+                  <br />
+                  Program
+                </h3>
+                <p className="text-muted text-sm">Institutional Support</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -565,12 +654,12 @@ export default function Home() {
               <h2 className="mb-4 font-black text-3xl md:text-4xl">
                 READY TO <span className="gradient-text">INNOVATE?</span>
               </h2>
-              <p className="mx-auto mb-8 max-w-xl text-muted">
+              <p className="mx-auto mb-8 max-w-xl font-bold text-lg text-muted">
                 Join the NEO League Season 2 and showcase your IoT innovation
                 skills. Registration is now open!
               </p>
 
-              <a
+              <Link
                 href="#register"
                 className="btn-primary mb-12 inline-flex animate-pulse-glow px-8 py-4 font-black text-lg uppercase"
               >
@@ -588,7 +677,7 @@ export default function Home() {
                     clipRule="evenodd"
                   />
                 </svg>
-              </a>
+              </Link>
 
               <div className="mt-8 border-primary/20 border-t pt-8">
                 <h3 className="mb-6 font-black">CONTACT US</h3>
@@ -600,32 +689,32 @@ export default function Home() {
                   </div>
                   <div>
                     <p className="mb-1 text-md text-muted">Email</p>
-                    <a
+                    <Link
                       href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
                       className="font-bold text-primary text-sm hover:underline"
                     >
                       neoculturetechclub.sgs@rmit.edu.vn
-                    </a>
+                    </Link>
                   </div>
                   <div>
                     <p className="mb-1 text-md text-muted">Follow Us</p>
                     <div className="flex flex-col justify-center">
-                      <a
+                      <Link
                         href="https://rmitnct.club"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary transition-colors hover:text-primary-foreground"
                       >
                         🌐 rmitnct.club
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href="https://facebook.com/RMITNeoCultureTech"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary transition-colors hover:text-primary-foreground"
                       >
                         📘 Facebook
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
