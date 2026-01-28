@@ -204,7 +204,7 @@ export function BillingClient({
                 </span>
                 {currentPlan.billingCycle && (
                   <span className="text-lg text-muted-foreground">
-                    {isSeatBased ? t('per-seat') + ' ' : ''}
+                    {isSeatBased ? `${t('per-seat')} ` : ''}
                     {currentPlan.billingCycle === 'month'
                       ? t('per-month')
                       : t('per-year')}

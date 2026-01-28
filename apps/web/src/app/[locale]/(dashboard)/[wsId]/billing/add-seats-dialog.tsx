@@ -136,7 +136,9 @@ export function AddSeatsDialog({
                 min={1}
                 value={additionalSeats}
                 onChange={(e) =>
-                  setAdditionalSeats(Math.max(1, parseInt(e.target.value) || 1))
+                  setAdditionalSeats(
+                    Math.max(1, parseInt(e.target.value, 10) || 1)
+                  )
                 }
                 className="w-20 text-center"
               />
