@@ -9,9 +9,9 @@
     "./polar/*": "./src/polar/*.ts"
   },
   "dependencies": {
-    "@polar-sh/checkout": "^0.2.0",
-    "@polar-sh/nextjs": "^0.9.3",
-    "@polar-sh/sdk": "^0.42.4"
+    "@polar-sh/checkout": "0.2.0",
+    "@polar-sh/nextjs": "0.9.3",
+    "@polar-sh/sdk": "0.42.5"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*"
