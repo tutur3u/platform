@@ -1681,6 +1681,7 @@
     "green": "Green",
     "grid": "Grid",
     "grid_view": "Grid view",
+    "groups": "Groups",
     "has_description": "Has description",
     "help": "Help",
     "hidden": "Hidden",
@@ -2054,8 +2055,7 @@
     "year_old": "year old",
     "years_old": "years old",
     "yellow": "Yellow",
-    "yesterday": "Yesterday",
-    "groups": "Groups"
+    "yesterday": "Yesterday"
   },
   "confidential_mode": "Confidential mode",
   "contact": {
@@ -9256,7 +9256,6 @@
     "and_more_invoices": "And {count} more invoices...",
     "and_more_transactions": "And {count} more transactions...",
     "attendance_calendar": "Attendance Calendar",
-    "no_attendance": "No attendance record",
     "attendance_for_month": "Attendance for {month}",
     "attendance_rate": "Attendance Rate",
     "attendance_summary": "Attendance Summary",
@@ -9328,6 +9327,7 @@
     "low_stock": "Low Stock",
     "new_invoice": "New invoice",
     "next_month": "Next month",
+    "no_attendance": "No attendance record",
     "no_category": "No category",
     "no_customers_found": "No Customers Found",
     "no_date": "No date",

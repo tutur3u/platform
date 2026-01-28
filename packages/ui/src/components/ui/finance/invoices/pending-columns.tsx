@@ -243,7 +243,6 @@ export const pendingInvoiceColumns = (
       ).filter((id: string) => Boolean(id));
       const monthsOwed = row.getValue<string[]>('months_owed');
       const attendanceDays = row.getValue<number>('attendance_days');
-      const totalSessions = row.getValue<number>('total_sessions');
 
       // Get the LAST (most recent) unpaid month from the array
       const lastUnpaidMonth =
@@ -259,10 +258,9 @@ export const pendingInvoiceColumns = (
       if (lastUnpaidMonth) {
         searchParams.set('month', lastUnpaidMonth);
       }
-      searchParams.set(
-        'amount',
-        String(useAttendanceBased ? attendanceDays : totalSessions)
-      );
+      if (useAttendanceBased) {
+        searchParams.set('amount', String(attendanceDays));
+      }
       if (groupIds.length > 0) {
         searchParams.set('group_ids', groupIds.join(','));
       }

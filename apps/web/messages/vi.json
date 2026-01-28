@@ -1700,6 +1700,7 @@
     "green": "Xanh lá cây",
     "grid": "Lưới",
     "grid_view": "Xem dạng lưới",
+    "groups": "Nhóm",
     "has_description": "Có mô tả",
     "help": "Trợ giúp",
     "hidden": "Ẩn",
@@ -2076,8 +2077,7 @@
     "year_old": "tuổi",
     "years_old": "tuổi",
     "yellow": "Vàng",
-    "yesterday": "Hôm qua",
-    "groups": "Nhóm"
+    "yesterday": "Hôm qua"
   },
   "confidential_mode": "Chế độ bảo mật",
   "contact": {
@@ -9348,7 +9348,6 @@
     "and_more_invoices": "Và {count} hóa đơn khác...",
     "and_more_transactions": "Và {count} giao dịch khác...",
     "attendance_calendar": "Lịch Điểm Danh",
-    "no_attendance": "Chưa có dữ liệu điểm danh",
     "attendance_for_month": "Điểm danh cho {month}",
     "attendance_rate": "Tỷ Lệ Tham Gia",
     "attendance_summary": "Tóm Tắt Điểm Danh",
@@ -9420,6 +9419,7 @@
     "low_stock": "Hàng Sắp Hết",
     "new_invoice": "Hóa đơn mới",
     "next_month": "Tháng sau",
+    "no_attendance": "Chưa có dữ liệu điểm danh",
     "no_category": "Không có danh mục",
     "no_customers_found": "Không tìm thấy khách hàng",
     "no_date": "Không có ngày",
