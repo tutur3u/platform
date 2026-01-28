@@ -57,7 +57,7 @@ function CollapsibleSection({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
+          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 font-medium text-sm transition-colors',
           'hover:bg-muted/50',
           variant === 'danger' && 'text-dynamic-red'
         )}
@@ -178,7 +178,7 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
             <div className="text-center">
               <div
                 className={cn(
-                  'text-2xl font-bold',
+                  'font-bold text-2xl',
                   overdue.length > 0
                     ? 'text-dynamic-red'
                     : 'text-muted-foreground'
@@ -186,19 +186,19 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
               >
                 {overdue.length}
               </div>
-              <div className="text-xs text-muted-foreground">Overdue</div>
+              <div className="text-muted-foreground text-xs">Overdue</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-orange">
+              <div className="font-bold text-2xl text-dynamic-orange">
                 {today.length}
               </div>
-              <div className="text-xs text-muted-foreground">Today</div>
+              <div className="text-muted-foreground text-xs">Today</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-green">
+              <div className="font-bold text-2xl text-dynamic-green">
                 {stats.completed_today}
               </div>
-              <div className="text-xs text-muted-foreground">Done Today</div>
+              <div className="text-muted-foreground text-xs">Done Today</div>
             </div>
           </div>
         </CardContent>

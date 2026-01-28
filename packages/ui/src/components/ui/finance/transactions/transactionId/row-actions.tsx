@@ -3,6 +3,17 @@
 import { Ellipsis } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -11,10 +22,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface Props {
   wsId: string;
@@ -31,29 +43,37 @@ export function TransactionObjectRowActions({
   const t = useTranslations();
 
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteStorageObject = async () => {
     if (!storageObj.name) return;
 
-    const { error } = await supabase.storage
-      .from('workspaces')
-      .remove([
-        joinPath(
-          wsId,
-          'finance',
-          'transactions',
-          transactionId,
-          storageObj.name
-        ),
-      ]);
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.storage
+        .from('workspaces')
+        .remove([
+          joinPath(
+            wsId,
+            'finance',
+            'transactions',
+            transactionId,
+            storageObj.name
+          ),
+        ]);
 
-    if (!error) {
-      router.refresh();
-    } else {
-      toast({
-        title: 'Failed to delete file',
-        description: error.message,
-      });
+      if (!error) {
+        toast.success(t('ws-transactions.file_deleted'));
+        router.refresh();
+      } else {
+        toast.error(
+          error.message || t('ws-transactions.failed_to_delete_file')
+        );
+      }
+    } catch {
+      toast.error(t('ws-transactions.failed_to_delete_file'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -90,10 +110,7 @@ export function TransactionObjectRowActions({
     if (!error) {
       router.refresh();
     } else {
-      toast({
-        title: 'Failed to rename file',
-        description: error.message,
-      });
+      toast.error(error.message || t('ws-transactions.failed_to_rename_file'));
     }
   };
 
@@ -113,10 +130,9 @@ export function TransactionObjectRowActions({
       );
 
     if (error) {
-      toast({
-        title: 'Failed to download file',
-        description: error.message,
-      });
+      toast.error(
+        error.message || t('ws-transactions.failed_to_download_file')
+      );
       return;
     }
 
@@ -151,9 +167,36 @@ export function TransactionObjectRowActions({
           {t('common.download')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={deleteStorageObject}>
-          {t('common.delete')}
-        </DropdownMenuItem>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              disabled={isDeleting}
+            >
+              {t('common.delete')}
+            </DropdownMenuItem>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t('common.confirm_delete_title')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('ws-transactions.confirm_delete_file')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={deleteStorageObject}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeleting}
+              >
+                {isDeleting ? t('common.deleting') : t('common.delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DropdownMenuContent>
     </DropdownMenu>
   );

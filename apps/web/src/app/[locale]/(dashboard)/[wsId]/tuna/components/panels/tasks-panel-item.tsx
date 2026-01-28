@@ -77,7 +77,7 @@ export const TasksPanelItem = memo(function TasksPanelItem({
       )}
     >
       {/* Checkbox */}
-      <div className="relative mt-0.5 flex-shrink-0">
+      <div className="relative mt-0.5 shrink-0">
         {isLoading ? (
           <div className="flex h-4 w-4 items-center justify-center">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
@@ -111,7 +111,7 @@ export const TasksPanelItem = memo(function TasksPanelItem({
       >
         <p
           className={cn(
-            'text-sm font-medium leading-tight',
+            'font-medium text-sm leading-tight',
             'line-clamp-2',
             isOverdue && 'text-dynamic-red'
           )}
@@ -124,7 +124,7 @@ export const TasksPanelItem = memo(function TasksPanelItem({
           {task.board_name && (
             <Badge
               variant="outline"
-              className="bg-muted/50 text-xs font-normal"
+              className="bg-muted/50 font-normal text-xs"
             >
               {task.board_name}
             </Badge>

@@ -92,7 +92,7 @@ function EventItem({ event, wsId }: EventItemProps) {
             <Badge
               variant={isToday ? 'default' : 'outline'}
               className={cn(
-                'text-xs font-normal',
+                'font-normal text-xs',
                 isToday && 'bg-dynamic-cyan text-white'
               )}
             >
@@ -109,14 +109,14 @@ function EventItem({ event, wsId }: EventItemProps) {
           {/* Location */}
           {event.location && (
             <div className="mt-1.5 flex items-center gap-1 text-muted-foreground text-xs">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <MapPin className="h-3 w-3 shrink-0" />
               <span className="line-clamp-1">{event.location}</span>
             </div>
           )}
         </div>
 
         {/* External link icon */}
-        <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
       </div>
     </Link>
   );
@@ -194,7 +194,7 @@ export function CalendarPanel({ wsId, className }: CalendarPanelProps) {
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="relative mx-auto mb-4 w-fit">
             <div className="absolute inset-0 animate-pulse rounded-full bg-dynamic-cyan/20 blur-xl" />
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-dynamic-cyan/20 bg-gradient-to-br from-dynamic-cyan/10 via-dynamic-cyan/5 to-transparent shadow-lg ring-4 ring-dynamic-cyan/10">
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-dynamic-cyan/20 bg-linear-to-br from-dynamic-cyan/10 via-dynamic-cyan/5 to-transparent shadow-lg ring-4 ring-dynamic-cyan/10">
               <Sparkles className="h-8 w-8 text-dynamic-cyan/50" />
             </div>
           </div>

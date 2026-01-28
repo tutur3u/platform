@@ -3,6 +3,17 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -13,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -27,23 +38,32 @@ export function TransactionCategoryRowActions(props: Props) {
 
   const router = useRouter();
   const data = props.row.original;
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteCategory = async () => {
-    const res = await fetch(
-      `/api/workspaces/${data.ws_id}/transactions/categories/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    setIsDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/workspaces/${data.ws_id}/transactions/categories/${data.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace category',
-        description: data.message,
-      });
+      if (res.ok) {
+        toast.success(t('ws-transaction-categories.category_deleted'));
+        router.refresh();
+      } else {
+        const errorData = await res.json();
+        toast.error(
+          errorData.message ||
+            t('ws-transaction-categories.failed_to_delete_category')
+        );
+      }
+    } catch {
+      toast.error(t('ws-transaction-categories.failed_to_delete_category'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -63,14 +83,41 @@ export function TransactionCategoryRowActions(props: Props) {
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteCategory}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                disabled={isDeleting}
+              >
+                {t('common.delete')}
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t('common.confirm_delete_title')}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t('ws-transaction-categories.confirm_delete_category')}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={deleteCategory}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? t('common.deleting') : t('common.delete')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </DropdownMenuContent>
       </DropdownMenu>
 
