@@ -10,7 +10,11 @@ interface UseSubscriptionInvoiceContentProps {
   userGroups: any[];
   groupProducts: UserGroupProducts[];
   subscriptionSelectedProducts: SelectedProductItem[];
-  userAttendance: { status: string; date: string }[];
+  userAttendance: { status: string; date: string; group_id?: string }[];
+  latestSubscriptionInvoices: {
+    group_id?: string;
+    valid_until?: string | null;
+  }[];
   isSelectedMonthPaid: boolean;
   locale: string;
   onContentChange: (content: string) => void;
@@ -25,6 +29,7 @@ export function useSubscriptionInvoiceContent({
   groupProducts,
   subscriptionSelectedProducts,
   userAttendance,
+  latestSubscriptionInvoices,
   isSelectedMonthPaid,
   locale,
   onContentChange,
@@ -73,12 +78,23 @@ export function useSubscriptionInvoiceContent({
 
     let autoNotes: string | null = null;
     if (selectedGroupIds.length > 0 && userAttendance.length > 0) {
-      const attendanceStats = getAttendanceStats(userAttendance);
+      const filteredAttendance = userAttendance.filter((a) => {
+        const latestInvoice = latestSubscriptionInvoices.find(
+          (inv) => inv.group_id === a.group_id
+        );
+        if (!latestInvoice || !latestInvoice.valid_until) return true;
+        const validUntil = new Date(latestInvoice.valid_until);
+        const attendanceDate = new Date(a.date);
+        return attendanceDate >= validUntil;
+      });
+
+      const attendanceStats = getAttendanceStats(filteredAttendance);
       const attendanceDays = attendanceStats.present + attendanceStats.late;
       const totalSessions = getTotalSessionsForGroups(
         userGroups,
         selectedGroupIds,
-        selectedMonth
+        selectedMonth,
+        latestSubscriptionInvoices
       );
       autoNotes = t('ws-invoices.attendance_summary_note', {
         attended: attendanceDays,

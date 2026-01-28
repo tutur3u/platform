@@ -184,27 +184,24 @@ export function SubscriptionInvoice({
   const { data: latestSubscriptionInvoices = [] } =
     useMultiGroupLatestSubscriptionInvoice(selectedUserId, selectedGroupIds);
 
-  const latestValidUntil: Date | null = useMemo(() => {
-    if (latestSubscriptionInvoices.length === 0) return null;
-    const validDates = latestSubscriptionInvoices
-      .map((invoice) =>
-        invoice.valid_until ? new Date(invoice.valid_until) : null
-      )
-      .filter((d): d is Date => d !== null && !Number.isNaN(d.getTime()));
-
-    if (validDates.length === 0) return null;
-    return validDates.reduce((latest, current) =>
-      current > latest ? current : latest
-    );
-  }, [latestSubscriptionInvoices]);
-
   const isSelectedMonthPaid = useMemo(() => {
-    if (!latestValidUntil || !selectedMonth) return false;
+    if (selectedGroupIds.length === 0 || !selectedMonth) return false;
+
     const selectedMonthStart = new Date(`${selectedMonth}-01`);
-    const validUntilMonthStart = new Date(latestValidUntil);
-    validUntilMonthStart.setDate(1);
-    return selectedMonthStart < validUntilMonthStart;
-  }, [latestValidUntil, selectedMonth]);
+
+    // A month is considered paid ONLY if ALL selected groups have paid for it.
+    // If ANY selected group has not paid, we allow creating an invoice.
+    return selectedGroupIds.every((groupId) => {
+      const latestInvoice = latestSubscriptionInvoices.find(
+        (inv) => inv.group_id === groupId
+      );
+      if (!latestInvoice || !latestInvoice.valid_until) return false;
+
+      const validUntilMonthStart = new Date(latestInvoice.valid_until);
+      validUntilMonthStart.setDate(1);
+      return selectedMonthStart < validUntilMonthStart;
+    });
+  }, [latestSubscriptionInvoices, selectedMonth, selectedGroupIds]);
 
   const selectedUser = users.find(
     (user: WorkspaceUser) => user.id === selectedUserId
@@ -248,6 +245,7 @@ export function SubscriptionInvoice({
     userGroups,
     useAttendanceBased,
     userAttendance,
+    latestSubscriptionInvoices,
     onSelectedProductsChange: setSubscriptionSelectedProducts,
   });
 
@@ -259,6 +257,7 @@ export function SubscriptionInvoice({
     groupProducts,
     subscriptionSelectedProducts,
     userAttendance,
+    latestSubscriptionInvoices,
     isSelectedMonthPaid,
     locale,
     onContentChange: setInvoiceContent,
@@ -676,7 +675,7 @@ export function SubscriptionInvoice({
                 canNavigateMonth={canNavigateMonth}
                 onMonthChange={(value) => updateSearchParam('month', value)}
                 userGroups={userGroups}
-                latestValidUntil={latestValidUntil}
+                latestSubscriptionInvoices={latestSubscriptionInvoices}
                 isLoadingSubscriptionData={isLoadingSubscriptionData}
                 userAttendance={userAttendance}
                 userAttendanceError={userAttendanceError}
@@ -684,7 +683,8 @@ export function SubscriptionInvoice({
                 totalSessions={getTotalSessionsForGroups(
                   userGroups,
                   selectedGroupIds,
-                  selectedMonth
+                  selectedMonth,
+                  latestSubscriptionInvoices
                 )}
                 attendanceRate={(() => {
                   const attendanceDays =
@@ -692,7 +692,8 @@ export function SubscriptionInvoice({
                   const totalSessions = getTotalSessionsForGroups(
                     userGroups,
                     selectedGroupIds,
-                    selectedMonth
+                    selectedMonth,
+                    latestSubscriptionInvoices
                   );
                   return totalSessions > 0
                     ? (attendanceDays / totalSessions) * 100

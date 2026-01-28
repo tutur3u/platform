@@ -7,7 +7,13 @@ import type {
   SelectedProductItem,
   UserGroupProducts,
 } from '../types';
-import { getEffectiveDays, getTotalSessionsForGroups } from '../utils';
+import {
+  getEffectiveAttendanceDays,
+  getEffectiveDays,
+  getSessionsForMonth,
+  getSessionsUntilMonth,
+  getTotalSessionsForGroups,
+} from '../utils';
 
 interface UseSubscriptionAutoSelectionProps {
   enabled: boolean;
@@ -18,14 +24,20 @@ interface UseSubscriptionAutoSelectionProps {
   products: Product[];
   userGroups: any[];
   useAttendanceBased: boolean;
-  userAttendance: { status: string; date: string }[];
+  userAttendance: { status: string; date: string; group_id?: string }[];
+  latestSubscriptionInvoices: {
+    group_id?: string;
+    valid_until?: string | null;
+    created_at?: string | null;
+  }[];
   onSelectedProductsChange: (products: SelectedProductItem[]) => void;
 }
 
 const buildAutoSelectedProductsForGroup = (
   groupLinked: UserGroupProducts[],
   allProducts: Product[],
-  attendanceDays: number
+  attendanceDays: number,
+  groupAttendanceDaysMap: Record<string, number> = {}
 ) => {
   let fallbackTriggered = false;
   const results: SelectedProductItem[] = [];
@@ -33,6 +45,12 @@ const buildAutoSelectedProductsForGroup = (
   for (const linkItem of groupLinked || []) {
     const productId = linkItem?.workspace_products?.id;
     if (!productId) continue;
+
+    const groupId = linkItem.group_id;
+    const itemAttendanceDays =
+      groupId && groupAttendanceDaysMap[groupId] !== undefined
+        ? groupAttendanceDaysMap[groupId]
+        : attendanceDays;
 
     const desiredUnitId = linkItem.inventory_units.id;
     const desiredWarehouseId = linkItem.warehouse_id;
@@ -79,8 +97,8 @@ const buildAutoSelectedProductsForGroup = (
 
     const finalQuantity =
       chosenInventory.amount === null
-        ? attendanceDays
-        : Math.min(attendanceDays, chosenInventory.amount);
+        ? itemAttendanceDays
+        : Math.min(itemAttendanceDays, chosenInventory.amount);
 
     if (finalQuantity > 0) {
       results.push({
@@ -104,6 +122,7 @@ export function useSubscriptionAutoSelection({
   userGroups,
   useAttendanceBased,
   userAttendance,
+  latestSubscriptionInvoices,
   onSelectedProductsChange,
 }: UseSubscriptionAutoSelectionProps) {
   const t = useTranslations();
@@ -112,12 +131,16 @@ export function useSubscriptionAutoSelection({
   const initialPrefillUsedRef = useRef<boolean>(false);
 
   const updateSelectedProducts = useCallback(
-    (attendanceDays: number) => {
+    (
+      attendanceDays: number,
+      groupAttendanceDaysMap: Record<string, number>
+    ) => {
       const { autoSelected, fallbackTriggered } =
         buildAutoSelectedProductsForGroup(
           groupProducts,
           products,
-          attendanceDays
+          attendanceDays,
+          groupAttendanceDaysMap
         );
 
       onSelectedProductsChange(autoSelected);
@@ -152,10 +175,57 @@ export function useSubscriptionAutoSelection({
 
     fallbackToastShownRef.current = false;
 
+    const groupAttendanceDaysMap: Record<string, number> = {};
+    for (const groupId of selectedGroupIds) {
+      const group = userGroups.find(
+        (g) => g.workspace_user_groups?.id === groupId
+      );
+      if (group) {
+        const latestInvoice = latestSubscriptionInvoices.find(
+          (inv) => inv.group_id === groupId
+        );
+        const validUntil = latestInvoice?.valid_until
+          ? new Date(latestInvoice.valid_until)
+          : null;
+
+        // Check if this group is already paid for the selected month
+        const isGroupPaid = (() => {
+          if (!validUntil) return false;
+          const selectedMonthStart = new Date(`${selectedMonth}-01`);
+          const validUntilMonthStart = new Date(validUntil);
+          validUntilMonthStart.setDate(1);
+          return selectedMonthStart < validUntilMonthStart;
+        })();
+
+        const sessionsArray = group.workspace_user_groups?.sessions || [];
+        const groupSessions = isGroupPaid
+          ? 0
+          : validUntil
+            ? getSessionsUntilMonth(sessionsArray, selectedMonth, validUntil)
+            : getSessionsForMonth(sessionsArray, selectedMonth);
+
+        if (useAttendanceBased) {
+          const groupAttendance = isGroupPaid
+            ? []
+            : userAttendance.filter((a) => {
+                if (a.group_id !== groupId) return false;
+                if (!validUntil) return true;
+                const attendanceDate = new Date(a.date);
+                return attendanceDate >= validUntil;
+              });
+          groupAttendanceDaysMap[groupId] =
+            getEffectiveAttendanceDays(groupAttendance);
+        } else {
+          groupAttendanceDaysMap[groupId] = groupSessions;
+        }
+      }
+    }
+
     const totalSessions = getTotalSessionsForGroups(
       userGroups,
       selectedGroupIds,
-      selectedMonth
+      selectedMonth,
+      latestSubscriptionInvoices
     );
 
     const shouldUsePrefill =
@@ -164,7 +234,10 @@ export function useSubscriptionAutoSelection({
       ? prefillAmount
       : getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
 
-    updateSelectedProducts(attendanceDays);
+    updateSelectedProducts(
+      attendanceDays,
+      shouldUsePrefill ? {} : groupAttendanceDaysMap
+    );
 
     if (shouldUsePrefill) {
       initialPrefillUsedRef.current = true;
@@ -178,6 +251,7 @@ export function useSubscriptionAutoSelection({
     groupProducts,
     userGroups,
     useAttendanceBased,
+    latestSubscriptionInvoices,
     updateSelectedProducts,
   ]);
 
@@ -195,10 +269,57 @@ export function useSubscriptionAutoSelection({
       return;
     }
 
+    const groupAttendanceDaysMap: Record<string, number> = {};
+    for (const groupId of selectedGroupIds) {
+      const group = userGroups.find(
+        (g) => g.workspace_user_groups?.id === groupId
+      );
+      if (group) {
+        const latestInvoice = latestSubscriptionInvoices.find(
+          (inv) => inv.group_id === groupId
+        );
+        const validUntil = latestInvoice?.valid_until
+          ? new Date(latestInvoice.valid_until)
+          : null;
+
+        // Check if this group is already paid for the selected month
+        const isGroupPaid = (() => {
+          if (!validUntil) return false;
+          const selectedMonthStart = new Date(`${selectedMonth}-01`);
+          const validUntilMonthStart = new Date(validUntil);
+          validUntilMonthStart.setDate(1);
+          return selectedMonthStart < validUntilMonthStart;
+        })();
+
+        const sessionsArray = group.workspace_user_groups?.sessions || [];
+        const groupSessions = isGroupPaid
+          ? 0
+          : validUntil
+            ? getSessionsUntilMonth(sessionsArray, selectedMonth, validUntil)
+            : getSessionsForMonth(sessionsArray, selectedMonth);
+
+        if (useAttendanceBased) {
+          const groupAttendance = isGroupPaid
+            ? []
+            : userAttendance.filter((a) => {
+                if (a.group_id !== groupId) return false;
+                if (!validUntil) return true;
+                const attendanceDate = new Date(a.date);
+                return attendanceDate >= validUntil;
+              });
+          groupAttendanceDaysMap[groupId] =
+            getEffectiveAttendanceDays(groupAttendance);
+        } else {
+          groupAttendanceDaysMap[groupId] = groupSessions;
+        }
+      }
+    }
+
     const totalSessions = getTotalSessionsForGroups(
       userGroups,
       selectedGroupIds,
-      selectedMonth
+      selectedMonth,
+      latestSubscriptionInvoices
     );
 
     const shouldUsePrefill =
@@ -213,7 +334,8 @@ export function useSubscriptionAutoSelection({
       buildAutoSelectedProductsForGroup(
         groupProducts,
         products,
-        attendanceDays
+        attendanceDays,
+        shouldUsePrefill ? {} : groupAttendanceDaysMap
       );
 
     if (autoSelected.length === 0) return;
@@ -240,6 +362,7 @@ export function useSubscriptionAutoSelection({
     useAttendanceBased,
     t,
     userAttendance,
+    latestSubscriptionInvoices,
     onSelectedProductsChange,
     products,
   ]);

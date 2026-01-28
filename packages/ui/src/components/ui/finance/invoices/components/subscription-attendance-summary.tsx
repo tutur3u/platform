@@ -29,7 +29,11 @@ interface SubscriptionAttendanceSummaryProps {
   canNavigateMonth: (direction: 'prev' | 'next') => boolean;
   onMonthChange: (month: string) => void;
   userGroups: any[];
-  latestValidUntil: Date | null;
+  latestSubscriptionInvoices: {
+    group_id?: string;
+    valid_until?: string | null;
+    created_at?: string | null;
+  }[];
   isLoadingSubscriptionData: boolean;
   userAttendance: { status: string; date: string }[];
   userAttendanceError: any;
@@ -53,7 +57,7 @@ export function SubscriptionAttendanceSummary({
   canNavigateMonth,
   onMonthChange,
   userGroups,
-  latestValidUntil,
+  latestSubscriptionInvoices,
   isLoadingSubscriptionData,
   userAttendance,
   userAttendanceError,
@@ -164,12 +168,23 @@ export function SubscriptionAttendanceSummary({
                     month: 'long',
                   });
                   const isPaidItem = (() => {
-                    if (!latestValidUntil) return false;
                     const itemMonthStart = new Date(currentDate);
                     itemMonthStart.setDate(1);
-                    const paidMonthStart = new Date(latestValidUntil);
-                    paidMonthStart.setDate(1);
-                    return itemMonthStart < paidMonthStart;
+
+                    // For the dropdown, we show "Paid" only if ALL selected groups have paid for this specific month
+                    return selectedGroupIds.every((groupId) => {
+                      const latestInvoice = latestSubscriptionInvoices.find(
+                        (inv) => inv.group_id === groupId
+                      );
+                      if (!latestInvoice || !latestInvoice.valid_until)
+                        return false;
+
+                      const validUntilMonthStart = new Date(
+                        latestInvoice.valid_until
+                      );
+                      validUntilMonthStart.setDate(1);
+                      return itemMonthStart < validUntilMonthStart;
+                    });
                   })();
 
                   months.push(
@@ -192,6 +207,7 @@ export function SubscriptionAttendanceSummary({
               })()}
             </SelectContent>
           </Select>
+
           <Button
             variant="outline"
             size="icon"
