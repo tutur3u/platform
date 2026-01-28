@@ -26,26 +26,26 @@ import {
   useReorderTask,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useTaskDialog } from '../../../hooks/useTaskDialog';
-import { TaskViewerProvider } from '../../../providers/task-viewer-provider';
-import type { ListStatusFilter } from '../../../shared/board-header';
-import { buildEstimationIndices } from '../../../shared/estimation-mapping';
-import { BoardSelector } from '../../board-selector';
-import type { TaskFilters } from '../task-filter';
-import { BulkActionsBar } from './bulk/bulk-actions-bar';
-import { BulkCustomDateDialog } from './bulk/bulk-custom-date-dialog';
-import { BulkDeleteDialog } from './bulk/bulk-delete-dialog';
-import { useBulkOperations } from './bulk/bulk-operations';
-import { useAppliedSets } from './data/use-applied-sets';
-import { useBulkResources } from './data/use-bulk-resources';
-import { useFilteredResources } from './data/use-filtered-resources';
-import { DragPreview } from './dnd/drag-preview';
-import { useKanbanDnd } from './dnd/use-kanban-dnd';
-import { DRAG_ACTIVATION_DISTANCE } from './kanban-constants';
-import { KanbanColumns } from './rendering/kanban-columns';
-import { KanbanSkeleton } from './rendering/kanban-skeleton';
-import { useKeyboardShortcuts } from './selection/use-keyboard-shortcuts';
-import { useMultiSelect } from './selection/use-multi-select';
+import { useTaskDialog } from '../../hooks/useTaskDialog';
+import { TaskViewerProvider } from '../../providers/task-viewer-provider';
+import type { ListStatusFilter } from '../../shared/board-header';
+import { buildEstimationIndices } from '../../shared/estimation-mapping';
+import { BoardSelector } from '../board-selector';
+import { BulkActionsBar } from './kanban/bulk/bulk-actions-bar';
+import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
+import { BulkDeleteDialog } from './kanban/bulk/bulk-delete-dialog';
+import { useBulkOperations } from './kanban/bulk/bulk-operations';
+import { useAppliedSets } from './kanban/data/use-applied-sets';
+import { useBulkResources } from './kanban/data/use-bulk-resources';
+import { useFilteredResources } from './kanban/data/use-filtered-resources';
+import { DragPreview } from './kanban/dnd/drag-preview';
+import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
+import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
+import { KanbanColumns } from './kanban/rendering/kanban-columns';
+import { KanbanSkeleton } from './kanban/rendering/kanban-skeleton';
+import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
+import { useMultiSelect } from './kanban/selection/use-multi-select';
+import type { TaskFilters } from './task-filter';
 
 interface Props {
   workspace: Workspace;
