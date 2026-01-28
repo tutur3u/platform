@@ -8,7 +8,6 @@ import type {
   WorkspaceProductTier,
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { notFound, redirect } from 'next/navigation';
 
 import {
@@ -487,11 +486,13 @@ export async function getPermissions({
   }
 
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+  const sbAdmin = await createAdminClient();
 
-  // FIX: Query user's role memberships and join with permissions
   const permissionsQuery = supabase
     .from('workspace_role_members')
-    .select('workspace_roles!inner(workspace_role_permissions(permission))')
+    .select(
+      '...workspace_roles!inner(...workspace_role_permissions(permission))'
+    )
     .eq('user_id', user.id)
     .eq('workspace_roles.ws_id', resolvedWorkspaceId)
     .eq('workspace_roles.workspace_role_permissions.enabled', true);
@@ -502,7 +503,7 @@ export async function getPermissions({
     .eq('id', resolvedWorkspaceId)
     .single();
 
-  const defaultQuery = supabase
+  const defaultQuery = sbAdmin
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', resolvedWorkspaceId)
@@ -531,14 +532,14 @@ export async function getPermissions({
   const hasPermissions =
     permissionsData.length > 0 || defaultData.length > 0 || isCreator;
 
-  if (DEV_MODE) {
-    // console.log('--------------------');
-    // console.log('Is creator', isCreator);
-    // console.log('Workspace permissions', permissionsData);
-    // console.log('Default permissions', defaultData);
-    // console.log('Has permissions', hasPermissions);
-    // console.log('--------------------');
-  }
+  // if (DEV_MODE) {
+  //   console.log('--------------------');
+  //   console.log('Is creator', isCreator);
+  //   console.log('Workspace permissions', permissionsData);
+  //   console.log('Default permissions', defaultData);
+  //   console.log('Has permissions', hasPermissions);
+  //   console.log('--------------------');
+  // }
 
   if (!isCreator && !hasPermissions) {
     if (redirectTo) {
@@ -556,21 +557,22 @@ export async function getPermissions({
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
     : [
         // permissions from role memberships
-        ...permissionsData.flatMap(
-          (m) =>
-            m.workspace_roles?.workspace_role_permissions?.map(
-              (p) => p.permission
-            ) || []
-        ),
+        ...permissionsData.flatMap((m) => m.permission || []),
         // default workspace permissions
         ...defaultData.map((d) => d.permission),
       ].filter((value, index, self) => self.indexOf(value) === index);
 
-  const containsPermission = (permission: PermissionId) =>
-    isCreator || permissions.includes(permission);
+  const isAdmin = permissions.includes('admin');
+
+  const containsPermission = (permission: PermissionId) => {
+    const hasPermission =
+      isCreator || isAdmin || permissions.includes(permission);
+    // console.log(permission, 'is allowed:', hasPermission);
+    return hasPermission;
+  };
 
   const withoutPermission = (permission: PermissionId) =>
-    !isCreator && !containsPermission(permission);
+    !containsPermission(permission);
 
   return { permissions, containsPermission, withoutPermission };
 }
