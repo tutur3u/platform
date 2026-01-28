@@ -1,13 +1,14 @@
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { SelectedProductItem, UserGroupProducts } from '../types';
+import type { UserGroup } from '../utils';
 import { getAttendanceStats, getTotalSessionsForGroups } from '../utils';
 
 interface UseSubscriptionInvoiceContentProps {
   enabled: boolean;
   selectedGroupIds: string[];
   selectedMonth: string;
-  userGroups: any[];
+  userGroups: UserGroup[];
   groupProducts: UserGroupProducts[];
   subscriptionSelectedProducts: SelectedProductItem[];
   userAttendance: { status: string; date: string; group_id?: string }[];
@@ -34,8 +35,16 @@ export function useSubscriptionInvoiceContent({
   locale,
   onContentChange,
   onNotesChange,
-}: UseSubscriptionInvoiceContentProps) {
+}: UseSubscriptionInvoiceContentProps): void {
   const t = useTranslations();
+  const contentCallbackRef = useRef(onContentChange);
+  const notesCallbackRef = useRef(onNotesChange);
+
+  useEffect(() => {
+    contentCallbackRef.current = onContentChange;
+    notesCallbackRef.current = onNotesChange;
+  }, [onContentChange, onNotesChange]);
+
   useEffect(() => {
     if (
       !enabled ||
@@ -98,11 +107,12 @@ export function useSubscriptionInvoiceContent({
               groupName: groupNames,
               monthName: rangeLabel,
             })
-          : t('ws-invoices.subscription_invoice_for_groups_month', {
-              groupNames,
-              monthName: rangeLabel,
-              default: `Subscription invoice for groups: ${groupNames} - ${rangeLabel}`,
-            })
+          : t.has('ws-invoices.subscription_invoice_for_groups_month')
+            ? t('ws-invoices.subscription_invoice_for_groups_month', {
+                groupNames,
+                monthName: rangeLabel,
+              })
+            : `Subscription invoice for groups: ${groupNames} - ${rangeLabel}`
       );
     } else {
       contentParts.push(t('ws-invoices.subscription_invoice_combined_title'));
@@ -158,10 +168,10 @@ export function useSubscriptionInvoiceContent({
       }
     }
 
-    onContentChange(contentParts.join('\n'));
+    contentCallbackRef.current(contentParts.join('\n'));
 
     if (autoNotes && !isSelectedMonthPaid) {
-      onNotesChange(autoNotes);
+      notesCallbackRef.current(autoNotes);
     }
   }, [
     enabled,
@@ -174,8 +184,6 @@ export function useSubscriptionInvoiceContent({
     isSelectedMonthPaid,
     locale,
     t,
-    onContentChange,
-    onNotesChange,
     latestSubscriptionInvoices,
   ]);
 }

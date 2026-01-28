@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -22,6 +23,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
+import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
 import { XLSX } from '../../../../xlsx';
 
 /**
@@ -62,6 +64,29 @@ interface InvoiceExportRow {
   potential_total?: number | string;
 }
 
+type PendingInvoiceExportData = {
+  attendance_days: number;
+  group_id: string;
+  group_name: string;
+  months_owed: string;
+  potential_total: number;
+  total_sessions: number;
+  user_avatar_url: string;
+  user_id: string;
+  user_name: string;
+  customer: {
+    full_name: string;
+    avatar_url: string;
+  } | null;
+  creator: null;
+  wallet: null;
+};
+
+type PendingInvoiceRaw =
+  Database['public']['Functions']['get_pending_invoices']['Returns'][number];
+type PendingInvoiceGroupedRaw =
+  Database['public']['Functions']['get_pending_invoices_grouped_by_user']['Returns'][number];
+
 // Helper function to fetch pending invoices data for export
 async function getPendingInvoicesData(
   wsId: string,
@@ -70,13 +95,15 @@ async function getPendingInvoicesData(
     pageSize = '10',
     q,
     userIds,
+    groupByUser = false,
   }: {
     page?: string;
     pageSize?: string;
     q?: string;
     userIds?: string | string[];
+    groupByUser?: boolean;
   }
-) {
+): Promise<{ data: PendingInvoiceExportData[]; count: number }> {
   const supabase = createClient();
 
   const parsedPage = parseInt(page, 10);
@@ -92,112 +119,112 @@ async function getPendingInvoicesData(
       ? [userIds]
       : undefined;
 
-  let groupByUser = false;
-  try {
-    const groupingRes = await fetch(
-      `/api/v1/workspaces/${wsId}/settings/INVOICE_GROUP_PENDING_INVOICES_BY_USER`
+  // Fetch pending invoices data
+  if (groupByUser) {
+    const { data: rawData, error } = await supabase.rpc(
+      'get_pending_invoices_grouped_by_user',
+      {
+        p_ws_id: wsId,
+        p_limit: parsedSize,
+        p_offset: offset,
+        p_query: q || undefined,
+        p_user_ids: ids,
+      }
     );
-    const groupingData = groupingRes.ok ? await groupingRes.json() : null;
-    const groupingValue = groupingData?.value?.trim?.().toLowerCase?.();
-    groupByUser = groupingValue === 'true' || groupingValue === true;
-  } catch (error) {
-    console.error('Pending invoices grouping config fetch error:', error);
+
+    if (error) throw error;
+
+    const { data: countData, error: countError } = await supabase.rpc(
+      'get_pending_invoices_grouped_by_user_count',
+      {
+        p_ws_id: wsId,
+        p_query: q || undefined,
+        p_user_ids: ids,
+      }
+    );
+
+    if (countError) throw countError;
+
+    const transformedData = (rawData || []).map(
+      (invoice: PendingInvoiceGroupedRaw) => {
+        const monthsOwed = Array.isArray(invoice.months_owed)
+          ? invoice.months_owed.join(', ')
+          : '';
+
+        const groupNames = Array.isArray(invoice.group_names)
+          ? invoice.group_names.filter(Boolean)
+          : [];
+        const groupedName = groupNames.join(', ');
+        const groupIdValue = Array.isArray(invoice.group_ids)
+          ? invoice.group_ids.join(',')
+          : '';
+
+        return {
+          ...invoice,
+          group_id: groupIdValue,
+          group_name: groupedName,
+          months_owed: monthsOwed,
+          customer: {
+            full_name: invoice.user_name || '',
+            avatar_url: invoice.user_avatar_url || '',
+          },
+          creator: null,
+          wallet: null,
+        };
+      }
+    );
+
+    return { data: transformedData, count: (countData as number) || 0 };
   }
 
-  // Fetch pending invoices data
-  const { data: rawData, error } = groupByUser
-    ? await (supabase.rpc as any)('get_pending_invoices_grouped_by_user', {
-        p_ws_id: wsId,
-        p_limit: parsedSize,
-        p_offset: offset,
-        p_query: q || undefined,
-        p_user_ids: ids,
-      })
-    : await supabase.rpc('get_pending_invoices', {
-        p_ws_id: wsId,
-        p_limit: parsedSize,
-        p_offset: offset,
-        p_query: q || undefined,
-        p_user_ids: ids,
-      });
+  const { data: rawData, error } = await supabase.rpc('get_pending_invoices', {
+    p_ws_id: wsId,
+    p_limit: parsedSize,
+    p_offset: offset,
+    p_query: q || undefined,
+    p_user_ids: ids,
+  });
 
   if (error) throw error;
 
-  // Fetch total count
-  const { data: countData, error: countError } = groupByUser
-    ? await (supabase.rpc as any)(
-        'get_pending_invoices_grouped_by_user_count',
-        {
-          p_ws_id: wsId,
-          p_query: q || undefined,
-          p_user_ids: ids,
-        }
-      )
-    : await supabase.rpc('get_pending_invoices_count', {
-        p_ws_id: wsId,
-        p_query: q || undefined,
-        p_user_ids: ids,
-      });
+  const { data: countData, error: countError } = await supabase.rpc(
+    'get_pending_invoices_count',
+    {
+      p_ws_id: wsId,
+      p_query: q || undefined,
+      p_user_ids: ids,
+    }
+  );
 
   if (countError) throw countError;
 
-  // Define the shape of raw pending invoice data from RPC
-  interface PendingInvoiceRaw {
-    user_id?: string | null;
-    user_name?: string | null;
-    user_avatar_url?: string | null;
-    group_id?: string | null;
-    group_name?: string | null;
-    group_ids?: string[] | null;
-    group_names?: string[] | null;
-    months_owed?: string | string[];
-    [key: string]: unknown;
-  }
-
-  // Transform the data to match the expected format
-  const data = (rawData || []).map((invoice: PendingInvoiceRaw) => {
-    // Parse months_owed - handle both CSV string and array, normalize formatting
+  const transformedData = (rawData || []).map((invoice: PendingInvoiceRaw) => {
     const monthsOwed =
       typeof invoice.months_owed === 'string'
         ? invoice.months_owed
             .split(',')
-            .map((m) => m.trim())
+            .map((m: string) => m.trim())
             .join(', ')
-        : Array.isArray(invoice.months_owed)
-          ? invoice.months_owed.join(', ')
-          : '';
-
-    const groupNames = Array.isArray(invoice.group_names)
-      ? invoice.group_names.filter(Boolean)
-      : [];
-    const groupedName =
-      groupNames.length > 0 ? groupNames.join(', ') : invoice.group_name || '';
-    const groupIdValue = Array.isArray(invoice.group_ids)
-      ? invoice.group_ids.join(',')
-      : invoice.group_id || '';
+        : '';
 
     return {
       ...invoice,
-      group_id: groupIdValue,
-      group_name: groupedName,
       months_owed: monthsOwed,
       customer: invoice.user_id
         ? {
             full_name: invoice.user_name || '',
             avatar_url: invoice.user_avatar_url || '',
           }
-        : invoice.group_id
-          ? {
-              full_name: groupedName,
-              avatar_url: '',
-            }
-          : null,
-      creator: null, // Pending invoices don't have creator info
-      wallet: null, // Pending invoices don't have wallet info yet
+        : {
+            full_name: invoice.group_name || '',
+            avatar_url: '',
+          },
+      creator: null,
+      wallet: null,
     };
   });
 
-  return { data, count: (countData as number) || 0 };
+  return { data: transformedData, count: (countData as number) || 0 };
 }
 
 export default function ExportDialogContent({
@@ -229,6 +256,15 @@ export default function ExportDialogContent({
 
   const filenameId = useId();
   const fileTypeId = useId();
+
+  const { data: groupByUserConfig, isLoading: groupingLoading } =
+    useWorkspaceConfig<string>(
+      wsId,
+      'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+      'false'
+    );
+
+  const groupByUser = groupByUserConfig === 'true';
 
   const defaultFilename = `${exportType}_${invoiceType}_export.${getFileExtension(exportFileType)}`;
 
@@ -280,6 +316,7 @@ export default function ExportDialogContent({
                 pageSize: pageSize.toString(),
                 q: searchParams.q,
                 userIds: searchParams.userIds,
+                groupByUser,
               })
             : await getData(wsId, {
                 q: searchParams.q,
@@ -292,7 +329,7 @@ export default function ExportDialogContent({
                 end: searchParams.end,
               });
 
-        const flattenedData: InvoiceExportRow[] = data.map((invoice: any) => {
+        const flattenedData: InvoiceExportRow[] = data.map((invoice) => {
           // Destructure out complex objects to prevent [object Object] in exports
           const { customer, creator, wallet, ...rest } = invoice;
 
@@ -412,7 +449,10 @@ export default function ExportDialogContent({
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button onClick={handleExport} disabled={isExporting}>
+        <Button
+          onClick={handleExport}
+          disabled={isExporting || groupingLoading}
+        >
           {isExporting ? t('common.loading') : t('common.export')}
         </Button>
       </DialogFooter>
@@ -460,7 +500,7 @@ async function getData(
   const walletJoinType = wallets.length > 0 ? '!inner' : '';
   selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
 
-  let queryBuilder = supabase
+  const queryBuilder = supabase
     .from('finance_invoices')
     .select(selectQuery, {
       count: 'exact',
@@ -468,19 +508,23 @@ async function getData(
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
+  let filteredQuery = queryBuilder;
+
   if (start && end) {
-    queryBuilder = queryBuilder.gte('created_at', start).lte('created_at', end);
+    filteredQuery = filteredQuery
+      .gte('created_at', start)
+      .lte('created_at', end);
   }
 
   if (userIds) {
     const ids = Array.isArray(userIds) ? userIds : [userIds];
     if (ids.length > 0) {
-      queryBuilder = queryBuilder.in('creator_id', ids);
+      filteredQuery = filteredQuery.in('creator_id', ids);
     }
   }
 
   if (wallets.length > 0) {
-    queryBuilder = queryBuilder.in('wallet_transactions.wallet_id', wallets);
+    filteredQuery = filteredQuery.in('wallet_transactions.wallet_id', wallets);
   }
 
   if (page && pageSize) {
@@ -488,37 +532,45 @@ async function getData(
     const parsedSize = parseInt(pageSize, 10);
     const startRange = (parsedPage - 1) * parsedSize;
     const endRange = parsedPage * parsedSize - 1;
-    queryBuilder = queryBuilder.range(startRange, endRange);
+    filteredQuery = filteredQuery.range(startRange, endRange);
   }
 
-  const { data: rawData, error, count } = await queryBuilder;
+  const { data: rawData, error, count } = await filteredQuery;
   if (error) throw error;
 
-  const data = rawData.map(
-    ({
-      customer,
-      legacy_creator,
-      platform_creator,
-      wallet_transactions,
-      ...rest
-    }: any) => {
-      const platformCreator = platform_creator as {
-        id: string;
-        display_name: string | null;
-        avatar_url: string | null;
-        user_private_details: {
-          full_name: string | null;
-          email: string | null;
-        } | null;
-      } | null;
-
-      const legacyCreator = legacy_creator as {
-        id: string;
-        display_name: string | null;
+  interface FinanceInvoiceRow {
+    customer: {
+      full_name: string | null;
+      avatar_url: string | null;
+    } | null;
+    legacy_creator: {
+      id: string;
+      display_name: string | null;
+      full_name: string | null;
+      email: string | null;
+      avatar_url: string | null;
+    } | null;
+    platform_creator: {
+      id: string;
+      display_name: string | null;
+      avatar_url: string | null;
+      user_private_details: {
         full_name: string | null;
         email: string | null;
-        avatar_url: string | null;
       } | null;
+    } | null;
+    wallet_transactions:
+      | { wallet: { name: string } | null }
+      | { wallet: { name: string } | null }[]
+      | null;
+    [key: string]: unknown;
+  }
+
+  const data = ((rawData as unknown as FinanceInvoiceRow[]) || []).map(
+    (row) => {
+      const customer = row.customer;
+      const platformCreator = row.platform_creator;
+      const legacyCreator = row.legacy_creator;
 
       const creator = {
         id: platformCreator?.id ?? legacyCreator?.id ?? '',
@@ -539,12 +591,28 @@ async function getData(
           platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
       };
 
-      const wallet = wallet_transactions?.wallet
-        ? { name: wallet_transactions.wallet.name }
+      const walletTransactions = row.wallet_transactions;
+
+      const wallet = walletTransactions
+        ? Array.isArray(walletTransactions)
+          ? walletTransactions[0]?.wallet
+            ? { name: walletTransactions[0].wallet.name }
+            : null
+          : walletTransactions.wallet
+            ? { name: walletTransactions.wallet.name }
+            : null
         : null;
 
+      const {
+        customer: _customer,
+        legacy_creator: _legacy_creator,
+        platform_creator: _platform_creator,
+        wallet_transactions: _wallet_transactions,
+        ...rest
+      } = row;
+
       return {
-        ...rest,
+        ...(rest as Record<string, unknown>),
         customer,
         creator,
         wallet,
@@ -552,5 +620,5 @@ async function getData(
     }
   );
 
-  return { data, count } as { data: Array<Record<string, any>>; count: number };
+  return { data, count: count || 0 };
 }

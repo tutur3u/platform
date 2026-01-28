@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
   Select,
   SelectContent,
@@ -25,7 +26,6 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 import BlockedCreationGroups from './blocked-creation-groups';
 import BlockedPendingGroups from './blocked-pending-groups';
@@ -33,6 +33,9 @@ import BlockedPendingGroups from './blocked-pending-groups';
 interface Props {
   wsId: string;
 }
+
+export const safeTrim = (v: unknown): string =>
+  typeof v === 'string' ? v.trim() : String(v ?? '').trim();
 
 const formSchema = z.object({
   allow_promotions: z.boolean(),
@@ -114,9 +117,6 @@ export default function InvoiceSettings({ wsId }: Props) {
       blockedCreationConfig !== undefined ||
       blockedPendingConfig !== undefined
     ) {
-      const safeTrim = (v: any) =>
-        typeof v === 'string' ? v.trim() : String(v || '').trim();
-
       const parseIds = (raw: string | null | undefined): string[] =>
         safeTrim(raw)
           .split(',')
@@ -146,9 +146,6 @@ export default function InvoiceSettings({ wsId }: Props) {
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const safeTrim = (v: any) =>
-        typeof v === 'string' ? v.trim() : String(v || '').trim();
-
       const serializeIds = (ids: string[] | undefined) =>
         ids
           ? ids

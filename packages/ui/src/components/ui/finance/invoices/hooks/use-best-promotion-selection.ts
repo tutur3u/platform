@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface LinkedPromotionRow {
   promo_id?: string | null;
@@ -29,7 +29,28 @@ export function useBestPromotionSelection({
   referralDiscountMap,
   onSelectPromotion,
 }: UseBestPromotionSelectionProps) {
+  const hasAppliedBestPromotion = useRef(false);
+
+  const lastResetKeyRef = useRef('');
+
   useEffect(() => {
+    const promotionKey = Array.isArray(linkedPromotions)
+      ? linkedPromotions
+          .map((promotion) => {
+            const id = promotion?.promo_id ?? '';
+            const promo = promotion?.workspace_promotions;
+            const value = promo?.value ?? 0;
+            const useRatio = promo?.use_ratio ? '1' : '0';
+            return `${id}:${useRatio}:${value}`;
+          })
+          .join('|')
+      : '';
+    const resetKey = `${enabled ? '1' : '0'}|${selectedUserId}|${subtotal}|${promotionKey}`;
+    if (resetKey !== lastResetKeyRef.current) {
+      lastResetKeyRef.current = resetKey;
+      hasAppliedBestPromotion.current = false;
+    }
+
     if (
       !enabled ||
       !selectedUserId ||
@@ -41,7 +62,7 @@ export function useBestPromotionSelection({
       return;
     }
 
-    const candidates = (linkedPromotions || [])
+    const candidates = linkedPromotions
       .map((lp) => {
         const id = lp?.promo_id as string | undefined;
         const promoObj = lp?.workspace_promotions as
@@ -82,6 +103,8 @@ export function useBestPromotionSelection({
     }
 
     if (best?.id) {
+      if (hasAppliedBestPromotion.current) return;
+      hasAppliedBestPromotion.current = true;
       onSelectPromotion(best.id);
     }
   }, [

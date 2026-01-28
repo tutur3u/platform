@@ -11,6 +11,8 @@ create table if not exists "public"."finance_invoice_user_groups" (
 
 alter table "public"."finance_invoice_user_groups" enable row level security;
 
+drop policy if exists "Enable all access for organization members" on "public"."finance_invoice_user_groups";
+
 create policy "Enable all access for organization members"
 on "public"."finance_invoice_user_groups"
 as permissive

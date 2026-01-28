@@ -2,6 +2,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
+export interface AttendanceGroup {
+  workspace_user_groups: {
+    id: string;
+    name: string;
+    sessions?: string[];
+  };
+}
+
 interface AttendanceCalendarProps {
   userAttendance: {
     date: string;
@@ -9,7 +17,7 @@ interface AttendanceCalendarProps {
     group_id?: string;
   }[];
   selectedMonth: string;
-  selectedGroups: any[];
+  selectedGroups: AttendanceGroup[];
   locale: string;
 }
 
@@ -139,15 +147,15 @@ export function AttendanceCalendar({
     const statuses = Array.from(attendanceStatusMap.values());
 
     if (statuses.includes('ABSENT')) {
-      return 'text-red-800 bg-red-100 border-red-200 font-semibold';
+      return 'text-dynamic-red bg-dynamic-red/10 border-dynamic-red/20 font-semibold';
     }
 
     if (statuses.includes('LATE')) {
-      return 'text-yellow-800 bg-yellow-100 border-yellow-200 font-semibold';
+      return 'text-dynamic-yellow bg-dynamic-yellow/10 border-dynamic-yellow/20 font-semibold';
     }
 
     if (statuses.includes('PRESENT')) {
-      return 'text-green-800 bg-green-100 border-green-200 font-semibold';
+      return 'text-dynamic-green bg-dynamic-green/10 border-dynamic-green/20 font-semibold';
     }
 
     return 'text-foreground/50 bg-muted/50 border-foreground/20';
@@ -223,11 +231,11 @@ export function AttendanceCalendar({
                             <span
                               className={
                                 status === 'PRESENT'
-                                  ? 'font-medium text-green-600'
+                                  ? 'font-medium text-dynamic-green'
                                   : status === 'LATE'
-                                    ? 'font-medium text-yellow-600'
+                                    ? 'font-medium text-dynamic-yellow'
                                     : status === 'ABSENT'
-                                      ? 'font-medium text-red-600'
+                                      ? 'font-medium text-dynamic-red'
                                       : 'text-muted-foreground'
                               }
                             >

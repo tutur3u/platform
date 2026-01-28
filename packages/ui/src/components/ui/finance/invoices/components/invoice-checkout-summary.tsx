@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 interface InvoiceCheckoutSummaryProps {
@@ -41,12 +42,7 @@ export function InvoiceCheckoutSummary({
           <span className="text-muted-foreground">
             {t('ws-invoices.subtotal')}
           </span>
-          <span>
-            {Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(subtotal)}
-          </span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
 
         {discountAmount !== undefined && discountLabel && (
@@ -55,11 +51,7 @@ export function InvoiceCheckoutSummary({
               {t('ws-invoices.discount')} ({discountLabel})
             </span>
             <span className={discountClassName}>
-              -
-              {Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(discountAmount)}
+              -{formatCurrency(discountAmount)}
             </span>
           </div>
         )}
@@ -68,12 +60,7 @@ export function InvoiceCheckoutSummary({
 
         <div className="flex justify-between font-semibold">
           <span>{t('ws-invoices.total')}</span>
-          <span>
-            {Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(roundedTotal)}
-          </span>
+          <span>{formatCurrency(roundedTotal)}</span>
         </div>
 
         {Math.abs(roundedTotal - totalBeforeRounding) > 0.01 && (
@@ -81,10 +68,7 @@ export function InvoiceCheckoutSummary({
             <span>{t('ws-invoices.adjustment')}</span>
             <span>
               {roundedTotal > totalBeforeRounding ? '+' : ''}
-              {Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(roundedTotal - totalBeforeRounding)}
+              {formatCurrency(roundedTotal - totalBeforeRounding)}
             </span>
           </div>
         )}

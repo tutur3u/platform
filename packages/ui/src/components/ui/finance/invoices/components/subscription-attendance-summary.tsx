@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, Loader2 } from '@tuturuuu/icons';
+import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -19,6 +20,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import type React from 'react';
 
 interface SubscriptionAttendanceSummaryProps {
   selectedGroupIds: string[];
@@ -28,7 +30,11 @@ interface SubscriptionAttendanceSummaryProps {
   navigateMonth: (direction: 'prev' | 'next') => void;
   canNavigateMonth: (direction: 'prev' | 'next') => boolean;
   onMonthChange: (month: string) => void;
-  userGroups: any[];
+  userGroups: {
+    workspace_user_groups:
+      | Database['public']['Tables']['workspace_user_groups']['Row']
+      | null;
+  }[];
   latestSubscriptionInvoices: {
     group_id?: string;
     valid_until?: string | null;
@@ -36,7 +42,7 @@ interface SubscriptionAttendanceSummaryProps {
   }[];
   isLoadingSubscriptionData: boolean;
   userAttendance: { status: string; date: string }[];
-  userAttendanceError: any;
+  userAttendanceError: Error | null;
   attendanceStats: {
     present: number;
     late: number;
@@ -45,7 +51,6 @@ interface SubscriptionAttendanceSummaryProps {
   };
   totalSessions: number;
   attendanceRate: number;
-  effectiveAttendanceDays: number;
 }
 
 export function SubscriptionAttendanceSummary({
@@ -64,7 +69,7 @@ export function SubscriptionAttendanceSummary({
   attendanceStats,
   totalSessions,
   attendanceRate,
-}: SubscriptionAttendanceSummaryProps) {
+}: SubscriptionAttendanceSummaryProps): React.ReactElement {
   const t = useTranslations();
   return (
     <Card>
@@ -73,7 +78,7 @@ export function SubscriptionAttendanceSummary({
           <div className="flex items-center gap-2">
             <CardTitle>{t('ws-invoices.attendance_summary')}</CardTitle>
             {isSelectedMonthPaid && (
-              <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-[10px] text-green-700 uppercase tracking-wide">
+              <span className="rounded-full bg-dynamic-green/10 px-2 py-0.5 font-medium text-[10px] text-dynamic-green uppercase tracking-wide">
                 {t('ws-invoices.paid')}
               </span>
             )}
@@ -155,13 +160,25 @@ export function SubscriptionAttendanceSummary({
                   }
                 }
 
-                if (!earliestStart || !latestEnd) return null;
+                if (!earliestStart) return null;
+
+                if (!latestEnd) {
+                  if (selectedMonth) {
+                    latestEnd = new Date(`${selectedMonth}-01`);
+                  } else {
+                    latestEnd = new Date();
+                    latestEnd.setDate(1);
+                  }
+                }
 
                 const months = [];
                 const currentDate = new Date(earliestStart);
                 currentDate.setDate(1);
 
-                while (currentDate <= latestEnd) {
+                const normalizedLatestEnd = new Date(latestEnd);
+                normalizedLatestEnd.setDate(1);
+
+                while (currentDate <= normalizedLatestEnd) {
                   const value = currentDate.toISOString().slice(0, 7);
                   const label = currentDate.toLocaleDateString(locale, {
                     year: 'numeric',
@@ -192,7 +209,7 @@ export function SubscriptionAttendanceSummary({
                       <span className="flex items-center gap-2">
                         <span>{label}</span>
                         {isPaidItem && (
-                          <span className="rounded bg-green-100 px-1.5 py-0.5 font-medium text-[10px] text-green-700">
+                          <span className="rounded bg-dynamic-green/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-green">
                             {t('ws-invoices.paid')}
                           </span>
                         )}
@@ -243,7 +260,7 @@ export function SubscriptionAttendanceSummary({
                 <p className="text-muted-foreground text-sm">
                   {t('ws-invoices.days_attended')}
                 </p>
-                <p className="font-bold text-2xl text-green-600">
+                <p className="font-bold text-2xl text-dynamic-green">
                   {attendanceStats.present + attendanceStats.late}
                 </p>
               </div>
@@ -260,7 +277,7 @@ export function SubscriptionAttendanceSummary({
                 <p className="text-muted-foreground text-sm">
                   {t('ws-invoices.present')}
                 </p>
-                <p className="font-bold text-green-600 text-xl">
+                <p className="font-bold text-dynamic-green text-xl">
                   {attendanceStats.present}
                 </p>
               </div>
@@ -268,7 +285,7 @@ export function SubscriptionAttendanceSummary({
                 <p className="text-muted-foreground text-sm">
                   {t('ws-invoices.late')}
                 </p>
-                <p className="font-bold text-xl text-yellow-600">
+                <p className="font-bold text-dynamic-yellow text-xl">
                   {attendanceStats.late}
                 </p>
               </div>
@@ -276,7 +293,7 @@ export function SubscriptionAttendanceSummary({
                 <p className="text-muted-foreground text-sm">
                   {t('ws-invoices.absent')}
                 </p>
-                <p className="font-bold text-red-600 text-xl">
+                <p className="font-bold text-dynamic-red text-xl">
                   {attendanceStats.absent}
                 </p>
               </div>
@@ -291,7 +308,7 @@ export function SubscriptionAttendanceSummary({
               </div>
               <div className="h-2 w-full rounded-full bg-muted">
                 <div
-                  className="h-2 rounded-full bg-green-500 transition-all"
+                  className="h-2 rounded-full bg-dynamic-green transition-all"
                   style={{
                     width: `${Math.min(attendanceRate, 100)}%`,
                   }}
@@ -305,26 +322,40 @@ export function SubscriptionAttendanceSummary({
                 <AttendanceCalendar
                   userAttendance={userAttendance}
                   selectedMonth={selectedMonth}
-                  selectedGroups={userGroups.filter((g) =>
-                    selectedGroupIds.includes(g.workspace_user_groups?.id || '')
-                  )}
+                  selectedGroups={userGroups
+                    .filter(
+                      (
+                        g
+                      ): g is {
+                        workspace_user_groups: Database['public']['Tables']['workspace_user_groups']['Row'];
+                      } =>
+                        !!g.workspace_user_groups &&
+                        selectedGroupIds.includes(g.workspace_user_groups.id)
+                    )
+                    .map((g) => ({
+                      workspace_user_groups: {
+                        id: g.workspace_user_groups.id,
+                        name: g.workspace_user_groups.name,
+                        sessions: g.workspace_user_groups.sessions || [],
+                      },
+                    }))}
                   locale={locale}
                 />
                 <div className="flex items-center gap-4 text-muted-foreground text-xs">
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                    <div className="h-2 w-2 rounded-full bg-dynamic-green"></div>
                     <span>{t('ws-invoices.present')}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                    <div className="h-2 w-2 rounded-full bg-dynamic-yellow"></div>
                     <span>{t('ws-invoices.late')}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                    <div className="h-2 w-2 rounded-full bg-dynamic-red"></div>
                     <span>{t('ws-invoices.absent')}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                    <div className="h-2 w-2 rounded-full bg-dynamic-muted"></div>
                     <span>{t('ws-invoices.no_session')}</span>
                   </div>
                 </div>

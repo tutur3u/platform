@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2 } from '@tuturuuu/icons';
+import type { Database } from '@tuturuuu/types';
 import {
   Card,
   CardContent,
@@ -9,9 +10,14 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
+import type React from 'react';
 
 interface SubscriptionGroupSelectorProps {
-  userGroups: any[];
+  userGroups: {
+    workspace_user_groups:
+      | Database['public']['Tables']['workspace_user_groups']['Row']
+      | null;
+  }[];
   userGroupsLoading: boolean;
   selectedGroupIds: string[];
   activeGroupId: string;
@@ -28,7 +34,7 @@ export function SubscriptionGroupSelector({
   onGroupSelect,
   isLoadingSubscriptionData,
   locale,
-}: SubscriptionGroupSelectorProps) {
+}: SubscriptionGroupSelectorProps): React.ReactElement {
   const t = useTranslations();
   return (
     <Card>

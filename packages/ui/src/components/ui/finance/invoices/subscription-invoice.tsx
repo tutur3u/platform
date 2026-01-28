@@ -360,32 +360,46 @@ export function SubscriptionInvoice({
     setSelectedGroupIds,
   ]);
 
+  const getGroupsDateRange = useCallback(
+    (groups: typeof userGroups, groupIds: string[]) => {
+      if (groupIds.length === 0)
+        return { earliestStart: null, latestEnd: null };
+      const selectedGroupsData = groups.filter((g) =>
+        groupIds.includes(g.workspace_user_groups?.id || '')
+      );
+      if (selectedGroupsData.length === 0)
+        return { earliestStart: null, latestEnd: null };
+
+      let earliestStart: Date | null = null;
+      let latestEnd: Date | null = null;
+
+      for (const selectedGroupItem of selectedGroupsData) {
+        const group = selectedGroupItem.workspace_user_groups;
+        if (!group) continue;
+
+        const startDate = group.starting_date
+          ? new Date(group.starting_date)
+          : null;
+        const endDate = group.ending_date ? new Date(group.ending_date) : null;
+
+        if (startDate && (!earliestStart || startDate < earliestStart))
+          earliestStart = startDate;
+        if (endDate && (!latestEnd || endDate > latestEnd)) latestEnd = endDate;
+      }
+
+      return { earliestStart, latestEnd };
+    },
+    []
+  );
+
   // Validate and reset selectedMonth when groups change
   useEffect(() => {
     if (selectedGroupIds.length === 0 || !userGroups.length) return;
 
-    const selectedGroupsData = userGroups.filter((g) =>
-      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
+    const { earliestStart, latestEnd } = getGroupsDateRange(
+      userGroups,
+      selectedGroupIds
     );
-
-    if (selectedGroupsData.length === 0) return;
-
-    let earliestStart: Date | null = null;
-    let latestEnd: Date | null = null;
-
-    for (const selectedGroupItem of selectedGroupsData) {
-      const group = selectedGroupItem.workspace_user_groups;
-      if (!group) continue;
-
-      const startDate = group.starting_date
-        ? new Date(group.starting_date)
-        : null;
-      const endDate = group.ending_date ? new Date(group.ending_date) : null;
-
-      if (startDate && (!earliestStart || startDate < earliestStart))
-        earliestStart = startDate;
-      if (endDate && (!latestEnd || endDate > latestEnd)) latestEnd = endDate;
-    }
 
     if (!earliestStart || !latestEnd) return;
 
@@ -407,29 +421,15 @@ export function SubscriptionInvoice({
     selectedMonth,
     updateSearchParam,
     userGroups,
+    getGroupsDateRange,
   ]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     if (selectedGroupIds.length === 0) return;
-    const selectedGroupsData = userGroups.filter((g) =>
-      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
+    const { earliestStart, latestEnd } = getGroupsDateRange(
+      userGroups,
+      selectedGroupIds
     );
-    if (selectedGroupsData.length === 0) return;
-
-    let earliestStart: Date | null = null;
-    let latestEnd: Date | null = null;
-
-    for (const groupItem of selectedGroupsData) {
-      const group = groupItem.workspace_user_groups;
-      if (!group) continue;
-      const startDate = group.starting_date
-        ? new Date(group.starting_date)
-        : null;
-      const endDate = group.ending_date ? new Date(group.ending_date) : null;
-      if (startDate && (!earliestStart || startDate < earliestStart))
-        earliestStart = startDate;
-      if (endDate && (!latestEnd || endDate > latestEnd)) latestEnd = endDate;
-    }
 
     if (!earliestStart || !latestEnd) return;
     const currentMonth = new Date(`${selectedMonth}-01`);
@@ -444,25 +444,10 @@ export function SubscriptionInvoice({
 
   const canNavigateMonth = (direction: 'prev' | 'next') => {
     if (selectedGroupIds.length === 0) return false;
-    const selectedGroupsData = userGroups.filter((g) =>
-      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
+    const { earliestStart, latestEnd } = getGroupsDateRange(
+      userGroups,
+      selectedGroupIds
     );
-    if (selectedGroupsData.length === 0) return false;
-
-    let earliestStart: Date | null = null;
-    let latestEnd: Date | null = null;
-
-    for (const groupItem of selectedGroupsData) {
-      const group = groupItem.workspace_user_groups;
-      if (!group) continue;
-      const startDate = group.starting_date
-        ? new Date(group.starting_date)
-        : null;
-      const endDate = group.ending_date ? new Date(group.ending_date) : null;
-      if (startDate && (!earliestStart || startDate < earliestStart))
-        earliestStart = startDate;
-      if (endDate && (!latestEnd || endDate > latestEnd)) latestEnd = endDate;
-    }
 
     if (!earliestStart || !latestEnd) return false;
     const currentMonth = new Date(`${selectedMonth}-01`);
@@ -699,9 +684,6 @@ export function SubscriptionInvoice({
                     ? (attendanceDays / totalSessions) * 100
                     : 0;
                 })()}
-                effectiveAttendanceDays={getEffectiveAttendanceDays(
-                  userAttendance
-                )}
               />
             )}
 

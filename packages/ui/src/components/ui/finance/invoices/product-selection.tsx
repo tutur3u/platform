@@ -176,7 +176,7 @@ export function ProductSelection({
                 return (
                   <div
                     key={`${item.product.id}-${item.inventory.warehouse_id}-${item.inventory.unit_id}-${index}`}
-                    className={`flex items-center justify-between rounded-lg border p-3 ${linkedGroups.length > 0 ? 'border-primary bg-primary/5' : ''}`}
+                    className={`flex items-center justify-between rounded-lg border p-3 ${linkedGroups.length > 0 ? 'border-dynamic-gray bg-dynamic-gray/5' : ''}`}
                   >
                     <div className="flex-1">
                       <p className="font-medium">{item.product.name}</p>

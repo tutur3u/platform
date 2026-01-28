@@ -3785,7 +3785,6 @@ export type Database = {
           created_at: string | null;
           min_amount: number;
           price: number;
-          price_override: boolean | null;
           product_id: string;
           unit_id: string;
           warehouse_id: string;
@@ -3795,7 +3794,6 @@ export type Database = {
           created_at?: string | null;
           min_amount?: number;
           price?: number;
-          price_override?: boolean | null;
           product_id: string;
           unit_id: string;
           warehouse_id: string;
@@ -3805,7 +3803,6 @@ export type Database = {
           created_at?: string | null;
           min_amount?: number;
           price?: number;
-          price_override?: boolean | null;
           product_id?: string;
           unit_id?: string;
           warehouse_id?: string;
@@ -6303,48 +6300,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      product_global_inventory: {
-        Row: {
-          created_at: string | null;
-          global_amount: number;
-          global_price: number;
-          product_id: string;
-          unit_id: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          global_amount?: number;
-          global_price?: number;
-          product_id: string;
-          unit_id: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          global_amount?: number;
-          global_price?: number;
-          product_id?: string;
-          unit_id?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'fk_product_global_inventory_product';
-            columns: ['product_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_products';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'fk_product_global_inventory_unit';
-            columns: ['unit_id'];
-            isOneToOne: false;
-            referencedRelation: 'inventory_units';
             referencedColumns: ['id'];
           },
         ];
@@ -16063,35 +16018,6 @@ export type Database = {
           },
         ];
       };
-      product_inventory_overview: {
-        Row: {
-          allocated_amount: number | null;
-          available_amount: number | null;
-          created_at: string | null;
-          global_amount: number | null;
-          global_price: number | null;
-          product_id: string | null;
-          unit_id: string | null;
-          updated_at: string | null;
-          warehouse_count: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'fk_product_global_inventory_product';
-            columns: ['product_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_products';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'fk_product_global_inventory_unit';
-            columns: ['unit_id'];
-            isOneToOne: false;
-            referencedRelation: 'inventory_units';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       shortened_links_creator_stats: {
         Row: {
           avatar_url: string | null;
@@ -17059,6 +16985,13 @@ export type Database = {
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
+      fetch_workspace_invoice_configs: {
+        Args: { p_ws_id: string };
+        Returns: {
+          blocked_pending_group_ids: string[];
+          use_attendance_based: boolean;
+        }[];
+      };
       generate_cross_app_token:
         | {
             Args: {

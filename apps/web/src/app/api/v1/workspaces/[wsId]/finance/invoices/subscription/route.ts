@@ -39,6 +39,8 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
+  let createdInvoiceId: string | null = null;
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -191,6 +193,32 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const invoiceId = invoice.id;
+    createdInvoiceId = invoiceId;
+
+    const cleanupInvoice = async (): Promise<void> => {
+      if (!createdInvoiceId) return;
+
+      // Best-effort rollback: delete children first, then the invoice itself.
+      await Promise.all([
+        supabase
+          .from('finance_invoice_promotions')
+          .delete()
+          .eq('invoice_id', createdInvoiceId),
+        supabase
+          .from('finance_invoice_products')
+          .delete()
+          .eq('invoice_id', createdInvoiceId),
+        supabase
+          .from('finance_invoice_user_groups')
+          .delete()
+          .eq('invoice_id', createdInvoiceId),
+      ]);
+
+      await supabase
+        .from('finance_invoices')
+        .delete()
+        .eq('id', createdInvoiceId);
+    };
 
     const invoiceGroupRows = groupIds.map((groupId) => ({
       invoice_id: invoiceId,
@@ -203,13 +231,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (invoiceGroupsError) {
       console.error('Error creating invoice groups:', invoiceGroupsError);
-      await Promise.all([
-        supabase
-          .from('finance_invoice_user_groups')
-          .delete()
-          .eq('invoice_id', invoiceId),
-        supabase.from('finance_invoices').delete().eq('id', invoiceId),
-      ]);
+      await cleanupInvoice();
       return NextResponse.json(
         {
           message: 'Error linking invoice to groups',
@@ -245,6 +267,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (productsError) {
       console.error('Error getting products information:', productsError);
+      await cleanupInvoice();
       return NextResponse.json(
         {
           message: 'Error getting products information',
@@ -263,6 +286,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (unitsError) {
       console.error('Error getting units information:', unitsError);
+      await cleanupInvoice();
       return NextResponse.json(
         {
           message: 'Error getting units information',
@@ -294,13 +318,7 @@ export async function POST(req: Request, { params }: Params) {
         'Error creating subscription invoice products:',
         invoiceProductsError
       );
-      await Promise.all([
-        supabase
-          .from('finance_invoice_user_groups')
-          .delete()
-          .eq('invoice_id', invoiceId),
-        supabase.from('finance_invoices').delete().eq('id', invoiceId),
-      ]);
+      await cleanupInvoice();
       return NextResponse.json(
         {
           message: 'Error creating invoice products',
@@ -333,17 +351,7 @@ export async function POST(req: Request, { params }: Params) {
 
         if (promotionError) {
           console.error('Error creating invoice promotion:', promotionError);
-          await Promise.all([
-            supabase
-              .from('finance_invoice_products')
-              .delete()
-              .eq('invoice_id', invoiceId),
-            supabase
-              .from('finance_invoice_user_groups')
-              .delete()
-              .eq('invoice_id', invoiceId),
-            supabase.from('finance_invoices').delete().eq('id', invoiceId),
-          ]);
+          await cleanupInvoice();
           return NextResponse.json(
             {
               message: 'Error applying promotion to invoice',
@@ -371,21 +379,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (stockError) {
       console.error('Error creating stock changes:', stockError);
-      await Promise.all([
-        supabase
-          .from('finance_invoice_promotions')
-          .delete()
-          .eq('invoice_id', invoiceId),
-        supabase
-          .from('finance_invoice_products')
-          .delete()
-          .eq('invoice_id', invoiceId),
-        supabase
-          .from('finance_invoice_user_groups')
-          .delete()
-          .eq('invoice_id', invoiceId),
-        supabase.from('finance_invoices').delete().eq('id', invoiceId),
-      ]);
+      await cleanupInvoice();
       return NextResponse.json(
         {
           message: 'Error updating product stock',
@@ -430,6 +424,23 @@ export async function POST(req: Request, { params }: Params) {
     });
   } catch (error) {
     console.error('Unexpected error creating subscription invoice:', error);
+    if (createdInvoiceId) {
+      await Promise.allSettled([
+        supabase
+          .from('finance_invoice_promotions')
+          .delete()
+          .eq('invoice_id', createdInvoiceId),
+        supabase
+          .from('finance_invoice_products')
+          .delete()
+          .eq('invoice_id', createdInvoiceId),
+        supabase
+          .from('finance_invoice_user_groups')
+          .delete()
+          .eq('invoice_id', createdInvoiceId),
+        supabase.from('finance_invoices').delete().eq('id', createdInvoiceId),
+      ]);
+    }
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

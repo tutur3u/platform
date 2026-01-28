@@ -1,5 +1,50 @@
 -- Add grouped pending invoice RPCs (per user)
 
+drop function if exists public.fetch_workspace_invoice_configs(uuid);
+
+create or replace function public.fetch_workspace_invoice_configs(
+  p_ws_id uuid
+)
+returns table (
+  use_attendance_based boolean,
+  blocked_pending_group_ids uuid[]
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    coalesce(
+      (
+        select case
+          when lower(value) = 'true' then true
+          when lower(value) = 'false' then false
+          else true
+        end
+        from workspace_configs
+        where ws_id = p_ws_id
+          and id = 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'
+      ),
+      true
+    ) as use_attendance_based,
+    (
+      select
+        case
+          when value is null or trim(value) = '' then null
+          else (
+            select array_agg(v::uuid)
+            from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
+            where trim(v) != ''
+              and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+          )
+        end
+      from workspace_configs
+      where ws_id = p_ws_id
+        and id = 'INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING'
+    ) as blocked_pending_group_ids;
+$$;
+
 drop function if exists public.get_pending_invoices_grouped_by_user(
   uuid,
   integer,
@@ -36,38 +81,16 @@ declare
   v_use_attendance_based boolean;
   v_blocked_pending_group_ids uuid[];
 begin
-  -- Fetch workspace config for attendance-based calculation (default to TRUE for backward compatibility)
-  -- workspace_configs stores values as text, so we need to convert "true"/"false" strings to boolean
-  select coalesce(
-    (select case
-      when lower(value) = 'true' then true
-      when lower(value) = 'false' then false
-      else true
-    end
-    from workspace_configs
-    where ws_id = p_ws_id and id = 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'),
-    true
-  ) into v_use_attendance_based;
-
-  -- Fetch workspace config for groups that should be excluded from pending invoices
-  -- Value is stored as a comma-separated list of UUIDs
-  -- Safe split-and-filter: validate each token is a valid UUID before casting
+  perform set_config('statement_timeout', '5000ms', true);
   select
-    case
-      when value is null or trim(value) = '' then null
-      else (
-        select array_agg(v::uuid)
-        from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
-        where trim(v) != ''
-          and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-      )
-    end
-  into v_blocked_pending_group_ids
-  from workspace_configs
-  where ws_id = p_ws_id
-    and id = 'INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING';
+    use_attendance_based,
+    blocked_pending_group_ids
+  into
+    v_use_attendance_based,
+    v_blocked_pending_group_ids
+  from public.fetch_workspace_invoice_configs(p_ws_id);
 
-  v_escaped_query := replace(replace(replace(p_query, '\\', '\\\\'), '%', '\\%'), '_', '\\_');
+  v_escaped_query := replace(replace(replace(coalesce(p_query, ''), '\\', '\\\\'), '%', '\\%'), '_', '\\_');
 
   return query
   with base_data as (
@@ -76,10 +99,11 @@ begin
   filtered_base as (
     select * from base_data bd
     where (p_user_ids is null or bd.user_id = any(p_user_ids))
-      and (p_query is null or (
-        bd.user_name ilike '%' || v_escaped_query || '%' escape '\\' or
-        bd.group_name ilike '%' || v_escaped_query || '%' escape '\\'
-      ))
+      and (
+        p_query is null
+        or bd.user_name ilike '%' || v_escaped_query || '%' escape '\\'
+        or bd.group_name ilike '%' || v_escaped_query || '%' escape '\\'
+      )
       and (
         v_blocked_pending_group_ids is null
         or (
@@ -233,36 +257,13 @@ declare
   v_use_attendance_based boolean;
   v_blocked_pending_group_ids uuid[];
 begin
-  -- Fetch workspace config for attendance-based calculation (default to TRUE for backward compatibility)
-  -- workspace_configs stores values as text, so we need to convert "true"/"false" strings to boolean
-  select coalesce(
-    (select case
-      when lower(value) = 'true' then true
-      when lower(value) = 'false' then false
-      else true
-    end
-    from workspace_configs
-    where ws_id = p_ws_id and id = 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'),
-    true
-  ) into v_use_attendance_based;
-
-  -- Fetch workspace config for groups that should be excluded from pending invoices
-  -- Value is stored as a comma-separated list of UUIDs
-  -- Safe split-and-filter: validate each token is a valid UUID before casting
   select
-    case
-      when value is null or trim(value) = '' then null
-      else (
-        select array_agg(v::uuid)
-        from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
-        where trim(v) != ''
-          and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-      )
-    end
-  into v_blocked_pending_group_ids
-  from workspace_configs
-  where ws_id = p_ws_id
-    and id = 'INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING';
+    use_attendance_based,
+    blocked_pending_group_ids
+  into
+    v_use_attendance_based,
+    v_blocked_pending_group_ids
+  from public.fetch_workspace_invoice_configs(p_ws_id);
 
   v_escaped_query := case
     when p_query is null then null

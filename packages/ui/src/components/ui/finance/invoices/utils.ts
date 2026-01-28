@@ -1,28 +1,56 @@
+type AttendanceRecord = {
+  status: string;
+  date: string;
+};
+
+type AttendanceStats = {
+  present: number;
+  late: number;
+  absent: number;
+  total: number;
+};
+
+export type WorkspaceUserGroup = {
+  id: string;
+  name?: string | null;
+  sessions?: string[] | null;
+};
+
+export type UserGroup = {
+  workspace_user_groups?: WorkspaceUserGroup | null;
+};
+
+type Invoice = {
+  group_id?: string;
+  valid_until?: string | null;
+};
+
 export const getAttendanceStats = (
-  attendance: { status: string; date: string }[]
-) => {
+  attendance: AttendanceRecord[]
+): AttendanceStats => {
   if (!attendance || !Array.isArray(attendance)) {
     return { present: 0, late: 0, absent: 0, total: 0 };
   }
 
-  return attendance.reduce(
+  return attendance.reduce<AttendanceStats>(
     (stats, record) => {
       const status = record.status?.toUpperCase();
       switch (status) {
         case 'PRESENT':
           stats.present++;
+          stats.total++;
           break;
         case 'LATE':
           stats.late++;
+          stats.total++;
           break;
         case 'ABSENT':
           stats.absent++;
+          stats.total++;
           break;
         default:
-          stats.present++;
           break;
       }
-      stats.total++;
       return stats;
     },
     { present: 0, late: 0, absent: 0, total: 0 }
@@ -30,8 +58,8 @@ export const getAttendanceStats = (
 };
 
 export const getEffectiveAttendanceDays = (
-  attendance: { status: string; date: string }[]
-) => {
+  attendance: AttendanceRecord[]
+): number => {
   const stats = getAttendanceStats(attendance);
   return stats.present + stats.late;
 };
@@ -62,10 +90,10 @@ export const getSessionsForMonth = (
 };
 
 export const getEffectiveDays = (
-  attendance: { status: string; date: string }[],
+  attendance: AttendanceRecord[],
   totalSessions: number,
   useAttendanceBased: boolean
-) => {
+): number => {
   if (useAttendanceBased) {
     return getEffectiveAttendanceDays(attendance);
   }
@@ -104,10 +132,10 @@ export const getSessionsUntilMonth = (
 };
 
 export const getTotalSessionsForGroups = (
-  userGroups: any[],
+  userGroups: UserGroup[],
   groupIds: string[],
   selectedMonth: string,
-  latestInvoices: { group_id?: string; valid_until?: string | null }[] = []
+  latestInvoices: Invoice[] = []
 ): number => {
   let total = 0;
   for (const groupId of groupIds) {

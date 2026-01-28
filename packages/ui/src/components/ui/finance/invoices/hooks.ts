@@ -776,12 +776,34 @@ export const useMultiGroupLatestSubscriptionInvoice = (
       if (groupIds.length === 0) return [];
 
       const supabase = createClient();
+
+      const { data: validGroups, error: validGroupsError } = await supabase
+        .from('workspace_user_groups_users')
+        .select('group_id')
+        .eq('user_id', userId)
+        .eq('role', 'STUDENT')
+        .in('group_id', groupIds);
+
+      if (validGroupsError) {
+        console.error(
+          '❌ Multi-group latest subscription invoice valid groups error:',
+          validGroupsError
+        );
+        throw validGroupsError;
+      }
+
+      const validGroupIds = (validGroups || [])
+        .map((row) => row.group_id)
+        .filter((id): id is string => !!id);
+
+      if (validGroupIds.length === 0) return [];
+
       const { data, error } = await supabase
         .from('finance_invoice_user_groups')
         .select(
           'user_group_id, finance_invoices!inner(valid_until, created_at)'
         )
-        .in('user_group_id', groupIds)
+        .in('user_group_id', validGroupIds)
         .eq('finance_invoices.customer_id', userId)
         .order('created_at', {
           referencedTable: 'finance_invoices',
@@ -796,15 +818,34 @@ export const useMultiGroupLatestSubscriptionInvoice = (
         throw error;
       }
 
-      const invoices = (data ?? []).map(
-        (row: FinanceInvoiceUserGroupRow & { user_group_id?: string }) => ({
-          group_id: row.user_group_id,
-          valid_until: row.finance_invoices?.valid_until,
-          created_at: row.finance_invoices?.created_at,
-        })
-      );
+      const sortedRows = (data ?? []).slice().sort((a, b) => {
+        const aDate = a.finance_invoices?.created_at
+          ? new Date(a.finance_invoices.created_at).getTime()
+          : 0;
+        const bDate = b.finance_invoices?.created_at
+          ? new Date(b.finance_invoices.created_at).getTime()
+          : 0;
+        return bDate - aDate;
+      });
 
-      return invoices;
+      // Deduplicate to get only the latest invoice per group
+      const latestInvoicesMap = new Map<
+        string,
+        { group_id: string; valid_until: string | null; created_at: string }
+      >();
+
+      sortedRows.forEach((row) => {
+        const groupId = row.user_group_id;
+        if (groupId && !latestInvoicesMap.has(groupId)) {
+          latestInvoicesMap.set(groupId, {
+            group_id: groupId,
+            valid_until: row.finance_invoices?.valid_until ?? null,
+            created_at: row.finance_invoices?.created_at ?? '',
+          });
+        }
+      });
+
+      return Array.from(latestInvoicesMap.values());
     },
     enabled: !!userId && groupIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes

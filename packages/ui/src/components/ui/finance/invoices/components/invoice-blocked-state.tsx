@@ -17,17 +17,13 @@ export function InvoiceBlockedState({
       : t('ws-invoices.user_in_blocked_group_description');
 
   return (
-    <div className="mt-4 flex flex-col items-center justify-center gap-4 rounded-lg border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900/50 dark:bg-amber-950/20">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
-        <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+    <div className="mt-4 flex flex-col items-center justify-center gap-4 rounded-lg border border-dynamic-orange bg-dynamic-orange/10 p-8 text-center dark:border-dynamic-orange/50 dark:bg-dynamic-orange/20">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dynamic-orange/20 dark:bg-dynamic-orange/40">
+        <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
       </div>
       <div className="space-y-1">
-        <h3 className="font-semibold text-amber-900 dark:text-amber-400">
-          {title}
-        </h3>
-        <p className="max-w-xs text-amber-800 text-sm dark:text-amber-500">
-          {description}
-        </p>
+        <h3 className="font-semibold text-dynamic-orange">{title}</h3>
+        <p className="max-w-xs text-dynamic-orange text-sm">{description}</p>
       </div>
     </div>
   );
