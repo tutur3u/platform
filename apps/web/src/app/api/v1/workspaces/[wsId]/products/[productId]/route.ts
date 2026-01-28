@@ -1,7 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -9,6 +12,102 @@ interface Params {
     wsId: string;
     productId: string;
   }>;
+}
+
+export async function GET(_: Request, { params }: Params) {
+  const { wsId: id, productId } = await params;
+
+  // Resolve workspace ID
+  const wsId = await normalizeWorkspaceId(id);
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('view_inventory')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_products')
+    .select(
+      '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))'
+    )
+    .eq('id', productId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching product:', error);
+    return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
+
+  const item = data;
+
+  type InventoryProduct = {
+    amount: number | null;
+    min_amount: number | null;
+    price: number | null;
+    unit_id: string | null;
+    warehouse_id: string | null;
+    inventory_warehouses: { name: string | null } | null;
+    inventory_units: { name: string | null } | null;
+  };
+
+  type ProductStockChange = {
+    amount: number;
+    created_at: string;
+    beneficiary: { full_name: string | null; email: string | null } | null;
+    creator: { full_name: string | null; email: string | null } | null;
+  };
+
+  const formattedProduct = {
+    id: item.id,
+    name: item.name,
+    manufacturer: item.manufacturer,
+    description: item.description,
+    usage: item.usage,
+    unit: (item.inventory_products as unknown as InventoryProduct[])?.[0]
+      ?.inventory_units?.name,
+    stock: (
+      (item.inventory_products as unknown as InventoryProduct[] | null) || []
+    ).map((inventory: InventoryProduct) => ({
+      amount: inventory.amount,
+      min_amount: inventory.min_amount,
+      unit: inventory.inventory_units?.name,
+      warehouse: inventory.inventory_warehouses?.name,
+      price: inventory.price,
+    })),
+    // Inventory with ids for editing
+    inventory: (
+      (item.inventory_products as unknown as InventoryProduct[] | null) || []
+    ).map((inventory: InventoryProduct) => ({
+      unit_id: inventory.unit_id,
+      warehouse_id: inventory.warehouse_id,
+      amount: inventory.amount,
+      min_amount: inventory.min_amount,
+      price: inventory.price,
+    })),
+    min_amount:
+      (item.inventory_products as unknown as InventoryProduct[])?.[0]
+        ?.min_amount || 0,
+    warehouse: (item.inventory_products as unknown as InventoryProduct[])?.[0]
+      ?.inventory_warehouses?.name,
+    category: (item.product_categories as any)?.name,
+    category_id: item.category_id,
+    ws_id: item.ws_id,
+    created_at: item.created_at,
+    stock_changes:
+      (item.product_stock_changes as unknown as ProductStockChange[])?.map(
+        (change: ProductStockChange) => ({
+          amount: change.amount,
+          creator: change.creator,
+          beneficiary: change.beneficiary,
+          created_at: change.created_at,
+        })
+      ) || [],
+  };
+
+  return NextResponse.json(formattedProduct);
 }
 
 export async function PATCH(req: Request, { params }: Params) {

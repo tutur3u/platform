@@ -57,7 +57,9 @@ export function ProductsPageClient({
   const t = useTranslations();
   const queryClient = useQueryClient();
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
+  const [selectedProductId, setSelectedProductId] = useState<
+    string | undefined
+  >();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [q, setQ] = useQueryState(
@@ -113,15 +115,17 @@ export function ProductsPageClient({
     }
   );
 
+  const selectedProduct = data?.data?.find((p) => p.id === selectedProductId);
+
   const handleRowClick = (product: Product) => {
-    setSelectedProduct(product);
+    setSelectedProductId(product.id);
     setIsDialogOpen(true);
   };
 
   const handleDialogClose = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      setSelectedProduct(undefined);
+      setSelectedProductId(undefined);
     }
   };
 

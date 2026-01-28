@@ -57,3 +57,30 @@ export function useWorkspaceProducts(
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+export function useWorkspaceProduct(
+  wsId: string,
+  productId?: string,
+  options?: {
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: ['workspace-product', wsId, productId],
+    queryFn: async (): Promise<Product> => {
+      if (!productId) throw new Error('Product ID is required');
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/products/${productId}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch product');
+      }
+
+      const json = await response.json();
+      return json as Product;
+    },
+    enabled: options?.enabled !== false && !!productId,
+  });
+}
