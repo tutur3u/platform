@@ -1024,49 +1024,18 @@ export const usePendingInvoices = (
     pageSize?: number;
     q?: string;
     userIds?: string[];
+    groupByUser?: boolean;
+    enabled?: boolean;
   } = {}
 ) => {
-  const { page = 1, pageSize = 10, q = '', userIds = [] } = params;
-  const { data: groupByUserConfig } = useQuery({
-    queryKey: [
-      'workspace-config',
-      wsId,
-      'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
-    ],
-    queryFn: async () => {
-      if (!wsId) return false;
-
-      try {
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/settings/INVOICE_GROUP_PENDING_INVOICES_BY_USER`
-        );
-
-        if (!res.ok) {
-          if (res.status === 404) {
-            return false;
-          }
-          throw new Error('Failed to fetch pending invoices grouping config');
-        }
-
-        const data = await res.json();
-        const value = data.value?.trim().toLowerCase();
-        return value === 'true' || value === true;
-      } catch (error) {
-        console.error(
-          '❌ Pending invoices grouping config fetch error:',
-          error
-        );
-        return false;
-      }
-    },
-    enabled: !!wsId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    retry: 2,
-  });
-
-  const groupByUser = !!groupByUserConfig;
+  const {
+    page = 1,
+    pageSize = 10,
+    q = '',
+    userIds = [],
+    groupByUser = false,
+    enabled = true,
+  } = params;
 
   return useQuery({
     queryKey: [
@@ -1176,7 +1145,7 @@ export const usePendingInvoices = (
         count: count || 0,
       };
     },
-    enabled: !!wsId,
+    enabled: !!wsId && enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes - more frequent refresh for pending data
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true, // Refetch when window gains focus
@@ -1186,26 +1155,15 @@ export const usePendingInvoices = (
 };
 
 // Get count of pending invoices for the current month
-export const usePendingInvoicesCurrentMonthCount = (wsId: string) => {
+export const usePendingInvoicesCurrentMonthCount = (
+  wsId: string,
+  groupByUser = false,
+  enabled = true
+) => {
   return useQuery({
-    queryKey: ['pending-invoices-current-month', wsId],
+    queryKey: ['pending-invoices-current-month', wsId, groupByUser],
     queryFn: async () => {
       const supabase = createClient();
-
-      let groupByUser = false;
-      try {
-        const groupingRes = await fetch(
-          `/api/v1/workspaces/${wsId}/settings/INVOICE_GROUP_PENDING_INVOICES_BY_USER`
-        );
-        const groupingData = groupingRes.ok ? await groupingRes.json() : null;
-        const groupingValue = groupingData?.value?.trim?.().toLowerCase?.();
-        groupByUser = groupingValue === 'true' || groupingValue === true;
-      } catch (error) {
-        console.error(
-          '❌ Pending invoices grouping config fetch error:',
-          error
-        );
-      }
 
       // Get current month in YYYY-MM format
       const now = new Date();
@@ -1261,7 +1219,7 @@ export const usePendingInvoicesCurrentMonthCount = (wsId: string) => {
 
       return currentMonthCount;
     },
-    enabled: !!wsId,
+    enabled: !!wsId && enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
