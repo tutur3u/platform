@@ -22,5 +22,7 @@ export const useWorkspaceConfig = <T>(
       return (data.value as T) ?? defaultValue;
     },
     enabled: !!wsId && !!configId,
+    staleTime: 30_000,
+    placeholderData: (previousData) => previousData,
   });
 };

@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -25,17 +24,7 @@ export default async function WorkspaceInvoicesPage({ params }: Props) {
         });
         if (withoutPermission('create_invoices')) notFound();
 
-        const supabase = await createClient();
-        const { data: config } = await supabase
-          .from('workspace_configs')
-          .select('value')
-          .eq('ws_id', wsId)
-          .eq('id', 'default_wallet_id')
-          .single();
-
-        const defaultWalletId = config?.value as string | undefined;
-
-        return <NewInvoicePage wsId={wsId} defaultWalletId={defaultWalletId} />;
+        return <NewInvoicePage wsId={wsId} />;
       }}
     </WorkspaceWrapper>
   );

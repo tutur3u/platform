@@ -131,11 +131,22 @@ const areSelectedProductsEqual = (
   const toKey = (item: SelectedProductItem) =>
     `${item.product.id}|${item.inventory.unit_id}|${item.inventory.warehouse_id}|${item.quantity}`;
 
-  const currentKeys = new Set(current.map(toKey));
-  if (currentKeys.size !== next.length) return false;
+  const buildCounts = (items: SelectedProductItem[]) => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      const key = toKey(item);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  };
 
-  for (const item of next) {
-    if (!currentKeys.has(toKey(item))) return false;
+  const currentCounts = buildCounts(current);
+  const nextCounts = buildCounts(next);
+
+  if (currentCounts.size !== nextCounts.size) return false;
+
+  for (const [key, count] of currentCounts) {
+    if (nextCounts.get(key) !== count) return false;
   }
 
   return true;

@@ -21,54 +21,61 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useWallets } from '@/hooks/use-wallets';
 
 interface Props {
-  wsId: string;
+  workspaceId: string;
 }
 
 const formSchema = z.object({
   default_wallet_id: z.string().optional(),
 });
 
-export default function DefaultWalletSettings({ wsId }: Props) {
+const NONE_OPTION = 'none';
+
+export default function DefaultWalletSettings({ workspaceId }: Props) {
   const t = useTranslations('ws-finance-settings');
   const tWallets = useTranslations('ws-wallets');
-  const { data: wallets = [] } = useWallets(wsId);
-  const { data: defaultConfig } = useWorkspaceConfig(
-    wsId,
-    'default_wallet_id',
-    ''
-  );
+  const { data: wallets = [], isLoading: isLoadingWallets } =
+    useWallets(workspaceId);
+  const { data: defaultConfig, isLoading: isLoadingDefaultConfig } =
+    useWorkspaceConfig(workspaceId, 'default_wallet_id', '');
 
   const queryClient = useQueryClient();
+
+  const isLoading = isLoadingWallets || isLoadingDefaultConfig;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      default_wallet_id: undefined,
+      default_wallet_id: NONE_OPTION,
+    },
+    values: useMemo(() => {
+      if (isLoading) return undefined;
+      return {
+        default_wallet_id: (defaultConfig as string) || NONE_OPTION,
+      };
+    }, [isLoading, defaultConfig]),
+    resetOptions: {
+      keepDirtyValues: true,
     },
   });
 
-  useEffect(() => {
-    if (defaultConfig !== undefined) {
-      form.reset({
-        default_wallet_id: (defaultConfig as string) || undefined,
-      });
-    }
-  }, [defaultConfig, form]);
-
   const updateMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const nextValue =
+        values.default_wallet_id && values.default_wallet_id !== NONE_OPTION
+          ? values.default_wallet_id
+          : '';
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/default_wallet_id`,
+        `/api/v1/workspaces/${workspaceId}/settings/default_wallet_id`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: values.default_wallet_id }),
+          body: JSON.stringify({ value: nextValue }),
         }
       );
 
@@ -80,7 +87,7 @@ export default function DefaultWalletSettings({ wsId }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId, 'default_wallet_id'],
+        queryKey: ['workspace-config', workspaceId, 'default_wallet_id'],
       });
       toast.success(t('update_success'));
     },
@@ -110,8 +117,7 @@ export default function DefaultWalletSettings({ wsId }: Props) {
                 <FormLabel>{t('default_wallet_label')}</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  value={field.value}
+                  value={field.value ?? NONE_OPTION}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -119,7 +125,7 @@ export default function DefaultWalletSettings({ wsId }: Props) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">
+                    <SelectItem value={NONE_OPTION}>
                       {t('no_default_wallet')}
                     </SelectItem>
                     {wallets
@@ -138,7 +144,9 @@ export default function DefaultWalletSettings({ wsId }: Props) {
 
           <Button
             type="submit"
-            disabled={updateMutation.isPending || !form.formState.isDirty}
+            disabled={
+              isLoading || updateMutation.isPending || !form.formState.isDirty
+            }
           >
             {updateMutation.isPending ? t('saving') : t('save')}
           </Button>

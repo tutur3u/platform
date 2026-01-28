@@ -894,12 +894,12 @@ export function SettingsDialog({
                   </div>
                 )}
 
-                {activeTab === 'default_wallet' && wsId && (
-                  <DefaultWalletSettings wsId={wsId} />
+                {activeTab === 'default_wallet' && workspace?.id && (
+                  <DefaultWalletSettings workspaceId={workspace.id} />
                 )}
 
-                {activeTab === 'invoice_settings' && wsId && (
-                  <InvoiceSettings wsId={wsId} />
+                {activeTab === 'invoice_settings' && workspace?.id && (
+                  <InvoiceSettings workspaceId={workspace.id} />
                 )}
 
                 {activeTab === 'referrals' && wsId && (

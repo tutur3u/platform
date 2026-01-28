@@ -15,16 +15,16 @@ import { type Control, useWatch } from 'react-hook-form';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface Props {
-  wsId: string;
+  workspaceId: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: Control<any>;
 }
 
-export default function BlockedCreationGroups({ wsId, control }: Props) {
+export default function BlockedCreationGroups({ workspaceId, control }: Props) {
   const t = useTranslations('ws-finance-settings');
 
   const { data: groupsData, isLoading: isLoadingGroups } =
-    useWorkspaceUserGroups(wsId);
+    useWorkspaceUserGroups(workspaceId);
 
   const selectedGroupIds =
     useWatch({
