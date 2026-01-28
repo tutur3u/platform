@@ -1,9 +1,6 @@
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product } from '@tuturuuu/types/primitives/Product';
-import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -66,12 +63,7 @@ export default async function WorkspaceProductsPage({
         const canDeleteInventory = permissions.includes('delete_inventory');
 
         const resolvedSearchParams = await searchParams;
-        const [initialData, categories, warehouses, units] = await Promise.all([
-          getInitialData(wsId, resolvedSearchParams),
-          getCategories(wsId),
-          getWarehouses(wsId),
-          getUnits(wsId),
-        ]);
+        const initialData = await getInitialData(wsId, resolvedSearchParams);
 
         return (
           <>
@@ -95,9 +87,6 @@ export default async function WorkspaceProductsPage({
             <Separator className="my-4" />
             <ProductsPageClient
               initialData={initialData}
-              categories={categories}
-              warehouses={warehouses}
-              units={units}
               wsId={wsId}
               canCreateInventory={canCreateInventory}
               canUpdateInventory={canUpdateInventory}
@@ -198,46 +187,4 @@ async function getInitialData(
   }));
 
   return { data, count } as { data: Product[]; count: number };
-}
-
-async function getCategories(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('product_categories')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
-
-  return data as ProductCategory[];
-}
-
-async function getWarehouses(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('inventory_warehouses')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
-
-  return data as ProductWarehouse[];
-}
-
-async function getUnits(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('inventory_units')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
-
-  return data as ProductUnit[];
 }

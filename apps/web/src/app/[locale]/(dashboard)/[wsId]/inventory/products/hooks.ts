@@ -1,5 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { Product } from '@tuturuuu/types/primitives/Product';
+import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 
 export interface ProductsParams {
   q?: string;
@@ -82,5 +85,81 @@ export function useWorkspaceProduct(
       return json as Product;
     },
     enabled: options?.enabled !== false && !!productId,
+  });
+}
+
+export function useProductCategories(
+  wsId: string,
+  options?: {
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: ['product-categories', wsId],
+    queryFn: async (): Promise<ProductCategory[]> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/product-categories`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch product categories');
+      }
+
+      const json = await response.json();
+      return json as ProductCategory[];
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+export function useProductWarehouses(
+  wsId: string,
+  options?: {
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: ['product-warehouses', wsId],
+    queryFn: async (): Promise<ProductWarehouse[]> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/product-warehouses`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch product warehouses');
+      }
+
+      const json = await response.json();
+      return json as ProductWarehouse[];
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+export function useProductUnits(
+  wsId: string,
+  options?: {
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: ['product-units', wsId],
+    queryFn: async (): Promise<ProductUnit[]> => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/product-units`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch product units');
+      }
+
+      const json = await response.json();
+      return json as ProductUnit[];
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }

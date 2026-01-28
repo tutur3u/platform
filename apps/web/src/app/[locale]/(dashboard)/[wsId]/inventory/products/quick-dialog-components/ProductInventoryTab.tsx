@@ -22,12 +22,14 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
+import type { EditProductFormValues } from './schema';
 
 interface Props {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<EditProductFormValues>;
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
   isSaving: boolean;
+  isLoading?: boolean;
   onSave: () => void;
   canUpdateInventory: boolean;
 }
@@ -37,6 +39,7 @@ export function ProductInventoryTab({
   warehouses,
   units,
   isSaving,
+  isLoading,
   onSave,
   canUpdateInventory,
 }: Props) {
@@ -55,6 +58,14 @@ export function ProductInventoryTab({
       price: 0,
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-32 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -130,9 +141,14 @@ export function ProductInventoryTab({
                               placeholder={t(
                                 'ws-inventory-products.placeholders.enter_price'
                               )}
-                              {...field}
-                              value={String(field.value || '')}
-                              onChange={(e) => field.onChange(e.target.value)}
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ''
+                                    ? 0
+                                    : Number(e.target.value)
+                                )
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -154,9 +170,14 @@ export function ProductInventoryTab({
                             <Input
                               type="number"
                               placeholder="Min amount"
-                              {...field}
-                              value={String(field.value || '')}
-                              onChange={(e) => field.onChange(e.target.value)}
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ''
+                                    ? 0
+                                    : Number(e.target.value)
+                                )
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -176,9 +197,14 @@ export function ProductInventoryTab({
                             <Input
                               type="number"
                               placeholder="Current amount"
-                              {...field}
-                              value={String(field.value || '')}
-                              onChange={(e) => field.onChange(e.target.value)}
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ''
+                                    ? 0
+                                    : Number(e.target.value)
+                                )
+                              }
                             />
                           </FormControl>
                           <FormMessage />

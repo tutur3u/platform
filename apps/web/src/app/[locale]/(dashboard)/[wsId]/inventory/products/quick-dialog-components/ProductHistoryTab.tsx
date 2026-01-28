@@ -1,14 +1,23 @@
-import { ShoppingBag, Store } from '@tuturuuu/icons';
+import { Loader2, ShoppingBag, Store } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 
 interface Props {
   product: Product;
+  isLoading?: boolean;
 }
 
-export function ProductHistoryTab({ product }: Props) {
+export function ProductHistoryTab({ product, isLoading }: Props) {
   const t = useTranslations();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-32 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

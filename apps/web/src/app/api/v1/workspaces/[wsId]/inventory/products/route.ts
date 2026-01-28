@@ -68,7 +68,7 @@ export async function GET(request: Request, { params }: Params) {
     const queryBuilder = supabase
       .from('workspace_products')
       .select(
-        '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
+        'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name))',
         {
           count: 'exact',
         }
@@ -92,60 +92,37 @@ export async function GET(request: Request, { params }: Params) {
 
     if (error) throw error;
 
-    type InventoryProduct = Tables<'inventory_products'> & {
-      inventory_warehouses: { name: string | null } | null;
-      inventory_units: { name: string | null } | null;
+    type RawProduct = Tables<'workspace_products'> & {
+      product_categories: { name: string | null } | null;
+      inventory_products: {
+        amount: number | null;
+        min_amount: number;
+        price: number;
+        inventory_warehouses: { name: string | null } | null;
+        inventory_units: { name: string | null } | null;
+      }[];
     };
 
-    type ProductStockChange = Tables<'product_stock_changes'> & {
-      beneficiary: { full_name: string | null; email: string | null } | null;
-      creator: { full_name: string | null; email: string | null } | null;
-    };
-
-    const data = (rawData || []).map((item) => ({
+    const data = ((rawData as unknown as RawProduct[]) || []).map((item) => ({
       id: item.id,
       name: item.name,
       manufacturer: item.manufacturer,
       description: item.description,
       usage: item.usage,
-      unit: (item.inventory_products as InventoryProduct[])?.[0]
-        ?.inventory_units?.name,
-      stock: ((item.inventory_products as InventoryProduct[] | null) || []).map(
-        (inventory: InventoryProduct) => ({
-          amount: inventory.amount,
-          min_amount: inventory.min_amount,
-          unit: inventory.inventory_units?.name,
-          warehouse: inventory.inventory_warehouses?.name,
-          price: inventory.price,
-        })
-      ),
-      // Inventory with ids for editing
-      inventory: (
-        (item.inventory_products as InventoryProduct[] | null) || []
-      ).map((inventory: InventoryProduct) => ({
-        unit_id: inventory.unit_id,
-        warehouse_id: inventory.warehouse_id,
+      unit: item.inventory_products?.[0]?.inventory_units?.name,
+      stock: (item.inventory_products || []).map((inventory) => ({
         amount: inventory.amount,
         min_amount: inventory.min_amount,
+        unit: inventory.inventory_units?.name,
+        warehouse: inventory.inventory_warehouses?.name,
         price: inventory.price,
       })),
-      min_amount:
-        (item.inventory_products as InventoryProduct[])?.[0]?.min_amount || 0,
-      warehouse: (item.inventory_products as InventoryProduct[])?.[0]
-        ?.inventory_warehouses?.name,
+      min_amount: item.inventory_products?.[0]?.min_amount || 0,
+      warehouse: item.inventory_products?.[0]?.inventory_warehouses?.name,
       category: item.product_categories?.name,
       category_id: item.category_id,
       ws_id: item.ws_id,
       created_at: item.created_at,
-      stock_changes:
-        (item.product_stock_changes as ProductStockChange[])?.map(
-          (change: ProductStockChange) => ({
-            amount: change.amount,
-            creator: change.creator,
-            beneficiary: change.beneficiary,
-            created_at: change.created_at,
-          })
-        ) || [],
     }));
 
     return NextResponse.json({

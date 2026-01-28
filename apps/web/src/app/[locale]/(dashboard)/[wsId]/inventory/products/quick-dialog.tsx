@@ -2,9 +2,6 @@
 
 import { Edit, Eye, History, Package } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
-import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import {
   Dialog,
   DialogContent,
@@ -19,13 +16,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type * as z from 'zod';
-import { useWorkspaceProduct } from './hooks';
+import {
+  useProductCategories,
+  useProductUnits,
+  useProductWarehouses,
+  useWorkspaceProduct,
+} from './hooks';
 import { ProductDeleteDialog } from './quick-dialog-components/ProductDeleteDialog';
 import { ProductDetailsTab } from './quick-dialog-components/ProductDetailsTab';
 import { ProductEditTab } from './quick-dialog-components/ProductEditTab';
 import { ProductHistoryTab } from './quick-dialog-components/ProductHistoryTab';
 import { ProductInventoryTab } from './quick-dialog-components/ProductInventoryTab';
-import { EditProductSchema } from './quick-dialog-components/schema';
+import {
+  type EditProductFormValues,
+  EditProductSchema,
+} from './quick-dialog-components/schema';
 import { useProductMutations } from './quick-dialog-components/useProductMutations';
 
 interface Props {
@@ -33,9 +38,6 @@ interface Props {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   wsId: string;
-  categories: ProductCategory[];
-  warehouses: ProductWarehouse[];
-  units: ProductUnit[];
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
 }
@@ -45,9 +47,6 @@ export function ProductQuickDialog({
   isOpen,
   onOpenChange,
   wsId,
-  categories,
-  warehouses,
-  units,
   canUpdateInventory,
   canDeleteInventory,
 }: Props) {
@@ -61,8 +60,21 @@ export function ProductQuickDialog({
     deleteProductMutation,
   } = useProductMutations();
 
-  const { data: fetchedProduct } = useWorkspaceProduct(wsId, product?.id, {
-    enabled: isOpen && !!product?.id,
+  const { data: fetchedProduct, isLoading: isProductLoading } =
+    useWorkspaceProduct(wsId, product?.id, {
+      enabled: isOpen && !!product?.id,
+    });
+
+  const { data: categories = [] } = useProductCategories(wsId, {
+    enabled: isOpen,
+  });
+
+  const { data: warehouses = [] } = useProductWarehouses(wsId, {
+    enabled: isOpen,
+  });
+
+  const { data: units = [] } = useProductUnits(wsId, {
+    enabled: isOpen,
   });
 
   const displayProduct = fetchedProduct || product;
@@ -79,7 +91,7 @@ export function ProductQuickDialog({
     computeUnlimitedStock(displayProduct)
   );
 
-  const editForm = useForm({
+  const editForm = useForm<EditProductFormValues>({
     resolver: zodResolver(EditProductSchema),
     defaultValues: {
       name: displayProduct?.name || '',
@@ -90,12 +102,18 @@ export function ProductQuickDialog({
       inventory: hasUnlimitedStock
         ? []
         : displayProduct?.inventory && displayProduct.inventory.length > 0
-          ? displayProduct.inventory
+          ? displayProduct.inventory.map((item) => ({
+              unit_id: item.unit_id,
+              warehouse_id: item.warehouse_id,
+              amount: Number(item.amount),
+              min_amount: Number(item.min_amount),
+              price: Number(item.price),
+            }))
           : [
               {
                 unit_id: '',
                 warehouse_id: '',
-                min_amount: displayProduct?.min_amount || 0,
+                min_amount: Number(displayProduct?.min_amount || 0),
                 amount: 0,
                 price: 0,
               },
@@ -116,12 +134,18 @@ export function ProductQuickDialog({
         inventory: isUnlimited
           ? []
           : displayProduct.inventory && displayProduct.inventory.length > 0
-            ? displayProduct.inventory
+            ? displayProduct.inventory.map((inv) => ({
+                unit_id: inv.unit_id,
+                warehouse_id: inv.warehouse_id,
+                amount: Number(inv.amount) || 0,
+                min_amount: Number(inv.min_amount) || 0,
+                price: Number(inv.price) || 0,
+              }))
             : [
                 {
                   unit_id: '',
                   warehouse_id: '',
-                  min_amount: displayProduct.min_amount || 0,
+                  min_amount: Number(displayProduct.min_amount) || 0,
                   amount: 0,
                   price: 0,
                 },
@@ -136,19 +160,19 @@ export function ProductQuickDialog({
       editForm.setValue('inventory', [], { shouldDirty: true });
     } else {
       const currentValues = editForm.getValues();
-      const newValues = {
+      const newInventory: EditProductFormValues['inventory'] = [
+        {
+          unit_id: '',
+          warehouse_id: '',
+          min_amount: Number(displayProduct?.min_amount) || 0,
+          amount: 0,
+          price: 0,
+        },
+      ];
+      editForm.reset({
         ...currentValues,
-        inventory: [
-          {
-            unit_id: '',
-            warehouse_id: '',
-            min_amount: displayProduct?.min_amount || 0,
-            amount: 0,
-            price: 0,
-          },
-        ],
-      };
-      editForm.reset(newValues);
+        inventory: newInventory,
+      });
     }
   }
 
@@ -161,7 +185,7 @@ export function ProductQuickDialog({
     }
 
     try {
-      const productPayload: any = {};
+      const productPayload: Partial<Product> = {};
       let hasProductChanges = false;
       let hasInventoryChanges = false;
 
@@ -186,7 +210,7 @@ export function ProductQuickDialog({
         hasProductChanges = true;
       }
 
-      const originalInventory = (displayProduct as any).inventory || [];
+      const originalInventory = displayProduct.inventory || [];
       const newInventory = data.inventory || [];
 
       const originalIsUnlimited =
@@ -323,6 +347,7 @@ export function ProductQuickDialog({
                   warehouses={warehouses}
                   units={units}
                   isSaving={isSaving}
+                  isLoading={isProductLoading}
                   onSave={editForm.handleSubmit(handleEditSave)}
                   canUpdateInventory={canUpdateInventory}
                 />
@@ -330,7 +355,10 @@ export function ProductQuickDialog({
             )}
 
             <TabsContent value="history" className="space-y-4">
-              <ProductHistoryTab product={displayProduct} />
+              <ProductHistoryTab
+                product={displayProduct}
+                isLoading={isProductLoading}
+              />
             </TabsContent>
 
             <TabsContent value="edit" className="space-y-4">

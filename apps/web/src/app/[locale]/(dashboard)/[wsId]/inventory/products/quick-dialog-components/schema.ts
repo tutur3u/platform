@@ -3,9 +3,9 @@ import * as z from 'zod';
 export const InventorySchema = z.object({
   unit_id: z.string(),
   warehouse_id: z.string(),
-  amount: z.coerce.number(),
-  min_amount: z.coerce.number(),
-  price: z.coerce.number(),
+  amount: z.number(),
+  min_amount: z.number(),
+  price: z.number(),
 });
 
 export const EditProductSchema = z.object({
@@ -16,3 +16,5 @@ export const EditProductSchema = z.object({
   category_id: z.string().optional(),
   inventory: z.array(InventorySchema).optional(),
 });
+
+export type EditProductFormValues = z.infer<typeof EditProductSchema>;

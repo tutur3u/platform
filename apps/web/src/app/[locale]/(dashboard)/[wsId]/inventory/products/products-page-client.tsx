@@ -3,9 +3,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
-import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import {
@@ -24,9 +21,6 @@ interface Props {
     data: Product[];
     count: number;
   };
-  categories: ProductCategory[];
-  warehouses: ProductWarehouse[];
-  units: ProductUnit[];
   wsId: string;
   canCreateInventory: boolean;
   canUpdateInventory: boolean;
@@ -47,9 +41,6 @@ const sortOrderValues = ['asc', 'desc'] as const;
 
 export function ProductsPageClient({
   initialData,
-  categories,
-  warehouses,
-  units,
   wsId,
   canUpdateInventory,
   canDeleteInventory,
@@ -224,9 +215,6 @@ export function ProductsPageClient({
         isOpen={isDialogOpen}
         onOpenChange={handleDialogClose}
         wsId={wsId}
-        categories={categories}
-        warehouses={warehouses}
-        units={units}
         canUpdateInventory={canUpdateInventory}
         canDeleteInventory={canDeleteInventory}
       />

@@ -92,7 +92,9 @@ export async function GET(_: Request, { params }: Params) {
         ?.min_amount || 0,
     warehouse: (item.inventory_products as unknown as InventoryProduct[])?.[0]
       ?.inventory_warehouses?.name,
-    category: (item.product_categories as any)?.name,
+    category: (
+      item.product_categories as unknown as { name: string | null } | null
+    )?.name,
     category_id: item.category_id,
     ws_id: item.ws_id,
     created_at: item.created_at,

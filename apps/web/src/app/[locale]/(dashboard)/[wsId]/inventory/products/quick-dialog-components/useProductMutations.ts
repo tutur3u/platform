@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Product } from '@tuturuuu/types/primitives/Product';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -6,13 +7,13 @@ import { useTranslations } from 'next-intl';
 interface UpdateProductParams {
   wsId: string;
   productId: string;
-  payload: any;
+  payload: Partial<Product>;
 }
 
 interface UpdateInventoryParams {
   wsId: string;
   productId: string;
-  inventory: any[];
+  inventory: NonNullable<Product['inventory']>;
 }
 
 interface DeleteProductParams {

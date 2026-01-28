@@ -24,14 +24,15 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
+import type { EditProductFormValues } from './schema';
 
 interface Props {
   product: Product;
-  form: UseFormReturn<any>;
+  form: UseFormReturn<EditProductFormValues>;
   categories: ProductCategory[];
   hasUnlimitedStock: boolean;
   onToggleUnlimitedStock: (unlimited: boolean) => void;
-  onSave: (data: any) => void;
+  onSave: (data: EditProductFormValues) => void;
   onDelete: () => void;
   isSaving: boolean;
   canUpdateInventory: boolean;
