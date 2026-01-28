@@ -127,12 +127,19 @@ export async function canCreateInvitation(
   }
 
   // Count pending invitations
-  const { count: pendingInvitations } = await supabase
-    .from('workspace_invites')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
+  const [{ count: workspaceInvitesCount }, { count: emailInvitesCount }] =
+    await Promise.all([
+      supabase
+        .from('workspace_invites')
+        .select('*', { count: 'exact', head: true })
+        .eq('ws_id', wsId),
+      supabase
+        .from('workspace_email_invites')
+        .select('*', { count: 'exact', head: true })
+        .eq('ws_id', wsId),
+    ]);
 
-  const totalPending = pendingInvitations ?? 0;
+  const totalPending = (workspaceInvitesCount ?? 0) + (emailInvitesCount ?? 0);
   const effectiveUsed = status.memberCount + totalPending;
   const effectiveAvailable = Math.max(0, status.seatCount - effectiveUsed);
 

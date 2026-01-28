@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Minus, Plus, Users } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -16,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
+import type { SeatStatus } from '@/utils/seat-limits';
 
 interface AddSeatsDialogProps {
   open: boolean;
@@ -35,18 +37,21 @@ export function AddSeatsDialog({
   billingCycle,
 }: AddSeatsDialogProps) {
   const [additionalSeats, setAdditionalSeats] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const t = useTranslations('billing');
   const router = useRouter();
 
   const totalCost = pricePerSeat * additionalSeats;
   const newTotalSeats = currentSeats + additionalSeats;
 
-  const handlePurchaseSeats = async () => {
-    if (additionalSeats < 1) return;
-
-    setIsLoading(true);
-    try {
+  const mutation = useMutation({
+    mutationFn: async ({
+      wsId,
+      additionalSeats,
+    }: {
+      wsId: string;
+      additionalSeats: number;
+    }) => {
       const response = await fetch('/api/payment/seats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,24 +67,70 @@ export function AddSeatsDialog({
         throw new Error(data.error || 'Failed to purchase seats');
       }
 
+      return data;
+    },
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({
+        queryKey: ['workspace-seat-status', wsId],
+      });
+
+      // Snapshot the previous value
+      const previousSeatStatus = queryClient.getQueryData<SeatStatus>([
+        'workspace-seat-status',
+        wsId,
+      ]);
+
+      // Optimistically update to the new value
+      if (previousSeatStatus) {
+        queryClient.setQueryData<SeatStatus>(['workspace-seat-status', wsId], {
+          ...previousSeatStatus,
+          seatCount: previousSeatStatus.seatCount + variables.additionalSeats,
+          availableSeats:
+            previousSeatStatus.availableSeats + variables.additionalSeats,
+        });
+      }
+
+      return { previousSeatStatus };
+    },
+    onError: (error, _variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousSeatStatus) {
+        queryClient.setQueryData(
+          ['workspace-seat-status', wsId],
+          context.previousSeatStatus
+        );
+      }
+
+      console.error('Error purchasing seats:', error);
+      toast.error(t('seats-purchased-error'), {
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+      });
+    },
+    onSuccess: (data, variables) => {
       toast.success(t('seats-purchased-success'), {
         description: t('seats-purchased-description', {
-          count: additionalSeats,
+          count: variables.additionalSeats,
           total: data.newSeats,
         }),
       });
 
       onOpenChange(false);
       router.refresh();
-    } catch (error) {
-      console.error('Error purchasing seats:', error);
-      toast.error(t('seats-purchased-error'), {
-        description:
-          error instanceof Error ? error.message : 'An error occurred',
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have the correct data
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-seat-status', wsId],
       });
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const handlePurchaseSeats = async (): Promise<void> => {
+    if (additionalSeats < 1) return;
+    await mutation.mutateAsync({ wsId, additionalSeats });
   };
 
   const incrementSeats = () => setAdditionalSeats((prev) => prev + 1);
@@ -175,12 +226,14 @@ export function AddSeatsDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isLoading}
+            disabled={mutation.isPending}
           >
             {t('cancel')}
           </Button>
-          <Button onClick={handlePurchaseSeats} disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button onClick={handlePurchaseSeats} disabled={mutation.isPending}>
+            {mutation.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {t('purchase-seats')}
           </Button>
         </DialogFooter>

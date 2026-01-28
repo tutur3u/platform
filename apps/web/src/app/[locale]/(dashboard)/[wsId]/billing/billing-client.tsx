@@ -252,7 +252,7 @@ export function BillingClient({
                             : 'bg-dynamic-green'
                       )}
                       style={{
-                        width: `${Math.min(100, (seatStatus.memberCount / seatStatus.seatCount) * 100)}%`,
+                        width: `${Math.min(100, (seatStatus.memberCount / Math.max(1, seatStatus.seatCount)) * 100)}%`,
                       }}
                     />
                   </div>

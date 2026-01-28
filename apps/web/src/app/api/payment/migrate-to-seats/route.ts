@@ -32,16 +32,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is the workspace creator (has billing permission)
-    const { data: workspace } = await sbAdmin
-      .from('workspaces')
-      .select('creator_id')
-      .eq('id', wsId)
-      .single();
+    // Check if user has permission to manage subscriptions
+    const {
+      data: hasManageSubscriptionPermission,
+      error: hasManageSubscriptionPermissionError,
+    } = await supabase.rpc('has_workspace_permission', {
+      p_user_id: user.id,
+      p_ws_id: wsId,
+      p_permission: 'manage_subscription',
+    });
 
-    if (!workspace || workspace.creator_id !== user.id) {
+    if (hasManageSubscriptionPermissionError) {
+      console.error(
+        'Error checking manage subscription permission:',
+        hasManageSubscriptionPermissionError
+      );
       return NextResponse.json(
-        { error: 'Only the workspace owner can migrate to seat-based pricing' },
+        {
+          error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!hasManageSubscriptionPermission) {
+      return NextResponse.json(
+        {
+          error:
+            'Unauthorized: You are not authorized to migrate to seat-based pricing',
+        },
         { status: 403 }
       );
     }
@@ -179,6 +198,39 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if user has permission to manage subscriptions
+    const {
+      data: hasManageSubscriptionPermission,
+      error: hasManageSubscriptionPermissionError,
+    } = await supabase.rpc('has_workspace_permission', {
+      p_user_id: user.id,
+      p_ws_id: wsId,
+      p_permission: 'manage_subscription',
+    });
+
+    if (hasManageSubscriptionPermissionError) {
+      console.error(
+        'Error checking manage subscription permission:',
+        hasManageSubscriptionPermissionError
+      );
+      return NextResponse.json(
+        {
+          error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!hasManageSubscriptionPermission) {
+      return NextResponse.json(
+        {
+          error:
+            'Unauthorized: You are not authorized to get migration preview',
+        },
+        { status: 403 }
+      );
+    }
+
     // Get current subscription
     const { data: currentSubscription } = await sbAdmin
       .from('workspace_subscriptions')
@@ -218,7 +270,7 @@ export async function GET(req: Request) {
 
     // Count current members
     const { count: memberCount } = await sbAdmin
-      .from('workspace_users')
+      .from('workspace_members')
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', wsId);
 
