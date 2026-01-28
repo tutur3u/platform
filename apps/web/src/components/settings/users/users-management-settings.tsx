@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface Props {

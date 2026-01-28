@@ -12,6 +12,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
 import ExportDialogContent from './export-dialog-content';
 import { usePendingInvoices } from './hooks';
 import { pendingInvoiceColumns } from './pending-columns';
@@ -55,6 +56,22 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
     })
   );
 
+  const { data: groupByUserConfig, isLoading: isConfigLoading } =
+    useWorkspaceConfig<string>(
+      wsId,
+      'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+      'false'
+    );
+
+  const { data: useAttendanceBasedConfig } = useWorkspaceConfig<string>(
+    wsId,
+    'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
+    'true'
+  );
+
+  const groupByUser = groupByUserConfig === 'true';
+  const useAttendanceBased = useAttendanceBasedConfig === 'true';
+
   const handleResetParams = useCallback(() => {
     setQ(null);
     setUserIds(null);
@@ -67,7 +84,19 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
     pageSize,
     q,
     userIds,
+    groupByUser,
+    enabled: !isConfigLoading,
   });
+
+  const columns = useMemo(
+    () =>
+      pendingInvoiceColumns(
+        t,
+        'pending-invoice-data-table',
+        useAttendanceBased
+      ),
+    [t, useAttendanceBased]
+  );
 
   const [allUsers, setAllUsers] = useState<
     { id: string; display_name: string; avatar_url?: string }[]
@@ -169,7 +198,7 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
       <DataTable
         t={t}
         data={invoices}
-        columnGenerator={pendingInvoiceColumns}
+        columns={columns}
         namespace="pending-invoice-data-table"
         count={data?.count || 0}
         pageIndex={pageIndex}

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -2648,6 +2648,81 @@ export type Database = {
           },
         ];
       };
+      finance_invoice_user_groups: {
+        Row: {
+          created_at: string;
+          invoice_id: string;
+          user_group_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          invoice_id: string;
+          user_group_id: string;
+        };
+        Update: {
+          created_at?: string;
+          invoice_id?: string;
+          user_group_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_invoice_user_groups_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       finance_invoices: {
         Row: {
           category_id: string;
@@ -2663,7 +2738,6 @@ export type Database = {
           price: number;
           total_diff: number;
           transaction_id: string | null;
-          user_group_id: string | null;
           valid_until: string | null;
           wallet_id: string;
           ws_id: string;
@@ -2682,7 +2756,6 @@ export type Database = {
           price: number;
           total_diff?: number;
           transaction_id?: string | null;
-          user_group_id?: string | null;
           valid_until?: string | null;
           wallet_id: string;
           ws_id: string;
@@ -2701,7 +2774,6 @@ export type Database = {
           price?: number;
           total_diff?: number;
           transaction_id?: string | null;
-          user_group_id?: string | null;
           valid_until?: string | null;
           wallet_id?: string;
           ws_id?: string;
@@ -2845,55 +2917,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
         ];
@@ -17499,6 +17522,13 @@ export type Database = {
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
+      fetch_workspace_invoice_configs: {
+        Args: { p_ws_id: string };
+        Returns: {
+          blocked_pending_group_ids: string[];
+          use_attendance_based: boolean;
+        }[];
+      };
       generate_cross_app_token:
         | {
             Args: {
@@ -18147,6 +18177,30 @@ export type Database = {
         }[];
       };
       get_pending_invoices_count: {
+        Args: { p_query?: string; p_user_ids?: string[]; p_ws_id: string };
+        Returns: number;
+      };
+      get_pending_invoices_grouped_by_user: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_user_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          attendance_days: number;
+          group_ids: string[];
+          group_names: string[];
+          months_owed: string[];
+          potential_total: number;
+          total_sessions: number;
+          user_avatar_url: string;
+          user_id: string;
+          user_name: string;
+        }[];
+      };
+      get_pending_invoices_grouped_by_user_count: {
         Args: { p_query?: string; p_user_ids?: string[]; p_ws_id: string };
         Returns: number;
       };

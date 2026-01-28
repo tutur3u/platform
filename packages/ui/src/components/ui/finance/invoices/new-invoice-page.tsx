@@ -48,6 +48,12 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
     downloadImageAfterCreateInitialized;
 
   const invoiceType = searchParams.get('type') || 'standard';
+  const prefillAmount = (() => {
+    const raw = searchParams.get('amount');
+    if (!raw) return undefined;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  })();
 
   return (
     <>
@@ -168,6 +174,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
         <TabsContent value="subscription" className="mt-4">
           <SubscriptionInvoice
             wsId={wsId}
+            prefillAmount={prefillAmount}
             defaultWalletId={defaultWalletId}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}

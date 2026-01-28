@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
   Select,
   SelectContent,
@@ -25,7 +26,6 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 import BlockedCreationGroups from './blocked-creation-groups';
 import BlockedPendingGroups from './blocked-pending-groups';
@@ -34,9 +34,13 @@ interface Props {
   wsId: string;
 }
 
+export const safeTrim = (v: unknown): string =>
+  typeof v === 'string' ? v.trim() : String(v ?? '').trim();
+
 const formSchema = z.object({
   allow_promotions: z.boolean(),
   use_attendance_based: z.boolean(),
+  group_pending_by_user: z.boolean(),
   default_group_id: z.string().optional().nullable(),
   blocked_creation_group_ids: z.array(z.string()).optional(),
   blocked_pending_group_ids: z.array(z.string()).optional(),
@@ -58,6 +62,13 @@ export default function InvoiceSettings({ wsId }: Props) {
       wsId,
       'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
       'true'
+    );
+
+  const { data: groupPendingConfig, isLoading: isLoadingGroupPending } =
+    useWorkspaceConfig<string>(
+      wsId,
+      'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+      'false'
     );
 
   const { data: defaultGroupConfig } = useWorkspaceConfig<string | null>(
@@ -90,6 +101,7 @@ export default function InvoiceSettings({ wsId }: Props) {
     defaultValues: {
       allow_promotions: true,
       use_attendance_based: true,
+      group_pending_by_user: false,
       default_group_id: null,
       blocked_creation_group_ids: [],
       blocked_pending_group_ids: [],
@@ -100,19 +112,23 @@ export default function InvoiceSettings({ wsId }: Props) {
     if (
       promotionsConfig !== undefined ||
       attendanceConfig !== undefined ||
+      groupPendingConfig !== undefined ||
       defaultGroupConfig !== undefined ||
       blockedCreationConfig !== undefined ||
       blockedPendingConfig !== undefined
     ) {
       const parseIds = (raw: string | null | undefined): string[] =>
-        (raw || '')
+        safeTrim(raw)
           .split(',')
           .map((v) => v.trim())
           .filter(Boolean);
 
       form.reset({
-        allow_promotions: promotionsConfig?.trim().toLowerCase() !== 'false',
-        use_attendance_based: attendanceConfig?.trim().toLowerCase() === 'true',
+        allow_promotions: safeTrim(promotionsConfig).toLowerCase() !== 'false',
+        use_attendance_based:
+          safeTrim(attendanceConfig).toLowerCase() === 'true',
+        group_pending_by_user:
+          safeTrim(groupPendingConfig).toLowerCase() === 'true',
         default_group_id: defaultGroupConfig || null,
         blocked_creation_group_ids: parseIds(blockedCreationConfig),
         blocked_pending_group_ids: parseIds(blockedPendingConfig),
@@ -121,6 +137,7 @@ export default function InvoiceSettings({ wsId }: Props) {
   }, [
     promotionsConfig,
     attendanceConfig,
+    groupPendingConfig,
     defaultGroupConfig,
     blockedCreationConfig,
     blockedPendingConfig,
@@ -132,7 +149,7 @@ export default function InvoiceSettings({ wsId }: Props) {
       const serializeIds = (ids: string[] | undefined) =>
         ids
           ? ids
-              .map((v) => v.trim())
+              .map((v) => safeTrim(v))
               .filter(Boolean)
               .join(',')
           : '';
@@ -147,8 +164,12 @@ export default function InvoiceSettings({ wsId }: Props) {
           value: values.use_attendance_based.toString(),
         },
         {
+          key: 'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+          value: values.group_pending_by_user.toString(),
+        },
+        {
           key: 'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
-          value: values.default_group_id?.trim() || '',
+          value: safeTrim(values.default_group_id) || '',
         },
         {
           key: 'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION',
@@ -214,6 +235,9 @@ export default function InvoiceSettings({ wsId }: Props) {
         queryKey: ['invoice-attendance-config', wsId],
       });
       queryClient.invalidateQueries({
+        queryKey: ['workspace-config', wsId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ['pending-invoices', wsId],
       });
       toast.success(t('update_success'));
@@ -241,6 +265,13 @@ export default function InvoiceSettings({ wsId }: Props) {
         queryKey: [
           'workspace-config',
           wsId,
+          'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          'workspace-config',
+          wsId,
           'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
         ],
       });
@@ -262,7 +293,10 @@ export default function InvoiceSettings({ wsId }: Props) {
   });
 
   const isLoading =
-    isLoadingPromotions || isLoadingAttendance || isLoadingGroups;
+    isLoadingPromotions ||
+    isLoadingAttendance ||
+    isLoadingGroupPending ||
+    isLoadingGroups;
 
   return (
     <div className="space-y-6">
@@ -309,6 +343,33 @@ export default function InvoiceSettings({ wsId }: Props) {
                   </FormLabel>
                   <FormDescription>
                     {t('invoice_attendance_help')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="group_pending_by_user"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    {t('invoice_pending_group_label')}
+                  </FormLabel>
+                  <FormDescription>
+                    {t('invoice_pending_group_help')}
                   </FormDescription>
                 </div>
                 <FormControl>

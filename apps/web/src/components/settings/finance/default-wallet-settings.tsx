@@ -24,7 +24,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useWallets } from '@/hooks/use-wallets';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 
 interface Props {
   wsId: string;

@@ -6,7 +6,7 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { validateEndTime, validateStartTime } from '@/lib/time-validation';
 import { useImageUpload } from '../../hooks/use-image-upload';
 import { useSessionActions } from '../session-history/use-session-actions';
