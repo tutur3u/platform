@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -21,13 +22,22 @@ import { SubscriptionInvoice } from './subscription-invoice';
 
 interface Props {
   wsId: string;
-  defaultWalletId?: string;
 }
 
-export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
+export default function NewInvoicePage({ wsId }: Props) {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const { data: defaultWalletId } = useWorkspaceConfig<string>(
+    wsId,
+    'default_wallet_id'
+  );
+
+  const { data: defaultCategoryId } = useWorkspaceConfig<string>(
+    wsId,
+    'DEFAULT_SUBSCRIPTION_CATEGORY_ID'
+  );
 
   const [
     createMultipleInvoices,
@@ -176,6 +186,7 @@ export default function NewInvoicePage({ wsId, defaultWalletId }: Props) {
             wsId={wsId}
             prefillAmount={prefillAmount}
             defaultWalletId={defaultWalletId}
+            defaultCategoryId={defaultCategoryId}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}

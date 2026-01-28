@@ -55,6 +55,7 @@ interface Props {
   printAfterCreate?: boolean;
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
+  defaultCategoryId?: string;
 }
 
 export function SubscriptionInvoice({
@@ -64,6 +65,7 @@ export function SubscriptionInvoice({
   printAfterCreate = false,
   downloadImageAfterCreate = false,
   defaultWalletId,
+  defaultCategoryId,
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
@@ -154,7 +156,16 @@ export function SubscriptionInvoice({
 
   const [selectedPromotionId, setSelectedPromotionId] =
     useState<string>('none');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
+    defaultCategoryId || ''
+  );
+
+  useEffect(() => {
+    if (defaultCategoryId) {
+      setSelectedCategoryId(defaultCategoryId);
+    }
+  }, [defaultCategoryId]);
+
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -312,18 +323,6 @@ export function SubscriptionInvoice({
     }
   }, [wallets, walletsLoading, selectedWalletId, defaultWalletId]);
 
-  // Auto-select "Học phí" category when categories load (if no category selected)
-  useEffect(() => {
-    if (categories.length > 0 && !selectedCategoryId) {
-      const hocPhiCategory = categories.find((cat) =>
-        cat.name?.toLowerCase().includes('học phí')
-      );
-      if (hocPhiCategory?.id) {
-        setSelectedCategoryId(hocPhiCategory.id);
-      }
-    }
-  }, [categories, selectedCategoryId]);
-
   // Reset subscription state when user changes
   useEffect(() => {
     if (!selectedUserId) {
@@ -404,8 +403,12 @@ export function SubscriptionInvoice({
     if (!earliestStart || !latestEnd) return;
 
     const currentMonth = new Date(`${selectedMonth}-01`);
+    const earliestMonthStart = new Date(earliestStart);
+    earliestMonthStart.setDate(1);
+    const latestMonthStart = new Date(latestEnd);
+    latestMonthStart.setDate(1);
 
-    if (currentMonth < earliestStart || currentMonth > latestEnd) {
+    if (currentMonth < earliestMonthStart || currentMonth > latestMonthStart) {
       const now = new Date();
       let defaultMonth: Date;
 
@@ -413,7 +416,10 @@ export function SubscriptionInvoice({
       else if (now > latestEnd) defaultMonth = latestEnd;
       else defaultMonth = earliestStart;
 
-      updateSearchParam('month', defaultMonth.toISOString().slice(0, 7));
+      const nextMonth = defaultMonth.toISOString().slice(0, 7);
+      if (nextMonth !== selectedMonth) {
+        updateSearchParam('month', nextMonth);
+      }
     }
   }, [
     selectedGroupIds,
