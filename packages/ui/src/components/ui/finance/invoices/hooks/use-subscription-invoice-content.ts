@@ -45,36 +45,71 @@ export function useSubscriptionInvoiceContent({
       return;
     }
 
-    const selectedGroupsData = userGroups.filter((g) =>
-      selectedGroupIds.includes(g.workspace_user_groups?.id || '')
-    );
-
-    const groupNames =
-      selectedGroupsData
-        .map((g) => g.workspace_user_groups?.name)
-        .filter(Boolean)
-        .join(', ') || 'Unknown Group(s)';
-
-    const monthName = new Date(`${selectedMonth}-01`).toLocaleDateString(
-      locale,
-      {
+    const formatMonth = (monthStr: string) =>
+      new Date(`${monthStr}-01`).toLocaleDateString(locale, {
         year: 'numeric',
         month: 'long',
-      }
-    );
+      });
 
-    const contentParts = [
-      selectedGroupIds.length === 1
-        ? t('ws-invoices.subscription_invoice_for_group_month', {
-            groupName: groupNames,
-            monthName,
-          })
-        : t('ws-invoices.subscription_invoice_for_groups_month', {
-            groupNames,
-            monthName,
-            default: `Subscription invoice for groups: ${groupNames} - ${monthName}`,
-          }),
-    ];
+    // Group by month ranges
+    const rangeToGroups = new Map<string, string[]>();
+
+    selectedGroupIds.forEach((groupId) => {
+      const group = userGroups.find(
+        (g) => g.workspace_user_groups?.id === groupId
+      );
+      if (!group) return;
+
+      const groupName = group.workspace_user_groups?.name || 'Unknown Group';
+      const latestInvoice = latestSubscriptionInvoices.find(
+        (inv) => inv.group_id === groupId
+      );
+
+      const startMonth = latestInvoice?.valid_until
+        ? latestInvoice.valid_until.slice(0, 7)
+        : null;
+
+      const endMonth = selectedMonth;
+
+      let rangeLabel = '';
+      if (startMonth && startMonth < endMonth) {
+        // Range from startMonth to endMonth
+        rangeLabel = `${formatMonth(startMonth)} - ${formatMonth(endMonth)}`;
+      } else {
+        // Single month
+        rangeLabel = formatMonth(endMonth);
+      }
+
+      if (!rangeToGroups.has(rangeLabel)) {
+        rangeToGroups.set(rangeLabel, []);
+      }
+      rangeToGroups.get(rangeLabel)!.push(groupName);
+    });
+
+    const contentParts: string[] = [];
+
+    if (rangeToGroups.size === 1) {
+      const [rangeLabel, names] = Array.from(rangeToGroups.entries())[0]!;
+      const groupNames = names.join(', ');
+
+      contentParts.push(
+        selectedGroupIds.length === 1
+          ? t('ws-invoices.subscription_invoice_for_group_month', {
+              groupName: groupNames,
+              monthName: rangeLabel,
+            })
+          : t('ws-invoices.subscription_invoice_for_groups_month', {
+              groupNames,
+              monthName: rangeLabel,
+              default: `Subscription invoice for groups: ${groupNames} - ${rangeLabel}`,
+            })
+      );
+    } else {
+      contentParts.push(t('ws-invoices.subscription_invoice_combined_title'));
+      rangeToGroups.forEach((names, rangeLabel) => {
+        contentParts.push(`- ${names.join(', ')}: ${rangeLabel}`);
+      });
+    }
 
     let autoNotes: string | null = null;
     if (selectedGroupIds.length > 0 && userAttendance.length > 0) {

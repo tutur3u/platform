@@ -9380,6 +9380,7 @@
     "subscription": "Subscription invoice",
     "subscription_customer_selection_description": "Select the customer for this subscription invoice.",
     "subscription_invoice": "Subscription Invoice",
+    "subscription_invoice_combined_title": "Subscription invoice for multiple groups:",
     "subscription_invoice_configuration": "Subscription Invoice Information",
     "subscription_invoice_content_placeholder": "Subscription invoice content...",
     "subscription_invoice_created_recalculated": "Subscription invoice created successfully! Values were recalculated on the server.",

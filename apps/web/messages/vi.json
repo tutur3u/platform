@@ -9472,6 +9472,7 @@
     "subscription": "Hóa đơn định kỳ",
     "subscription_customer_selection_description": "Chọn khách hàng cho hóa đơn đăng ký này.",
     "subscription_invoice": "Hóa đơn đăng ký",
+    "subscription_invoice_combined_title": "Hóa đơn đăng ký cho nhiều nhóm:",
     "subscription_invoice_configuration": "Thông tin hóa đơn đăng ký",
     "subscription_invoice_content_placeholder": "Nội dung hóa đơn đăng ký...",
     "subscription_invoice_created_recalculated": "Hóa đơn đăng ký đã được tạo thành công! Các giá trị đã được tính toán lại trên máy chủ.",
