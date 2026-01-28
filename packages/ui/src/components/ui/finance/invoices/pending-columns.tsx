@@ -6,13 +6,20 @@ import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import Link from 'next/link';
 
+type PendingInvoiceRow = PendingInvoice & {
+  group_ids?: string[];
+  group_names?: string[];
+};
+
 export const pendingInvoiceColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  useAttendanceBased = true
 ): ColumnDef<PendingInvoice>[] => [
   {
     accessorKey: 'user_id',
@@ -65,9 +72,15 @@ export const pendingInvoiceColumns = (
         title={t(`${namespace}.group_id`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-32">{row.getValue('group_id')}</div>
-    ),
+    cell: ({ row }) => {
+      const groupId = row.getValue<string>('group_id');
+      const groupIds = (
+        (row.original as PendingInvoiceRow).group_ids ?? []
+      ).filter((id: string) => Boolean(id));
+      const displayValue =
+        groupIds.length > 0 ? groupIds.join(', ') : groupId || '-';
+      return <div className="line-clamp-1 min-w-32">{displayValue}</div>;
+    },
   },
   {
     accessorKey: 'group_name',
@@ -78,9 +91,49 @@ export const pendingInvoiceColumns = (
         title={t(`${namespace}.group`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-32">{row.getValue('group_name') || '-'}</div>
-    ),
+    cell: ({ row }) => {
+      const groupName = row.getValue<string>('group_name');
+      const groupNames = (
+        (row.original as PendingInvoiceRow).group_names ?? []
+      ).filter((name: string) => Boolean(name));
+
+      if (groupNames.length > 1) {
+        return (
+          <div className="min-w-32">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-dynamic-blue hover:text-dynamic-blue/80"
+                >
+                  {groupNames.length} {t('common.groups')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64">
+                <div className="grid gap-2">
+                  <h4 className="font-medium leading-none">
+                    {t('common.groups')}
+                  </h4>
+                  <ul className="text-muted-foreground text-sm">
+                    {groupNames.map((name, index) => (
+                      <li key={`${name}-${index}`} className="line-clamp-1">
+                        • {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        );
+      }
+
+      if (groupNames.length === 1) {
+        return <div className="line-clamp-1 min-w-32">{groupNames[0]}</div>;
+      }
+
+      return <div className="line-clamp-1 min-w-32">{groupName || '-'}</div>;
+    },
   },
   {
     accessorKey: 'months_owed',
@@ -130,7 +183,7 @@ export const pendingInvoiceColumns = (
     ),
     cell: ({ row }) => (
       <div className="min-w-24 text-center">
-        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
+        <span className="inline-flex items-center rounded-full bg-dynamic-green/10 px-2.5 py-0.5 font-medium text-dynamic-green text-xs">
           {row.getValue<number>('attendance_days')}
         </span>
       </div>
@@ -147,7 +200,7 @@ export const pendingInvoiceColumns = (
     ),
     cell: ({ row }) => (
       <div className="min-w-24 text-center">
-        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/30 dark:text-blue-400">
+        <span className="inline-flex items-center rounded-full bg-dynamic-blue/10 px-2.5 py-0.5 font-medium text-dynamic-blue text-xs">
           {row.getValue<number>('total_sessions')}
         </span>
       </div>
@@ -184,6 +237,10 @@ export const pendingInvoiceColumns = (
       const wsId = row.original.ws_id;
       const userId = row.getValue<string>('user_id');
       const groupId = row.getValue<string>('group_id');
+      const groupIds = (
+        (row.original as PendingInvoiceRow).group_ids ??
+        (groupId ? [groupId] : [])
+      ).filter((id: string) => Boolean(id));
       const monthsOwed = row.getValue<string[]>('months_owed');
       const attendanceDays = row.getValue<number>('attendance_days');
 
@@ -195,9 +252,20 @@ export const pendingInvoiceColumns = (
 
       if (!wsId) return null;
 
-      // Build the URL with query params
-      // Include amount (total attendance_days across all unpaid months) for prefilling
-      const createInvoiceUrl = `/${wsId}/finance/invoices/new?type=subscription&user_id=${userId}&group_id=${groupId}&month=${lastUnpaidMonth}&amount=${attendanceDays}`;
+      const searchParams = new URLSearchParams();
+      searchParams.set('type', 'subscription');
+      searchParams.set('user_id', userId);
+      if (lastUnpaidMonth) {
+        searchParams.set('month', lastUnpaidMonth);
+      }
+      if (useAttendanceBased) {
+        searchParams.set('amount', String(attendanceDays));
+      }
+      if (groupIds.length > 0) {
+        searchParams.set('group_ids', groupIds.join(','));
+      }
+
+      const createInvoiceUrl = `/${wsId}/finance/invoices/new?${searchParams.toString()}`;
 
       return (
         <div className="flex items-center gap-2">
