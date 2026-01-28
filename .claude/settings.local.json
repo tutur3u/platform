@@ -31,7 +31,8 @@
       "Bash(head:*)",
       "Bash(gh run view:*)",
       "Bash(gh workflow view:*)",
-      "Bash(npx @biomejs/biome@latest lint:*)"
+      "Bash(npx @biomejs/biome@latest lint:*)",
+      "Bash(cat:*)"
     ]
   }
 }
