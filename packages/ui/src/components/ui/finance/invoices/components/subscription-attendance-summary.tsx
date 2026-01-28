@@ -299,44 +299,35 @@ export function SubscriptionAttendanceSummary({
               </div>
             </div>
 
-            {selectedGroupIds.length === 1 &&
-              userAttendance &&
-              userAttendance.length > 0 && (
-                <div className="space-y-2">
-                  <Label>{t('ws-invoices.attendance_calendar')}</Label>
-                  <AttendanceCalendar
-                    userAttendance={userAttendance}
-                    selectedMonth={selectedMonth}
-                    selectedGroup={userGroups.find(
-                      (g) => g.workspace_user_groups?.id === selectedGroupIds[0]
-                    )}
-                    locale={locale}
-                  />
-                  <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                      <span>{t('ws-invoices.present')}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                      <span>{t('ws-invoices.late')}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                      <span>{t('ws-invoices.absent')}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-gray-300"></div>
-                      <span>{t('ws-invoices.no_session')}</span>
-                    </div>
+            {userAttendance && userAttendance.length > 0 && (
+              <div className="space-y-2">
+                <Label>{t('ws-invoices.attendance_calendar')}</Label>
+                <AttendanceCalendar
+                  userAttendance={userAttendance}
+                  selectedMonth={selectedMonth}
+                  selectedGroups={userGroups.filter((g) =>
+                    selectedGroupIds.includes(g.workspace_user_groups?.id || '')
+                  )}
+                  locale={locale}
+                />
+                <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                    <span>{t('ws-invoices.present')}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                    <span>{t('ws-invoices.late')}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                    <span>{t('ws-invoices.absent')}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                    <span>{t('ws-invoices.no_session')}</span>
                   </div>
                 </div>
-              )}
-            {selectedGroupIds.length > 1 && (
-              <div className="text-muted-foreground text-sm italic">
-                {t('ws-invoices.calendar_hidden_multiple_groups', {
-                  default: 'Calendar view hidden for multiple group selection',
-                })}
               </div>
             )}
           </div>

@@ -141,5 +141,6 @@ export function useSubscriptionInvoiceContent({
     t,
     onContentChange,
     onNotesChange,
+    latestSubscriptionInvoices,
   ]);
 }
