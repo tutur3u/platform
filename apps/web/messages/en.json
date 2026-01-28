@@ -899,6 +899,7 @@
     "subscription-ending-soon": "Subscription Ending Soon",
     "subscription-ending-warning": "You'll lose access to premium features after this date.",
     "subscription-ends-on": "Your subscription will end on",
+    "subscription-management-restricted": "Only the workspace owner or members with subscription management permission can manage billing.",
     "subscription-update": "Plan Change",
     "success": {
       "active-plan": "Your active plan will be updated immediately.",

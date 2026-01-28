@@ -91,6 +91,26 @@ const checkCreator = async (wsId: string) => {
   return data.creator_id === user?.id;
 };
 
+const checkManageSubscriptionPermission = async (
+  wsId: string,
+  userId: string
+) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('has_workspace_permission', {
+    p_ws_id: wsId,
+    p_user_id: userId,
+    p_permission: 'manage_subscription',
+  });
+
+  if (error) {
+    console.error('Error checking manage_subscription permission:', error);
+    return false;
+  }
+
+  return data ?? false;
+};
+
 const ensureSubscription = async (wsId: string, userId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
@@ -159,15 +179,23 @@ export default async function BillingPage({
 
         if (!user) return notFound();
 
-        const [products, subscriptionResult, orders, isCreator, locale, t] =
-          await Promise.all([
-            fetchProducts(),
-            ensureSubscription(wsId, user.id), // Try to ensure subscription exists
-            fetchWorkspaceOrders(wsId),
-            checkCreator(wsId),
-            getLocale(),
-            getTranslations('billing'),
-          ]);
+        const [
+          products,
+          subscriptionResult,
+          orders,
+          isCreator,
+          hasManageSubscriptionPermission,
+          locale,
+          t,
+        ] = await Promise.all([
+          fetchProducts(),
+          ensureSubscription(wsId, user.id), // Try to ensure subscription exists
+          fetchWorkspaceOrders(wsId),
+          checkCreator(wsId),
+          checkManageSubscriptionPermission(wsId, user.id),
+          getLocale(),
+          getTranslations('billing'),
+        ]);
 
         // Handle subscription creation failure
         if (!subscriptionResult.subscription) {
@@ -210,6 +238,7 @@ export default async function BillingPage({
               product_id={subscription?.product.id || ''}
               wsId={wsId}
               isCreator={isCreator}
+              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
             />
 
             <BillingHistory orders={orders} />
