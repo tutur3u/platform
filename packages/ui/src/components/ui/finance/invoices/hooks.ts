@@ -700,7 +700,7 @@ export const useMultiGroupProducts = (groupIds: string[]) => {
       const { data, error } = await supabase
         .from('user_group_linked_products')
         .select(
-          'group_id, workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
+          'group_id, workspace_user_groups(name), workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
         )
         .in('group_id', groupIds);
 

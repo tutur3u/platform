@@ -647,9 +647,16 @@ export function SubscriptionInvoice({
             products={products}
             selectedProducts={subscriptionSelectedProducts}
             onSelectedProductsChange={setSubscriptionSelectedProducts}
-            groupLinkedProductIds={(groupProducts || [])
-              .map((item) => item.workspace_products?.id)
-              .filter(Boolean)}
+            groupLinkedProducts={(groupProducts || [])
+              .map((item) => ({
+                productId: item.workspace_products?.id,
+                groupName:
+                  item.workspace_user_groups?.name || t('ws-invoices.no_name'),
+              }))
+              .filter(
+                (item): item is { productId: string; groupName: string } =>
+                  !!item.productId
+              )}
           />
         )}
       </div>
