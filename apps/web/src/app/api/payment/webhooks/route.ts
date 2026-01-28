@@ -9,7 +9,7 @@ import {
 } from '@/utils/subscription-helper';
 
 // Helper function to report initial seat usage to Polar
-async function reportInitialUsage(ws_id: string, customerId: string) {
+export async function reportInitialUsage(ws_id: string, customerId: string) {
   const sbAdmin = await createAdminClient();
 
   const { count: initialUserCount, error: countError } = await sbAdmin
@@ -39,7 +39,7 @@ async function reportInitialUsage(ws_id: string, customerId: string) {
 }
 
 // Helper function to sync subscription data from Polar to DB
-async function syncSubscriptionToDatabase(subscription: Subscription) {
+export async function syncSubscriptionToDatabase(subscription: Subscription) {
   const sbAdmin = await createAdminClient();
   const ws_id = subscription.metadata?.wsId;
 
@@ -109,7 +109,7 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
 }
 
 // Helper function to sync order data from Polar to DB
-async function syncOrderToDatabase(order: Order) {
+export async function syncOrderToDatabase(order: Order) {
   const sbAdmin = await createAdminClient();
   const ws_id = order.metadata?.wsId;
 
