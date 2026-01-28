@@ -2659,6 +2659,15 @@
         "q4_item3": "Knowledge transfer and handover"
       },
       "hours": "Hours",
+      "jsc_birthday": {
+        "date": "April 2",
+        "days_until": "{count} days until JSC birthday",
+        "happy_birthday": "Happy {count}th Birthday Tuturuuu JSC!",
+        "incorporated": "Inc. April 2, 2025",
+        "next_birthday": "Tuturuuu JSC will turn {age} years old on April 2, {year}",
+        "title": "JSC Birthday",
+        "years_of_growth": "{count} years of growth and success"
+      },
       "minutes": "Minutes",
       "phases": {
         "current_phase": "Current Phase",

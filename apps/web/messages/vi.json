@@ -2659,6 +2659,15 @@
         "q4_item3": "Chuyển giao kiến thức và bàn giao"
       },
       "hours": "Giờ",
+      "jsc_birthday": {
+        "date": "2 tháng 4",
+        "days_until": "Còn {count} ngày đến sinh nhật JSC",
+        "happy_birthday": "Chúc mừng sinh nhật {count} tuổi Tuturuuu JSC!",
+        "incorporated": "Thành lập: 02/04/2025",
+        "next_birthday": "Tuturuuu JSC sẽ tròn {age} tuổi vào ngày 2 tháng 4 năm {year}",
+        "title": "Sinh nhật JSC",
+        "years_of_growth": "{count} năm phát triển và thành công"
+      },
       "minutes": "Phút",
       "phases": {
         "current_phase": "Giai đoạn hiện tại",

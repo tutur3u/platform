@@ -1,4 +1,5 @@
-// Founding date: June 20, 2022 at 00:00:00 GMT+7
+// Tuturuuu founding date: June 20, 2022 at 00:00:00 GMT+7
+// Tuturuuu JSC incorporation date: April 2, 2025 at 00:00:00 GMT+7
 
 import { Lightbulb, Rocket, TrendingUp, Trophy } from '@tuturuuu/icons';
 import dayjs from 'dayjs';
@@ -13,6 +14,11 @@ dayjs.extend(duration);
 
 export const FOUNDING_DATE = dayjs.tz(
   '2022-06-20 00:00:00',
+  'Asia/Ho_Chi_Minh'
+);
+
+export const JSC_INCORPORATION_DATE = dayjs.tz(
+  '2025-04-02 00:00:00',
   'Asia/Ho_Chi_Minh'
 );
 
@@ -55,6 +61,9 @@ export interface YearInfo {
   isJanuary: boolean;
   isBirthday: boolean;
   daysUntilBirthday: number;
+  isJscBirthday: boolean;
+  daysUntilJscBirthday: number;
+  jscAge: { years: number; months: number; days: number };
   isYearEndPartyMonth: boolean;
   isYearEndPartyPassed: boolean;
   daysUntilYearEndParty: number;
