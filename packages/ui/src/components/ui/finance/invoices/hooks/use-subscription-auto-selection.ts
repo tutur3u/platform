@@ -1,4 +1,5 @@
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
 import type {
   Product,
@@ -18,7 +19,6 @@ interface UseSubscriptionAutoSelectionProps {
   userGroups: any[];
   useAttendanceBased: boolean;
   userAttendance: { status: string; date: string }[];
-  t: any;
   onSelectedProductsChange: (products: SelectedProductItem[]) => void;
 }
 
@@ -104,9 +104,9 @@ export function useSubscriptionAutoSelection({
   userGroups,
   useAttendanceBased,
   userAttendance,
-  t,
   onSelectedProductsChange,
 }: UseSubscriptionAutoSelectionProps) {
+  const t = useTranslations();
   const previousGroupIdRef = useRef<string>('');
   const fallbackToastShownRef = useRef<boolean>(false);
   const initialPrefillUsedRef = useRef<boolean>(false);

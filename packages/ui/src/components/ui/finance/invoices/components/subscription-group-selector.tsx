@@ -8,10 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import type { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface SubscriptionGroupSelectorProps {
-  t: ReturnType<typeof useTranslations>;
   userGroups: any[];
   userGroupsLoading: boolean;
   selectedGroupIds: string[];
@@ -22,7 +21,6 @@ interface SubscriptionGroupSelectorProps {
 }
 
 export function SubscriptionGroupSelector({
-  t,
   userGroups,
   userGroupsLoading,
   selectedGroupIds,
@@ -31,6 +29,7 @@ export function SubscriptionGroupSelector({
   isLoadingSubscriptionData,
   locale,
 }: SubscriptionGroupSelectorProps) {
+  const t = useTranslations();
   return (
     <Card>
       <CardHeader>

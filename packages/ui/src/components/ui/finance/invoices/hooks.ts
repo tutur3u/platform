@@ -138,8 +138,10 @@ const pendingInvoiceRawSchema = z.object({
   user_id: z.string(),
   user_name: z.string(),
   user_avatar_url: z.string().optional().nullable(),
-  group_id: z.string(),
-  group_name: z.string(),
+  group_id: z.string().optional(),
+  group_name: z.string().optional(),
+  group_ids: z.array(z.string()).optional(),
+  group_names: z.array(z.string()).optional(),
   months_owed: z.union([z.string(), z.array(z.string())]),
   attendance_days: z.number(),
   total_sessions: z.number(),
@@ -1025,9 +1027,53 @@ export const usePendingInvoices = (
   } = {}
 ) => {
   const { page = 1, pageSize = 10, q = '', userIds = [] } = params;
+  const { data: groupByUserConfig } = useQuery({
+    queryKey: [
+      'workspace-config',
+      wsId,
+      'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+    ],
+    queryFn: async () => {
+      if (!wsId) return false;
+
+      try {
+        const res = await fetch(
+          `/api/v1/workspaces/${wsId}/settings/INVOICE_GROUP_PENDING_INVOICES_BY_USER`
+        );
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            return false;
+          }
+          throw new Error('Failed to fetch pending invoices grouping config');
+        }
+
+        const data = await res.json();
+        const value = data.value?.trim().toLowerCase();
+        return value === 'true' || value === true;
+      } catch (error) {
+        console.error(
+          '❌ Pending invoices grouping config fetch error:',
+          error
+        );
+        return false;
+      }
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  const groupByUser = !!groupByUserConfig;
 
   return useQuery({
-    queryKey: ['pending-invoices', wsId, { page, pageSize, q, userIds }],
+    queryKey: [
+      'pending-invoices',
+      wsId,
+      { page, pageSize, q, userIds, groupByUser },
+    ],
     queryFn: async () => {
       const supabase = createClient();
 
@@ -1035,16 +1081,33 @@ export const usePendingInvoices = (
       const offset = (page - 1) * pageSize;
 
       // Fetch data with pagination and filters
-      const { data: rawData, error } = await supabase.rpc(
-        'get_pending_invoices',
-        {
+      let rawData: unknown = null;
+      let error: unknown = null;
+
+      if (groupByUser) {
+        const response = await supabase.rpc(
+          'get_pending_invoices_grouped_by_user',
+          {
+            p_ws_id: wsId,
+            p_limit: pageSize,
+            p_offset: offset,
+            p_query: q || undefined,
+            p_user_ids: userIds.length > 0 ? userIds : undefined,
+          }
+        );
+        rawData = response.data;
+        error = response.error;
+      } else {
+        const response = await supabase.rpc('get_pending_invoices', {
           p_ws_id: wsId,
           p_limit: pageSize,
           p_offset: offset,
           p_query: q || undefined,
           p_user_ids: userIds.length > 0 ? userIds : undefined,
-        }
-      );
+        });
+        rawData = response.data;
+        error = response.error;
+      }
 
       if (error) {
         console.error('❌ Pending invoices fetch error:', error);
@@ -1061,14 +1124,29 @@ export const usePendingInvoices = (
       const data = result.data;
 
       // Fetch total count with filters
-      const { data: countData, error: countError } = await supabase.rpc(
-        'get_pending_invoices_count',
-        {
+      let countData: unknown = null;
+      let countError: unknown = null;
+
+      if (groupByUser) {
+        const response = await supabase.rpc(
+          'get_pending_invoices_grouped_by_user_count',
+          {
+            p_ws_id: wsId,
+            p_query: q || undefined,
+            p_user_ids: userIds.length > 0 ? userIds : undefined,
+          }
+        );
+        countData = response.data;
+        countError = response.error;
+      } else {
+        const response = await supabase.rpc('get_pending_invoices_count', {
           p_ws_id: wsId,
           p_query: q || undefined,
           p_user_ids: userIds.length > 0 ? userIds : undefined,
-        }
-      );
+        });
+        countData = response.data;
+        countError = response.error;
+      }
 
       if (countError) {
         console.error('❌ Pending invoices count error:', countError);
@@ -1114,19 +1192,49 @@ export const usePendingInvoicesCurrentMonthCount = (wsId: string) => {
     queryFn: async () => {
       const supabase = createClient();
 
+      let groupByUser = false;
+      try {
+        const groupingRes = await fetch(
+          `/api/v1/workspaces/${wsId}/settings/INVOICE_GROUP_PENDING_INVOICES_BY_USER`
+        );
+        const groupingData = groupingRes.ok ? await groupingRes.json() : null;
+        const groupingValue = groupingData?.value?.trim?.().toLowerCase?.();
+        groupByUser = groupingValue === 'true' || groupingValue === true;
+      } catch (error) {
+        console.error(
+          '❌ Pending invoices grouping config fetch error:',
+          error
+        );
+      }
+
       // Get current month in YYYY-MM format
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
       // Fetch all pending invoices without pagination to count current month
-      const { data: rawData, error } = await supabase.rpc(
-        'get_pending_invoices',
-        {
+      let rawData: unknown = null;
+      let error: unknown = null;
+
+      if (groupByUser) {
+        const response = await supabase.rpc(
+          'get_pending_invoices_grouped_by_user',
+          {
+            p_ws_id: wsId,
+            p_limit: 10000,
+            p_offset: 0,
+          }
+        );
+        rawData = response.data;
+        error = response.error;
+      } else {
+        const response = await supabase.rpc('get_pending_invoices', {
           p_ws_id: wsId,
-          p_limit: 10000, // Large limit to get all records
+          p_limit: 10000,
           p_offset: 0,
-        }
-      );
+        });
+        rawData = response.data;
+        error = response.error;
+      }
 
       if (error) {
         console.error('❌ Pending invoices current month count error:', error);

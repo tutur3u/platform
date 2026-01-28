@@ -14,12 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import type { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { AvailablePromotion } from '../hooks';
 
 interface InvoicePaymentSettingsProps {
-  t: ReturnType<typeof useTranslations>;
   wallets: Array<{
     id?: string | null;
     name?: string | null;
@@ -51,7 +50,6 @@ interface InvoicePaymentSettingsProps {
 }
 
 export function InvoicePaymentSettings({
-  t,
   wallets,
   categories,
   selectedWalletId,
@@ -73,6 +71,7 @@ export function InvoicePaymentSettings({
   walletLabelClassName = 'text-dynamic-red',
   categoryLabelClassName = 'text-dynamic-red',
 }: InvoicePaymentSettingsProps) {
+  const t = useTranslations();
   const shouldShowPromotion = showPromotion && promotionsAllowed;
 
   const promotionOptions = (() => {

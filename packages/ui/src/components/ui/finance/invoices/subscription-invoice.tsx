@@ -248,7 +248,6 @@ export function SubscriptionInvoice({
     userGroups,
     useAttendanceBased,
     userAttendance,
-    t,
     onSelectedProductsChange: setSubscriptionSelectedProducts,
   });
 
@@ -262,7 +261,6 @@ export function SubscriptionInvoice({
     userAttendance,
     isSelectedMonthPaid,
     locale,
-    t,
     onContentChange: setInvoiceContent,
     onNotesChange: setInvoiceNotes,
   });
@@ -612,7 +610,6 @@ export function SubscriptionInvoice({
           customers={users}
           selectedUserId={selectedUserId}
           onSelect={(value) => updateSearchParam('user_id', value)}
-          t={t}
           selectedUser={selectedUser}
           showUserPreview
           loading={usersLoading}
@@ -622,7 +619,6 @@ export function SubscriptionInvoice({
 
         {selectedUserId && (
           <SubscriptionGroupSelector
-            t={t}
             userGroups={userGroups}
             userGroupsLoading={userGroupsLoading}
             selectedGroupIds={selectedGroupIds}
@@ -660,15 +656,11 @@ export function SubscriptionInvoice({
 
       <div className="space-y-6">
         {isBlocked ? (
-          <InvoiceBlockedState
-            title={t('ws-invoices.creation_blocked')}
-            description={t('ws-invoices.group_blocked_description')}
-          />
+          <InvoiceBlockedState type="subscription" />
         ) : (
           <>
             {selectedGroupIds.length > 0 && selectedMonth && (
               <SubscriptionAttendanceSummary
-                t={t}
                 selectedGroupIds={selectedGroupIds}
                 selectedMonth={selectedMonth}
                 isSelectedMonthPaid={isSelectedMonthPaid}
@@ -709,16 +701,8 @@ export function SubscriptionInvoice({
               !isSelectedMonthPaid && (
                 <>
                   <InvoiceContentEditor
-                    title={t('ws-invoices.subscription_invoice_configuration')}
-                    contentLabel={t('ws-invoices.content')}
-                    contentPlaceholder={t(
-                      'ws-invoices.subscription_invoice_content_placeholder'
-                    )}
+                    type="subscription"
                     contentValue={invoiceContent}
-                    notesLabel={t('ws-invoices.notes')}
-                    notesPlaceholder={t(
-                      'ws-invoices.additional_notes_placeholder'
-                    )}
                     notesValue={invoiceNotes}
                     onContentChange={setInvoiceContent}
                     onNotesChange={setInvoiceNotes}
@@ -732,7 +716,6 @@ export function SubscriptionInvoice({
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <InvoicePaymentSettings
-                        t={t}
                         wallets={wallets}
                         categories={categories}
                         selectedWalletId={selectedWalletId}
@@ -798,7 +781,6 @@ export function SubscriptionInvoice({
                         </div>
 
                         <InvoiceCheckoutSummary
-                          t={t}
                           subtotal={subtotal}
                           totalBeforeRounding={totalBeforeRounding}
                           roundedTotal={subscriptionRoundedTotal}

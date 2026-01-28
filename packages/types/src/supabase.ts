@@ -17630,6 +17630,30 @@ export type Database = {
         Args: { p_query?: string; p_user_ids?: string[]; p_ws_id: string };
         Returns: number;
       };
+      get_pending_invoices_grouped_by_user: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_user_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          attendance_days: number;
+          group_ids: string[];
+          group_names: string[];
+          months_owed: string[];
+          potential_total: number;
+          total_sessions: number;
+          user_avatar_url: string;
+          user_id: string;
+          user_name: string;
+        }[];
+      };
+      get_pending_invoices_grouped_by_user_count: {
+        Args: { p_query?: string; p_user_ids?: string[]; p_ws_id: string };
+        Returns: number;
+      };
       get_period_summary_stats: {
         Args: { p_period?: string; p_ws_id: string };
         Returns: Json;

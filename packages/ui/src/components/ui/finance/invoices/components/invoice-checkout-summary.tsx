@@ -4,10 +4,9 @@ import { ArrowDown, ArrowUp } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
-import type { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface InvoiceCheckoutSummaryProps {
-  t: ReturnType<typeof useTranslations>;
   subtotal: number;
   totalBeforeRounding: number;
   roundedTotal: number;
@@ -22,7 +21,6 @@ interface InvoiceCheckoutSummaryProps {
 }
 
 export function InvoiceCheckoutSummary({
-  t,
   subtotal,
   totalBeforeRounding,
   roundedTotal,
@@ -35,6 +33,7 @@ export function InvoiceCheckoutSummary({
   showRoundingControls = true,
   roundingDisabled = false,
 }: InvoiceCheckoutSummaryProps) {
+  const t = useTranslations();
   return (
     <div className="space-y-4">
       <div className="space-y-2">

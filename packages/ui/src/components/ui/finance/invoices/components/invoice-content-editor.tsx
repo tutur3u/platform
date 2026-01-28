@@ -1,15 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface InvoiceContentEditorProps {
-  title: ReactNode;
-  contentLabel: string;
-  contentPlaceholder: string;
+  type?: 'standard' | 'subscription';
   contentValue: string;
-  notesLabel: string;
-  notesPlaceholder: string;
   notesValue: string;
   onContentChange: (value: string) => void;
   onNotesChange: (value: string) => void;
@@ -18,18 +14,31 @@ interface InvoiceContentEditorProps {
 }
 
 export function InvoiceContentEditor({
-  title,
-  contentLabel,
-  contentPlaceholder,
+  type = 'standard',
   contentValue,
-  notesLabel,
-  notesPlaceholder,
   notesValue,
   onContentChange,
   onNotesChange,
   contentId = 'invoice-content',
   notesId = 'invoice-notes',
 }: InvoiceContentEditorProps) {
+  const t = useTranslations();
+
+  const title =
+    type === 'subscription'
+      ? t('ws-invoices.subscription_invoice_configuration')
+      : t('ws-invoices.invoice_configuration');
+
+  const contentPlaceholder =
+    type === 'subscription'
+      ? t('ws-invoices.subscription_invoice_content_placeholder')
+      : t('ws-invoices.content_placeholder');
+
+  const notesPlaceholder =
+    type === 'subscription'
+      ? t('ws-invoices.additional_notes_placeholder')
+      : t('ws-invoices.notes_placeholder');
+
   return (
     <Card>
       <CardHeader>
@@ -37,7 +46,7 @@ export function InvoiceContentEditor({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor={contentId}>{contentLabel}</Label>
+          <Label htmlFor={contentId}>{t('ws-invoices.content')}</Label>
           <Textarea
             id={contentId}
             placeholder={contentPlaceholder}
@@ -47,7 +56,7 @@ export function InvoiceContentEditor({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={notesId}>{notesLabel}</Label>
+          <Label htmlFor={notesId}>{t('ws-invoices.notes')}</Label>
           <Textarea
             id={notesId}
             placeholder={notesPlaceholder}

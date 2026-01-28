@@ -2076,7 +2076,8 @@
     "year_old": "tuổi",
     "years_old": "tuổi",
     "yellow": "Vàng",
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "groups": "Nhóm"
   },
   "confidential_mode": "Chế độ bảo mật",
   "contact": {
@@ -9041,6 +9042,8 @@
     "invoice_attendance_help": "Bật để chỉ tính các ngày đã điểm danh, tắt để tính tất cả các buổi học bất kể điểm danh.",
     "invoice_attendance_label": "Sử dụng tính toán dựa trên điểm danh",
     "invoice_attendance_title": "Phương pháp tính hóa đơn",
+    "invoice_pending_group_help": "Gộp các hóa đơn chờ thanh toán theo học viên để nhiều nhóm hiển thị trong một dòng.",
+    "invoice_pending_group_label": "Gộp hóa đơn chờ theo học viên",
     "invoice_promotion_description": "Cấu hình cách áp dụng khuyến mãi cho hóa đơn",
     "invoice_promotion_help": "Khi bật, khuyến mãi có thể áp dụng cho tất cả hóa đơn. Khi tắt, khuyến mãi chỉ được phép cho hóa đơn đăng ký.",
     "invoice_promotion_label": "Cho phép khuyến mãi cho hóa đơn thông thường",

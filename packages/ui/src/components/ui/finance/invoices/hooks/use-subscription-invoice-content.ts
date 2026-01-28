@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import type { SelectedProductItem, UserGroupProducts } from '../types';
 import { getAttendanceStats, getTotalSessionsForGroups } from '../utils';
@@ -12,7 +13,6 @@ interface UseSubscriptionInvoiceContentProps {
   userAttendance: { status: string; date: string }[];
   isSelectedMonthPaid: boolean;
   locale: string;
-  t: any;
   onContentChange: (content: string) => void;
   onNotesChange: (notes: string) => void;
 }
@@ -27,10 +27,10 @@ export function useSubscriptionInvoiceContent({
   userAttendance,
   isSelectedMonthPaid,
   locale,
-  t,
   onContentChange,
   onNotesChange,
 }: UseSubscriptionInvoiceContentProps) {
+  const t = useTranslations();
   useEffect(() => {
     if (
       !enabled ||

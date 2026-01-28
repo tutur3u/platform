@@ -413,7 +413,6 @@ export function StandardInvoice({
           customers={users}
           selectedUserId={selectedUserId}
           onSelect={(value) => updateSearchParam('user_id', value)}
-          t={t}
           selectedUser={selectedUser}
           showUserPreview
         >
@@ -585,19 +584,12 @@ export function StandardInvoice({
       </div>
       <div className="space-y-6">
         {isBlocked ? (
-          <InvoiceBlockedState
-            title={t('ws-invoices.creation_blocked')}
-            description={t('ws-invoices.user_in_blocked_group_description')}
-          />
+          <InvoiceBlockedState type="standard" />
         ) : (
           <>
             <InvoiceContentEditor
-              title={t('ws-invoices.invoice_configuration')}
-              contentLabel={t('ws-invoices.content')}
-              contentPlaceholder={t('ws-invoices.content_placeholder')}
+              type="standard"
               contentValue={invoiceContent}
-              notesLabel={t('ws-invoices.notes')}
-              notesPlaceholder={t('ws-invoices.notes_placeholder')}
               notesValue={invoiceNotes}
               onContentChange={setInvoiceContent}
               onNotesChange={setInvoiceNotes}
@@ -608,7 +600,6 @@ export function StandardInvoice({
               </CardHeader>
               <CardContent className="space-y-4">
                 <InvoicePaymentSettings
-                  t={t}
                   wallets={wallets}
                   categories={categories}
                   selectedWalletId={selectedWalletId}
@@ -675,7 +666,6 @@ export function StandardInvoice({
                       </div>
 
                       <InvoiceCheckoutSummary
-                        t={t}
                         subtotal={subtotal}
                         totalBeforeRounding={totalBeforeRounding}
                         roundedTotal={roundedTotal}

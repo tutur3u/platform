@@ -1,14 +1,21 @@
 import { AlertTriangle } from '@tuturuuu/icons';
+import { useTranslations } from 'next-intl';
 
 interface InvoiceBlockedStateProps {
-  title: string;
-  description: string;
+  type?: 'standard' | 'subscription';
 }
 
 export function InvoiceBlockedState({
-  title,
-  description,
+  type = 'standard',
 }: InvoiceBlockedStateProps) {
+  const t = useTranslations();
+
+  const title = t('ws-invoices.creation_blocked');
+  const description =
+    type === 'subscription'
+      ? t('ws-invoices.group_blocked_description')
+      : t('ws-invoices.user_in_blocked_group_description');
+
   return (
     <div className="mt-4 flex flex-col items-center justify-center gap-4 rounded-lg border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900/50 dark:bg-amber-950/20">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">

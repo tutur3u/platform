@@ -2,8 +2,10 @@ export interface PendingInvoice {
   user_id: string;
   user_name: string;
   user_avatar_url?: string | null;
-  group_id: string;
-  group_name: string;
+  group_id?: string;
+  group_name?: string;
+  group_ids?: string[];
+  group_names?: string[];
   months_owed: string[]; // Array of months (e.g., ["2025-04", "2025-05", "2025-03"])
   attendance_days: number; // Total attendance across all unpaid months
   total_sessions: number; // Total sessions across all unpaid months

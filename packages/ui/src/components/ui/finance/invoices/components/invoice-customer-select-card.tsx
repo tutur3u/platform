@@ -12,7 +12,7 @@ import {
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
-import type { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface InvoiceCustomerSelectCardProps {
   title: string;
@@ -20,7 +20,6 @@ interface InvoiceCustomerSelectCardProps {
   customers: WorkspaceUser[];
   selectedUserId: string;
   onSelect: (value: string) => void;
-  t: ReturnType<typeof useTranslations>;
   selectedUser?: WorkspaceUser;
   showUserPreview?: boolean;
   loading?: boolean;
@@ -36,7 +35,6 @@ export function InvoiceCustomerSelectCard({
   customers,
   selectedUserId,
   onSelect,
-  t,
   selectedUser,
   showUserPreview = false,
   loading,
@@ -45,6 +43,7 @@ export function InvoiceCustomerSelectCard({
   emptyMessage,
   children,
 }: InvoiceCustomerSelectCardProps) {
+  const t = useTranslations();
   return (
     <Card>
       <CardHeader>

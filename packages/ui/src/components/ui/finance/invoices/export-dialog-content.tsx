@@ -92,26 +92,52 @@ async function getPendingInvoicesData(
       ? [userIds]
       : undefined;
 
+  let groupByUser = false;
+  try {
+    const groupingRes = await fetch(
+      `/api/v1/workspaces/${wsId}/settings/INVOICE_GROUP_PENDING_INVOICES_BY_USER`
+    );
+    const groupingData = groupingRes.ok ? await groupingRes.json() : null;
+    const groupingValue = groupingData?.value?.trim?.().toLowerCase?.();
+    groupByUser = groupingValue === 'true' || groupingValue === true;
+  } catch (error) {
+    console.error('Pending invoices grouping config fetch error:', error);
+  }
+
   // Fetch pending invoices data
-  const { data: rawData, error } = await supabase.rpc('get_pending_invoices', {
-    p_ws_id: wsId,
-    p_limit: parsedSize,
-    p_offset: offset,
-    p_query: q || undefined,
-    p_user_ids: ids,
-  });
+  const { data: rawData, error } = groupByUser
+    ? await (supabase.rpc as any)('get_pending_invoices_grouped_by_user', {
+        p_ws_id: wsId,
+        p_limit: parsedSize,
+        p_offset: offset,
+        p_query: q || undefined,
+        p_user_ids: ids,
+      })
+    : await supabase.rpc('get_pending_invoices', {
+        p_ws_id: wsId,
+        p_limit: parsedSize,
+        p_offset: offset,
+        p_query: q || undefined,
+        p_user_ids: ids,
+      });
 
   if (error) throw error;
 
   // Fetch total count
-  const { data: countData, error: countError } = await supabase.rpc(
-    'get_pending_invoices_count',
-    {
-      p_ws_id: wsId,
-      p_query: q || undefined,
-      p_user_ids: ids,
-    }
-  );
+  const { data: countData, error: countError } = groupByUser
+    ? await (supabase.rpc as any)(
+        'get_pending_invoices_grouped_by_user_count',
+        {
+          p_ws_id: wsId,
+          p_query: q || undefined,
+          p_user_ids: ids,
+        }
+      )
+    : await supabase.rpc('get_pending_invoices_count', {
+        p_ws_id: wsId,
+        p_query: q || undefined,
+        p_user_ids: ids,
+      });
 
   if (countError) throw countError;
 
@@ -122,6 +148,8 @@ async function getPendingInvoicesData(
     user_avatar_url?: string | null;
     group_id?: string | null;
     group_name?: string | null;
+    group_ids?: string[] | null;
+    group_names?: string[] | null;
     months_owed?: string | string[];
     [key: string]: unknown;
   }
@@ -139,8 +167,19 @@ async function getPendingInvoicesData(
           ? invoice.months_owed.join(', ')
           : '';
 
+    const groupNames = Array.isArray(invoice.group_names)
+      ? invoice.group_names.filter(Boolean)
+      : [];
+    const groupedName =
+      groupNames.length > 0 ? groupNames.join(', ') : invoice.group_name || '';
+    const groupIdValue = Array.isArray(invoice.group_ids)
+      ? invoice.group_ids.join(',')
+      : invoice.group_id || '';
+
     return {
       ...invoice,
+      group_id: groupIdValue,
+      group_name: groupedName,
       months_owed: monthsOwed,
       customer: invoice.user_id
         ? {
@@ -149,7 +188,7 @@ async function getPendingInvoicesData(
           }
         : invoice.group_id
           ? {
-              full_name: invoice.group_name || '',
+              full_name: groupedName,
               avatar_url: '',
             }
           : null,

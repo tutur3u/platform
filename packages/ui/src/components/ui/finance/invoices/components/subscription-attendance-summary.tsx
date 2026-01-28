@@ -18,10 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import type { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface SubscriptionAttendanceSummaryProps {
-  t: ReturnType<typeof useTranslations>;
   selectedGroupIds: string[];
   selectedMonth: string;
   isSelectedMonthPaid: boolean;
@@ -46,7 +45,6 @@ interface SubscriptionAttendanceSummaryProps {
 }
 
 export function SubscriptionAttendanceSummary({
-  t,
   selectedGroupIds,
   selectedMonth,
   isSelectedMonthPaid,
@@ -63,6 +61,7 @@ export function SubscriptionAttendanceSummary({
   totalSessions,
   attendanceRate,
 }: SubscriptionAttendanceSummaryProps) {
+  const t = useTranslations();
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
