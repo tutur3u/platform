@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -19,7 +20,6 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { HeatmapDisplaySettings } from './heatmap-display-settings';
 
 interface Props {
