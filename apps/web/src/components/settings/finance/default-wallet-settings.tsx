@@ -1,16 +1,10 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,55 +14,59 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import { useEffect, useState } from 'react';
 import { useWallets } from '@/hooks/use-wallets';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 
 interface Props {
-  wsId: string;
+  workspaceId: string;
 }
 
-const formSchema = z.object({
-  default_wallet_id: z.string().optional(),
-});
+const NONE_OPTION = 'none';
 
-export default function DefaultWalletSettings({ wsId }: Props) {
+export default function DefaultWalletSettings({ workspaceId }: Props) {
   const t = useTranslations('ws-finance-settings');
   const tWallets = useTranslations('ws-wallets');
-  const { data: wallets = [] } = useWallets(wsId);
-  const { data: defaultConfig } = useWorkspaceConfig(
-    wsId,
-    'default_wallet_id',
-    ''
-  );
+  const { data: wallets = [], isLoading: isLoadingWallets } =
+    useWallets(workspaceId);
+  const { data: defaultConfig, isLoading: isLoadingDefaultConfig } =
+    useWorkspaceConfig(workspaceId, 'default_wallet_id', '');
 
   const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      default_wallet_id: undefined,
-    },
-  });
+  const isLoading = isLoadingWallets || isLoadingDefaultConfig;
+
+  const [selectedWalletId, setSelectedWalletId] = useState(NONE_OPTION);
+  const [initialWalletId, setInitialWalletId] = useState(NONE_OPTION);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (defaultConfig !== undefined) {
-      form.reset({
-        default_wallet_id: (defaultConfig as string) || undefined,
-      });
+    if (isLoading) return;
+
+    const trimmed = String(defaultConfig || '').trim();
+    const walletExists = wallets.some((w) => w.id === trimmed);
+    const val = walletExists ? trimmed : NONE_OPTION;
+
+    setInitialWalletId(val);
+    if (!initialized) {
+      setSelectedWalletId(val);
+      setInitialized(true);
     }
-  }, [defaultConfig, form]);
+  }, [isLoading, defaultConfig, wallets, initialized]);
+
+  const isDirty = selectedWalletId !== initialWalletId;
 
   const updateMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
+    mutationFn: async () => {
+      const nextValue =
+        selectedWalletId && selectedWalletId !== NONE_OPTION
+          ? selectedWalletId
+          : '';
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/default_wallet_id`,
+        `/api/v1/workspaces/${workspaceId}/settings/default_wallet_id`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: values.default_wallet_id }),
+          body: JSON.stringify({ value: nextValue }),
         }
       );
 
@@ -79,8 +77,9 @@ export default function DefaultWalletSettings({ wsId }: Props) {
       return res.json();
     },
     onSuccess: () => {
+      setInitialWalletId(selectedWalletId);
       queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId, 'default_wallet_id'],
+        queryKey: ['workspace-config', workspaceId, 'default_wallet_id'],
       });
       toast.success(t('update_success'));
     },
@@ -89,8 +88,17 @@ export default function DefaultWalletSettings({ wsId }: Props) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    updateMutation.mutate(values);
+  if (!initialized) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    updateMutation.mutate();
   }
 
   return (
@@ -100,50 +108,35 @@ export default function DefaultWalletSettings({ wsId }: Props) {
         <p className="text-muted-foreground text-sm">{t('description')}</p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="default_wallet_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('default_wallet_label')}</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('select_default_wallet')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="none">
-                      {t('no_default_wallet')}
-                    </SelectItem>
-                    {wallets
-                      .filter((wallet) => wallet.id)
-                      .map((wallet) => (
-                        <SelectItem key={wallet.id} value={wallet.id as string}>
-                          {wallet.name || tWallets('unnamed_wallet')}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="grid gap-2">
+          <Label>{t('default_wallet_label')}</Label>
+          <Select onValueChange={setSelectedWalletId} value={selectedWalletId}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('select_default_wallet')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE_OPTION}>
+                {t('no_default_wallet')}
+              </SelectItem>
+              {wallets
+                .filter((wallet) => wallet.id)
+                .map((wallet) => (
+                  <SelectItem key={wallet.id} value={wallet.id as string}>
+                    {wallet.name || tWallets('unnamed_wallet')}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <Button
-            type="submit"
-            disabled={updateMutation.isPending || !form.formState.isDirty}
-          >
-            {updateMutation.isPending ? t('saving') : t('save')}
-          </Button>
-        </form>
-      </Form>
+        <Button
+          type="submit"
+          disabled={isLoading || updateMutation.isPending || !isDirty}
+        >
+          {updateMutation.isPending ? t('saving') : t('save')}
+        </Button>
+      </form>
     </div>
   );
 }

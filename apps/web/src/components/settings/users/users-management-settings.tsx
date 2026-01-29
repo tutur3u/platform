@@ -13,12 +13,12 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface Props {
@@ -43,12 +43,29 @@ export default function UsersManagementSettings({ wsId }: Props) {
   const { data: groupsData, isLoading: isLoadingGroups } =
     useWorkspaceUserGroups(wsId);
 
+  const isLoading = isLoadingConfig || isLoadingGroups;
+
   type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       default_excluded_groups: [],
+    },
+    values: useMemo(() => {
+      if (isLoading) return undefined;
+      const parseIds = (raw: string | null | undefined): string[] =>
+        (raw || '')
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean);
+
+      return {
+        default_excluded_groups: parseIds(defaultExcludedConfig),
+      };
+    }, [isLoading, defaultExcludedConfig]),
+    resetOptions: {
+      keepDirtyValues: true,
     },
   });
 
@@ -68,20 +85,6 @@ export default function UsersManagementSettings({ wsId }: Props) {
         return aSelected ? -1 : 1;
       });
   }, [groupsData, selectedGroupIds]);
-
-  useEffect(() => {
-    if (defaultExcludedConfig !== undefined) {
-      const parseIds = (raw: string | null | undefined): string[] =>
-        (raw || '')
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean);
-
-      form.reset({
-        default_excluded_groups: parseIds(defaultExcludedConfig),
-      });
-    }
-  }, [defaultExcludedConfig, form]);
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -126,8 +129,6 @@ export default function UsersManagementSettings({ wsId }: Props) {
       toast.error(t('update_error'));
     },
   });
-
-  const isLoading = isLoadingConfig || isLoadingGroups;
 
   return (
     <div className="space-y-6">

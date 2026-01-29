@@ -303,6 +303,17 @@ export function useLiveAPI({
     setConnectionStatus('disconnected');
     // Clear the session handle since we're intentionally disconnecting
     latestSessionHandleRef.current = null;
+
+    // Clear server-side session handle as well
+    if (wsIdRef.current) {
+      try {
+        await fetch(`/api/v1/live/session?wsId=${wsIdRef.current}`, {
+          method: 'DELETE',
+        });
+      } catch (error) {
+        console.warn('[Live API] Failed to delete session handle:', error);
+      }
+    }
   }, [client]);
 
   const sendToolResponse = useCallback(

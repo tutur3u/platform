@@ -43,6 +43,7 @@ interface BillingClientProps {
   products: Product[];
   product_id: string;
   isCreator: boolean;
+  hasManageSubscriptionPermission: boolean;
 }
 
 function getSimplePlanName(name: string): string {
@@ -58,6 +59,7 @@ export function BillingClient({
   products,
   wsId,
   isCreator,
+  hasManageSubscriptionPermission,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
@@ -215,28 +217,39 @@ export function BillingClient({
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button onClick={() => setShowUpgradeOptions(true)} size="lg">
-                  {t('upgrade-plan')}
-                </Button>
-                {isPaidPlan && isCreator && (
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
-                    onClick={() => setShowConfirmationDialog(true)}
-                  >
-                    {currentPlan.cancelAtPeriodEnd ? (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        {t('continue-subscription')}
-                      </>
-                    ) : (
-                      <>
-                        <X className="mr-2 h-4 w-4" />
-                        {t('cancel-subscription')}
-                      </>
+                {hasManageSubscriptionPermission ? (
+                  <>
+                    <Button
+                      onClick={() => setShowUpgradeOptions(true)}
+                      size="lg"
+                    >
+                      {t('upgrade-plan')}
+                    </Button>
+                    {isPaidPlan && isCreator && (
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
+                        onClick={() => setShowConfirmationDialog(true)}
+                      >
+                        {currentPlan.cancelAtPeriodEnd ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            {t('continue-subscription')}
+                          </>
+                        ) : (
+                          <>
+                            <X className="mr-2 h-4 w-4" />
+                            {t('cancel-subscription')}
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    {t('subscription-management-restricted')}
+                  </p>
                 )}
               </div>
             </div>

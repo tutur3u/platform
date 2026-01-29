@@ -29,7 +29,8 @@ export type FeatureId =
   | 'inventory'
   | 'ai_lab'
   | 'voice_assistant'
-  | 'workforce';
+  | 'workforce'
+  | 'tuna';
 
 /**
  * Feature tier requirements configuration
@@ -56,6 +57,7 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
   drive: 'PRO',
   ai_lab: 'PRO',
   voice_assistant: 'PRO',
+  tuna: 'PRO',
 };
 
 /**

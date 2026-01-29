@@ -374,7 +374,10 @@ export function Structure({
           link.requiredWorkspaceTier.requiredTier
         );
 
-        if (!meetsTier) {
+        // Tuturuuu employees bypass tier requirements
+        const isTuturuuuEmployee = isValidTuturuuuEmail(user?.email);
+
+        if (!meetsTier && !isTuturuuuEmployee) {
           if (link.requiredWorkspaceTier.alwaysShow) {
             return [
               {
@@ -387,7 +390,7 @@ export function Structure({
             return [];
           }
         } else {
-          // Tier requirement is met - remove the badge
+          // Tier requirement is met or user is Tuturuuu employee - remove the badge
           return [
             {
               ...link,

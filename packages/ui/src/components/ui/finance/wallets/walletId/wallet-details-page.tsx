@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
+import { WalletDeleteButton } from './wallet-delete-button';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
 interface Props {
@@ -55,6 +56,7 @@ export default async function WalletDetailsPage({
     'view_confidential_category'
   );
   const hasManageFinance = containsPermission('manage_finance');
+  const canDeleteWallets = containsPermission('delete_wallets');
 
   const { wallet } = await getData(wsId, walletId, hasManageFinance);
 
@@ -62,13 +64,22 @@ export default async function WalletDetailsPage({
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      <FeatureSummary
-        pluralTitle={wallet.name || t('ws-wallets.plural')}
-        singularTitle={wallet.name || t('ws-wallets.singular')}
-        description={wallet.description || t('ws-wallets.description')}
-        createTitle={t('ws-wallets.create')}
-        createDescription={t('ws-wallets.create_description')}
-      />
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <FeatureSummary
+          pluralTitle={wallet.name || t('ws-wallets.plural')}
+          singularTitle={wallet.name || t('ws-wallets.singular')}
+          description={wallet.description || t('ws-wallets.description')}
+          createTitle={t('ws-wallets.create')}
+          createDescription={t('ws-wallets.create_description')}
+        />
+        {canDeleteWallets && (
+          <WalletDeleteButton
+            wsId={wsId}
+            walletId={walletId}
+            walletName={wallet.name ?? undefined}
+          />
+        )}
+      </div>
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <Card className="grid gap-4">

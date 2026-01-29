@@ -8,6 +8,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -31,6 +32,13 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const t = useTranslations('settings.tasks');
   const queryClient = useQueryClient();
   const isPersonalWorkspace = workspace?.personal ?? false;
+
+  const {
+    value: expandTunaSections,
+    setValue: setExpandTunaSections,
+    isLoading: expandTunaSectionsLoading,
+    isPending: expandTunaSectionsPending,
+  } = useUserBooleanConfig('TUNA_EXPAND_ALL_TASK_SECTIONS', true);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
@@ -115,6 +123,17 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             checked={settings?.fade_completed_tasks ?? false}
             onCheckedChange={handleFadeCompletedToggle}
             disabled={isLoading || updateSettings.isPending}
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('expand_tuna_sections')}
+          description={t('expand_tuna_sections_description')}
+        >
+          <Switch
+            checked={expandTunaSections}
+            onCheckedChange={setExpandTunaSections}
+            disabled={expandTunaSectionsLoading || expandTunaSectionsPending}
           />
         </SettingItemTab>
         <Separator />

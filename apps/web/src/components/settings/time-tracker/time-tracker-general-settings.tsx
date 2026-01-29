@@ -12,14 +12,14 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 import { HeatmapDisplaySettings } from './heatmap-display-settings';
 
 interface Props {
@@ -47,16 +47,16 @@ export function TimeTrackerGeneralSettings({ wsId }: Props) {
     defaultValues: {
       allow_future_sessions: false,
     },
+    values: useMemo(() => {
+      if (isLoading || configValue === undefined) return undefined;
+      return {
+        allow_future_sessions: configValue.trim().toLowerCase() === 'true',
+      };
+    }, [isLoading, configValue]),
+    resetOptions: {
+      keepDirtyValues: true,
+    },
   });
-
-  useEffect(() => {
-    if (configValue !== undefined) {
-      const value = configValue.trim().toLowerCase() === 'true';
-      form.reset({
-        allow_future_sessions: value,
-      });
-    }
-  }, [configValue, form]);
 
   const updateMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {

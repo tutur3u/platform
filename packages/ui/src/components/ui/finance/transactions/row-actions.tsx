@@ -3,6 +3,17 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -13,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -29,23 +40,31 @@ export function TransactionRowActions(props: Props) {
 
   const router = useRouter();
   const data = props.row.original;
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteTransaction = async () => {
-    const res = await fetch(
-      `/api/workspaces/${data.ws_id}/transactions/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    setIsDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/workspaces/${data.ws_id}/transactions/${data.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace transaction',
-        description: data.message,
-      });
+      if (res.ok) {
+        toast.success(t('ws-transactions.transaction_deleted'));
+        router.refresh();
+      } else {
+        const errorData = await res.json();
+        toast.error(
+          errorData.message || t('ws-transactions.failed_to_delete_transaction')
+        );
+      }
+    } catch {
+      toast.error(t('ws-transactions.failed_to_delete_transaction'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -74,14 +93,41 @@ export function TransactionRowActions(props: Props) {
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteTransaction}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                disabled={isDeleting}
+              >
+                {t('common.delete')}
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t('common.confirm_delete_title')}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t('ws-transactions.confirm_delete_transaction')}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={deleteTransaction}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? t('common.deleting') : t('common.delete')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -26,6 +26,7 @@ import {
   ClockFading,
   Database,
   FileText,
+  Fish,
   FolderSync,
   GalleryVerticalEnd,
   Goal,
@@ -180,6 +181,17 @@ export async function WorkspaceNavigationLinks({
       href: `/${personalOrWsId}/notifications`,
       aliases: [`/${personalOrWsId}/notifications`],
       icon: <Bell className="h-5 w-5" />,
+    },
+    null,
+    {
+      title: t('sidebar_tabs.tuna'),
+      href: `/${personalOrWsId}/tuna`,
+      icon: <Fish className="h-5 w-5" />,
+      disabled: !isPersonal,
+      requiredWorkspaceTier: createTierRequirement('tuna', {
+        alwaysShow: true,
+      }),
+      experimental: 'beta',
     },
     null,
     {

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Briefcase,
   Building2,
   Cake,
   Check,
@@ -8,6 +9,7 @@ import {
   Gift,
   PartyPopper,
   Sparkles,
+  Star,
   Trophy,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -109,6 +111,93 @@ export function MilestonesSection({ yearInfo }: { yearInfo: YearInfo }) {
                     year:
                       new Date().getFullYear() +
                       (yearInfo.currentMonth > 6 ? 1 : 0),
+                  })}
+                </span>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* JSC Birthday Section */}
+      {yearInfo.isJscBirthday ? (
+        <div className="relative overflow-hidden rounded-xl border-2 border-dynamic-blue/30 bg-linear-to-r from-dynamic-blue/10 via-dynamic-cyan/5 to-dynamic-green/10 p-4">
+          <div className="pointer-events-none absolute inset-0">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-bounce opacity-30"
+                style={{
+                  left: `${(i * 12 + 5) % 100}%`,
+                  top: `${(i * 15 + 10) % 100}%`,
+                  animationDelay: `${i * 0.15}s`,
+                }}
+              >
+                {i % 3 === 0 ? (
+                  <Star className="h-3 w-3 text-dynamic-cyan" />
+                ) : i % 3 === 1 ? (
+                  <Briefcase className="h-3 w-3 text-dynamic-blue" />
+                ) : (
+                  <PartyPopper className="h-3 w-3 text-dynamic-green" />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="relative text-center">
+            <div className="mb-2 flex items-center justify-center gap-2">
+              <Briefcase className="h-5 w-5 text-dynamic-blue" />
+              <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text font-bold text-lg text-transparent">
+                {t('jsc_birthday.happy_birthday', {
+                  count: yearInfo.jscAge.years,
+                })}
+              </span>
+              <Star className="h-5 w-5 text-dynamic-cyan" />
+            </div>
+            <p className="text-dynamic-blue/70 text-sm">
+              {t('jsc_birthday.years_of_growth', {
+                count: yearInfo.jscAge.years,
+              })}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-auto w-full justify-between rounded-xl border border-border/50 bg-muted/20 p-3 hover:bg-muted/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/15">
+                  <Briefcase className="h-4 w-4 text-dynamic-blue" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-sm">
+                    {t('jsc_birthday.title')}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {t('jsc_birthday.date')} • {t('jsc_birthday.incorporated')}
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline" className="gap-1 text-[10px]">
+                <Clock className="h-3 w-3" />
+                {t('jsc_birthday.days_until', {
+                  count: yearInfo.daysUntilJscBirthday,
+                })}
+              </Badge>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <div className="rounded-lg border border-border/30 bg-muted/10 p-3">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                <Building2 className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {t('jsc_birthday.next_birthday', {
+                    age: yearInfo.jscAge.years + 1,
+                    year:
+                      new Date().getFullYear() +
+                      (yearInfo.currentMonth > 4 ? 1 : 0),
                   })}
                 </span>
               </div>

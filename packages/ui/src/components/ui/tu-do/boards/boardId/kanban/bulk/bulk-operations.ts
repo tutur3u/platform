@@ -17,7 +17,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { moveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
-import { calculateDaysUntilEndOfWeek } from '../../utils/weekDateUtils';
+import { calculateDaysUntilEndOfWeek } from '../../../../utils/weekDateUtils';
 
 interface WorkspaceProject {
   id: string;

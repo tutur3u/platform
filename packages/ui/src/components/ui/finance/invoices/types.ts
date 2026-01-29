@@ -60,6 +60,10 @@ export interface Promotion {
 }
 
 export interface UserGroupProducts {
+  group_id?: string;
+  workspace_user_groups?: {
+    name: string | null;
+  };
   workspace_products: {
     id: string;
     name: string | null;
