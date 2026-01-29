@@ -14,8 +14,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { templateId, wsId } = await params;
-  const template = await getTemplate(wsId, templateId);
+  const { templateId } = await params;
+  const template = await getTemplate(templateId);
 
   if (!template) {
     return {
@@ -45,7 +45,7 @@ export default async function TemplateDetailPage({ params }: Props) {
         if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
         // Fetch template
-        const template = await getTemplate(wsId, templateId);
+        const template = await getTemplate(templateId);
 
         if (!template) {
           notFound();
@@ -58,7 +58,6 @@ export default async function TemplateDetailPage({ params }: Props) {
 }
 
 async function getTemplate(
-  wsId: string,
   templateId: string
 ): Promise<BoardTemplateWithContent | null> {
   const supabase = await createClient();

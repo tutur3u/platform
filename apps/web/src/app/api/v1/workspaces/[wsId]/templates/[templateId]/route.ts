@@ -16,7 +16,7 @@ interface Params {
   }>;
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { wsId, templateId } = await params;
 
@@ -221,7 +221,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Params) {
+export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
     const { wsId, templateId } = await params;
 
