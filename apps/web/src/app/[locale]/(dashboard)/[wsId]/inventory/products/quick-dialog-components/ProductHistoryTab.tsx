@@ -62,7 +62,7 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-dynamic-blue">
                         <ShoppingBag className="h-4 w-4" />
                       </div>
-                      <span className="wrap-break-word min-w-0 flex-1 text-balance text-primary text-sm">
+                      <span className="wrap-break-word min-w-0 flex-1 text-balance text-dynamic-light-blue text-sm">
                         {change.beneficiary.full_name ||
                           change.beneficiary.email}
                       </span>
