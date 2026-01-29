@@ -46,6 +46,7 @@
     "@tanstack/react-pacer": "^0.19.4",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.6",
     "@tiptap/core": "^3.18.0",
     "@tiptap/extension-collaboration": "^3.18.0",
     "@tiptap/extension-collaboration-caret": "^3.18.0",
@@ -198,12 +199,20 @@
       "types": "./src/components/ui/finance/wallets/wallet-form-schema.ts",
       "import": "./src/components/ui/finance/wallets/wallet-form-schema.ts"
     },
+    "./finance/transactions/categories/hooks": {
+      "types": "./src/components/ui/finance/transactions/categories/hooks.ts",
+      "import": "./src/components/ui/finance/transactions/categories/hooks.ts"
+    },
     "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
     "./legacy/calendar/settings/types": {
       "types": "./src/components/ui/legacy/calendar/settings/types.ts",
       "import": "./src/components/ui/legacy/calendar/settings/types.ts"
     },
     "./legacy/calendar/settings/*": "./src/components/ui/legacy/calendar/settings/*.tsx",
+    "./custom/icon-picker": {
+      "types": "./src/components/ui/custom/icon-picker/index.ts",
+      "import": "./src/components/ui/custom/icon-picker/index.ts"
+    },
     "./*": "./src/components/ui/*.tsx"
   },
   "packageManager": "bun@1.3.7"
