@@ -168,9 +168,9 @@ export default function Home() {
             className="mb-6 animate-slide-up font-extrabold text-4xl md:text-6xl lg:text-7xl"
             style={{ animationDelay: '0.1s' }}
           >
-            <span className="gradient-text drop-shadow-text">NEO LEAGUE</span>
+            <span className="gradient-text">NEO LEAGUE</span>
             <br />
-            <span className="text-muted">SEASON 2</span>
+            <span className="text-brand-dark-blue">SEASON 2</span>
           </h1>
 
           <p
@@ -222,7 +222,7 @@ export default function Home() {
               <div className="flex items-center gap-1 text-primary">
                 <Calendar className="h-6 w-6" /> March 2 – May 29, 2026
               </div>
-              <span className="mx-4 text-muted">|</span>
+              <span className="mx-4 text-foreground">|</span>
               <div className="flex items-center gap-1 text-primary">
                 <MapPin className="h-6 w-6" /> Ho Chi Minh City
               </div>
@@ -256,10 +256,10 @@ export default function Home() {
       >
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 text-center">
-            <h2 className="mb-4 font-black text-3xl md:text-5xl">
+            <h2 className="mb-4 font-black text-3xl shadow-text md:text-5xl">
               ABOUT <span className="text-secondary">NEO LEAGUE</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
               A student-led competition challenging Ho Chi Minh City
               undergraduates to engineer integrated IoT solutions.
             </p>
@@ -284,7 +284,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="mb-3 font-black text-xl">THE CHALLENGE</h3>
-              <p className="text-muted">
+              <p className="text-foreground">
                 Combine physical prototyping with software, data connectivity,
                 and smart technologies to address UN Sustainable Development
                 Goals (SDGs). Focus on real hardware solutions, not just
@@ -310,7 +310,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="mb-3 font-black text-xl">ABOUT THE ORGANIZERS</h3>
-              <p className="text-muted">
+              <p className="text-foreground">
                 RMIT NEO Culture Technology Club focuses on innovation in
                 emerging technologies like machine learning and digital systems.
                 With 80+ members and 30+ completed projects, we foster a
@@ -326,10 +326,10 @@ export default function Home() {
                 key={index}
                 className="glass-card card-hover rounded-xl p-6 text-center"
               >
-                <p className="gradient-text mb-2 font-black text-3xl drop-shadow-text md:text-4xl">
+                <p className="gradient-text mb-2 font-black text-3xl shadow-text md:text-4xl">
                   {stat.number}
                 </p>
-                <p className="text-muted text-sm">{stat.label}</p>
+                <p className="text-foreground text-sm">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -343,7 +343,7 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               COMPETITION <span className="text-secondary">PHASES</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
               Three challenging rounds designed to test your innovation,
               technical skills, and presentation abilities.
             </p>
@@ -360,7 +360,7 @@ export default function Home() {
                     {phase.icon}
                   </div>
                   <h3 className="mb-4 font-black text-2xl">{phase.title}</h3>
-                  <p className="text-muted">{phase.description}</p>
+                  <p className="text-foreground">{phase.description}</p>
                 </div>
               </div>
             ))}
@@ -416,7 +416,9 @@ export default function Home() {
                         </span>
                       </div>
                       <h3 className="mb-2 font-black text-xl">{item.event}</h3>
-                      <p className="text-muted text-sm">{item.description}</p>
+                      <p className="text-foreground text-sm">
+                        {item.description}
+                      </p>
                     </div>
                   </div>
 
@@ -535,7 +537,7 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               MENTORS & <span className="text-secondary">JUDGES</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
               Learn from and be evaluated by distinguished faculty from RMIT
               School of Science, Engineering & Technology.
             </p>
@@ -551,7 +553,7 @@ export default function Home() {
                   {mentor.name.split(' ').pop()?.charAt(0)}
                 </div>
                 <h4 className="mb-1 font-black">{mentor.name}</h4>
-                <p className="text-muted text-sm">{mentor.field}</p>
+                <p className="text-foreground text-sm">{mentor.field}</p>
               </div>
             ))}
           </div>
@@ -565,7 +567,7 @@ export default function Home() {
             <h2 className="mb-4 font-black text-3xl md:text-4xl">
               OUR <span className="text-secondary">SUPPORTERS</span>
             </h2>
-            <p className="mx-auto max-w-2xl font-bold text-lg text-muted">
+            <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
               Proudly supported by leading institutions committed to fostering
               innovation and student excellence.
             </p>
@@ -590,7 +592,7 @@ export default function Home() {
                   <br />
                   Engineering & Technology
                 </h3>
-                <p className="text-muted text-sm">Academic Partner</p>
+                <p className="text-foreground text-sm">Academic Partner</p>
               </div>
             </div>
 
@@ -612,7 +614,7 @@ export default function Home() {
                   <br />
                   Club
                 </h3>
-                <p className="text-muted text-sm">Organizer</p>
+                <p className="text-foreground text-sm">Organizer</p>
               </div>
             </div>
 
@@ -634,7 +636,7 @@ export default function Home() {
                   <br />
                   Program
                 </h3>
-                <p className="text-muted text-sm">Institutional Support</p>
+                <p className="text-foreground text-sm">Institutional Support</p>
               </div>
             </div>
           </div>
@@ -654,7 +656,7 @@ export default function Home() {
               <h2 className="mb-4 font-black text-3xl md:text-4xl">
                 READY TO <span className="gradient-text">INNOVATE?</span>
               </h2>
-              <p className="mx-auto mb-8 max-w-xl font-bold text-lg text-muted">
+              <p className="mx-auto mb-8 max-w-xl font-bold text-foreground text-lg">
                 Join the NEO League Season 2 and showcase your IoT innovation
                 skills. Registration is now open!
               </p>
@@ -683,12 +685,12 @@ export default function Home() {
                 <h3 className="mb-6 font-black">CONTACT US</h3>
                 <div className="grid gap-6 md:grid-cols-3">
                   <div>
-                    <p className="mb-1 text-md text-muted">Phone</p>
+                    <p className="mb-1 text-foreground text-md">Phone</p>
                     <p className="font-bold text-sm">0765386296 (Ms. Tam)</p>
                     <p className="font-bold text-sm">0918498056 (Mr. Tai)</p>
                   </div>
                   <div>
-                    <p className="mb-1 text-md text-muted">Email</p>
+                    <p className="mb-1 text-foreground text-md">Email</p>
                     <Link
                       href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
                       className="font-bold text-primary text-sm hover:underline"
@@ -697,7 +699,7 @@ export default function Home() {
                     </Link>
                   </div>
                   <div>
-                    <p className="mb-1 text-md text-muted">Follow Us</p>
+                    <p className="mb-1 text-foreground text-md">Follow Us</p>
                     <div className="flex flex-col justify-center">
                       <Link
                         href="https://rmitnct.club"
