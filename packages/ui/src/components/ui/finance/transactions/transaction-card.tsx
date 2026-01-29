@@ -19,7 +19,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {
   getIconComponentByKey,
-  type WorkspaceBoardIconKey,
+  type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import {
   DropdownMenu,
@@ -75,7 +75,7 @@ export function TransactionCard({
   const CategoryIcon = useMemo(() => {
     if (transaction.category_icon) {
       return getIconComponentByKey(
-        transaction.category_icon as WorkspaceBoardIconKey
+        transaction.category_icon as PlatformIconKey
       );
     }
     return null;

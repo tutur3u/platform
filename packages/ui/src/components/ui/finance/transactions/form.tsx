@@ -23,7 +23,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   getIconComponentByKey,
-  type WorkspaceBoardIconKey,
+  type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import {
   Dialog,
@@ -68,7 +68,7 @@ function getCategoryIcon(
   iconGetter: typeof getIconComponentByKey
 ): React.ReactNode {
   const IconComponent = category.icon
-    ? iconGetter(category.icon as WorkspaceBoardIconKey)
+    ? iconGetter(category.icon as PlatformIconKey)
     : null;
 
   if (IconComponent) {

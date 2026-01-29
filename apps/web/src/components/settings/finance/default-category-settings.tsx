@@ -6,7 +6,7 @@ import type { TransactionCategory } from '@tuturuuu/types/primitives/Transaction
 import { Button } from '@tuturuuu/ui/button';
 import {
   getIconComponentByKey,
-  type WorkspaceBoardIconKey,
+  type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Label } from '@tuturuuu/ui/label';
@@ -31,7 +31,7 @@ const NONE_OPTION = 'none';
 function CategoryIcon({ category }: { category: TransactionCategory }) {
   if (category.icon) {
     const IconComponent = getIconComponentByKey(
-      category.icon as WorkspaceBoardIconKey
+      category.icon as PlatformIconKey
     );
     if (IconComponent) {
       return <IconComponent className="h-4 w-4" />;

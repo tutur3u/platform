@@ -16,7 +16,7 @@ import {
 } from '@tuturuuu/ui/command';
 import {
   getIconComponentByKey,
-  type WorkspaceBoardIconKey,
+  type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
@@ -155,7 +155,7 @@ export function CategoryFilter({
                       // Get icon component if available
                       const IconComponent = category.icon
                         ? getIconComponentByKey(
-                            category.icon as WorkspaceBoardIconKey
+                            category.icon as PlatformIconKey
                           )
                         : null;
 
