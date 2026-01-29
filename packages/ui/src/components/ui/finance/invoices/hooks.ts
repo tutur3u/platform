@@ -1,5 +1,6 @@
 import {
   keepPreviousData,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -426,6 +427,40 @@ export const useUserInvoices = (wsId: string, userId: string) => {
       if (error) throw error;
       return data as Invoice[];
     },
+    enabled: !!userId,
+  });
+};
+
+export const useInfiniteUserInvoices = (
+  wsId: string,
+  userId: string,
+  pageSize = 10
+) => {
+  return useInfiniteQuery({
+    queryKey: ['infinite-user-invoices', wsId, userId],
+    queryFn: async ({ pageParam = 0 }) => {
+      const supabase = createClient();
+      const from = pageParam * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
+        .from('finance_invoices')
+        .select('*', { count: 'exact' })
+        .eq('ws_id', wsId)
+        .eq('customer_id', userId)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      return {
+        data: (data as Invoice[]) || [],
+        count: count || 0,
+        nextPage: data && data.length === pageSize ? pageParam + 1 : undefined,
+      };
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!userId,
   });
 };

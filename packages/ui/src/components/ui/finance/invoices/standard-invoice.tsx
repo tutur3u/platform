@@ -25,7 +25,6 @@ import {
   useInvoicePromotionConfig,
   useProducts,
   useUserGroups,
-  useUserInvoices,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
   useUsersWithSelectableGroups,
@@ -132,10 +131,6 @@ export function StandardInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
-  // User history queries
-  const { data: userInvoices = [], isLoading: userInvoicesLoading } =
-    useUserInvoices(wsId, selectedUserId);
-
   const selectedUser = users.find(
     (user: WorkspaceUser) => user.id === selectedUserId
   );
@@ -146,7 +141,6 @@ export function StandardInvoice({
           (promotion: AvailablePromotion) =>
             promotion.id === selectedPromotionId
         );
-  const isLoadingUserHistory = userInvoicesLoading;
   const isLoadingData =
     usersLoading ||
     productsLoading ||
@@ -408,11 +402,7 @@ export function StandardInvoice({
         >
           {/* Conditional User History Accordion */}
           {selectedUser && (
-            <InvoiceUserHistoryAccordion
-              wsId={wsId}
-              userInvoices={userInvoices}
-              isLoading={isLoadingUserHistory}
-            />
+            <InvoiceUserHistoryAccordion wsId={wsId} userId={selectedUser.id} />
           )}
         </InvoiceCustomerSelectCard>
 

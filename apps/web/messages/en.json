@@ -9885,7 +9885,8 @@
     "user_groups": "User Groups",
     "user_groups_description": "Select the group for subscription billing.",
     "user_history": "Customer History",
-    "user_in_blocked_group_description": "Invoice creation is blocked because the user belongs to a restricted group."
+    "user_in_blocked_group_description": "Invoice creation is blocked because the user belongs to a restricted group.",
+    "load_more": "Load more"
   },
   "ws-members": {
     "active_members": "Active",

@@ -9885,7 +9885,8 @@
     "user_groups": "Nhóm Người Dùng",
     "user_groups_description": "Chọn nhóm để thanh toán đăng ký.",
     "user_history": "Lịch sử khách hàng",
-    "user_in_blocked_group_description": "Việc tạo hóa đơn bị chặn vì người dùng thuộc nhóm bị hạn chế."
+    "user_in_blocked_group_description": "Việc tạo hóa đơn bị chặn vì người dùng thuộc nhóm bị hạn chế.",
+    "load_more": "Tải thêm"
   },
   "ws-members": {
     "active_members": "Đang hoạt động",
