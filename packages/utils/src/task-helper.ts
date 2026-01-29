@@ -1707,7 +1707,7 @@ export async function createBoardWithTemplate(
   wsId: string,
   name: string,
   templateId?: string,
-  icon?: Database['public']['Enums']['workspace_board_icon'] | null
+  icon?: Database['public']['Enums']['platform_icon'] | null
 ) {
   const { data, error } = await supabase
     .from('workspace_boards')
@@ -1837,7 +1837,7 @@ export function useCreateBoardWithTemplate(wsId: string) {
     }: {
       name: string;
       templateId?: string;
-      icon?: Database['public']['Enums']['workspace_board_icon'] | null;
+      icon?: Database['public']['Enums']['platform_icon'] | null;
     }) => {
       const supabase = createClient();
       return createBoardWithTemplate(supabase, wsId, name, templateId, icon);
