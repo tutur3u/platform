@@ -56,7 +56,10 @@ function extractTimestamp(filename) {
  * Format a Date object for display
  */
 function formatDate(date) {
-  return date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
+  return date
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d{3}Z$/, ' UTC');
 }
 
 /**
@@ -89,13 +92,14 @@ function checkMigration(file, now) {
   if (!timestamp) {
     return {
       filename: file.filename,
-      error: 'Invalid filename format - expected YYYYMMDDHHMMSS_description.sql',
+      error:
+        'Invalid filename format - expected YYYYMMDDHHMMSS_description.sql',
     };
   }
 
   const migrationDate = parseTimestamp(timestamp);
 
-  if (!migrationDate || isNaN(migrationDate.getTime())) {
+  if (!migrationDate || Number.isNaN(migrationDate.getTime())) {
     return {
       filename: file.filename,
       error: `Invalid timestamp: ${timestamp}`,

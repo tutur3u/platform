@@ -12,6 +12,7 @@ import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   DropdownMenu,
@@ -33,14 +34,20 @@ import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { NovaUsersRowActions } from './row-actions';
 
-export const getUserColumns = (
-  t: any,
-  _: string | undefined,
-  __: any[] | undefined,
-  extraData: { locale: string }
-): ColumnDef<
-  User & PlatformUser & Partial<UserPrivateDetails> & { team_name: string[] }
->[] => {
+type NovaUserRow = User &
+  PlatformUser &
+  Partial<UserPrivateDetails> & { team_name: string[] };
+
+interface NovaUserExtraData {
+  locale: string;
+}
+
+export const getUserColumns = ({
+  t,
+  extraData,
+}: ColumnGeneratorOptions<NovaUserRow> & {
+  extraData: NovaUserExtraData;
+}): ColumnDef<NovaUserRow>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
 

@@ -7,17 +7,23 @@ import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
 
-export const transactionCategoryColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
-  extraData?: { currency?: string }
-): ColumnDef<TransactionCategoryWithStats>[] => {
+interface TransactionCategoryExtraData {
+  currency?: string;
+}
+
+export const transactionCategoryColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<TransactionCategoryWithStats> & {
+  extraData?: TransactionCategoryExtraData;
+}): ColumnDef<TransactionCategoryWithStats>[] => {
   const currency = extraData?.currency || 'USD';
 
   return [

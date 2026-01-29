@@ -2,19 +2,21 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { PromotionRowActions } from './row-actions';
 
-export const getPromotionColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any[],
+export const getPromotionColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<ProductPromotion> & {
   extraData?: {
     canDeleteInventory?: boolean;
     canUpdateInventory?: boolean;
-  }
-): ColumnDef<ProductPromotion>[] => [
+  };
+}): ColumnDef<ProductPromotion>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

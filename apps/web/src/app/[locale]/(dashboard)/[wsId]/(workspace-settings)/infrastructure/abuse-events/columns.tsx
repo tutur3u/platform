@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Shield, XCircle } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
@@ -62,10 +63,10 @@ const getEventTypeBadge = (eventType: string) => {
   );
 };
 
-export const getAbuseEventsColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<AbuseEventEntry>[] => [
+export const getAbuseEventsColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<AbuseEventEntry>): ColumnDef<AbuseEventEntry>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

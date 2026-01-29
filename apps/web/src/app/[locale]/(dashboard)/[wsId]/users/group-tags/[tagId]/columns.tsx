@@ -3,17 +3,19 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { UserGroupRowActions } from './row-actions';
 
-export const getUserGroupColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any[],
-  extraData?: any
-): ColumnDef<UserGroup>[] => [
+export const getUserGroupColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<UserGroup> & {
+  extraData?: any;
+}): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

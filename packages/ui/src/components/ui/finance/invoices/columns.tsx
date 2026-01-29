@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { InvoiceRowActions } from '@tuturuuu/ui/finance/invoices/row-actions';
 import {
@@ -19,16 +20,19 @@ type DeleteInvoiceAction = (
   invoiceId: string
 ) => Promise<{ success: boolean; message?: string }>;
 
-export const invoiceColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
-  extraData?: {
-    canDeleteInvoices?: boolean;
-    deleteInvoiceAction?: DeleteInvoiceAction;
-    currency?: string;
-  }
-): ColumnDef<Invoice>[] => {
+interface InvoiceExtraData {
+  canDeleteInvoices?: boolean;
+  deleteInvoiceAction?: DeleteInvoiceAction;
+  currency?: string;
+}
+
+export const invoiceColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Invoice> & {
+  extraData?: InvoiceExtraData;
+}): ColumnDef<Invoice>[] => {
   const currency = extraData?.currency || 'USD';
   const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 

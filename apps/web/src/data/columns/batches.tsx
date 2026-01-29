@@ -2,13 +2,14 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
-export const batchColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<ProductBatch>[] => [
+export const batchColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<ProductBatch>): ColumnDef<ProductBatch>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

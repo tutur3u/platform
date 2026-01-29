@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Check, TrendingDown, TrendingUp, X } from '@tuturuuu/icons';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
 import { cn } from '@tuturuuu/utils/format';
@@ -15,12 +16,13 @@ interface WalletExtraData {
   currency?: string;
 }
 
-export const walletColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
-  extraData?: WalletExtraData
-): ColumnDef<Wallet>[] => {
+export const walletColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Wallet> & {
+  extraData?: WalletExtraData;
+}): ColumnDef<Wallet>[] => {
   const workspaceCurrency = extraData?.currency || 'USD';
 
   return [

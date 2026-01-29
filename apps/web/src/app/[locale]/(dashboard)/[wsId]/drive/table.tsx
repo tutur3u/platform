@@ -203,16 +203,13 @@ export default function StorageObjectsTable({
       {viewMode === 'list' ? (
         <CustomDataTable
           data={!path || path === '/' ? data : [{ name: '...' }, ...data]}
-          columnGenerator={(t: any, namespace: string | undefined) =>
-            storageObjectsColumns(
-              t,
-              namespace,
-              handleSetStorageObject,
-              wsId,
-              path,
-              handleRequestDelete
-            )
-          }
+          columnGenerator={storageObjectsColumns}
+          extraData={{
+            setStorageObject: handleSetStorageObject,
+            wsId,
+            path,
+            onRequestDelete: handleRequestDelete,
+          }}
           namespace="storage-object-data-table"
           count={count}
           defaultVisibility={{

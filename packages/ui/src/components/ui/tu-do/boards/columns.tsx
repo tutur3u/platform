@@ -3,15 +3,16 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { BoardActions } from './row-actions';
 
-export const projectColumns = (
-  t: (key: string) => string,
-  namespace: string | undefined
-): ColumnDef<WorkspaceTaskBoard>[] => [
+export const projectColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceTaskBoard>): ColumnDef<WorkspaceTaskBoard>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

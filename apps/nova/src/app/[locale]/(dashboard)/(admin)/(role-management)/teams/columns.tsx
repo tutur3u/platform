@@ -1,6 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
@@ -16,7 +17,9 @@ interface Team {
   invitation_count?: number;
 }
 
-export const getTeamColumns = (t: any): ColumnDef<Team>[] => {
+export const getTeamColumns = ({
+  t,
+}: ColumnGeneratorOptions<Team>): ColumnDef<Team>[] => {
   return [
     {
       accessorKey: 'id',

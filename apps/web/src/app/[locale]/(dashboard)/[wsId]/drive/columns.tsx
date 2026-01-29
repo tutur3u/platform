@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { ChevronLeft, FileText, Folder } from '@tuturuuu/icons';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
@@ -12,15 +13,20 @@ import { formatBytes } from '@/utils/file-helper';
 import { joinPath, popPath } from '@/utils/path-helper';
 import { StorageObjectRowActions } from './row-actions';
 
-export const storageObjectsColumns = (
-  t: any,
-  namespace: string | undefined,
+interface StorageObjectExtraData {
+  setStorageObject: (value: StorageObject | undefined) => void;
+  wsId: string;
+  path?: string;
+  onRequestDelete?: (obj: StorageObject) => void;
+}
 
-  setStorageObject: (value: StorageObject | undefined) => void,
-  wsId: string,
-  path?: string,
-  onRequestDelete?: (obj: StorageObject) => void
-): ColumnDef<StorageObject>[] => [
+export const storageObjectsColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<StorageObject> & {
+  extraData?: StorageObjectExtraData;
+}): ColumnDef<StorageObject>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -154,11 +160,11 @@ export const storageObjectsColumns = (
     cell: ({ row }) =>
       row.getValue('name') === '...' ? null : (
         <StorageObjectRowActions
-          wsId={wsId}
+          wsId={extraData.wsId}
           row={row}
-          path={path}
-          setStorageObject={setStorageObject}
-          onRequestDelete={onRequestDelete}
+          path={extraData.path}
+          setStorageObject={extraData.setStorageObject}
+          onRequestDelete={extraData.onRequestDelete}
         />
       ),
   },

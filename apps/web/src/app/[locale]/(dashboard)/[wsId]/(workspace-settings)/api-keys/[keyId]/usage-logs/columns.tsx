@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight } from '@tuturuuu/icons';
 import type { WorkspaceApiKeyUsageLog } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import moment from 'moment';
@@ -65,10 +66,10 @@ function ExpandableRowContent({ log }: { log: WorkspaceApiKeyUsageLog }) {
   );
 }
 
-export const usageLogsColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceApiKeyUsageLog>[] => [
+export const usageLogsColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceApiKeyUsageLog>): ColumnDef<WorkspaceApiKeyUsageLog>[] => [
   {
     id: 'expand',
     header: '',

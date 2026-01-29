@@ -8,15 +8,16 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import type { AIWhitelistEmail } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { AIWhitelistEmailRowActions } from './row-actions';
 
-export const getAIWhitelistEmailColumns = (
-  t: any
-): ColumnDef<AIWhitelistEmail>[] => {
+export const getAIWhitelistEmailColumns = ({
+  t,
+}: ColumnGeneratorOptions<AIWhitelistEmail>): ColumnDef<AIWhitelistEmail>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isFetching = useIsFetching({ queryKey: ['ai-whitelist'] });

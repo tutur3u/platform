@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, Warehouse } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
@@ -25,16 +26,17 @@ const isLowStock = (s: {
   s.min_amount !== undefined &&
   s.amount < s.min_amount;
 
-export const productColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any[],
+export const productColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Product> & {
   extraData?: {
     canUpdateInventory?: boolean;
     canDeleteInventory?: boolean;
     canViewStockQuantity?: boolean;
-  }
-): ColumnDef<Product>[] => {
+  };
+}): ColumnDef<Product>[] => {
   const columns: ColumnDef<Product>[] = [
     {
       accessorKey: 'id',

@@ -18,6 +18,7 @@ import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   DropdownMenu,
@@ -39,12 +40,16 @@ import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import type { PlatformUserWithDetails } from './page';
 
-export const getPlatformRoleColumns = (
-  t: any,
-  _: string | undefined,
-  __: any[] | undefined,
-  extraData: { locale: string }
-): ColumnDef<PlatformUserWithDetails>[] => {
+interface PlatformRoleExtraData {
+  locale: string;
+}
+
+export const getPlatformRoleColumns = ({
+  t,
+  extraData,
+}: ColumnGeneratorOptions<PlatformUserWithDetails> & {
+  extraData?: PlatformRoleExtraData;
+}): ColumnDef<PlatformUserWithDetails>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
 

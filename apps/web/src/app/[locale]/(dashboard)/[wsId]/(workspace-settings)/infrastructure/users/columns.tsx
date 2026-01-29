@@ -2,11 +2,14 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { User } from '@tuturuuu/types/primitives/User';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
-export const userColumns = (t: any, _namespace?: string): ColumnDef<User>[] => [
+export const userColumns = ({
+  t,
+}: ColumnGeneratorOptions<User>): ColumnDef<User>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
