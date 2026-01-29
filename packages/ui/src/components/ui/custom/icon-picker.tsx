@@ -116,6 +116,7 @@ import {
   FolderOpen,
   FolderPlus,
   Footprints,
+  Fuel,
   // New icons - Entertainment & Gaming
   Gamepad2,
   Gem,
@@ -523,6 +524,7 @@ export const WORKSPACE_BOARD_ICON_VALUES = [
   'Luggage',
   'Ticket',
   'Hotel',
+  'Fuel',
   // New icons - Entertainment & Gaming
   'Gamepad2',
   'Dice1',
@@ -838,6 +840,7 @@ export const ICON_OPTIONS: IconOption[] = [
   { value: 'Luggage', label: 'Luggage', Icon: Luggage },
   { value: 'Ticket', label: 'Ticket', Icon: Ticket },
   { value: 'Hotel', label: 'Hotel', Icon: Hotel },
+  { value: 'Fuel', label: 'Fuel', Icon: Fuel },
   // New icons - Entertainment & Gaming
   { value: 'Gamepad2', label: 'Gamepad', Icon: Gamepad2 },
   { value: 'Dice1', label: 'Dice', Icon: Dice1 },

@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
 import { AmountFilterWrapper } from '@tuturuuu/ui/finance/transactions/categories/amount-filter-wrapper';
-import { transactionCategoryColumns } from '@tuturuuu/ui/finance/transactions/categories/columns';
+import { CategoriesDataTable } from '@tuturuuu/ui/finance/transactions/categories/categories-data-table';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import { TypeFilterWrapper } from '@tuturuuu/ui/finance/transactions/categories/type-filter-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -20,11 +20,13 @@ interface Props {
     minAmount?: string;
     maxAmount?: string;
   };
+  currency?: string;
 }
 
 export default async function TransactionsCategoriesPage({
   wsId: id,
   searchParams,
+  currency = 'USD',
 }: Props) {
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
@@ -49,19 +51,17 @@ export default async function TransactionsCategoriesPage({
         form={<TransactionCategoryForm wsId={wsId} />}
       />
       <Separator className="my-4" />
-      <CustomDataTable
+      <CategoryBreakdownChart wsId={wsId} currency={currency} />
+      <Separator className="my-4" />
+      <CategoriesDataTable
+        wsId={wsId}
         data={data}
-        columnGenerator={transactionCategoryColumns}
+        count={count}
+        currency={currency}
         filters={[
           <TypeFilterWrapper key="type-filter" />,
           <AmountFilterWrapper key="amount-filter" />,
         ]}
-        namespace="transaction-category-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
       />
     </>
   );

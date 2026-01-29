@@ -39,17 +39,34 @@ const recurringFormSchema = z.object({
 
 type RecurringFormValues = z.infer<typeof recurringFormSchema>;
 
+interface RecurringTransaction {
+  id: string;
+  name: string;
+  description: string | null;
+  amount: number;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  next_occurrence: string;
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+  wallet_id: string;
+  category_id: string | null;
+}
+
 interface RecurringTransactionFormProps {
   wsId: string;
+  data?: RecurringTransaction;
   onSuccess?: () => void;
 }
 
 export function RecurringTransactionForm({
   wsId,
+  data,
   onSuccess,
 }: RecurringTransactionFormProps) {
   const queryClient = useQueryClient();
   const supabase = createClient();
+  const isEditing = !!data?.id;
 
   const { data: wallets } = useQuery({
     queryKey: ['wallets', wsId],
@@ -81,46 +98,78 @@ export function RecurringTransactionForm({
 
   const form = useForm<RecurringFormValues>({
     resolver: zodResolver(recurringFormSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      amount: '',
-      wallet_id: '',
-      category_id: '',
-      frequency: 'monthly',
-      start_date: new Date().toISOString().split('T')[0],
-      end_date: '',
-    },
-  });
-
-  const onSubmit = async (data: RecurringFormValues) => {
-    try {
-      const { error } = await supabase.from('recurring_transactions').insert([
-        {
-          ws_id: wsId,
+    defaultValues: data
+      ? {
           name: data.name,
-          description: data.description || null,
-          amount: parseFloat(data.amount),
+          description: data.description || '',
+          amount: String(data.amount),
           wallet_id: data.wallet_id,
-          category_id: data.category_id || null,
+          category_id: data.category_id || '',
           frequency: data.frequency,
           start_date: data.start_date,
-          end_date: data.end_date || null,
-          next_occurrence: data.start_date,
+          end_date: data.end_date || '',
+        }
+      : {
+          name: '',
+          description: '',
+          amount: '',
+          wallet_id: '',
+          category_id: '',
+          frequency: 'monthly',
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: '',
         },
-      ]);
+  });
 
-      if (error) throw error;
+  const onSubmit = async (formData: RecurringFormValues) => {
+    try {
+      const transactionData = {
+        ws_id: wsId,
+        name: formData.name,
+        description: formData.description || null,
+        amount: parseFloat(formData.amount),
+        wallet_id: formData.wallet_id,
+        category_id: formData.category_id || null,
+        frequency: formData.frequency,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+      };
 
-      toast.success('Recurring transaction created successfully');
+      if (isEditing && data) {
+        const { error } = await supabase
+          .from('recurring_transactions')
+          .update(transactionData)
+          .eq('id', data.id);
+
+        if (error) throw error;
+        toast.success('Recurring transaction updated successfully');
+      } else {
+        const { error } = await supabase.from('recurring_transactions').insert([
+          {
+            ...transactionData,
+            next_occurrence: formData.start_date,
+          },
+        ]);
+
+        if (error) throw error;
+        toast.success('Recurring transaction created successfully');
+      }
+
       queryClient.invalidateQueries({
         queryKey: ['recurring_transactions', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['upcoming_recurring_transactions', wsId],
       });
 
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error('Error creating recurring transaction:', error);
-      toast.error('Failed to create recurring transaction');
+      console.error('Error saving recurring transaction:', error);
+      toast.error(
+        isEditing
+          ? 'Failed to update recurring transaction'
+          : 'Failed to create recurring transaction'
+      );
     }
   };
 
@@ -296,7 +345,11 @@ export function RecurringTransactionForm({
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit">Create Recurring Transaction</Button>
+          <Button type="submit">
+            {isEditing
+              ? 'Update Recurring Transaction'
+              : 'Create Recurring Transaction'}
+          </Button>
         </div>
       </form>
     </Form>

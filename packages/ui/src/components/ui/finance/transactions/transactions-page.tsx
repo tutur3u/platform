@@ -3,7 +3,11 @@ import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -12,11 +16,12 @@ interface Props {
 }
 
 export default async function TransactionsPage({ wsId }: Props) {
-  const t = await getTranslations();
-
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
+  const [t, workspace, { containsPermission }, currency] = await Promise.all([
+    getTranslations(),
+    getWorkspace(wsId),
+    getPermissions({ wsId }),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
 
   const canViewTransactions = containsPermission('view_transactions');
   const canExportFinanceData = containsPermission('export_finance_data');
@@ -67,6 +72,7 @@ export default async function TransactionsPage({ wsId }: Props) {
       <Separator className="my-4" />
       <TransactionsInfinitePage
         wsId={wsId}
+        currency={currency ?? 'USD'}
         canExport={canExportFinanceData}
         exportContent={
           <ExportDialogContent wsId={wsId} exportType="transactions" />
@@ -78,6 +84,7 @@ export default async function TransactionsPage({ wsId }: Props) {
         canViewConfidentialAmount={canViewConfidentialAmount}
         canViewConfidentialDescription={canViewConfidentialDescription}
         canViewConfidentialCategory={canViewConfidentialCategory}
+        isPersonalWorkspace={workspace.personal}
       />
     </>
   );

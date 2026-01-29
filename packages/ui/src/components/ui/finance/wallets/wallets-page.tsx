@@ -5,7 +5,10 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -18,11 +21,11 @@ interface Props {
 }
 
 export default async function WalletsPage({ wsId, searchParams }: Props) {
-  const t = await getTranslations();
-
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
+  const [t, { containsPermission }, currency] = await Promise.all([
+    getTranslations(),
+    getPermissions({ wsId }),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
 
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');
@@ -60,6 +63,7 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         extraData={{
           canUpdateWallets,
           canDeleteWallets,
+          currency: currency ?? 'USD',
         }}
         defaultVisibility={{
           id: false,

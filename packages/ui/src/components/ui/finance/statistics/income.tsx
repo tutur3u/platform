@@ -10,9 +10,11 @@ const enabled = true;
 
 export default async function IncomeStatistics({
   wsId,
+  currency = 'USD',
   searchParams: { view, startDate, endDate, includeConfidential } = {},
 }: {
   wsId: string;
+  currency?: string;
   searchParams?: FinanceDashboardSearchParams;
 }) {
   const supabase = await createClient();
@@ -51,8 +53,8 @@ export default async function IncomeStatistics({
       title={t('finance-overview.total-income')}
       value={income || 0}
       icon={<TrendingUp className="h-5 w-5" />}
-      currency="VND"
-      locale="vi-VN"
+      currency={currency}
+      locale={currency === 'VND' ? 'vi-VN' : 'en-US'}
     />
   );
 }

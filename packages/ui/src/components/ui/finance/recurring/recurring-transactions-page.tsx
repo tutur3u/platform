@@ -1,8 +1,19 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { Calendar, Plus, RefreshCw } from '@tuturuuu/icons';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Calendar, Ellipsis, Plus, RefreshCw } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -12,12 +23,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { RecurringTransactionForm } from './form';
 
 interface RecurringTransactionsPageProps {
   wsId: string;
+  currency?: string;
 }
 
 interface RecurringTransaction {
@@ -36,9 +56,15 @@ interface RecurringTransaction {
 
 export default function RecurringTransactionsPage({
   wsId,
+  currency = 'USD',
 }: RecurringTransactionsPageProps) {
+  const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] =
+    useState<RecurringTransaction | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   const { data: recurringTransactions, isLoading } = useQuery({
     queryKey: ['recurring_transactions', wsId],
@@ -69,6 +95,31 @@ export default function RecurringTransactionsPage({
       return data;
     },
   });
+
+  const deleteRecurringTransaction = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase
+        .from('recurring_transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Recurring transaction deleted successfully');
+      queryClient.invalidateQueries({
+        queryKey: ['recurring_transactions', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['upcoming_recurring_transactions', wsId],
+      });
+    } catch (error) {
+      console.error('Error deleting recurring transaction:', error);
+      toast.error('Failed to delete recurring transaction');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const getFrequencyLabel = (frequency: string) => {
     const labels = {
@@ -156,7 +207,7 @@ export default function RecurringTransactionsPage({
                               </span>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="flex items-start gap-2">
                             <p
                               className={`font-semibold ${
                                 Number(transaction.amount) >= 0
@@ -164,12 +215,73 @@ export default function RecurringTransactionsPage({
                                   : 'text-dynamic-red'
                               }`}
                             >
-                              {new Intl.NumberFormat('en-US', {
+                              {new Intl.NumberFormat(locale, {
                                 style: 'currency',
-                                currency: 'USD',
+                                currency,
                                 signDisplay: 'always',
                               }).format(Number(transaction.amount))}
                             </p>
+                            <DropdownMenu modal={false}>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 data-[state=open]:bg-muted"
+                                >
+                                  <Ellipsis className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setEditingTransaction(transaction)
+                                  }
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                      onSelect={(e) => e.preventDefault()}
+                                      disabled={deletingId === transaction.id}
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                        Delete Recurring Transaction
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete &quot;
+                                        {transaction.name}&quot;? This action
+                                        cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>
+                                        Cancel
+                                      </AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() =>
+                                          deleteRecurringTransaction(
+                                            transaction.id
+                                          )
+                                        }
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        disabled={deletingId === transaction.id}
+                                      >
+                                        {deletingId === transaction.id
+                                          ? 'Deleting...'
+                                          : 'Delete'}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       </CardContent>
@@ -232,9 +344,9 @@ export default function RecurringTransactionsPage({
                                 : 'text-dynamic-red'
                             }`}
                           >
-                            {new Intl.NumberFormat('en-US', {
+                            {new Intl.NumberFormat(locale, {
                               style: 'currency',
-                              currency: 'USD',
+                              currency,
                               signDisplay: 'always',
                             }).format(Number(transaction.amount))}
                           </p>
@@ -255,6 +367,25 @@ export default function RecurringTransactionsPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={!!editingTransaction}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Recurring Transaction</DialogTitle>
+          </DialogHeader>
+          {editingTransaction && (
+            <RecurringTransactionForm
+              wsId={wsId}
+              data={editingTransaction}
+              onSuccess={() => setEditingTransaction(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

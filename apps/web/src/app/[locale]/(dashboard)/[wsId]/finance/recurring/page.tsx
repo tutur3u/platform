@@ -1,5 +1,8 @@
 import RecurringTransactionsPage from '@tuturuuu/ui/finance/recurring/recurring-transactions-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -19,8 +22,11 @@ export default async function WorkspaceRecurringTransactionsPage({
 }: Props) {
   const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(id);
+  const [workspace, currency] = await Promise.all([
+    getWorkspace(id),
+    getWorkspaceConfig(id, 'DEFAULT_CURRENCY'),
+  ]);
   const wsId = workspace.id;
 
-  return <RecurringTransactionsPage wsId={wsId} />;
+  return <RecurringTransactionsPage wsId={wsId} currency={currency ?? 'USD'} />;
 }

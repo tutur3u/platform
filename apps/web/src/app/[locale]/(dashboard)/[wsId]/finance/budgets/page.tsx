@@ -1,5 +1,8 @@
 import BudgetsPage from '@tuturuuu/ui/finance/budgets/budgets-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -25,8 +28,13 @@ export default async function WorkspaceBudgetsPage({
   const { wsId: id } = await params;
   const sp = await searchParams;
 
-  const workspace = await getWorkspace(id);
+  const [workspace, currency] = await Promise.all([
+    getWorkspace(id),
+    getWorkspaceConfig(id, 'DEFAULT_CURRENCY'),
+  ]);
   const wsId = workspace.id;
 
-  return <BudgetsPage wsId={wsId} searchParams={sp} />;
+  return (
+    <BudgetsPage wsId={wsId} currency={currency ?? 'USD'} searchParams={sp} />
+  );
 }

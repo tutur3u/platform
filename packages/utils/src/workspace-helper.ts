@@ -724,7 +724,47 @@ export async function getWorkspaceConfig(
   configId: string
 ): Promise<string | null> {
   const sbAdmin = await createAdminClient();
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+  const supabase = await createClient();
+
+  // Handle 'personal' workspace slug by looking up the user's personal workspace
+  let resolvedWorkspaceId: string;
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      logWorkspaceError(
+        'User not authenticated for personal workspace config',
+        null,
+        {
+          workspaceId: wsId,
+          configId,
+        }
+      );
+      return null;
+    }
+
+    const { data: workspace, error: wsError } = await supabase
+      .from('workspaces')
+      .select('id, workspace_members!inner(user_id)')
+      .eq('personal', true)
+      .eq('workspace_members.user_id', user.id)
+      .maybeSingle();
+
+    if (wsError || !workspace) {
+      logWorkspaceError('Failed to find personal workspace', wsError, {
+        workspaceId: wsId,
+        configId,
+        userId: user.id,
+      });
+      return null;
+    }
+
+    resolvedWorkspaceId = workspace.id;
+  } else {
+    resolvedWorkspaceId = resolveWorkspaceId(wsId);
+  }
 
   const { data, error } = await sbAdmin
     .from('workspace_configs')

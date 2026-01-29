@@ -8,6 +8,7 @@ import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-f
 import { CategoryFilterWrapper } from '@tuturuuu/ui/finance/transactions/category-filter-wrapper';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-lover-import-dialog';
+import { TagFilterWrapper } from '@tuturuuu/ui/finance/transactions/tag-filter-wrapper';
 import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
 import { WalletFilterWrapper } from '@tuturuuu/ui/finance/transactions/wallet-filter-wrapper';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
@@ -17,6 +18,7 @@ import { Suspense } from 'react';
 
 interface TransactionsInfinitePageProps {
   wsId: string;
+  currency?: string;
   canExport?: boolean;
   exportContent?: React.ReactNode;
   canUpdateTransactions?: boolean;
@@ -26,10 +28,13 @@ interface TransactionsInfinitePageProps {
   canViewConfidentialAmount?: boolean;
   canViewConfidentialDescription?: boolean;
   canViewConfidentialCategory?: boolean;
+  /** Hide transaction creator (useful for personal workspaces) */
+  isPersonalWorkspace?: boolean;
 }
 
 export function TransactionsInfinitePage({
   wsId,
+  currency,
   canExport,
   exportContent,
   canUpdateTransactions,
@@ -39,6 +44,7 @@ export function TransactionsInfinitePage({
   canViewConfidentialAmount,
   canViewConfidentialDescription,
   canViewConfidentialCategory,
+  isPersonalWorkspace,
 }: TransactionsInfinitePageProps) {
   const t = useTranslations();
   const [q, setQ] = useQueryState(
@@ -75,6 +81,9 @@ export function TransactionsInfinitePage({
           </Suspense>
           <Suspense fallback={<Skeleton className="h-8 w-32" />}>
             <WalletFilterWrapper wsId={wsId} />
+          </Suspense>
+          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+            <TagFilterWrapper wsId={wsId} />
           </Suspense>
         </div>
 
@@ -131,6 +140,7 @@ export function TransactionsInfinitePage({
       >
         <InfiniteTransactionsList
           wsId={wsId}
+          currency={currency}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
@@ -138,6 +148,7 @@ export function TransactionsInfinitePage({
           canViewConfidentialAmount={canViewConfidentialAmount}
           canViewConfidentialDescription={canViewConfidentialDescription}
           canViewConfidentialCategory={canViewConfidentialCategory}
+          isPersonalWorkspace={isPersonalWorkspace}
         />
       </Suspense>
     </div>

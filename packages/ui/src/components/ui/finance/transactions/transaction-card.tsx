@@ -8,13 +8,19 @@ import {
   Lock,
   MoreVertical,
   Pencil,
+  Tag,
   Trash2,
+  Wallet,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import {
+  getIconComponentByKey,
+  type WorkspaceBoardIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,9 +29,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { ConfidentialAmount } from '@tuturuuu/ui/finance/transactions/confidential-field';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface TransactionCardProps {
   transaction: Transaction & {
@@ -36,18 +43,23 @@ interface TransactionCardProps {
     } | null;
   };
   wsId: string;
+  currency?: string;
   onEdit?: () => void;
   onDelete?: () => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  /** Hide the transaction creator (useful for personal workspaces where all transactions belong to the same user) */
+  showCreator?: boolean;
 }
 
 export function TransactionCard({
   transaction,
+  currency = 'USD',
   onEdit,
   onDelete,
   canEdit,
   canDelete,
+  showCreator = true,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
   const [isHovered, setIsHovered] = useState(false);
@@ -58,6 +70,27 @@ export function TransactionCard({
     transaction.is_amount_confidential ||
     transaction.is_description_confidential ||
     transaction.is_category_confidential;
+
+  // Get custom icon if available
+  const CategoryIcon = useMemo(() => {
+    if (transaction.category_icon) {
+      return getIconComponentByKey(
+        transaction.category_icon as WorkspaceBoardIconKey
+      );
+    }
+    return null;
+  }, [transaction.category_icon]);
+
+  // Get custom color styles if available
+  const customColorStyles = useMemo(() => {
+    if (transaction.category_color) {
+      return computeAccessibleLabelStyles(transaction.category_color);
+    }
+    return null;
+  }, [transaction.category_color]);
+
+  // Determine if we should use custom styling
+  const hasCustomStyling = Boolean(customColorStyles);
 
   const handleMenuClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -73,17 +106,41 @@ export function TransactionCard({
     onDelete?.();
   };
 
+  // Determine card border and background colors
+  const getCardStyles = () => {
+    if (isConfidential) {
+      return 'border-dynamic-orange/30 bg-linear-to-br from-dynamic-orange/5 to-transparent';
+    }
+    if (hasCustomStyling && customColorStyles) {
+      return ''; // Will use inline styles
+    }
+    return isExpense
+      ? 'border-dynamic-red/20 bg-linear-to-br from-dynamic-red/5 to-transparent hover:border-dynamic-red/40'
+      : 'border-dynamic-green/20 bg-linear-to-br from-dynamic-green/5 to-transparent hover:border-dynamic-green/40';
+  };
+
+  // Determine accent bar color
+  const getAccentBarColor = () => {
+    if (isConfidential) return 'bg-dynamic-orange';
+    if (hasCustomStyling && customColorStyles) return ''; // Will use inline styles
+    return isExpense ? 'bg-dynamic-red' : 'bg-dynamic-green';
+  };
+
   return (
     <Card
       className={cn(
         'group relative overflow-hidden border transition-all duration-200',
         'hover:-translate-y-0.5 hover:shadow-lg',
-        isConfidential
-          ? 'border-dynamic-orange/30 bg-linear-to-br from-dynamic-orange/5 to-transparent'
-          : isExpense
-            ? 'border-dynamic-red/20 bg-linear-to-br from-dynamic-red/5 to-transparent hover:border-dynamic-red/40'
-            : 'border-dynamic-green/20 bg-linear-to-br from-dynamic-green/5 to-transparent hover:border-dynamic-green/40'
+        getCardStyles()
       )}
+      style={
+        hasCustomStyling && !isConfidential && customColorStyles
+          ? {
+              borderColor: customColorStyles.border,
+              background: `linear-gradient(to bottom right, ${customColorStyles.bg}, transparent)`,
+            }
+          : undefined
+      }
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -91,13 +148,14 @@ export function TransactionCard({
       <div
         className={cn(
           'absolute top-0 bottom-0 left-0 w-1 transition-all duration-200',
-          isConfidential
-            ? 'bg-dynamic-orange'
-            : isExpense
-              ? 'bg-dynamic-red'
-              : 'bg-dynamic-green',
+          getAccentBarColor(),
           isHovered ? 'w-1.5' : 'w-1'
         )}
+        style={
+          hasCustomStyling && !isConfidential && customColorStyles
+            ? { backgroundColor: customColorStyles.text }
+            : undefined
+        }
       />
 
       <div className="flex items-start gap-4 p-4 pl-5">
@@ -111,25 +169,62 @@ export function TransactionCard({
                 'shadow-sm ring-1 ring-black/5',
                 isConfidential
                   ? 'bg-linear-to-br from-dynamic-orange/20 to-dynamic-orange/10'
-                  : isExpense
-                    ? 'bg-linear-to-br from-dynamic-red/20 to-dynamic-red/10'
-                    : 'bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10',
+                  : !hasCustomStyling &&
+                      (isExpense
+                        ? 'bg-linear-to-br from-dynamic-red/20 to-dynamic-red/10'
+                        : 'bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10'),
                 isHovered && 'scale-105 shadow-md'
               )}
+              style={
+                hasCustomStyling && !isConfidential && customColorStyles
+                  ? {
+                      background: `linear-gradient(to bottom right, ${customColorStyles.bg}, ${customColorStyles.bg}80)`,
+                    }
+                  : undefined
+              }
             >
               {isConfidential ? (
                 <Lock className="h-6 w-6 text-dynamic-orange" />
+              ) : CategoryIcon ? (
+                <CategoryIcon
+                  className="h-6 w-6"
+                  style={
+                    customColorStyles
+                      ? { color: customColorStyles.text }
+                      : undefined
+                  }
+                />
               ) : isExpense ? (
-                <ArrowDownCircle className="h-6 w-6 text-dynamic-red" />
+                <ArrowDownCircle
+                  className={cn(
+                    'h-6 w-6',
+                    !hasCustomStyling && 'text-dynamic-red'
+                  )}
+                  style={
+                    customColorStyles
+                      ? { color: customColorStyles.text }
+                      : undefined
+                  }
+                />
               ) : (
-                <ArrowUpCircle className="h-6 w-6 text-dynamic-green" />
+                <ArrowUpCircle
+                  className={cn(
+                    'h-6 w-6',
+                    !hasCustomStyling && 'text-dynamic-green'
+                  )}
+                  style={
+                    customColorStyles
+                      ? { color: customColorStyles.text }
+                      : undefined
+                  }
+                />
               )}
             </div>
           </div>
 
           {/* Transaction details */}
           <div className="flex min-w-0 flex-1 flex-col gap-2">
-            {/* Top row: Category and badges */}
+            {/* Top row: Category, Wallet and badges */}
             <div className="flex flex-wrap items-center gap-2">
               {transaction.category && (
                 <Badge
@@ -138,12 +233,31 @@ export function TransactionCard({
                     'font-semibold text-xs transition-colors',
                     isConfidential
                       ? 'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange'
-                      : isExpense
-                        ? 'border-dynamic-red/40 bg-dynamic-red/10 text-dynamic-red'
-                        : 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green'
+                      : !hasCustomStyling &&
+                          (isExpense
+                            ? 'border-dynamic-red/40 bg-dynamic-red/10 text-dynamic-red'
+                            : 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green')
                   )}
+                  style={
+                    hasCustomStyling && !isConfidential && customColorStyles
+                      ? {
+                          backgroundColor: customColorStyles.bg,
+                          borderColor: customColorStyles.border,
+                          color: customColorStyles.text,
+                        }
+                      : undefined
+                  }
                 >
                   {transaction.category}
+                </Badge>
+              )}
+              {transaction.wallet && (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-muted-foreground/30 bg-muted/50 px-2 py-0.5 font-medium text-muted-foreground text-xs"
+                >
+                  <Wallet className="h-3 w-3" />
+                  {transaction.wallet}
                 </Badge>
               )}
               {isConfidential && (
@@ -167,14 +281,29 @@ export function TransactionCard({
               </div>
             )}
 
+            {/* Tags row */}
+            {transaction.tags && transaction.tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Tag className="h-3 w-3 text-muted-foreground" />
+                {transaction.tags.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="px-1.5 py-0 font-normal text-[10px]"
+                    style={{
+                      backgroundColor: `${tag.color}20`,
+                      color: tag.color,
+                      borderColor: `${tag.color}40`,
+                    }}
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
             {/* Bottom metadata row */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs">
-              {transaction.wallet && (
-                <div className="flex items-center gap-1.5 font-medium">
-                  <div className="h-1 w-1 rounded-full bg-current" />
-                  <span>{transaction.wallet}</span>
-                </div>
-              )}
               {transaction.taken_at && (
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3 w-3" />
@@ -183,7 +312,7 @@ export function TransactionCard({
                   </span>
                 </div>
               )}
-              {transaction.user && (
+              {showCreator && transaction.user && (
                 <div className="flex items-center gap-1.5">
                   <Avatar className="h-4 w-4 ring-1 ring-border">
                     <AvatarImage
@@ -211,15 +340,20 @@ export function TransactionCard({
             <ConfidentialAmount
               amount={transaction.amount ?? null}
               isConfidential={transaction.is_amount_confidential || false}
+              currency={currency}
               className={cn(
                 'font-bold text-xl tabular-nums transition-all duration-200',
                 isConfidential
                   ? 'text-dynamic-orange'
-                  : isExpense
-                    ? 'text-dynamic-red'
-                    : 'text-dynamic-green',
+                  : !hasCustomStyling &&
+                      (isExpense ? 'text-dynamic-red' : 'text-dynamic-green'),
                 isHovered && 'scale-105'
               )}
+              style={
+                hasCustomStyling && !isConfidential && customColorStyles
+                  ? { color: customColorStyles.text }
+                  : undefined
+              }
             />
           </div>
 

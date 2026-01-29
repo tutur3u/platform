@@ -16,11 +16,15 @@ function getAvatarPlaceholder(name: string) {
 
 export const transactionColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  _extraColumns?: any[],
+  extraData?: { currency?: string; isPersonalWorkspace?: boolean }
 ): ColumnDef<Transaction>[] => {
   const locale = useLocale();
+  const currency = extraData?.currency || 'USD';
+  const isPersonalWorkspace = extraData?.isPersonalWorkspace || false;
 
-  return [
+  const columns: ColumnDef<Transaction>[] = [
     // {
     //   id: 'select',
     //   header: ({ table }) => (
@@ -165,9 +169,9 @@ export const transactionColumns = (
               isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
             }`}
           >
-            {Intl.NumberFormat(locale, {
+            {Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
               style: 'currency',
-              currency: 'VND',
+              currency,
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
               signDisplay: 'always',
@@ -236,4 +240,14 @@ export const transactionColumns = (
       ),
     },
   ];
+
+  // Filter out the user column if in personal workspace
+  if (isPersonalWorkspace) {
+    return columns.filter((col) => {
+      const accessorKey = (col as any).accessorKey;
+      return accessorKey !== 'user';
+    });
+  }
+
+  return columns;
 };

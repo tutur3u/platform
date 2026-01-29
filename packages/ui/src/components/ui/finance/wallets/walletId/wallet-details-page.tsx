@@ -4,7 +4,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
@@ -17,7 +17,6 @@ import WalletRoleAccessDialog from './wallet-role-access-dialog';
 interface Props {
   wsId: string;
   walletId: string;
-  locale: string;
   searchParams: {
     q: string;
     page: string;
@@ -25,16 +24,13 @@ interface Props {
   };
 }
 
-export default async function WalletDetailsPage({
-  wsId,
-  walletId,
-  locale,
-}: Props) {
-  const t = await getTranslations();
-
-  const { withoutPermission, containsPermission } = await getPermissions({
-    wsId,
-  });
+export default async function WalletDetailsPage({ wsId, walletId }: Props) {
+  const [t, workspace, { withoutPermission, containsPermission }] =
+    await Promise.all([
+      getTranslations(),
+      getWorkspace(wsId),
+      getPermissions({ wsId }),
+    ]);
   const canManageRoles = !withoutPermission('manage_workspace_roles');
 
   // Transaction permissions
@@ -96,10 +92,13 @@ export default async function WalletDetailsPage({
             <DetailItem
               icon={<DollarSign className="h-5 w-5" />}
               label={t('wallet-data-table.balance')}
-              value={Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'VND',
-              }).format(wallet.balance || 0)}
+              value={Intl.NumberFormat(
+                wallet.currency === 'VND' ? 'vi-VN' : 'en-US',
+                {
+                  style: 'currency',
+                  currency: wallet.currency || 'USD',
+                }
+              ).format(wallet.balance || 0)}
             />
             <DetailItem
               icon={<CreditCard className="h-5 w-5" />}
@@ -131,7 +130,7 @@ export default async function WalletDetailsPage({
         </Card>
       </div>
       <Separator className="my-4" />
-      {canManageRoles && (
+      {canManageRoles && !workspace.personal && (
         <>
           <WalletRoleAccessDialog wsId={wsId} walletId={walletId} />
           <Separator className="my-4" />
@@ -149,7 +148,7 @@ export default async function WalletDetailsPage({
         <InfiniteTransactionsList
           wsId={wsId}
           walletId={walletId}
-          currency={wallet.currency ?? 'VND'}
+          currency={wallet.currency ?? 'USD'}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
@@ -157,6 +156,7 @@ export default async function WalletDetailsPage({
           canViewConfidentialAmount={canViewConfidentialAmount}
           canViewConfidentialDescription={canViewConfidentialDescription}
           canViewConfidentialCategory={canViewConfidentialCategory}
+          isPersonalWorkspace={workspace.personal}
         />
       </Suspense>
     </div>

@@ -73,7 +73,10 @@ export function TransactionRowActions(props: Props) {
   if (!data.id || !data.ws_id) return null;
 
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div
+      className="flex items-center justify-end gap-2"
+      onClick={(e) => e.stopPropagation()}
+    >
       {data.href && (
         <Link href={data.href}>
           <Button>

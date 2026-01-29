@@ -8,7 +8,10 @@ import TotalBalanceStatistics from '@tuturuuu/ui/finance/statistics/total-balanc
 import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/transaction-categories';
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import { Suspense } from 'react';
 import { FinanceCategoryStatistics } from './categories/finance';
 import FinanceToggle from './finance-toggle';
@@ -24,10 +27,14 @@ export default async function FinanceStatistics({
   const { showFinanceStats } = sp;
 
   // Check if user has permission to view confidential amounts
-  const { permissions } = await getPermissions({ wsId });
+  const [{ permissions }, currency] = await Promise.all([
+    getPermissions({ wsId }),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
   const canViewConfidentialAmount = permissions.includes(
     'view_confidential_amount'
   );
+  const workspaceCurrency = currency ?? 'USD';
 
   return (
     <>
@@ -42,15 +49,27 @@ export default async function FinanceStatistics({
           <Suspense
             fallback={<LoadingStatisticCard className="md:col-span-2" />}
           >
-            <TotalBalanceStatistics wsId={wsId} searchParams={sp} />
+            <TotalBalanceStatistics
+              wsId={wsId}
+              currency={workspaceCurrency}
+              searchParams={sp}
+            />
           </Suspense>
 
           <Suspense fallback={<LoadingStatisticCard />}>
-            <IncomeStatistics wsId={wsId} searchParams={sp} />
+            <IncomeStatistics
+              wsId={wsId}
+              currency={workspaceCurrency}
+              searchParams={sp}
+            />
           </Suspense>
 
           <Suspense fallback={<LoadingStatisticCard />}>
-            <ExpenseStatistics wsId={wsId} searchParams={sp} />
+            <ExpenseStatistics
+              wsId={wsId}
+              currency={workspaceCurrency}
+              searchParams={sp}
+            />
           </Suspense>
 
           <Suspense fallback={<LoadingStatisticCard />}>
