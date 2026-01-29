@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Tables } from '@tuturuuu/types/supabase';
+import type {
+  InventoryProduct,
+  RawInventoryProduct,
+} from '@tuturuuu/types/primitives/InventoryProductRelations';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -24,21 +27,6 @@ const SearchParamsSchema = z.object({
     .optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
-
-type InventoryWarehouse = Pick<Tables<'inventory_warehouses'>, 'id' | 'name'>;
-type InventoryUnit = Pick<Tables<'inventory_units'>, 'id' | 'name'>;
-type InventoryProduct = Pick<
-  Tables<'inventory_products'>,
-  'amount' | 'min_amount' | 'price' | 'warehouse_id' | 'unit_id' | 'created_at'
-> & {
-  inventory_warehouses: InventoryWarehouse | null;
-  inventory_units: InventoryUnit | null;
-};
-type ProductCategory = Pick<Tables<'product_categories'>, 'name'>;
-type RawProduct = Tables<'workspace_products'> & {
-  product_categories: ProductCategory | null;
-  inventory_products: InventoryProduct[] | null;
-};
 
 interface Params {
   params: Promise<{
@@ -128,7 +116,7 @@ export async function GET(request: Request, { params }: Params) {
       })[0];
     };
 
-    const typedData = rawData as RawProduct[] | null;
+    const typedData = rawData as RawInventoryProduct[] | null;
     const data = (typedData ?? []).map((item) => {
       const primaryInventory = selectPrimaryInventory(item.inventory_products);
 

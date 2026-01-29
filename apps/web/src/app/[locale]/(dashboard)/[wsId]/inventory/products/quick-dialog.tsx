@@ -15,7 +15,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import type * as z from 'zod';
 import {
   useProductCategories,
   useProductUnits,
@@ -80,15 +79,37 @@ export function ProductQuickDialog({
   const displayProduct = fetchedProduct || product;
 
   const computeUnlimitedStock = useCallback(
-    (p?: Product) =>
-      !p?.stock ||
-      p.stock.length === 0 ||
-      p.stock.some((s) => s.amount == null),
+    (p?: Product) => p?.stock?.some((s) => s.amount == null) ?? false,
     []
   );
 
   const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
     computeUnlimitedStock(displayProduct)
+  );
+
+  const buildInventoryDefaults = useCallback(
+    (product?: Product, forceUnlimited?: boolean) => {
+      if (product?.inventory && product.inventory.length > 0) {
+        return product.inventory.map((item) => ({
+          unit_id: item.unit_id,
+          warehouse_id: item.warehouse_id,
+          amount: item.amount == null ? null : Number(item.amount),
+          min_amount: Number(item.min_amount) || 0,
+          price: Number(item.price) || 0,
+        }));
+      }
+
+      return [
+        {
+          unit_id: '',
+          warehouse_id: '',
+          min_amount: Number(product?.min_amount) || 0,
+          amount: forceUnlimited ? null : 0,
+          price: 0,
+        },
+      ];
+    },
+    []
   );
 
   const editForm = useForm<EditProductFormValues>({
@@ -99,25 +120,10 @@ export function ProductQuickDialog({
       description: displayProduct?.description || '',
       usage: displayProduct?.usage || '',
       category_id: displayProduct?.category_id || '',
-      inventory: hasUnlimitedStock
-        ? []
-        : displayProduct?.inventory && displayProduct.inventory.length > 0
-          ? displayProduct.inventory.map((item) => ({
-              unit_id: item.unit_id,
-              warehouse_id: item.warehouse_id,
-              amount: Number(item.amount),
-              min_amount: Number(item.min_amount),
-              price: Number(item.price),
-            }))
-          : [
-              {
-                unit_id: '',
-                warehouse_id: '',
-                min_amount: Number(displayProduct?.min_amount || 0),
-                amount: 0,
-                price: 0,
-              },
-            ],
+      inventory: buildInventoryDefaults(
+        displayProduct,
+        computeUnlimitedStock(displayProduct)
+      ),
     },
   });
 
@@ -131,52 +137,54 @@ export function ProductQuickDialog({
         description: displayProduct.description || '',
         usage: displayProduct.usage || '',
         category_id: displayProduct.category_id || '',
-        inventory: isUnlimited
-          ? []
-          : displayProduct.inventory && displayProduct.inventory.length > 0
-            ? displayProduct.inventory.map((inv) => ({
-                unit_id: inv.unit_id,
-                warehouse_id: inv.warehouse_id,
-                amount: Number(inv.amount) || 0,
-                min_amount: Number(inv.min_amount) || 0,
-                price: Number(inv.price) || 0,
-              }))
-            : [
-                {
-                  unit_id: '',
-                  warehouse_id: '',
-                  min_amount: Number(displayProduct.min_amount) || 0,
-                  amount: 0,
-                  price: 0,
-                },
-              ],
+        inventory: buildInventoryDefaults(displayProduct, isUnlimited),
       });
     }
-  }, [displayProduct, editForm, computeUnlimitedStock]);
+  }, [displayProduct, editForm, computeUnlimitedStock, buildInventoryDefaults]);
 
   function toggleUnlimitedStock(unlimited: boolean) {
     setHasUnlimitedStock(unlimited);
     if (unlimited) {
-      editForm.setValue('inventory', [], { shouldDirty: true });
+      const currentInventory = editForm.getValues('inventory') || [];
+      const updatedInventory =
+        currentInventory.length > 0
+          ? currentInventory.map((item) => ({
+              ...item,
+              amount: null,
+              min_amount: 0,
+            }))
+          : [
+              {
+                unit_id: '',
+                warehouse_id: '',
+                min_amount: 0,
+                amount: null,
+                price: 0,
+              },
+            ];
+      editForm.setValue('inventory', updatedInventory, { shouldDirty: true });
     } else {
-      const currentValues = editForm.getValues();
-      const newInventory: EditProductFormValues['inventory'] = [
-        {
-          unit_id: '',
-          warehouse_id: '',
-          min_amount: Number(displayProduct?.min_amount) || 0,
-          amount: 0,
-          price: 0,
-        },
-      ];
-      editForm.reset({
-        ...currentValues,
-        inventory: newInventory,
-      });
+      const currentInventory = editForm.getValues('inventory') || [];
+      const updatedInventory =
+        currentInventory.length > 0
+          ? currentInventory.map((item) => ({
+              ...item,
+              amount: item.amount == null ? 0 : item.amount,
+            }))
+          : [
+              {
+                unit_id: '',
+                warehouse_id: '',
+                min_amount: Number(displayProduct?.min_amount) || 0,
+                amount: 0,
+                price: 0,
+              },
+            ];
+      editForm.setValue('inventory', updatedInventory, { shouldDirty: true });
     }
   }
 
-  const handleEditSave = async (data: z.infer<typeof EditProductSchema>) => {
+  const handleEditSave = async (data: EditProductFormValues) => {
     if (!displayProduct?.id) return;
 
     if (!canUpdateInventory) {
@@ -213,9 +221,8 @@ export function ProductQuickDialog({
       const originalInventory = displayProduct.inventory || [];
       const newInventory = data.inventory || [];
 
-      const originalIsUnlimited =
-        originalInventory.length === 0 || computeUnlimitedStock(displayProduct);
-      const newIsUnlimited = newInventory.length === 0;
+      const originalIsUnlimited = computeUnlimitedStock(displayProduct);
+      const newIsUnlimited = newInventory.some((item) => item.amount == null);
 
       if (originalIsUnlimited !== newIsUnlimited) {
         hasInventoryChanges = true;
@@ -306,21 +313,19 @@ export function ProductQuickDialog({
             className="w-full"
           >
             <TabsList
-              className={`grid w-full ${hasUnlimitedStock ? 'grid-cols-3' : 'grid-cols-4'}`}
+              className={`grid w-full ${canUpdateInventory ? 'grid-cols-4' : 'grid-cols-3'}`}
             >
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Eye className="h-4 w-4" />
                 {t('ws-inventory-products.tabs.details')}
               </TabsTrigger>
-              {!hasUnlimitedStock && (
-                <TabsTrigger
-                  value="inventory"
-                  className="flex items-center gap-2"
-                >
-                  <Package className="h-4 w-4" />
-                  {t('ws-inventory-products.tabs.stock')}
-                </TabsTrigger>
-              )}
+              <TabsTrigger
+                value="inventory"
+                className="flex items-center gap-2"
+              >
+                <Package className="h-4 w-4" />
+                {t('ws-inventory-products.tabs.stock')}
+              </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
                 {t('ws-inventory-products.tabs.history')}
@@ -340,19 +345,19 @@ export function ProductQuickDialog({
               />
             </TabsContent>
 
-            {!hasUnlimitedStock && (
-              <TabsContent value="inventory" className="space-y-4">
-                <ProductInventoryTab
-                  form={editForm}
-                  warehouses={warehouses}
-                  units={units}
-                  isSaving={isSaving}
-                  isLoading={isProductLoading}
-                  onSave={editForm.handleSubmit(handleEditSave)}
-                  canUpdateInventory={canUpdateInventory}
-                />
-              </TabsContent>
-            )}
+            <TabsContent value="inventory" className="space-y-4">
+              <ProductInventoryTab
+                form={editForm}
+                warehouses={warehouses}
+                units={units}
+                isSaving={isSaving}
+                isLoading={isProductLoading}
+                onSave={editForm.handleSubmit(handleEditSave)}
+                canUpdateInventory={canUpdateInventory}
+                hasUnlimitedStock={hasUnlimitedStock}
+                onToggleUnlimitedStock={toggleUnlimitedStock}
+              />
+            </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
               <ProductHistoryTab
@@ -366,8 +371,6 @@ export function ProductQuickDialog({
                 product={displayProduct}
                 form={editForm}
                 categories={categories}
-                hasUnlimitedStock={hasUnlimitedStock}
-                onToggleUnlimitedStock={toggleUnlimitedStock}
                 onSave={handleEditSave}
                 onDelete={() => setShowDeleteDialog(true)}
                 isSaving={isSaving}

@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -30,8 +29,6 @@ interface Props {
   product: Product;
   form: UseFormReturn<EditProductFormValues>;
   categories: ProductCategory[];
-  hasUnlimitedStock: boolean;
-  onToggleUnlimitedStock: (unlimited: boolean) => void;
   onSave: (data: EditProductFormValues) => void;
   onDelete: () => void;
   isSaving: boolean;
@@ -44,8 +41,6 @@ export function ProductEditTab({
   product,
   form,
   categories,
-  hasUnlimitedStock,
-  onToggleUnlimitedStock,
   onSave,
   onDelete,
   isSaving,
@@ -200,39 +195,6 @@ export function ProductEditTab({
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-lg">
-                    {t('ws-inventory-products.sections.stock_management')}
-                  </h4>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="unlimited-stock"
-                      checked={hasUnlimitedStock}
-                      onCheckedChange={onToggleUnlimitedStock}
-                    />
-                    <label
-                      htmlFor="unlimited-stock"
-                      className="font-medium text-sm"
-                    >
-                      {t('ws-inventory-products.labels.unlimited_stock_label')}
-                    </label>
-                  </div>
-                </div>
-
-                {hasUnlimitedStock ? (
-                  <div className="text-muted-foreground text-sm">
-                    {t(
-                      'ws-inventory-products.messages.unlimited_stock_available'
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground text-sm">
-                    {t('ws-inventory-products.messages.manage_tracked_stock')}
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center justify-between pt-4">

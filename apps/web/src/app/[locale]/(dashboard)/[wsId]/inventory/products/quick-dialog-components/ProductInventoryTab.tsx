@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
 import type { EditProductFormValues } from './schema';
@@ -32,6 +33,8 @@ interface Props {
   isLoading?: boolean;
   onSave: () => void;
   canUpdateInventory: boolean;
+  hasUnlimitedStock: boolean;
+  onToggleUnlimitedStock: (unlimited: boolean) => void;
 }
 
 export function ProductInventoryTab({
@@ -42,6 +45,8 @@ export function ProductInventoryTab({
   isLoading,
   onSave,
   canUpdateInventory,
+  hasUnlimitedStock,
+  onToggleUnlimitedStock,
 }: Props) {
   const t = useTranslations();
   const { fields, append, remove } = useFieldArray({
@@ -54,7 +59,7 @@ export function ProductInventoryTab({
       unit_id: '',
       warehouse_id: '',
       min_amount: 0,
-      amount: 0,
+      amount: hasUnlimitedStock ? null : 0,
       price: 0,
     });
   };
@@ -81,6 +86,16 @@ export function ProductInventoryTab({
             <CardTitle className="text-lg">
               {t('ws-inventory-products.sections.manage_inventory')}
             </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="unlimited-stock"
+                checked={hasUnlimitedStock}
+                onCheckedChange={onToggleUnlimitedStock}
+              />
+              <label htmlFor="unlimited-stock" className="font-medium text-sm">
+                {t('ws-inventory-products.labels.unlimited_stock_label')}
+              </label>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -180,6 +195,8 @@ export function ProductInventoryTab({
                                 'ws-inventory-products.placeholders.enter_min_amount'
                               )}
                               value={field.value ?? ''}
+                              disabled={hasUnlimitedStock}
+                              aria-disabled={hasUnlimitedStock}
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value === ''
@@ -205,10 +222,18 @@ export function ProductInventoryTab({
                           <FormControl>
                             <Input
                               type="number"
-                              placeholder={t(
-                                'ws-inventory-products.placeholders.enter_current_amount'
-                              )}
+                              placeholder={
+                                hasUnlimitedStock
+                                  ? t(
+                                      'ws-inventory-products.labels.unlimited_stock'
+                                    )
+                                  : t(
+                                      'ws-inventory-products.placeholders.enter_current_amount'
+                                    )
+                              }
                               value={field.value ?? ''}
+                              disabled={hasUnlimitedStock}
+                              aria-disabled={hasUnlimitedStock}
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value === ''
