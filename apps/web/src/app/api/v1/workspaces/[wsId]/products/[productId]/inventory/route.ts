@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
@@ -44,7 +47,9 @@ const getWorkspaceUserId = async (
 };
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId, productId } = await params;
+  const { wsId: id, productId } = await params;
+
+  const wsId = await normalizeWorkspaceId(id);
 
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
@@ -145,8 +150,9 @@ export async function POST(req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const { wsId, productId } = await params;
+  const { wsId: id, productId } = await params;
 
+  const wsId = await normalizeWorkspaceId(id);
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
   if (!containsPermission('update_stock_quantity')) {
@@ -434,16 +440,11 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const { wsId, productId } = await params;
+  const { wsId: id, productId } = await params;
 
+  const wsId = await normalizeWorkspaceId(id);
   const { containsPermission } = await getPermissions({ wsId });
-  if (
-    !containsPermission(
-      'view_stock_quantity' as unknown as Parameters<
-        typeof containsPermission
-      >[0]
-    )
-  ) {
+  if (!containsPermission('view_stock_quantity')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
@@ -467,17 +468,12 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const { wsId, productId } = await params;
+  const { wsId: id, productId } = await params;
 
+  const wsId = await normalizeWorkspaceId(id);
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
-  if (
-    !containsPermission(
-      'update_stock_quantity' as unknown as Parameters<
-        typeof containsPermission
-      >[0]
-    )
-  ) {
+  if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
@@ -535,7 +531,12 @@ export async function DELETE(_: Request, { params }: Params) {
       }));
 
     if (stockChanges.length > 0) {
-      await supabase.from('product_stock_changes').insert(stockChanges);
+      const { error: stockChangeError } = await supabase
+        .from('product_stock_changes')
+        .insert(stockChanges);
+      if (stockChangeError) {
+        console.error('Error logging stock changes', stockChangeError);
+      }
     }
   }
 

@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
@@ -49,7 +52,8 @@ const getWorkspaceUserId = async (
 };
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const wsId = await normalizeWorkspaceId(id);
 
   // Validate request body
   const parsed = ProductCreateSchema.safeParse(await req.json());
@@ -138,7 +142,12 @@ export async function POST(req: Request, { params }: Params) {
         }));
 
       if (stockChanges.length > 0) {
-        await supabase.from('product_stock_changes').insert(stockChanges);
+        const { error: stockChangeError } = await supabase
+          .from('product_stock_changes')
+          .insert(stockChanges);
+        if (stockChangeError) {
+          console.error('Error logging stock changes', stockChangeError);
+        }
       }
     }
   }
