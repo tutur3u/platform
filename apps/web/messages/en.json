@@ -9524,6 +9524,7 @@
       "cancel": "Cancel",
       "delete_product": "Delete Product",
       "remove": "Remove",
+      "remove_stock_option": "Remove Stock Option",
       "save_changes": "Save Changes",
       "save_inventory_changes": "Save Inventory Changes",
       "view_full_details": "View Full Details"
@@ -9569,6 +9570,7 @@
       "manage_tracked_stock": "Manage tracked stock in the Stock tab.",
       "no_changes_to_save": "No changes to save",
       "no_delete_permission": "You do not have permission to delete inventory",
+      "no_stock_changes": "No stock changes yet",
       "product_deleted_successfully": "Product deleted successfully",
       "product_updated_successfully": "Product updated successfully",
       "recently": "Recently",
@@ -9577,7 +9579,9 @@
     },
     "no_changes_detected": "No changes detected",
     "placeholders": {
+      "enter_current_amount": "Enter current amount",
       "enter_manufacturer": "Enter manufacturer",
+      "enter_min_amount": "Enter min amount",
       "enter_price": "Enter price",
       "enter_product_description": "Enter product description",
       "enter_product_name": "Enter product name",

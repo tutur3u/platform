@@ -25,13 +25,12 @@ export async function GET(_: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('inventory_units')
     .select('*')
-    .eq('ws_id', id)
-    .single();
+    .eq('ws_id', id);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching workspace user groups' },
+      { message: 'Error fetching product units' },
       { status: 500 }
     );
   }

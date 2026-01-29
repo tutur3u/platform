@@ -47,22 +47,45 @@ import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
 
 const InventorySchema = z.object({
-  unit_id: z.string(),
-  warehouse_id: z.string(),
-  amount: z.coerce.number(),
-  min_amount: z.coerce.number(),
-  price: z.coerce.number(),
+  unit_id: z.string().min(1, 'Unit is required'),
+  warehouse_id: z.string().min(1, 'Warehouse is required'),
+  amount: z.coerce.number().min(0).nullable(),
+  min_amount: z.coerce.number().min(0).nullable(),
+  price: z.coerce.number().min(0),
 });
 
-const FormSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1).max(255),
-  manufacturer: z.string().optional(),
-  description: z.string().optional(),
-  usage: z.string().optional(),
-  category_id: z.string(),
-  inventory: z.array(InventorySchema).optional(),
-});
+const FormSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1).max(255),
+    manufacturer: z.string().optional(),
+    description: z.string().optional(),
+    usage: z.string().optional(),
+    category_id: z.string(),
+    inventory: z.array(InventorySchema).optional(),
+  })
+  .superRefine((values, ctx) => {
+    const inventory = values.inventory ?? [];
+    const seen = new Set<string>();
+    inventory.forEach((item, index) => {
+      if (!item.unit_id || !item.warehouse_id) return;
+      const key = `${item.warehouse_id}-${item.unit_id}`;
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Warehouse and unit combination must be unique',
+          path: ['inventory', index, 'unit_id'],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Warehouse and unit combination must be unique',
+          path: ['inventory', index, 'warehouse_id'],
+        });
+      } else {
+        seen.add(key);
+      }
+    });
+  });
 
 interface Props {
   wsId: string;
@@ -91,7 +114,7 @@ export function ProductForm({
   const [showCategoryDialog, setCategoryDialog] = useState(false);
   const [showWarehouseDialog, setWarehouseDialog] = useState(false);
   const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
-    (data?.inventory || []).length === 0
+    (data?.inventory || []).some((item) => item.amount === null)
   );
 
   const form = useForm({
@@ -102,18 +125,20 @@ export function ProductForm({
       description: data?.description ?? '',
       usage: data?.usage ?? '',
       inventory:
-        data?.inventory ||
-        (hasUnlimitedStock
-          ? []
+        data?.inventory && data.inventory.length > 0
+          ? data.inventory.map((item) => ({
+              ...item,
+              amount: item.amount ?? null,
+            }))
           : [
               {
                 unit_id: '',
                 warehouse_id: '',
                 min_amount: 0,
-                amount: 0,
+                amount: hasUnlimitedStock ? null : 0,
                 price: 0,
               },
-            ]),
+            ],
     },
   });
 
@@ -127,7 +152,7 @@ export function ProductForm({
       unit_id: '',
       warehouse_id: '',
       min_amount: 0,
-      amount: 0,
+      amount: hasUnlimitedStock ? null : 0,
       price: 0,
     });
   }
@@ -138,20 +163,45 @@ export function ProductForm({
 
   function toggleUnlimitedStock(unlimited: boolean) {
     setHasUnlimitedStock(unlimited);
-    if (unlimited) {
-      // Clear all inventory when switching to unlimited
-      form.setValue('inventory', [], { shouldDirty: true });
-    } else {
-      // Restore original inventory when switching from unlimited
-      const originalInventory = data?.inventory || [];
-      const currentValues = form.getValues();
-      const newValues = {
-        ...currentValues,
-        inventory: originalInventory,
-      };
+    const currentInventory = form.getValues('inventory') || [];
 
-      // Reset the form with the new values to properly clear dirty state
-      form.reset(newValues);
+    if (unlimited) {
+      // Set all inventory amounts to null when switching to unlimited
+      const updatedInventory =
+        currentInventory.length > 0
+          ? currentInventory.map((item) => ({
+              ...item,
+              amount: null,
+              min_amount: 0,
+            }))
+          : [
+              {
+                unit_id: '',
+                warehouse_id: '',
+                min_amount: 0,
+                amount: null,
+                price: 0,
+              },
+            ];
+      form.setValue('inventory', updatedInventory, { shouldDirty: true });
+    } else {
+      // Set all inventory amounts to 0 when switching from unlimited
+      const updatedInventory =
+        currentInventory.length > 0
+          ? currentInventory.map((item) => ({
+              ...item,
+              amount: item.amount === null ? 0 : item.amount,
+            }))
+          : [
+              {
+                unit_id: '',
+                warehouse_id: '',
+                min_amount: 0,
+                amount: 0,
+                price: 0,
+              },
+            ];
+      form.setValue('inventory', updatedInventory, { shouldDirty: true });
     }
   }
 
@@ -229,8 +279,8 @@ export function ProductForm({
           return (
             newItem.unit_id !== originalItem.unit_id ||
             newItem.warehouse_id !== originalItem.warehouse_id ||
-            newItem.amount !== originalItem.amount ||
-            newItem.min_amount !== originalItem.min_amount ||
+            newItem.amount !== (originalItem.amount ?? null) ||
+            newItem.min_amount !== (originalItem.min_amount ?? null) ||
             newItem.price !== originalItem.price
           );
         });
@@ -305,20 +355,18 @@ export function ProductForm({
           description: '',
           usage: '',
           category_id: '',
-          inventory: hasUnlimitedStock
-            ? []
-            : [
-                {
-                  unit_id: '',
-                  warehouse_id: '',
-                  min_amount: 0,
-                  amount: 0,
-                  price: 0,
-                },
-              ],
+          inventory: [
+            {
+              unit_id: '',
+              warehouse_id: '',
+              min_amount: 0,
+              amount: 0,
+              price: 0,
+            },
+          ],
         });
         // Also reset the unlimited stock toggle for new products
-        setHasUnlimitedStock(true);
+        setHasUnlimitedStock(false);
       }
       // router.push('../products');
     } catch (error) {
@@ -438,253 +486,254 @@ export function ProductForm({
                     htmlFor="unlimited-stock"
                     className="font-medium text-sm"
                   >
-                    Unlimited Stock
+                    {t('ws-inventory-products.labels.unlimited_stock_label')}
                   </label>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {hasUnlimitedStock ? (
-                    <div className="text-muted-foreground text-sm">
-                      This product has unlimited stock available.
-                    </div>
-                  ) : (
-                    <>
-                      {fields.map((_, i) => (
-                        <div key={i} className="grid gap-4">
-                          <FormField
-                            control={form.control}
-                            name={`inventory.${i}.warehouse_id`}
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormLabel>
-                                  {t('ws-inventory-warehouses.singular')}
-                                </FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className="w-full justify-between"
-                                      >
-                                        {field.value
-                                          ? warehouses.find(
-                                              (warehouse) =>
-                                                warehouse.id === field.value
-                                            )?.name
-                                          : t(
-                                              'ws-inventory-warehouses.placeholder'
-                                            )}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="p-0">
-                                    <Command>
-                                      <CommandInput placeholder="Search warehouse..." />
-                                      <CommandList>
-                                        <CommandEmpty>
-                                          Warehouse {field.value} not found.
-                                        </CommandEmpty>
-                                        <CommandGroup>
-                                          <CommandItem
-                                            onSelect={() =>
-                                              setWarehouseDialog(true)
-                                            }
-                                          >
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Create new warehouse
-                                          </CommandItem>
-                                        </CommandGroup>
-                                        <CommandSeparator />
-                                        <CommandGroup>
-                                          {warehouses.map((warehouse) => (
-                                            <CommandItem
-                                              value={warehouse.id}
-                                              key={warehouse.id}
-                                              onSelect={() => {
-                                                form.setValue(
-                                                  `inventory.${i}.warehouse_id`,
-                                                  warehouse.id
-                                                );
-                                              }}
-                                            >
-                                              <Check
-                                                className={cn(
-                                                  'mr-2 h-4 w-4',
-                                                  warehouse.id === field.value
-                                                    ? 'opacity-100'
-                                                    : 'opacity-0'
-                                                )}
-                                              />
-                                              {warehouse.name}
-                                            </CommandItem>
-                                          ))}
-                                        </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name={`inventory.${i}.price`}
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormLabel>
-                                  {t('ws-inventory-products.form.price')}
-                                </FormLabel>
+                  {fields.map((_, i) => (
+                    <div key={i} className="grid gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`inventory.${i}.warehouse_id`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>
+                              {t('ws-inventory-warehouses.singular')}
+                            </FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
                                 <FormControl>
-                                  <Input
-                                    type="number"
-                                    placeholder={t(
-                                      'ws-inventory-products.form.price'
-                                    )}
-                                    {...field}
-                                    value={String(field.value || '')}
-                                    onChange={(e) =>
-                                      field.onChange(e.target.value)
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <div className="grid grid-cols-3 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`inventory.${i}.min_amount`}
-                              render={({ field }) => (
-                                <FormItem className="flex-1">
-                                  <FormLabel>
-                                    {t('ws-inventory-products.form.min_amount')}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      placeholder={t(
-                                        'ws-inventory-products.form.min_amount'
-                                      )}
-                                      {...field}
-                                      value={String(field.value || '')}
-                                      onChange={(e) =>
-                                        field.onChange(e.target.value)
-                                      }
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`inventory.${i}.amount`}
-                              render={({ field }) => (
-                                <FormItem className="flex-1">
-                                  <FormLabel>
-                                    {t('ws-inventory-products.form.amount')}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      placeholder={t(
-                                        'ws-inventory-products.form.amount'
-                                      )}
-                                      {...field}
-                                      value={String(field.value || '')}
-                                      onChange={(e) =>
-                                        field.onChange(e.target.value)
-                                      }
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`inventory.${i}.unit_id`}
-                              render={({ field }) => (
-                                <FormItem className="flex-1">
-                                  <FormLabel>
-                                    {t('ws-inventory-units.singular')}
-                                  </FormLabel>
-                                  <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between"
                                   >
-                                    <FormControl>
-                                      <SelectTrigger
-                                        id="status"
-                                        aria-label={t(
-                                          'ws-inventory-units.placeholder'
+                                    {field.value
+                                      ? warehouses.find(
+                                          (warehouse) =>
+                                            warehouse.id === field.value
+                                        )?.name
+                                      : t(
+                                          'ws-inventory-warehouses.placeholder'
                                         )}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search warehouse..." />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      Warehouse {field.value} not found.
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      <CommandItem
+                                        onSelect={() =>
+                                          setWarehouseDialog(true)
+                                        }
                                       >
-                                        <SelectValue
-                                          placeholder={t(
-                                            'ws-inventory-units.placeholder'
-                                          )}
-                                        />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {units.map((unit) => (
-                                        <SelectItem
-                                          value={unit.id}
-                                          key={unit.id}
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create new warehouse
+                                      </CommandItem>
+                                    </CommandGroup>
+                                    <CommandSeparator />
+                                    <CommandGroup>
+                                      {warehouses.map((warehouse) => (
+                                        <CommandItem
+                                          value={warehouse.id}
+                                          key={warehouse.id}
+                                          onSelect={() => {
+                                            form.setValue(
+                                              `inventory.${i}.warehouse_id`,
+                                              warehouse.id
+                                            );
+                                          }}
                                         >
-                                          {unit.name}
-                                        </SelectItem>
+                                          <Check
+                                            className={cn(
+                                              'mr-2 h-4 w-4',
+                                              warehouse.id === field.value
+                                                ? 'opacity-100'
+                                                : 'opacity-0'
+                                            )}
+                                          />
+                                          {warehouse.name}
+                                        </CommandItem>
                                       ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                          {fields.length > 1 && (
-                            <div className="text-right">
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="destructive"
-                                onClick={() => {
-                                  removeStock(i);
-                                }}
-                              >
-                                <Trash />
-                                <span className="sr-only">
-                                  Remove stock option
-                                </span>
-                              </Button>
-                            </div>
+                      <FormField
+                        control={form.control}
+                        name={`inventory.${i}.price`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>
+                              {t('ws-inventory-products.form.price')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder={t(
+                                  'ws-inventory-products.form.price'
+                                )}
+                                {...field}
+                                value={String(field.value || '')}
+                                onChange={(e) => field.onChange(e.target.value)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`inventory.${i}.min_amount`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>
+                                {t('ws-inventory-products.form.min_amount')}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder={t(
+                                    'ws-inventory-products.form.min_amount'
+                                  )}
+                                  {...field}
+                                  value={String(field.value || '')}
+                                  disabled={hasUnlimitedStock}
+                                  aria-disabled={hasUnlimitedStock}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value)
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
+                        />
 
-                          <Separator />
+                        <FormField
+                          control={form.control}
+                          name={`inventory.${i}.amount`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>
+                                {t('ws-inventory-products.form.amount')}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder={
+                                    hasUnlimitedStock
+                                      ? t(
+                                          'ws-inventory-products.labels.unlimited_stock'
+                                        )
+                                      : t('ws-inventory-products.form.amount')
+                                  }
+                                  {...field}
+                                  value={String(field.value ?? '')}
+                                  disabled={hasUnlimitedStock}
+                                  aria-disabled={hasUnlimitedStock}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      e.target.value === ''
+                                        ? 0
+                                        : Number(e.target.value)
+                                    )
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name={`inventory.${i}.unit_id`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>
+                                {t('ws-inventory-units.singular')}
+                              </FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger
+                                    id="status"
+                                    aria-label={t(
+                                      'ws-inventory-units.placeholder'
+                                    )}
+                                  >
+                                    <SelectValue
+                                      placeholder={t(
+                                        'ws-inventory-units.placeholder'
+                                      )}
+                                    />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {units.map((unit) => (
+                                    <SelectItem value={unit.id} key={unit.id}>
+                                      {unit.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {fields.length > 1 && (
+                        <div className="text-right">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            onClick={() => {
+                              removeStock(i);
+                            }}
+                          >
+                            <Trash />
+                            <span className="sr-only">
+                              {t(
+                                'ws-inventory-products.buttons.remove_stock_option'
+                              )}
+                            </span>
+                          </Button>
                         </div>
-                      ))}
+                      )}
 
-                      <Button
-                        type="button"
-                        className="w-full"
-                        disabled={loading}
-                        onClick={addStock}
-                      >
-                        Add stock
-                      </Button>
-                    </>
-                  )}
+                      <Separator />
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={loading}
+                    onClick={addStock}
+                  >
+                    {t('ws-inventory-products.buttons.add_stock_entry')}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
