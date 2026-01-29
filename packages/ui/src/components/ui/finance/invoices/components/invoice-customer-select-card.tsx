@@ -81,7 +81,7 @@ export function InvoiceCustomerSelectCard({
 
         {showUserPreview && selectedUser && (
           <div className="flex items-center gap-3 rounded-lg border p-3">
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-10 w-10 shrink-0">
               <AvatarImage
                 src={
                   selectedUser.avatar_url ||
@@ -105,11 +105,11 @@ export function InvoiceCustomerSelectCard({
                 )}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-semibold">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">
                 {selectedUser.full_name || selectedUser.display_name}
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="truncate text-muted-foreground text-sm">
                 {selectedUser.email || selectedUser.phone || '-'}
               </p>
             </div>

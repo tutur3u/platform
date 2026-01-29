@@ -2,15 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Calculator, Loader2, Plus } from '@tuturuuu/icons';
-import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -23,6 +15,7 @@ import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
 import { InvoiceCustomerSelectCard } from './components/invoice-customer-select-card';
 import { InvoicePaymentSettings } from './components/invoice-payment-settings';
+import { InvoiceUserHistoryAccordion } from './components/invoice-user-history-accordion';
 import { CreatePromotionDialog } from './create-promotion-dialog';
 import type { AvailablePromotion } from './hooks';
 import {
@@ -32,11 +25,9 @@ import {
   useInvoicePromotionConfig,
   useProducts,
   useUserGroups,
-  useUserInvoices,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
   useUsersWithSelectableGroups,
-  useUserTransactions,
   useWallets,
 } from './hooks';
 import { useBestPromotionSelection } from './hooks/use-best-promotion-selection';
@@ -140,12 +131,6 @@ export function StandardInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
-  // User history queries
-  const { data: userTransactions = [], isLoading: userTransactionsLoading } =
-    useUserTransactions(wsId, selectedUserId);
-  const { data: userInvoices = [], isLoading: userInvoicesLoading } =
-    useUserInvoices(wsId, selectedUserId);
-
   const selectedUser = users.find(
     (user: WorkspaceUser) => user.id === selectedUserId
   );
@@ -156,7 +141,6 @@ export function StandardInvoice({
           (promotion: AvailablePromotion) =>
             promotion.id === selectedPromotionId
         );
-  const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
     usersLoading ||
     productsLoading ||
@@ -418,159 +402,7 @@ export function StandardInvoice({
         >
           {/* Conditional User History Accordion */}
           {selectedUser && (
-            <div className="mt-4">
-              {isLoadingUserHistory ? (
-                <div className="py-4 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    {t('ws-invoices.loading_user_history')}
-                  </p>
-                </div>
-              ) : userTransactions.length > 0 || userInvoices.length > 0 ? (
-                <Accordion type="single" collapsible className="w-full">
-                  {userTransactions && userTransactions.length > 0 && (
-                    <AccordionItem value="transactions">
-                      <AccordionTrigger>
-                        {t('ws-transactions.plural')} ({userTransactions.length}
-                        )
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-3">
-                          {userTransactions
-                            .slice(0, 5)
-                            .map((transaction: Transaction) => (
-                              <div
-                                key={transaction.id}
-                                className="flex items-center justify-between rounded-lg border p-3"
-                              >
-                                <div className="flex-1">
-                                  <p className="font-medium">
-                                    {transaction.description ||
-                                      t('ws-invoices.no_description')}
-                                  </p>
-                                  <p className="text-muted-foreground text-sm">
-                                    {transaction.category ||
-                                      t('ws-invoices.no_category')}{' '}
-                                    •{' '}
-                                    {transaction.wallet ||
-                                      t('ws-invoices.no_wallet')}
-                                  </p>
-                                  <p className="text-muted-foreground text-xs">
-                                    {transaction.taken_at
-                                      ? new Date(
-                                          transaction.taken_at
-                                        ).toLocaleDateString()
-                                      : t('ws-invoices.no_date')}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p
-                                    className={`font-semibold ${
-                                      (transaction.amount || 0) >= 0
-                                        ? 'text-dynamic-green'
-                                        : 'text-dynamic-red'
-                                    }`}
-                                  >
-                                    {transaction.amount !== undefined
-                                      ? Intl.NumberFormat('vi-VN', {
-                                          style: 'currency',
-                                          currency: 'VND',
-                                        }).format(transaction.amount)
-                                      : '-'}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          {userTransactions.length > 5 && (
-                            <p className="text-center text-muted-foreground text-sm">
-                              {t('ws-invoices.and_more_transactions', {
-                                count: userTransactions.length - 5,
-                              })}
-                            </p>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-
-                  {userInvoices && userInvoices.length > 0 && (
-                    <AccordionItem value="invoices">
-                      <AccordionTrigger>
-                        {t('ws-invoices.plural')} ({userInvoices.length})
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-3">
-                          {userInvoices.slice(0, 5).map((invoice: Invoice) => (
-                            <div
-                              key={invoice.id}
-                              className="flex items-center justify-between rounded-lg border p-3"
-                            >
-                              <div className="flex-1">
-                                <p className="font-medium">
-                                  {t('ws-invoices.invoice_id_short', {
-                                    id: invoice.id.slice(-8),
-                                  })}
-                                </p>
-                                <p className="text-muted-foreground text-sm">
-                                  {t('ws-invoices.status')}:{' '}
-                                  {invoice.completed_at
-                                    ? t('ws-invoices.completed')
-                                    : t('ws-invoices.pending')}
-                                </p>
-                                <p className="text-muted-foreground text-xs">
-                                  {invoice.created_at
-                                    ? new Date(
-                                        invoice.created_at
-                                      ).toLocaleDateString()
-                                    : t('ws-invoices.no_date')}
-                                </p>
-                                {invoice.note && (
-                                  <p className="truncate text-muted-foreground text-xs">
-                                    {t('ws-invoices.note')}: {invoice.note}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-dynamic-blue">
-                                  {invoice.price !== undefined
-                                    ? Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND',
-                                      }).format(invoice.price)
-                                    : '-'}
-                                </p>
-                                {invoice.total_diff !== undefined &&
-                                  invoice.total_diff !== 0 && (
-                                    <p className="text-muted-foreground text-xs">
-                                      {t('ws-invoices.diff')}:{' '}
-                                      {Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND',
-                                      }).format(invoice.total_diff)}
-                                    </p>
-                                  )}
-                              </div>
-                            </div>
-                          ))}
-                          {userInvoices.length > 5 && (
-                            <p className="text-center text-muted-foreground text-sm">
-                              {t('ws-invoices.and_more_invoices', {
-                                count: userInvoices.length - 5,
-                              })}
-                            </p>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                </Accordion>
-              ) : (
-                <div className="py-4 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    {t('ws-invoices.no_transaction_or_invoice_history')}
-                  </p>
-                </div>
-              )}
-            </div>
+            <InvoiceUserHistoryAccordion wsId={wsId} userId={selectedUser.id} />
           )}
         </InvoiceCustomerSelectCard>
 
