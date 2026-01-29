@@ -26,7 +26,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.16",
+    "@ai-sdk/google": "^3.0.17",
     "@deepgram/sdk": "^4.11.3",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -80,7 +80,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.9.0",
     "@upstash/redis": "^1.36.1",
-    "ai": "^6.0.59",
+    "ai": "^6.0.61",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
@@ -88,7 +88,7 @@
     "cmdk": "^1.1.1",
     "cookies-next": "^6.1.1",
     "cron-parser": "^5.5.0",
-    "cronstrue": "^3.9.0",
+    "cronstrue": "^3.11.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.1",

@@ -46,8 +46,9 @@ export const getUserColumns = ({
   t,
   extraData,
 }: ColumnGeneratorOptions<NovaUserRow> & {
-  extraData: NovaUserExtraData;
+  extraData?: NovaUserExtraData;
 }): ColumnDef<NovaUserRow>[] => {
+  const locale = extraData?.locale ?? 'en';
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -151,7 +152,7 @@ export const getUserColumns = ({
             <div>
               <div className="font-medium">
                 {user.display_name ||
-                  generateFunName({ id: user.id, locale: extraData.locale })}
+                  generateFunName({ id: user.id, locale })}
               </div>
               {user?.email && (
                 <div className="text-muted-foreground text-sm">
