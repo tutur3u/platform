@@ -56,13 +56,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     const [sourceWorkspaceCheck, targetWorkspaceCheck] = await Promise.all([
       supabase
         .from('workspace_members')
-        .select('user_id, role')
+        .select('user_id')
         .eq('ws_id', wsId)
         .eq('user_id', user.id)
         .single(),
       supabase
         .from('workspace_members')
-        .select('user_id, role')
+        .select('user_id')
         .eq('ws_id', targetWorkspaceId)
         .eq('user_id', user.id)
         .single(),
