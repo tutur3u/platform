@@ -19989,7 +19989,8 @@ export type Database = {
         | 'CircleAlert'
         | 'BellRing'
         | 'BellOff'
-        | 'Fuel';
+        | 'Fuel'
+        | 'WashingMachine';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
@@ -20671,6 +20672,7 @@ export const Constants = {
         'BellRing',
         'BellOff',
         'Fuel',
+        'WashingMachine',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
