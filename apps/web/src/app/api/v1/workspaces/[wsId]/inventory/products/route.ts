@@ -45,6 +45,7 @@ export async function GET(request: Request, { params }: Params) {
     // Check permissions
     const { containsPermission } = await getPermissions({ wsId });
     const canViewInventory = containsPermission('view_inventory');
+    const canViewStockQuantity = containsPermission('view_stock_quantity');
 
     if (!canViewInventory) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -68,32 +69,71 @@ export async function GET(request: Request, { params }: Params) {
     }
     const { q, page, pageSize, sortBy, sortOrder } = parsed.data;
 
-    const queryBuilder = supabase
-      .from('workspace_products')
-      .select(
-        'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('ws_id', wsId);
-
-    if (q) queryBuilder.ilike('name', `%${q}%`);
-
     const start = (page - 1) * pageSize;
     const end = page * pageSize - 1;
-    queryBuilder.range(start, end);
 
-    // Apply sorting - default to created_at desc for consistent ordering
-    if (sortBy && sortOrder) {
-      queryBuilder.order(sortBy, { ascending: sortOrder === 'asc' });
+    let rawData: RawInventoryProduct[] | null = null;
+    let count: number | null = null;
+
+    if (canViewStockQuantity) {
+      let query = supabase
+        .from('workspace_products')
+        .select(
+          'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
+          {
+            count: 'exact',
+          }
+        )
+        .eq('ws_id', wsId);
+
+      if (q) query = query.ilike('name', `%${q}%`);
+      query = query.range(start, end);
+
+      // Apply sorting - default to created_at desc for consistent ordering
+      if (sortBy && sortOrder) {
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const {
+        data,
+        error,
+        count: fetchedCount,
+      } = await query.overrideTypes<RawInventoryProduct[]>();
+      if (error) throw error;
+      rawData = data;
+      count = fetchedCount;
     } else {
-      queryBuilder.order('created_at', { ascending: false });
+      let query = supabase
+        .from('workspace_products')
+        .select(
+          'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name)',
+          {
+            count: 'exact',
+          }
+        )
+        .eq('ws_id', wsId);
+
+      if (q) query = query.ilike('name', `%${q}%`);
+      query = query.range(start, end);
+
+      // Apply sorting - default to created_at desc for consistent ordering
+      if (sortBy && sortOrder) {
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const {
+        data,
+        error,
+        count: fetchedCount,
+      } = await query.overrideTypes<RawInventoryProduct[]>();
+      if (error) throw error;
+      rawData = data;
+      count = fetchedCount;
     }
-
-    const { data: rawData, error, count } = await queryBuilder;
-
-    if (error) throw error;
 
     const selectPrimaryInventory = (
       inventories: InventoryProduct[] | null | undefined
@@ -116,8 +156,7 @@ export async function GET(request: Request, { params }: Params) {
       })[0];
     };
 
-    const typedData = rawData as RawInventoryProduct[] | null;
-    const data = (typedData ?? []).map((item) => {
+    const data = (rawData ?? []).map((item) => {
       const primaryInventory = selectPrimaryInventory(item.inventory_products);
 
       return {
@@ -126,16 +165,24 @@ export async function GET(request: Request, { params }: Params) {
         manufacturer: item.manufacturer,
         description: item.description,
         usage: item.usage,
-        unit: primaryInventory?.inventory_units?.name ?? null,
-        stock: (item.inventory_products || []).map((inventory) => ({
-          amount: inventory.amount,
-          min_amount: inventory.min_amount,
-          unit: inventory.inventory_units?.name,
-          warehouse: inventory.inventory_warehouses?.name,
-          price: inventory.price,
-        })),
-        min_amount: primaryInventory?.min_amount ?? null,
-        warehouse: primaryInventory?.inventory_warehouses?.name ?? null,
+        unit: canViewStockQuantity
+          ? (primaryInventory?.inventory_units?.name ?? null)
+          : null,
+        stock: canViewStockQuantity
+          ? (item.inventory_products || []).map((inventory) => ({
+              amount: inventory.amount,
+              min_amount: inventory.min_amount,
+              unit: inventory.inventory_units?.name,
+              warehouse: inventory.inventory_warehouses?.name,
+              price: inventory.price,
+            }))
+          : [],
+        min_amount: canViewStockQuantity
+          ? (primaryInventory?.min_amount ?? null)
+          : null,
+        warehouse: canViewStockQuantity
+          ? (primaryInventory?.inventory_warehouses?.name ?? null)
+          : null,
         category: item.product_categories?.name,
         category_id: item.category_id,
         ws_id: item.ws_id,

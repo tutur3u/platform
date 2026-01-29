@@ -40,6 +40,10 @@ export interface Product {
       full_name: string;
       email: string;
     };
+    warehouse?: {
+      id: string;
+      name: string;
+    };
     created_at: string;
   }[];
 }

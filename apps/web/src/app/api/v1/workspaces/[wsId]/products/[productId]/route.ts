@@ -41,13 +41,17 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
+  const canViewStockQuantity = containsPermission('view_stock_quantity');
+
   const supabase = await createClient();
+
+  const selectFields = canViewStockQuantity
+    ? '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
+    : '*, product_categories(name)';
 
   const { data, error } = await supabase
     .from('workspace_products')
-    .select(
-      '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))'
-    )
+    .select(selectFields)
     .eq('ws_id', wsId)
     .eq('id', productId)
     .single();
@@ -57,7 +61,7 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
-  const item = data as RawInventoryProductWithChanges;
+  const item = data as unknown as RawInventoryProductWithChanges;
 
   const formattedProduct = {
     id: item.id,
@@ -65,35 +69,47 @@ export async function GET(_: Request, { params }: Params) {
     manufacturer: item.manufacturer,
     description: item.description,
     usage: item.usage,
-    unit: item.inventory_products?.[0]?.inventory_units?.name,
-    stock: (item.inventory_products || []).map((inventory) => ({
-      amount: inventory.amount,
-      min_amount: inventory.min_amount,
-      unit: inventory.inventory_units?.name,
-      warehouse: inventory.inventory_warehouses?.name,
-      price: inventory.price,
-    })),
+    unit: canViewStockQuantity
+      ? item.inventory_products?.[0]?.inventory_units?.name
+      : null,
+    stock: canViewStockQuantity
+      ? (item.inventory_products || []).map((inventory) => ({
+          amount: inventory.amount,
+          min_amount: inventory.min_amount,
+          unit: inventory.inventory_units?.name,
+          warehouse: inventory.inventory_warehouses?.name,
+          price: inventory.price,
+        }))
+      : [],
     // Inventory with ids for editing
-    inventory: (item.inventory_products || []).map((inventory) => ({
-      unit_id: inventory.unit_id,
-      warehouse_id: inventory.warehouse_id,
-      amount: inventory.amount,
-      min_amount: inventory.min_amount,
-      price: inventory.price,
-    })),
-    min_amount: item.inventory_products?.[0]?.min_amount || 0,
-    warehouse: item.inventory_products?.[0]?.inventory_warehouses?.name,
+    inventory: canViewStockQuantity
+      ? (item.inventory_products || []).map((inventory) => ({
+          unit_id: inventory.unit_id,
+          warehouse_id: inventory.warehouse_id,
+          amount: inventory.amount,
+          min_amount: inventory.min_amount,
+          price: inventory.price,
+        }))
+      : [],
+    min_amount: canViewStockQuantity
+      ? item.inventory_products?.[0]?.min_amount || 0
+      : 0,
+    warehouse: canViewStockQuantity
+      ? item.inventory_products?.[0]?.inventory_warehouses?.name
+      : null,
     category: item.product_categories?.name,
     category_id: item.category_id,
     ws_id: item.ws_id,
     created_at: item.created_at,
-    stock_changes:
-      item.product_stock_changes?.map((change) => ({
-        amount: change.amount,
-        creator: change.creator,
-        beneficiary: change.beneficiary,
-        created_at: change.created_at,
-      })) || [],
+    stock_changes: canViewStockQuantity
+      ? item.product_stock_changes?.map((change) => ({
+          amount: change.amount,
+          creator: change.creator,
+          beneficiary: change.beneficiary,
+          warehouse: change.warehouse,
+          created_at: change.created_at,
+        })) || []
+      : [],
   };
 
   return NextResponse.json(formattedProduct);
@@ -120,6 +136,8 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
+  const canUpdateStockQuantity = containsPermission('update_stock_quantity');
+
   const supabase = await createClient();
   const { inventory, ...data } = (await req.json()) as Product2 & {
     inventory?: ProductInventory[];
@@ -144,6 +162,12 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Update inventory if provided
   if (inventory && Array.isArray(inventory) && inventory.length > 0) {
+    if (!canUpdateStockQuantity) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to update stock quantities' },
+        { status: 403 }
+      );
+    }
     // First, delete existing inventory for this product
     const { error: deleteError } = await supabase
       .from('inventory_products')

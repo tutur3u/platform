@@ -1,4 +1,4 @@
-import { Loader2, ShoppingBag, Store } from '@tuturuuu/icons';
+import { Loader2, ShoppingBag, User, Warehouse } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
@@ -35,7 +35,7 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                 <CardContent className="flex flex-col gap-2 p-4">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <Store className="h-4 w-4 shrink-0" />
+                      <User className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <p className="wrap-break-word min-w-0 flex-1 text-balance font-medium text-foreground text-sm">
                         {change.creator.full_name || change.creator.email}
                       </p>{' '}
@@ -50,17 +50,27 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                         {change.amount}
                       </span>
                     </div>
-                    <p className="text-dynamic-gray text-xs">
-                      {change.created_at
-                        ? new Date(change.created_at).toLocaleDateString()
-                        : t('ws-inventory-products.messages.recently')}
-                    </p>
+                    <div className="flex flex-col gap-1 pl-6">
+                      {change.warehouse && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Warehouse className="h-3 w-3 shrink-0" />
+                          <span className="text-xs">
+                            {change.warehouse.name}
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-dynamic-gray text-xs">
+                        {change.created_at
+                          ? new Date(change.created_at).toLocaleDateString()
+                          : t('ws-inventory-products.messages.recently')}
+                      </p>
+                    </div>
                   </div>
 
                   {change.beneficiary && (
-                    <div className="flex items-center gap-2 rounded bg-dynamic-blue/20 p-2">
+                    <div className="mt-1 flex items-center gap-2 rounded bg-dynamic-blue/20 p-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-dynamic-blue">
-                        <ShoppingBag className="h-4 w-4" />
+                        <ShoppingBag className="h-4 w-4 text-white" />
                       </div>
                       <span className="wrap-break-word min-w-0 flex-1 text-balance text-dynamic-light-blue text-sm">
                         {change.beneficiary.full_name ||

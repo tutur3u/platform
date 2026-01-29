@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Product2 } from '@tuturuuu/types/primitives/Product';
+import type { RawInventoryProduct } from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -53,9 +52,19 @@ export default async function WorkspaceProductsPage({ params }: Props) {
 
         const canCreateInventory = permissions.includes('create_inventory');
         const canUpdateInventory = permissions.includes('update_inventory');
+        const canViewStockQuantity = permissions.includes(
+          'view_stock_quantity'
+        );
+        const canUpdateStockQuantity = permissions.includes(
+          'update_stock_quantity'
+        );
 
         const data =
-          productId === 'new' ? undefined : await getData(wsId, productId);
+          productId === 'new'
+            ? undefined
+            : await getData(wsId, productId, {
+                canViewStockQuantity,
+              });
         const categories = await getCategories(wsId);
         const warehouses = await getWarehouses(wsId);
         const units = await getUnits(wsId);
@@ -78,6 +87,8 @@ export default async function WorkspaceProductsPage({ params }: Props) {
               units={units}
               canCreateInventory={canCreateInventory}
               canUpdateInventory={canUpdateInventory}
+              canViewStockQuantity={canViewStockQuantity}
+              canUpdateStockQuantity={canUpdateStockQuantity}
             />
           </>
         );
@@ -86,20 +97,62 @@ export default async function WorkspaceProductsPage({ params }: Props) {
   );
 }
 
-async function getData(wsId: string, productId: string) {
+async function getData(
+  wsId: string,
+  productId: string,
+  {
+    canViewStockQuantity,
+  }: {
+    canViewStockQuantity: boolean;
+  }
+) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_products')
-    .select('*, inventory:inventory_products(*)')
-    .eq('ws_id', wsId)
-    .eq('id', productId)
-    .single();
+  let rawProduct: RawInventoryProduct | null = null;
 
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
+  if (canViewStockQuantity) {
+    const { data, error } = await supabase
+      .from('workspace_products')
+      .select('*, inventory_products(*)')
+      .eq('ws_id', wsId)
+      .eq('id', productId)
+      .single()
+      .returns<RawInventoryProduct>();
 
-  return data as Product2 & { inventory: ProductInventory[] };
+    if (error) throw error;
+    rawProduct = data;
+  } else {
+    const { data, error } = await supabase
+      .from('workspace_products')
+      .select('*')
+      .eq('ws_id', wsId)
+      .eq('id', productId)
+      .single()
+      .returns<RawInventoryProduct>();
+
+    if (error) throw error;
+    rawProduct = data;
+  }
+
+  if (!rawProduct) return undefined;
+
+  return {
+    id: rawProduct.id,
+    name: rawProduct.name ?? '',
+    manufacturer: rawProduct.manufacturer ?? undefined,
+    description: rawProduct.description ?? undefined,
+    usage: rawProduct.usage ?? undefined,
+    category_id: rawProduct.category_id ?? '',
+    inventory: canViewStockQuantity
+      ? (rawProduct.inventory_products || []).map((inv) => ({
+          unit_id: inv.unit_id,
+          warehouse_id: inv.warehouse_id,
+          amount: inv.amount,
+          min_amount: inv.min_amount,
+          price: inv.price,
+        }))
+      : [],
+  };
 }
 
 async function getCategories(wsId: string) {
