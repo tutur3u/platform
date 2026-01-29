@@ -1,7 +1,9 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
   warehouse_id: z.uuid(),
@@ -20,6 +22,26 @@ interface Params {
     productId: string;
   }>;
 }
+
+const getWorkspaceUserId = async (
+  supabase: TypedSupabaseClient,
+  wsId: string
+) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: workspaceUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', wsId)
+    .single();
+
+  return workspaceUser?.virtual_user_id ?? null;
+};
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId, productId } = await params;
@@ -89,6 +111,34 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Error creating inventory' },
       { status: 500 }
     );
+  }
+
+  const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+  if (workspaceUserId) {
+    const stockChanges = inventory
+      .map((item) => ({
+        item,
+        difference: getStockChangeAmount(null, item.amount),
+      }))
+      .filter(
+        (
+          entry
+        ): entry is {
+          item: (typeof inventory)[number];
+          difference: number;
+        } => entry.difference != null
+      )
+      .map(({ item, difference }) => ({
+        product_id: productId,
+        unit_id: item.unit_id,
+        warehouse_id: item.warehouse_id,
+        amount: difference,
+        creator_id: workspaceUserId,
+      }));
+
+    if (stockChanges.length > 0) {
+      await supabase.from('product_stock_changes').insert(stockChanges);
+    }
   }
 
   return NextResponse.json({ message: 'Inventory created successfully' });
@@ -166,8 +216,37 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
+  const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+
   // If inventory is empty, clear all existing inventory
   if (inventory.length === 0) {
+    if (workspaceUserId && existingInventory?.length) {
+      const stockChanges = existingInventory
+        .map((item) => ({
+          item,
+          difference: getStockChangeAmount(item.amount, null),
+        }))
+        .filter(
+          (
+            entry
+          ): entry is {
+            item: (typeof existingInventory)[number];
+            difference: number;
+          } => entry.difference != null
+        )
+        .map(({ item, difference }) => ({
+          product_id: productId,
+          unit_id: item.unit_id,
+          warehouse_id: item.warehouse_id,
+          amount: difference,
+          creator_id: workspaceUserId,
+        }));
+
+      if (stockChanges.length > 0) {
+        await supabase.from('product_stock_changes').insert(stockChanges);
+      }
+    }
+
     const { error: deleteError } = await supabase
       .from('inventory_products')
       .delete()
@@ -214,18 +293,6 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   });
 
-  let workspaceUserId: string | null = null;
-  if (user) {
-    const { data: workspaceUser } = await supabase
-      .from('workspace_user_linked_users')
-      .select('virtual_user_id')
-      .eq('platform_user_id', user.id)
-      .eq('ws_id', (await params).wsId)
-      .single();
-
-    workspaceUserId = workspaceUser?.virtual_user_id || null;
-  }
-
   // Perform deletions
   if (toDelete.length > 0) {
     for (const key of toDelete) {
@@ -241,12 +308,14 @@ export async function PATCH(req: Request, { params }: Params) {
       // Log stock change for deletion (negative amount)
       if (workspaceUserId) {
         const existingItem = existingMap.get(key);
-        if (existingItem?.amount) {
+        const difference = getStockChangeAmount(existingItem?.amount, null);
+
+        if (difference != null) {
           await supabase.from('product_stock_changes').insert({
             product_id: productId,
             unit_id: unit_id,
             warehouse_id: warehouse_id,
-            amount: -(existingItem.amount || 0), // Negative for deletion
+            amount: difference,
             creator_id: workspaceUserId,
           });
         }
@@ -291,12 +360,23 @@ export async function PATCH(req: Request, { params }: Params) {
     // Log stock changes for insertions (positive amount)
     if (workspaceUserId) {
       const stockChanges = toInsert
-        .filter((item) => item.amount != null)
         .map((item) => ({
+          item,
+          difference: getStockChangeAmount(null, item.amount),
+        }))
+        .filter(
+          (
+            entry
+          ): entry is {
+            item: (typeof toInsert)[number];
+            difference: number;
+          } => entry.difference != null
+        )
+        .map(({ item, difference }) => ({
           product_id: productId,
           unit_id: item.unit_id,
           warehouse_id: item.warehouse_id,
-          amount: item.amount ?? 0,
+          amount: difference,
           creator_id: workspaceUserId,
         }));
 
@@ -311,41 +391,20 @@ export async function PATCH(req: Request, { params }: Params) {
     for (const item of toUpdate) {
       const existing = existingMap.get(createKey(item));
 
-      // Log stock changes before updating
-      if (
-        existing &&
-        existing.amount !== item.amount &&
-        existing.amount != null &&
-        item.amount != null
-      ) {
-        const existingAmount = existing.amount || 0;
-        const newAmount = item.amount || 0;
-        const stockDifference = newAmount - existingAmount;
+      if (existing && workspaceUserId) {
+        const stockDifference = getStockChangeAmount(
+          existing.amount,
+          item.amount
+        );
 
-        // Get current user and workspace user for logging
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          // Get workspace user ID for the current platform user
-          const { data: workspaceUser } = await supabase
-            .from('workspace_user_linked_users')
-            .select('virtual_user_id')
-            .eq('platform_user_id', user.id)
-            .eq('ws_id', (await params).wsId)
-            .single();
-
-          if (workspaceUser) {
-            // Log the stock change
-            await supabase.from('product_stock_changes').insert({
-              product_id: productId,
-              unit_id: item.unit_id,
-              warehouse_id: item.warehouse_id,
-              amount: stockDifference,
-              creator_id: workspaceUser.virtual_user_id,
-            });
-          }
+        if (stockDifference != null) {
+          await supabase.from('product_stock_changes').insert({
+            product_id: productId,
+            unit_id: item.unit_id,
+            warehouse_id: item.warehouse_id,
+            amount: stockDifference,
+            creator_id: workspaceUserId,
+          });
         }
       }
 
@@ -443,6 +502,47 @@ export async function DELETE(_: Request, { params }: Params) {
 
   if (productError || !product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
+
+  const { data: existingInventory, error: fetchError } = await supabase
+    .from('inventory_products')
+    .select('*')
+    .eq('product_id', productId);
+
+  if (fetchError) {
+    console.log(fetchError);
+    return NextResponse.json(
+      { message: 'Error fetching existing inventory' },
+      { status: 500 }
+    );
+  }
+
+  const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+  if (workspaceUserId && existingInventory?.length) {
+    const stockChanges = existingInventory
+      .map((item) => ({
+        item,
+        difference: getStockChangeAmount(item.amount, null),
+      }))
+      .filter(
+        (
+          entry
+        ): entry is {
+          item: (typeof existingInventory)[number];
+          difference: number;
+        } => entry.difference != null
+      )
+      .map(({ item, difference }) => ({
+        product_id: productId,
+        unit_id: item.unit_id,
+        warehouse_id: item.warehouse_id,
+        amount: difference,
+        creator_id: workspaceUserId,
+      }));
+
+    if (stockChanges.length > 0) {
+      await supabase.from('product_stock_changes').insert(stockChanges);
+    }
   }
 
   // Delete all inventory for this product

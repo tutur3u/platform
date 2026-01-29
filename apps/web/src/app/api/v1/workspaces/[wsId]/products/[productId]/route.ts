@@ -46,7 +46,7 @@ export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
 
   const selectFields = canViewStockQuantity
-    ? '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))'
+    ? '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
     : '*, product_categories(name)';
 
   const { data, error } = await supabase
@@ -106,6 +106,7 @@ export async function GET(_: Request, { params }: Params) {
           amount: change.amount,
           creator: change.creator,
           beneficiary: change.beneficiary,
+          warehouse: change.warehouse,
           created_at: change.created_at,
         })) || []
       : [],
