@@ -713,7 +713,11 @@ export function ProductForm({
                             }}
                           >
                             <Trash />
-                            <span className="sr-only">Remove stock option</span>
+                            <span className="sr-only">
+                              {t(
+                                'ws-inventory-products.buttons.remove_stock_option'
+                              )}
+                            </span>
                           </Button>
                         </div>
                       )}
@@ -728,7 +732,7 @@ export function ProductForm({
                     disabled={loading}
                     onClick={addStock}
                   >
-                    Add stock
+                    {t('ws-inventory-products.buttons.add_stock_entry')}
                   </Button>
                 </div>
               </CardContent>

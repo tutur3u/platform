@@ -9455,6 +9455,7 @@
       "cancel": "Cancel",
       "delete_product": "Delete Product",
       "remove": "Remove",
+      "remove_stock_option": "Remove Stock Option",
       "save_changes": "Save Changes",
       "save_inventory_changes": "Save Inventory Changes",
       "view_full_details": "View Full Details"
