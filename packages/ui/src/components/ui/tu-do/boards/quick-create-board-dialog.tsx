@@ -1,6 +1,5 @@
 'use client';
 
-import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
   Dialog,
   DialogContent,
@@ -37,9 +36,11 @@ export function QuickCreateBoardDialog({
     [t]
   );
 
-  const handleFinish = (
-    data: { id?: string } & Partial<WorkspaceTaskBoard>
-  ) => {
+  const handleFinish = (data: {
+    id?: string;
+    name?: string;
+    icon?: string | null;
+  }) => {
     setOpen(false);
 
     const boardId = data.id;
