@@ -1,0 +1,23 @@
+name: Check Migration Timestamps
+
+on:
+  pull_request:
+    paths:
+      - "apps/db/supabase/migrations/**.sql"
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: check-migration-timestamps.yml
+
+  check-timestamps:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Check migration timestamps
+        run: node scripts/check-migration-timestamps.js
