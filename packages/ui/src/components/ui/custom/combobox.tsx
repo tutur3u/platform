@@ -176,8 +176,10 @@ export function Combobox({
             )}
             disabled={disabled}
           >
-            {label ?? selectedLabel ?? placeholder}
-            <ChevronsUpDown className="opacity-50" />
+            <span className="truncate">
+              {label ?? selectedLabel ?? placeholder}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent

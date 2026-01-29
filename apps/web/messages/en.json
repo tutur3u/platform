@@ -9804,6 +9804,7 @@
     "invoice_items_description": "Review and adjust quantities for selected products.",
     "late": "Late",
     "linked_to_group": "Linked to group",
+    "load_more": "Load more",
     "loading": "Loading...",
     "loading_attendance": "Loading attendance...",
     "loading_groups": "Loading groups...",
@@ -9885,8 +9886,7 @@
     "user_groups": "User Groups",
     "user_groups_description": "Select the group for subscription billing.",
     "user_history": "Customer History",
-    "user_in_blocked_group_description": "Invoice creation is blocked because the user belongs to a restricted group.",
-    "load_more": "Load more"
+    "user_in_blocked_group_description": "Invoice creation is blocked because the user belongs to a restricted group."
   },
   "ws-members": {
     "active_members": "Active",
