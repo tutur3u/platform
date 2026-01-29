@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Clock,
   Coffee,
+  Coins,
   CreditCard,
   Goal,
   Laptop,
@@ -99,6 +100,8 @@ import AppearanceSettings from './appearance-settings';
 import AttendanceDisplaySettings from './attendance/attendance-display-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
+import DefaultCategorySettings from './finance/default-category-settings';
+import DefaultCurrencySettings from './finance/default-currency-settings';
 import DefaultWalletSettings from './finance/default-wallet-settings';
 import InvoiceSettings from './finance/invoice-settings';
 import ReferralSettings from './inventory/referral-settings';
@@ -483,6 +486,20 @@ export function SettingsDialog({
                 icon: Wallet,
                 description: t('settings.finance.default_wallet_description'),
                 keywords: ['Finance', 'Wallet'],
+              },
+              {
+                name: 'default_category',
+                label: t('settings.finance.default_category'),
+                icon: LayoutGrid,
+                description: t('settings.finance.default_category_description'),
+                keywords: ['Finance', 'Category', 'Transaction'],
+              },
+              {
+                name: 'default_currency',
+                label: t('settings.finance.default_currency'),
+                icon: Coins,
+                description: t('settings.finance.default_currency_description'),
+                keywords: ['Finance', 'Currency', 'VND', 'USD'],
               },
               {
                 name: 'invoice_settings',
@@ -896,6 +913,14 @@ export function SettingsDialog({
 
                 {activeTab === 'default_wallet' && workspace?.id && (
                   <DefaultWalletSettings workspaceId={workspace.id} />
+                )}
+
+                {activeTab === 'default_category' && workspace?.id && (
+                  <DefaultCategorySettings workspaceId={workspace.id} />
+                )}
+
+                {activeTab === 'default_currency' && workspace?.id && (
+                  <DefaultCurrencySettings workspaceId={workspace.id} />
                 )}
 
                 {activeTab === 'invoice_settings' && workspace?.id && (

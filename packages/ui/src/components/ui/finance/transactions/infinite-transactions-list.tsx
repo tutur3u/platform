@@ -2,6 +2,7 @@
 
 import {
   useInfiniteQuery,
+  useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -14,16 +15,28 @@ import {
   TrendingUp,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { TransactionForm } from './form';
 import { TransactionCard } from './transaction-card';
-import { TransactionEditDialog } from './transaction-edit-dialog';
 import { TransactionStatistics } from './transaction-statistics';
 
 interface InfiniteTransactionsListProps {
@@ -38,6 +51,8 @@ interface InfiniteTransactionsListProps {
   canViewConfidentialAmount?: boolean;
   canViewConfidentialDescription?: boolean;
   canViewConfidentialCategory?: boolean;
+  /** Hide transaction creator (useful for personal workspaces) */
+  isPersonalWorkspace?: boolean;
 }
 
 interface TransactionResponse {
@@ -60,10 +75,11 @@ export function InfiniteTransactionsList({
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
-  canDeleteConfidentialTransactions,
-  canViewConfidentialAmount,
-  canViewConfidentialDescription,
-  canViewConfidentialCategory,
+  canDeleteConfidentialTransactions: _canDeleteConfidentialTransactions,
+  canViewConfidentialAmount: _canViewConfidentialAmount,
+  canViewConfidentialDescription: _canViewConfidentialDescription,
+  canViewConfidentialCategory: _canViewConfidentialCategory,
+  isPersonalWorkspace,
 }: InfiniteTransactionsListProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -72,6 +88,8 @@ export function InfiniteTransactionsList({
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] =
+    useState<Transaction | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Set moment locale
@@ -96,6 +114,40 @@ export function InfiniteTransactionsList({
         typeof query.queryKey[0] === 'string' &&
         query.queryKey[0].includes(`/api/workspaces/${wsId}/transactions`),
     });
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const response = await fetch(
+        `/api/workspaces/${wsId}/transactions/${transactionId}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to delete transaction');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success(t('ws-transactions.transaction_deleted'));
+      handleTransactionUpdate();
+      setTransactionToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || t('ws-transactions.failed_to_delete_transaction')
+      );
+    },
+  });
+
+  const handleDeleteClick = (transaction: Transaction) => {
+    setTransactionToDelete(transaction);
+  };
+
+  const handleConfirmDelete = () => {
+    if (transactionToDelete?.id) {
+      deleteMutation.mutate(transactionToDelete.id);
+    }
   };
 
   const toggleGroup = (dateKey: string) => {
@@ -138,6 +190,13 @@ export function InfiniteTransactionsList({
     })
   );
 
+  const [tagIds] = useQueryState(
+    'tagIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
   const [start] = useQueryState(
     'start',
     parseAsString.withOptions({
@@ -168,6 +227,9 @@ export function InfiniteTransactionsList({
     walletIds.forEach((id) => {
       params.append('walletIds', id);
     });
+    tagIds.forEach((id) => {
+      params.append('tagIds', id);
+    });
     params.set('limit', '20');
     return params.toString();
   };
@@ -186,6 +248,7 @@ export function InfiniteTransactionsList({
       userIds,
       categoryIds,
       walletIds,
+      tagIds,
       walletId,
       start,
       end,
@@ -222,6 +285,7 @@ export function InfiniteTransactionsList({
     userIds.length > 0 ||
     categoryIds.length > 0 ||
     walletIds.length > 0 ||
+    tagIds.length > 0 ||
     !!start ||
     !!end ||
     !!walletId;
@@ -233,6 +297,7 @@ export function InfiniteTransactionsList({
       userIds,
       categoryIds,
       walletIds,
+      tagIds,
       walletId,
       start,
       end,
@@ -439,7 +504,7 @@ export function InfiniteTransactionsList({
                           <span className="text-dynamic-green">
                             {Intl.NumberFormat(locale, {
                               style: 'currency',
-                              currency: 'VND',
+                              currency: currency || 'USD',
                               notation: 'compact',
                               maximumFractionDigits: 1,
                             }).format(income)}
@@ -452,7 +517,7 @@ export function InfiniteTransactionsList({
                           <span className="text-dynamic-red">
                             {Intl.NumberFormat(locale, {
                               style: 'currency',
-                              currency: 'VND',
+                              currency: currency || 'USD',
                               notation: 'compact',
                               maximumFractionDigits: 1,
                             }).format(Math.abs(expense))}
@@ -496,7 +561,7 @@ export function InfiniteTransactionsList({
                           {hasRedactedAmounts && '≈ '}
                           {Intl.NumberFormat(locale, {
                             style: 'currency',
-                            currency: 'VND',
+                            currency: currency || 'USD',
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
                             signDisplay: 'always',
@@ -534,9 +599,12 @@ export function InfiniteTransactionsList({
                         transaction.is_description_confidential ?? undefined,
                     }}
                     wsId={wsId}
+                    currency={currency}
                     onEdit={() => handleTransactionClick(transaction)}
+                    onDelete={() => handleDeleteClick(transaction)}
                     canEdit={canUpdateTransactions}
                     canDelete={canDeleteTransactions}
+                    showCreator={!isPersonalWorkspace}
                   />
                 </div>
               ))}
@@ -605,21 +673,71 @@ export function InfiniteTransactionsList({
 
       {/* Transaction Edit Dialog */}
       {selectedTransaction && (
-        <TransactionEditDialog
-          transaction={selectedTransaction}
-          wsId={wsId}
-          isOpen={isEditDialogOpen}
-          onClose={handleCloseDialog}
-          onUpdate={handleTransactionUpdate}
-          canUpdateTransactions={canUpdateTransactions}
-          canDeleteTransactions={canDeleteTransactions}
-          canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
-          canDeleteConfidentialTransactions={canDeleteConfidentialTransactions}
-          canViewConfidentialAmount={canViewConfidentialAmount}
-          canViewConfidentialDescription={canViewConfidentialDescription}
-          canViewConfidentialCategory={canViewConfidentialCategory}
+        <ModifiableDialogTrigger
+          data={selectedTransaction}
+          open={isEditDialogOpen}
+          title={t('ws-transactions.edit')}
+          editDescription={t('ws-transactions.edit_description')}
+          setOpen={(open) => {
+            if (!open) {
+              handleCloseDialog();
+            }
+          }}
+          form={
+            <TransactionForm
+              wsId={wsId}
+              data={selectedTransaction}
+              canUpdateTransactions={canUpdateTransactions}
+              canUpdateConfidentialTransactions={
+                canUpdateConfidentialTransactions
+              }
+              onFinish={() => {
+                handleTransactionUpdate();
+                handleCloseDialog();
+              }}
+            />
+          }
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!transactionToDelete}
+        onOpenChange={(open) => !open && setTransactionToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('ws-transactions.delete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('ws-transactions.confirm_delete_transaction')}
+              {transactionToDelete?.description && (
+                <span className="mt-2 block font-medium text-foreground">
+                  "{transactionToDelete.description}"
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+              className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('common.deleting')}
+                </>
+              ) : (
+                t('common.delete')
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* CSS animations */}
       <style>{`

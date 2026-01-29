@@ -116,6 +116,7 @@ import {
   FolderOpen,
   FolderPlus,
   Footprints,
+  Fuel,
   // New icons - Entertainment & Gaming
   Gamepad2,
   Gem,
@@ -296,6 +297,7 @@ import {
   Video,
   Wallet,
   Wand2,
+  WashingMachine,
   Watch,
   Wifi,
   Wind,
@@ -523,6 +525,7 @@ export const WORKSPACE_BOARD_ICON_VALUES = [
   'Luggage',
   'Ticket',
   'Hotel',
+  'Fuel',
   // New icons - Entertainment & Gaming
   'Gamepad2',
   'Dice1',
@@ -588,6 +591,7 @@ export const WORKSPACE_BOARD_ICON_VALUES = [
   'Lamp',
   'Sofa',
   'Shirt',
+  'WashingMachine',
   'Watch',
   'Glasses',
   'Gem',
@@ -838,6 +842,7 @@ export const ICON_OPTIONS: IconOption[] = [
   { value: 'Luggage', label: 'Luggage', Icon: Luggage },
   { value: 'Ticket', label: 'Ticket', Icon: Ticket },
   { value: 'Hotel', label: 'Hotel', Icon: Hotel },
+  { value: 'Fuel', label: 'Fuel', Icon: Fuel },
   // New icons - Entertainment & Gaming
   { value: 'Gamepad2', label: 'Gamepad', Icon: Gamepad2 },
   { value: 'Dice1', label: 'Dice', Icon: Dice1 },
@@ -903,6 +908,7 @@ export const ICON_OPTIONS: IconOption[] = [
   { value: 'Lamp', label: 'Lamp', Icon: Lamp },
   { value: 'Sofa', label: 'Sofa', Icon: Sofa },
   { value: 'Shirt', label: 'Shirt', Icon: Shirt },
+  { value: 'WashingMachine', label: 'Washing Machine', Icon: WashingMachine },
   { value: 'Watch', label: 'Watch', Icon: Watch },
   { value: 'Glasses', label: 'Glasses', Icon: Glasses },
   { value: 'Gem', label: 'Gem', Icon: Gem },

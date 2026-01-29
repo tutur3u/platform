@@ -63,6 +63,13 @@ export default function ExportDialogContent({
     })
   );
 
+  const [tagIds] = useQueryState(
+    'tagIds',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
   const [start] = useQueryState(
     'start',
     parseAsString.withOptions({
@@ -137,6 +144,7 @@ export default function ExportDialogContent({
           userIds,
           categoryIds,
           walletIds,
+          tagIds,
           start: start || undefined,
           end: end || undefined,
         });

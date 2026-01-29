@@ -87,6 +87,7 @@ interface DateRangeProps {
   setPeriod: (period: InvoiceAnalyticsPeriod) => void;
   className?: string;
   showPeriodTabs?: boolean;
+  currency?: string;
 }
 
 // Props for default mode (no date range, period tabs)
@@ -102,6 +103,7 @@ interface DefaultModeProps {
   setPeriod: (period: InvoiceAnalyticsPeriod) => void;
   className?: string;
   showPeriodTabs?: boolean;
+  currency?: string;
 }
 
 export type InvoiceTotalsChartProps = DateRangeProps | DefaultModeProps;
@@ -112,7 +114,8 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
-  const { period, setPeriod } = props;
+  const { period, setPeriod, currency = 'USD' } = props;
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
   const [metric, setMetric] = useState<InvoiceAnalyticsMetric>('amount');
   const [groupBy, setGroupBy] = useState<InvoiceAnalyticsGroupBy>('wallet');
   const [chartMode, setChartMode] = useState<ChartMode>('stacked');
@@ -249,9 +252,9 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currencyLocale, {
       style: 'currency',
-      currency: 'VND',
+      currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);

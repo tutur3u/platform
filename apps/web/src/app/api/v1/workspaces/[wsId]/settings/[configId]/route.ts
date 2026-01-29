@@ -1,6 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { getWorkspaceConfig } from '@/lib/workspace-helper';
+import {
+  getWorkspaceConfig,
+  normalizeWorkspaceId,
+} from '@/lib/workspace-helper';
 
 interface Params {
   params: Promise<{
@@ -11,7 +14,10 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const { wsId, configId: id } = await params;
+  const { wsId: rawWsId, configId: id } = await params;
+
+  // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
+  const wsId = await normalizeWorkspaceId(rawWsId);
 
   const { value } = await req.json();
 
@@ -38,7 +44,10 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const { wsId, configId: id } = await params;
+  const { wsId: rawWsId, configId: id } = await params;
+
+  // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
+  const wsId = await normalizeWorkspaceId(rawWsId);
   const value = await getWorkspaceConfig(wsId, id);
 
   if (value === null) {

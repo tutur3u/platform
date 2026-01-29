@@ -19,6 +19,7 @@ export async function GET(req: Request, { params }: Params) {
     const userIds = searchParams.getAll('userIds');
     const categoryIds = searchParams.getAll('categoryIds');
     const walletIds = searchParams.getAll('walletIds');
+    const tagIds = searchParams.getAll('tagIds');
     const walletId = searchParams.get('walletId'); // For single wallet view
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
@@ -73,6 +74,7 @@ export async function GET(req: Request, { params }: Params) {
         p_wallet_ids: finalWalletIds,
         p_category_ids: categoryIds.length > 0 ? categoryIds : undefined,
         p_creator_ids: userIds.length > 0 ? userIds : undefined,
+        p_tag_ids: tagIds.length > 0 ? tagIds : undefined,
         p_search_query: q || undefined,
         p_start_date: startDate || undefined,
         p_end_date: endDate || undefined,
@@ -91,15 +93,44 @@ export async function GET(req: Request, { params }: Params) {
     const hasMore = (data || []).length > limit;
     const rawTransactions = hasMore ? data.slice(0, limit) : data || [];
 
+    // Get transaction IDs for fetching tags
+    const transactionIds = rawTransactions.map((t) => t.id);
+
+    // Fetch tags for all transactions in a single query
+    const { data: transactionTags } =
+      transactionIds.length > 0
+        ? await supabase
+            .from('wallet_transaction_tags')
+            .select('transaction_id, tag:transaction_tags(id, name, color)')
+            .in('transaction_id', transactionIds)
+        : { data: [] };
+
+    // Group tags by transaction ID
+    const tagsByTransaction: Record<
+      string,
+      Array<{ id: string; name: string; color: string }>
+    > = {};
+    (transactionTags || []).forEach((tt: any) => {
+      if (!tagsByTransaction[tt.transaction_id]) {
+        tagsByTransaction[tt.transaction_id] = [];
+      }
+      if (tt.tag) {
+        tagsByTransaction[tt.transaction_id]!.push(tt.tag);
+      }
+    });
+
     const transactions = rawTransactions.map((t) => ({
       ...t,
       wallet: t.wallet_name,
+      category: t.category_name,
+      category_icon: t.category_icon,
+      category_color: t.category_color,
       user: {
         full_name: t.creator_full_name,
         email: t.creator_email,
         avatar_url: t.creator_avatar_url,
       },
-      // Remove flat fields to keep response clean (optional, keeping them doesn't hurt)
+      tags: tagsByTransaction[t.id] || [],
     }));
 
     // Generate next cursor

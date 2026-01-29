@@ -1,4 +1,5 @@
 import TransactionCategoriesPage from '@tuturuuu/ui/finance/transactions/categories/transactions-categories-page';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
@@ -29,10 +30,12 @@ export default async function WorkspaceTransactionCategoriesPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+        const currency = await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY');
         return (
           <TransactionCategoriesPage
             wsId={wsId}
             searchParams={await searchParams}
+            currency={currency ?? 'USD'}
           />
         );
       }}

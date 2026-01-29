@@ -40,13 +40,14 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface MoneyLoverImportDialogProps {
   wsId: string;
+  currency?: string;
 }
 
 const importFormSchema = z.object({
@@ -77,9 +78,9 @@ interface ImportProgress {
 
 export default function MoneyLoverImportDialog({
   wsId,
+  currency = 'USD',
 }: MoneyLoverImportDialogProps) {
   const t = useTranslations();
-  const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -550,13 +551,16 @@ export default function MoneyLoverImportDialog({
                                   : 'text-dynamic-green'
                               }`}
                             >
-                              {Intl.NumberFormat(locale, {
-                                style: 'currency',
-                                currency: 'VND',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                                signDisplay: 'always',
-                              }).format(amount)}
+                              {Intl.NumberFormat(
+                                currency === 'VND' ? 'vi-VN' : 'en-US',
+                                {
+                                  style: 'currency',
+                                  currency,
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                  signDisplay: 'always',
+                                }
+                              ).format(amount)}
                             </td>
                             <td className="p-2.5">
                               <Badge

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Check, Tag, X } from '@tuturuuu/icons';
+import { ArrowDownCircle, ArrowUpCircle, Check, Tag, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -14,8 +14,13 @@ import {
   CommandList,
   CommandSeparator,
 } from '@tuturuuu/ui/command';
+import {
+  getIconComponentByKey,
+  type WorkspaceBoardIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -23,6 +28,8 @@ interface TransactionCategory {
   id: string;
   name: string;
   is_expense: boolean;
+  icon: string | null;
+  color: string | null;
 }
 
 interface CategoryFilterProps {
@@ -39,7 +46,7 @@ async function fetchTransactionCategories(
   const supabase = createClient();
   const { data, error } = await supabase
     .from('transaction_categories')
-    .select('id, name, is_expense')
+    .select('id, name, is_expense, icon, color')
     .eq('ws_id', wsId)
     .order('name', { ascending: true });
 
@@ -47,6 +54,8 @@ async function fetchTransactionCategories(
   return (data || []).map((cat) => ({
     ...cat,
     is_expense: cat.is_expense ?? false,
+    icon: cat.icon ?? null,
+    color: cat.color ?? null,
   }));
 }
 
@@ -143,6 +152,25 @@ export function CategoryFilter({
                         category.id
                       );
 
+                      // Get icon component if available
+                      const IconComponent = category.icon
+                        ? getIconComponentByKey(
+                            category.icon as WorkspaceBoardIconKey
+                          )
+                        : null;
+
+                      // Determine the icon to show
+                      const CategoryIcon = IconComponent
+                        ? IconComponent
+                        : category.is_expense
+                          ? ArrowDownCircle
+                          : ArrowUpCircle;
+
+                      // Get color styles if available
+                      const colorStyles = category.color
+                        ? computeAccessibleLabelStyles(category.color)
+                        : null;
+
                       return (
                         <CommandItem
                           key={category.id}
@@ -160,7 +188,27 @@ export function CategoryFilter({
                             <Check className="h-4 w-4" />
                           </div>
                           <div className="flex flex-1 items-center gap-2">
-                            <Tag className="h-4 w-4 text-muted-foreground" />
+                            <div
+                              className="flex h-6 w-6 items-center justify-center rounded"
+                              style={
+                                colorStyles
+                                  ? {
+                                      backgroundColor: colorStyles.bg,
+                                      color: colorStyles.text,
+                                    }
+                                  : undefined
+                              }
+                            >
+                              <CategoryIcon
+                                className={cn(
+                                  'h-4 w-4',
+                                  !colorStyles &&
+                                    (category.is_expense
+                                      ? 'text-dynamic-red'
+                                      : 'text-dynamic-green')
+                                )}
+                              />
+                            </div>
                             <div className="flex flex-1 flex-col">
                               <span className="font-medium text-sm">
                                 {category.name}

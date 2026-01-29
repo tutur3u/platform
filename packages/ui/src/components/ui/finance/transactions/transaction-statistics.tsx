@@ -30,7 +30,7 @@ export function TransactionStatistics({
   transactions,
   stats,
   isLoading,
-  currency = 'VND',
+  currency = 'USD',
 }: TransactionStatisticsProps) {
   const t = useTranslations();
   const locale = useLocale();

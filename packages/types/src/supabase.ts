@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -9642,21 +9642,27 @@ export type Database = {
       };
       transaction_categories: {
         Row: {
+          color: string | null;
           created_at: string | null;
+          icon: string | null;
           id: string;
           is_expense: boolean | null;
           name: string;
           ws_id: string;
         };
         Insert: {
+          color?: string | null;
           created_at?: string | null;
+          icon?: string | null;
           id?: string;
           is_expense?: boolean | null;
           name: string;
           ws_id: string;
         };
         Update: {
+          color?: string | null;
           created_at?: string | null;
+          icon?: string | null;
           id?: string;
           is_expense?: boolean | null;
           name?: string;
@@ -17933,6 +17939,44 @@ export type Database = {
           spent: number;
         }[];
       };
+      get_category_breakdown:
+        | {
+            Args: {
+              _end_date?: string;
+              _interval?: string;
+              _start_date?: string;
+              _transaction_type?: string;
+              _ws_id: string;
+              include_confidential?: boolean;
+            };
+            Returns: {
+              category_color: string;
+              category_icon: string;
+              category_id: string;
+              category_name: string;
+              period: string;
+              total: number;
+            }[];
+          }
+        | {
+            Args: {
+              _anchor_to_latest?: boolean;
+              _end_date?: string;
+              _interval?: string;
+              _start_date?: string;
+              _transaction_type?: string;
+              _ws_id: string;
+              include_confidential?: boolean;
+            };
+            Returns: {
+              category_color: string;
+              category_icon: string;
+              category_id: string;
+              category_name: string;
+              period: string;
+              total: number;
+            }[];
+          };
       get_challenge_stats: {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: {
@@ -17991,6 +18035,19 @@ export type Database = {
               total_income: number;
             }[];
           };
+      get_daily_income_expense_range: {
+        Args: {
+          _end_date?: string;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          day: string;
+          total_expense: number;
+          total_income: number;
+        }[];
+      };
       get_daily_invoice_totals: {
         Args: {
           _ws_id: string;
@@ -18218,6 +18275,40 @@ export type Database = {
         Returns: number;
       };
       get_mau_count: { Args: never; Returns: number };
+      get_monthly_category_breakdown:
+        | {
+            Args: {
+              _end_date?: string;
+              _start_date?: string;
+              _ws_id: string;
+              include_confidential?: boolean;
+            };
+            Returns: {
+              category_color: string;
+              category_icon: string;
+              category_id: string;
+              category_name: string;
+              month: string;
+              total: number;
+            }[];
+          }
+        | {
+            Args: {
+              _end_date?: string;
+              _start_date?: string;
+              _transaction_type?: string;
+              _ws_id: string;
+              include_confidential?: boolean;
+            };
+            Returns: {
+              category_color: string;
+              category_icon: string;
+              category_id: string;
+              category_name: string;
+              month: string;
+              total: number;
+            }[];
+          };
       get_monthly_income_expense:
         | {
             Args: { _ws_id: string; past_months?: number };
@@ -18239,6 +18330,19 @@ export type Database = {
               total_income: number;
             }[];
           };
+      get_monthly_income_expense_range: {
+        Args: {
+          _end_date?: string;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          month: string;
+          total_expense: number;
+          total_income: number;
+        }[];
+      };
       get_monthly_invoice_totals: {
         Args: {
           _ws_id: string;
@@ -18674,7 +18778,9 @@ export type Database = {
         Args: { p_ws_id: string };
         Returns: {
           amount: number;
+          color: string;
           created_at: string;
+          icon: string;
           id: string;
           is_expense: boolean;
           name: string;
@@ -18707,6 +18813,7 @@ export type Database = {
           p_end_date?: string;
           p_search_query?: string;
           p_start_date?: string;
+          p_tag_ids?: string[];
           p_user_id?: string;
           p_wallet_ids?: string[];
           p_ws_id: string;
@@ -18825,6 +18932,14 @@ export type Database = {
           is_whitelisted: boolean;
         }[];
       };
+      get_wallet_balance_at_date: {
+        Args: {
+          _target_date: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: number;
+      };
       get_wallet_expense_count:
         | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number }
         | {
@@ -18891,6 +19006,7 @@ export type Database = {
           p_order_direction?: string;
           p_search_query?: string;
           p_start_date?: string;
+          p_tag_ids?: string[];
           p_transaction_ids?: string[];
           p_user_id?: string;
           p_wallet_ids?: string[];
@@ -18898,7 +19014,10 @@ export type Database = {
         };
         Returns: {
           amount: number;
+          category_color: string;
+          category_icon: string;
           category_id: string;
+          category_name: string;
           created_at: string;
           creator_avatar_url: string;
           creator_email: string;
@@ -20095,7 +20214,9 @@ export type Database = {
         | 'CircleX'
         | 'CircleAlert'
         | 'BellRing'
-        | 'BellOff';
+        | 'BellOff'
+        | 'Fuel'
+        | 'WashingMachine';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
       workspace_pricing_model: 'fixed' | 'seat_based';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
@@ -20181,7 +20302,9 @@ export type Database = {
         | 'view_incomes'
         | 'create_wallets'
         | 'update_wallets'
-        | 'delete_wallets';
+        | 'delete_wallets'
+        | 'view_stock_quantity'
+        | 'update_stock_quantity';
     };
     CompositeTypes: {
       email_block_status: {
@@ -20778,6 +20901,8 @@ export const Constants = {
         'CircleAlert',
         'BellRing',
         'BellOff',
+        'Fuel',
+        'WashingMachine',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
       workspace_pricing_model: ['fixed', 'seat_based'],
@@ -20865,6 +20990,8 @@ export const Constants = {
         'create_wallets',
         'update_wallets',
         'delete_wallets',
+        'view_stock_quantity',
+        'update_stock_quantity',
       ],
     },
   },

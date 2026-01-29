@@ -622,6 +622,22 @@ export const permissionGroups = ({
             disableOnProduction: false,
             disabled: false,
           },
+          {
+            id: 'view_stock_quantity',
+            icon: <Eye />,
+            title: t('ws-roles.view_stock_quantity'),
+            description: t('ws-roles.view_stock_quantity_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'update_stock_quantity',
+            icon: <Edit />,
+            title: t('ws-roles.update_stock_quantity'),
+            description: t('ws-roles.update_stock_quantity_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
         ],
       },
       {

@@ -19,6 +19,9 @@ import { Separator } from '../separator';
 export type ComboboxOption = {
   value: string;
   label: string;
+  icon?: React.ReactNode;
+  /** Optional color for styling */
+  color?: string;
 };
 
 export type ComboboxAction = {
@@ -261,10 +264,29 @@ export function Combobox({
                       }
                     }}
                   >
-                    {option.label}
+                    {option.icon && (
+                      <span
+                        className="flex shrink-0 items-center justify-center [&_svg]:stroke-current"
+                        style={
+                          option.color
+                            ? {
+                                color: option.color,
+                              }
+                            : undefined
+                        }
+                      >
+                        {option.icon}
+                      </span>
+                    )}
+                    <span
+                      className="truncate"
+                      style={option.color ? { color: option.color } : undefined}
+                    >
+                      {option.label}
+                    </span>
                     <Check
                       className={cn(
-                        'ml-auto',
+                        'ml-auto shrink-0',
                         isSelected(option.value) ? 'opacity-100' : 'opacity-0'
                       )}
                     />
