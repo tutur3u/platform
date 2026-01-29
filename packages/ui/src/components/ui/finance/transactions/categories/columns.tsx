@@ -6,13 +6,14 @@ import type { TransactionCategory } from '@tuturuuu/types/primitives/Transaction
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
 import moment from 'moment';
-import { useLocale } from 'next-intl';
 
 export const transactionCategoryColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  _extraColumns?: any[],
+  extraData?: { currency?: string }
 ): ColumnDef<TransactionCategory>[] => {
-  const locale = useLocale();
+  const currency = extraData?.currency || 'USD';
 
   return [
     // {
@@ -88,9 +89,9 @@ export const transactionCategoryColumns = (
               isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
             }`}
           >
-            {new Intl.NumberFormat(locale, {
+            {new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
               style: 'currency',
-              currency: 'VND',
+              currency,
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
             }).format(Math.abs(amount))}

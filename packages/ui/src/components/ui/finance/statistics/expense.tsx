@@ -10,9 +10,11 @@ const enabled = true;
 
 export default async function ExpenseStatistics({
   wsId,
+  currency = 'USD',
   searchParams: { view, startDate, endDate, includeConfidential } = {},
 }: {
   wsId: string;
+  currency?: string;
   searchParams?: FinanceDashboardSearchParams;
 }) {
   const supabase = await createClient();
@@ -51,8 +53,8 @@ export default async function ExpenseStatistics({
       title={t('finance-overview.total-expense')}
       value={expense || 0}
       icon={<TrendingDown className="h-5 w-5" />}
-      currency="VND"
-      locale="vi-VN"
+      currency={currency}
+      locale={currency === 'VND' ? 'vi-VN' : 'en-US'}
     />
   );
 }

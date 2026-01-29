@@ -85,6 +85,7 @@ export async function getData(
     userIds,
     categoryIds,
     walletIds,
+    tagIds,
     start,
     end,
   }: {
@@ -94,11 +95,38 @@ export async function getData(
     userIds?: string | string[];
     categoryIds?: string | string[];
     walletIds?: string | string[];
+    tagIds?: string | string[];
     start?: string;
     end?: string;
   }
 ) {
   const supabase = createClient();
+
+  // If tag filter is provided, first get transaction IDs with those tags
+  let transactionIdsWithTags: string[] | null = null;
+  if (tagIds) {
+    const tagIdArray = Array.isArray(tagIds) ? tagIds : [tagIds];
+    if (tagIdArray.length > 0) {
+      const { data: taggedTransactions } = await supabase
+        .from('wallet_transaction_tags')
+        .select('transaction_id')
+        .in('tag_id', tagIdArray);
+
+      if (taggedTransactions) {
+        transactionIdsWithTags = [
+          ...new Set(taggedTransactions.map((t) => t.transaction_id)),
+        ];
+      }
+
+      // If no transactions have any of the selected tags, return empty result
+      if (!transactionIdsWithTags || transactionIdsWithTags.length === 0) {
+        return {
+          data: [] as TransactionExportRow[],
+          count: 0,
+        };
+      }
+    }
+  }
 
   let queryBuilder = supabase
     .from('wallet_transactions')
@@ -148,6 +176,11 @@ export async function getData(
     if (walletIdArray.length > 0) {
       queryBuilder = queryBuilder.in('wallet_id', walletIdArray);
     }
+  }
+
+  // Filter by transaction IDs if tag filter was applied
+  if (transactionIdsWithTags) {
+    queryBuilder = queryBuilder.in('id', transactionIdsWithTags);
   }
 
   // Filter by date range if provided

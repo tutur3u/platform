@@ -1,6 +1,9 @@
 import FinancePage from '@tuturuuu/ui/finance/finance-page';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -20,10 +23,19 @@ export default async function WorkspaceFinancePage({
   searchParams,
 }: Props) {
   const { wsId: id } = await params;
-  const sp = await searchParams;
 
-  const workspace = await getWorkspace(id);
+  const [sp, workspace] = await Promise.all([searchParams, getWorkspace(id)]);
   const wsId = workspace.id;
 
-  return <FinancePage wsId={wsId} searchParams={sp} />;
+  // Fetch currency from workspace config
+  const currency = await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY');
+
+  return (
+    <FinancePage
+      wsId={wsId}
+      searchParams={sp}
+      currency={currency || 'USD'}
+      isPersonalWorkspace={workspace.personal}
+    />
+  );
 }

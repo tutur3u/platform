@@ -33,7 +33,7 @@ interface Params {
 }
 
 const TransactionUpdateSchema = z.object({
-  description: z.string().min(1).optional(),
+  description: z.string().optional(),
   amount: z.number().optional(),
   origin_wallet_id: z.uuid().optional(),
   category_id: z.uuid().optional(),

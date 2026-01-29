@@ -20,7 +20,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TransactionEditDialog } from '../transaction-edit-dialog';
 import { Bill } from './bill';
@@ -28,6 +28,7 @@ import { DetailObjects } from './objects';
 
 interface Props {
   wsId: string;
+  currency?: string;
   transaction: any;
   tags: Array<{ id: string; name: string; color: string }>;
   objects: any[];
@@ -35,12 +36,12 @@ interface Props {
 
 export function TransactionDetailsClientPage({
   wsId,
+  currency = 'USD',
   transaction,
   tags,
   objects,
 }: Props) {
   const t = useTranslations();
-  const locale = useLocale();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isExpense = (transaction.amount || 0) < 0;
@@ -96,9 +97,9 @@ export function TransactionDetailsClientPage({
                   isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
                 }`}
               >
-                {Intl.NumberFormat(locale, {
+                {Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
                   style: 'currency',
-                  currency: 'VND',
+                  currency,
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
                   signDisplay: 'always',

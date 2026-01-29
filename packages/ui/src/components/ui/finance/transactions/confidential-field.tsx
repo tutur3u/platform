@@ -47,7 +47,9 @@ interface ConfidentialAmountProps {
   isConfidential: boolean;
   isRedacted?: boolean;
   formatAmount?: (amount: number) => string;
+  currency?: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 /**
@@ -60,7 +62,9 @@ export function ConfidentialAmount({
   isConfidential,
   isRedacted,
   formatAmount,
+  currency = 'USD',
   className = '',
+  style,
 }: ConfidentialAmountProps) {
   const t = useTranslations('workspace-finance-transactions');
   const locale = useLocale();
@@ -68,8 +72,9 @@ export function ConfidentialAmount({
   // Auto-detect redaction: amount is null AND field is confidential
   const actuallyRedacted = isRedacted ?? (amount === null && isConfidential);
 
-  // Default formatter using locale
-  const defaultFormatter = (amt: number) => formatCurrency(amt, locale);
+  // Default formatter using locale and currency
+  const defaultFormatter = (amt: number) =>
+    formatCurrency(amt, locale, currency);
 
   if (actuallyRedacted) {
     return (
@@ -95,7 +100,7 @@ export function ConfidentialAmount({
   const formatter = formatAmount || defaultFormatter;
 
   return (
-    <span className={className}>
+    <span className={className} style={style}>
       {amount !== null ? formatter(amount) : '—'}
     </span>
   );

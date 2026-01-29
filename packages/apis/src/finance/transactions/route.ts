@@ -1,4 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -10,7 +14,7 @@ interface Params {
 }
 
 const TransactionSchema = z.object({
-  description: z.string().min(1),
+  description: z.string().optional(),
   amount: z.number(),
   origin_wallet_id: z.string().uuid(),
   category_id: z.string().uuid().optional(),
@@ -118,13 +122,55 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  // Resolve workspace ID (handles "internal" slug)
+  const resolvedWsId = resolveWorkspaceId(wsId);
+
   // Get the virtual_user_id for this workspace
-  const { data: wsUser } = await supabase
+  let { data: wsUser } = await supabase
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', user.id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', resolvedWsId)
     .single();
+
+  // If not found, try to auto-repair the link
+  if (!wsUser?.virtual_user_id) {
+    // Check if user is a workspace member first
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .eq('ws_id', resolvedWsId)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json(
+        { message: 'User is not a member of this workspace' },
+        { status: 403 }
+      );
+    }
+
+    // Try to repair the link using admin client
+    try {
+      const sbAdmin = await createAdminClient();
+      await sbAdmin.rpc('ensure_workspace_user_link', {
+        target_user_id: user.id,
+        target_ws_id: resolvedWsId,
+      });
+
+      // Fetch the newly created link
+      const { data: repairedUser } = await supabase
+        .from('workspace_user_linked_users')
+        .select('virtual_user_id')
+        .eq('platform_user_id', user.id)
+        .eq('ws_id', resolvedWsId)
+        .single();
+
+      wsUser = repairedUser;
+    } catch (repairError) {
+      console.error('Failed to auto-repair workspace user link:', repairError);
+    }
+  }
 
   if (!wsUser?.virtual_user_id) {
     return NextResponse.json(

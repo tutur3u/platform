@@ -1,8 +1,19 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { Plus } from '@tuturuuu/icons';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Ellipsis, Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -12,13 +23,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Progress } from '@tuturuuu/ui/progress';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { BudgetForm } from './form';
 
 interface BudgetsPageProps {
   wsId: string;
+  currency?: string;
   searchParams: {
     q?: string;
     page?: string;
@@ -41,9 +61,16 @@ interface Budget {
   wallet_id: string | null;
 }
 
-export default function BudgetsPage({ wsId }: BudgetsPageProps) {
+export default function BudgetsPage({
+  wsId,
+  currency = 'USD',
+}: BudgetsPageProps) {
+  const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   const { data: budgets, isLoading } = useQuery({
     queryKey: ['budgets', wsId],
@@ -59,6 +86,27 @@ export default function BudgetsPage({ wsId }: BudgetsPageProps) {
       return data as Budget[];
     },
   });
+
+  const deleteBudget = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase
+        .from('finance_budgets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Budget deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
+      queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      toast.error('Failed to delete budget');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const getProgressColor = (percentage: number, threshold: number) => {
     if (percentage >= 100) return 'bg-dynamic-red';
@@ -128,17 +176,72 @@ export default function BudgetsPage({ wsId }: BudgetsPageProps) {
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>{budget.name}</span>
-                    {isOverBudget && (
-                      <span className="rounded-full bg-dynamic-red/10 px-2 py-1 font-medium text-dynamic-red text-xs">
-                        Over Budget
-                      </span>
-                    )}
-                    {isNearThreshold && !isOverBudget && (
-                      <span className="rounded-full bg-dynamic-orange/10 px-2 py-1 font-medium text-dynamic-orange text-xs">
-                        Alert
-                      </span>
-                    )}
+                    <span className="flex-1">{budget.name}</span>
+                    <div className="flex items-center gap-2">
+                      {isOverBudget && (
+                        <span className="rounded-full bg-dynamic-red/10 px-2 py-1 font-medium text-dynamic-red text-xs">
+                          Over Budget
+                        </span>
+                      )}
+                      {isNearThreshold && !isOverBudget && (
+                        <span className="rounded-full bg-dynamic-orange/10 px-2 py-1 font-medium text-dynamic-orange text-xs">
+                          Alert
+                        </span>
+                      )}
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0 data-[state=open]:bg-muted"
+                          >
+                            <Ellipsis className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem
+                            onClick={() => setEditingBudget(budget)}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
+                                disabled={deletingId === budget.id}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Delete Budget
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete &quot;
+                                  {budget.name}&quot;? This action cannot be
+                                  undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteBudget(budget.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={deletingId === budget.id}
+                                >
+                                  {deletingId === budget.id
+                                    ? 'Deleting...'
+                                    : 'Delete'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </CardTitle>
                   {budget.description && (
                     <p className="text-muted-foreground text-sm">
@@ -159,9 +262,9 @@ export default function BudgetsPage({ wsId }: BudgetsPageProps) {
                             'text-dynamic-orange'
                         )}
                       >
-                        {new Intl.NumberFormat('en-US', {
+                        {new Intl.NumberFormat(locale, {
                           style: 'currency',
-                          currency: 'USD',
+                          currency,
                         }).format(Number(budget.spent))}
                       </span>
                     </div>
@@ -176,9 +279,9 @@ export default function BudgetsPage({ wsId }: BudgetsPageProps) {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Budget</span>
                       <span className="font-medium">
-                        {new Intl.NumberFormat('en-US', {
+                        {new Intl.NumberFormat(locale, {
                           style: 'currency',
-                          currency: 'USD',
+                          currency,
                         }).format(Number(budget.amount))}
                       </span>
                     </div>
@@ -195,9 +298,9 @@ export default function BudgetsPage({ wsId }: BudgetsPageProps) {
                             : 'text-dynamic-green'
                         )}
                       >
-                        {new Intl.NumberFormat('en-US', {
+                        {new Intl.NumberFormat(locale, {
                           style: 'currency',
-                          currency: 'USD',
+                          currency,
                           signDisplay: 'always',
                         }).format(Number(remaining))}
                       </p>
@@ -232,6 +335,36 @@ export default function BudgetsPage({ wsId }: BudgetsPageProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={!!editingBudget}
+        onOpenChange={(open) => !open && setEditingBudget(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Budget</DialogTitle>
+          </DialogHeader>
+          {editingBudget && (
+            <BudgetForm
+              wsId={wsId}
+              budgetId={editingBudget.id}
+              initialData={{
+                name: editingBudget.name,
+                description: editingBudget.description || '',
+                amount: String(editingBudget.amount),
+                period: editingBudget.period as 'monthly' | 'yearly' | 'custom',
+                start_date: editingBudget.start_date,
+                end_date: editingBudget.end_date || '',
+                alert_threshold: String(editingBudget.alert_threshold),
+                category_id: editingBudget.category_id || '',
+                wallet_id: editingBudget.wallet_id || '',
+              }}
+              onSuccess={() => setEditingBudget(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

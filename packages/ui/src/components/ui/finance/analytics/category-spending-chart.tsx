@@ -18,6 +18,7 @@ interface CategorySpendingChartProps {
   startDate?: string;
   endDate?: string;
   className?: string;
+  currency?: string;
 }
 
 const COLORS = [
@@ -38,6 +39,7 @@ export function CategorySpendingChart({
   startDate,
   endDate,
   className,
+  currency = 'USD',
 }: CategorySpendingChartProps) {
   const locale = useLocale();
   const supabase = createClient();
@@ -146,7 +148,7 @@ export function CategorySpendingChart({
                         formatter={(value) =>
                           new Intl.NumberFormat(locale, {
                             style: 'currency',
-                            currency: 'USD',
+                            currency,
                           }).format(Number(value))
                         }
                       />
@@ -184,7 +186,7 @@ export function CategorySpendingChart({
                       <span className="font-medium">
                         {new Intl.NumberFormat(locale, {
                           style: 'currency',
-                          currency: 'USD',
+                          currency,
                         }).format(item.value)}
                       </span>
                     </div>
@@ -197,7 +199,7 @@ export function CategorySpendingChart({
                   <span>
                     {new Intl.NumberFormat(locale, {
                       style: 'currency',
-                      currency: 'USD',
+                      currency,
                     }).format(totalSpending)}
                   </span>
                 </div>

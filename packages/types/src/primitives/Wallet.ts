@@ -2,7 +2,7 @@ import type { Entity } from './Entity';
 
 export interface Wallet extends Entity {
   balance?: number;
-  currency?: 'VND';
+  currency?: string;
   description?: string;
   statement_date?: number | null;
   payment_date?: number | null;

@@ -25,11 +25,13 @@ import {
 interface SpendingTrendsChartProps {
   wsId: string;
   className?: string;
+  currency?: string;
 }
 
 export function SpendingTrendsChart({
   wsId,
   className,
+  currency = 'USD',
 }: SpendingTrendsChartProps) {
   const locale = useLocale();
   const supabase = createClient();
@@ -106,7 +108,7 @@ export function SpendingTrendsChart({
           Daily average:{' '}
           {new Intl.NumberFormat(locale, {
             style: 'currency',
-            currency: 'USD',
+            currency,
           }).format(averageSpending)}
         </p>
       </CardHeader>
@@ -143,7 +145,7 @@ export function SpendingTrendsChart({
                       formatter={(value) =>
                         new Intl.NumberFormat(locale, {
                           style: 'currency',
-                          currency: 'USD',
+                          currency,
                         }).format(Number(value))
                       }
                     />

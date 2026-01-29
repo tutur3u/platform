@@ -62,6 +62,7 @@ interface TransactionEditDialogProps {
     } | null;
   };
   wsId: string;
+  currency?: string;
   isOpen: boolean;
   onClose: () => void;
   onUpdate?: () => void;
@@ -77,6 +78,7 @@ interface TransactionEditDialogProps {
 export function TransactionEditDialog({
   transaction,
   wsId,
+  currency = 'USD',
   isOpen,
   onClose,
   onUpdate,
@@ -651,13 +653,16 @@ export function TransactionEditDialog({
                         : t('transaction-data-table.income')}
                     </span>
                     <span className="font-medium">
-                      {Intl.NumberFormat(locale, {
-                        style: 'currency',
-                        currency: 'VND',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                        signDisplay: 'always',
-                      }).format(isExpense ? -numericAmount : numericAmount)}
+                      {Intl.NumberFormat(
+                        currency === 'VND' ? 'vi-VN' : 'en-US',
+                        {
+                          style: 'currency',
+                          currency,
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                          signDisplay: 'always',
+                        }
+                      ).format(isExpense ? -numericAmount : numericAmount)}
                     </span>
                   </div>
                 </div>
