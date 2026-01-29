@@ -4196,6 +4196,7 @@
     "name_examples": "Cash, Bank Transfer, etc.",
     "select_type": "Select type",
     "total_amount": "Total Amount",
+    "transaction_count": "Transactions",
     "type": "Type"
   },
   "transaction-data-table": {

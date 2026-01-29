@@ -4196,6 +4196,7 @@
     "name_examples": "Tiền mặt, chuyển khoản, v.v.",
     "select_type": "Chọn loại",
     "total_amount": "Tổng số tiền",
+    "transaction_count": "Số giao dịch",
     "type": "Loại"
   },
   "transaction-data-table": {
