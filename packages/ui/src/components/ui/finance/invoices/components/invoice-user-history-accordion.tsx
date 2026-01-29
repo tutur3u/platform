@@ -108,13 +108,6 @@ export function InvoiceUserHistoryAccordion({ wsId, userId }: Props) {
                           </div>
                         </div>
                       )}
-
-                      <p className="text-muted-foreground text-sm">
-                        {t('ws-invoices.status')}:{' '}
-                        {invoice.completed_at
-                          ? t('ws-invoices.completed')
-                          : t('ws-invoices.pending')}
-                      </p>
                       <p className="text-muted-foreground text-xs">
                         {invoice.created_at
                           ? new Date(invoice.created_at).toLocaleDateString()

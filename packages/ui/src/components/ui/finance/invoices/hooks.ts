@@ -443,15 +443,78 @@ export const useInfiniteUserInvoices = (
       const from = pageParam * pageSize;
       const to = from + pageSize - 1;
 
-      const { data, error, count } = await supabase
+      const {
+        data: rawData,
+        error,
+        count,
+      } = await supabase
         .from('finance_invoices')
-        .select('*', { count: 'exact' })
+        .select(
+          '*, legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))',
+          { count: 'exact' }
+        )
         .eq('ws_id', wsId)
         .eq('customer_id', userId)
         .order('created_at', { ascending: false })
         .range(from, to);
 
       if (error) throw error;
+
+      const data = rawData.map(
+        ({
+          legacy_creator,
+          platform_creator,
+          wallet_transactions,
+          ...rest
+        }: any) => {
+          const platformCreator = platform_creator as {
+            id: string;
+            display_name: string | null;
+            avatar_url: string | null;
+            user_private_details: {
+              full_name: string | null;
+              email: string | null;
+            } | null;
+          } | null;
+
+          const legacyCreator = legacy_creator as {
+            id: string;
+            display_name: string | null;
+            full_name: string | null;
+            email: string | null;
+            avatar_url: string | null;
+          } | null;
+
+          const creator = {
+            id: platformCreator?.id ?? legacyCreator?.id ?? '',
+            display_name:
+              platformCreator?.display_name ??
+              legacyCreator?.display_name ??
+              platformCreator?.user_private_details?.email ??
+              null,
+            full_name:
+              platformCreator?.user_private_details?.full_name ??
+              legacyCreator?.full_name ??
+              null,
+            email:
+              platformCreator?.user_private_details?.email ??
+              legacyCreator?.email ??
+              null,
+            avatar_url:
+              platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+          };
+
+          const wallet = wallet_transactions?.wallet
+            ? { name: wallet_transactions.wallet.name }
+            : null;
+
+          return {
+            ...rest,
+            creator,
+            wallet,
+          };
+        }
+      );
 
       return {
         data: (data as Invoice[]) || [],
