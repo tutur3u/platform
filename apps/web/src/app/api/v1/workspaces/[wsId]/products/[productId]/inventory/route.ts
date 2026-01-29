@@ -149,13 +149,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
-  if (
-    !containsPermission(
-      'update_stock_quantity' as unknown as Parameters<
-        typeof containsPermission
-      >[0]
-    )
-  ) {
+  if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }

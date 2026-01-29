@@ -136,11 +136,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const canUpdateStockQuantity = containsPermission(
-    'update_stock_quantity' as unknown as Parameters<
-      typeof containsPermission
-    >[0]
-  );
+  const canUpdateStockQuantity = containsPermission('update_stock_quantity');
 
   const supabase = await createClient();
   const { inventory, ...data } = (await req.json()) as Product2 & {
