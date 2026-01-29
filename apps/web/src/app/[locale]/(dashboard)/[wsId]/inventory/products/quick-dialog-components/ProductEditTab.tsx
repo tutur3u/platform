@@ -74,7 +74,16 @@ export function ProductEditTab({
       <Card>
         <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                if (!canUpdateInventory) {
+                  e.preventDefault();
+                  return;
+                }
+                form.handleSubmit(onSave)(e);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}

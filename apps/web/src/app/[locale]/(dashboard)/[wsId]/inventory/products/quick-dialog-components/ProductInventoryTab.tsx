@@ -85,7 +85,14 @@ export function ProductInventoryTab({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <div className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!canUpdateInventory) return;
+                onSave();
+              }}
+              className="space-y-4"
+            >
               {fields.map((field, i) => (
                 <div key={field.id} className="space-y-4 rounded-lg border p-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -297,7 +304,7 @@ export function ProductInventoryTab({
                   </Button>
                 </div>
               )}
-            </div>
+            </form>
           </Form>
         </CardContent>
       </Card>

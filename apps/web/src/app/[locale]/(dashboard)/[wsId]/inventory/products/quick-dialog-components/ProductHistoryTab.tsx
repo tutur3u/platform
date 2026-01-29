@@ -36,21 +36,21 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <Store className="h-4 w-4 shrink-0" />
-                      <p className="wrap-break-word min-w-0 flex-1 text-balance font-medium text-dynamic-on-background text-sm">
+                      <p className="wrap-break-word min-w-0 flex-1 text-balance font-medium text-foreground text-sm">
                         {change.creator.full_name || change.creator.email}
                       </p>{' '}
                       <span
                         className={`inline-flex shrink-0 items-center rounded px-2 py-1 font-medium text-sm ${
                           change.amount > 0
-                            ? 'border border-dynamic-success bg-dynamic-success/50 text-dynamic-success'
-                            : 'border border-dynamic-danger bg-dynamic-danger/50 text-dynamic-danger'
+                            ? 'border border-dynamic-green bg-dynamic-green/50 text-dynamic-green'
+                            : 'border border-dynamic-red bg-dynamic-red/50 text-dynamic-red'
                         }`}
                       >
                         {change.amount > 0 ? '+' : ''}
                         {change.amount}
                       </span>
                     </div>
-                    <p className="text-dynamic-muted text-xs">
+                    <p className="text-dynamic-gray text-xs">
                       {change.created_at
                         ? new Date(change.created_at).toLocaleDateString()
                         : t('ws-inventory-products.messages.recently')}
@@ -58,7 +58,7 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                   </div>
 
                   {change.beneficiary && (
-                    <div className="flex items-center gap-2 rounded bg-dynamic-surface/50 p-2">
+                    <div className="flex items-center gap-2 rounded bg-dynamic-blue/20 p-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-dynamic-blue">
                         <ShoppingBag className="h-4 w-4" />
                       </div>
