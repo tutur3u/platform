@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -19954,7 +19954,9 @@ export type Database = {
         | 'view_incomes'
         | 'create_wallets'
         | 'update_wallets'
-        | 'delete_wallets';
+        | 'delete_wallets'
+        | 'view_stock_quantity'
+        | 'update_stock_quantity';
     };
     CompositeTypes: {
       email_block_status: {
@@ -20636,6 +20638,8 @@ export const Constants = {
         'create_wallets',
         'update_wallets',
         'delete_wallets',
+        'view_stock_quantity',
+        'update_stock_quantity',
       ],
     },
   },

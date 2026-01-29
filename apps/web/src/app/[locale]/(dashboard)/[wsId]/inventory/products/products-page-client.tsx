@@ -24,6 +24,8 @@ interface Props {
   wsId: string;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
+  canViewStockQuantity: boolean;
+  canUpdateStockQuantity: boolean;
 }
 
 const sortByValues = [
@@ -43,6 +45,8 @@ export function ProductsPageClient({
   wsId,
   canUpdateInventory,
   canDeleteInventory,
+  canViewStockQuantity,
+  canUpdateStockQuantity,
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -195,6 +199,7 @@ export function ProductsPageClient({
         extraData={{
           canUpdateInventory,
           canDeleteInventory,
+          canViewStockQuantity,
         }}
         defaultVisibility={{
           id: false,
@@ -216,6 +221,8 @@ export function ProductsPageClient({
         wsId={wsId}
         canUpdateInventory={canUpdateInventory}
         canDeleteInventory={canDeleteInventory}
+        canViewStockQuantity={canViewStockQuantity}
+        canUpdateStockQuantity={canUpdateStockQuantity}
       />
     </div>
   );

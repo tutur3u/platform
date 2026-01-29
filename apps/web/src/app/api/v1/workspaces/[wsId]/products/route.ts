@@ -70,6 +70,13 @@ export async function POST(req: Request, { params }: Params) {
 
   // Only insert inventory if it exists and is an array
   if (inventory && Array.isArray(inventory) && inventory.length > 0) {
+    if (withoutPermission('update_stock_quantity')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to update stock quantities' },
+        { status: 403 }
+      );
+    }
+
     const { error } = await supabase.from('inventory_products').insert(
       inventory.map((item) => ({
         ...item,

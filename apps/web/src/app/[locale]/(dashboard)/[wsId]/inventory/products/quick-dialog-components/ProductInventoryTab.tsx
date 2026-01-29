@@ -32,7 +32,7 @@ interface Props {
   isSaving: boolean;
   isLoading?: boolean;
   onSave: () => void;
-  canUpdateInventory: boolean;
+  canUpdateStockQuantity: boolean;
   hasUnlimitedStock: boolean;
   onToggleUnlimitedStock: (unlimited: boolean) => void;
 }
@@ -44,7 +44,7 @@ export function ProductInventoryTab({
   isSaving,
   isLoading,
   onSave,
-  canUpdateInventory,
+  canUpdateStockQuantity,
   hasUnlimitedStock,
   onToggleUnlimitedStock,
 }: Props) {
@@ -91,6 +91,8 @@ export function ProductInventoryTab({
                 id="unlimited-stock"
                 checked={hasUnlimitedStock}
                 onCheckedChange={onToggleUnlimitedStock}
+                disabled={!canUpdateStockQuantity}
+                aria-disabled={!canUpdateStockQuantity}
               />
               <label htmlFor="unlimited-stock" className="font-medium text-sm">
                 {t('ws-inventory-products.labels.unlimited_stock_label')}
@@ -103,7 +105,7 @@ export function ProductInventoryTab({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!canUpdateInventory) return;
+                if (!canUpdateStockQuantity) return;
                 onSave();
               }}
               className="space-y-4"
@@ -122,6 +124,7 @@ export function ProductInventoryTab({
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
+                            disabled={!canUpdateStockQuantity}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -164,6 +167,8 @@ export function ProductInventoryTab({
                                 'ws-inventory-products.placeholders.enter_price'
                               )}
                               value={field.value ?? ''}
+                              disabled={!canUpdateStockQuantity}
+                              aria-disabled={!canUpdateStockQuantity}
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value === ''
@@ -195,8 +200,12 @@ export function ProductInventoryTab({
                                 'ws-inventory-products.placeholders.enter_min_amount'
                               )}
                               value={field.value ?? ''}
-                              disabled={hasUnlimitedStock}
-                              aria-disabled={hasUnlimitedStock}
+                              disabled={
+                                hasUnlimitedStock || !canUpdateStockQuantity
+                              }
+                              aria-disabled={
+                                hasUnlimitedStock || !canUpdateStockQuantity
+                              }
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value === ''
@@ -232,8 +241,12 @@ export function ProductInventoryTab({
                                     )
                               }
                               value={field.value ?? ''}
-                              disabled={hasUnlimitedStock}
-                              aria-disabled={hasUnlimitedStock}
+                              disabled={
+                                hasUnlimitedStock || !canUpdateStockQuantity
+                              }
+                              aria-disabled={
+                                hasUnlimitedStock || !canUpdateStockQuantity
+                              }
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value === ''
@@ -259,6 +272,7 @@ export function ProductInventoryTab({
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
+                            disabled={!canUpdateStockQuantity}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -290,6 +304,8 @@ export function ProductInventoryTab({
                         size="sm"
                         variant="destructive"
                         onClick={() => remove(i)}
+                        disabled={!canUpdateStockQuantity}
+                        aria-disabled={!canUpdateStockQuantity}
                       >
                         <Trash className="h-4 w-4" />
                         {t('ws-inventory-products.buttons.remove')}
@@ -299,7 +315,7 @@ export function ProductInventoryTab({
                 </div>
               ))}
 
-              {canUpdateInventory && (
+              {canUpdateStockQuantity && (
                 <div className="flex gap-2">
                   <Button
                     type="button"

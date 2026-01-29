@@ -13,6 +13,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -39,6 +40,8 @@ interface Props {
   wsId: string;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
+  canViewStockQuantity: boolean;
+  canUpdateStockQuantity: boolean;
 }
 
 export function ProductQuickDialog({
@@ -48,6 +51,8 @@ export function ProductQuickDialog({
   wsId,
   canUpdateInventory,
   canDeleteInventory,
+  canViewStockQuantity,
+  canUpdateStockQuantity,
 }: Props) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
@@ -187,11 +192,6 @@ export function ProductQuickDialog({
   const handleEditSave = async (data: EditProductFormValues) => {
     if (!displayProduct?.id) return;
 
-    if (!canUpdateInventory) {
-      toast.error(t('ws-roles.inventory_products_access_denied_description'));
-      return;
-    }
-
     try {
       const productPayload: Partial<Product> = {};
       let hasProductChanges = false;
@@ -218,31 +218,45 @@ export function ProductQuickDialog({
         hasProductChanges = true;
       }
 
-      const originalInventory = displayProduct.inventory || [];
-      const newInventory = data.inventory || [];
+      let newInventory: EditProductFormValues['inventory'] = [];
 
-      const originalIsUnlimited = computeUnlimitedStock(displayProduct);
-      const newIsUnlimited = newInventory.some((item) => item.amount == null);
+      if (canUpdateStockQuantity) {
+        const originalInventory = displayProduct.inventory || [];
+        newInventory = data.inventory || [];
 
-      if (originalIsUnlimited !== newIsUnlimited) {
-        hasInventoryChanges = true;
+        const originalIsUnlimited = computeUnlimitedStock(displayProduct);
+        const newIsUnlimited = newInventory.some((item) => item.amount == null);
+
+        if (originalIsUnlimited !== newIsUnlimited) {
+          hasInventoryChanges = true;
+        }
+
+        const changedInventoryItems = newInventory.filter((newItem, index) => {
+          const originalItem = originalInventory[index];
+          if (!originalItem) return true;
+          return (
+            newItem.unit_id !== originalItem.unit_id ||
+            newItem.warehouse_id !== originalItem.warehouse_id ||
+            Number(newItem.amount) !== Number(originalItem.amount) ||
+            Number(newItem.min_amount) !== Number(originalItem.min_amount) ||
+            Number(newItem.price) !== Number(originalItem.price)
+          );
+        });
+
+        const hasRemovedItems = originalInventory.length > newInventory.length;
+        if (changedInventoryItems.length > 0 || hasRemovedItems) {
+          hasInventoryChanges = true;
+        }
       }
 
-      const changedInventoryItems = newInventory.filter((newItem, index) => {
-        const originalItem = originalInventory[index];
-        if (!originalItem) return true;
-        return (
-          newItem.unit_id !== originalItem.unit_id ||
-          newItem.warehouse_id !== originalItem.warehouse_id ||
-          Number(newItem.amount) !== Number(originalItem.amount) ||
-          Number(newItem.min_amount) !== Number(originalItem.min_amount) ||
-          Number(newItem.price) !== Number(originalItem.price)
-        );
-      });
+      if (hasProductChanges && !canUpdateInventory) {
+        toast.error(t('common.insufficient_permissions'));
+        return;
+      }
 
-      const hasRemovedItems = originalInventory.length > newInventory.length;
-      if (changedInventoryItems.length > 0 || hasRemovedItems) {
-        hasInventoryChanges = true;
+      if (hasInventoryChanges && !canUpdateStockQuantity) {
+        toast.error(t('common.insufficient_permissions'));
+        return;
       }
 
       if (!hasProductChanges && !hasInventoryChanges) {
@@ -262,7 +276,7 @@ export function ProductQuickDialog({
         await updateInventoryMutation.mutateAsync({
           wsId,
           productId: displayProduct.id,
-          inventory: newInventory,
+          inventory: newInventory ?? [],
         });
       }
 
@@ -313,23 +327,39 @@ export function ProductQuickDialog({
             className="w-full"
           >
             <TabsList
-              className={`grid w-full ${canUpdateInventory ? 'grid-cols-4' : 'grid-cols-3'}`}
+              className={cn(
+                'grid w-full',
+                canViewStockQuantity && canUpdateInventory
+                  ? 'grid-cols-4'
+                  : canViewStockQuantity
+                    ? 'grid-cols-3'
+                    : canUpdateInventory
+                      ? 'grid-cols-2'
+                      : 'grid-cols-1'
+              )}
             >
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Eye className="h-4 w-4" />
                 {t('ws-inventory-products.tabs.details')}
               </TabsTrigger>
-              <TabsTrigger
-                value="inventory"
-                className="flex items-center gap-2"
-              >
-                <Package className="h-4 w-4" />
-                {t('ws-inventory-products.tabs.stock')}
-              </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                {t('ws-inventory-products.tabs.history')}
-              </TabsTrigger>
+              {canViewStockQuantity && (
+                <TabsTrigger
+                  value="inventory"
+                  className="flex items-center gap-2"
+                >
+                  <Package className="h-4 w-4" />
+                  {t('ws-inventory-products.tabs.stock')}
+                </TabsTrigger>
+              )}
+              {canViewStockQuantity && (
+                <TabsTrigger
+                  value="history"
+                  className="flex items-center gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  {t('ws-inventory-products.tabs.history')}
+                </TabsTrigger>
+              )}
               {canUpdateInventory && (
                 <TabsTrigger value="edit" className="flex items-center gap-2">
                   <Edit className="h-4 w-4" />
@@ -342,29 +372,34 @@ export function ProductQuickDialog({
               <ProductDetailsTab
                 product={displayProduct}
                 hasUnlimitedStock={hasUnlimitedStock}
+                canViewStockQuantity={canViewStockQuantity}
               />
             </TabsContent>
 
-            <TabsContent value="inventory" className="space-y-4">
-              <ProductInventoryTab
-                form={editForm}
-                warehouses={warehouses}
-                units={units}
-                isSaving={isSaving}
-                isLoading={isProductLoading}
-                onSave={editForm.handleSubmit(handleEditSave)}
-                canUpdateInventory={canUpdateInventory}
-                hasUnlimitedStock={hasUnlimitedStock}
-                onToggleUnlimitedStock={toggleUnlimitedStock}
-              />
-            </TabsContent>
+            {canViewStockQuantity && (
+              <TabsContent value="inventory" className="space-y-4">
+                <ProductInventoryTab
+                  form={editForm}
+                  warehouses={warehouses}
+                  units={units}
+                  isSaving={isSaving}
+                  isLoading={isProductLoading}
+                  onSave={editForm.handleSubmit(handleEditSave)}
+                  canUpdateStockQuantity={canUpdateStockQuantity}
+                  hasUnlimitedStock={hasUnlimitedStock}
+                  onToggleUnlimitedStock={toggleUnlimitedStock}
+                />
+              </TabsContent>
+            )}
 
-            <TabsContent value="history" className="space-y-4">
-              <ProductHistoryTab
-                product={displayProduct}
-                isLoading={isProductLoading}
-              />
-            </TabsContent>
+            {canViewStockQuantity && (
+              <TabsContent value="history" className="space-y-4">
+                <ProductHistoryTab
+                  product={displayProduct}
+                  isLoading={isProductLoading}
+                />
+              </TabsContent>
+            )}
 
             <TabsContent value="edit" className="space-y-4">
               <ProductEditTab

@@ -21,11 +21,11 @@ export type ProductStockChange = Pick<
   creator: Pick<Tables<'workspace_users'>, 'full_name' | 'email'> | null;
 };
 export type RawInventoryProduct = Tables<'workspace_products'> & {
-  product_categories: InventoryProductCategory | null;
-  inventory_products: InventoryProduct[] | null;
+  product_categories?: InventoryProductCategory | null;
+  inventory_products?: InventoryProduct[] | null;
 };
 export type RawInventoryProductWithChanges = Tables<'workspace_products'> & {
-  inventory_products: InventoryProduct[] | null;
-  product_stock_changes: ProductStockChange[] | null;
-  product_categories: InventoryProductCategory | null;
+  inventory_products?: InventoryProduct[] | null;
+  product_stock_changes?: ProductStockChange[] | null;
+  product_categories?: InventoryProductCategory | null;
 };

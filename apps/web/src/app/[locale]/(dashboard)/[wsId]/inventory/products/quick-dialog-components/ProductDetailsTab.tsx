@@ -6,9 +6,14 @@ import { useFormatter, useTranslations } from 'next-intl';
 interface Props {
   product: Product;
   hasUnlimitedStock: boolean;
+  canViewStockQuantity: boolean;
 }
 
-export function ProductDetailsTab({ product, hasUnlimitedStock }: Props) {
+export function ProductDetailsTab({
+  product,
+  hasUnlimitedStock,
+  canViewStockQuantity,
+}: Props) {
   const t = useTranslations();
   const { dateTime } = useFormatter();
 
@@ -43,7 +48,7 @@ export function ProductDetailsTab({ product, hasUnlimitedStock }: Props) {
               <p className="mt-1 text-sm">{product.category}</p>
             </div>
           )}
-          {hasUnlimitedStock && (
+          {hasUnlimitedStock && canViewStockQuantity && (
             <div>
               <Label className="font-medium text-muted-foreground text-sm">
                 {t('ws-inventory-products.form.stock')}

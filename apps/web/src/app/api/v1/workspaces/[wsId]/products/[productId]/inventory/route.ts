@@ -26,9 +26,9 @@ export async function POST(req: Request, { params }: Params) {
 
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
-  if (!containsPermission('create_inventory')) {
+  if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to create inventory' },
+      { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
     );
   }
@@ -99,9 +99,15 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
-  if (!containsPermission('update_inventory')) {
+  if (
+    !containsPermission(
+      'update_stock_quantity' as unknown as Parameters<
+        typeof containsPermission
+      >[0]
+    )
+  ) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to update inventory' },
+      { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
     );
   }
@@ -375,8 +381,20 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 export async function GET(_: Request, { params }: Params) {
+  const { wsId, productId } = await params;
+
+  const { containsPermission } = await getPermissions({ wsId });
+  if (
+    !containsPermission(
+      'view_stock_quantity' as unknown as Parameters<
+        typeof containsPermission
+      >[0]
+    )
+  ) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
   const supabase = await createClient();
-  const { productId } = await params;
 
   // Get inventory for this product
   const { data: inventory, error } = await supabase
@@ -400,9 +418,15 @@ export async function DELETE(_: Request, { params }: Params) {
 
   // Check permissions
   const { containsPermission } = await getPermissions({ wsId });
-  if (!containsPermission('delete_inventory')) {
+  if (
+    !containsPermission(
+      'update_stock_quantity' as unknown as Parameters<
+        typeof containsPermission
+      >[0]
+    )
+  ) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to delete inventory' },
+      { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
     );
   }

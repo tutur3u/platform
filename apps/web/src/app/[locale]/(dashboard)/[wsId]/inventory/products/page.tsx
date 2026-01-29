@@ -1,5 +1,10 @@
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type {
+  InventoryProduct,
+  ProductStockChange,
+  RawInventoryProductWithChanges,
+} from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -61,9 +66,17 @@ export default async function WorkspaceProductsPage({
         const canCreateInventory = permissions.includes('create_inventory');
         const canUpdateInventory = permissions.includes('update_inventory');
         const canDeleteInventory = permissions.includes('delete_inventory');
+        const canViewStockQuantity = permissions.includes(
+          'view_stock_quantity'
+        );
+        const canUpdateStockQuantity = permissions.includes(
+          'update_stock_quantity'
+        );
 
         const resolvedSearchParams = await searchParams;
-        const initialData = await getInitialData(wsId, resolvedSearchParams);
+        const initialData = await getInitialData(wsId, resolvedSearchParams, {
+          canViewStockQuantity,
+        });
 
         return (
           <>
@@ -90,6 +103,8 @@ export default async function WorkspaceProductsPage({
               wsId={wsId}
               canUpdateInventory={canUpdateInventory}
               canDeleteInventory={canDeleteInventory}
+              canViewStockQuantity={canViewStockQuantity}
+              canUpdateStockQuantity={canUpdateStockQuantity}
             />
           </>
         );
@@ -112,77 +127,128 @@ async function getInitialData(
     pageSize?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+  },
+  {
+    canViewStockQuantity,
+  }: {
+    canViewStockQuantity: boolean;
   }
 ) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_products')
-    .select(
-      '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId);
+  const parsedPage = parseInt(page || '1', 10);
+  const parsedSize = parseInt(pageSize || '10', 10);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = parsedPage * parsedSize - 1;
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  let rawData: RawInventoryProductWithChanges[] | null = null;
+  let count: number | null = null;
 
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize - 1;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
+  if (canViewStockQuantity) {
+    let query = supabase
+      .from('workspace_products')
+      .select(
+        '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
+        {
+          count: 'exact',
+        }
+      )
+      .eq('ws_id', wsId);
 
-  // Apply sorting - default to created_at desc for consistent ordering
-  if (sortBy && sortOrder) {
-    queryBuilder.order(sortBy, { ascending: sortOrder === 'asc' });
+    if (q) query = query.ilike('name', `%${q}%`);
+    query = query.range(start, end).limit(parsedSize);
+
+    if (sortBy && sortOrder) {
+      query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
+        ascending: sortOrder === 'asc',
+      });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
+    const {
+      data,
+      error,
+      count: fetchedCount,
+    } = await query.overrideTypes<RawInventoryProductWithChanges[]>();
+    if (error) throw error;
+    rawData = data;
+    count = fetchedCount;
   } else {
-    // Default ordering to ensure consistent results
-    queryBuilder.order('created_at', { ascending: false });
+    let query = supabase
+      .from('workspace_products')
+      .select('*, product_categories(name)', {
+        count: 'exact',
+      })
+      .eq('ws_id', wsId);
+
+    if (q) query = query.ilike('name', `%${q}%`);
+    query = query.range(start, end).limit(parsedSize);
+
+    if (sortBy && sortOrder) {
+      query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
+        ascending: sortOrder === 'asc',
+      });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
+    const {
+      data,
+      error,
+      count: fetchedCount,
+    } = await query.overrideTypes<RawInventoryProductWithChanges[]>();
+    if (error) throw error;
+    rawData = data;
+    count = fetchedCount;
   }
 
-  const { data: rawData, error, count } = await queryBuilder;
-
-  if (error) throw error;
-
-  const data = (rawData || []).map((item) => ({
+  const data = (rawData || []).map((item: RawInventoryProductWithChanges) => ({
     id: item.id,
     name: item.name,
     manufacturer: item.manufacturer,
     description: item.description,
     usage: item.usage,
-    unit: item.inventory_products?.[0]?.inventory_units?.name,
-    stock: (item.inventory_products || []).map((inventory) => ({
-      amount: inventory.amount,
-      min_amount: inventory.min_amount,
-      unit: inventory.inventory_units?.name,
-      warehouse: inventory.inventory_warehouses?.name,
-      price: inventory.price,
-    })),
+    unit: canViewStockQuantity
+      ? item.inventory_products?.[0]?.inventory_units?.name
+      : null,
+    stock: canViewStockQuantity
+      ? (item.inventory_products || []).map((inventory: InventoryProduct) => ({
+          amount: inventory.amount,
+          min_amount: inventory.min_amount,
+          unit: inventory.inventory_units?.name,
+          warehouse: inventory.inventory_warehouses?.name,
+          price: inventory.price,
+        }))
+      : [],
     // Inventory with ids for editing
-    inventory: (item.inventory_products || []).map((inventory) => ({
-      unit_id: inventory.unit_id,
-      warehouse_id: inventory.warehouse_id,
-      amount: inventory.amount,
-      min_amount: inventory.min_amount,
-      price: inventory.price,
-    })),
-    min_amount: item.inventory_products?.[0]?.min_amount || 0,
-    warehouse: item.inventory_products?.[0]?.inventory_warehouses?.name,
+    inventory: canViewStockQuantity
+      ? (item.inventory_products || []).map((inventory: InventoryProduct) => ({
+          unit_id: inventory.unit_id,
+          warehouse_id: inventory.warehouse_id,
+          amount: inventory.amount,
+          min_amount: inventory.min_amount,
+          price: inventory.price,
+        }))
+      : [],
+    min_amount: canViewStockQuantity
+      ? item.inventory_products?.[0]?.min_amount || 0
+      : 0,
+    warehouse: canViewStockQuantity
+      ? item.inventory_products?.[0]?.inventory_warehouses?.name
+      : null,
     category: item.product_categories?.name,
     category_id: item.category_id,
     ws_id: item.ws_id,
     created_at: item.created_at,
-    stock_changes:
-      item.product_stock_changes?.map((change) => ({
-        amount: change.amount,
-        creator: change.creator,
-        beneficiary: change.beneficiary,
-        created_at: change.created_at,
-      })) || [],
+    stock_changes: canViewStockQuantity
+      ? item.product_stock_changes?.map((change: ProductStockChange) => ({
+          amount: change.amount,
+          creator: change.creator,
+          beneficiary: change.beneficiary,
+          created_at: change.created_at,
+        })) || []
+      : [],
   }));
 
   return { data, count } as { data: Product[]; count: number };
