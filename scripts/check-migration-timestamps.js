@@ -53,13 +53,26 @@ function extractTimestamp(filename) {
 }
 
 /**
- * Format a Date object for display
+ * Format a Date object for display in both UTC and local time
  */
 function formatDate(date) {
-  return date
+  const utc = date
     .toISOString()
     .replace('T', ' ')
     .replace(/\.\d{3}Z$/, ' UTC');
+
+  const local = date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  });
+
+  return `${utc} (${local})`;
 }
 
 /**
