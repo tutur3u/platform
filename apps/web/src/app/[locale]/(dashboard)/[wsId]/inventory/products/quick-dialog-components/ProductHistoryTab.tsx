@@ -36,21 +36,21 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <Store className="h-4 w-4 shrink-0" />
-                      <p className="wrap-break-word min-w-0 flex-1 text-balance font-medium text-sm text-white">
+                      <p className="wrap-break-word min-w-0 flex-1 text-balance font-medium text-dynamic-on-background text-sm">
                         {change.creator.full_name || change.creator.email}
                       </p>{' '}
                       <span
                         className={`inline-flex shrink-0 items-center rounded px-2 py-1 font-medium text-sm ${
                           change.amount > 0
-                            ? 'border border-green-800 bg-green-900/50 text-green-400'
-                            : 'border border-red-800 bg-red-900/50 text-red-400'
+                            ? 'border border-dynamic-success bg-dynamic-success/50 text-dynamic-success'
+                            : 'border border-dynamic-danger bg-dynamic-danger/50 text-dynamic-danger'
                         }`}
                       >
                         {change.amount > 0 ? '+' : ''}
                         {change.amount}
                       </span>
                     </div>
-                    <p className="text-slate-400 text-xs">
+                    <p className="text-dynamic-muted text-xs">
                       {change.created_at
                         ? new Date(change.created_at).toLocaleDateString()
                         : t('ws-inventory-products.messages.recently')}
@@ -58,11 +58,11 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
                   </div>
 
                   {change.beneficiary && (
-                    <div className="flex items-center gap-2 rounded bg-slate-800/50 p-2">
+                    <div className="flex items-center gap-2 rounded bg-dynamic-surface/50 p-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-dynamic-blue">
                         <ShoppingBag className="h-4 w-4" />
                       </div>
-                      <span className="wrap-break-word min-w-0 flex-1 text-balance text-blue-400 text-sm">
+                      <span className="wrap-break-word min-w-0 flex-1 text-balance text-primary text-sm">
                         {change.beneficiary.full_name ||
                           change.beneficiary.email}
                       </span>
@@ -73,7 +73,11 @@ export function ProductHistoryTab({ product, isLoading }: Props) {
             ))}
           </div>
         </div>
-      ) : null}
+      ) : (
+        <p className="py-8 text-center text-dynamic-muted text-sm">
+          {t('ws-inventory-products.messages.no_stock_changes')}
+        </p>
+      )}
     </div>
   );
 }

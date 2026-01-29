@@ -25,6 +25,21 @@ const SearchParamsSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
+type InventoryWarehouse = Pick<Tables<'inventory_warehouses'>, 'id' | 'name'>;
+type InventoryUnit = Pick<Tables<'inventory_units'>, 'id' | 'name'>;
+type InventoryProduct = Pick<
+  Tables<'inventory_products'>,
+  'amount' | 'min_amount' | 'price' | 'warehouse_id' | 'unit_id' | 'created_at'
+> & {
+  inventory_warehouses: InventoryWarehouse | null;
+  inventory_units: InventoryUnit | null;
+};
+type ProductCategory = Pick<Tables<'product_categories'>, 'name'>;
+type RawProduct = Tables<'workspace_products'> & {
+  product_categories: ProductCategory | null;
+  inventory_products: InventoryProduct[] | null;
+};
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -68,7 +83,7 @@ export async function GET(request: Request, { params }: Params) {
     const queryBuilder = supabase
       .from('workspace_products')
       .select(
-        'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name))',
+        'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
         {
           count: 'exact',
         }
@@ -92,38 +107,53 @@ export async function GET(request: Request, { params }: Params) {
 
     if (error) throw error;
 
-    type RawProduct = Tables<'workspace_products'> & {
-      product_categories: { name: string | null } | null;
-      inventory_products: {
-        amount: number | null;
-        min_amount: number;
-        price: number;
-        inventory_warehouses: { name: string | null } | null;
-        inventory_units: { name: string | null } | null;
-      }[];
+    const selectPrimaryInventory = (
+      inventories: InventoryProduct[] | null | undefined
+    ) => {
+      if (!inventories?.length) return undefined;
+
+      return inventories.slice().sort((a, b) => {
+        const aKey = [
+          a.warehouse_id ?? '',
+          a.unit_id ?? '',
+          a.created_at ?? '',
+        ].join('|');
+        const bKey = [
+          b.warehouse_id ?? '',
+          b.unit_id ?? '',
+          b.created_at ?? '',
+        ].join('|');
+
+        return aKey.localeCompare(bKey);
+      })[0];
     };
 
-    const data = ((rawData as unknown as RawProduct[]) || []).map((item) => ({
-      id: item.id,
-      name: item.name,
-      manufacturer: item.manufacturer,
-      description: item.description,
-      usage: item.usage,
-      unit: item.inventory_products?.[0]?.inventory_units?.name,
-      stock: (item.inventory_products || []).map((inventory) => ({
-        amount: inventory.amount,
-        min_amount: inventory.min_amount,
-        unit: inventory.inventory_units?.name,
-        warehouse: inventory.inventory_warehouses?.name,
-        price: inventory.price,
-      })),
-      min_amount: item.inventory_products?.[0]?.min_amount || 0,
-      warehouse: item.inventory_products?.[0]?.inventory_warehouses?.name,
-      category: item.product_categories?.name,
-      category_id: item.category_id,
-      ws_id: item.ws_id,
-      created_at: item.created_at,
-    }));
+    const typedData = rawData as RawProduct[] | null;
+    const data = (typedData ?? []).map((item) => {
+      const primaryInventory = selectPrimaryInventory(item.inventory_products);
+
+      return {
+        id: item.id,
+        name: item.name,
+        manufacturer: item.manufacturer,
+        description: item.description,
+        usage: item.usage,
+        unit: primaryInventory?.inventory_units?.name ?? null,
+        stock: (item.inventory_products || []).map((inventory) => ({
+          amount: inventory.amount,
+          min_amount: inventory.min_amount,
+          unit: inventory.inventory_units?.name,
+          warehouse: inventory.inventory_warehouses?.name,
+          price: inventory.price,
+        })),
+        min_amount: primaryInventory?.min_amount ?? null,
+        warehouse: primaryInventory?.inventory_warehouses?.name ?? null,
+        category: item.product_categories?.name,
+        category_id: item.category_id,
+        ws_id: item.ws_id,
+        created_at: item.created_at,
+      };
+    });
 
     return NextResponse.json({
       data,

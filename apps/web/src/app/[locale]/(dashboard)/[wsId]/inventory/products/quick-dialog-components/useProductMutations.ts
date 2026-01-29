@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 interface UpdateProductParams {
@@ -23,7 +22,6 @@ interface DeleteProductParams {
 
 export function useProductMutations() {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const t = useTranslations();
 
   const updateProductMutation = useMutation({
@@ -46,11 +44,16 @@ export function useProductMutations() {
       return res.json();
     },
     onSuccess: (_, { wsId, productId }) => {
+      toast.success(
+        t('ws-inventory-products.messages.product_updated_successfully')
+      );
       queryClient.invalidateQueries({ queryKey: ['workspace-products', wsId] });
       queryClient.invalidateQueries({
         queryKey: ['workspace-product', wsId, productId],
       });
-      router.refresh();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 
@@ -81,7 +84,6 @@ export function useProductMutations() {
       queryClient.invalidateQueries({
         queryKey: ['workspace-product', wsId, productId],
       });
-      router.refresh();
     },
   });
 
@@ -95,11 +97,14 @@ export function useProductMutations() {
       );
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(
-          data.message ||
-            t('ws-inventory-products.messages.failed_delete_product')
-        );
+        let message = t('ws-inventory-products.messages.failed_delete_product');
+        try {
+          const data = await res.json();
+          message = data.message || message;
+        } catch (_error) {
+          // Fallback to default message if JSON parsing fails
+        }
+        throw new Error(message);
       }
 
       return res.json();
@@ -112,7 +117,6 @@ export function useProductMutations() {
       queryClient.invalidateQueries({
         queryKey: ['workspace-product', wsId, productId],
       });
-      router.refresh();
     },
     onError: (error: Error) => {
       toast.error(error.message);

@@ -1,7 +1,7 @@
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 interface Props {
   product: Product;
@@ -10,6 +10,7 @@ interface Props {
 
 export function ProductDetailsTab({ product, hasUnlimitedStock }: Props) {
   const t = useTranslations();
+  const { dateTime } = useFormatter();
 
   return (
     <Card>
@@ -45,7 +46,7 @@ export function ProductDetailsTab({ product, hasUnlimitedStock }: Props) {
           {hasUnlimitedStock && (
             <div>
               <Label className="font-medium text-muted-foreground text-sm">
-                Stock
+                {t('ws-inventory-products.form.stock')}
               </Label>
               <p className="mt-1 text-sm">
                 {t('ws-inventory-products.labels.unlimited_stock')}
@@ -63,7 +64,7 @@ export function ProductDetailsTab({ product, hasUnlimitedStock }: Props) {
           {product.usage && (
             <div className="md:col-span-2">
               <Label className="font-medium text-muted-foreground text-sm">
-                Usage
+                {t('ws-inventory-products.form.usage')}
               </Label>
               <p className="mt-1 text-sm">{product.usage}</p>
             </div>
@@ -74,7 +75,9 @@ export function ProductDetailsTab({ product, hasUnlimitedStock }: Props) {
                 {t('ws-inventory-products.labels.created_at')}
               </Label>
               <p className="mt-1 text-sm">
-                {new Date(product.created_at).toLocaleDateString()}
+                {dateTime(new Date(product.created_at), {
+                  dateStyle: 'medium',
+                })}
               </p>
             </div>
           )}

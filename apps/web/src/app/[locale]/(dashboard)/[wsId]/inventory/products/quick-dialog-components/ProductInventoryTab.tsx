@@ -86,8 +86,8 @@ export function ProductInventoryTab({
         <CardContent>
           <Form {...form}>
             <div className="space-y-4">
-              {fields.map((_, i) => (
-                <div key={i} className="space-y-4 rounded-lg border p-4">
+              {fields.map((field, i) => (
+                <div key={field.id} className="space-y-4 rounded-lg border p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -169,7 +169,9 @@ export function ProductInventoryTab({
                           <FormControl>
                             <Input
                               type="number"
-                              placeholder="Min amount"
+                              placeholder={t(
+                                'ws-inventory-products.placeholders.enter_min_amount'
+                              )}
                               value={field.value ?? ''}
                               onChange={(e) =>
                                 field.onChange(
@@ -196,7 +198,9 @@ export function ProductInventoryTab({
                           <FormControl>
                             <Input
                               type="number"
-                              placeholder="Current amount"
+                              placeholder={t(
+                                'ws-inventory-products.placeholders.enter_current_amount'
+                              )}
                               value={field.value ?? ''}
                               onChange={(e) =>
                                 field.onChange(

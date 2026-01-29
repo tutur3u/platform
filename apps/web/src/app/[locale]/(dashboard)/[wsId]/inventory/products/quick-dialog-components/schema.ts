@@ -3,9 +3,9 @@ import * as z from 'zod';
 export const InventorySchema = z.object({
   unit_id: z.string(),
   warehouse_id: z.string(),
-  amount: z.number(),
-  min_amount: z.number(),
-  price: z.number(),
+  amount: z.number().min(0),
+  min_amount: z.number().min(0),
+  price: z.number().min(0),
 });
 
 export const EditProductSchema = z.object({

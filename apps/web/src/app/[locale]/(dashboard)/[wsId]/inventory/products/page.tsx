@@ -88,7 +88,6 @@ export default async function WorkspaceProductsPage({
             <ProductsPageClient
               initialData={initialData}
               wsId={wsId}
-              canCreateInventory={canCreateInventory}
               canUpdateInventory={canUpdateInventory}
               canDeleteInventory={canDeleteInventory}
             />

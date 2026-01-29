@@ -9463,6 +9463,7 @@
       "manage_tracked_stock": "Quản lý kho được theo dõi trong tab Kho.",
       "no_changes_to_save": "Không có thay đổi để lưu",
       "no_delete_permission": "Bạn không có quyền xóa kho hàng",
+      "no_stock_changes": "Chưa có thay đổi kho nào",
       "product_deleted_successfully": "Sản phẩm được xóa thành công",
       "product_updated_successfully": "Sản phẩm được cập nhật thành công",
       "recently": "Gần đây",
@@ -9471,7 +9472,9 @@
     },
     "no_changes_detected": "Không có thay đổi gì",
     "placeholders": {
+      "enter_current_amount": "Nhập số lượng hiện tại",
       "enter_manufacturer": "Nhập nhà sản xuất",
+      "enter_min_amount": "Nhập số lượng tối thiểu",
       "enter_price": "Nhập giá",
       "enter_product_description": "Nhập mô tả sản phẩm",
       "enter_product_name": "Nhập tên sản phẩm",

@@ -22,7 +22,6 @@ interface Props {
     count: number;
   };
   wsId: string;
-  canCreateInventory: boolean;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
 }

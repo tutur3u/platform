@@ -121,7 +121,9 @@ export function ProductEditTab({
                   name="category_id"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Category</FormLabel>
+                      <FormLabel>
+                        {t('ws-inventory-products.form.category')}
+                      </FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
