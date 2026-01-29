@@ -111,9 +111,8 @@ export const productColumns = (
       />
     ),
     cell: ({ row }) => {
-      const stock = row.original.stock;
-      const isUnlimited =
-        !stock || stock.length === 0 || stock.some((s) => s.amount == null);
+      const stock = row.original.stock || [];
+      const isUnlimited = stock.some((s) => s.amount == null);
 
       if (isUnlimited) {
         return (
@@ -269,8 +268,8 @@ export const productColumns = (
       />
     ),
     cell: ({ row }) => {
-      const stock = row.original.stock;
-      if (!stock || stock.length === 0) return <div>-</div>;
+      const stock = row.original.stock || [];
+      if (stock.length === 0) return <div>-</div>;
       if (stock.length === 1) {
         const s = stock[0];
         if (!s) return null;

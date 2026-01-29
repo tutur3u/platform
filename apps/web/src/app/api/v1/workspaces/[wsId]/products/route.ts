@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const InventoryItemSchema = z.object({
-  unit_id: z.string().uuid(),
-  warehouse_id: z.string().uuid(),
-  amount: z.number().nonnegative(),
+  unit_id: z.uuid(),
+  warehouse_id: z.uuid(),
+  amount: z.number().nonnegative().nullable(),
   min_amount: z.number().nonnegative(),
   price: z.number().nonnegative(),
 });

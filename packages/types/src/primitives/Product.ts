@@ -15,8 +15,8 @@ export interface Product {
   inventory?: {
     unit_id: string;
     warehouse_id: string;
-    amount: number;
-    min_amount: number;
+    amount: number | null;
+    min_amount: number | null;
     price: number;
   }[];
   min_amount?: number | string;

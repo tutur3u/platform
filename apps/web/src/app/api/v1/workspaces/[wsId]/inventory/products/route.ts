@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Tables } from '@tuturuuu/types/supabase';
+import type {
+  InventoryProduct,
+  RawInventoryProduct,
+} from '@tuturuuu/types/primitives/InventoryProductRelations';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -68,7 +71,7 @@ export async function GET(request: Request, { params }: Params) {
     const queryBuilder = supabase
       .from('workspace_products')
       .select(
-        '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
+        'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
         {
           count: 'exact',
         }
@@ -92,61 +95,53 @@ export async function GET(request: Request, { params }: Params) {
 
     if (error) throw error;
 
-    type InventoryProduct = Tables<'inventory_products'> & {
-      inventory_warehouses: { name: string | null } | null;
-      inventory_units: { name: string | null } | null;
+    const selectPrimaryInventory = (
+      inventories: InventoryProduct[] | null | undefined
+    ) => {
+      if (!inventories?.length) return undefined;
+
+      return inventories.slice().sort((a, b) => {
+        const aKey = [
+          a.warehouse_id ?? '',
+          a.unit_id ?? '',
+          a.created_at ?? '',
+        ].join('|');
+        const bKey = [
+          b.warehouse_id ?? '',
+          b.unit_id ?? '',
+          b.created_at ?? '',
+        ].join('|');
+
+        return aKey.localeCompare(bKey);
+      })[0];
     };
 
-    type ProductStockChange = Tables<'product_stock_changes'> & {
-      beneficiary: { full_name: string | null; email: string | null } | null;
-      creator: { full_name: string | null; email: string | null } | null;
-    };
+    const typedData = rawData as RawInventoryProduct[] | null;
+    const data = (typedData ?? []).map((item) => {
+      const primaryInventory = selectPrimaryInventory(item.inventory_products);
 
-    const data = (rawData || []).map((item) => ({
-      id: item.id,
-      name: item.name,
-      manufacturer: item.manufacturer,
-      description: item.description,
-      usage: item.usage,
-      unit: (item.inventory_products as InventoryProduct[])?.[0]
-        ?.inventory_units?.name,
-      stock: ((item.inventory_products as InventoryProduct[] | null) || []).map(
-        (inventory: InventoryProduct) => ({
+      return {
+        id: item.id,
+        name: item.name,
+        manufacturer: item.manufacturer,
+        description: item.description,
+        usage: item.usage,
+        unit: primaryInventory?.inventory_units?.name ?? null,
+        stock: (item.inventory_products || []).map((inventory) => ({
           amount: inventory.amount,
           min_amount: inventory.min_amount,
           unit: inventory.inventory_units?.name,
           warehouse: inventory.inventory_warehouses?.name,
           price: inventory.price,
-        })
-      ),
-      // Inventory with ids for editing
-      inventory: (
-        (item.inventory_products as InventoryProduct[] | null) || []
-      ).map((inventory: InventoryProduct) => ({
-        unit_id: inventory.unit_id,
-        warehouse_id: inventory.warehouse_id,
-        amount: inventory.amount,
-        min_amount: inventory.min_amount,
-        price: inventory.price,
-      })),
-      min_amount:
-        (item.inventory_products as InventoryProduct[])?.[0]?.min_amount || 0,
-      warehouse: (item.inventory_products as InventoryProduct[])?.[0]
-        ?.inventory_warehouses?.name,
-      category: item.product_categories?.name,
-      category_id: item.category_id,
-      ws_id: item.ws_id,
-      created_at: item.created_at,
-      stock_changes:
-        (item.product_stock_changes as ProductStockChange[])?.map(
-          (change: ProductStockChange) => ({
-            amount: change.amount,
-            creator: change.creator,
-            beneficiary: change.beneficiary,
-            created_at: change.created_at,
-          })
-        ) || [],
-    }));
+        })),
+        min_amount: primaryInventory?.min_amount ?? null,
+        warehouse: primaryInventory?.inventory_warehouses?.name ?? null,
+        category: item.product_categories?.name,
+        category_id: item.category_id,
+        ws_id: item.ws_id,
+        created_at: item.created_at,
+      };
+    });
 
     return NextResponse.json({
       data,

@@ -6,9 +6,9 @@ import { z } from 'zod';
 const InventoryItemSchema = z.object({
   warehouse_id: z.uuid(),
   unit_id: z.uuid(),
-  amount: z.number().nonnegative().optional(),
+  amount: z.number().nonnegative().nullable(),
   min_amount: z.number().nonnegative().optional(),
-  price: z.number().nonnegative().optional(),
+  price: z.number().nonnegative(),
 });
 const BodySchema = z.object({
   inventory: z.array(InventoryItemSchema).default([]),
@@ -42,6 +42,18 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
   const { inventory } = parsed.data;
+
+  const inventoryKeys = new Set<string>();
+  for (const item of inventory) {
+    const key = `${item.warehouse_id}-${item.unit_id}`;
+    if (inventoryKeys.has(key)) {
+      return NextResponse.json(
+        { message: 'Invalid payload', errors: ['duplicate_inventory_key'] },
+        { status: 400 }
+      );
+    }
+    inventoryKeys.add(key);
+  }
 
   // Validate that product exists
   const { data: product, error: productError } = await supabase
@@ -110,6 +122,18 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   const { inventory } = parsed.data;
 
+  const inventoryKeys = new Set<string>();
+  for (const item of inventory) {
+    const key = `${item.warehouse_id}-${item.unit_id}`;
+    if (inventoryKeys.has(key)) {
+      return NextResponse.json(
+        { message: 'Invalid payload', errors: ['duplicate_inventory_key'] },
+        { status: 400 }
+      );
+    }
+    inventoryKeys.add(key);
+  }
+
   // Validate that product exists
   const { data: product, error: productError } = await supabase
     .from('workspace_products')
@@ -136,7 +160,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  // If inventory is empty, this means unlimited stock - delete all existing inventory
+  // If inventory is empty, clear all existing inventory
   if (inventory.length === 0) {
     const { error: deleteError } = await supabase
       .from('inventory_products')
@@ -146,12 +170,12 @@ export async function PATCH(req: Request, { params }: Params) {
     if (deleteError) {
       console.log(deleteError);
       return NextResponse.json(
-        { message: 'Error setting unlimited stock' },
+        { message: 'Error deleting inventory items' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ message: 'Product set to unlimited stock' });
+    return NextResponse.json({ message: 'Inventory cleared' });
   }
 
   // Create a key for comparison (warehouse_id + unit_id combination)
@@ -260,13 +284,15 @@ export async function PATCH(req: Request, { params }: Params) {
 
     // Log stock changes for insertions (positive amount)
     if (workspaceUserId) {
-      const stockChanges = toInsert.map((item) => ({
-        product_id: productId,
-        unit_id: item.unit_id,
-        warehouse_id: item.warehouse_id,
-        amount: item.amount || 0,
-        creator_id: workspaceUserId,
-      }));
+      const stockChanges = toInsert
+        .filter((item) => item.amount != null)
+        .map((item) => ({
+          product_id: productId,
+          unit_id: item.unit_id,
+          warehouse_id: item.warehouse_id,
+          amount: item.amount ?? 0,
+          creator_id: workspaceUserId,
+        }));
 
       if (stockChanges.length > 0) {
         await supabase.from('product_stock_changes').insert(stockChanges);
@@ -280,7 +306,12 @@ export async function PATCH(req: Request, { params }: Params) {
       const existing = existingMap.get(createKey(item));
 
       // Log stock changes before updating
-      if (existing && existing.amount !== item.amount) {
+      if (
+        existing &&
+        existing.amount !== item.amount &&
+        existing.amount != null &&
+        item.amount != null
+      ) {
         const existingAmount = existing.amount || 0;
         const newAmount = item.amount || 0;
         const stockDifference = newAmount - existingAmount;

@@ -3,9 +3,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
-import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import {
@@ -24,11 +21,7 @@ interface Props {
     data: Product[];
     count: number;
   };
-  categories: ProductCategory[];
-  warehouses: ProductWarehouse[];
-  units: ProductUnit[];
   wsId: string;
-  canCreateInventory: boolean;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
 }
@@ -47,9 +40,6 @@ const sortOrderValues = ['asc', 'desc'] as const;
 
 export function ProductsPageClient({
   initialData,
-  categories,
-  warehouses,
-  units,
   wsId,
   canUpdateInventory,
   canDeleteInventory,
@@ -57,7 +47,9 @@ export function ProductsPageClient({
   const t = useTranslations();
   const queryClient = useQueryClient();
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
+  const [selectedProductId, setSelectedProductId] = useState<
+    string | undefined
+  >();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [q, setQ] = useQueryState(
@@ -113,15 +105,17 @@ export function ProductsPageClient({
     }
   );
 
+  const selectedProduct = data?.data?.find((p) => p.id === selectedProductId);
+
   const handleRowClick = (product: Product) => {
-    setSelectedProduct(product);
+    setSelectedProductId(product.id);
     setIsDialogOpen(true);
   };
 
   const handleDialogClose = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      setSelectedProduct(undefined);
+      setSelectedProductId(undefined);
     }
   };
 
@@ -220,9 +214,6 @@ export function ProductsPageClient({
         isOpen={isDialogOpen}
         onOpenChange={handleDialogClose}
         wsId={wsId}
-        categories={categories}
-        warehouses={warehouses}
-        units={units}
         canUpdateInventory={canUpdateInventory}
         canDeleteInventory={canDeleteInventory}
       />
