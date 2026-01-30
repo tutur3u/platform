@@ -83,59 +83,67 @@ export default function TemplatesClient({
   return (
     <div className="space-y-6">
       {/* Action Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
+      <Card>
+        <CardContent className="space-y-4 p-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="space-y-2">
+              <p className="font-medium text-sm leading-none">Search</p>
+              <div className="relative w-64">
+                <Input
+                  placeholder={t('gallery.search_placeholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="font-medium text-sm leading-none">Visibility</p>
+              <Select
+                value={initialVisibility}
+                onValueChange={(v) =>
+                  handleVisibilityChange(v as TemplateFilter)
+                }
+                disabled={isPending}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span>{t('visibility.public')}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="workspace">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>{t('visibility.workspace')}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="private">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      <span>{t('visibility.private')}</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Bookmark className="h-4 w-4" />
             <span>
-              {t('gallery.count_templates', { count: initialTemplates.length })}
+              {t('gallery.count_templates', {
+                count: initialTemplates.length,
+              })}
             </span>
           </div>
-          {initialTemplates.length > 0 && (
-            <div className="relative flex-1 sm:w-64">
-              <Input
-                placeholder={t('gallery.search_placeholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Select
-            value={initialVisibility}
-            onValueChange={(v) => handleVisibilityChange(v as TemplateFilter)}
-            disabled={isPending}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="public">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  <span>{t('visibility.public')}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="workspace">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>{t('visibility.workspace')}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="private">
-                <div className="flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
-                  <span>{t('visibility.private')}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Templates Grid */}
       {filteredTemplates.length === 0 ? (
