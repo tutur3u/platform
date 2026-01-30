@@ -15,6 +15,7 @@ interface WalletExtraData {
   canUpdateWallets?: boolean;
   canDeleteWallets?: boolean;
   currency?: string;
+  isPersonalWorkspace?: boolean;
 }
 
 export const walletColumns = ({
@@ -217,6 +218,7 @@ export const walletColumns = ({
           href={row.original.href}
           canUpdateWallets={extraData?.canUpdateWallets}
           canDeleteWallets={extraData?.canDeleteWallets}
+          isPersonalWorkspace={extraData?.isPersonalWorkspace}
         />
       ),
     },

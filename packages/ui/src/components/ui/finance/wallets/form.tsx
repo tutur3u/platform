@@ -20,13 +20,14 @@ import { useCallback, useState } from 'react';
 import * as z from 'zod';
 import { toast } from '../../sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
-import WalletRoleAccess from './walletId/wallet-role-access';
 import { WalletIconImagePicker } from './wallet-icon-image-picker';
+import WalletRoleAccess from './walletId/wallet-role-access';
 
 interface Props {
   wsId: string;
   data?: Wallet;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  isPersonalWorkspace?: boolean;
 }
 
 const FormSchema = z.object({
@@ -42,7 +43,12 @@ const FormSchema = z.object({
   image_src: z.string().nullable().optional(),
 });
 
-export function WalletForm({ wsId, data, onFinish }: Props) {
+export function WalletForm({
+  wsId,
+  data,
+  onFinish,
+  isPersonalWorkspace,
+}: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -292,7 +298,8 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
     </Form>
   );
 
-  if (!data?.id) return formContent;
+  // If personal workspace or no data.id, only show form (no tabs needed for role access)
+  if (!data?.id || isPersonalWorkspace) return formContent;
 
   return (
     <Tabs defaultValue="general">

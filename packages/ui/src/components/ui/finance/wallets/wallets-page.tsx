@@ -1,12 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
-import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
+import { WalletsDataTable } from '@tuturuuu/ui/finance/wallets/wallets-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   getPermissions,
+  getWorkspace,
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -21,10 +21,11 @@ interface Props {
 }
 
 export default async function WalletsPage({ wsId, searchParams }: Props) {
-  const [t, { containsPermission }, currency] = await Promise.all([
+  const [t, { containsPermission }, currency, workspace] = await Promise.all([
     getTranslations(),
     getPermissions({ wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+    getWorkspace(wsId),
   ]);
 
   const canCreateWallets = containsPermission('create_wallets');
@@ -55,24 +56,14 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
       />
       <Separator className="my-4" />
-      <CustomDataTable
+      <WalletsDataTable
+        wsId={wsId}
         data={data}
-        columnGenerator={walletColumns}
-        namespace="wallet-data-table"
         count={count}
-        extraData={{
-          canUpdateWallets,
-          canDeleteWallets,
-          currency: currency ?? 'USD',
-        }}
-        defaultVisibility={{
-          id: false,
-          description: false,
-          type: false,
-          currency: false,
-          report_opt_in: false,
-          created_at: false,
-        }}
+        canUpdateWallets={canUpdateWallets}
+        canDeleteWallets={canDeleteWallets}
+        currency={currency ?? 'USD'}
+        isPersonalWorkspace={workspace?.personal}
       />
     </>
   );
