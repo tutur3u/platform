@@ -1,5 +1,6 @@
 import { Calendar, CreditCard, DollarSign } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Wallet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -12,6 +13,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
 import { WalletIconDisplay } from '../wallet-icon-display';
+import { WalletInterestSection } from './interest';
 import { WalletDeleteButton } from './wallet-delete-button';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
@@ -143,6 +145,8 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           <Separator className="my-4" />
         </>
       )}
+      {/* Interest Tracking Section - for Momo/ZaloPay wallets */}
+      <WalletInterestSection wsId={wsId} wallet={wallet as Wallet} />
       <Suspense
         fallback={
           <div className="space-y-3">
