@@ -490,9 +490,7 @@ export async function getPermissions({
 
   const permissionsQuery = supabase
     .from('workspace_role_members')
-    .select(
-      '...workspace_roles!inner(...workspace_role_permissions(permission))'
-    )
+    .select('workspace_roles!inner(workspace_role_permissions(permission))')
     .eq('user_id', user.id)
     .eq('workspace_roles.ws_id', resolvedWorkspaceId)
     .eq('workspace_roles.workspace_role_permissions.enabled', true);
@@ -557,7 +555,12 @@ export async function getPermissions({
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
     : [
         // permissions from role memberships
-        ...permissionsData.flatMap((m) => m.permission || []),
+        ...permissionsData.flatMap(
+          (m) =>
+            m.workspace_roles?.workspace_role_permissions?.map(
+              (p) => p.permission
+            ) || []
+        ),
         // default workspace permissions
         ...defaultData.map((d) => d.permission),
       ].filter((value, index, self) => self.indexOf(value) === index);
