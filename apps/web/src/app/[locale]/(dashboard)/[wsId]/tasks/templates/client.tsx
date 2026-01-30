@@ -57,7 +57,7 @@ export default function TemplatesClient({
   const handleVisibilityChange = (newVisibility: TemplateFilter) => {
     const params = new URLSearchParams(searchParams.toString());
 
-    if (newVisibility === 'public') {
+    if (newVisibility === 'workspace') {
       params.delete('visibility');
     } else {
       params.set('visibility', newVisibility);

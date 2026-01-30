@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -35,7 +36,7 @@ export default async function TemplatesPage({ params, searchParams }: Props) {
         // Get search params
         const resolvedSearchParams = await searchParams;
         const visibility = (resolvedSearchParams.visibility ||
-          'public') as TemplateFilter;
+          'workspace') as TemplateFilter;
 
         // Fetch templates based on visibility
         const { templates } = await getTemplates(wsId, visibility);
@@ -45,14 +46,14 @@ export default async function TemplatesPage({ params, searchParams }: Props) {
         return (
           <div className="space-y-6">
             {/* Header */}
-            <div className="space-y-2">
-              <h1 className="font-bold text-2xl tracking-tight">
-                {t('gallery.header')}
-              </h1>
-              <p className="text-muted-foreground">
-                {t('gallery.description')}
-              </p>
-            </div>
+            <FeatureSummary
+              title={
+                <h1 className="font-bold text-2xl tracking-tight">
+                  {t('gallery.header')}
+                </h1>
+              }
+              description={t('gallery.description')}
+            />
 
             {/* Templates Gallery */}
             <TemplatesClient
