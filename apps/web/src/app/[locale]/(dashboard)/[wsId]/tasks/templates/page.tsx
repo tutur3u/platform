@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TemplatesClient from './client';
-import type { BoardTemplate } from './types';
+import type { BoardTemplate, TemplateFilter } from './types';
 
 export const metadata: Metadata = {
   title: 'Board Templates',
@@ -16,9 +16,12 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<{
+    visibility?: string;
+  }>;
 }
 
-export default async function TemplatesPage({ params }: Props) {
+export default async function TemplatesPage({ params, searchParams }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -29,8 +32,13 @@ export default async function TemplatesPage({ params }: Props) {
 
         if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-        // Fetch templates
-        const { templates } = await getTemplates(wsId);
+        // Get search params
+        const resolvedSearchParams = await searchParams;
+        const visibility = (resolvedSearchParams.visibility ||
+          'public') as TemplateFilter;
+
+        // Fetch templates based on visibility
+        const { templates } = await getTemplates(wsId, visibility);
 
         const t = await getTranslations('ws-board-templates');
 
@@ -47,7 +55,11 @@ export default async function TemplatesPage({ params }: Props) {
             </div>
 
             {/* Templates Gallery */}
-            <TemplatesClient wsId={wsId} initialTemplates={templates} />
+            <TemplatesClient
+              wsId={wsId}
+              initialTemplates={templates}
+              initialVisibility={visibility}
+            />
           </div>
         );
       }}
@@ -56,11 +68,21 @@ export default async function TemplatesPage({ params }: Props) {
 }
 
 async function getTemplates(
-  wsId: string
+  wsId: string,
+  visibility: TemplateFilter
 ): Promise<{ templates: BoardTemplate[] }> {
   const supabase = await createClient();
 
-  const { data: templates, error } = await supabase
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { templates: [] };
+  }
+
+  let query = supabase
     .from('board_templates')
     .select(
       `
@@ -76,50 +98,59 @@ async function getTemplates(
       updated_at
     `
     )
-    .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
+
+  // Apply visibility-based filtering
+  if (visibility === 'private') {
+    // Only private templates created by the user in this workspace
+    query = query
+      .eq('ws_id', wsId)
+      .eq('visibility', 'private')
+      .eq('created_by', user.id);
+  } else if (visibility === 'workspace') {
+    // Only workspace templates in this workspace
+    query = query.eq('ws_id', wsId).eq('visibility', 'workspace');
+  } else if (visibility === 'public') {
+    // Only public templates (from any workspace)
+    query = query.eq('visibility', 'public');
+  }
+
+  const { data: templates, error } = await query;
 
   if (error) {
     console.error('Error fetching templates:', error);
     return { templates: [] };
   }
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   // Transform templates
-  const transformedTemplates: BoardTemplate[] = (templates || []).map(
-    (template) => {
-      const content = template.content as {
-        lists?: Array<{ tasks?: unknown[] }>;
-        labels?: unknown[];
-      };
+  const transformedTemplates: BoardTemplate[] = templates.map((template) => {
+    const content = template.content as {
+      lists?: Array<{ tasks?: unknown[] }>;
+      labels?: unknown[];
+    };
 
-      return {
-        id: template.id,
-        wsId: template.ws_id,
-        createdBy: template.created_by,
-        sourceBoardId: template.source_board_id,
-        name: template.name,
-        description: template.description,
-        visibility: template.visibility as 'private' | 'workspace' | 'public',
-        createdAt: template.created_at,
-        updatedAt: template.updated_at,
-        isOwner: template.created_by === user?.id,
-        stats: {
-          lists: content.lists?.length || 0,
-          tasks:
-            content.lists?.reduce(
-              (acc, list) => acc + (list.tasks?.length || 0),
-              0
-            ) || 0,
-          labels: content.labels?.length || 0,
-        },
-      };
-    }
-  );
+    return {
+      id: template.id,
+      wsId: template.ws_id,
+      createdBy: template.created_by,
+      sourceBoardId: template.source_board_id,
+      name: template.name,
+      description: template.description,
+      visibility: template.visibility as 'private' | 'workspace' | 'public',
+      createdAt: template.created_at,
+      updatedAt: template.updated_at,
+      isOwner: template.created_by === user?.id,
+      stats: {
+        lists: content.lists?.length || 0,
+        tasks:
+          content.lists?.reduce(
+            (acc, list) => acc + (list.tasks?.length || 0),
+            0
+          ) || 0,
+        labels: content.labels?.length || 0,
+      },
+    };
+  });
 
   return { templates: transformedTemplates };
 }

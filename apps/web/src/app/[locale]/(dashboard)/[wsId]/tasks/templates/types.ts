@@ -48,4 +48,4 @@ export interface TemplateContent {
   };
 }
 
-export type TemplateFilter = 'all' | 'my' | 'workspace';
+export type TemplateFilter = 'private' | 'workspace' | 'public';

@@ -2,7 +2,6 @@
 
 import {
   Bookmark,
-  Eye,
   Globe,
   KanbanSquare,
   ListTodo,
@@ -31,52 +30,55 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import type { BoardTemplate, TemplateFilter } from './types';
 
 interface Props {
   wsId: string;
   initialTemplates: BoardTemplate[];
+  initialVisibility: TemplateFilter;
 }
 
-export default function TemplatesClient({ wsId, initialTemplates }: Props) {
+export default function TemplatesClient({
+  wsId,
+  initialTemplates,
+  initialVisibility,
+}: Props) {
   const t = useTranslations('ws-board-templates');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<TemplateFilter>('all');
 
+  // Handle visibility change with server-side fetch
+  const handleVisibilityChange = (newVisibility: TemplateFilter) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (newVisibility === 'public') {
+      params.delete('visibility');
+    } else {
+      params.set('visibility', newVisibility);
+    }
+
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
+  };
+
+  // Client-side text search filtering only
   const filteredTemplates = useMemo(() => {
-    let templates = initialTemplates;
+    if (!searchQuery.trim()) return initialTemplates;
 
-    // Apply ownership filter
-    if (filter === 'my') {
-      templates = templates.filter((tmpl) => tmpl.isOwner);
-    } else if (filter === 'workspace') {
-      templates = templates.filter((tmpl) => tmpl.visibility === 'workspace');
-    }
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      templates = templates.filter(
-        (tmpl) =>
-          tmpl.name.toLowerCase().includes(query) ||
-          tmpl.description?.toLowerCase().includes(query)
-      );
-    }
-
-    return templates;
-  }, [initialTemplates, filter, searchQuery]);
-
-  const myTemplatesCount = useMemo(
-    () => initialTemplates.filter((t) => t.isOwner).length,
-    [initialTemplates]
-  );
-
-  const workspaceTemplatesCount = useMemo(
-    () => initialTemplates.filter((t) => t.visibility === 'workspace').length,
-    [initialTemplates]
-  );
+    const query = searchQuery.toLowerCase();
+    return initialTemplates.filter(
+      (tmpl) =>
+        tmpl.name.toLowerCase().includes(query) ||
+        tmpl.description?.toLowerCase().includes(query)
+    );
+  }, [initialTemplates, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -104,33 +106,30 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
 
         <div className="flex items-center gap-2">
           <Select
-            value={filter}
-            onValueChange={(v) => setFilter(v as TemplateFilter)}
+            value={initialVisibility}
+            onValueChange={(v) => handleVisibilityChange(v as TemplateFilter)}
+            disabled={isPending}
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">
+              <SelectItem value="public">
                 <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  <span>{t('gallery.filter_all')}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="my">
-                <div className="flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
-                  <span>
-                    {t('gallery.filter_my')} ({myTemplatesCount})
-                  </span>
+                  <Globe className="h-4 w-4" />
+                  <span>{t('visibility.public')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="workspace">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span>
-                    {t('gallery.filter_workspace')} ({workspaceTemplatesCount})
-                  </span>
+                  <span>{t('visibility.workspace')}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="private">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  <span>{t('visibility.private')}</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -142,9 +141,9 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
       {filteredTemplates.length === 0 ? (
         <EmptyState
           searchQuery={searchQuery}
-          filter={filter}
+          visibility={initialVisibility}
           onClearSearch={() => setSearchQuery('')}
-          onClearFilter={() => setFilter('all')}
+          onClearFilter={() => handleVisibilityChange('public')}
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -252,14 +251,14 @@ function TemplateCard({ template, wsId }: TemplateCardProps) {
 
 interface EmptyStateProps {
   searchQuery: string;
-  filter: TemplateFilter;
+  visibility: TemplateFilter;
   onClearSearch: () => void;
   onClearFilter: () => void;
 }
 
 function EmptyState({
   searchQuery,
-  filter,
+  visibility,
   onClearSearch,
   onClearFilter,
 }: EmptyStateProps) {
@@ -282,7 +281,7 @@ function EmptyState({
     );
   }
 
-  if (filter !== 'all') {
+  if (visibility !== 'public') {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
         <Bookmark className="mb-4 h-12 w-12 text-muted-foreground/50" />
