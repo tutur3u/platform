@@ -11050,6 +11050,7 @@
     "row_actions": {
       "archive": "Lưu trữ",
       "copy": "Nhân bản",
+
       "delete_forever": "Xóa vĩnh viễn",
       "dialog": {
         "archive_button": "Lưu trữ bảng",
@@ -11073,7 +11074,9 @@
         "unarchive_description": "Bạn có chắc chắn muốn bỏ lưu trữ \"{name}\" không? Bảng sẽ được chuyển về danh sách bảng đang hoạt động.",
         "unarchive_title": "Bỏ lưu trữ bảng"
       },
+      "duplicate": "Nhân bản",
       "restore": "Khôi phục",
+      "save_as_template": "Lưu làm mẫu",
       "toast": {
         "archive_error": "Không thể lưu trữ bảng",
         "archive_success": "Bảng đã được lưu trữ thành công",

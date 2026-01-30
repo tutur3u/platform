@@ -11073,7 +11073,9 @@
         "unarchive_description": "Are you sure you want to unarchive \"{name}\"? This board will be moved to active boards.",
         "unarchive_title": "Unarchive Board"
       },
+      "duplicate": "Duplicate",
       "restore": "Restore",
+      "save_as_template": "Save as Template",
       "toast": {
         "archive_error": "Failed to archive board",
         "archive_success": "Board archived successfully",
