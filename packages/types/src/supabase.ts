@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -16117,7 +16112,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -17738,6 +17762,20 @@ export type Database = {
         };
         Returns: string;
       };
+      detect_duplicate_workspace_users: {
+        Args: { _ws_id: string };
+        Returns: {
+          cluster_id: number;
+          created_at: string;
+          email: string;
+          full_name: string;
+          is_linked: boolean;
+          linked_platform_user_id: string;
+          match_reason: string;
+          phone: string;
+          user_id: string;
+        }[];
+      };
       ensure_workspace_user_link: {
         Args: { target_user_id: string; target_ws_id: string };
         Returns: string;
@@ -17869,7 +17907,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: unknown;
+          last_sign_in_avg: string;
           percentage: number;
           provider: string;
           user_count: number;
@@ -18143,6 +18181,44 @@ export type Database = {
           adoption_count: number;
           adoption_percentage: number;
           feature_name: string;
+        }[];
+      };
+      get_finance_invoice_products_by_workspace: {
+        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
+        Returns: {
+          amount: number;
+          created_at: string;
+          id: string;
+          invoice_id: string;
+          price: number;
+          product_id: string;
+          total_count: number;
+          unit_id: string;
+          warehouse_id: string;
+        }[];
+      };
+      get_finance_invoice_promotions_by_workspace: {
+        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
+        Returns: {
+          code: string;
+          created_at: string;
+          description: string;
+          id: string;
+          invoice_id: string;
+          name: string;
+          promo_id: string;
+          total_count: number;
+          use_ratio: boolean;
+          value: number;
+        }[];
+      };
+      get_finance_invoice_user_groups_by_workspace: {
+        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
+        Returns: {
+          created_at: string;
+          invoice_id: string;
+          total_count: number;
+          user_group_id: string;
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
@@ -18826,6 +18902,33 @@ export type Database = {
           total_transactions: number;
         }[];
       };
+      get_transactions_by_period: {
+        Args: {
+          p_category_ids?: string[];
+          p_creator_ids?: string[];
+          p_cursor_period_start?: string;
+          p_end_date?: string;
+          p_interval?: string;
+          p_limit?: number;
+          p_search_query?: string;
+          p_start_date?: string;
+          p_tag_ids?: string[];
+          p_user_id?: string;
+          p_wallet_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          has_more: boolean;
+          has_redacted_amounts: boolean;
+          net_total: number;
+          period_end: string;
+          period_start: string;
+          total_expense: number;
+          total_income: number;
+          transaction_count: number;
+          transactions: Json;
+        }[];
+      };
       get_upcoming_recurring_transactions: {
         Args: { _ws_id: string; days_ahead?: number };
         Returns: {
@@ -18893,7 +18996,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: unknown;
+          current_session_age: string;
           total_sessions: number;
         }[];
       };
@@ -19413,6 +19516,10 @@ export type Database = {
           similarity: number;
           start_date: string;
         }[];
+      };
+      merge_workspace_users: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
       };
       normalize_task_sort_keys: { Args: never; Returns: undefined };
       nova_get_all_challenges_with_user_stats: {

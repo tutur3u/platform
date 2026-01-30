@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLogTable } from './audit-log-table';
+import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
 import ExportDialogContent from './export-dialog-content';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
@@ -142,8 +143,13 @@ export default async function WorkspaceUsersPage({
               data: users,
               count: count,
             }}
+            toolbarActions={
+              canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
+                <DuplicateUsersDialog wsId={wsId} />
+              ) : undefined
+            }
             toolbarImportContent={
-              canExportUsers && <ImportDialogContent wsId={wsId} />
+              canExportUsers ? <ImportDialogContent wsId={wsId} /> : undefined
             }
             toolbarExportContent={
               canExportUsers && (

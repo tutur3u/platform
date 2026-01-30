@@ -28,12 +28,14 @@ interface InvoiceAnalyticsProps {
    * @default 1 (Monday)
    */
   weekStartsOn?: WeekStartsOn;
+  currency?: string;
 }
 
 export function InvoiceAnalytics({
   wsId,
   className,
   weekStartsOn = 1,
+  currency: _currency = 'USD',
 }: InvoiceAnalyticsProps) {
   const t = useTranslations('invoice-analytics');
 
@@ -118,7 +120,7 @@ export function InvoiceAnalytics({
   if (error) {
     return (
       <Card className={className}>
-        <CardContent className="flex h-[280px] items-center justify-center">
+        <CardContent className="flex h-70 items-center justify-center">
           <p className="text-destructive text-sm">{t('error_loading')}</p>
         </CardContent>
       </Card>

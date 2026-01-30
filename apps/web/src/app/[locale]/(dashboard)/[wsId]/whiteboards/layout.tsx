@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
@@ -15,8 +14,8 @@ export default async function WhiteboardsLayout({
 }: LayoutProps) {
   return (
     <WorkspaceWrapper params={params}>
-      {({ workspace }) => {
-        if (!workspace.tier || workspace.tier === 'FREE') return notFound();
+      {({ workspace: _ }) => {
+        // if (!workspace.tier || workspace.tier === 'FREE') return notFound();
 
         return children;
       }}

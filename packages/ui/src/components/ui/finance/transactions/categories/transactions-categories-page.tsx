@@ -26,6 +26,10 @@ export default async function TransactionsCategoriesPage({
   const initialData = await getInitialData(wsId);
   const t = await getTranslations();
 
+  // Determine default chart mode based on category types
+  // If all categories are income (is_expense: false), default to 'income' mode
+  const defaultChartType = initialData.allAreIncome ? 'income' : 'expense';
+
   return (
     <>
       <FeatureSummary
@@ -37,7 +41,11 @@ export default async function TransactionsCategoriesPage({
         form={<TransactionCategoryForm wsId={wsId} />}
       />
       <Separator className="my-4" />
-      <CategoryBreakdownChart wsId={wsId} currency={currency} />
+      <CategoryBreakdownChart
+        wsId={wsId}
+        currency={currency}
+        defaultTransactionType={defaultChartType}
+      />
       <Separator className="my-4" />
       <CategoriesDataTable
         wsId={wsId}
@@ -73,5 +81,10 @@ async function getInitialData(wsId: string) {
   const pageSize = 10;
   const data = allCategories.slice(0, pageSize);
 
-  return { data, count };
+  // Check if all categories are income (for chart default mode)
+  const allAreIncome =
+    allCategories.length > 0 &&
+    allCategories.every((cat) => cat.is_expense === false);
+
+  return { data, count, allAreIncome };
 }

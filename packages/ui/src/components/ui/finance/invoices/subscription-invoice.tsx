@@ -56,6 +56,7 @@ interface Props {
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
   defaultCategoryId?: string;
+  defaultCurrency?: 'VND' | 'USD';
 }
 
 export function SubscriptionInvoice({
@@ -66,11 +67,15 @@ export function SubscriptionInvoice({
   downloadImageAfterCreate = false,
   defaultWalletId,
   defaultCategoryId,
+  defaultCurrency = 'USD',
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Compute locale based on currency
+  const currencyLocale = defaultCurrency === 'VND' ? 'vi-VN' : 'en-US';
 
   // URL state using nuqs
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
@@ -527,10 +532,10 @@ export function SubscriptionInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(calculated_values.rounding_applied)}`
+            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat(currencyLocale, { style: 'currency', currency: defaultCurrency }).format(calculated_values.rounding_applied)}`
             : '';
         toast(t('ws-invoices.subscription_invoice_created_recalculated'), {
-          description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(calculated_values.total)} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(frontend_values?.total || 0)}${roundingInfo}`,
+          description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(currencyLocale, { style: 'currency', currency: defaultCurrency }).format(calculated_values.total)} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat(currencyLocale, { style: 'currency', currency: defaultCurrency }).format(frontend_values?.total || 0)}${roundingInfo}`,
           duration: 5000,
         });
       } else {
@@ -717,6 +722,7 @@ export function SubscriptionInvoice({
                         onWalletChange={setSelectedWalletId}
                         onCategoryChange={setSelectedCategoryId}
                         showPromotion
+                        currency={defaultCurrency}
                         promotionsAllowed={true}
                         selectedUserId={selectedUserId}
                         selectedPromotionId={selectedPromotionId}

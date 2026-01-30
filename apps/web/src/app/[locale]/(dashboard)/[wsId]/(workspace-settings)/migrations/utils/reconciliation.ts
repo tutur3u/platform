@@ -59,6 +59,12 @@ const compositeKeyStrategies: Record<string, (item: unknown) => string | null> =
         ? `${String(i.invoice_id)}|${String(i.code)}|${String(i.value)}|${String(i.use_ratio)}`
         : null;
     },
+    'finance-invoice-user-groups': (item) => {
+      const i = item as Record<string, unknown>;
+      return i?.invoice_id != null && i?.user_group_id != null
+        ? `${String(i.invoice_id)}|${String(i.user_group_id)}`
+        : null;
+    },
   };
 
 /**
@@ -156,6 +162,34 @@ export function hasSignificantChanges(
 }
 
 /**
+ * Options for reconciliation behavior
+ */
+export interface ReconciliationOptions {
+  /**
+   * When true, returns recordsToSync containing only new + updated records,
+   * excluding unchanged duplicates. Use this in Tuturuuu mode to skip
+   * unnecessary upserts.
+   */
+  skipDuplicates?: boolean;
+}
+
+/**
+ * Result of reconciliation containing counts and optionally filtered data
+ */
+export interface ReconciliationResult {
+  newRecords: number;
+  updates: number;
+  duplicates: number;
+  /** All mapped external data (for display purposes) */
+  mappedData: unknown[];
+  /**
+   * Records that need syncing (new + updates only).
+   * Only populated when skipDuplicates option is true.
+   */
+  recordsToSync?: unknown[];
+}
+
+/**
  * Reconcile external data with existing internal data
  */
 export function reconcileData(
@@ -163,13 +197,11 @@ export function reconcileData(
   externalData: unknown[],
   existingInternalData: unknown[],
   mapping?: (wsId: string, data: unknown[]) => unknown[],
-  workspaceId?: string
-): {
-  newRecords: number;
-  updates: number;
-  duplicates: number;
-  mappedData: unknown[];
-} {
+  workspaceId?: string,
+  options?: ReconciliationOptions
+): ReconciliationResult {
+  const { skipDuplicates = false } = options ?? {};
+
   // Apply mapping to external data before comparison
   const mappedData =
     mapping && workspaceId ? mapping(workspaceId, externalData) : externalData;
@@ -181,6 +213,10 @@ export function reconcileData(
   let updates = 0;
   let duplicates = 0;
 
+  // Arrays to collect filtered records when skipDuplicates is enabled
+  const newItems: unknown[] = [];
+  const updateItems: unknown[] = [];
+
   // Analyze mapped external data vs existing data
   for (const extItem of mappedData) {
     const extKey = getItemKey(module, extItem);
@@ -188,13 +224,28 @@ export function reconcileData(
       const existing = existingMap.get(extKey);
       if (hasSignificantChanges(existing, extItem)) {
         updates++;
+        if (skipDuplicates) updateItems.push(extItem);
       } else {
         duplicates++;
+        // Don't add duplicates to recordsToSync
       }
     } else {
       newRecords++;
+      if (skipDuplicates) newItems.push(extItem);
     }
   }
 
-  return { newRecords, updates, duplicates, mappedData };
+  const result: ReconciliationResult = {
+    newRecords,
+    updates,
+    duplicates,
+    mappedData,
+  };
+
+  // Only include recordsToSync when skipDuplicates is enabled
+  if (skipDuplicates) {
+    result.recordsToSync = [...newItems, ...updateItems];
+  }
+
+  return result;
 }

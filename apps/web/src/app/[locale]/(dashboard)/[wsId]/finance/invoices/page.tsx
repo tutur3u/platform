@@ -1,5 +1,8 @@
 import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -41,6 +44,8 @@ export default async function WorkspaceInvoicesPage({
 
         const canCreateInvoices = containsPermission('create_invoices');
         const canDeleteInvoices = containsPermission('delete_invoices');
+        const currency =
+          (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
 
         return (
           <InvoicesPage
@@ -49,6 +54,7 @@ export default async function WorkspaceInvoicesPage({
             canCreateInvoices={canCreateInvoices}
             canDeleteInvoices={canDeleteInvoices}
             deleteInvoiceAction={deleteInvoice}
+            currency={currency}
           />
         );
       }}

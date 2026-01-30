@@ -76,6 +76,8 @@ export interface DataTableProps<TData, TValue> {
   currentSortOrder?: 'asc' | 'desc';
   toolbarImportContent?: ReactNode;
   toolbarExportContent?: ReactNode;
+  /** Custom toolbar actions rendered directly (not wrapped in dialogs) */
+  toolbarActions?: ReactNode;
   className?: string;
   preserveParams?: string[];
   onRefresh?: () => void;
@@ -123,6 +125,7 @@ export function DataTable<TData, TValue>({
   t,
   toolbarImportContent,
   toolbarExportContent,
+  toolbarActions,
   className,
   onRefresh,
   selectedRowsActions,
@@ -226,6 +229,7 @@ export function DataTable<TData, TValue>({
           selectedRowsActions={selectedRowsActions}
           importContent={toolbarImportContent}
           exportContent={toolbarExportContent}
+          toolbarActions={toolbarActions}
         />
       )}
       <Card>

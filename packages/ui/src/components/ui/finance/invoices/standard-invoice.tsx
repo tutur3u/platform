@@ -42,6 +42,7 @@ interface Props {
   printAfterCreate?: boolean;
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
+  defaultCurrency?: 'VND' | 'USD';
 }
 
 export function StandardInvoice({
@@ -50,11 +51,15 @@ export function StandardInvoice({
   printAfterCreate = false,
   downloadImageAfterCreate = false,
   defaultWalletId,
+  defaultCurrency = 'USD',
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+
+  // Compute locale based on currency
+  const currencyLocale = defaultCurrency === 'VND' ? 'vi-VN' : 'en-US';
 
   // Read from URL params
   const selectedUserId = searchParams.get('user_id') || '';
@@ -298,26 +303,29 @@ export function StandardInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(calculated_values.rounding_applied)}`
+            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat(
+                currencyLocale,
+                {
+                  style: 'currency',
+                  currency: defaultCurrency,
+                }
+              ).format(calculated_values.rounding_applied)}`
             : '';
 
         toast(t('ws-invoices.invoice_created_recalculated'), {
           description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(
-            'vi-VN',
+            currencyLocale,
             {
               style: 'currency',
-              currency: 'VND',
+              currency: defaultCurrency,
             }
           ).format(
             calculated_values.total
           )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat(
-            'vi-VN',
+            currencyLocale,
             {
               style: 'currency',
-              currency: 'VND',
+              currency: defaultCurrency,
             }
           ).format(frontend_values?.total || 0)}${roundingInfo}`,
           duration: 5000,
@@ -411,6 +419,7 @@ export function StandardInvoice({
             products={products}
             selectedProducts={selectedProducts}
             onSelectedProductsChange={setSelectedProducts}
+            currency={defaultCurrency}
           />
         )}
       </div>
@@ -439,6 +448,7 @@ export function StandardInvoice({
                   onWalletChange={setSelectedWalletId}
                   onCategoryChange={setSelectedCategoryId}
                   showPromotion
+                  currency={defaultCurrency}
                   promotionsAllowed={promotionsAllowed}
                   selectedUserId={selectedUserId}
                   selectedPromotionId={selectedPromotionId}

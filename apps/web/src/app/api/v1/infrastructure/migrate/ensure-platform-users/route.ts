@@ -1,21 +1,27 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { requireDevMode } from '../batch-upsert';
 
 /**
  * POST /api/v1/infrastructure/migrate/ensure-platform-users
  *
  * Ensures that platform users exist for the given IDs.
- * Creates placeholder users for any missing IDs with display_name and full_name set to the ID.
+ * Creates placeholder users for any missing IDs with display_name set to a placeholder.
  *
  * This is used during migration to satisfy foreign key constraints when syncing data
  * from one environment to another (e.g., production to staging).
+ *
+ * Uses upsert with ignoreDuplicates for efficiency - no need to check existence first.
  */
 export async function POST(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   try {
     const json = await req.json();
     const userIds: string[] = json?.user_ids || [];
 
     if (!userIds.length) {
-      return Response.json({ created: 0, existing: 0 });
+      return Response.json({ created: 0, total: 0 });
     }
 
     // Filter out null, undefined, and empty strings
@@ -24,7 +30,7 @@ export async function POST(req: Request) {
     );
 
     if (!validUserIds.length) {
-      return Response.json({ created: 0, existing: 0 });
+      return Response.json({ created: 0, total: 0 });
     }
 
     // Deduplicate
@@ -32,67 +38,59 @@ export async function POST(req: Request) {
 
     const sbAdmin = await createAdminClient();
 
-    // Check which users already exist
-    const { data: existingUsers, error: fetchError } = await sbAdmin
-      .from('users')
-      .select('id')
-      .in('id', uniqueUserIds);
-
-    if (fetchError) {
-      console.error('Error fetching existing users:', fetchError);
-      return Response.json(
-        {
-          error: 'Failed to check existing users',
-          details: fetchError.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    const existingIds = new Set(existingUsers?.map((u) => u.id) || []);
-    const missingIds = uniqueUserIds.filter((id) => !existingIds.has(id));
-
-    if (!missingIds.length) {
-      return Response.json({
-        created: 0,
-        existing: existingIds.size,
-        message: 'All users already exist',
-      });
-    }
-
-    // Create placeholder users for missing IDs
-    // Note: The users table in Supabase Auth requires specific handling
-    // We'll create records in the public.users table which is the profile table
-    const placeholderUsers = missingIds.map((id) => ({
+    // Create placeholder users for all IDs using upsert with ignoreDuplicates
+    // This is more efficient than checking which exist first:
+    // - Avoids .in() queries which have URL length limits
+    // - Let the database handle deduplication in a single operation
+    // - No need for round-trip to check existence
+    const placeholderUsers = uniqueUserIds.map((id) => ({
       id,
       display_name: `Migrated User (${id.substring(0, 8)}...)`,
     }));
 
-    const { error: insertError } = await sbAdmin
-      .from('users')
-      .upsert(placeholderUsers, { onConflict: 'id', ignoreDuplicates: true });
+    // Batch the upserts to avoid request body size limits
+    const BATCH_SIZE = 500;
+    const errors: Array<{ batch: number; error: unknown }> = [];
 
-    if (insertError) {
-      console.error('Error creating placeholder users:', insertError);
+    for (let i = 0; i < placeholderUsers.length; i += BATCH_SIZE) {
+      const batch = placeholderUsers.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+      const { error: insertError } = await sbAdmin
+        .from('users')
+        .upsert(batch, { onConflict: 'id', ignoreDuplicates: true });
+
+      if (insertError) {
+        console.error(
+          `Error creating placeholder users (batch ${batchNumber}):`,
+          insertError
+        );
+        errors.push({ batch: batchNumber, error: insertError });
+      }
+    }
+
+    if (errors.length > 0) {
       return Response.json(
         {
-          error: 'Failed to create placeholder users',
-          details: insertError.message,
+          error: 'Failed to create some placeholder users',
+          details: (errors[0]?.error as { message?: string })?.message,
+          errorCount: errors.length,
+          totalBatches: Math.ceil(placeholderUsers.length / BATCH_SIZE),
         },
         { status: 500 }
       );
     }
 
     console.log(
-      `Created ${missingIds.length} placeholder users:`,
-      missingIds.slice(0, 5),
-      missingIds.length > 5 ? `... and ${missingIds.length - 5} more` : ''
+      `Ensured ${uniqueUserIds.length} platform users:`,
+      uniqueUserIds.slice(0, 5),
+      uniqueUserIds.length > 5 ? `... and ${uniqueUserIds.length - 5} more` : ''
     );
 
     return Response.json({
-      created: missingIds.length,
-      existing: existingIds.size,
-      createdIds: missingIds,
+      created: uniqueUserIds.length,
+      total: uniqueUserIds.length,
+      message: 'Platform users ensured (new users created, existing skipped)',
     });
   } catch (error) {
     console.error('Error in ensure-platform-users:', error);

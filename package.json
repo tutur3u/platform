@@ -74,7 +74,7 @@
     "type-check:foundapack": "turbo run type-check -F @tuturuuu/foundapack",
     "type-check:external": "turbo run type-check -F @tuturuuu/external",
     "type-check:playground": "turbo run type-check -F @tuturuuu/playground",
-    "check": "bun biome check && bun test && bun type-check && bun i18n:check && bun i18n:key-parity && bun i18n:sort:check && bun migration:timestamps:check",
+    "check": "node scripts/check.js",
     "migration:timestamps:check": "node scripts/check-migration-timestamps.js",
     "format": "biome format",
     "format:fix": "biome format --write",

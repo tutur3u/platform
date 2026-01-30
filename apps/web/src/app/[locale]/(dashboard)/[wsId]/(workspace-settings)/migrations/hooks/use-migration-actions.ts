@@ -8,7 +8,11 @@ import {
   type ModulePackage,
 } from '../modules';
 import { buildProxyUrl, parseUrlForProxy } from '../utils/api-path';
-import { reconcileData, usesCompositeKey } from '../utils/reconciliation';
+import {
+  type ReconciliationResult,
+  reconcileData,
+  usesCompositeKey,
+} from '../utils/reconciliation';
 import type { useMigrationState } from './use-migration-state';
 
 type MigrationState = ReturnType<typeof useMigrationState>;
@@ -35,6 +39,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
     setDuplicates,
     setUpdates,
     setNewRecords,
+    setRecordsToSync,
     setStage,
     setExistingInternalData,
     resetData,
@@ -245,8 +250,8 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         // Legacy mode uses the effectiveApiEndpoint directly
         externalUrl = `${effectiveApiEndpoint}${externalPath}`;
       }
-      const chunkSize = 500;
-      const healthCheckLimit = 501;
+      const chunkSize = 1000;
+      const healthCheckLimit = 1001;
 
       // Stage 1: Fetch external data
       setStage(module, 'external');
@@ -272,7 +277,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
 
           const allInternalData: unknown[] = [];
           let offset = 0;
-          const batchSize = 500;
+          const batchSize = 1000;
           const maxFetch = healthCheckMode ? healthCheckLimit : 100000;
 
           try {
@@ -405,14 +410,24 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
       );
 
       // For Tuturuuu mode, skip mapping (1:1 sync with matching schemas)
+      // Also enable skipDuplicates to avoid unnecessary upserts
       const effectiveMapping = mode === 'tuturuuu' ? undefined : mapping;
-      const { newRecords, updates, duplicates, mappedData } = reconcileData(
+      const skipDuplicatesInSync = mode === 'tuturuuu';
+
+      const reconciliationResult: ReconciliationResult = reconcileData(
         module,
         externalData,
         existingInternalData,
         effectiveMapping,
-        targetWorkspaceId
+        targetWorkspaceId,
+        { skipDuplicates: skipDuplicatesInSync }
       );
+
+      const { newRecords, updates, duplicates, mappedData, recordsToSync } =
+        reconciliationResult;
+
+      // Use filtered data (recordsToSync) in Tuturuuu mode to skip duplicates
+      const dataToSync = recordsToSync ?? mappedData;
 
       console.log(
         `[${module}] Mapped external data: ${mappedData.length} records`
@@ -426,9 +441,19 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         duplicates,
       });
 
+      if (skipDuplicatesInSync && duplicates > 0) {
+        console.log(
+          `[${module}] Skipping ${duplicates} duplicate records (${((duplicates / mappedData.length) * 100).toFixed(1)}% efficiency)`
+        );
+        console.log(
+          `[${module}] Records to sync: ${dataToSync.length} (${newRecords} new + ${updates} updates)`
+        );
+      }
+
       setDuplicates(module, duplicates);
       setUpdates(module, updates);
       setNewRecords(module, newRecords);
+      setRecordsToSync(module, dataToSync.length);
 
       if (cancelRequested.has(module)) {
         setLoading(module, false);
@@ -447,7 +472,8 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
       } else if (internalPath && targetWorkspaceId) {
         // For Tuturuuu mode, ensure platform users exist before syncing
         // This creates placeholder users for any missing user IDs to satisfy foreign key constraints
-        if (mode === 'tuturuuu' && externalData.length > 0) {
+        // Use dataToSync (filtered) for user extraction to avoid unnecessary lookups
+        if (mode === 'tuturuuu' && dataToSync.length > 0) {
           const platformUserFields = [
             'creator_id',
             'updated_by',
@@ -458,9 +484,9 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
             'platform_user_id', // workspace_user_linked_users table
           ];
 
-          // Extract all unique platform user IDs from the data
+          // Extract all unique platform user IDs from the data to sync
           const userIds = new Set<string>();
-          for (const item of externalData) {
+          for (const item of dataToSync) {
             const record = item as Record<string, unknown>;
             for (const field of platformUserFields) {
               const value = record[field];
@@ -506,16 +532,17 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
 
         await new Promise((resolve) => setTimeout(resolve, 200));
 
-        if (externalData.length > 0) {
-          for (let i = 0; i < externalData.length; i += chunkSize) {
+        // Sync only records that need syncing (new + updates), skipping duplicates
+        if (dataToSync.length > 0) {
+          for (let i = 0; i < dataToSync.length; i += chunkSize) {
             while (pauseRequested.has(module) && !cancelRequested.has(module)) {
               await new Promise((resolve) => setTimeout(resolve, 500));
             }
 
             if (cancelRequested.has(module) || internalError !== null) break;
 
-            const chunkMax = Math.min(i + chunkSize, externalData.length);
-            const chunk = externalData.slice(i, chunkMax);
+            const chunkMax = Math.min(i + chunkSize, dataToSync.length);
+            const chunk = dataToSync.slice(i, chunkMax);
 
             // Tables that don't have ws_id column - RLS validates via foreign keys
             const tablesWithoutWsId = [
@@ -531,6 +558,8 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
               // Finance invoice related (ws_id via invoice_id)
               'finance-invoice-products',
               'finance-invoice-promotions',
+              'finance-invoice-user-groups', // junction table (invoice_id, user_group_id)
+              'finance-invoice-transaction-links', // update-only module, ws_id already set
               // Wallet related
               'credit-wallets', // ws_id via wallet_id
               'wallet-types', // global table, no ws_id at all
@@ -603,7 +632,9 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
             }
           }
         } else {
-          console.log('No external data to migrate');
+          console.log(
+            `[${module}] No records to sync (${duplicates} duplicates skipped)`
+          );
           setData('internal', module, internalData, 0);
         }
       }
@@ -641,6 +672,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
       setDuplicates,
       setUpdates,
       setNewRecords,
+      setRecordsToSync,
       setCompleted,
       healthCheckMode,
       abortControllersRef,

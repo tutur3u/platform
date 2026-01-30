@@ -1,5 +1,8 @@
 import InvoiceDetailsPage from '@tuturuuu/ui/finance/invoices/invoiceId/invoice-details-page';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -30,12 +33,16 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
         if (withoutPermission('view_invoices')) notFound();
 
         const canUpdateInvoices = containsPermission('update_invoices');
+        const currency =
+          (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
+
         return (
           <InvoiceDetailsPage
             wsId={wsId}
             locale={locale}
             invoiceId={invoiceId}
             canUpdateInvoices={canUpdateInvoices}
+            currency={currency}
           />
         );
       }}
