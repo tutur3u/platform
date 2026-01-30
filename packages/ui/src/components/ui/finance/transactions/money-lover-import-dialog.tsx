@@ -5,14 +5,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   FileSpreadsheet,
   FolderOpen,
+  Info,
   Loader2,
   Upload,
   Wallet,
+  X,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import {
   DialogClose,
   DialogDescription,
@@ -39,9 +48,11 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -67,14 +78,26 @@ interface ParsedTransaction {
   wallet: string;
 }
 
+type ImportStep =
+  | 'idle'
+  | 'parsing'
+  | 'validating'
+  | 'uploading'
+  | 'complete'
+  | 'error';
+
 interface ImportProgress {
-  step: 'parsing' | 'validating' | 'uploading' | 'complete' | 'error';
+  step: ImportStep;
   current: number;
   total: number;
   status: 'processing' | 'success' | 'error';
   message: string;
   details?: string;
+  batch?: number;
+  totalBatches?: number;
 }
+
+const BATCH_SIZE = 1000;
 
 export default function MoneyLoverImportDialog({
   wsId,
@@ -88,6 +111,8 @@ export default function MoneyLoverImportDialog({
   const [allData, setAllData] = useState<ParsedTransaction[]>([]);
   const [fileSelected, setFileSelected] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [fileName, setFileName] = useState<string>('');
 
   const form = useForm<ImportFormValues>({
     resolver: zodResolver(importFormSchema),
@@ -96,51 +121,80 @@ export default function MoneyLoverImportDialog({
     },
   });
 
-  const parseCSV = (text: string, delimiter: string): ParsedTransaction[] => {
-    const delimiterChar =
-      delimiter === 'tab' ? '\t' : delimiter === 'semicolon' ? ';' : ',';
+  const parseCSV = useCallback(
+    (text: string, delimiter: string): ParsedTransaction[] => {
+      const delimiterChar =
+        delimiter === 'tab' ? '\t' : delimiter === 'semicolon' ? ';' : ',';
 
-    const lines = text.split('\n').filter((line) => line.trim());
-    if (lines.length < 2) return [];
+      const lines = text.split('\n').filter((line) => line.trim());
+      if (lines.length < 2) return [];
 
-    // Skip header line
-    const dataLines = lines.slice(1);
+      // Skip header line
+      const dataLines = lines.slice(1);
 
-    return dataLines
-      .map((line) => {
-        const columns = line.split(delimiterChar).map((col) => col.trim());
+      return dataLines
+        .map((line) => {
+          const columns = line.split(delimiterChar).map((col) => col.trim());
 
-        if (columns.length < 7) return null;
+          if (columns.length < 7) return null;
 
-        return {
-          id: columns[0] || '',
-          date: columns[1] || '',
-          category: columns[2] || '',
-          amount: columns[3] || '',
-          currency: columns[4] || '',
-          note: columns[5] || '',
-          wallet: columns[6] || '',
-        };
-      })
-      .filter((item): item is ParsedTransaction => item !== null);
-  };
+          return {
+            id: columns[0] || '',
+            date: columns[1] || '',
+            category: columns[2] || '',
+            amount: columns[3] || '',
+            currency: columns[4] || '',
+            note: columns[5] || '',
+            wallet: columns[6] || '',
+          };
+        })
+        .filter((item): item is ParsedTransaction => item !== null);
+    },
+    []
+  );
+
+  const processFile = useCallback(
+    async (file: File) => {
+      form.setValue('file', file);
+      setFileSelected(true);
+      setFileName(file.name);
+
+      // Read and preview file
+      const text = await file.text();
+      const delimiter = form.getValues('delimiter');
+      const parsed = parseCSV(text, delimiter);
+      setAllData(parsed);
+      setPreviewData(parsed.slice(0, 5)); // Show first 5 rows
+    },
+    [form, parseCSV]
+  );
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    form.setValue('file', file);
-    setFileSelected(true);
-
-    // Read and preview file
-    const text = await file.text();
-    const delimiter = form.getValues('delimiter');
-    const parsed = parseCSV(text, delimiter);
-    setAllData(parsed);
-    setPreviewData(parsed.slice(0, 5)); // Show first 5 rows
+    await processFile(file);
   };
+
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+      await processFile(file);
+    },
+    [processFile]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'text/csv': ['.csv'],
+      'text/plain': ['.txt'],
+    },
+    maxFiles: 1,
+    disabled: loading,
+  });
 
   const handleDelimiterChange = async (delimiter: string) => {
     form.setValue('delimiter', delimiter as 'tab' | 'semicolon' | 'comma');
@@ -155,12 +209,24 @@ export default function MoneyLoverImportDialog({
     setPreviewData(parsed.slice(0, 5));
   };
 
+  const clearFile = () => {
+    form.setValue('file', undefined);
+    setFileSelected(false);
+    setFileName('');
+    setPreviewData([]);
+    setAllData([]);
+    setProgress(null);
+  };
+
   // Calculate import statistics
   const stats = {
     totalTransactions: allData.length,
     uniqueCategories: new Set(allData.map((t) => t.category)).size,
     uniqueWallets: new Set(allData.map((t) => t.wallet)).size,
   };
+
+  // Calculate estimated batches
+  const estimatedBatches = Math.ceil(allData.length / BATCH_SIZE);
 
   const onSubmit = async (data: ImportFormValues) => {
     if (!data.file) {
@@ -180,14 +246,11 @@ export default function MoneyLoverImportDialog({
     try {
       // Step 1: Parse CSV
       const text = await data.file.text();
-      console.log('File read, size:', text.length);
-
       const transactions = parseCSV(text, data.delimiter);
-      console.log('Parsed transactions:', transactions.length);
 
       if (transactions.length === 0) {
         setProgress({
-          step: 'parsing',
+          step: 'error',
           current: 0,
           total: 0,
           status: 'error',
@@ -212,9 +275,6 @@ export default function MoneyLoverImportDialog({
       const formData = new FormData();
       formData.append('transactions', JSON.stringify(transactions));
 
-      console.log('Sending to API:', transactions.length, 'transactions');
-
-      const BATCH_SIZE = 50;
       const batchCount = Math.ceil(transactions.length / BATCH_SIZE);
 
       setProgress({
@@ -230,6 +290,8 @@ export default function MoneyLoverImportDialog({
                 size: BATCH_SIZE,
               })
             : undefined,
+        batch: 0,
+        totalBatches: batchCount,
       });
 
       const res = await fetch(
@@ -250,7 +312,6 @@ export default function MoneyLoverImportDialog({
           message: errorResult.message || t('money-lover-import.error'),
         });
         toast.error(errorResult.message || t('money-lover-import.error'));
-        console.error('Import failed:', errorResult);
         setLoading(false);
         return;
       }
@@ -272,7 +333,6 @@ export default function MoneyLoverImportDialog({
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const data = JSON.parse(line.slice(6));
-                console.log('Stream data:', data);
 
                 if (data.type === 'progress') {
                   setProgress({
@@ -287,6 +347,8 @@ export default function MoneyLoverImportDialog({
                       current: data.current,
                       total: data.total,
                     }),
+                    batch: data.batch,
+                    totalBatches: data.totalBatches,
                   });
                 } else if (data.type === 'complete') {
                   finalResult = data;
@@ -351,9 +413,6 @@ export default function MoneyLoverImportDialog({
           );
         }
 
-        // queryClient.invalidateQueries({
-        //   queryKey: [`/api/workspaces/${wsId}/transactions`],
-        // });
         queryClient.invalidateQueries({
           queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
         });
@@ -365,8 +424,9 @@ export default function MoneyLoverImportDialog({
           setPreviewData([]);
           setAllData([]);
           setFileSelected(false);
+          setFileName('');
           setProgress(null);
-        }, 2000);
+        }, 3000);
       }
     } catch (error) {
       console.error('Import error:', error);
@@ -386,10 +446,16 @@ export default function MoneyLoverImportDialog({
     }
   };
 
+  const progressPercentage =
+    progress && progress.total > 0
+      ? Math.round((progress.current / progress.total) * 100)
+      : 0;
+
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>
+    <div className="flex max-h-[80vh] flex-col">
+      <DialogHeader className="shrink-0">
+        <DialogTitle className="flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5 text-primary" />
           {t('money-lover-import.import_from_money_lover')}
         </DialogTitle>
         <DialogDescription>
@@ -398,279 +464,412 @@ export default function MoneyLoverImportDialog({
       </DialogHeader>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="delimiter"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('money-lover-import.delimiter')}</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={handleDelimiterChange}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="tab">
-                      {t('money-lover-import.delimiter_tab')}
-                    </SelectItem>
-                    <SelectItem value="semicolon">
-                      {t('money-lover-import.delimiter_semicolon')}
-                    </SelectItem>
-                    <SelectItem value="comma">
-                      {t('money-lover-import.delimiter_comma')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  {t('money-lover-import.delimiter_description')}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="file"
-            render={() => (
-              <FormItem>
-                <FormLabel>{t('money-lover-import.csv_file')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="file"
-                    accept=".csv,.txt"
-                    onChange={handleFileChange}
-                  />
-                </FormControl>
-                <FormDescription>
-                  {t('money-lover-import.file_description')}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {previewData.length > 0 && (
-            <div className="space-y-4">
-              {/* Statistics */}
-              <div className="grid gap-3 rounded-lg border bg-linear-to-br from-primary/5 to-primary/10 p-4 md:grid-cols-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
-                    <FileSpreadsheet className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-muted-foreground text-xs">
-                      {t('money-lover-import.transactions')}
-                    </p>
-                    <p className="font-bold text-xl tabular-nums">
-                      {stats.totalTransactions.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
-                    <FolderOpen className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-muted-foreground text-xs">
-                      {t('money-lover-import.categories')}
-                    </p>
-                    <p className="font-bold text-xl tabular-nums">
-                      {stats.uniqueCategories.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
-                    <Wallet className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-muted-foreground text-xs">
-                      {t('money-lover-import.wallets')}
-                    </p>
-                    <p className="font-bold text-xl tabular-nums">
-                      {stats.uniqueWallets.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Preview Table */}
-              <div className="space-y-2.5">
-                <h3 className="font-semibold text-sm">
-                  {t('money-lover-import.preview')}
-                </h3>
-                <div className="max-h-64 overflow-auto rounded-lg border shadow-sm">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
-                      <tr>
-                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                          {t('money-lover-import.date')}
-                        </th>
-                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                          {t('money-lover-import.category')}
-                        </th>
-                        <th className="p-2.5 text-right font-semibold text-xs uppercase tracking-wide">
-                          {t('money-lover-import.amount')}
-                        </th>
-                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                          {t('money-lover-import.wallet')}
-                        </th>
-                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                          {t('money-lover-import.note')}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewData.map((row, idx) => {
-                        const amount = parseFloat(row.amount);
-                        const isExpense = amount < 0;
-
-                        return (
-                          <tr
-                            key={idx}
-                            className="border-t transition-colors hover:bg-muted/30"
-                          >
-                            <td className="p-2.5 text-muted-foreground text-xs">
-                              {row.date}
-                            </td>
-                            <td className="p-2.5">
-                              <Badge variant="outline" className="font-medium">
-                                {row.category}
-                              </Badge>
-                            </td>
-                            <td
-                              className={`p-2.5 text-right font-bold tabular-nums ${
-                                isExpense
-                                  ? 'text-dynamic-red'
-                                  : 'text-dynamic-green'
-                              }`}
-                            >
-                              {Intl.NumberFormat(
-                                currency === 'VND' ? 'vi-VN' : 'en-US',
-                                {
-                                  style: 'currency',
-                                  currency,
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                  signDisplay: 'always',
-                                }
-                              ).format(amount)}
-                            </td>
-                            <td className="p-2.5">
-                              <Badge
-                                variant="secondary"
-                                className="font-medium"
-                              >
-                                {row.wallet}
-                              </Badge>
-                            </td>
-                            <td className="p-2.5 text-muted-foreground text-xs">
-                              {row.note || '-'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-muted-foreground text-xs italic">
-                  {t('money-lover-import.preview_note')}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Progress Display */}
-          {progress && (
-            <div className="space-y-4 rounded-lg border bg-linear-to-br from-muted/50 to-muted/30 p-5 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="mt-0.5">
-                  {progress.status === 'processing' && (
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  )}
-                  {progress.status === 'success' && (
-                    <CheckCircle2 className="h-6 w-6 text-dynamic-green" />
-                  )}
-                  {progress.status === 'error' && (
-                    <AlertCircle className="h-6 w-6 text-dynamic-red" />
-                  )}
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <p className="font-semibold text-sm leading-none">
-                    {progress.message}
-                  </p>
-                  {progress.details && (
-                    <p className="text-muted-foreground text-xs">
-                      {progress.details}
-                    </p>
-                  )}
-                  {progress.total > 0 && progress.step !== 'parsing' && (
-                    <div className="flex items-baseline gap-2 pt-1">
-                      <span className="font-mono font-semibold text-lg tabular-nums">
-                        {progress.current.toLocaleString()}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        / {progress.total.toLocaleString()}{' '}
-                        {t('money-lover-import.transactions').toLowerCase()}
-                      </span>
-                      <span className="ml-auto text-muted-foreground text-xs">
-                        {Math.round((progress.current / progress.total) * 100)}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {progress.status === 'processing' &&
-                progress.total > 0 &&
-                progress.step !== 'parsing' && (
-                  <Progress
-                    value={(progress.current / progress.total) * 100}
-                    className="h-2.5"
-                  />
-                )}
-              {progress.status === 'success' && (
-                <div className="flex items-center gap-2 rounded-md border-dynamic-green/20 bg-dynamic-green/10 px-3 py-2">
-                  <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                  <p className="font-medium text-dynamic-green text-xs">
-                    {t('money-lover-import.import_successful')}
-                  </p>
-                </div>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="flex-1 space-y-5 overflow-y-auto py-4 pr-1">
+            {/* Delimiter Selection */}
+            <FormField
+              control={form.control}
+              name="delimiter"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('money-lover-import.delimiter')}</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={handleDelimiterChange}
+                    disabled={loading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="tab">
+                        {t('money-lover-import.delimiter_tab')}
+                      </SelectItem>
+                      <SelectItem value="semicolon">
+                        {t('money-lover-import.delimiter_semicolon')}
+                      </SelectItem>
+                      <SelectItem value="comma">
+                        {t('money-lover-import.delimiter_comma')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {t('money-lover-import.delimiter_description')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-          )}
+            />
 
-          <DialogFooter className="gap-2">
+            {/* File Upload - Drag and Drop Zone */}
+            <FormField
+              control={form.control}
+              name="file"
+              render={() => (
+                <FormItem>
+                  <FormLabel>{t('money-lover-import.csv_file')}</FormLabel>
+                  <FormControl>
+                    {!fileSelected ? (
+                      <div
+                        {...getRootProps()}
+                        className={cn(
+                          'relative cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors',
+                          isDragActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50',
+                          loading && 'pointer-events-none opacity-50'
+                        )}
+                      >
+                        <input {...getInputProps()} />
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                            <Upload className="h-7 w-7 text-primary" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-medium text-sm">
+                              {isDragActive
+                                ? t('money-lover-import.drop_file_here')
+                                : t('money-lover-import.drag_drop_or_click')}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {t('money-lover-import.supported_formats')}
+                            </p>
+                          </div>
+                        </div>
+                        <Input
+                          type="file"
+                          accept=".csv,.txt"
+                          onChange={handleFileChange}
+                          className="sr-only"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <FileSpreadsheet className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-sm">
+                            {fileName}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            {stats.totalTransactions.toLocaleString()}{' '}
+                            {t('money-lover-import.transactions').toLowerCase()}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={clearFile}
+                          disabled={loading}
+                          className="h-8 w-8 shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </FormControl>
+                  <FormDescription>
+                    {t('money-lover-import.file_description')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {previewData.length > 0 && (
+              <div className="space-y-4">
+                {/* Statistics Cards */}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="flex items-center gap-3 rounded-lg border bg-linear-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
+                      <FileSpreadsheet className="h-5 w-5 text-dynamic-blue" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground text-xs">
+                        {t('money-lover-import.transactions')}
+                      </p>
+                      <p className="font-bold text-xl tabular-nums">
+                        {stats.totalTransactions.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border bg-linear-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
+                      <FolderOpen className="h-5 w-5 text-dynamic-purple" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground text-xs">
+                        {t('money-lover-import.categories')}
+                      </p>
+                      <p className="font-bold text-xl tabular-nums">
+                        {stats.uniqueCategories.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border bg-linear-to-br from-dynamic-green/5 to-dynamic-green/10 p-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
+                      <Wallet className="h-5 w-5 text-dynamic-green" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground text-xs">
+                        {t('money-lover-import.wallets')}
+                      </p>
+                      <p className="font-bold text-xl tabular-nums">
+                        {stats.uniqueWallets.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Batch Info */}
+                {estimatedBatches > 1 && (
+                  <div className="flex items-start gap-2 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-blue" />
+                    <p className="text-dynamic-blue text-sm">
+                      {t('money-lover-import.batch_info', {
+                        batches: estimatedBatches,
+                        size: BATCH_SIZE.toLocaleString(),
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {/* Collapsible Preview Table */}
+                <Collapsible
+                  open={previewExpanded}
+                  onOpenChange={setPreviewExpanded}
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">
+                      {t('money-lover-import.preview')}
+                    </h3>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 gap-1.5">
+                        {previewExpanded ? (
+                          <>
+                            <ChevronUp className="h-3.5 w-3.5" />
+                            {t('common.collapse')}
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3.5 w-3.5" />
+                            {t('common.expand')}
+                          </>
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="pt-2.5">
+                    <div className="max-h-40 overflow-auto rounded-lg border shadow-sm">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-muted/95 backdrop-blur-sm">
+                          <tr>
+                            <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                              {t('money-lover-import.date')}
+                            </th>
+                            <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                              {t('money-lover-import.category')}
+                            </th>
+                            <th className="p-2.5 text-right font-semibold text-xs uppercase tracking-wide">
+                              {t('money-lover-import.amount')}
+                            </th>
+                            <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                              {t('money-lover-import.wallet')}
+                            </th>
+                            <th className="hidden p-2.5 text-left font-semibold text-xs uppercase tracking-wide md:table-cell">
+                              {t('money-lover-import.note')}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {previewData.map((row, idx) => {
+                            const amount = parseFloat(row.amount);
+                            const isExpense = amount < 0;
+
+                            return (
+                              <tr
+                                key={idx}
+                                className="transition-colors hover:bg-muted/30"
+                              >
+                                <td className="p-2.5 text-muted-foreground text-xs">
+                                  {row.date}
+                                </td>
+                                <td className="p-2.5">
+                                  <Badge
+                                    variant="outline"
+                                    className="max-w-30 truncate font-medium"
+                                  >
+                                    {row.category}
+                                  </Badge>
+                                </td>
+                                <td
+                                  className={cn(
+                                    'p-2.5 text-right font-bold tabular-nums',
+                                    isExpense
+                                      ? 'text-dynamic-red'
+                                      : 'text-dynamic-green'
+                                  )}
+                                >
+                                  {Intl.NumberFormat(
+                                    currency === 'VND' ? 'vi-VN' : 'en-US',
+                                    {
+                                      style: 'currency',
+                                      currency,
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                      signDisplay: 'always',
+                                    }
+                                  ).format(amount)}
+                                </td>
+                                <td className="p-2.5">
+                                  <Badge
+                                    variant="secondary"
+                                    className="max-w-25 truncate font-medium"
+                                  >
+                                    {row.wallet}
+                                  </Badge>
+                                </td>
+                                <td className="hidden max-w-37.5 truncate p-2.5 text-muted-foreground text-xs md:table-cell">
+                                  {row.note || '-'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="mt-2 text-muted-foreground text-xs italic">
+                      {t('money-lover-import.preview_note')}
+                    </p>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            )}
+
+            {/* Progress Display */}
+            {progress && (
+              <div
+                className={cn(
+                  'space-y-4 rounded-lg border p-5',
+                  progress.status === 'success' &&
+                    'border-dynamic-green/30 bg-dynamic-green/5',
+                  progress.status === 'error' &&
+                    'border-dynamic-red/30 bg-dynamic-red/5',
+                  progress.status === 'processing' && 'bg-muted/50'
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="mt-0.5">
+                    {progress.status === 'processing' && (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      </div>
+                    )}
+                    {progress.status === 'success' && (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-green/10">
+                        <CheckCircle2 className="h-5 w-5 text-dynamic-green" />
+                      </div>
+                    )}
+                    {progress.status === 'error' && (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-red/10">
+                        <AlertCircle className="h-5 w-5 text-dynamic-red" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <p className="font-semibold text-sm leading-none">
+                      {progress.message}
+                    </p>
+                    {progress.details && (
+                      <p className="text-muted-foreground text-xs">
+                        {progress.details}
+                      </p>
+                    )}
+                    {progress.total > 0 && progress.step !== 'parsing' && (
+                      <div className="flex items-baseline gap-2 pt-1">
+                        <span className="font-mono font-semibold text-lg tabular-nums">
+                          {progress.current.toLocaleString()}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          / {progress.total.toLocaleString()}{' '}
+                          {t('money-lover-import.transactions').toLowerCase()}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="ml-auto font-mono tabular-nums"
+                        >
+                          {progressPercentage}%
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {progress.status === 'processing' &&
+                  progress.total > 0 &&
+                  progress.step !== 'parsing' && (
+                    <Progress value={progressPercentage} className="h-2" />
+                  )}
+                {progress.status === 'success' && (
+                  <div className="flex items-center gap-2 rounded-md bg-dynamic-green/10 px-3 py-2">
+                    <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                    <p className="font-medium text-dynamic-green text-xs">
+                      {t('money-lover-import.import_successful')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="shrink-0 gap-2 border-t pt-4 sm:gap-0">
             <DialogClose asChild>
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 disabled={loading && progress?.status === 'processing'}
               >
-                {t('common.cancel')}
+                {progress?.status === 'success'
+                  ? t('common.close')
+                  : t('common.cancel')}
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={loading || !fileSelected}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('common.processing')}
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {t('money-lover-import.import')}
-                </>
-              )}
-            </Button>
+            {progress?.status !== 'success' && (
+              <Button
+                type="submit"
+                disabled={loading || !fileSelected}
+                className="gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t('common.processing')}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    {t('money-lover-import.import')}
+                    {fileSelected && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 font-mono tabular-nums"
+                      >
+                        {stats.totalTransactions.toLocaleString()}
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </Form>
-    </>
+    </div>
   );
 }

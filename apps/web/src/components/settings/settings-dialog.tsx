@@ -13,7 +13,9 @@ import {
   Coffee,
   Coins,
   CreditCard,
+  FlaskConical,
   Goal,
+  HandCoins,
   Laptop,
   LayoutGrid,
   Paintbrush,
@@ -100,9 +102,11 @@ import AppearanceSettings from './appearance-settings';
 import AttendanceDisplaySettings from './attendance/attendance-display-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
+import DebtLoanSettings from './finance/debt-loan-settings';
 import DefaultCategorySettings from './finance/default-category-settings';
 import DefaultCurrencySettings from './finance/default-currency-settings';
 import DefaultWalletSettings from './finance/default-wallet-settings';
+import ExperimentalFinanceSettings from './finance/experimental-finance-settings';
 import InvoiceSettings from './finance/invoice-settings';
 import ReferralSettings from './inventory/referral-settings';
 import SidebarSettings from './sidebar-settings';
@@ -507,6 +511,22 @@ export function SettingsDialog({
                 icon: CreditCard,
                 description: t('settings.finance.invoice_settings_description'),
                 keywords: ['Finance', 'Invoice', 'Attendance', 'Promotions'],
+              },
+              {
+                name: 'debt_loan_categories',
+                label: t('settings.finance.debt_loan_categories'),
+                icon: HandCoins,
+                description: t(
+                  'settings.finance.debt_loan_categories_description'
+                ),
+                keywords: ['Finance', 'Debt', 'Loan', 'Borrow', 'Lend'],
+              },
+              {
+                name: 'experimental_finance',
+                label: t('ws-finance-settings.experimental_title'),
+                icon: FlaskConical,
+                description: t('ws-finance-settings.experimental_description'),
+                keywords: ['Experimental', 'Finance', 'Momo', 'ZaloPay'],
               },
             ],
           },
@@ -925,6 +945,14 @@ export function SettingsDialog({
 
                 {activeTab === 'invoice_settings' && workspace?.id && (
                   <InvoiceSettings workspaceId={workspace.id} />
+                )}
+
+                {activeTab === 'debt_loan_categories' && workspace?.id && (
+                  <DebtLoanSettings workspaceId={workspace.id} />
+                )}
+
+                {activeTab === 'experimental_finance' && workspace?.id && (
+                  <ExperimentalFinanceSettings workspaceId={workspace.id} />
                 )}
 
                 {activeTab === 'referrals' && wsId && (

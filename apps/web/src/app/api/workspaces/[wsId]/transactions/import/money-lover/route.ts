@@ -298,11 +298,11 @@ export async function POST(req: Request, { params }: Params) {
       `[Money Lover Import] Prepared ${transactionsToInsert.length} transactions for insert`
     );
 
-    // Step 4: Insert transactions in batches of 10 with streaming progress
+    // Step 4: Insert transactions in batches of 1000 with streaming progress
     console.log(
       '[Money Lover Import] Step 4: Inserting transactions in batches...'
     );
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 1000;
     let imported = 0;
 
     const encoder = new TextEncoder();
