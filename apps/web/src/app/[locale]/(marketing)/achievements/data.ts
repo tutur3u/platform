@@ -6,7 +6,6 @@ export interface TeamMember {
 }
 
 export interface Achievement {
-  id: string;
   name: string;
   achievement: string;
   teamName?: string;
@@ -20,7 +19,6 @@ export interface Achievement {
 
 export const achievements: Achievement[] = [
   {
-    id: '1',
     name: 'Bosch CodeRace 2025',
     achievement: '2nd Runner-Up',
     teamName: 'The LIEMS',
@@ -52,7 +50,6 @@ export const achievements: Achievement[] = [
     category: 'Hackathon',
   },
   {
-    id: '2',
     name: "2025 SSET Dean's List Award",
     achievement: '🎓 Academic Excellence',
     image: '/hall-of-fames/dean-list.jpg',
@@ -91,10 +88,65 @@ export const achievements: Achievement[] = [
     category: 'Award',
   },
   {
-    id: '3',
+    name: 'NAVER Vietnam AI Hackathon 2025',
+    achievement: '🥉 Second Runner Up (NAVER Award)',
+    image: '/hall-of-fames/naver.jpg',
+    teamMembers: [
+      {
+        name: 'Huynh Thai Duong',
+        role: 'Developer',
+        avatar: '/members/gen7/duong.png',
+        isNctMember: true,
+      },
+      {
+        name: 'Truong Van Dat',
+        role: 'Developer',
+      },
+      {
+        name: 'Uyen Pham',
+        role: 'Developer',
+      },
+    ],
+    achievementDescription:
+      'Competed against 2000+ participants in the NAVER Vietnam AI Hackathon 2025, an online program for Vietnamese students to build practical AI service prototypes on NAVER infrastructure. In just 2 weeks, our team built a mobile/web prototype using NAVER AI APIs, advancing to the Final Pitching & Award Ceremony where the top 5 teams presented their projects. Our solution was evaluated on implementation, creativity, impact, and relevance.',
+    year: 2025,
+    category: 'Hackathon',
+  },
+
+  {
+    name: 'Katalon x RMIT Testathon',
+    achievement: 'Top 5 Finisher',
+    image: '/hall-of-fames/testathon.jpeg',
+    teamMembers: [
+      {
+        name: 'Ngo Van Tai',
+        role: 'Tester',
+        avatar: '/members/gen7/tai.png',
+        isNctMember: true,
+      },
+      {
+        name: 'Huynh Thai Duong',
+        role: 'Tester',
+        avatar: '/members/gen7/duong.png',
+        isNctMember: true,
+      },
+      {
+        name: 'Huynh Tan Phat',
+        role: 'Tester',
+        avatar: '/members/gen6/phat.png',
+        isNctMember: true,
+      },
+    ],
+    achievementDescription:
+      'Secured a top 5 position during the intensive Katalon x RMIT Testathon. In just 5 hours, we rigorously tested a full-stack application by applying a comprehensive testing strategy. By leveraging manual testing, Katalon, and Postman, we uncovered 40 bugs. Our analysis used black-box, white-box, and experience-based techniques to identify a wide spectrum of issues, including critical security flaws.',
+    year: 2025,
+    category: 'Contest',
+  },
+  {
     name: 'RMIT Hack-A-Venture 2024',
     achievement: '🏆 Champion',
     image: '/hall-of-fames/hackaventure2024.jpeg',
+    teamName: 'YourSDGSolver',
     teamMembers: [
       {
         name: 'Ngo Van Tai',
@@ -118,103 +170,6 @@ export const achievements: Achievement[] = [
     achievementDescription:
       'Awarded Champion of RMIT Hack-A-Venture 2024, a 24-hour hackathon, for our innovative Cashew Carbon Credits Platform. The platform empowers cashew farmers to earn additional income by selling carbon credits while helping buyers offset their carbon footprint. Our team developed a blockchain-based solution that ensures both technical feasibility and real-world impact, supporting sustainability through innovative technology.',
     year: 2025,
-    category: 'Competition',
-  },
-  {
-    id: '4',
-    name: 'Tech Innovation Awards',
-    achievement: '🏆 Best Innovation',
-    teamName: 'Future Builders',
-    image: '/android-chrome-512x512.png',
-    teamMembers: [
-      {
-        name: 'Kevin Lee',
-        role: 'Tech Lead',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Isabella Martinez',
-        role: 'Product Designer',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Ryan Cooper',
-        role: 'DevOps Engineer',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Zoe Adams',
-        role: 'Research Analyst',
-        avatar: '/android-chrome-512x512.png',
-      },
-    ],
-    achievementDescription:
-      'Developed a groundbreaking blockchain-based supply chain management system that provides complete transparency and traceability for agricultural products, helping consumers make informed choices about their food.',
-    eventLink: 'https://techinnovationawards.org/2024',
-    year: 2024,
-    category: 'Competition',
-  },
-  {
-    id: '5',
-    name: 'AI Challenge Summit',
-    achievement: '🎯 Most Creative Solution',
-    teamName: 'Neural Networks',
-    image: '/android-chrome-512x512.png',
-    teamMembers: [
-      {
-        name: 'Oliver Smith',
-        role: 'AI Engineer',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Sophie Turner',
-        role: 'Machine Learning Specialist',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Diego Santos',
-        role: 'Data Engineer',
-        avatar: '/android-chrome-512x512.png',
-      },
-    ],
-    achievementDescription:
-      'Built an AI-powered personal assistant that learns from user behavior to provide personalized recommendations for daily tasks, entertainment, and productivity improvements. The solution uses advanced natural language processing and behavioral analysis.',
-    eventLink: 'https://aichallenge.ai/summit2024',
-    year: 2024,
-    category: 'Tournament',
-  },
-  {
-    id: '6',
-    name: 'Open Source Championship',
-    achievement: '⭐ Community Choice',
-    teamName: 'Open Innovators',
-    image: '/android-chrome-512x512.png',
-    teamMembers: [
-      {
-        name: 'Aria Johnson',
-        role: 'Open Source Maintainer',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Lucas Brown',
-        role: 'Community Manager',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Mia Davis',
-        role: 'Documentation Lead',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        name: 'Ethan Wilson',
-        role: 'Security Expert',
-        avatar: '/android-chrome-512x512.png',
-      },
-    ],
-    achievementDescription:
-      'Created an open-source developer tool that simplifies the process of contributing to large codebases. The tool provides automated testing, code formatting, and integration workflows that have been adopted by over 50 open source projects.',
-    eventLink: 'https://opensourcechampionship.org/2024',
-    year: 2024,
     category: 'Competition',
   },
 ];

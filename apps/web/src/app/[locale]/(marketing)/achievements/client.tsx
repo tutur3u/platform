@@ -86,7 +86,7 @@ export function TopThreeAchievements({
       >
         {achievements.map((achievement, index) => (
           <AchievementDialog
-            key={achievement.id}
+            key={achievement.name}
             achievement={achievement}
             trigger={
               <motion.div
@@ -126,7 +126,7 @@ export function OtherAchievements({
     >
       {achievements.map((achievement) => (
         <AchievementDialog
-          key={achievement.id}
+          key={achievement.name}
           achievement={achievement}
           trigger={
             <motion.div variants={item}>

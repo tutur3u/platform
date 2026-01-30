@@ -35,7 +35,7 @@ export default function AchievementDialog({
   const [imageError, setImageError] = useState(false);
 
   return (
-    <Dialog key={achievement.id}>
+    <Dialog key={achievement.name}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto md:min-w-2xl lg:min-w-3xl xl:min-w-4xl">
         <DialogHeader>
