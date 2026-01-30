@@ -196,6 +196,9 @@ export function SaveAsTemplateDialog({
                 <SelectItem value="workspace">
                   {t('ws-board-templates.visibility.workspace')}
                 </SelectItem>
+                <SelectItem value="public">
+                  {t('ws-board-templates.visibility.public')}
+                </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-muted-foreground text-xs">
