@@ -9758,8 +9758,8 @@
     "update_success": "Updated successfully",
     "view_all": "View All",
     "view_details": "View Details",
-    "year": "year",
-    "wallet": "Wallet"
+    "wallet": "Wallet",
+    "year": "year"
   },
   "ws-debt-loan-settings": {
     "debt_category": "Debt Category",
@@ -9820,6 +9820,10 @@
     "default_wallet_label": "Default Wallet",
     "default_wallet_placeholder": "Select a wallet",
     "description": "Manage finance settings for your workspace.",
+    "enable_momo_zalopay_description": "Shows interest tracking charts and projections for Momo and ZaloPay wallets. Warning: This feature is experimental and unstable.",
+    "enable_momo_zalopay_label": "Enable Momo/ZaloPay Interest Support",
+    "experimental_description": "Manage experimental finance features.",
+    "experimental_title": "Experimental Features",
     "group_archived": "archived",
     "invoice_attendance_description": "Control how pending invoices are calculated. When enabled, only days with attendance (PRESENT/LATE) are counted. When disabled, all scheduled sessions are included.",
     "invoice_attendance_help": "Enable to count only attended days, disable to include all sessions regardless of attendance.",
