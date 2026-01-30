@@ -35,7 +35,10 @@
       "Bash(cat:*)",
       "Bash(tsgo --build:*)",
       "Bash(printf:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(bunx vitest run:*)",
+      "Bash(node scripts/check-migration-timestamps.js:*)",
+      "Bash(node scripts/check.js:*)"
     ]
   }
 }
