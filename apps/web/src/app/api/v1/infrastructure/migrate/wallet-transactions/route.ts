@@ -1,9 +1,16 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { batchUpsert, createMigrationResponse } from '../batch-upsert';
+import {
+  batchUpsert,
+  createMigrationResponse,
+  requireDevMode,
+} from '../batch-upsert';
 
 // wallet_transactions doesn't have ws_id - query via wallet_id -> workspace_wallets
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -51,6 +58,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   // Strip invoice_id to break circular FK dependency with finance_invoices
   // After both tables are migrated, use PATCH to update invoice_id
@@ -70,6 +80,9 @@ export async function PUT(req: Request) {
 // PATCH: Update invoice_id after finance_invoices are migrated
 // This resolves the circular FK dependency
 export async function PATCH(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const supabase = await createClient();
   const json = await req.json();
 

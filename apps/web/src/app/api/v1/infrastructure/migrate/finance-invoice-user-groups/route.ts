@@ -28,13 +28,13 @@ export async function GET(req: Request) {
   // Use RPC for efficient fetching with proper JOINs
   // This avoids the 1000-row limit when using .in() queries
   const { data, error } = await supabase.rpc(
-    'get_finance_invoice_products_by_workspace',
+    'get_finance_invoice_user_groups_by_workspace',
     { p_ws_id: wsId, p_offset: offset, p_limit: limit }
   );
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error fetching finance-invoice-products', error },
+      { message: 'Error fetching finance-invoice-user-groups', error },
       { status: 500 }
     );
   }
@@ -51,13 +51,13 @@ export async function PUT(req: Request) {
   if (devModeError) return devModeError;
 
   const json = await req.json();
-  // No unique constraint on this table - use plain insert
-  // Duplicates should be handled by reconciliation before syncing
+  const supabase = createAdminClient({ noCookie: true });
+  // Unique constraint: (invoice_id, user_group_id)
   const result = await batchUpsert({
-    table: 'finance_invoice_products',
+    table: 'finance_invoice_user_groups',
     data: json?.data || [],
-    supabase: createAdminClient({ noCookie: true }),
-    // No onConflict - table has no unique constraint
+    onConflict: 'invoice_id,user_group_id',
+    supabase,
   });
-  return createMigrationResponse(result, 'finance-invoice-products');
+  return createMigrationResponse(result, 'finance-invoice-user-groups');
 }

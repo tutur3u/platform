@@ -1,14 +1,16 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
 import {
   batchFetch,
   batchUpsert,
   createFetchResponse,
   createMigrationResponse,
+  requireDevMode,
 } from '../batch-upsert';
 
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -28,12 +30,8 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  if (!DEV_MODE) {
-    return NextResponse.json(
-      { message: 'Migration endpoints are only available in dev mode' },
-      { status: 403 }
-    );
-  }
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
 
   const json = await req.json();
 
