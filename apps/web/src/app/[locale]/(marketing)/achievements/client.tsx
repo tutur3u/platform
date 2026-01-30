@@ -1,7 +1,5 @@
 'use client';
 
-import AchievementDialog from './achievement-dialog';
-import { type Achievement } from './data';
 import { Badge } from '@ncthub/ui/badge';
 import {
   Card,
@@ -16,12 +14,15 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import Confetti from 'react-confetti';
+import AchievementDialog from './achievement-dialog';
+import type { Achievement } from './data';
 
 const categoryColors = {
   Hackathon: 'default',
   Competition: 'success',
   Contest: 'warning',
   Tournament: 'secondary',
+  Award: 'default',
 } as const;
 
 const container = {
@@ -148,7 +149,7 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
         {!imageError ? (
           <Image
             src={achievement.image}
-            alt={achievement.competitionName}
+            alt={achievement.name}
             fill
             className="object-cover transition-transform duration-200 group-hover:scale-105"
             onError={() => setImageError(true)}
@@ -166,7 +167,7 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
       <div className="relative z-10 flex h-full flex-col p-6 transition-all duration-200 group-hover:scale-90 group-hover:opacity-80">
         {/* Top section with badges */}
         <div className="flex justify-end">
-          <span className="flex items-center gap-2 text-sm font-medium text-white/90">
+          <span className="flex items-center gap-2 font-medium text-sm text-white/90">
             <CalendarIcon className="h-4 w-4" />
             {achievement.year}
           </span>
@@ -175,10 +176,10 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
         {/* Center section with main headers */}
         <div className="flex flex-1 items-center justify-center">
           <div className="space-y-2 text-center sm:space-y-4">
-            <h2 className="text-2xl leading-tight font-extrabold text-white sm:text-3xl md:text-4xl lg:text-5xl">
-              {achievement.competitionName}
+            <h2 className="font-extrabold text-2xl text-white leading-tight sm:text-3xl md:text-4xl lg:text-5xl">
+              {achievement.name}
             </h2>
-            <h3 className="text-xl font-semibold text-white/95 sm:text-2xl md:text-3xl lg:text-4xl">
+            <h3 className="font-semibold text-white/95 text-xl sm:text-2xl md:text-3xl lg:text-4xl">
               {achievement.achievement}
             </h3>
           </div>
@@ -206,7 +207,7 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
           {!imageError ? (
             <Image
               src={achievement.image}
-              alt={achievement.competitionName}
+              alt={achievement.name}
               fill
               className="object-cover transition-transform duration-200 group-hover:scale-105"
               onError={() => setImageError(true)}
@@ -224,20 +225,20 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
           >
             {achievement.category}
           </Badge>
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1 text-muted-foreground text-sm">
             <CalendarIcon className="h-3 w-3" />
             {achievement.year}
           </span>
         </div>
         <CardTitle className="line-clamp-2 text-lg leading-tight">
-          {achievement.competitionName}
+          {achievement.name}
         </CardTitle>
-        <CardDescription className="text-base font-medium text-foreground">
+        <CardDescription className="font-medium text-base text-foreground">
           {achievement.achievement}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <UsersIcon className="h-4 w-4" />
           <span className="font-medium">{achievement.teamName}</span>
           <span>•</span>

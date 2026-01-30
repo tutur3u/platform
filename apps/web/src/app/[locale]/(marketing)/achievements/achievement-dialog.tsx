@@ -22,6 +22,7 @@ const categoryColors = {
   Competition: 'success',
   Contest: 'warning',
   Tournament: 'secondary',
+  Award: 'default',
 } as const;
 
 export default function AchievementDialog({
@@ -39,7 +40,7 @@ export default function AchievementDialog({
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto md:min-w-2xl lg:min-w-3xl xl:min-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            {achievement.competitionName}
+            {achievement.name}
           </DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-4">
@@ -58,7 +59,7 @@ export default function AchievementDialog({
                 {!imageError ? (
                   <Image
                     src={achievement.image}
-                    alt={achievement.competitionName}
+                    alt={achievement.name}
                     fill
                     className="object-cover"
                     onError={() => setImageError(true)}
@@ -77,12 +78,14 @@ export default function AchievementDialog({
           <div>
             <h4 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
               <UsersIcon className="h-4 w-4" />
-              Team: {achievement.teamName}
+              {achievement.teamName
+                ? `Team: ${achievement.teamName}`
+                : 'Members'}
             </h4>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {achievement.teamMembers.map((member) => (
                 <div
-                  key={member.id}
+                  key={member.name}
                   className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
                 >
                   <Avatar className="h-12 w-12">
@@ -126,19 +129,21 @@ export default function AchievementDialog({
             </p>
           </div>
 
-          <div className="flex justify-end">
-            <Button asChild variant="outline">
-              <Link
-                href={achievement.eventLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
-              >
-                <ExternalLinkIcon className="h-4 w-4" />
-                View Competition
-              </Link>
-            </Button>
-          </div>
+          {achievement.eventLink && (
+            <div className="flex justify-end">
+              <Button asChild variant="outline">
+                <Link
+                  href={achievement.eventLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2"
+                >
+                  <ExternalLinkIcon className="h-4 w-4" />
+                  View Event
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

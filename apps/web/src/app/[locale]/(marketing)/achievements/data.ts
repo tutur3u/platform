@@ -1,5 +1,4 @@
 export interface TeamMember {
-  id: string;
   name: string;
   role: string;
   avatar?: string;
@@ -8,41 +7,38 @@ export interface TeamMember {
 
 export interface Achievement {
   id: string;
-  competitionName: string;
+  name: string;
   achievement: string;
-  teamName: string;
+  teamName?: string;
   image: string;
   teamMembers: TeamMember[];
   achievementDescription: string;
-  eventLink: string;
+  eventLink?: string;
   year: number;
-  category: 'Hackathon' | 'Competition' | 'Contest' | 'Tournament';
+  category: 'Hackathon' | 'Competition' | 'Contest' | 'Tournament' | 'Award';
 }
 
 export const achievements: Achievement[] = [
   {
     id: '1',
-    competitionName: 'Bosch Code Race 2025',
+    name: 'Bosch CodeRace 2025',
     achievement: '2nd Runner-Up',
     teamName: 'The LIEMS',
     image: '/hall-of-fames/coderace.jpg',
     teamMembers: [
       {
-        id: '1',
         name: 'Ngo Van Tai',
         role: 'Embedded Developer',
         avatar: '/members/gen7/tai.png',
         isNctMember: true,
       },
       {
-        id: '2',
         name: 'Huynh Thai Duong',
         role: 'Embedded Developer',
         avatar: '/members/gen7/duong.png',
         isNctMember: true,
       },
       {
-        id: '3',
         name: 'Le Nguyen Khuong Duy',
         role: 'Embedded Developer',
         isNctMember: false,
@@ -57,95 +53,96 @@ export const achievements: Achievement[] = [
   },
   {
     id: '2',
-    competitionName: 'Global Hackathon Series',
-    achievement: '🥈 Second Place',
-    teamName: 'Innovation Hub',
-    image: '/android-chrome-512x512.png',
+    name: "2025 SSET Dean's List Award",
+    achievement: '🎓 Academic Excellence',
+    image: '/hall-of-fames/dean-list.jpg',
     teamMembers: [
       {
-        id: '5',
-        name: 'David Park',
-        role: 'Project Manager',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Huynh Hoang Duc',
+        role: 'Robotics and Mechatronics Year 3',
+        avatar: '/members/gen7/duc.png',
+        isNctMember: true,
       },
       {
-        id: '6',
-        name: 'Luna Zhang',
-        role: 'Data Scientist',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Ngo Van Tai',
+        role: 'Software Engineering Year 3',
+        avatar: '/members/gen7/tai.png',
+        isNctMember: true,
       },
       {
-        id: '7',
-        name: 'James Wilson',
-        role: 'Mobile Developer',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Pham Van Thanh Dat',
+        role: 'Software Engineering Year 1',
+        isNctMember: true,
+      },
+      {
+        name: 'Luu Quoc Phap',
+        role: 'Information Technology Year 1',
+        isNctMember: true,
+      },
+      {
+        name: 'Lisa',
+        role: 'Robotics and Mechatronics Year 1',
+        isNctMember: true,
       },
     ],
     achievementDescription:
-      'Created a sustainable transportation app that connects commuters with eco-friendly travel options. The app uses real-time data to optimize routes and reduce carbon footprint while saving users money on their daily commute.',
-    eventLink: 'https://globalhackathon.com/2024',
-    year: 2024,
-    category: 'Hackathon',
+      "Neo Culture Tech is incredibly proud to celebrate five of our brilliant members who have been selected for the 2025 SSET Dean's List Award! This prestigious award from the School of Science, Engineering & Technology (SSET) recognizes their outstanding academic performance, relentless dedication, and hard work. Leading and contributing to Neo while balancing demanding club responsibilities, technical projects, and top-tier academics is incredibly impressive.",
+    year: 2025,
+    category: 'Award',
   },
   {
     id: '3',
-    competitionName: 'University Programming Contest',
-    achievement: '🥉 Third Place',
-    teamName: 'Algorithm Aces',
-    image: '/android-chrome-512x512.png',
+    name: 'RMIT Hack-A-Venture 2024',
+    achievement: '🏆 Champion',
+    image: '/hall-of-fames/hackaventure2024.jpeg',
     teamMembers: [
       {
-        id: '8',
-        name: 'Rachel Green',
-        role: 'Algorithm Expert',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Ngo Van Tai',
+        role: 'Full-Stack Developer',
+        avatar: '/members/gen7/tai.png',
+        isNctMember: true,
       },
       {
-        id: '9',
-        name: 'Thomas Anderson',
-        role: 'Systems Architect',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Le Nguyen Khuong Duy',
+        role: 'Full-Stack Developer',
       },
       {
-        id: '10',
-        name: 'Maya Patel',
-        role: 'Quality Assurance',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Nhan Nguyen',
+        role: 'Full-Stack Developer',
+      },
+      {
+        name: 'Thuy Nguyen',
+        role: 'Business Strategy & Pitch',
       },
     ],
     achievementDescription:
-      'Solved complex algorithmic challenges in competitive programming, demonstrating exceptional problem-solving skills and mathematical thinking. Our solutions were optimized for both time and space complexity.',
-    eventLink: 'https://universitycontest.edu/2024',
-    year: 2024,
-    category: 'Contest',
+      'Awarded Champion of RMIT Hack-A-Venture 2024, a 24-hour hackathon, for our innovative Cashew Carbon Credits Platform. The platform empowers cashew farmers to earn additional income by selling carbon credits while helping buyers offset their carbon footprint. Our team developed a blockchain-based solution that ensures both technical feasibility and real-world impact, supporting sustainability through innovative technology.',
+    year: 2025,
+    category: 'Competition',
   },
   {
     id: '4',
-    competitionName: 'Tech Innovation Awards',
+    name: 'Tech Innovation Awards',
     achievement: '🏆 Best Innovation',
     teamName: 'Future Builders',
     image: '/android-chrome-512x512.png',
     teamMembers: [
       {
-        id: '11',
         name: 'Kevin Lee',
         role: 'Tech Lead',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '12',
         name: 'Isabella Martinez',
         role: 'Product Designer',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '13',
         name: 'Ryan Cooper',
         role: 'DevOps Engineer',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '14',
         name: 'Zoe Adams',
         role: 'Research Analyst',
         avatar: '/android-chrome-512x512.png',
@@ -159,25 +156,22 @@ export const achievements: Achievement[] = [
   },
   {
     id: '5',
-    competitionName: 'AI Challenge Summit',
+    name: 'AI Challenge Summit',
     achievement: '🎯 Most Creative Solution',
     teamName: 'Neural Networks',
     image: '/android-chrome-512x512.png',
     teamMembers: [
       {
-        id: '15',
         name: 'Oliver Smith',
         role: 'AI Engineer',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '16',
         name: 'Sophie Turner',
         role: 'Machine Learning Specialist',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '17',
         name: 'Diego Santos',
         role: 'Data Engineer',
         avatar: '/android-chrome-512x512.png',
@@ -191,31 +185,27 @@ export const achievements: Achievement[] = [
   },
   {
     id: '6',
-    competitionName: 'Open Source Championship',
+    name: 'Open Source Championship',
     achievement: '⭐ Community Choice',
     teamName: 'Open Innovators',
     image: '/android-chrome-512x512.png',
     teamMembers: [
       {
-        id: '18',
         name: 'Aria Johnson',
         role: 'Open Source Maintainer',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '19',
         name: 'Lucas Brown',
         role: 'Community Manager',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '20',
         name: 'Mia Davis',
         role: 'Documentation Lead',
         avatar: '/android-chrome-512x512.png',
       },
       {
-        id: '21',
         name: 'Ethan Wilson',
         role: 'Security Expert',
         avatar: '/android-chrome-512x512.png',
