@@ -47,6 +47,7 @@ interface InvoicePaymentSettingsProps {
   promotionPlaceholder?: string;
   walletLabelClassName?: string;
   categoryLabelClassName?: string;
+  currency?: string;
 }
 
 export function InvoicePaymentSettings({
@@ -70,9 +71,13 @@ export function InvoicePaymentSettings({
   promotionPlaceholder,
   walletLabelClassName = 'text-dynamic-red',
   categoryLabelClassName = 'text-dynamic-red',
+  currency = 'USD',
 }: InvoicePaymentSettingsProps) {
   const t = useTranslations();
   const shouldShowPromotion = showPromotion && promotionsAllowed;
+
+  // Compute locale based on currency
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const promotionOptions = (() => {
     if (!shouldShowPromotion) return [];
@@ -86,9 +91,9 @@ export function InvoicePaymentSettings({
             ? `${referralPercent || 0}%`
             : promotion.use_ratio
               ? `${promotion.value}%`
-              : Intl.NumberFormat('vi-VN', {
+              : Intl.NumberFormat(currencyLocale, {
                   style: 'currency',
-                  currency: 'VND',
+                  currency,
                 }).format(promotion.value);
         return {
           value: promotion.id,
@@ -143,7 +148,7 @@ export function InvoicePaymentSettings({
                       {wallet.name || t('ws-invoices.unnamed_wallet')}
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      {wallet.type || 'STANDARD'} - {wallet.currency || 'VND'}
+                      {wallet.type || 'STANDARD'} - {wallet.currency || 'USD'}
                     </p>
                   </div>
                 </div>

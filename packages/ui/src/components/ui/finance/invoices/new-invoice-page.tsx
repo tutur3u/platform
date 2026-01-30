@@ -39,6 +39,12 @@ export default function NewInvoicePage({ wsId }: Props) {
     'DEFAULT_SUBSCRIPTION_CATEGORY_ID'
   );
 
+  const { data: defaultCurrency } = useWorkspaceConfig<'VND' | 'USD'>(
+    wsId,
+    'DEFAULT_CURRENCY',
+    'USD'
+  );
+
   const [
     createMultipleInvoices,
     setCreateMultipleInvoices,
@@ -176,6 +182,7 @@ export default function NewInvoicePage({ wsId }: Props) {
           <StandardInvoice
             wsId={wsId}
             defaultWalletId={defaultWalletId}
+            defaultCurrency={defaultCurrency}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}
@@ -187,6 +194,7 @@ export default function NewInvoicePage({ wsId }: Props) {
             prefillAmount={prefillAmount}
             defaultWalletId={defaultWalletId}
             defaultCategoryId={defaultCategoryId}
+            defaultCurrency={defaultCurrency}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}

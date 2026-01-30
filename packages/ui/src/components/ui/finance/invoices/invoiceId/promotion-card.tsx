@@ -10,9 +10,14 @@ interface PromotionCardProps {
     value: number;
   };
   locale: string;
+  currency?: string;
 }
 
-export function PromotionCard({ promotion, locale }: PromotionCardProps) {
+export function PromotionCard({
+  promotion,
+  locale,
+  currency = 'USD',
+}: PromotionCardProps) {
   const isPercentage = promotion.use_ratio;
   const displayName = promotion.name || promotion.code;
   const isHighValue = isPercentage
@@ -56,7 +61,7 @@ export function PromotionCard({ promotion, locale }: PromotionCardProps) {
                 ? `${promotion.value}%`
                 : `-${Intl.NumberFormat(locale, {
                     style: 'currency',
-                    currency: 'VND',
+                    currency,
                   }).format(promotion.value)}`}
             </div>
             <div className="text-muted-foreground text-xs">

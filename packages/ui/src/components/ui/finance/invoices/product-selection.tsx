@@ -25,6 +25,7 @@ interface Props {
     productId: string;
     groupName: string;
   }[];
+  currency?: string;
 }
 
 export function ProductSelection({
@@ -32,9 +33,13 @@ export function ProductSelection({
   selectedProducts,
   onSelectedProductsChange,
   groupLinkedProducts = [],
+  currency = 'USD',
 }: Props) {
   const t = useTranslations();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+
+  // Compute locale based on currency
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const availableInventory =
@@ -142,6 +147,7 @@ export function ProductSelection({
                     onAdd={(quantity) =>
                       addProductToInvoice(inventory, quantity)
                     }
+                    currency={currency}
                   />
                 ))}
               </div>
@@ -190,9 +196,9 @@ export function ProductSelection({
                           ? t('ws-invoices.unlimited')
                           : item.inventory.amount}{' '}
                         • {t('ws-invoices.price')}:{' '}
-                        {Intl.NumberFormat('vi-VN', {
+                        {Intl.NumberFormat(currencyLocale, {
                           style: 'currency',
-                          currency: 'VND',
+                          currency,
                         }).format(item.inventory.price)}
                       </p>
                       {linkedGroups.length > 0 && (
@@ -261,9 +267,9 @@ export function ProductSelection({
                 <div className="flex items-center justify-between font-semibold">
                   <span>Subtotal:</span>
                   <span>
-                    {Intl.NumberFormat('vi-VN', {
+                    {Intl.NumberFormat(currencyLocale, {
                       style: 'currency',
-                      currency: 'VND',
+                      currency,
                     }).format(
                       selectedProducts.reduce(
                         (total, item) =>
@@ -285,11 +291,15 @@ export function ProductSelection({
 interface StockItemProps {
   inventory: ProductInventory;
   onAdd: (quantity: number) => void;
+  currency?: string;
 }
 
-function StockItem({ inventory, onAdd }: StockItemProps) {
+function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
+
+  // Compute locale based on currency
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const handleAdd = () => {
     if (
@@ -313,9 +323,9 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
               ? t('ws-invoices.unlimited')
               : inventory.amount}{' '}
             {inventory.unit_name} •{' '}
-            {Intl.NumberFormat('vi-VN', {
+            {Intl.NumberFormat(currencyLocale, {
               style: 'currency',
-              currency: 'VND',
+              currency,
             }).format(inventory.price)}{' '}
             {t('ws-invoices.each')}
           </p>

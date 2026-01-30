@@ -21,9 +21,14 @@ import { UserFilterWrapper } from './user-filter-wrapper';
 interface Props {
   wsId: string;
   canExport?: boolean;
+  currency?: string;
 }
 
-export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
+export function PendingInvoicesTable({
+  wsId,
+  canExport = false,
+  currency = 'USD',
+}: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
 
@@ -93,9 +98,10 @@ export function PendingInvoicesTable({ wsId, canExport = false }: Props) {
       pendingInvoiceColumns(
         t,
         'pending-invoice-data-table',
-        useAttendanceBased
+        useAttendanceBased,
+        currency
       ),
-    [t, useAttendanceBased]
+    [t, useAttendanceBased, currency]
   );
 
   const [allUsers, setAllUsers] = useState<

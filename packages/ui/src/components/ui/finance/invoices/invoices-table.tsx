@@ -35,6 +35,7 @@ interface Props {
   invoiceType?: 'created' | 'pending';
   deleteInvoiceAction?: DeleteInvoiceAction;
   initialData: InvoicesResponse;
+  currency?: string;
 }
 
 export function InvoicesTable({
@@ -44,6 +45,7 @@ export function InvoicesTable({
   invoiceType = 'created',
   deleteInvoiceAction,
   initialData,
+  currency = 'USD',
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -146,6 +148,7 @@ export function InvoicesTable({
   const extraData = {
     canDeleteInvoices,
     deleteInvoiceAction,
+    currency,
   };
 
   // Handler for search - uses nuqs setQ

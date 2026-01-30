@@ -179,6 +179,7 @@ export default async function InvoiceDetailsPage({
                     product={product}
                     locale={locale}
                     workspaceId={wsId}
+                    currency={currency}
                   />
                 ))}
               </div>
@@ -202,6 +203,7 @@ export default async function InvoiceDetailsPage({
                       key={index}
                       promotion={promotion}
                       locale={locale}
+                      currency={currency}
                     />
                   ))}
                 </div>
