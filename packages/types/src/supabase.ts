@@ -19383,7 +19383,6 @@ export type Database = {
         Args: { user_id_param: string };
         Returns: boolean;
       };
-      is_workspace_member: { Args: { p_ws_id: string }; Returns: boolean };
       is_workspace_owner: {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: boolean;
