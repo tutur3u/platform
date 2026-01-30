@@ -18,9 +18,16 @@ interface Props {
     page: string;
     pageSize: string;
   };
+  page?: string;
+  pageSize?: string;
 }
 
-export default async function WalletsPage({ wsId, searchParams }: Props) {
+export default async function WalletsPage({
+  wsId,
+  searchParams,
+  page,
+  pageSize,
+}: Props) {
   const [t, { containsPermission }, currency, workspace] = await Promise.all([
     getTranslations(),
     getPermissions({ wsId }),
@@ -64,6 +71,8 @@ export default async function WalletsPage({ wsId, searchParams }: Props) {
         canDeleteWallets={canDeleteWallets}
         currency={currency ?? 'USD'}
         isPersonalWorkspace={workspace?.personal}
+        page={page}
+        pageSize={pageSize}
       />
     </>
   );

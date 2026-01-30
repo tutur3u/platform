@@ -6,6 +6,7 @@ import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigg
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useState } from 'react';
 
@@ -18,6 +19,8 @@ interface WalletsDataTableProps {
   canDeleteWallets?: boolean;
   currency?: string;
   isPersonalWorkspace?: boolean;
+  page?: string;
+  pageSize?: string;
 }
 
 export function WalletsDataTable({
@@ -29,8 +32,13 @@ export function WalletsDataTable({
   canDeleteWallets,
   currency = 'USD',
   isPersonalWorkspace,
+  page,
+  pageSize,
 }: WalletsDataTableProps) {
   const t = useTranslations();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
   // State for edit dialog
@@ -52,6 +60,26 @@ export function WalletsDataTable({
       queryKey: ['wallets', wsId],
     });
   }, [queryClient, wsId]);
+
+  const handleSetParams = useCallback(
+    (params: { page?: number; pageSize?: string }) => {
+      const newSearchParams = new URLSearchParams(searchParams?.toString());
+
+      if (params.page !== undefined) {
+        newSearchParams.set('page', params.page.toString());
+      }
+
+      if (params.pageSize !== undefined) {
+        newSearchParams.set('pageSize', params.pageSize);
+      }
+
+      router.push(`${pathname}?${newSearchParams.toString()}`);
+    },
+    [pathname, router, searchParams]
+  );
+
+  const pageIndex = page ? Number.parseInt(page) - 1 : 0;
+  const pageSizeValue = pageSize ? Number.parseInt(pageSize) : 10;
 
   return (
     <div className="relative">
@@ -77,6 +105,9 @@ export function WalletsDataTable({
           created_at: false,
         }}
         onRowClick={canUpdateWallets ? handleRowClick : undefined}
+        pageIndex={pageIndex}
+        pageSize={pageSizeValue}
+        setParams={handleSetParams}
       />
 
       {/* Edit Dialog */}
