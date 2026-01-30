@@ -9435,7 +9435,7 @@
     "share": {
       "add_error": "Không thể chia sẻ mẫu",
       "add_success": "Đã chia sẻ mẫu thành công",
-      "dialog_description": "Chia sẻ mẫu riêng tư này với những người cụ thể qua email. Họ sẽ chỉ có quyền xem.",
+      "dialog_description": "Chia sẻ mẫu này với những người cụ thể qua email. Họ sẽ chỉ có quyền xem.",
       "dialog_title": "Quản lý chia sẻ",
       "email_hint": "Người dùng sẽ có thể xem và sử dụng mẫu này",
       "email_label": "Chia sẻ qua Email",

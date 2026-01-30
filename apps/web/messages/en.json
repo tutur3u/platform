@@ -9435,7 +9435,7 @@
     "share": {
       "add_error": "Failed to share template",
       "add_success": "Template shared successfully",
-      "dialog_description": "Share this private template with specific people by email. They will have view-only access.",
+      "dialog_description": "Share this template with specific people by email. They will have view-only access.",
       "dialog_title": "Manage Shares",
       "email_hint": "The user will be able to view and use this template",
       "email_label": "Share by Email",
