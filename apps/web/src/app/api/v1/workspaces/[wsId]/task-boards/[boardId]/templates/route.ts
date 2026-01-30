@@ -226,7 +226,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     };
 
     // Insert the template
-    const { data: template, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('board_templates')
       .insert({
         ws_id: wsId,
@@ -236,11 +236,9 @@ export async function POST(req: NextRequest, { params }: Params) {
         description: description?.trim() || null,
         visibility,
         content: content as unknown as Json,
-      })
-      .select('id, name, visibility, created_at')
-      .single();
+      });
 
-    if (insertError || !template) {
+    if (insertError) {
       console.error('Failed to create template:', insertError);
       return NextResponse.json(
         { error: 'Failed to create template' },
@@ -259,12 +257,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({
       success: true,
       message: 'Template saved successfully',
-      template: {
-        id: template.id,
-        name: template.name,
-        visibility: template.visibility,
-        createdAt: template.created_at,
-      },
       stats: {
         lists: totalLists,
         tasks: includeTasks ? totalTasks : 0,
