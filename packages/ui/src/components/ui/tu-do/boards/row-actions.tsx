@@ -92,7 +92,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-48">
             {data.deleted_at ? (
               // Deleted board options
               <>
