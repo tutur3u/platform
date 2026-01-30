@@ -10,6 +10,9 @@
  * The 14-digit timestamp prefix represents when the migration was created.
  * Future-dated migrations can cause ordering issues and confusion.
  *
+ * IMPORTANT: All migration timestamps are interpreted as GMT+7 (Asia/Ho_Chi_Minh)
+ * to ensure consistent behavior across different CI/local environments.
+ *
  * Usage:
  *   node scripts/check-migration-timestamps.js
  *
@@ -24,9 +27,15 @@ const path = require('node:path');
 // Migration directory
 const MIGRATIONS_DIR = 'apps/db/supabase/migrations';
 
+// GMT+7 offset in milliseconds (7 hours)
+const GMT_PLUS_7_OFFSET_MS = 7 * 60 * 60 * 1000;
+
 /**
  * Parse a 14-digit timestamp string into a Date object
  * Format: YYYYMMDDHHMMSS
+ *
+ * The timestamp is interpreted as GMT+7 (Asia/Ho_Chi_Minh timezone)
+ * to ensure consistent behavior regardless of where the script runs.
  */
 function parseTimestamp(timestamp) {
   if (!/^\d{14}$/.test(timestamp)) {
@@ -40,7 +49,10 @@ function parseTimestamp(timestamp) {
   const minute = parseInt(timestamp.substring(10, 12), 10);
   const second = parseInt(timestamp.substring(12, 14), 10);
 
-  return new Date(year, month, day, hour, minute, second);
+  // Create UTC timestamp, then subtract GMT+7 offset to interpret as GMT+7
+  // Example: 10:00 GMT+7 = 03:00 UTC, so we do Date.UTC(10:00) - 7h = 03:00 UTC
+  const utcMs = Date.UTC(year, month, day, hour, minute, second);
+  return new Date(utcMs - GMT_PLUS_7_OFFSET_MS);
 }
 
 /**
@@ -53,7 +65,7 @@ function extractTimestamp(filename) {
 }
 
 /**
- * Format a Date object for display in both UTC and local time
+ * Format a Date object for display in both UTC and GMT+7
  */
 function formatDate(date) {
   const utc = date
@@ -61,18 +73,14 @@ function formatDate(date) {
     .replace('T', ' ')
     .replace(/\.\d{3}Z$/, ' UTC');
 
-  const local = date.toLocaleString('en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZoneName: 'short',
-  });
+  // Calculate GMT+7 time
+  const gmt7Date = new Date(date.getTime() + GMT_PLUS_7_OFFSET_MS);
+  const gmt7 = gmt7Date
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d{3}Z$/, ' GMT+7');
 
-  return `${utc} (${local})`;
+  return `${utc} (${gmt7})`;
 }
 
 /**
@@ -140,7 +148,8 @@ function checkMigration(file, now) {
  * Main function
  */
 function main() {
-  console.log('Checking migration timestamps...\n');
+  console.log('Checking migration timestamps...');
+  console.log('(All timestamps are interpreted as GMT+7)\n');
 
   const files = findMigrationFiles();
 
