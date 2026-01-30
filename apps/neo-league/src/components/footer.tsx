@@ -1,4 +1,4 @@
-export function Footer() {
+export default function Footer() {
   return (
     <footer className="border-primary/10 border-t py-8">
       <div className="mx-auto max-w-6xl px-6 text-center">
