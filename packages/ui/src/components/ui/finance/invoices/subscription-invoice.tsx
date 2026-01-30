@@ -10,7 +10,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
@@ -171,6 +171,9 @@ export function SubscriptionInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
+  // Track previous user ID to detect user changes
+  const prevUserIdRef = useRef<string>(selectedUserId);
+
   // Product selection state
   const [subscriptionSelectedProducts, setSubscriptionSelectedProducts] =
     useState<SelectedProductItem[]>([]);
@@ -309,33 +312,28 @@ export function SubscriptionInvoice({
     resetRounding: resetRoundingSubscription,
   } = useInvoiceRounding(totalBeforeRounding);
 
-  // Auto-select first wallet if none selected or if default provided
+  // Reset subscription state when user changes (including switching to a different user)
   useEffect(() => {
-    if (!walletsLoading && wallets.length > 0 && !selectedWalletId) {
-      if (defaultWalletId) {
-        const defaultExists = wallets.find((w) => w.id === defaultWalletId);
-        if (defaultExists) {
-          setSelectedWalletId(defaultWalletId);
-          return;
-        }
-      }
-      setSelectedWalletId(wallets[0]?.id || '');
-    }
-  }, [wallets, walletsLoading, selectedWalletId, defaultWalletId]);
+    const userChanged = prevUserIdRef.current !== selectedUserId;
+    prevUserIdRef.current = selectedUserId;
 
-  // Reset subscription state when user changes
-  useEffect(() => {
-    if (!selectedUserId) {
+    if (!selectedUserId || userChanged) {
       setSubscriptionSelectedProducts([]);
       setInvoiceContent('');
       setInvoiceNotes('');
-      setSelectedWalletId('');
+      setSelectedWalletId(defaultWalletId || '');
       setSelectedPromotionId('none');
-      setSelectedCategoryId('');
+      setSelectedCategoryId(defaultCategoryId || '');
       setSelectedGroupIds(null);
       setSelectedMonth(null);
     }
-  }, [selectedUserId, setSelectedGroupIds, setSelectedMonth]);
+  }, [
+    selectedUserId,
+    setSelectedGroupIds,
+    setSelectedMonth,
+    defaultWalletId,
+    defaultCategoryId,
+  ]);
 
   // Auto-select the first group when userGroups are loaded
   useEffect(() => {
