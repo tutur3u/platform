@@ -103,16 +103,12 @@ async function getTemplates(
 
   // Apply visibility-based filtering
   if (visibility === 'private') {
-    // Only private templates created by the user in this workspace
-    query = query
-      .eq('ws_id', wsId)
-      .eq('visibility', 'private')
-      .eq('created_by', user.id);
-  } else if (visibility === 'workspace') {
-    // Only workspace templates in this workspace
-    query = query.eq('ws_id', wsId).eq('visibility', 'workspace');
-  } else if (visibility === 'public') {
-    // Only public templates (from any workspace)
+    query = query.eq('created_by', user.id);
+  }
+  if (visibility === 'workspace') {
+    query = query.eq('ws_id', wsId);
+  }
+  if (visibility === 'public') {
     query = query.eq('visibility', 'public');
   }
 
