@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
@@ -89,10 +90,9 @@ function EditButton({ id }: { id: string }) {
   );
 }
 
-export const changelogColumns = (
-  t: any,
-  _namespace?: string
-): ColumnDef<ChangelogEntry>[] => [
+export const changelogColumns = ({
+  t,
+}: ColumnGeneratorOptions<ChangelogEntry>): ColumnDef<ChangelogEntry>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

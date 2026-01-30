@@ -23,6 +23,8 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'finance-invoices': 'finance_invoices',
   'finance-invoice-products': 'finance_invoice_products',
   'finance-invoice-promotions': 'finance_invoice_promotions',
+  'finance-invoice-user-groups': 'finance_invoice_user_groups',
+  'finance-invoice-transaction-links': 'finance_invoices', // Special: returns id + transaction_id for relinking
   // Wallet tables
   'credit-wallets': 'credit_wallets',
   'wallet-types': 'wallet_types',
@@ -334,6 +336,10 @@ export const GET = withApiAuth<Params>(
         parentTable: 'finance_invoices',
         joinColumn: 'invoice_id',
       },
+      finance_invoice_user_groups: {
+        parentTable: 'finance_invoices',
+        joinColumn: 'invoice_id',
+      },
       // Wallet related - query via workspace_wallets
       credit_wallets: {
         parentTable: 'workspace_wallets',
@@ -374,6 +380,49 @@ export const GET = withApiAuth<Params>(
         joinColumn: 'user_id',
       },
     };
+
+    // finance-invoice-transaction-links: special module that returns only id + transaction_id
+    // for relinking invoices to wallet_transactions after migration
+    if (module === 'finance-invoice-transaction-links') {
+      // Get invoices with transaction_id for relinking
+      const { count: totalCount, error: countError } = await supabase
+        .from('finance_invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('ws_id', wsId)
+        .not('transaction_id', 'is', null);
+
+      if (countError) {
+        console.error('Error counting invoice transaction links:', countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('finance_invoices')
+        .select('id, transaction_id')
+        .eq('ws_id', wsId)
+        .not('transaction_id', 'is', null)
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error('Error fetching invoice transaction links:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
 
     // inventory_batch_products needs two-level join (batch -> warehouse)
     if (tableName === 'inventory_batch_products') {

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
+    PostgrestVersion: '14.1';
   };
   public: {
     Tables: {
@@ -11953,7 +11953,7 @@ export type Database = {
             | Database['public']['Enums']['estimation_type']
             | null;
           extended_estimation: boolean;
-          icon: Database['public']['Enums']['workspace_board_icon'] | null;
+          icon: Database['public']['Enums']['platform_icon'] | null;
           id: string;
           name: string | null;
           next_task_number: number;
@@ -11972,7 +11972,7 @@ export type Database = {
             | Database['public']['Enums']['estimation_type']
             | null;
           extended_estimation?: boolean;
-          icon?: Database['public']['Enums']['workspace_board_icon'] | null;
+          icon?: Database['public']['Enums']['platform_icon'] | null;
           id?: string;
           name?: string | null;
           next_task_number?: number;
@@ -11991,7 +11991,7 @@ export type Database = {
             | Database['public']['Enums']['estimation_type']
             | null;
           extended_estimation?: boolean;
-          icon?: Database['public']['Enums']['workspace_board_icon'] | null;
+          icon?: Database['public']['Enums']['platform_icon'] | null;
           id?: string;
           name?: string | null;
           next_task_number?: number;
@@ -19816,6 +19816,1675 @@ export type Database = {
         | 'approved'
         | 'finalized'
         | 'cancelled';
+      platform_icon:
+        | 'AArrowDown'
+        | 'AArrowUp'
+        | 'ALargeSmall'
+        | 'Accessibility'
+        | 'Activity'
+        | 'AirVent'
+        | 'Airplay'
+        | 'AlarmClock'
+        | 'AlarmClockCheck'
+        | 'AlarmClockMinus'
+        | 'AlarmClockOff'
+        | 'AlarmClockPlus'
+        | 'AlarmSmoke'
+        | 'Album'
+        | 'AlignCenterHorizontal'
+        | 'AlignCenterVertical'
+        | 'AlignEndHorizontal'
+        | 'AlignEndVertical'
+        | 'AlignHorizontalDistributeCenter'
+        | 'AlignHorizontalDistributeEnd'
+        | 'AlignHorizontalDistributeStart'
+        | 'AlignHorizontalJustifyCenter'
+        | 'AlignHorizontalJustifyEnd'
+        | 'AlignHorizontalJustifyStart'
+        | 'AlignHorizontalSpaceAround'
+        | 'AlignHorizontalSpaceBetween'
+        | 'AlignStartHorizontal'
+        | 'AlignStartVertical'
+        | 'AlignVerticalDistributeCenter'
+        | 'AlignVerticalDistributeEnd'
+        | 'AlignVerticalDistributeStart'
+        | 'AlignVerticalJustifyCenter'
+        | 'AlignVerticalJustifyEnd'
+        | 'AlignVerticalJustifyStart'
+        | 'AlignVerticalSpaceAround'
+        | 'AlignVerticalSpaceBetween'
+        | 'Ambulance'
+        | 'Ampersand'
+        | 'Ampersands'
+        | 'Amphora'
+        | 'Anchor'
+        | 'Angry'
+        | 'Annoyed'
+        | 'Antenna'
+        | 'Anvil'
+        | 'Aperture'
+        | 'AppWindow'
+        | 'AppWindowMac'
+        | 'Apple'
+        | 'Archive'
+        | 'ArchiveRestore'
+        | 'ArchiveX'
+        | 'Armchair'
+        | 'ArrowBigDown'
+        | 'ArrowBigDownDash'
+        | 'ArrowBigLeft'
+        | 'ArrowBigLeftDash'
+        | 'ArrowBigRight'
+        | 'ArrowBigRightDash'
+        | 'ArrowBigUp'
+        | 'ArrowBigUpDash'
+        | 'ArrowDown'
+        | 'ArrowDown01'
+        | 'ArrowDown10'
+        | 'ArrowDownAZ'
+        | 'ArrowDownFromLine'
+        | 'ArrowDownLeft'
+        | 'ArrowDownNarrowWide'
+        | 'ArrowDownRight'
+        | 'ArrowDownToDot'
+        | 'ArrowDownToLine'
+        | 'ArrowDownUp'
+        | 'ArrowDownWideNarrow'
+        | 'ArrowDownZA'
+        | 'ArrowLeft'
+        | 'ArrowLeftFromLine'
+        | 'ArrowLeftRight'
+        | 'ArrowLeftToLine'
+        | 'ArrowRight'
+        | 'ArrowRightFromLine'
+        | 'ArrowRightLeft'
+        | 'ArrowRightToLine'
+        | 'ArrowUp'
+        | 'ArrowUp01'
+        | 'ArrowUp10'
+        | 'ArrowUpAZ'
+        | 'ArrowUpDown'
+        | 'ArrowUpFromDot'
+        | 'ArrowUpFromLine'
+        | 'ArrowUpLeft'
+        | 'ArrowUpNarrowWide'
+        | 'ArrowUpRight'
+        | 'ArrowUpToLine'
+        | 'ArrowUpWideNarrow'
+        | 'ArrowUpZA'
+        | 'ArrowsUpFromLine'
+        | 'Asterisk'
+        | 'AtSign'
+        | 'Atom'
+        | 'AudioLines'
+        | 'AudioWaveform'
+        | 'Award'
+        | 'Axe'
+        | 'Axis3d'
+        | 'Baby'
+        | 'Backpack'
+        | 'Badge'
+        | 'BadgeAlert'
+        | 'BadgeCent'
+        | 'BadgeCheck'
+        | 'BadgeDollarSign'
+        | 'BadgeEuro'
+        | 'BadgeIndianRupee'
+        | 'BadgeInfo'
+        | 'BadgeJapaneseYen'
+        | 'BadgeMinus'
+        | 'BadgePercent'
+        | 'BadgePlus'
+        | 'BadgePoundSterling'
+        | 'BadgeQuestionMark'
+        | 'BadgeRussianRuble'
+        | 'BadgeSwissFranc'
+        | 'BadgeTurkishLira'
+        | 'BadgeX'
+        | 'BaggageClaim'
+        | 'Balloon'
+        | 'Ban'
+        | 'Banana'
+        | 'Bandage'
+        | 'Banknote'
+        | 'BanknoteArrowDown'
+        | 'BanknoteArrowUp'
+        | 'BanknoteX'
+        | 'Barcode'
+        | 'Barrel'
+        | 'Baseline'
+        | 'Bath'
+        | 'Battery'
+        | 'BatteryCharging'
+        | 'BatteryFull'
+        | 'BatteryLow'
+        | 'BatteryMedium'
+        | 'BatteryPlus'
+        | 'BatteryWarning'
+        | 'Beaker'
+        | 'Bean'
+        | 'BeanOff'
+        | 'Bed'
+        | 'BedDouble'
+        | 'BedSingle'
+        | 'Beef'
+        | 'Beer'
+        | 'BeerOff'
+        | 'Bell'
+        | 'BellDot'
+        | 'BellElectric'
+        | 'BellMinus'
+        | 'BellOff'
+        | 'BellPlus'
+        | 'BellRing'
+        | 'BetweenHorizontalEnd'
+        | 'BetweenHorizontalStart'
+        | 'BetweenVerticalEnd'
+        | 'BetweenVerticalStart'
+        | 'BicepsFlexed'
+        | 'Bike'
+        | 'Binary'
+        | 'Binoculars'
+        | 'Biohazard'
+        | 'Bird'
+        | 'Birdhouse'
+        | 'Bitcoin'
+        | 'Blend'
+        | 'Blinds'
+        | 'Blocks'
+        | 'Bluetooth'
+        | 'BluetoothConnected'
+        | 'BluetoothOff'
+        | 'BluetoothSearching'
+        | 'Bold'
+        | 'Bolt'
+        | 'Bomb'
+        | 'Bone'
+        | 'Book'
+        | 'BookA'
+        | 'BookAlert'
+        | 'BookAudio'
+        | 'BookCheck'
+        | 'BookCopy'
+        | 'BookDashed'
+        | 'BookDown'
+        | 'BookHeadphones'
+        | 'BookHeart'
+        | 'BookImage'
+        | 'BookKey'
+        | 'BookLock'
+        | 'BookMarked'
+        | 'BookMinus'
+        | 'BookOpen'
+        | 'BookOpenCheck'
+        | 'BookOpenText'
+        | 'BookPlus'
+        | 'BookSearch'
+        | 'BookText'
+        | 'BookType'
+        | 'BookUp'
+        | 'BookUp2'
+        | 'BookUser'
+        | 'BookX'
+        | 'Bookmark'
+        | 'BookmarkCheck'
+        | 'BookmarkMinus'
+        | 'BookmarkPlus'
+        | 'BookmarkX'
+        | 'BoomBox'
+        | 'Bot'
+        | 'BotMessageSquare'
+        | 'BotOff'
+        | 'BottleWine'
+        | 'BowArrow'
+        | 'Box'
+        | 'Boxes'
+        | 'Braces'
+        | 'Brackets'
+        | 'Brain'
+        | 'BrainCircuit'
+        | 'BrainCog'
+        | 'BrickWall'
+        | 'BrickWallFire'
+        | 'BrickWallShield'
+        | 'Briefcase'
+        | 'BriefcaseBusiness'
+        | 'BriefcaseConveyorBelt'
+        | 'BriefcaseMedical'
+        | 'BringToFront'
+        | 'Brush'
+        | 'BrushCleaning'
+        | 'Bubbles'
+        | 'Bug'
+        | 'BugOff'
+        | 'BugPlay'
+        | 'Building'
+        | 'Building2'
+        | 'Bus'
+        | 'BusFront'
+        | 'Cable'
+        | 'CableCar'
+        | 'Cake'
+        | 'CakeSlice'
+        | 'Calculator'
+        | 'Calendar'
+        | 'Calendar1'
+        | 'CalendarArrowDown'
+        | 'CalendarArrowUp'
+        | 'CalendarCheck'
+        | 'CalendarCheck2'
+        | 'CalendarClock'
+        | 'CalendarCog'
+        | 'CalendarDays'
+        | 'CalendarFold'
+        | 'CalendarHeart'
+        | 'CalendarMinus'
+        | 'CalendarMinus2'
+        | 'CalendarOff'
+        | 'CalendarPlus'
+        | 'CalendarPlus2'
+        | 'CalendarRange'
+        | 'CalendarSearch'
+        | 'CalendarSync'
+        | 'CalendarX'
+        | 'CalendarX2'
+        | 'Calendars'
+        | 'Camera'
+        | 'CameraOff'
+        | 'Candy'
+        | 'CandyCane'
+        | 'CandyOff'
+        | 'Cannabis'
+        | 'CannabisOff'
+        | 'Captions'
+        | 'CaptionsOff'
+        | 'Car'
+        | 'CarFront'
+        | 'CarTaxiFront'
+        | 'Caravan'
+        | 'CardSim'
+        | 'Carrot'
+        | 'CaseLower'
+        | 'CaseSensitive'
+        | 'CaseUpper'
+        | 'CassetteTape'
+        | 'Cast'
+        | 'Castle'
+        | 'Cat'
+        | 'Cctv'
+        | 'ChartArea'
+        | 'ChartBar'
+        | 'ChartBarBig'
+        | 'ChartBarDecreasing'
+        | 'ChartBarIncreasing'
+        | 'ChartBarStacked'
+        | 'ChartCandlestick'
+        | 'ChartColumn'
+        | 'ChartColumnBig'
+        | 'ChartColumnDecreasing'
+        | 'ChartColumnIncreasing'
+        | 'ChartColumnStacked'
+        | 'ChartGantt'
+        | 'ChartLine'
+        | 'ChartNetwork'
+        | 'ChartNoAxesColumn'
+        | 'ChartNoAxesColumnDecreasing'
+        | 'ChartNoAxesColumnIncreasing'
+        | 'ChartNoAxesCombined'
+        | 'ChartNoAxesGantt'
+        | 'ChartPie'
+        | 'ChartScatter'
+        | 'ChartSpline'
+        | 'Check'
+        | 'CheckCheck'
+        | 'CheckLine'
+        | 'ChefHat'
+        | 'Cherry'
+        | 'ChessBishop'
+        | 'ChessKing'
+        | 'ChessKnight'
+        | 'ChessPawn'
+        | 'ChessQueen'
+        | 'ChessRook'
+        | 'ChevronDown'
+        | 'ChevronFirst'
+        | 'ChevronLast'
+        | 'ChevronLeft'
+        | 'ChevronRight'
+        | 'ChevronUp'
+        | 'ChevronsDown'
+        | 'ChevronsDownUp'
+        | 'ChevronsLeft'
+        | 'ChevronsLeftRight'
+        | 'ChevronsLeftRightEllipsis'
+        | 'ChevronsRight'
+        | 'ChevronsRightLeft'
+        | 'ChevronsUp'
+        | 'ChevronsUpDown'
+        | 'Chromium'
+        | 'Church'
+        | 'Cigarette'
+        | 'CigaretteOff'
+        | 'Circle'
+        | 'CircleAlert'
+        | 'CircleArrowDown'
+        | 'CircleArrowLeft'
+        | 'CircleArrowOutDownLeft'
+        | 'CircleArrowOutDownRight'
+        | 'CircleArrowOutUpLeft'
+        | 'CircleArrowOutUpRight'
+        | 'CircleArrowRight'
+        | 'CircleArrowUp'
+        | 'CircleCheck'
+        | 'CircleCheckBig'
+        | 'CircleChevronDown'
+        | 'CircleChevronLeft'
+        | 'CircleChevronRight'
+        | 'CircleChevronUp'
+        | 'CircleDashed'
+        | 'CircleDivide'
+        | 'CircleDollarSign'
+        | 'CircleDot'
+        | 'CircleDotDashed'
+        | 'CircleEllipsis'
+        | 'CircleEqual'
+        | 'CircleFadingArrowUp'
+        | 'CircleFadingPlus'
+        | 'CircleGauge'
+        | 'CircleMinus'
+        | 'CircleOff'
+        | 'CircleParking'
+        | 'CircleParkingOff'
+        | 'CirclePause'
+        | 'CirclePercent'
+        | 'CirclePile'
+        | 'CirclePlay'
+        | 'CirclePlus'
+        | 'CirclePoundSterling'
+        | 'CirclePower'
+        | 'CircleQuestionMark'
+        | 'CircleSlash'
+        | 'CircleSlash2'
+        | 'CircleSmall'
+        | 'CircleStar'
+        | 'CircleStop'
+        | 'CircleUser'
+        | 'CircleUserRound'
+        | 'CircleX'
+        | 'CircuitBoard'
+        | 'Citrus'
+        | 'Clapperboard'
+        | 'Clipboard'
+        | 'ClipboardCheck'
+        | 'ClipboardClock'
+        | 'ClipboardCopy'
+        | 'ClipboardList'
+        | 'ClipboardMinus'
+        | 'ClipboardPaste'
+        | 'ClipboardPen'
+        | 'ClipboardPenLine'
+        | 'ClipboardPlus'
+        | 'ClipboardType'
+        | 'ClipboardX'
+        | 'Clock'
+        | 'Clock1'
+        | 'Clock10'
+        | 'Clock11'
+        | 'Clock12'
+        | 'Clock2'
+        | 'Clock3'
+        | 'Clock4'
+        | 'Clock5'
+        | 'Clock6'
+        | 'Clock7'
+        | 'Clock8'
+        | 'Clock9'
+        | 'ClockAlert'
+        | 'ClockArrowDown'
+        | 'ClockArrowUp'
+        | 'ClockCheck'
+        | 'ClockFading'
+        | 'ClockPlus'
+        | 'ClosedCaption'
+        | 'Cloud'
+        | 'CloudAlert'
+        | 'CloudBackup'
+        | 'CloudCheck'
+        | 'CloudCog'
+        | 'CloudDownload'
+        | 'CloudDrizzle'
+        | 'CloudFog'
+        | 'CloudHail'
+        | 'CloudLightning'
+        | 'CloudMoon'
+        | 'CloudMoonRain'
+        | 'CloudOff'
+        | 'CloudRain'
+        | 'CloudRainWind'
+        | 'CloudSnow'
+        | 'CloudSun'
+        | 'CloudSunRain'
+        | 'CloudSync'
+        | 'CloudUpload'
+        | 'Cloudy'
+        | 'Clover'
+        | 'Club'
+        | 'Code'
+        | 'CodeXml'
+        | 'Codepen'
+        | 'Codesandbox'
+        | 'Coffee'
+        | 'Cog'
+        | 'Coins'
+        | 'Columns2'
+        | 'Columns3'
+        | 'Columns3Cog'
+        | 'Columns4'
+        | 'Combine'
+        | 'Command'
+        | 'Compass'
+        | 'Component'
+        | 'Computer'
+        | 'ConciergeBell'
+        | 'Cone'
+        | 'Construction'
+        | 'Contact'
+        | 'ContactRound'
+        | 'Container'
+        | 'Contrast'
+        | 'Cookie'
+        | 'CookingPot'
+        | 'Copy'
+        | 'CopyCheck'
+        | 'CopyMinus'
+        | 'CopyPlus'
+        | 'CopySlash'
+        | 'CopyX'
+        | 'Copyleft'
+        | 'Copyright'
+        | 'CornerDownLeft'
+        | 'CornerDownRight'
+        | 'CornerLeftDown'
+        | 'CornerLeftUp'
+        | 'CornerRightDown'
+        | 'CornerRightUp'
+        | 'CornerUpLeft'
+        | 'CornerUpRight'
+        | 'Cpu'
+        | 'CreativeCommons'
+        | 'CreditCard'
+        | 'Croissant'
+        | 'Crop'
+        | 'Cross'
+        | 'Crosshair'
+        | 'Crown'
+        | 'Cuboid'
+        | 'CupSoda'
+        | 'Currency'
+        | 'Cylinder'
+        | 'Dam'
+        | 'Database'
+        | 'DatabaseBackup'
+        | 'DatabaseZap'
+        | 'DecimalsArrowLeft'
+        | 'DecimalsArrowRight'
+        | 'Delete'
+        | 'Dessert'
+        | 'Diameter'
+        | 'Diamond'
+        | 'DiamondMinus'
+        | 'DiamondPercent'
+        | 'DiamondPlus'
+        | 'Dice1'
+        | 'Dice2'
+        | 'Dice3'
+        | 'Dice4'
+        | 'Dice5'
+        | 'Dice6'
+        | 'Dices'
+        | 'Diff'
+        | 'Disc'
+        | 'Disc2'
+        | 'Disc3'
+        | 'DiscAlbum'
+        | 'Divide'
+        | 'Dna'
+        | 'DnaOff'
+        | 'Dock'
+        | 'Dog'
+        | 'DollarSign'
+        | 'Donut'
+        | 'DoorClosed'
+        | 'DoorClosedLocked'
+        | 'DoorOpen'
+        | 'Dot'
+        | 'Download'
+        | 'DraftingCompass'
+        | 'Drama'
+        | 'Dribbble'
+        | 'Drill'
+        | 'Drone'
+        | 'Droplet'
+        | 'DropletOff'
+        | 'Droplets'
+        | 'Drum'
+        | 'Drumstick'
+        | 'Dumbbell'
+        | 'Ear'
+        | 'EarOff'
+        | 'Earth'
+        | 'EarthLock'
+        | 'Eclipse'
+        | 'Egg'
+        | 'EggFried'
+        | 'EggOff'
+        | 'Ellipsis'
+        | 'EllipsisVertical'
+        | 'Equal'
+        | 'EqualApproximately'
+        | 'EqualNot'
+        | 'Eraser'
+        | 'EthernetPort'
+        | 'Euro'
+        | 'EvCharger'
+        | 'Expand'
+        | 'ExternalLink'
+        | 'Eye'
+        | 'EyeClosed'
+        | 'EyeOff'
+        | 'Facebook'
+        | 'Factory'
+        | 'Fan'
+        | 'FastForward'
+        | 'Feather'
+        | 'Fence'
+        | 'FerrisWheel'
+        | 'Figma'
+        | 'File'
+        | 'FileArchive'
+        | 'FileAxis3d'
+        | 'FileBadge'
+        | 'FileBox'
+        | 'FileBraces'
+        | 'FileBracesCorner'
+        | 'FileChartColumn'
+        | 'FileChartColumnIncreasing'
+        | 'FileChartLine'
+        | 'FileChartPie'
+        | 'FileCheck'
+        | 'FileCheckCorner'
+        | 'FileClock'
+        | 'FileCode'
+        | 'FileCodeCorner'
+        | 'FileCog'
+        | 'FileDiff'
+        | 'FileDigit'
+        | 'FileDown'
+        | 'FileExclamationPoint'
+        | 'FileHeadphone'
+        | 'FileHeart'
+        | 'FileImage'
+        | 'FileInput'
+        | 'FileKey'
+        | 'FileLock'
+        | 'FileMinus'
+        | 'FileMinusCorner'
+        | 'FileMusic'
+        | 'FileOutput'
+        | 'FilePen'
+        | 'FilePenLine'
+        | 'FilePlay'
+        | 'FilePlus'
+        | 'FilePlusCorner'
+        | 'FileQuestionMark'
+        | 'FileScan'
+        | 'FileSearch'
+        | 'FileSearchCorner'
+        | 'FileSignal'
+        | 'FileSliders'
+        | 'FileSpreadsheet'
+        | 'FileStack'
+        | 'FileSymlink'
+        | 'FileTerminal'
+        | 'FileText'
+        | 'FileType'
+        | 'FileTypeCorner'
+        | 'FileUp'
+        | 'FileUser'
+        | 'FileVideoCamera'
+        | 'FileVolume'
+        | 'FileX'
+        | 'FileXCorner'
+        | 'Files'
+        | 'Film'
+        | 'FingerprintPattern'
+        | 'FireExtinguisher'
+        | 'Fish'
+        | 'FishOff'
+        | 'FishSymbol'
+        | 'FishingHook'
+        | 'Flag'
+        | 'FlagOff'
+        | 'FlagTriangleLeft'
+        | 'FlagTriangleRight'
+        | 'Flame'
+        | 'FlameKindling'
+        | 'Flashlight'
+        | 'FlashlightOff'
+        | 'FlaskConical'
+        | 'FlaskConicalOff'
+        | 'FlaskRound'
+        | 'FlipHorizontal'
+        | 'FlipHorizontal2'
+        | 'FlipVertical'
+        | 'FlipVertical2'
+        | 'Flower'
+        | 'Flower2'
+        | 'Focus'
+        | 'FoldHorizontal'
+        | 'FoldVertical'
+        | 'Folder'
+        | 'FolderArchive'
+        | 'FolderCheck'
+        | 'FolderClock'
+        | 'FolderClosed'
+        | 'FolderCode'
+        | 'FolderCog'
+        | 'FolderDot'
+        | 'FolderDown'
+        | 'FolderGit'
+        | 'FolderGit2'
+        | 'FolderHeart'
+        | 'FolderInput'
+        | 'FolderKanban'
+        | 'FolderKey'
+        | 'FolderLock'
+        | 'FolderMinus'
+        | 'FolderOpen'
+        | 'FolderOpenDot'
+        | 'FolderOutput'
+        | 'FolderPen'
+        | 'FolderPlus'
+        | 'FolderRoot'
+        | 'FolderSearch'
+        | 'FolderSearch2'
+        | 'FolderSymlink'
+        | 'FolderSync'
+        | 'FolderTree'
+        | 'FolderUp'
+        | 'FolderX'
+        | 'Folders'
+        | 'Footprints'
+        | 'Forklift'
+        | 'Form'
+        | 'Forward'
+        | 'Frame'
+        | 'Framer'
+        | 'Frown'
+        | 'Fuel'
+        | 'Fullscreen'
+        | 'Funnel'
+        | 'FunnelPlus'
+        | 'FunnelX'
+        | 'GalleryHorizontal'
+        | 'GalleryHorizontalEnd'
+        | 'GalleryThumbnails'
+        | 'GalleryVertical'
+        | 'GalleryVerticalEnd'
+        | 'Gamepad'
+        | 'Gamepad2'
+        | 'GamepadDirectional'
+        | 'Gauge'
+        | 'Gavel'
+        | 'Gem'
+        | 'GeorgianLari'
+        | 'Ghost'
+        | 'Gift'
+        | 'GitBranch'
+        | 'GitBranchMinus'
+        | 'GitBranchPlus'
+        | 'GitCommitHorizontal'
+        | 'GitCommitVertical'
+        | 'GitCompare'
+        | 'GitCompareArrows'
+        | 'GitFork'
+        | 'GitGraph'
+        | 'GitMerge'
+        | 'GitPullRequest'
+        | 'GitPullRequestArrow'
+        | 'GitPullRequestClosed'
+        | 'GitPullRequestCreate'
+        | 'GitPullRequestCreateArrow'
+        | 'GitPullRequestDraft'
+        | 'Github'
+        | 'Gitlab'
+        | 'GlassWater'
+        | 'Glasses'
+        | 'Globe'
+        | 'GlobeLock'
+        | 'GlobeX'
+        | 'Goal'
+        | 'Gpu'
+        | 'GraduationCap'
+        | 'Grape'
+        | 'Grid2x2'
+        | 'Grid2x2Check'
+        | 'Grid2x2Plus'
+        | 'Grid2x2X'
+        | 'Grid3x2'
+        | 'Grid3x3'
+        | 'Grip'
+        | 'GripHorizontal'
+        | 'GripVertical'
+        | 'Group'
+        | 'Guitar'
+        | 'Ham'
+        | 'Hamburger'
+        | 'Hammer'
+        | 'Hand'
+        | 'HandCoins'
+        | 'HandFist'
+        | 'HandGrab'
+        | 'HandHeart'
+        | 'HandHelping'
+        | 'HandMetal'
+        | 'HandPlatter'
+        | 'Handbag'
+        | 'Handshake'
+        | 'HardDrive'
+        | 'HardDriveDownload'
+        | 'HardDriveUpload'
+        | 'HardHat'
+        | 'Hash'
+        | 'HatGlasses'
+        | 'Haze'
+        | 'Hd'
+        | 'HdmiPort'
+        | 'Heading'
+        | 'Heading1'
+        | 'Heading2'
+        | 'Heading3'
+        | 'Heading4'
+        | 'Heading5'
+        | 'Heading6'
+        | 'HeadphoneOff'
+        | 'Headphones'
+        | 'Headset'
+        | 'Heart'
+        | 'HeartCrack'
+        | 'HeartHandshake'
+        | 'HeartMinus'
+        | 'HeartOff'
+        | 'HeartPlus'
+        | 'HeartPulse'
+        | 'Heater'
+        | 'Helicopter'
+        | 'Hexagon'
+        | 'Highlighter'
+        | 'History'
+        | 'Hop'
+        | 'HopOff'
+        | 'Hospital'
+        | 'Hotel'
+        | 'Hourglass'
+        | 'House'
+        | 'HouseHeart'
+        | 'HousePlug'
+        | 'HousePlus'
+        | 'HouseWifi'
+        | 'IceCreamBowl'
+        | 'IceCreamCone'
+        | 'IdCard'
+        | 'IdCardLanyard'
+        | 'Image'
+        | 'ImageDown'
+        | 'ImageMinus'
+        | 'ImageOff'
+        | 'ImagePlay'
+        | 'ImagePlus'
+        | 'ImageUp'
+        | 'ImageUpscale'
+        | 'Images'
+        | 'Import'
+        | 'Inbox'
+        | 'IndianRupee'
+        | 'Infinity'
+        | 'Info'
+        | 'InspectionPanel'
+        | 'Instagram'
+        | 'Italic'
+        | 'IterationCcw'
+        | 'IterationCw'
+        | 'JapaneseYen'
+        | 'Joystick'
+        | 'Kanban'
+        | 'Kayak'
+        | 'Key'
+        | 'KeyRound'
+        | 'KeySquare'
+        | 'Keyboard'
+        | 'KeyboardMusic'
+        | 'KeyboardOff'
+        | 'Lamp'
+        | 'LampCeiling'
+        | 'LampDesk'
+        | 'LampFloor'
+        | 'LampWallDown'
+        | 'LampWallUp'
+        | 'LandPlot'
+        | 'Landmark'
+        | 'Languages'
+        | 'Laptop'
+        | 'LaptopMinimal'
+        | 'LaptopMinimalCheck'
+        | 'Lasso'
+        | 'LassoSelect'
+        | 'Laugh'
+        | 'Layers'
+        | 'Layers2'
+        | 'LayersPlus'
+        | 'LayoutDashboard'
+        | 'LayoutGrid'
+        | 'LayoutList'
+        | 'LayoutPanelLeft'
+        | 'LayoutPanelTop'
+        | 'LayoutTemplate'
+        | 'Leaf'
+        | 'LeafyGreen'
+        | 'Lectern'
+        | 'Library'
+        | 'LibraryBig'
+        | 'LifeBuoy'
+        | 'Ligature'
+        | 'Lightbulb'
+        | 'LightbulbOff'
+        | 'LineSquiggle'
+        | 'Link'
+        | 'Link2'
+        | 'Link2Off'
+        | 'Linkedin'
+        | 'List'
+        | 'ListCheck'
+        | 'ListChecks'
+        | 'ListChevronsDownUp'
+        | 'ListChevronsUpDown'
+        | 'ListCollapse'
+        | 'ListEnd'
+        | 'ListFilter'
+        | 'ListFilterPlus'
+        | 'ListIndentDecrease'
+        | 'ListIndentIncrease'
+        | 'ListMinus'
+        | 'ListMusic'
+        | 'ListOrdered'
+        | 'ListPlus'
+        | 'ListRestart'
+        | 'ListStart'
+        | 'ListTodo'
+        | 'ListTree'
+        | 'ListVideo'
+        | 'ListX'
+        | 'Loader'
+        | 'LoaderCircle'
+        | 'LoaderPinwheel'
+        | 'Locate'
+        | 'LocateFixed'
+        | 'LocateOff'
+        | 'Lock'
+        | 'LockKeyhole'
+        | 'LockKeyholeOpen'
+        | 'LockOpen'
+        | 'LogIn'
+        | 'LogOut'
+        | 'Logs'
+        | 'Lollipop'
+        | 'Luggage'
+        | 'Magnet'
+        | 'Mail'
+        | 'MailCheck'
+        | 'MailMinus'
+        | 'MailOpen'
+        | 'MailPlus'
+        | 'MailQuestionMark'
+        | 'MailSearch'
+        | 'MailWarning'
+        | 'MailX'
+        | 'Mailbox'
+        | 'Mails'
+        | 'Map'
+        | 'MapMinus'
+        | 'MapPin'
+        | 'MapPinCheck'
+        | 'MapPinCheckInside'
+        | 'MapPinHouse'
+        | 'MapPinMinus'
+        | 'MapPinMinusInside'
+        | 'MapPinOff'
+        | 'MapPinPen'
+        | 'MapPinPlus'
+        | 'MapPinPlusInside'
+        | 'MapPinX'
+        | 'MapPinXInside'
+        | 'MapPinned'
+        | 'MapPlus'
+        | 'Mars'
+        | 'MarsStroke'
+        | 'Martini'
+        | 'Maximize'
+        | 'Maximize2'
+        | 'Medal'
+        | 'Megaphone'
+        | 'MegaphoneOff'
+        | 'Meh'
+        | 'MemoryStick'
+        | 'Menu'
+        | 'Merge'
+        | 'MessageCircle'
+        | 'MessageCircleCode'
+        | 'MessageCircleDashed'
+        | 'MessageCircleHeart'
+        | 'MessageCircleMore'
+        | 'MessageCircleOff'
+        | 'MessageCirclePlus'
+        | 'MessageCircleQuestionMark'
+        | 'MessageCircleReply'
+        | 'MessageCircleWarning'
+        | 'MessageCircleX'
+        | 'MessageSquare'
+        | 'MessageSquareCode'
+        | 'MessageSquareDashed'
+        | 'MessageSquareDiff'
+        | 'MessageSquareDot'
+        | 'MessageSquareHeart'
+        | 'MessageSquareLock'
+        | 'MessageSquareMore'
+        | 'MessageSquareOff'
+        | 'MessageSquarePlus'
+        | 'MessageSquareQuote'
+        | 'MessageSquareReply'
+        | 'MessageSquareShare'
+        | 'MessageSquareText'
+        | 'MessageSquareWarning'
+        | 'MessageSquareX'
+        | 'MessagesSquare'
+        | 'Mic'
+        | 'MicOff'
+        | 'MicVocal'
+        | 'Microchip'
+        | 'Microscope'
+        | 'Microwave'
+        | 'Milestone'
+        | 'Milk'
+        | 'MilkOff'
+        | 'Minimize'
+        | 'Minimize2'
+        | 'Minus'
+        | 'Monitor'
+        | 'MonitorCheck'
+        | 'MonitorCloud'
+        | 'MonitorCog'
+        | 'MonitorDot'
+        | 'MonitorDown'
+        | 'MonitorOff'
+        | 'MonitorPause'
+        | 'MonitorPlay'
+        | 'MonitorSmartphone'
+        | 'MonitorSpeaker'
+        | 'MonitorStop'
+        | 'MonitorUp'
+        | 'MonitorX'
+        | 'Moon'
+        | 'MoonStar'
+        | 'Motorbike'
+        | 'Mountain'
+        | 'MountainSnow'
+        | 'Mouse'
+        | 'MouseOff'
+        | 'MousePointer'
+        | 'MousePointer2'
+        | 'MousePointer2Off'
+        | 'MousePointerBan'
+        | 'MousePointerClick'
+        | 'Move'
+        | 'Move3d'
+        | 'MoveDiagonal'
+        | 'MoveDiagonal2'
+        | 'MoveDown'
+        | 'MoveDownLeft'
+        | 'MoveDownRight'
+        | 'MoveHorizontal'
+        | 'MoveLeft'
+        | 'MoveRight'
+        | 'MoveUp'
+        | 'MoveUpLeft'
+        | 'MoveUpRight'
+        | 'MoveVertical'
+        | 'Music'
+        | 'Music2'
+        | 'Music3'
+        | 'Music4'
+        | 'Navigation'
+        | 'Navigation2'
+        | 'Navigation2Off'
+        | 'NavigationOff'
+        | 'Network'
+        | 'Newspaper'
+        | 'Nfc'
+        | 'NonBinary'
+        | 'Notebook'
+        | 'NotebookPen'
+        | 'NotebookTabs'
+        | 'NotebookText'
+        | 'NotepadText'
+        | 'NotepadTextDashed'
+        | 'Nut'
+        | 'NutOff'
+        | 'Octagon'
+        | 'OctagonAlert'
+        | 'OctagonMinus'
+        | 'OctagonPause'
+        | 'OctagonX'
+        | 'Omega'
+        | 'Option'
+        | 'Orbit'
+        | 'Origami'
+        | 'Package'
+        | 'Package2'
+        | 'PackageCheck'
+        | 'PackageMinus'
+        | 'PackageOpen'
+        | 'PackagePlus'
+        | 'PackageSearch'
+        | 'PackageX'
+        | 'PaintBucket'
+        | 'PaintRoller'
+        | 'Paintbrush'
+        | 'PaintbrushVertical'
+        | 'Palette'
+        | 'Panda'
+        | 'PanelBottom'
+        | 'PanelBottomClose'
+        | 'PanelBottomDashed'
+        | 'PanelBottomOpen'
+        | 'PanelLeft'
+        | 'PanelLeftClose'
+        | 'PanelLeftDashed'
+        | 'PanelLeftOpen'
+        | 'PanelLeftRightDashed'
+        | 'PanelRight'
+        | 'PanelRightClose'
+        | 'PanelRightDashed'
+        | 'PanelRightOpen'
+        | 'PanelTop'
+        | 'PanelTopBottomDashed'
+        | 'PanelTopClose'
+        | 'PanelTopDashed'
+        | 'PanelTopOpen'
+        | 'PanelsLeftBottom'
+        | 'PanelsRightBottom'
+        | 'PanelsTopLeft'
+        | 'Paperclip'
+        | 'Parentheses'
+        | 'ParkingMeter'
+        | 'PartyPopper'
+        | 'Pause'
+        | 'PawPrint'
+        | 'PcCase'
+        | 'Pen'
+        | 'PenLine'
+        | 'PenOff'
+        | 'PenTool'
+        | 'Pencil'
+        | 'PencilLine'
+        | 'PencilOff'
+        | 'PencilRuler'
+        | 'Pentagon'
+        | 'Percent'
+        | 'PersonStanding'
+        | 'PhilippinePeso'
+        | 'Phone'
+        | 'PhoneCall'
+        | 'PhoneForwarded'
+        | 'PhoneIncoming'
+        | 'PhoneMissed'
+        | 'PhoneOff'
+        | 'PhoneOutgoing'
+        | 'Pi'
+        | 'Piano'
+        | 'Pickaxe'
+        | 'PictureInPicture'
+        | 'PictureInPicture2'
+        | 'PiggyBank'
+        | 'Pilcrow'
+        | 'PilcrowLeft'
+        | 'PilcrowRight'
+        | 'Pill'
+        | 'PillBottle'
+        | 'Pin'
+        | 'PinOff'
+        | 'Pipette'
+        | 'Pizza'
+        | 'Plane'
+        | 'PlaneLanding'
+        | 'PlaneTakeoff'
+        | 'Play'
+        | 'Plug'
+        | 'Plug2'
+        | 'PlugZap'
+        | 'Plus'
+        | 'Pocket'
+        | 'PocketKnife'
+        | 'Podcast'
+        | 'Pointer'
+        | 'PointerOff'
+        | 'Popcorn'
+        | 'Popsicle'
+        | 'PoundSterling'
+        | 'Power'
+        | 'PowerOff'
+        | 'Presentation'
+        | 'Printer'
+        | 'PrinterCheck'
+        | 'PrinterX'
+        | 'Projector'
+        | 'Proportions'
+        | 'Puzzle'
+        | 'Pyramid'
+        | 'QrCode'
+        | 'Quote'
+        | 'Rabbit'
+        | 'Radar'
+        | 'Radiation'
+        | 'Radical'
+        | 'Radio'
+        | 'RadioReceiver'
+        | 'RadioTower'
+        | 'Radius'
+        | 'RailSymbol'
+        | 'Rainbow'
+        | 'Rat'
+        | 'Ratio'
+        | 'Receipt'
+        | 'ReceiptCent'
+        | 'ReceiptEuro'
+        | 'ReceiptIndianRupee'
+        | 'ReceiptJapaneseYen'
+        | 'ReceiptPoundSterling'
+        | 'ReceiptRussianRuble'
+        | 'ReceiptSwissFranc'
+        | 'ReceiptText'
+        | 'ReceiptTurkishLira'
+        | 'RectangleCircle'
+        | 'RectangleEllipsis'
+        | 'RectangleGoggles'
+        | 'RectangleHorizontal'
+        | 'RectangleVertical'
+        | 'Recycle'
+        | 'Redo'
+        | 'Redo2'
+        | 'RedoDot'
+        | 'RefreshCcw'
+        | 'RefreshCcwDot'
+        | 'RefreshCw'
+        | 'RefreshCwOff'
+        | 'Refrigerator'
+        | 'Regex'
+        | 'RemoveFormatting'
+        | 'Repeat'
+        | 'Repeat1'
+        | 'Repeat2'
+        | 'Replace'
+        | 'ReplaceAll'
+        | 'Reply'
+        | 'ReplyAll'
+        | 'Rewind'
+        | 'Ribbon'
+        | 'Rocket'
+        | 'RockingChair'
+        | 'RollerCoaster'
+        | 'Rose'
+        | 'Rotate3d'
+        | 'RotateCcw'
+        | 'RotateCcwKey'
+        | 'RotateCcwSquare'
+        | 'RotateCw'
+        | 'RotateCwSquare'
+        | 'Route'
+        | 'RouteOff'
+        | 'Router'
+        | 'Rows2'
+        | 'Rows3'
+        | 'Rows4'
+        | 'Rss'
+        | 'Ruler'
+        | 'RulerDimensionLine'
+        | 'RussianRuble'
+        | 'Sailboat'
+        | 'Salad'
+        | 'Sandwich'
+        | 'Satellite'
+        | 'SatelliteDish'
+        | 'SaudiRiyal'
+        | 'Save'
+        | 'SaveAll'
+        | 'SaveOff'
+        | 'Scale'
+        | 'Scale3d'
+        | 'Scaling'
+        | 'Scan'
+        | 'ScanBarcode'
+        | 'ScanEye'
+        | 'ScanFace'
+        | 'ScanHeart'
+        | 'ScanLine'
+        | 'ScanQrCode'
+        | 'ScanSearch'
+        | 'ScanText'
+        | 'School'
+        | 'Scissors'
+        | 'ScissorsLineDashed'
+        | 'Scooter'
+        | 'ScreenShare'
+        | 'ScreenShareOff'
+        | 'Scroll'
+        | 'ScrollText'
+        | 'Search'
+        | 'SearchAlert'
+        | 'SearchCheck'
+        | 'SearchCode'
+        | 'SearchSlash'
+        | 'SearchX'
+        | 'Section'
+        | 'Send'
+        | 'SendHorizontal'
+        | 'SendToBack'
+        | 'SeparatorHorizontal'
+        | 'SeparatorVertical'
+        | 'Server'
+        | 'ServerCog'
+        | 'ServerCrash'
+        | 'ServerOff'
+        | 'Settings'
+        | 'Settings2'
+        | 'Shapes'
+        | 'Share'
+        | 'Share2'
+        | 'Sheet'
+        | 'Shell'
+        | 'Shield'
+        | 'ShieldAlert'
+        | 'ShieldBan'
+        | 'ShieldCheck'
+        | 'ShieldEllipsis'
+        | 'ShieldHalf'
+        | 'ShieldMinus'
+        | 'ShieldOff'
+        | 'ShieldPlus'
+        | 'ShieldQuestionMark'
+        | 'ShieldUser'
+        | 'ShieldX'
+        | 'Ship'
+        | 'ShipWheel'
+        | 'Shirt'
+        | 'ShoppingBag'
+        | 'ShoppingBasket'
+        | 'ShoppingCart'
+        | 'Shovel'
+        | 'ShowerHead'
+        | 'Shredder'
+        | 'Shrimp'
+        | 'Shrink'
+        | 'Shrub'
+        | 'Shuffle'
+        | 'Sigma'
+        | 'Signal'
+        | 'SignalHigh'
+        | 'SignalLow'
+        | 'SignalMedium'
+        | 'SignalZero'
+        | 'Signature'
+        | 'Signpost'
+        | 'SignpostBig'
+        | 'Siren'
+        | 'SkipBack'
+        | 'SkipForward'
+        | 'Skull'
+        | 'Slack'
+        | 'Slash'
+        | 'Slice'
+        | 'SlidersHorizontal'
+        | 'SlidersVertical'
+        | 'Smartphone'
+        | 'SmartphoneCharging'
+        | 'SmartphoneNfc'
+        | 'Smile'
+        | 'SmilePlus'
+        | 'Snail'
+        | 'Snowflake'
+        | 'SoapDispenserDroplet'
+        | 'Sofa'
+        | 'SolarPanel'
+        | 'Soup'
+        | 'Space'
+        | 'Spade'
+        | 'Sparkle'
+        | 'Sparkles'
+        | 'Speaker'
+        | 'Speech'
+        | 'SpellCheck'
+        | 'SpellCheck2'
+        | 'Spline'
+        | 'SplinePointer'
+        | 'Split'
+        | 'Spool'
+        | 'Spotlight'
+        | 'SprayCan'
+        | 'Sprout'
+        | 'Square'
+        | 'SquareActivity'
+        | 'SquareArrowDown'
+        | 'SquareArrowDownLeft'
+        | 'SquareArrowDownRight'
+        | 'SquareArrowLeft'
+        | 'SquareArrowOutDownLeft'
+        | 'SquareArrowOutDownRight'
+        | 'SquareArrowOutUpLeft'
+        | 'SquareArrowOutUpRight'
+        | 'SquareArrowRight'
+        | 'SquareArrowUp'
+        | 'SquareArrowUpLeft'
+        | 'SquareArrowUpRight'
+        | 'SquareAsterisk'
+        | 'SquareBottomDashedScissors'
+        | 'SquareChartGantt'
+        | 'SquareCheck'
+        | 'SquareCheckBig'
+        | 'SquareChevronDown'
+        | 'SquareChevronLeft'
+        | 'SquareChevronRight'
+        | 'SquareChevronUp'
+        | 'SquareCode'
+        | 'SquareDashed'
+        | 'SquareDashedBottom'
+        | 'SquareDashedBottomCode'
+        | 'SquareDashedKanban'
+        | 'SquareDashedMousePointer'
+        | 'SquareDashedTopSolid'
+        | 'SquareDivide'
+        | 'SquareDot'
+        | 'SquareEqual'
+        | 'SquareFunction'
+        | 'SquareKanban'
+        | 'SquareLibrary'
+        | 'SquareM'
+        | 'SquareMenu'
+        | 'SquareMinus'
+        | 'SquareMousePointer'
+        | 'SquareParking'
+        | 'SquareParkingOff'
+        | 'SquarePause'
+        | 'SquarePen'
+        | 'SquarePercent'
+        | 'SquarePi'
+        | 'SquarePilcrow'
+        | 'SquarePlay'
+        | 'SquarePlus'
+        | 'SquarePower'
+        | 'SquareRadical'
+        | 'SquareRoundCorner'
+        | 'SquareScissors'
+        | 'SquareSigma'
+        | 'SquareSlash'
+        | 'SquareSplitHorizontal'
+        | 'SquareSplitVertical'
+        | 'SquareSquare'
+        | 'SquareStack'
+        | 'SquareStar'
+        | 'SquareStop'
+        | 'SquareTerminal'
+        | 'SquareUser'
+        | 'SquareUserRound'
+        | 'SquareX'
+        | 'SquaresExclude'
+        | 'SquaresIntersect'
+        | 'SquaresSubtract'
+        | 'SquaresUnite'
+        | 'Squircle'
+        | 'SquircleDashed'
+        | 'Squirrel'
+        | 'Stamp'
+        | 'Star'
+        | 'StarHalf'
+        | 'StarOff'
+        | 'StepBack'
+        | 'StepForward'
+        | 'Stethoscope'
+        | 'Sticker'
+        | 'StickyNote'
+        | 'Stone'
+        | 'Store'
+        | 'StretchHorizontal'
+        | 'StretchVertical'
+        | 'Strikethrough'
+        | 'Subscript'
+        | 'Sun'
+        | 'SunDim'
+        | 'SunMedium'
+        | 'SunMoon'
+        | 'SunSnow'
+        | 'Sunrise'
+        | 'Sunset'
+        | 'Superscript'
+        | 'SwatchBook'
+        | 'SwissFranc'
+        | 'SwitchCamera'
+        | 'Sword'
+        | 'Swords'
+        | 'Syringe'
+        | 'Table'
+        | 'Table2'
+        | 'TableCellsMerge'
+        | 'TableCellsSplit'
+        | 'TableColumnsSplit'
+        | 'TableOfContents'
+        | 'TableProperties'
+        | 'TableRowsSplit'
+        | 'Tablet'
+        | 'TabletSmartphone'
+        | 'Tablets'
+        | 'Tag'
+        | 'Tags'
+        | 'Tally1'
+        | 'Tally2'
+        | 'Tally3'
+        | 'Tally4'
+        | 'Tally5'
+        | 'Tangent'
+        | 'Target'
+        | 'Telescope'
+        | 'Tent'
+        | 'TentTree'
+        | 'Terminal'
+        | 'TestTube'
+        | 'TestTubeDiagonal'
+        | 'TestTubes'
+        | 'TextAlignCenter'
+        | 'TextAlignEnd'
+        | 'TextAlignJustify'
+        | 'TextAlignStart'
+        | 'TextCursor'
+        | 'TextCursorInput'
+        | 'TextInitial'
+        | 'TextQuote'
+        | 'TextSearch'
+        | 'TextSelect'
+        | 'TextWrap'
+        | 'Theater'
+        | 'Thermometer'
+        | 'ThermometerSnowflake'
+        | 'ThermometerSun'
+        | 'ThumbsDown'
+        | 'ThumbsUp'
+        | 'Ticket'
+        | 'TicketCheck'
+        | 'TicketMinus'
+        | 'TicketPercent'
+        | 'TicketPlus'
+        | 'TicketSlash'
+        | 'TicketX'
+        | 'Tickets'
+        | 'TicketsPlane'
+        | 'Timer'
+        | 'TimerOff'
+        | 'TimerReset'
+        | 'ToggleLeft'
+        | 'ToggleRight'
+        | 'Toilet'
+        | 'ToolCase'
+        | 'Toolbox'
+        | 'Tornado'
+        | 'Torus'
+        | 'Touchpad'
+        | 'TouchpadOff'
+        | 'TowerControl'
+        | 'ToyBrick'
+        | 'Tractor'
+        | 'TrafficCone'
+        | 'TrainFront'
+        | 'TrainFrontTunnel'
+        | 'TrainTrack'
+        | 'TramFront'
+        | 'Transgender'
+        | 'Trash'
+        | 'Trash2'
+        | 'TreeDeciduous'
+        | 'TreePalm'
+        | 'TreePine'
+        | 'Trees'
+        | 'Trello'
+        | 'TrendingDown'
+        | 'TrendingUp'
+        | 'TrendingUpDown'
+        | 'Triangle'
+        | 'TriangleAlert'
+        | 'TriangleDashed'
+        | 'TriangleRight'
+        | 'Trophy'
+        | 'Truck'
+        | 'TruckElectric'
+        | 'TurkishLira'
+        | 'Turntable'
+        | 'Turtle'
+        | 'Tv'
+        | 'TvMinimal'
+        | 'TvMinimalPlay'
+        | 'Twitch'
+        | 'Twitter'
+        | 'Type'
+        | 'TypeOutline'
+        | 'Umbrella'
+        | 'UmbrellaOff'
+        | 'Underline'
+        | 'Undo'
+        | 'Undo2'
+        | 'UndoDot'
+        | 'UnfoldHorizontal'
+        | 'UnfoldVertical'
+        | 'Ungroup'
+        | 'University'
+        | 'Unlink'
+        | 'Unlink2'
+        | 'Unplug'
+        | 'Upload'
+        | 'Usb'
+        | 'User'
+        | 'UserCheck'
+        | 'UserCog'
+        | 'UserLock'
+        | 'UserMinus'
+        | 'UserPen'
+        | 'UserPlus'
+        | 'UserRound'
+        | 'UserRoundCheck'
+        | 'UserRoundCog'
+        | 'UserRoundMinus'
+        | 'UserRoundPen'
+        | 'UserRoundPlus'
+        | 'UserRoundSearch'
+        | 'UserRoundX'
+        | 'UserSearch'
+        | 'UserStar'
+        | 'UserX'
+        | 'Users'
+        | 'UsersRound'
+        | 'Utensils'
+        | 'UtensilsCrossed'
+        | 'UtilityPole'
+        | 'Van'
+        | 'Variable'
+        | 'Vault'
+        | 'VectorSquare'
+        | 'Vegan'
+        | 'VenetianMask'
+        | 'Venus'
+        | 'VenusAndMars'
+        | 'Vibrate'
+        | 'VibrateOff'
+        | 'Video'
+        | 'VideoOff'
+        | 'Videotape'
+        | 'View'
+        | 'Voicemail'
+        | 'Volleyball'
+        | 'Volume'
+        | 'Volume1'
+        | 'Volume2'
+        | 'VolumeOff'
+        | 'VolumeX'
+        | 'Vote'
+        | 'Wallet'
+        | 'WalletCards'
+        | 'WalletMinimal'
+        | 'Wallpaper'
+        | 'Wand'
+        | 'WandSparkles'
+        | 'Warehouse'
+        | 'WashingMachine'
+        | 'Watch'
+        | 'Waves'
+        | 'WavesArrowDown'
+        | 'WavesArrowUp'
+        | 'WavesLadder'
+        | 'Waypoints'
+        | 'Webcam'
+        | 'Webhook'
+        | 'WebhookOff'
+        | 'Weight'
+        | 'WeightTilde'
+        | 'Wheat'
+        | 'WheatOff'
+        | 'WholeWord'
+        | 'Wifi'
+        | 'WifiCog'
+        | 'WifiHigh'
+        | 'WifiLow'
+        | 'WifiOff'
+        | 'WifiPen'
+        | 'WifiSync'
+        | 'WifiZero'
+        | 'Wind'
+        | 'WindArrowDown'
+        | 'Wine'
+        | 'WineOff'
+        | 'Workflow'
+        | 'Worm'
+        | 'Wrench'
+        | 'X'
+        | 'Youtube'
+        | 'Zap'
+        | 'ZapOff'
+        | 'ZoomIn'
+        | 'ZoomOut';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       product:
         | 'web'
@@ -19935,288 +21604,6 @@ export type Database = {
         | 'gemini-2.5-pro'
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
-      workspace_board_icon:
-        | 'Users'
-        | 'User'
-        | 'Briefcase'
-        | 'Target'
-        | 'Rocket'
-        | 'TrendingUp'
-        | 'ClipboardList'
-        | 'ListChecks'
-        | 'CheckSquare'
-        | 'Calendar'
-        | 'CalendarDays'
-        | 'CalendarCheck'
-        | 'Clock'
-        | 'AlarmClock'
-        | 'Bell'
-        | 'Star'
-        | 'Settings'
-        | 'Shield'
-        | 'Tag'
-        | 'Folder'
-        | 'FolderOpen'
-        | 'FileText'
-        | 'Database'
-        | 'Server'
-        | 'Inbox'
-        | 'Mail'
-        | 'MessageSquare'
-        | 'Phone'
-        | 'Video'
-        | 'Mic'
-        | 'Image'
-        | 'Paperclip'
-        | 'Link'
-        | 'ExternalLink'
-        | 'Download'
-        | 'Upload'
-        | 'Search'
-        | 'Eye'
-        | 'EyeOff'
-        | 'Lock'
-        | 'Key'
-        | 'Wrench'
-        | 'Paintbrush'
-        | 'Wand2'
-        | 'Lightbulb'
-        | 'Bug'
-        | 'GraduationCap'
-        | 'BookOpen'
-        | 'Bookmark'
-        | 'Newspaper'
-        | 'PieChart'
-        | 'Play'
-        | 'PlusSquare'
-        | 'Puzzle'
-        | 'Package'
-        | 'Truck'
-        | 'Monitor'
-        | 'Laptop'
-        | 'Music'
-        | 'Timer'
-        | 'Trash2'
-        | 'Heart'
-        | 'HelpCircle'
-        | 'Moon'
-        | 'Zap'
-        | 'Flame'
-        | 'Gift'
-        | 'Globe'
-        | 'MapPin'
-        | 'Home'
-        | 'Building2'
-        | 'ShoppingCart'
-        | 'CreditCard'
-        | 'Wallet'
-        | 'ThumbsUp'
-        | 'Trophy'
-        | 'Smartphone'
-        | 'Tablet'
-        | 'Cpu'
-        | 'HardDrive'
-        | 'Wifi'
-        | 'Bluetooth'
-        | 'Camera'
-        | 'Headphones'
-        | 'Speaker'
-        | 'Tv'
-        | 'Printer'
-        | 'Keyboard'
-        | 'Mouse'
-        | 'DollarSign'
-        | 'Banknote'
-        | 'Receipt'
-        | 'Calculator'
-        | 'TrendingDown'
-        | 'BarChart'
-        | 'BarChart2'
-        | 'LineChart'
-        | 'Activity'
-        | 'Coins'
-        | 'PiggyBank'
-        | 'Send'
-        | 'AtSign'
-        | 'Hash'
-        | 'MessageCircle'
-        | 'MessagesSquare'
-        | 'Share'
-        | 'Share2'
-        | 'Megaphone'
-        | 'Radio'
-        | 'Rss'
-        | 'File'
-        | 'FileCode'
-        | 'FileImage'
-        | 'FileAudio'
-        | 'FileVideo'
-        | 'FileSpreadsheet'
-        | 'FileCheck'
-        | 'FilePlus'
-        | 'FolderPlus'
-        | 'FolderCheck'
-        | 'Archive'
-        | 'ClipboardCheck'
-        | 'UserPlus'
-        | 'UserCheck'
-        | 'UserX'
-        | 'UserMinus'
-        | 'UsersRound'
-        | 'UserRound'
-        | 'Crown'
-        | 'Contact'
-        | 'Handshake'
-        | 'Map'
-        | 'Navigation'
-        | 'Compass'
-        | 'Locate'
-        | 'Milestone'
-        | 'Signpost'
-        | 'Route'
-        | 'Sun'
-        | 'Cloud'
-        | 'CloudRain'
-        | 'Snowflake'
-        | 'Wind'
-        | 'Thermometer'
-        | 'Umbrella'
-        | 'Rainbow'
-        | 'Leaf'
-        | 'Trees'
-        | 'Flower2'
-        | 'Mountain'
-        | 'HeartPulse'
-        | 'Stethoscope'
-        | 'Pill'
-        | 'Syringe'
-        | 'Dumbbell'
-        | 'Bike'
-        | 'Footprints'
-        | 'Brain'
-        | 'Salad'
-        | 'UtensilsCrossed'
-        | 'Coffee'
-        | 'Wine'
-        | 'Beer'
-        | 'Pizza'
-        | 'Cake'
-        | 'Cookie'
-        | 'IceCream2'
-        | 'Apple'
-        | 'Plane'
-        | 'Car'
-        | 'Bus'
-        | 'Train'
-        | 'Ship'
-        | 'Anchor'
-        | 'Luggage'
-        | 'Ticket'
-        | 'Hotel'
-        | 'Gamepad2'
-        | 'Dice1'
-        | 'Clapperboard'
-        | 'Popcorn'
-        | 'Drama'
-        | 'PartyPopper'
-        | 'Sparkles'
-        | 'Film'
-        | 'Tv2'
-        | 'Book'
-        | 'Library'
-        | 'PenTool'
-        | 'Highlighter'
-        | 'Ruler'
-        | 'School'
-        | 'Presentation'
-        | 'Languages'
-        | 'FlaskConical'
-        | 'Microscope'
-        | 'Atom'
-        | 'Dna'
-        | 'Telescope'
-        | 'Orbit'
-        | 'Satellite'
-        | 'Code'
-        | 'Code2'
-        | 'Terminal'
-        | 'GitBranch'
-        | 'GitMerge'
-        | 'GitPullRequest'
-        | 'Hammer'
-        | 'Axe'
-        | 'Scissors'
-        | 'Brush'
-        | 'Palette'
-        | 'Pipette'
-        | 'Eraser'
-        | 'CircleDot'
-        | 'Square'
-        | 'Triangle'
-        | 'Pentagon'
-        | 'Hexagon'
-        | 'Octagon'
-        | 'Diamond'
-        | 'Shapes'
-        | 'ShieldCheck'
-        | 'ShieldAlert'
-        | 'Fingerprint'
-        | 'ScanFace'
-        | 'KeyRound'
-        | 'LockKeyhole'
-        | 'UnlockKeyhole'
-        | 'Armchair'
-        | 'Bed'
-        | 'Bath'
-        | 'Lamp'
-        | 'Sofa'
-        | 'Shirt'
-        | 'Watch'
-        | 'Glasses'
-        | 'Gem'
-        | 'Award'
-        | 'Medal'
-        | 'BadgeCheck'
-        | 'Flag'
-        | 'Bookmark2'
-        | 'Pin'
-        | 'Magnet'
-        | 'Battery'
-        | 'Power'
-        | 'Plug'
-        | 'Infinity'
-        | 'QrCode'
-        | 'Barcode'
-        | 'Scan'
-        | 'Bot'
-        | 'BrainCircuit'
-        | 'Sparkle'
-        | 'Blocks'
-        | 'Layers'
-        | 'LayoutGrid'
-        | 'LayoutList'
-        | 'LayoutDashboard'
-        | 'ArrowRight'
-        | 'ArrowUp'
-        | 'ArrowDown'
-        | 'ArrowLeft'
-        | 'RefreshCw'
-        | 'RotateCcw'
-        | 'Repeat'
-        | 'Shuffle'
-        | 'Move'
-        | 'Maximize2'
-        | 'Minimize2'
-        | 'AlertCircle'
-        | 'AlertTriangle'
-        | 'Info'
-        | 'CircleCheck'
-        | 'CircleX'
-        | 'CircleAlert'
-        | 'BellRing'
-        | 'BellOff'
-        | 'Fuel'
-        | 'WashingMachine';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
       workspace_pricing_model: 'fixed' | 'seat_based';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
@@ -20494,6 +21881,1676 @@ export const Constants = {
         'finalized',
         'cancelled',
       ],
+      platform_icon: [
+        'AArrowDown',
+        'AArrowUp',
+        'ALargeSmall',
+        'Accessibility',
+        'Activity',
+        'AirVent',
+        'Airplay',
+        'AlarmClock',
+        'AlarmClockCheck',
+        'AlarmClockMinus',
+        'AlarmClockOff',
+        'AlarmClockPlus',
+        'AlarmSmoke',
+        'Album',
+        'AlignCenterHorizontal',
+        'AlignCenterVertical',
+        'AlignEndHorizontal',
+        'AlignEndVertical',
+        'AlignHorizontalDistributeCenter',
+        'AlignHorizontalDistributeEnd',
+        'AlignHorizontalDistributeStart',
+        'AlignHorizontalJustifyCenter',
+        'AlignHorizontalJustifyEnd',
+        'AlignHorizontalJustifyStart',
+        'AlignHorizontalSpaceAround',
+        'AlignHorizontalSpaceBetween',
+        'AlignStartHorizontal',
+        'AlignStartVertical',
+        'AlignVerticalDistributeCenter',
+        'AlignVerticalDistributeEnd',
+        'AlignVerticalDistributeStart',
+        'AlignVerticalJustifyCenter',
+        'AlignVerticalJustifyEnd',
+        'AlignVerticalJustifyStart',
+        'AlignVerticalSpaceAround',
+        'AlignVerticalSpaceBetween',
+        'Ambulance',
+        'Ampersand',
+        'Ampersands',
+        'Amphora',
+        'Anchor',
+        'Angry',
+        'Annoyed',
+        'Antenna',
+        'Anvil',
+        'Aperture',
+        'AppWindow',
+        'AppWindowMac',
+        'Apple',
+        'Archive',
+        'ArchiveRestore',
+        'ArchiveX',
+        'Armchair',
+        'ArrowBigDown',
+        'ArrowBigDownDash',
+        'ArrowBigLeft',
+        'ArrowBigLeftDash',
+        'ArrowBigRight',
+        'ArrowBigRightDash',
+        'ArrowBigUp',
+        'ArrowBigUpDash',
+        'ArrowDown',
+        'ArrowDown01',
+        'ArrowDown10',
+        'ArrowDownAZ',
+        'ArrowDownFromLine',
+        'ArrowDownLeft',
+        'ArrowDownNarrowWide',
+        'ArrowDownRight',
+        'ArrowDownToDot',
+        'ArrowDownToLine',
+        'ArrowDownUp',
+        'ArrowDownWideNarrow',
+        'ArrowDownZA',
+        'ArrowLeft',
+        'ArrowLeftFromLine',
+        'ArrowLeftRight',
+        'ArrowLeftToLine',
+        'ArrowRight',
+        'ArrowRightFromLine',
+        'ArrowRightLeft',
+        'ArrowRightToLine',
+        'ArrowUp',
+        'ArrowUp01',
+        'ArrowUp10',
+        'ArrowUpAZ',
+        'ArrowUpDown',
+        'ArrowUpFromDot',
+        'ArrowUpFromLine',
+        'ArrowUpLeft',
+        'ArrowUpNarrowWide',
+        'ArrowUpRight',
+        'ArrowUpToLine',
+        'ArrowUpWideNarrow',
+        'ArrowUpZA',
+        'ArrowsUpFromLine',
+        'Asterisk',
+        'AtSign',
+        'Atom',
+        'AudioLines',
+        'AudioWaveform',
+        'Award',
+        'Axe',
+        'Axis3d',
+        'Baby',
+        'Backpack',
+        'Badge',
+        'BadgeAlert',
+        'BadgeCent',
+        'BadgeCheck',
+        'BadgeDollarSign',
+        'BadgeEuro',
+        'BadgeIndianRupee',
+        'BadgeInfo',
+        'BadgeJapaneseYen',
+        'BadgeMinus',
+        'BadgePercent',
+        'BadgePlus',
+        'BadgePoundSterling',
+        'BadgeQuestionMark',
+        'BadgeRussianRuble',
+        'BadgeSwissFranc',
+        'BadgeTurkishLira',
+        'BadgeX',
+        'BaggageClaim',
+        'Balloon',
+        'Ban',
+        'Banana',
+        'Bandage',
+        'Banknote',
+        'BanknoteArrowDown',
+        'BanknoteArrowUp',
+        'BanknoteX',
+        'Barcode',
+        'Barrel',
+        'Baseline',
+        'Bath',
+        'Battery',
+        'BatteryCharging',
+        'BatteryFull',
+        'BatteryLow',
+        'BatteryMedium',
+        'BatteryPlus',
+        'BatteryWarning',
+        'Beaker',
+        'Bean',
+        'BeanOff',
+        'Bed',
+        'BedDouble',
+        'BedSingle',
+        'Beef',
+        'Beer',
+        'BeerOff',
+        'Bell',
+        'BellDot',
+        'BellElectric',
+        'BellMinus',
+        'BellOff',
+        'BellPlus',
+        'BellRing',
+        'BetweenHorizontalEnd',
+        'BetweenHorizontalStart',
+        'BetweenVerticalEnd',
+        'BetweenVerticalStart',
+        'BicepsFlexed',
+        'Bike',
+        'Binary',
+        'Binoculars',
+        'Biohazard',
+        'Bird',
+        'Birdhouse',
+        'Bitcoin',
+        'Blend',
+        'Blinds',
+        'Blocks',
+        'Bluetooth',
+        'BluetoothConnected',
+        'BluetoothOff',
+        'BluetoothSearching',
+        'Bold',
+        'Bolt',
+        'Bomb',
+        'Bone',
+        'Book',
+        'BookA',
+        'BookAlert',
+        'BookAudio',
+        'BookCheck',
+        'BookCopy',
+        'BookDashed',
+        'BookDown',
+        'BookHeadphones',
+        'BookHeart',
+        'BookImage',
+        'BookKey',
+        'BookLock',
+        'BookMarked',
+        'BookMinus',
+        'BookOpen',
+        'BookOpenCheck',
+        'BookOpenText',
+        'BookPlus',
+        'BookSearch',
+        'BookText',
+        'BookType',
+        'BookUp',
+        'BookUp2',
+        'BookUser',
+        'BookX',
+        'Bookmark',
+        'BookmarkCheck',
+        'BookmarkMinus',
+        'BookmarkPlus',
+        'BookmarkX',
+        'BoomBox',
+        'Bot',
+        'BotMessageSquare',
+        'BotOff',
+        'BottleWine',
+        'BowArrow',
+        'Box',
+        'Boxes',
+        'Braces',
+        'Brackets',
+        'Brain',
+        'BrainCircuit',
+        'BrainCog',
+        'BrickWall',
+        'BrickWallFire',
+        'BrickWallShield',
+        'Briefcase',
+        'BriefcaseBusiness',
+        'BriefcaseConveyorBelt',
+        'BriefcaseMedical',
+        'BringToFront',
+        'Brush',
+        'BrushCleaning',
+        'Bubbles',
+        'Bug',
+        'BugOff',
+        'BugPlay',
+        'Building',
+        'Building2',
+        'Bus',
+        'BusFront',
+        'Cable',
+        'CableCar',
+        'Cake',
+        'CakeSlice',
+        'Calculator',
+        'Calendar',
+        'Calendar1',
+        'CalendarArrowDown',
+        'CalendarArrowUp',
+        'CalendarCheck',
+        'CalendarCheck2',
+        'CalendarClock',
+        'CalendarCog',
+        'CalendarDays',
+        'CalendarFold',
+        'CalendarHeart',
+        'CalendarMinus',
+        'CalendarMinus2',
+        'CalendarOff',
+        'CalendarPlus',
+        'CalendarPlus2',
+        'CalendarRange',
+        'CalendarSearch',
+        'CalendarSync',
+        'CalendarX',
+        'CalendarX2',
+        'Calendars',
+        'Camera',
+        'CameraOff',
+        'Candy',
+        'CandyCane',
+        'CandyOff',
+        'Cannabis',
+        'CannabisOff',
+        'Captions',
+        'CaptionsOff',
+        'Car',
+        'CarFront',
+        'CarTaxiFront',
+        'Caravan',
+        'CardSim',
+        'Carrot',
+        'CaseLower',
+        'CaseSensitive',
+        'CaseUpper',
+        'CassetteTape',
+        'Cast',
+        'Castle',
+        'Cat',
+        'Cctv',
+        'ChartArea',
+        'ChartBar',
+        'ChartBarBig',
+        'ChartBarDecreasing',
+        'ChartBarIncreasing',
+        'ChartBarStacked',
+        'ChartCandlestick',
+        'ChartColumn',
+        'ChartColumnBig',
+        'ChartColumnDecreasing',
+        'ChartColumnIncreasing',
+        'ChartColumnStacked',
+        'ChartGantt',
+        'ChartLine',
+        'ChartNetwork',
+        'ChartNoAxesColumn',
+        'ChartNoAxesColumnDecreasing',
+        'ChartNoAxesColumnIncreasing',
+        'ChartNoAxesCombined',
+        'ChartNoAxesGantt',
+        'ChartPie',
+        'ChartScatter',
+        'ChartSpline',
+        'Check',
+        'CheckCheck',
+        'CheckLine',
+        'ChefHat',
+        'Cherry',
+        'ChessBishop',
+        'ChessKing',
+        'ChessKnight',
+        'ChessPawn',
+        'ChessQueen',
+        'ChessRook',
+        'ChevronDown',
+        'ChevronFirst',
+        'ChevronLast',
+        'ChevronLeft',
+        'ChevronRight',
+        'ChevronUp',
+        'ChevronsDown',
+        'ChevronsDownUp',
+        'ChevronsLeft',
+        'ChevronsLeftRight',
+        'ChevronsLeftRightEllipsis',
+        'ChevronsRight',
+        'ChevronsRightLeft',
+        'ChevronsUp',
+        'ChevronsUpDown',
+        'Chromium',
+        'Church',
+        'Cigarette',
+        'CigaretteOff',
+        'Circle',
+        'CircleAlert',
+        'CircleArrowDown',
+        'CircleArrowLeft',
+        'CircleArrowOutDownLeft',
+        'CircleArrowOutDownRight',
+        'CircleArrowOutUpLeft',
+        'CircleArrowOutUpRight',
+        'CircleArrowRight',
+        'CircleArrowUp',
+        'CircleCheck',
+        'CircleCheckBig',
+        'CircleChevronDown',
+        'CircleChevronLeft',
+        'CircleChevronRight',
+        'CircleChevronUp',
+        'CircleDashed',
+        'CircleDivide',
+        'CircleDollarSign',
+        'CircleDot',
+        'CircleDotDashed',
+        'CircleEllipsis',
+        'CircleEqual',
+        'CircleFadingArrowUp',
+        'CircleFadingPlus',
+        'CircleGauge',
+        'CircleMinus',
+        'CircleOff',
+        'CircleParking',
+        'CircleParkingOff',
+        'CirclePause',
+        'CirclePercent',
+        'CirclePile',
+        'CirclePlay',
+        'CirclePlus',
+        'CirclePoundSterling',
+        'CirclePower',
+        'CircleQuestionMark',
+        'CircleSlash',
+        'CircleSlash2',
+        'CircleSmall',
+        'CircleStar',
+        'CircleStop',
+        'CircleUser',
+        'CircleUserRound',
+        'CircleX',
+        'CircuitBoard',
+        'Citrus',
+        'Clapperboard',
+        'Clipboard',
+        'ClipboardCheck',
+        'ClipboardClock',
+        'ClipboardCopy',
+        'ClipboardList',
+        'ClipboardMinus',
+        'ClipboardPaste',
+        'ClipboardPen',
+        'ClipboardPenLine',
+        'ClipboardPlus',
+        'ClipboardType',
+        'ClipboardX',
+        'Clock',
+        'Clock1',
+        'Clock10',
+        'Clock11',
+        'Clock12',
+        'Clock2',
+        'Clock3',
+        'Clock4',
+        'Clock5',
+        'Clock6',
+        'Clock7',
+        'Clock8',
+        'Clock9',
+        'ClockAlert',
+        'ClockArrowDown',
+        'ClockArrowUp',
+        'ClockCheck',
+        'ClockFading',
+        'ClockPlus',
+        'ClosedCaption',
+        'Cloud',
+        'CloudAlert',
+        'CloudBackup',
+        'CloudCheck',
+        'CloudCog',
+        'CloudDownload',
+        'CloudDrizzle',
+        'CloudFog',
+        'CloudHail',
+        'CloudLightning',
+        'CloudMoon',
+        'CloudMoonRain',
+        'CloudOff',
+        'CloudRain',
+        'CloudRainWind',
+        'CloudSnow',
+        'CloudSun',
+        'CloudSunRain',
+        'CloudSync',
+        'CloudUpload',
+        'Cloudy',
+        'Clover',
+        'Club',
+        'Code',
+        'CodeXml',
+        'Codepen',
+        'Codesandbox',
+        'Coffee',
+        'Cog',
+        'Coins',
+        'Columns2',
+        'Columns3',
+        'Columns3Cog',
+        'Columns4',
+        'Combine',
+        'Command',
+        'Compass',
+        'Component',
+        'Computer',
+        'ConciergeBell',
+        'Cone',
+        'Construction',
+        'Contact',
+        'ContactRound',
+        'Container',
+        'Contrast',
+        'Cookie',
+        'CookingPot',
+        'Copy',
+        'CopyCheck',
+        'CopyMinus',
+        'CopyPlus',
+        'CopySlash',
+        'CopyX',
+        'Copyleft',
+        'Copyright',
+        'CornerDownLeft',
+        'CornerDownRight',
+        'CornerLeftDown',
+        'CornerLeftUp',
+        'CornerRightDown',
+        'CornerRightUp',
+        'CornerUpLeft',
+        'CornerUpRight',
+        'Cpu',
+        'CreativeCommons',
+        'CreditCard',
+        'Croissant',
+        'Crop',
+        'Cross',
+        'Crosshair',
+        'Crown',
+        'Cuboid',
+        'CupSoda',
+        'Currency',
+        'Cylinder',
+        'Dam',
+        'Database',
+        'DatabaseBackup',
+        'DatabaseZap',
+        'DecimalsArrowLeft',
+        'DecimalsArrowRight',
+        'Delete',
+        'Dessert',
+        'Diameter',
+        'Diamond',
+        'DiamondMinus',
+        'DiamondPercent',
+        'DiamondPlus',
+        'Dice1',
+        'Dice2',
+        'Dice3',
+        'Dice4',
+        'Dice5',
+        'Dice6',
+        'Dices',
+        'Diff',
+        'Disc',
+        'Disc2',
+        'Disc3',
+        'DiscAlbum',
+        'Divide',
+        'Dna',
+        'DnaOff',
+        'Dock',
+        'Dog',
+        'DollarSign',
+        'Donut',
+        'DoorClosed',
+        'DoorClosedLocked',
+        'DoorOpen',
+        'Dot',
+        'Download',
+        'DraftingCompass',
+        'Drama',
+        'Dribbble',
+        'Drill',
+        'Drone',
+        'Droplet',
+        'DropletOff',
+        'Droplets',
+        'Drum',
+        'Drumstick',
+        'Dumbbell',
+        'Ear',
+        'EarOff',
+        'Earth',
+        'EarthLock',
+        'Eclipse',
+        'Egg',
+        'EggFried',
+        'EggOff',
+        'Ellipsis',
+        'EllipsisVertical',
+        'Equal',
+        'EqualApproximately',
+        'EqualNot',
+        'Eraser',
+        'EthernetPort',
+        'Euro',
+        'EvCharger',
+        'Expand',
+        'ExternalLink',
+        'Eye',
+        'EyeClosed',
+        'EyeOff',
+        'Facebook',
+        'Factory',
+        'Fan',
+        'FastForward',
+        'Feather',
+        'Fence',
+        'FerrisWheel',
+        'Figma',
+        'File',
+        'FileArchive',
+        'FileAxis3d',
+        'FileBadge',
+        'FileBox',
+        'FileBraces',
+        'FileBracesCorner',
+        'FileChartColumn',
+        'FileChartColumnIncreasing',
+        'FileChartLine',
+        'FileChartPie',
+        'FileCheck',
+        'FileCheckCorner',
+        'FileClock',
+        'FileCode',
+        'FileCodeCorner',
+        'FileCog',
+        'FileDiff',
+        'FileDigit',
+        'FileDown',
+        'FileExclamationPoint',
+        'FileHeadphone',
+        'FileHeart',
+        'FileImage',
+        'FileInput',
+        'FileKey',
+        'FileLock',
+        'FileMinus',
+        'FileMinusCorner',
+        'FileMusic',
+        'FileOutput',
+        'FilePen',
+        'FilePenLine',
+        'FilePlay',
+        'FilePlus',
+        'FilePlusCorner',
+        'FileQuestionMark',
+        'FileScan',
+        'FileSearch',
+        'FileSearchCorner',
+        'FileSignal',
+        'FileSliders',
+        'FileSpreadsheet',
+        'FileStack',
+        'FileSymlink',
+        'FileTerminal',
+        'FileText',
+        'FileType',
+        'FileTypeCorner',
+        'FileUp',
+        'FileUser',
+        'FileVideoCamera',
+        'FileVolume',
+        'FileX',
+        'FileXCorner',
+        'Files',
+        'Film',
+        'FingerprintPattern',
+        'FireExtinguisher',
+        'Fish',
+        'FishOff',
+        'FishSymbol',
+        'FishingHook',
+        'Flag',
+        'FlagOff',
+        'FlagTriangleLeft',
+        'FlagTriangleRight',
+        'Flame',
+        'FlameKindling',
+        'Flashlight',
+        'FlashlightOff',
+        'FlaskConical',
+        'FlaskConicalOff',
+        'FlaskRound',
+        'FlipHorizontal',
+        'FlipHorizontal2',
+        'FlipVertical',
+        'FlipVertical2',
+        'Flower',
+        'Flower2',
+        'Focus',
+        'FoldHorizontal',
+        'FoldVertical',
+        'Folder',
+        'FolderArchive',
+        'FolderCheck',
+        'FolderClock',
+        'FolderClosed',
+        'FolderCode',
+        'FolderCog',
+        'FolderDot',
+        'FolderDown',
+        'FolderGit',
+        'FolderGit2',
+        'FolderHeart',
+        'FolderInput',
+        'FolderKanban',
+        'FolderKey',
+        'FolderLock',
+        'FolderMinus',
+        'FolderOpen',
+        'FolderOpenDot',
+        'FolderOutput',
+        'FolderPen',
+        'FolderPlus',
+        'FolderRoot',
+        'FolderSearch',
+        'FolderSearch2',
+        'FolderSymlink',
+        'FolderSync',
+        'FolderTree',
+        'FolderUp',
+        'FolderX',
+        'Folders',
+        'Footprints',
+        'Forklift',
+        'Form',
+        'Forward',
+        'Frame',
+        'Framer',
+        'Frown',
+        'Fuel',
+        'Fullscreen',
+        'Funnel',
+        'FunnelPlus',
+        'FunnelX',
+        'GalleryHorizontal',
+        'GalleryHorizontalEnd',
+        'GalleryThumbnails',
+        'GalleryVertical',
+        'GalleryVerticalEnd',
+        'Gamepad',
+        'Gamepad2',
+        'GamepadDirectional',
+        'Gauge',
+        'Gavel',
+        'Gem',
+        'GeorgianLari',
+        'Ghost',
+        'Gift',
+        'GitBranch',
+        'GitBranchMinus',
+        'GitBranchPlus',
+        'GitCommitHorizontal',
+        'GitCommitVertical',
+        'GitCompare',
+        'GitCompareArrows',
+        'GitFork',
+        'GitGraph',
+        'GitMerge',
+        'GitPullRequest',
+        'GitPullRequestArrow',
+        'GitPullRequestClosed',
+        'GitPullRequestCreate',
+        'GitPullRequestCreateArrow',
+        'GitPullRequestDraft',
+        'Github',
+        'Gitlab',
+        'GlassWater',
+        'Glasses',
+        'Globe',
+        'GlobeLock',
+        'GlobeX',
+        'Goal',
+        'Gpu',
+        'GraduationCap',
+        'Grape',
+        'Grid2x2',
+        'Grid2x2Check',
+        'Grid2x2Plus',
+        'Grid2x2X',
+        'Grid3x2',
+        'Grid3x3',
+        'Grip',
+        'GripHorizontal',
+        'GripVertical',
+        'Group',
+        'Guitar',
+        'Ham',
+        'Hamburger',
+        'Hammer',
+        'Hand',
+        'HandCoins',
+        'HandFist',
+        'HandGrab',
+        'HandHeart',
+        'HandHelping',
+        'HandMetal',
+        'HandPlatter',
+        'Handbag',
+        'Handshake',
+        'HardDrive',
+        'HardDriveDownload',
+        'HardDriveUpload',
+        'HardHat',
+        'Hash',
+        'HatGlasses',
+        'Haze',
+        'Hd',
+        'HdmiPort',
+        'Heading',
+        'Heading1',
+        'Heading2',
+        'Heading3',
+        'Heading4',
+        'Heading5',
+        'Heading6',
+        'HeadphoneOff',
+        'Headphones',
+        'Headset',
+        'Heart',
+        'HeartCrack',
+        'HeartHandshake',
+        'HeartMinus',
+        'HeartOff',
+        'HeartPlus',
+        'HeartPulse',
+        'Heater',
+        'Helicopter',
+        'Hexagon',
+        'Highlighter',
+        'History',
+        'Hop',
+        'HopOff',
+        'Hospital',
+        'Hotel',
+        'Hourglass',
+        'House',
+        'HouseHeart',
+        'HousePlug',
+        'HousePlus',
+        'HouseWifi',
+        'IceCreamBowl',
+        'IceCreamCone',
+        'IdCard',
+        'IdCardLanyard',
+        'Image',
+        'ImageDown',
+        'ImageMinus',
+        'ImageOff',
+        'ImagePlay',
+        'ImagePlus',
+        'ImageUp',
+        'ImageUpscale',
+        'Images',
+        'Import',
+        'Inbox',
+        'IndianRupee',
+        'Infinity',
+        'Info',
+        'InspectionPanel',
+        'Instagram',
+        'Italic',
+        'IterationCcw',
+        'IterationCw',
+        'JapaneseYen',
+        'Joystick',
+        'Kanban',
+        'Kayak',
+        'Key',
+        'KeyRound',
+        'KeySquare',
+        'Keyboard',
+        'KeyboardMusic',
+        'KeyboardOff',
+        'Lamp',
+        'LampCeiling',
+        'LampDesk',
+        'LampFloor',
+        'LampWallDown',
+        'LampWallUp',
+        'LandPlot',
+        'Landmark',
+        'Languages',
+        'Laptop',
+        'LaptopMinimal',
+        'LaptopMinimalCheck',
+        'Lasso',
+        'LassoSelect',
+        'Laugh',
+        'Layers',
+        'Layers2',
+        'LayersPlus',
+        'LayoutDashboard',
+        'LayoutGrid',
+        'LayoutList',
+        'LayoutPanelLeft',
+        'LayoutPanelTop',
+        'LayoutTemplate',
+        'Leaf',
+        'LeafyGreen',
+        'Lectern',
+        'Library',
+        'LibraryBig',
+        'LifeBuoy',
+        'Ligature',
+        'Lightbulb',
+        'LightbulbOff',
+        'LineSquiggle',
+        'Link',
+        'Link2',
+        'Link2Off',
+        'Linkedin',
+        'List',
+        'ListCheck',
+        'ListChecks',
+        'ListChevronsDownUp',
+        'ListChevronsUpDown',
+        'ListCollapse',
+        'ListEnd',
+        'ListFilter',
+        'ListFilterPlus',
+        'ListIndentDecrease',
+        'ListIndentIncrease',
+        'ListMinus',
+        'ListMusic',
+        'ListOrdered',
+        'ListPlus',
+        'ListRestart',
+        'ListStart',
+        'ListTodo',
+        'ListTree',
+        'ListVideo',
+        'ListX',
+        'Loader',
+        'LoaderCircle',
+        'LoaderPinwheel',
+        'Locate',
+        'LocateFixed',
+        'LocateOff',
+        'Lock',
+        'LockKeyhole',
+        'LockKeyholeOpen',
+        'LockOpen',
+        'LogIn',
+        'LogOut',
+        'Logs',
+        'Lollipop',
+        'Luggage',
+        'Magnet',
+        'Mail',
+        'MailCheck',
+        'MailMinus',
+        'MailOpen',
+        'MailPlus',
+        'MailQuestionMark',
+        'MailSearch',
+        'MailWarning',
+        'MailX',
+        'Mailbox',
+        'Mails',
+        'Map',
+        'MapMinus',
+        'MapPin',
+        'MapPinCheck',
+        'MapPinCheckInside',
+        'MapPinHouse',
+        'MapPinMinus',
+        'MapPinMinusInside',
+        'MapPinOff',
+        'MapPinPen',
+        'MapPinPlus',
+        'MapPinPlusInside',
+        'MapPinX',
+        'MapPinXInside',
+        'MapPinned',
+        'MapPlus',
+        'Mars',
+        'MarsStroke',
+        'Martini',
+        'Maximize',
+        'Maximize2',
+        'Medal',
+        'Megaphone',
+        'MegaphoneOff',
+        'Meh',
+        'MemoryStick',
+        'Menu',
+        'Merge',
+        'MessageCircle',
+        'MessageCircleCode',
+        'MessageCircleDashed',
+        'MessageCircleHeart',
+        'MessageCircleMore',
+        'MessageCircleOff',
+        'MessageCirclePlus',
+        'MessageCircleQuestionMark',
+        'MessageCircleReply',
+        'MessageCircleWarning',
+        'MessageCircleX',
+        'MessageSquare',
+        'MessageSquareCode',
+        'MessageSquareDashed',
+        'MessageSquareDiff',
+        'MessageSquareDot',
+        'MessageSquareHeart',
+        'MessageSquareLock',
+        'MessageSquareMore',
+        'MessageSquareOff',
+        'MessageSquarePlus',
+        'MessageSquareQuote',
+        'MessageSquareReply',
+        'MessageSquareShare',
+        'MessageSquareText',
+        'MessageSquareWarning',
+        'MessageSquareX',
+        'MessagesSquare',
+        'Mic',
+        'MicOff',
+        'MicVocal',
+        'Microchip',
+        'Microscope',
+        'Microwave',
+        'Milestone',
+        'Milk',
+        'MilkOff',
+        'Minimize',
+        'Minimize2',
+        'Minus',
+        'Monitor',
+        'MonitorCheck',
+        'MonitorCloud',
+        'MonitorCog',
+        'MonitorDot',
+        'MonitorDown',
+        'MonitorOff',
+        'MonitorPause',
+        'MonitorPlay',
+        'MonitorSmartphone',
+        'MonitorSpeaker',
+        'MonitorStop',
+        'MonitorUp',
+        'MonitorX',
+        'Moon',
+        'MoonStar',
+        'Motorbike',
+        'Mountain',
+        'MountainSnow',
+        'Mouse',
+        'MouseOff',
+        'MousePointer',
+        'MousePointer2',
+        'MousePointer2Off',
+        'MousePointerBan',
+        'MousePointerClick',
+        'Move',
+        'Move3d',
+        'MoveDiagonal',
+        'MoveDiagonal2',
+        'MoveDown',
+        'MoveDownLeft',
+        'MoveDownRight',
+        'MoveHorizontal',
+        'MoveLeft',
+        'MoveRight',
+        'MoveUp',
+        'MoveUpLeft',
+        'MoveUpRight',
+        'MoveVertical',
+        'Music',
+        'Music2',
+        'Music3',
+        'Music4',
+        'Navigation',
+        'Navigation2',
+        'Navigation2Off',
+        'NavigationOff',
+        'Network',
+        'Newspaper',
+        'Nfc',
+        'NonBinary',
+        'Notebook',
+        'NotebookPen',
+        'NotebookTabs',
+        'NotebookText',
+        'NotepadText',
+        'NotepadTextDashed',
+        'Nut',
+        'NutOff',
+        'Octagon',
+        'OctagonAlert',
+        'OctagonMinus',
+        'OctagonPause',
+        'OctagonX',
+        'Omega',
+        'Option',
+        'Orbit',
+        'Origami',
+        'Package',
+        'Package2',
+        'PackageCheck',
+        'PackageMinus',
+        'PackageOpen',
+        'PackagePlus',
+        'PackageSearch',
+        'PackageX',
+        'PaintBucket',
+        'PaintRoller',
+        'Paintbrush',
+        'PaintbrushVertical',
+        'Palette',
+        'Panda',
+        'PanelBottom',
+        'PanelBottomClose',
+        'PanelBottomDashed',
+        'PanelBottomOpen',
+        'PanelLeft',
+        'PanelLeftClose',
+        'PanelLeftDashed',
+        'PanelLeftOpen',
+        'PanelLeftRightDashed',
+        'PanelRight',
+        'PanelRightClose',
+        'PanelRightDashed',
+        'PanelRightOpen',
+        'PanelTop',
+        'PanelTopBottomDashed',
+        'PanelTopClose',
+        'PanelTopDashed',
+        'PanelTopOpen',
+        'PanelsLeftBottom',
+        'PanelsRightBottom',
+        'PanelsTopLeft',
+        'Paperclip',
+        'Parentheses',
+        'ParkingMeter',
+        'PartyPopper',
+        'Pause',
+        'PawPrint',
+        'PcCase',
+        'Pen',
+        'PenLine',
+        'PenOff',
+        'PenTool',
+        'Pencil',
+        'PencilLine',
+        'PencilOff',
+        'PencilRuler',
+        'Pentagon',
+        'Percent',
+        'PersonStanding',
+        'PhilippinePeso',
+        'Phone',
+        'PhoneCall',
+        'PhoneForwarded',
+        'PhoneIncoming',
+        'PhoneMissed',
+        'PhoneOff',
+        'PhoneOutgoing',
+        'Pi',
+        'Piano',
+        'Pickaxe',
+        'PictureInPicture',
+        'PictureInPicture2',
+        'PiggyBank',
+        'Pilcrow',
+        'PilcrowLeft',
+        'PilcrowRight',
+        'Pill',
+        'PillBottle',
+        'Pin',
+        'PinOff',
+        'Pipette',
+        'Pizza',
+        'Plane',
+        'PlaneLanding',
+        'PlaneTakeoff',
+        'Play',
+        'Plug',
+        'Plug2',
+        'PlugZap',
+        'Plus',
+        'Pocket',
+        'PocketKnife',
+        'Podcast',
+        'Pointer',
+        'PointerOff',
+        'Popcorn',
+        'Popsicle',
+        'PoundSterling',
+        'Power',
+        'PowerOff',
+        'Presentation',
+        'Printer',
+        'PrinterCheck',
+        'PrinterX',
+        'Projector',
+        'Proportions',
+        'Puzzle',
+        'Pyramid',
+        'QrCode',
+        'Quote',
+        'Rabbit',
+        'Radar',
+        'Radiation',
+        'Radical',
+        'Radio',
+        'RadioReceiver',
+        'RadioTower',
+        'Radius',
+        'RailSymbol',
+        'Rainbow',
+        'Rat',
+        'Ratio',
+        'Receipt',
+        'ReceiptCent',
+        'ReceiptEuro',
+        'ReceiptIndianRupee',
+        'ReceiptJapaneseYen',
+        'ReceiptPoundSterling',
+        'ReceiptRussianRuble',
+        'ReceiptSwissFranc',
+        'ReceiptText',
+        'ReceiptTurkishLira',
+        'RectangleCircle',
+        'RectangleEllipsis',
+        'RectangleGoggles',
+        'RectangleHorizontal',
+        'RectangleVertical',
+        'Recycle',
+        'Redo',
+        'Redo2',
+        'RedoDot',
+        'RefreshCcw',
+        'RefreshCcwDot',
+        'RefreshCw',
+        'RefreshCwOff',
+        'Refrigerator',
+        'Regex',
+        'RemoveFormatting',
+        'Repeat',
+        'Repeat1',
+        'Repeat2',
+        'Replace',
+        'ReplaceAll',
+        'Reply',
+        'ReplyAll',
+        'Rewind',
+        'Ribbon',
+        'Rocket',
+        'RockingChair',
+        'RollerCoaster',
+        'Rose',
+        'Rotate3d',
+        'RotateCcw',
+        'RotateCcwKey',
+        'RotateCcwSquare',
+        'RotateCw',
+        'RotateCwSquare',
+        'Route',
+        'RouteOff',
+        'Router',
+        'Rows2',
+        'Rows3',
+        'Rows4',
+        'Rss',
+        'Ruler',
+        'RulerDimensionLine',
+        'RussianRuble',
+        'Sailboat',
+        'Salad',
+        'Sandwich',
+        'Satellite',
+        'SatelliteDish',
+        'SaudiRiyal',
+        'Save',
+        'SaveAll',
+        'SaveOff',
+        'Scale',
+        'Scale3d',
+        'Scaling',
+        'Scan',
+        'ScanBarcode',
+        'ScanEye',
+        'ScanFace',
+        'ScanHeart',
+        'ScanLine',
+        'ScanQrCode',
+        'ScanSearch',
+        'ScanText',
+        'School',
+        'Scissors',
+        'ScissorsLineDashed',
+        'Scooter',
+        'ScreenShare',
+        'ScreenShareOff',
+        'Scroll',
+        'ScrollText',
+        'Search',
+        'SearchAlert',
+        'SearchCheck',
+        'SearchCode',
+        'SearchSlash',
+        'SearchX',
+        'Section',
+        'Send',
+        'SendHorizontal',
+        'SendToBack',
+        'SeparatorHorizontal',
+        'SeparatorVertical',
+        'Server',
+        'ServerCog',
+        'ServerCrash',
+        'ServerOff',
+        'Settings',
+        'Settings2',
+        'Shapes',
+        'Share',
+        'Share2',
+        'Sheet',
+        'Shell',
+        'Shield',
+        'ShieldAlert',
+        'ShieldBan',
+        'ShieldCheck',
+        'ShieldEllipsis',
+        'ShieldHalf',
+        'ShieldMinus',
+        'ShieldOff',
+        'ShieldPlus',
+        'ShieldQuestionMark',
+        'ShieldUser',
+        'ShieldX',
+        'Ship',
+        'ShipWheel',
+        'Shirt',
+        'ShoppingBag',
+        'ShoppingBasket',
+        'ShoppingCart',
+        'Shovel',
+        'ShowerHead',
+        'Shredder',
+        'Shrimp',
+        'Shrink',
+        'Shrub',
+        'Shuffle',
+        'Sigma',
+        'Signal',
+        'SignalHigh',
+        'SignalLow',
+        'SignalMedium',
+        'SignalZero',
+        'Signature',
+        'Signpost',
+        'SignpostBig',
+        'Siren',
+        'SkipBack',
+        'SkipForward',
+        'Skull',
+        'Slack',
+        'Slash',
+        'Slice',
+        'SlidersHorizontal',
+        'SlidersVertical',
+        'Smartphone',
+        'SmartphoneCharging',
+        'SmartphoneNfc',
+        'Smile',
+        'SmilePlus',
+        'Snail',
+        'Snowflake',
+        'SoapDispenserDroplet',
+        'Sofa',
+        'SolarPanel',
+        'Soup',
+        'Space',
+        'Spade',
+        'Sparkle',
+        'Sparkles',
+        'Speaker',
+        'Speech',
+        'SpellCheck',
+        'SpellCheck2',
+        'Spline',
+        'SplinePointer',
+        'Split',
+        'Spool',
+        'Spotlight',
+        'SprayCan',
+        'Sprout',
+        'Square',
+        'SquareActivity',
+        'SquareArrowDown',
+        'SquareArrowDownLeft',
+        'SquareArrowDownRight',
+        'SquareArrowLeft',
+        'SquareArrowOutDownLeft',
+        'SquareArrowOutDownRight',
+        'SquareArrowOutUpLeft',
+        'SquareArrowOutUpRight',
+        'SquareArrowRight',
+        'SquareArrowUp',
+        'SquareArrowUpLeft',
+        'SquareArrowUpRight',
+        'SquareAsterisk',
+        'SquareBottomDashedScissors',
+        'SquareChartGantt',
+        'SquareCheck',
+        'SquareCheckBig',
+        'SquareChevronDown',
+        'SquareChevronLeft',
+        'SquareChevronRight',
+        'SquareChevronUp',
+        'SquareCode',
+        'SquareDashed',
+        'SquareDashedBottom',
+        'SquareDashedBottomCode',
+        'SquareDashedKanban',
+        'SquareDashedMousePointer',
+        'SquareDashedTopSolid',
+        'SquareDivide',
+        'SquareDot',
+        'SquareEqual',
+        'SquareFunction',
+        'SquareKanban',
+        'SquareLibrary',
+        'SquareM',
+        'SquareMenu',
+        'SquareMinus',
+        'SquareMousePointer',
+        'SquareParking',
+        'SquareParkingOff',
+        'SquarePause',
+        'SquarePen',
+        'SquarePercent',
+        'SquarePi',
+        'SquarePilcrow',
+        'SquarePlay',
+        'SquarePlus',
+        'SquarePower',
+        'SquareRadical',
+        'SquareRoundCorner',
+        'SquareScissors',
+        'SquareSigma',
+        'SquareSlash',
+        'SquareSplitHorizontal',
+        'SquareSplitVertical',
+        'SquareSquare',
+        'SquareStack',
+        'SquareStar',
+        'SquareStop',
+        'SquareTerminal',
+        'SquareUser',
+        'SquareUserRound',
+        'SquareX',
+        'SquaresExclude',
+        'SquaresIntersect',
+        'SquaresSubtract',
+        'SquaresUnite',
+        'Squircle',
+        'SquircleDashed',
+        'Squirrel',
+        'Stamp',
+        'Star',
+        'StarHalf',
+        'StarOff',
+        'StepBack',
+        'StepForward',
+        'Stethoscope',
+        'Sticker',
+        'StickyNote',
+        'Stone',
+        'Store',
+        'StretchHorizontal',
+        'StretchVertical',
+        'Strikethrough',
+        'Subscript',
+        'Sun',
+        'SunDim',
+        'SunMedium',
+        'SunMoon',
+        'SunSnow',
+        'Sunrise',
+        'Sunset',
+        'Superscript',
+        'SwatchBook',
+        'SwissFranc',
+        'SwitchCamera',
+        'Sword',
+        'Swords',
+        'Syringe',
+        'Table',
+        'Table2',
+        'TableCellsMerge',
+        'TableCellsSplit',
+        'TableColumnsSplit',
+        'TableOfContents',
+        'TableProperties',
+        'TableRowsSplit',
+        'Tablet',
+        'TabletSmartphone',
+        'Tablets',
+        'Tag',
+        'Tags',
+        'Tally1',
+        'Tally2',
+        'Tally3',
+        'Tally4',
+        'Tally5',
+        'Tangent',
+        'Target',
+        'Telescope',
+        'Tent',
+        'TentTree',
+        'Terminal',
+        'TestTube',
+        'TestTubeDiagonal',
+        'TestTubes',
+        'TextAlignCenter',
+        'TextAlignEnd',
+        'TextAlignJustify',
+        'TextAlignStart',
+        'TextCursor',
+        'TextCursorInput',
+        'TextInitial',
+        'TextQuote',
+        'TextSearch',
+        'TextSelect',
+        'TextWrap',
+        'Theater',
+        'Thermometer',
+        'ThermometerSnowflake',
+        'ThermometerSun',
+        'ThumbsDown',
+        'ThumbsUp',
+        'Ticket',
+        'TicketCheck',
+        'TicketMinus',
+        'TicketPercent',
+        'TicketPlus',
+        'TicketSlash',
+        'TicketX',
+        'Tickets',
+        'TicketsPlane',
+        'Timer',
+        'TimerOff',
+        'TimerReset',
+        'ToggleLeft',
+        'ToggleRight',
+        'Toilet',
+        'ToolCase',
+        'Toolbox',
+        'Tornado',
+        'Torus',
+        'Touchpad',
+        'TouchpadOff',
+        'TowerControl',
+        'ToyBrick',
+        'Tractor',
+        'TrafficCone',
+        'TrainFront',
+        'TrainFrontTunnel',
+        'TrainTrack',
+        'TramFront',
+        'Transgender',
+        'Trash',
+        'Trash2',
+        'TreeDeciduous',
+        'TreePalm',
+        'TreePine',
+        'Trees',
+        'Trello',
+        'TrendingDown',
+        'TrendingUp',
+        'TrendingUpDown',
+        'Triangle',
+        'TriangleAlert',
+        'TriangleDashed',
+        'TriangleRight',
+        'Trophy',
+        'Truck',
+        'TruckElectric',
+        'TurkishLira',
+        'Turntable',
+        'Turtle',
+        'Tv',
+        'TvMinimal',
+        'TvMinimalPlay',
+        'Twitch',
+        'Twitter',
+        'Type',
+        'TypeOutline',
+        'Umbrella',
+        'UmbrellaOff',
+        'Underline',
+        'Undo',
+        'Undo2',
+        'UndoDot',
+        'UnfoldHorizontal',
+        'UnfoldVertical',
+        'Ungroup',
+        'University',
+        'Unlink',
+        'Unlink2',
+        'Unplug',
+        'Upload',
+        'Usb',
+        'User',
+        'UserCheck',
+        'UserCog',
+        'UserLock',
+        'UserMinus',
+        'UserPen',
+        'UserPlus',
+        'UserRound',
+        'UserRoundCheck',
+        'UserRoundCog',
+        'UserRoundMinus',
+        'UserRoundPen',
+        'UserRoundPlus',
+        'UserRoundSearch',
+        'UserRoundX',
+        'UserSearch',
+        'UserStar',
+        'UserX',
+        'Users',
+        'UsersRound',
+        'Utensils',
+        'UtensilsCrossed',
+        'UtilityPole',
+        'Van',
+        'Variable',
+        'Vault',
+        'VectorSquare',
+        'Vegan',
+        'VenetianMask',
+        'Venus',
+        'VenusAndMars',
+        'Vibrate',
+        'VibrateOff',
+        'Video',
+        'VideoOff',
+        'Videotape',
+        'View',
+        'Voicemail',
+        'Volleyball',
+        'Volume',
+        'Volume1',
+        'Volume2',
+        'VolumeOff',
+        'VolumeX',
+        'Vote',
+        'Wallet',
+        'WalletCards',
+        'WalletMinimal',
+        'Wallpaper',
+        'Wand',
+        'WandSparkles',
+        'Warehouse',
+        'WashingMachine',
+        'Watch',
+        'Waves',
+        'WavesArrowDown',
+        'WavesArrowUp',
+        'WavesLadder',
+        'Waypoints',
+        'Webcam',
+        'Webhook',
+        'WebhookOff',
+        'Weight',
+        'WeightTilde',
+        'Wheat',
+        'WheatOff',
+        'WholeWord',
+        'Wifi',
+        'WifiCog',
+        'WifiHigh',
+        'WifiLow',
+        'WifiOff',
+        'WifiPen',
+        'WifiSync',
+        'WifiZero',
+        'Wind',
+        'WindArrowDown',
+        'Wine',
+        'WineOff',
+        'Workflow',
+        'Worm',
+        'Wrench',
+        'X',
+        'Youtube',
+        'Zap',
+        'ZapOff',
+        'ZoomIn',
+        'ZoomOut',
+      ],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       product: [
         'web',
@@ -20620,289 +23677,6 @@ export const Constants = {
         'gemini-2.5-pro',
         'gemini-2.0-flash-lite',
         'gemini-2.5-flash-lite',
-      ],
-      workspace_board_icon: [
-        'Users',
-        'User',
-        'Briefcase',
-        'Target',
-        'Rocket',
-        'TrendingUp',
-        'ClipboardList',
-        'ListChecks',
-        'CheckSquare',
-        'Calendar',
-        'CalendarDays',
-        'CalendarCheck',
-        'Clock',
-        'AlarmClock',
-        'Bell',
-        'Star',
-        'Settings',
-        'Shield',
-        'Tag',
-        'Folder',
-        'FolderOpen',
-        'FileText',
-        'Database',
-        'Server',
-        'Inbox',
-        'Mail',
-        'MessageSquare',
-        'Phone',
-        'Video',
-        'Mic',
-        'Image',
-        'Paperclip',
-        'Link',
-        'ExternalLink',
-        'Download',
-        'Upload',
-        'Search',
-        'Eye',
-        'EyeOff',
-        'Lock',
-        'Key',
-        'Wrench',
-        'Paintbrush',
-        'Wand2',
-        'Lightbulb',
-        'Bug',
-        'GraduationCap',
-        'BookOpen',
-        'Bookmark',
-        'Newspaper',
-        'PieChart',
-        'Play',
-        'PlusSquare',
-        'Puzzle',
-        'Package',
-        'Truck',
-        'Monitor',
-        'Laptop',
-        'Music',
-        'Timer',
-        'Trash2',
-        'Heart',
-        'HelpCircle',
-        'Moon',
-        'Zap',
-        'Flame',
-        'Gift',
-        'Globe',
-        'MapPin',
-        'Home',
-        'Building2',
-        'ShoppingCart',
-        'CreditCard',
-        'Wallet',
-        'ThumbsUp',
-        'Trophy',
-        'Smartphone',
-        'Tablet',
-        'Cpu',
-        'HardDrive',
-        'Wifi',
-        'Bluetooth',
-        'Camera',
-        'Headphones',
-        'Speaker',
-        'Tv',
-        'Printer',
-        'Keyboard',
-        'Mouse',
-        'DollarSign',
-        'Banknote',
-        'Receipt',
-        'Calculator',
-        'TrendingDown',
-        'BarChart',
-        'BarChart2',
-        'LineChart',
-        'Activity',
-        'Coins',
-        'PiggyBank',
-        'Send',
-        'AtSign',
-        'Hash',
-        'MessageCircle',
-        'MessagesSquare',
-        'Share',
-        'Share2',
-        'Megaphone',
-        'Radio',
-        'Rss',
-        'File',
-        'FileCode',
-        'FileImage',
-        'FileAudio',
-        'FileVideo',
-        'FileSpreadsheet',
-        'FileCheck',
-        'FilePlus',
-        'FolderPlus',
-        'FolderCheck',
-        'Archive',
-        'ClipboardCheck',
-        'UserPlus',
-        'UserCheck',
-        'UserX',
-        'UserMinus',
-        'UsersRound',
-        'UserRound',
-        'Crown',
-        'Contact',
-        'Handshake',
-        'Map',
-        'Navigation',
-        'Compass',
-        'Locate',
-        'Milestone',
-        'Signpost',
-        'Route',
-        'Sun',
-        'Cloud',
-        'CloudRain',
-        'Snowflake',
-        'Wind',
-        'Thermometer',
-        'Umbrella',
-        'Rainbow',
-        'Leaf',
-        'Trees',
-        'Flower2',
-        'Mountain',
-        'HeartPulse',
-        'Stethoscope',
-        'Pill',
-        'Syringe',
-        'Dumbbell',
-        'Bike',
-        'Footprints',
-        'Brain',
-        'Salad',
-        'UtensilsCrossed',
-        'Coffee',
-        'Wine',
-        'Beer',
-        'Pizza',
-        'Cake',
-        'Cookie',
-        'IceCream2',
-        'Apple',
-        'Plane',
-        'Car',
-        'Bus',
-        'Train',
-        'Ship',
-        'Anchor',
-        'Luggage',
-        'Ticket',
-        'Hotel',
-        'Gamepad2',
-        'Dice1',
-        'Clapperboard',
-        'Popcorn',
-        'Drama',
-        'PartyPopper',
-        'Sparkles',
-        'Film',
-        'Tv2',
-        'Book',
-        'Library',
-        'PenTool',
-        'Highlighter',
-        'Ruler',
-        'School',
-        'Presentation',
-        'Languages',
-        'FlaskConical',
-        'Microscope',
-        'Atom',
-        'Dna',
-        'Telescope',
-        'Orbit',
-        'Satellite',
-        'Code',
-        'Code2',
-        'Terminal',
-        'GitBranch',
-        'GitMerge',
-        'GitPullRequest',
-        'Hammer',
-        'Axe',
-        'Scissors',
-        'Brush',
-        'Palette',
-        'Pipette',
-        'Eraser',
-        'CircleDot',
-        'Square',
-        'Triangle',
-        'Pentagon',
-        'Hexagon',
-        'Octagon',
-        'Diamond',
-        'Shapes',
-        'ShieldCheck',
-        'ShieldAlert',
-        'Fingerprint',
-        'ScanFace',
-        'KeyRound',
-        'LockKeyhole',
-        'UnlockKeyhole',
-        'Armchair',
-        'Bed',
-        'Bath',
-        'Lamp',
-        'Sofa',
-        'Shirt',
-        'Watch',
-        'Glasses',
-        'Gem',
-        'Award',
-        'Medal',
-        'BadgeCheck',
-        'Flag',
-        'Bookmark2',
-        'Pin',
-        'Magnet',
-        'Battery',
-        'Power',
-        'Plug',
-        'Infinity',
-        'QrCode',
-        'Barcode',
-        'Scan',
-        'Bot',
-        'BrainCircuit',
-        'Sparkle',
-        'Blocks',
-        'Layers',
-        'LayoutGrid',
-        'LayoutList',
-        'LayoutDashboard',
-        'ArrowRight',
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'RefreshCw',
-        'RotateCcw',
-        'Repeat',
-        'Shuffle',
-        'Move',
-        'Maximize2',
-        'Minimize2',
-        'AlertCircle',
-        'AlertTriangle',
-        'Info',
-        'CircleCheck',
-        'CircleX',
-        'CircleAlert',
-        'BellRing',
-        'BellOff',
-        'Fuel',
-        'WashingMachine',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
       workspace_pricing_model: ['fixed', 'seat_based'],

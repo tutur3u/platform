@@ -34,7 +34,8 @@
       "Bash(npx @biomejs/biome@latest lint:*)",
       "Bash(cat:*)",
       "Bash(tsgo --build:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

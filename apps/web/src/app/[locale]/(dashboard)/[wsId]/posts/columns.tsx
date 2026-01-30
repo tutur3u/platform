@@ -2,22 +2,26 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
 
-export const getPostEmailColumns = (
-  t: any,
-  namespace: string | undefined,
-  _: any,
-  extraData: {
-    locale?: string;
-    onEmailSent: () => void;
-    blacklistedEmails?: Set<string>;
-  }
-): ColumnDef<PostEmail>[] => [
+interface PostEmailExtraData {
+  locale?: string;
+  onEmailSent: () => void;
+  blacklistedEmails?: Set<string>;
+}
+
+export const getPostEmailColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<PostEmail> & {
+  extraData?: PostEmailExtraData;
+}): ColumnDef<PostEmail>[] => [
   {
     accessorKey: 'recipient',
     header: ({ column }) => (

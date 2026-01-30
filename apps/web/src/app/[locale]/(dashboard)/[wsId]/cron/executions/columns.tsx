@@ -2,17 +2,17 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCronExecution } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { RowActions } from './row-actions';
 
-export const getColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any,
-  extraData?: any
-): ColumnDef<WorkspaceCronExecution>[] => [
+export const getColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<WorkspaceCronExecution>): ColumnDef<WorkspaceCronExecution>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

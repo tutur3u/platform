@@ -1,7 +1,8 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
-import { ArrowDownCircle, ArrowUpCircle, Ellipsis } from '@tuturuuu/icons';
+import { Ellipsis } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import {
   AlertDialog,
@@ -14,12 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  getIconComponentByKey,
-  type WorkspaceBoardIconKey,
-} from '@tuturuuu/ui/custom/icon-picker';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -30,8 +26,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import { toast } from '@tuturuuu/ui/sonner';
-import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -41,8 +35,8 @@ interface Props {
 
 export function TransactionCategoryRowActions(props: Props) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
 
-  const router = useRouter();
   const data = props.row.original;
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -58,7 +52,10 @@ export function TransactionCategoryRowActions(props: Props) {
 
       if (res.ok) {
         toast.success(t('ws-transaction-categories.category_deleted'));
-        router.refresh();
+        // Invalidate the transaction categories query to refresh the list
+        await queryClient.invalidateQueries({
+          queryKey: ['transaction-categories', data.ws_id],
+        });
       } else {
         const errorData = await res.json();
         toast.error(
@@ -77,45 +74,11 @@ export function TransactionCategoryRowActions(props: Props) {
 
   if (!data.id || !data.ws_id) return null;
 
-  // Get icon component if available
-  const IconComponent = data.icon
-    ? getIconComponentByKey(data.icon as WorkspaceBoardIconKey)
-    : null;
-
-  // Get color styles
-  const colorStyles = data.color
-    ? computeAccessibleLabelStyles(data.color)
-    : null;
-
-  // Determine the icon to show
-  const CategoryIcon = IconComponent
-    ? IconComponent
-    : data.is_expense === false
-      ? ArrowUpCircle
-      : ArrowDownCircle;
-
   return (
     <div
-      className="flex items-center justify-end gap-2"
+      className="flex items-center justify-end"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Category icon badge */}
-      <Badge
-        variant="outline"
-        className="gap-1.5 px-2 py-1"
-        style={
-          colorStyles
-            ? {
-                backgroundColor: colorStyles.bg,
-                color: colorStyles.text,
-                borderColor: colorStyles.border,
-              }
-            : undefined
-        }
-      >
-        <CategoryIcon className="h-3.5 w-3.5" />
-      </Badge>
-
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button

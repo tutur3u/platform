@@ -2,14 +2,15 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceQuiz } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { WorkspaceQuizRowActions } from './row-actions';
 
-export const getWorkspaceQuizColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceQuiz>[] => [
+export const getWorkspaceQuizColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceQuiz>): ColumnDef<WorkspaceQuiz>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

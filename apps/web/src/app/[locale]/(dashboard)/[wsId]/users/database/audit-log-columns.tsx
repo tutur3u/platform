@@ -1,6 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { format } from 'date-fns';
 
 interface AuditLogEntry {
@@ -15,10 +16,10 @@ interface AuditLogEntry {
   creator_full_name?: string | null;
 }
 
-export const getAuditLogColumns = (
-  t: (key: string) => string,
-  namespace?: string
-): ColumnDef<AuditLogEntry>[] => [
+export const getAuditLogColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<AuditLogEntry>): ColumnDef<AuditLogEntry>[] => [
   {
     accessorKey: 'id',
     header: t(`${namespace}.id`),

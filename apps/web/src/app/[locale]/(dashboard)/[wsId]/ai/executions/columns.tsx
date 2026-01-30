@@ -2,17 +2,17 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceAIExecution } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { RowActions } from './row-actions';
 import { calculateCost, formatCost } from './utils/cost-calculator';
 
-export const getColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any,
-  extraData?: any
-): ColumnDef<WorkspaceAIExecution>[] => [
+export const getColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<WorkspaceAIExecution>): ColumnDef<WorkspaceAIExecution>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

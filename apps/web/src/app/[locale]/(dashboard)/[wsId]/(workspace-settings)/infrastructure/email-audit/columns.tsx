@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/icons';
 import type { Tables } from '@tuturuuu/types/supabase';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { EmailAuditRowActions } from './row-actions';
@@ -36,12 +37,13 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-export const getEmailAuditColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
-  _extraData?: any
-): ColumnDef<EmailAuditRecord>[] => [
+export const getEmailAuditColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<EmailAuditRecord> & {
+  extraData?: { onViewDetails?: (record: EmailAuditRecord) => void };
+}): ColumnDef<EmailAuditRecord>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -486,7 +488,7 @@ export const getEmailAuditColumns = (
     cell: ({ row }) => (
       <EmailAuditRowActions
         row={row}
-        onViewDetails={_extraData?.onViewDetails}
+        onViewDetails={extraData?.onViewDetails}
       />
     ),
   },

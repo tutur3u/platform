@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { TransactionRowActions } from '@tuturuuu/ui/finance/transactions/row-actions';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -14,12 +15,18 @@ function getAvatarPlaceholder(name: string) {
   return `https://ui-avatars.com/api/?name=${name}`;
 }
 
-export const transactionColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
-  extraData?: { currency?: string; isPersonalWorkspace?: boolean }
-): ColumnDef<Transaction>[] => {
+interface TransactionExtraData {
+  currency?: string;
+  isPersonalWorkspace?: boolean;
+}
+
+export const transactionColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Transaction> & {
+  extraData?: TransactionExtraData;
+}): ColumnDef<Transaction>[] => {
   const locale = useLocale();
   const currency = extraData?.currency || 'USD';
   const isPersonalWorkspace = extraData?.isPersonalWorkspace || false;

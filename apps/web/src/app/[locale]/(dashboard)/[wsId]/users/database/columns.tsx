@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
@@ -18,12 +18,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
 
-export const getUserColumns = (
-  t: any,
-  namespace: string | undefined,
-  extraFields?: WorkspaceUserField[],
-  extraData?: any
-): ColumnDef<WorkspaceUser>[] => {
+interface UserColumnsExtraData {
+  hasPrivateInfo?: boolean;
+  hasPublicInfo?: boolean;
+  canCheckUserAttendance?: boolean;
+  canUpdateUsers?: boolean;
+  canDeleteUsers?: boolean;
+  locale?: string;
+}
+
+export const getUserColumns = ({
+  t,
+  namespace,
+  extraColumns: extraFields,
+  extraData,
+}: ColumnGeneratorOptions<WorkspaceUser> & {
+  extraData?: UserColumnsExtraData;
+}): ColumnDef<WorkspaceUser>[] => {
   const hasPrivateInfo = extraData?.hasPrivateInfo ?? false;
   const hasPublicInfo = extraData?.hasPublicInfo ?? false;
   const canCheckUserAttendance = extraData?.canCheckUserAttendance ?? false;

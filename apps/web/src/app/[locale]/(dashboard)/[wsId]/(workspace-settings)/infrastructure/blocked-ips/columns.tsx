@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Clock, Shield, ShieldAlert, ShieldCheck } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { BlockedIPRowActions } from './row-actions';
@@ -102,10 +103,10 @@ const getReasonLabel = (reason: string) => {
   return labels[reason] || reason;
 };
 
-export const getBlockedIPsColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<BlockedIPEntry>[] => [
+export const getBlockedIPsColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<BlockedIPEntry>): ColumnDef<BlockedIPEntry>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

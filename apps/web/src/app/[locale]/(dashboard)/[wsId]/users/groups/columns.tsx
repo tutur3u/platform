@@ -5,6 +5,7 @@ import { Check, Users, X } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import moment from 'moment';
@@ -12,16 +13,17 @@ import Link from 'next/link';
 import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
 
-export const getUserGroupColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
+export const getUserGroupColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<UserGroup> & {
   extraData?: {
     canDeleteUserGroups?: boolean;
     canUpdateUserGroups?: boolean;
     canCreateUserGroups?: boolean;
-  }
-): ColumnDef<UserGroup>[] => [
+  };
+}): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

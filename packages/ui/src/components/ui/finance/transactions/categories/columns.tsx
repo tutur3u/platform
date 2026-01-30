@@ -2,17 +2,28 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowDownCircle, ArrowUpCircle } from '@tuturuuu/icons';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
+import {
+  getIconComponentByKey,
+  type PlatformIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
 
-export const transactionCategoryColumns = (
-  t: any,
-  namespace: string | undefined,
-  _extraColumns?: any[],
-  extraData?: { currency?: string }
-): ColumnDef<TransactionCategory>[] => {
+interface TransactionCategoryExtraData {
+  currency?: string;
+}
+
+export const transactionCategoryColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<TransactionCategoryWithStats> & {
+  extraData?: TransactionCategoryExtraData;
+}): ColumnDef<TransactionCategoryWithStats>[] => {
   const currency = extraData?.currency || 'USD';
 
   return [
@@ -59,16 +70,73 @@ export const transactionCategoryColumns = (
           title={t(`${namespace}.name`)}
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          {row.original.is_expense ? (
-            <ArrowDownCircle className="h-5 w-5 text-dynamic-red" />
-          ) : (
-            <ArrowUpCircle className="h-5 w-5 text-dynamic-green" />
-          )}
-          <span className="font-medium">{row.getValue('name') || '-'}</span>
-        </div>
+      cell: ({ row }) => {
+        const { icon, color, is_expense } = row.original;
+
+        // Get custom icon if available
+        const CustomIcon = icon
+          ? getIconComponentByKey(icon as PlatformIconKey)
+          : null;
+
+        // Determine the icon to display
+        const IconComponent = CustomIcon
+          ? CustomIcon
+          : is_expense
+            ? ArrowDownCircle
+            : ArrowUpCircle;
+
+        // Get color styles if a custom color is set
+        const colorStyles = color ? computeAccessibleLabelStyles(color) : null;
+
+        // Default colors based on expense type
+        const defaultIconClass = is_expense
+          ? 'text-dynamic-red'
+          : 'text-dynamic-green';
+
+        return (
+          <div className="flex items-center gap-2">
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-md"
+              style={
+                colorStyles
+                  ? {
+                      backgroundColor: colorStyles.bg,
+                      borderColor: colorStyles.border,
+                      borderWidth: '1px',
+                    }
+                  : undefined
+              }
+            >
+              <IconComponent
+                className="h-4 w-4"
+                style={colorStyles ? { color: colorStyles.text } : undefined}
+                {...(!colorStyles && {
+                  className: `h-4 w-4 ${defaultIconClass}`,
+                })}
+              />
+            </div>
+            <span className="font-medium">{row.getValue('name') || '-'}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'transaction_count',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.transaction_count`)}
+        />
       ),
+      cell: ({ row }) => {
+        const count = Number(row.getValue('transaction_count')) || 0;
+        return (
+          <div className="text-muted-foreground tabular-nums">
+            {count.toLocaleString()}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'amount',
@@ -85,7 +153,7 @@ export const transactionCategoryColumns = (
 
         return (
           <div
-            className={`font-semibold ${
+            className={`font-semibold tabular-nums ${
               isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
             }`}
           >

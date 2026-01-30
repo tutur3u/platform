@@ -2893,3 +2893,23 @@ INSERT INTO public.time_tracking_sessions (id, ws_id, user_id, category_id, titl
         true,
         NOW()
     );
+
+-- Bypass onboarding for test accounts
+INSERT INTO public.onboarding_progress (
+    user_id,
+    completed_steps,
+    current_step,
+    profile_completed,
+    tour_completed,
+    completed_at,
+    use_case,
+    flow_type,
+    invited_emails,
+    notifications_enabled
+)
+VALUES
+    ('00000000-0000-0000-0000-000000000001', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true),
+    ('00000000-0000-0000-0000-000000000002', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true),
+    ('00000000-0000-0000-0000-000000000003', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true),
+    ('00000000-0000-0000-0000-000000000004', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true),
+    ('00000000-0000-0000-0000-000000000005', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true);

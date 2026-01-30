@@ -22,7 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import {
   getIconComponentByKey,
-  type WorkspaceBoardIconKey,
+  type PlatformIconKey,
 } from '../../custom/icon-picker';
 
 interface BoardSwitcherProps {
@@ -115,8 +115,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
 
   // Get current board's icon
   const CurrentBoardIcon =
-    getIconComponentByKey(board.icon as WorkspaceBoardIconKey | null) ??
-    LayoutGrid;
+    getIconComponentByKey(board.icon as PlatformIconKey | null) ?? LayoutGrid;
 
   return (
     <DropdownMenu>
@@ -153,7 +152,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
                   const isCurrentBoard = otherBoard.id === board.id;
                   const BoardIcon =
                     getIconComponentByKey(
-                      otherBoard.icon as WorkspaceBoardIconKey | null
+                      otherBoard.icon as PlatformIconKey | null
                     ) ?? LayoutGrid;
                   return (
                     <DropdownMenuItem
@@ -202,7 +201,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
                   const isCurrentBoard = otherBoard.id === board.id;
                   const BoardIcon =
                     getIconComponentByKey(
-                      otherBoard.icon as WorkspaceBoardIconKey | null
+                      otherBoard.icon as PlatformIconKey | null
                     ) ?? LayoutGrid;
                   return (
                     <DropdownMenuItem
@@ -257,7 +256,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
                   const isCurrentBoard = otherBoard.id === board.id;
                   const BoardIcon =
                     getIconComponentByKey(
-                      otherBoard.icon as WorkspaceBoardIconKey | null
+                      otherBoard.icon as PlatformIconKey | null
                     ) ?? LayoutGrid;
 
                   return (

@@ -3,17 +3,17 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
 import type { CrawledUrl } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { RowActions } from './row-actions';
 
-export const getColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any,
-  extraData?: any
-): ColumnDef<CrawledUrl>[] => [
+export const getColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<CrawledUrl>): ColumnDef<CrawledUrl>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

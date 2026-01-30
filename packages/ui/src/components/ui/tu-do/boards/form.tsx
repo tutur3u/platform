@@ -28,10 +28,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 import * as z from 'zod';
-import IconPicker, {
-  WORKSPACE_BOARD_ICON_VALUES,
-  type WorkspaceBoardIconKey,
-} from '../../custom/icon-picker';
+import IconPicker from '../../custom/icon-picker';
 
 interface Props {
   wsId: string;
@@ -45,7 +42,8 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().optional(),
-  icon: z.enum(WORKSPACE_BOARD_ICON_VALUES).nullable().optional(),
+  // Use string to support all lucide icons - the API will validate against the DB enum
+  icon: z.string().nullable().optional(),
 });
 
 const getErrorMessage = (error: unknown): string => {
@@ -95,7 +93,7 @@ export function TaskBoardForm({
     try {
       // Use "Untitled Board" as default if name is empty or only whitespace
       const boardName = formData.name?.trim() || 'Untitled Board';
-      const icon = (formData.icon ?? null) as WorkspaceBoardIconKey | null;
+      const icon = formData.icon ?? null;
 
       if (formData.id) {
         // Update existing board (legacy API call)
@@ -126,9 +124,12 @@ export function TaskBoardForm({
         }
       } else {
         // Create new board (default lists are created by DB trigger)
+        // Note: cast icon to any since the mutation type uses the DB enum
+        // which may not include all icons until the migration is applied
         const newBoard = await createBoardMutation.mutateAsync({
           name: boardName,
-          icon,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          icon: icon as any,
         });
 
         toast.success('Board created');

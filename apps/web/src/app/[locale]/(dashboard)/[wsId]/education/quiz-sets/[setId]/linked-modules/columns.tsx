@@ -3,17 +3,19 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { WorkspaceCourseModuleRowActions } from './row-actions';
 
-export const getWorkspaceCourseModuleColumns = (
-  t: any,
-  namespace: string | undefined,
-  _: any,
-  extraData?: any
-): ColumnDef<Partial<WorkspaceCourseModule>>[] => [
+export const getWorkspaceCourseModuleColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Partial<WorkspaceCourseModule>> & {
+  extraData?: { wsId: string; courseId: string; setId: string };
+}): ColumnDef<Partial<WorkspaceCourseModule>>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

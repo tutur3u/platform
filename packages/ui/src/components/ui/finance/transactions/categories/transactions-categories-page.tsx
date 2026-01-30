@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
 import { AmountFilterWrapper } from '@tuturuuu/ui/finance/transactions/categories/amount-filter-wrapper';
@@ -12,33 +12,19 @@ import { getTranslations } from 'next-intl/server';
 
 interface Props {
   wsId: string;
-  searchParams: {
-    q: string;
-    page: string;
-    pageSize: string;
-    type?: string;
-    minAmount?: string;
-    maxAmount?: string;
-  };
   currency?: string;
 }
 
 export default async function TransactionsCategoriesPage({
   wsId: id,
-  searchParams,
   currency = 'USD',
 }: Props) {
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { data: rawData, count } = await getData(wsId, searchParams);
+  // Fetch initial data for SSR hydration (first page with default params)
+  const initialData = await getInitialData(wsId);
   const t = await getTranslations();
-
-  const data = rawData.map((d) => ({
-    ...d,
-    href: `/${wsId}/finance/transactions/categories/${d.id}`,
-    ws_id: wsId,
-  }));
 
   return (
     <>
@@ -55,8 +41,7 @@ export default async function TransactionsCategoriesPage({
       <Separator className="my-4" />
       <CategoriesDataTable
         wsId={wsId}
-        data={data}
-        count={count}
+        initialData={initialData}
         currency={currency}
         filters={[
           <TypeFilterWrapper key="type-filter" />,
@@ -67,27 +52,13 @@ export default async function TransactionsCategoriesPage({
   );
 }
 
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    type,
-    minAmount,
-    maxAmount,
-  }: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
-    type?: string;
-    minAmount?: string;
-    maxAmount?: string;
-  }
-) {
+/**
+ * Fetch initial data for SSR hydration.
+ * Returns the first page of categories with default page size (10).
+ */
+async function getInitialData(wsId: string) {
   const supabase = await createClient();
 
-  // Use optimized RPC function that filters by workspace
   const { data: categories, error } = await supabase.rpc(
     'get_transaction_categories_with_amount_by_workspace',
     { p_ws_id: wsId }
@@ -95,46 +66,12 @@ async function getData(
 
   if (error) throw error;
 
-  // Apply client-side filters
-  let filtered = categories || [];
+  const allCategories = (categories || []) as TransactionCategoryWithStats[];
+  const count = allCategories.length;
 
-  if (q) {
-    filtered = filtered.filter((cat) =>
-      cat.name.toLowerCase().includes(q.toLowerCase())
-    );
-  }
+  // Return first page (10 items) for initial hydration
+  const pageSize = 10;
+  const data = allCategories.slice(0, pageSize);
 
-  if (type) {
-    if (type === 'income') {
-      filtered = filtered.filter((cat) => !cat.is_expense);
-    } else if (type === 'expense') {
-      filtered = filtered.filter((cat) => cat.is_expense);
-    }
-  }
-
-  if (minAmount) {
-    const min = parseFloat(minAmount);
-    if (!Number.isNaN(min)) {
-      filtered = filtered.filter((cat) => Number(cat.amount) >= min);
-    }
-  }
-
-  if (maxAmount) {
-    const max = parseFloat(maxAmount);
-    if (!Number.isNaN(max)) {
-      filtered = filtered.filter((cat) => Number(cat.amount) <= max);
-    }
-  }
-
-  const count = filtered.length;
-
-  // Paginate
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    filtered = filtered.slice(start, start + parsedSize);
-  }
-
-  return { data: filtered as TransactionCategory[], count };
+  return { data, count };
 }

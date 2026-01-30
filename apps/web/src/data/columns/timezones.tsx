@@ -6,14 +6,15 @@ import type {
   Timezone,
   TimezoneStatus,
 } from '@tuturuuu/types/primitives/Timezone';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
 
-export const timezoneColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<Timezone>[] => [
+export const timezoneColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<Timezone>): ColumnDef<Timezone>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

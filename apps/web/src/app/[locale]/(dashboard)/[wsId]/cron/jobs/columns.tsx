@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/icons';
 import type { WorkspaceCronJob } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
@@ -72,12 +73,11 @@ function renderStatus(
   }
 }
 
-export const getColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any,
-  extraData?: any
-): ColumnDef<WorkspaceCronJob>[] => [
+export const getColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<WorkspaceCronJob>): ColumnDef<WorkspaceCronJob>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
