@@ -70,6 +70,13 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           description={wallet.description || t('ws-wallets.description')}
           createTitle={t('ws-wallets.create')}
           createDescription={t('ws-wallets.create_description')}
+          icon={
+            <WalletIconDisplay
+              icon={wallet.icon}
+              imageSrc={wallet.image_src}
+              size="lg"
+            />
+          }
         />
         {canDeleteWallets && (
           <WalletDeleteButton

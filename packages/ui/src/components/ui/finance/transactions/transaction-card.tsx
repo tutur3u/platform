@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -10,9 +11,10 @@ import {
   Pencil,
   Tag,
   Trash2,
-  Wallet,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { ConfidentialAmount } from '@tuturuuu/ui/finance/transactions/confidential-field';
+import { WalletIconDisplay } from '@tuturuuu/ui/finance/wallets/wallet-icon-display';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
@@ -60,6 +63,7 @@ export function TransactionCard({
   canEdit,
   canDelete,
   showCreator = true,
+  wsId,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
   const [isHovered, setIsHovered] = useState(false);
@@ -88,6 +92,28 @@ export function TransactionCard({
     }
     return null;
   }, [transaction.category_color]);
+
+  // Fetch wallets to get icon/image
+  // This shares the cache with WalletsPage
+  const { data: wallets } = useQuery({
+    queryKey: ['wallets', wsId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_wallets')
+        .select('*')
+        .eq('ws_id', wsId);
+
+      if (error) throw error;
+      return data as Wallet[];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const wallet = useMemo(() => {
+    if (!transaction.wallet_id || !wallets) return null;
+    return wallets.find((w) => w.id === transaction.wallet_id);
+  }, [transaction.wallet_id, wallets]);
 
   // Determine if we should use custom styling
   const hasCustomStyling = Boolean(customColorStyles);
@@ -256,7 +282,12 @@ export function TransactionCard({
                   variant="outline"
                   className="gap-1 border-muted-foreground/30 bg-muted/50 px-2 py-0.5 font-medium text-muted-foreground text-xs"
                 >
-                  <Wallet className="h-3 w-3" />
+                  <WalletIconDisplay
+                    icon={wallet?.icon}
+                    imageSrc={wallet?.image_src}
+                    size="sm"
+                    className="h-3 w-3"
+                  />
                   {transaction.wallet}
                 </Badge>
               )}
