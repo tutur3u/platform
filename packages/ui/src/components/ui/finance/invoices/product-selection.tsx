@@ -1,6 +1,6 @@
 'use client';
 
-import { Building, Minus, Package, Plus } from '@tuturuuu/icons';
+import { Building, Minus, Package, Plus, Trash } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -178,7 +178,7 @@ export function ProductSelection({
                     key={`${item.product.id}-${item.inventory.warehouse_id}-${item.inventory.unit_id}-${index}`}
                     className={`flex items-center justify-between rounded-lg border p-3 ${linkedGroups.length > 0 ? 'border-dynamic-gray bg-dynamic-gray/5' : ''}`}
                   >
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium">{item.product.name}</p>
                       <p className="text-muted-foreground text-sm">
                         {item.inventory.warehouse_name} •{' '}
@@ -197,7 +197,10 @@ export function ProductSelection({
                       </p>
                       {linkedGroups.length > 0 && (
                         <div className="mt-1">
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge
+                            variant="secondary"
+                            className="whitespace-normal text-[10px]"
+                          >
                             {t('ws-invoices.linked_to_group')}:{' '}
                             {linkedGroups.join(', ')}
                           </Badge>
@@ -207,7 +210,8 @@ export function ProductSelection({
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
                         onClick={() => updateQuantity(index, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                       >
@@ -222,7 +226,7 @@ export function ProductSelection({
                             parseInt(e.target.value, 10) || 0
                           )
                         }
-                        className="w-20 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        className="w-16 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         min="1"
                         {...(item.inventory.amount !== null && {
                           max: item.inventory.amount,
@@ -230,7 +234,8 @@ export function ProductSelection({
                       />
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
                         onClick={() => updateQuantity(index, item.quantity + 1)}
                         disabled={
                           item.inventory.amount !== null &&
@@ -241,10 +246,11 @@ export function ProductSelection({
                       </Button>
                       <Button
                         variant="destructive"
-                        size="sm"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
                         onClick={() => removeProductFromInvoice(index)}
                       >
-                        {t('ws-invoices.remove')}
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
