@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
+import { Agent, fetch as undiciFetch } from 'undici';
 import { DEV_MODE } from '@/constants/common';
 import { checkRateLimit, type RateLimitConfig } from '@/lib/api-middleware';
+
+// Custom dispatcher with increased header size limit (128KB)
+// This prevents HeadersOverflowError when external API returns many headers
+const customAgent = DEV_MODE
+  ? new Agent({
+      maxHeaderSize: 128 * 1024, // 128KB (default is ~16KB)
+    })
+  : undefined;
 
 // Default Tuturuuu API endpoint (production v2)
 const DEFAULT_TUTURUUU_API_ENDPOINT = 'https://tuturuuu.com/api/v2';
@@ -226,12 +235,14 @@ export async function GET(request: Request) {
     const finalUrl = urlObject.toString();
 
     // Make the request to Tuturuuu API using Bearer token (SDK authentication)
-    const response = await fetch(finalUrl, {
+    // Use undici with custom agent to handle large response headers
+    const response = await undiciFetch(finalUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
+      dispatcher: customAgent,
     });
 
     // Check if response is JSON
