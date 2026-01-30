@@ -30,55 +30,38 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import type { BoardTemplate, TemplateFilter } from './types';
 
 interface Props {
   wsId: string;
   initialTemplates: BoardTemplate[];
-  initialVisibility: TemplateFilter;
 }
 
-export default function TemplatesClient({
-  wsId,
-  initialTemplates,
-  initialVisibility,
-}: Props) {
+export default function TemplatesClient({ wsId, initialTemplates }: Props) {
   const t = useTranslations('ws-board-templates');
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibility, setVisibility] = useState<TemplateFilter>('workspace');
 
-  // Handle visibility change with server-side fetch
-  const handleVisibilityChange = (newVisibility: TemplateFilter) => {
-    const params = new URLSearchParams(searchParams.toString());
+  // Client-side filtering
+  const filteredTemplates = useMemo(() => {
+    let filtered = initialTemplates;
 
-    if (newVisibility === 'workspace') {
-      params.delete('visibility');
-    } else {
-      params.set('visibility', newVisibility);
+    // Filter by visibility
+    if (visibility === 'private') {
+      filtered = filtered.filter((t) => t.visibility === 'private');
     }
 
-    startTransition(() => {
-      router.push(`?${params.toString()}`);
-    });
-  };
-
-  // Client-side text search filtering only
-  const filteredTemplates = useMemo(() => {
-    if (!searchQuery.trim()) return initialTemplates;
+    if (!searchQuery.trim()) return filtered;
 
     const query = searchQuery.toLowerCase();
-    return initialTemplates.filter(
+    return filtered.filter(
       (tmpl) =>
         tmpl.name.toLowerCase().includes(query) ||
         tmpl.description?.toLowerCase().includes(query)
     );
-  }, [initialTemplates, searchQuery]);
+  }, [initialTemplates, searchQuery, visibility]);
 
   return (
     <div className="space-y-6">
@@ -102,22 +85,13 @@ export default function TemplatesClient({
             <div className="space-y-2">
               <p className="font-medium text-sm leading-none">Visibility</p>
               <Select
-                value={initialVisibility}
-                onValueChange={(v) =>
-                  handleVisibilityChange(v as TemplateFilter)
-                }
-                disabled={isPending}
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as TemplateFilter)}
               >
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="public">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      <span>{t('visibility.public')}</span>
-                    </div>
-                  </SelectItem>
                   <SelectItem value="workspace">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
@@ -149,9 +123,9 @@ export default function TemplatesClient({
       {filteredTemplates.length === 0 ? (
         <EmptyState
           searchQuery={searchQuery}
-          visibility={initialVisibility}
+          visibility={visibility}
           onClearSearch={() => setSearchQuery('')}
-          onClearFilter={() => handleVisibilityChange('public')}
+          onClearFilter={() => setVisibility('workspace')}
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -289,10 +263,10 @@ function EmptyState({
     );
   }
 
-  if (visibility !== 'public') {
+  if (visibility === 'private') {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-        <Bookmark className="mb-4 h-12 w-12 text-muted-foreground/50" />
+        <Lock className="mb-4 h-12 w-12 text-muted-foreground/50" />
         <h3 className="mb-2 font-semibold text-lg">
           {t('gallery.no_filter_results')}
         </h3>

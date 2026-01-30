@@ -1,4 +1,4 @@
-import { Store } from '@tuturuuu/icons';
+import { ArrowLeft, Globe } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -8,24 +8,21 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import TemplatesClient from './client';
-import type { BoardTemplate } from './types';
+import type { BoardTemplate } from '../types';
+import MarketplaceClient from './client';
 
 export const metadata: Metadata = {
-  title: 'Board Templates',
-  description: 'Browse and manage board templates in your Tuturuuu workspace.',
+  title: 'Template Marketplace',
+  description: 'Discover templates from the community.',
 };
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    visibility?: string;
-  }>;
 }
 
-export default async function TemplatesPage({ params }: Props) {
+export default async function MarketplacePage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -36,33 +33,36 @@ export default async function TemplatesPage({ params }: Props) {
 
         if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-        // Fetch templates
-        const { templates } = await getTemplates(wsId);
-
+        const { templates } = await getPublicTemplates();
         const t = await getTranslations('ws-board-templates');
 
         return (
           <div className="space-y-6">
-            {/* Header */}
-            <FeatureSummary
-              title={
-                <h1 className="font-bold text-2xl tracking-tight">
-                  {t('gallery.header')}
-                </h1>
-              }
-              description={t('gallery.description')}
-              action={
-                <Link href={`/${wsId}/tasks/templates/marketplace`}>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Store className="h-4 w-4" />
-                    {t('gallery.marketplace')}
-                  </Button>
-                </Link>
-              }
-            />
+            {/* Header with Back Button */}
+            <div className="space-y-4">
+              <Link href={`/${wsId}/tasks/templates`}>
+                <Button variant="ghost" size="sm" className="mb-4 gap-2 pl-0">
+                  <ArrowLeft className="h-4 w-4" />
+                  {t('marketplace.back_to_templates')}
+                </Button>
+              </Link>
+              <FeatureSummary
+                title={
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-linear-to-br from-dynamic-purple/10 to-dynamic-blue/10 p-3 text-dynamic-purple">
+                      <Globe className="h-7 w-7" />
+                    </div>
+                    <h1 className="font-bold text-2xl tracking-tight">
+                      {t('marketplace.header')}
+                    </h1>
+                  </div>
+                }
+                description={t('marketplace.description')}
+              />
+            </div>
 
-            {/* Templates Gallery */}
-            <TemplatesClient wsId={wsId} initialTemplates={templates} />
+            {/* Marketplace Client - handles search, sort, and rendering */}
+            <MarketplaceClient wsId={wsId} templates={templates} />
           </div>
         );
       }}
@@ -70,12 +70,10 @@ export default async function TemplatesPage({ params }: Props) {
   );
 }
 
-async function getTemplates(
-  wsId: string
-): Promise<{ templates: BoardTemplate[] }> {
+async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
   const supabase = await createClient();
 
-  // Get current user
+  // Get current user (to check ownership if needed, but for public it doesn't matter much unless we want to flag 'yours')
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -100,16 +98,14 @@ async function getTemplates(
       updated_at
     `
     )
-    .eq('ws_id', wsId)
-    .or(`visibility.neq.private,created_by.eq.${user.id}`)
+    .eq('visibility', 'public')
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching templates:', error);
+    console.error('Error fetching marketplace templates:', error);
     return { templates: [] };
   }
 
-  // Transform templates
   const transformedTemplates: BoardTemplate[] = templates.map((template) => {
     const content = template.content as {
       lists?: Array<{ tasks?: unknown[] }>;

@@ -9414,6 +9414,7 @@
       "header": "Mẫu bảng",
       "labels": "nhãn",
       "lists": "danh sách",
+      "marketplace": "Chợ mẫu",
       "no_filter_results": "Không tìm thấy mẫu",
       "no_filter_results_description": "Không có mẫu nào phù hợp với bộ lọc đã chọn. Hãy thử hiển thị tất cả mẫu.",
       "no_search_results": "Không tìm thấy mẫu",
@@ -9422,6 +9423,26 @@
       "search_placeholder": "Tìm kiếm mẫu...",
       "show_all_templates": "Hiển thị tất cả mẫu",
       "tasks": "nhiệm vụ"
+    },
+    "marketplace": {
+      "all_templates": "Tất cả mẫu",
+      "back_to_templates": "Quay lại Mẫu bảng",
+      "clear_search": "Xóa tìm kiếm",
+      "description": "Khám phá và sử dụng các mẫu được tạo bởi cộng đồng.",
+      "empty_description": "Hãy là người đầu tiên chia sẻ mẫu với cộng đồng!",
+      "empty_title": "Chưa có mẫu công khai nào",
+      "featured_badge": "Được đề xuất",
+      "featured_label": "Mẫu nổi bật",
+      "header": "Chợ mẫu",
+      "no_results_description": "Không có mẫu nào phù hợp với tìm kiếm của bạn. Thử từ khóa khác hoặc xóa tìm kiếm.",
+      "no_results_title": "Không tìm thấy mẫu",
+      "results_count": "{count, plural, =0 {Không có mẫu nào} =1 {1 mẫu} other {# mẫu}}",
+      "search_placeholder": "Tìm kiếm mẫu theo tên hoặc mô tả...",
+      "sort_created_asc": "Cũ nhất",
+      "sort_created_desc": "Mới nhất",
+      "sort_label": "Sắp xếp theo",
+      "sort_title_asc": "Tên (A-Z)",
+      "sort_title_desc": "Tên (Z-A)"
     },
     "save_dialog": {
       "confirm": "Lưu mẫu",
@@ -11050,7 +11071,6 @@
     "row_actions": {
       "archive": "Lưu trữ",
       "copy": "Nhân bản",
-
       "delete_forever": "Xóa vĩnh viễn",
       "dialog": {
         "archive_button": "Lưu trữ bảng",
