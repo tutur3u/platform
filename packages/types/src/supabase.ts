@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -2095,12 +2095,20 @@ export type Database = {
       };
       external_user_monthly_report_logs: {
         Row: {
+          approved_at: string | null;
+          approved_by: string | null;
           content: string;
           created_at: string;
           creator_id: string | null;
           feedback: string;
           group_id: string;
           id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          report_approval_status:
+            | Database['public']['Enums']['approval_status']
+            | null;
           report_id: string;
           score: number | null;
           scores: number[] | null;
@@ -2108,12 +2116,20 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
           feedback?: string;
           group_id: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?:
+            | Database['public']['Enums']['approval_status']
+            | null;
           report_id: string;
           score?: number | null;
           scores?: number[] | null;
@@ -2121,12 +2137,20 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
           feedback?: string;
           group_id?: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?:
+            | Database['public']['Enums']['approval_status']
+            | null;
           report_id?: string;
           score?: number | null;
           scores?: number[] | null;
@@ -2264,12 +2288,18 @@ export type Database = {
       };
       external_user_monthly_reports: {
         Row: {
+          approved_at: string | null;
+          approved_by: string | null;
           content: string;
           created_at: string;
           creator_id: string | null;
           feedback: string;
           group_id: string;
           id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
           score: number | null;
           scores: number[] | null;
           title: string;
@@ -2277,12 +2307,18 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content: string;
           created_at?: string;
           creator_id?: string | null;
           feedback: string;
           group_id: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           score?: number | null;
           scores?: number[] | null;
           title: string;
@@ -2290,12 +2326,18 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
           feedback?: string;
           group_id?: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           score?: number | null;
           scores?: number[] | null;
           title?: string;
@@ -10531,27 +10573,45 @@ export type Database = {
       };
       user_group_posts: {
         Row: {
+          approved_at: string | null;
+          approved_by: string | null;
           content: string | null;
           created_at: string;
           group_id: string;
           id: string;
           notes: string | null;
+          post_approval_status: Database['public']['Enums']['approval_status'];
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
           title: string | null;
         };
         Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string | null;
           created_at?: string;
           group_id: string;
           id?: string;
           notes?: string | null;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
           title?: string | null;
         };
         Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string | null;
           created_at?: string;
           group_id?: string;
           id?: string;
           notes?: string | null;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
           title?: string | null;
         };
         Relationships: [
@@ -18330,6 +18390,7 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_power_users: {
         Args: { limit_count?: number };
         Returns: {
@@ -18365,6 +18426,10 @@ export type Database = {
         Returns: {
           task_id: string;
         }[];
+      };
+      get_report_workspace_id: {
+        Args: { p_report_id: string };
+        Returns: string;
       };
       get_retention_rate: {
         Args: { period?: string };
@@ -19558,6 +19623,7 @@ export type Database = {
         | 'multi_choice_quiz'
         | 'paragraph_quiz'
         | 'flashcards';
+      approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
       billing_reason:
         | 'purchase'
         | 'subscription_create'
@@ -21464,7 +21530,9 @@ export type Database = {
         | 'update_wallets'
         | 'delete_wallets'
         | 'view_stock_quantity'
-        | 'update_stock_quantity';
+        | 'update_stock_quantity'
+        | 'approve_reports'
+        | 'approve_posts';
     };
     CompositeTypes: {
       email_block_status: {
@@ -21618,6 +21686,7 @@ export const Constants = {
         'paragraph_quiz',
         'flashcards',
       ],
+      approval_status: ['PENDING', 'APPROVED', 'REJECTED'],
       billing_reason: [
         'purchase',
         'subscription_create',
@@ -23537,6 +23606,8 @@ export const Constants = {
         'delete_wallets',
         'view_stock_quantity',
         'update_stock_quantity',
+        'approve_reports',
+        'approve_posts',
       ],
     },
   },

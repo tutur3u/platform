@@ -12,6 +12,7 @@ import {
   Plus,
   Printer,
   Sun,
+  Shield,
   Undo,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -81,6 +82,7 @@ export default function EditableReportPreview({
     user_note?: string | null;
     creator_name?: string;
     group_name?: string;
+    approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   };
   configs: WorkspaceConfig[];
   isNew: boolean;

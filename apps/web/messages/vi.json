@@ -10249,7 +10249,14 @@
     "updated_report-number": "Bản cập nhật #{number}",
     "user_data": "Chỉ số người dùng",
     "value": "Giá trị",
-    "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử"
+    "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử",
+    "needs_approval": "Cần phê duyệt",
+    "needs_approval_description": "Báo cáo này cần được phê duyệt trước khi có thể xuất.",
+    "export_blocked_not_approved": "Xuất bị chặn - báo cáo chưa được phê duyệt",
+    "approval_status": "Trạng thái phê duyệt",
+    "approved": "Đã phê duyệt",
+    "pending": "Đang chờ",
+    "rejected": "Bị từ chối"
   },
   "ws-roles": {
     "active_roles": "Vai trò đang hoạt động",
@@ -10273,6 +10280,10 @@
     "all_members_already_added": "Tất cả thành viên trong không gian làm việc đã được thêm vào vai trò này",
     "assignment_matrix": "Ma trận Phân công",
     "avg_permissions": "Quyền Trung bình",
+    "approve_posts": "Phê duyệt bài viết",
+    "approve_posts_description": "Cho phép thành viên phê duyệt hoặc từ chối bài viết trước khi gửi qua email.",
+    "approve_reports": "Phê duyệt báo cáo",
+    "approve_reports_description": "Cho phép thành viên phê duyệt hoặc từ chối báo cáo nhóm người dùng. Báo cáo đã phê duyệt có thể được xuất.",
     "bypass_time_tracking_request_approval": "Bỏ qua phê duyệt yêu cầu theo dõi thời gian",
     "bypass_time_tracking_request_approval_description": "Cho phép bỏ qua các hạn chế khi phê duyệt/từ chối yêu cầu theo dõi thời gian",
     "check_user_attendance": "Kiểm tra điểm danh người dùng",
@@ -11334,7 +11345,11 @@
     "select_group_placeholder": "Chọn một nhóm",
     "show_post_content": "Hiển thị nội dung bài viết",
     "show_post_status": "Hiển thị trạng thái bài viết",
-    "singular": "Nhóm người dùng"
+    "singular": "Nhóm người dùng",
+    "post_needs_approval": "Bài viết cần phê duyệt",
+    "post_needs_approval_description": "Bài viết này cần được phê duyệt trước khi có thể gửi qua email.",
+    "email_blocked_not_approved": "Email bị chặn - bài viết chưa được phê duyệt",
+    "post_approval_status": "Trạng thái phê duyệt"
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Khuyến mãi",

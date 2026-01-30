@@ -5,6 +5,7 @@ import {
   Eye,
   Pencil,
   Settings,
+  Shield,
   Trash2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -53,6 +54,7 @@ export interface UserGroupPost {
   content: string | null;
   notes: string | null;
   created_at?: string;
+  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 }
 
 export default function UserGroupPosts({
@@ -353,6 +355,12 @@ export default function UserGroupPosts({
                             new Date(post.created_at),
                             'HH:mm, dd/MM/yyyy'
                           )}
+                        </div>
+                      )}
+                      {post.approval_status !== 'APPROVED' && (
+                        <div className="flex w-fit items-center gap-0.5 rounded bg-dynamic-orange px-2 py-1 text-background text-xs">
+                          <Shield className="h-3 w-3" />
+                          {t('ws-user-groups.post_needs_approval')}
                         </div>
                       )}
                     </div>

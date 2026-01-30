@@ -53,6 +53,38 @@ export async function POST(
       );
     }
 
+    // Check if post is approved before allowing email send
+    // Fetch post from database to verify approval status (don't trust client input)
+    const { data: post, error: postError } = await sbAdmin
+      .from('user_group_posts')
+      .select('id, approval_status')
+      .eq('id', postId)
+      .eq('group_id', groupId)
+      .single();
+
+    if (postError || !post) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Post not found`
+      );
+      return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+    }
+
+    if (post.approval_status !== 'APPROVED') {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Post not approved`
+      );
+      return NextResponse.json(
+        { message: 'Post must be approved before sending emails' },
+        { status: 403 }
+      );
+    }
+
+    const data = (await req.json()) as {
+      users: UserToEmail[];
+      post: UserGroupPost;
+      date: string;
+    };
+
     // Check if workspace has email sending enabled
     const { data: workspaceSecret } =
       wsId === process.env.MAILBOX_ALLOWED_WS_ID
@@ -75,12 +107,6 @@ export async function POST(
         { status: 403 }
       );
     }
-
-    const data = (await req.json()) as {
-      users: UserToEmail[];
-      post: UserGroupPost;
-      date: string;
-    };
 
     if (!data.users) {
       console.log(

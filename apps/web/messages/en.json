@@ -10249,7 +10249,14 @@
     "updated_report-number": "Update #{number}",
     "user_data": "User Statistics",
     "value": "Value",
-    "viewing_history_snapshot": "Viewing history snapshot"
+    "viewing_history_snapshot": "Viewing history snapshot",
+    "needs_approval": "Needs approval",
+    "needs_approval_description": "This report needs to be approved before it can be exported.",
+    "export_blocked_not_approved": "Export blocked - report not approved",
+    "approval_status": "Approval status",
+    "approved": "Approved",
+    "pending": "Pending",
+    "rejected": "Rejected"
   },
   "ws-roles": {
     "active_roles": "Active roles",
@@ -10273,6 +10280,10 @@
     "all_members_already_added": "All workspace members have been added to this role",
     "assignment_matrix": "Assignment Matrix",
     "avg_permissions": "Avg Permissions",
+    "approve_posts": "Approve Posts",
+    "approve_posts_description": "Allows members to approve or reject posts before they can be sent via email.",
+    "approve_reports": "Approve Reports",
+    "approve_reports_description": "Allows members to approve or reject user group reports. Approved reports can be exported.",
     "bypass_time_tracking_request_approval": "Bypass Time Tracking Request Approval",
     "bypass_time_tracking_request_approval_description": "Allows bypassing of restrictions when approving/denying time-tracking requests",
     "check_user_attendance": "Check User Attendance",
@@ -11334,7 +11345,11 @@
     "select_group_placeholder": "Select a group",
     "show_post_content": "Show post content",
     "show_post_status": "Show post status",
-    "singular": "User group"
+    "singular": "User group",
+    "post_needs_approval": "Post needs approval",
+    "post_needs_approval_description": "This post needs to be approved before it can be sent via email.",
+    "email_blocked_not_approved": "Email blocked - post not approved",
+    "post_approval_status": "Approval status"
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Coupon",
