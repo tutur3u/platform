@@ -27,7 +27,7 @@ ALTER TABLE user_group_posts
 
 -- Add approval columns to external_user_monthly_report_logs (for snapshots)
 ALTER TABLE external_user_monthly_report_logs 
-    ADD COLUMN IF NOT EXISTS report_approval_status approval_status,
+    ADD COLUMN IF NOT EXISTS report_approval_status approval_status NOT NULL DEFAULT 'PENDING',
     ADD COLUMN IF NOT EXISTS approved_by uuid,
     ADD COLUMN IF NOT EXISTS approved_at timestamptz,
     ADD COLUMN IF NOT EXISTS rejected_by uuid,
@@ -53,6 +53,15 @@ ALTER TABLE user_group_posts
 
 -- Backfill existing reports to APPROVED with creator_id as approved_by
 UPDATE external_user_monthly_reports 
+SET 
+    report_approval_status = 'APPROVED',
+    approved_by = creator_id,
+    approved_at = created_at
+WHERE report_approval_status = 'PENDING';
+
+
+-- Backfill existing report logs to APPROVED with creator_id as approved_by
+UPDATE external_user_monthly_report_logs
 SET 
     report_approval_status = 'APPROVED',
     approved_by = creator_id,
@@ -149,19 +158,37 @@ BEGIN
     -- Check if user has approve permission
     v_has_approve_permission := has_workspace_permission(v_ws_id, v_user_id, 'approve_reports');
     
-    -- If user has approve permission, auto-approve the report
+    -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
     IF v_has_approve_permission THEN
-        NEW.approval_status := 'APPROVED';
-        NEW.approved_by := v_user_id;
-        NEW.approved_at := now();
-        NEW.rejected_by := NULL;
-        NEW.rejected_at := NULL;
-        NEW.rejection_reason := NULL;
+        IF NEW.report_approval_status = 'REJECTED' THEN
+            -- Allow rejection, ensure required fields are set
+            IF NEW.rejected_by IS NULL THEN
+                NEW.rejected_by := v_user_id;
+            END IF;
+            IF NEW.rejected_at IS NULL THEN
+                NEW.rejected_at := now();
+            END IF;
+            -- Clear approval fields
+            NEW.approved_by := NULL;
+            NEW.approved_at := NULL;
+        ELSIF NEW.report_approval_status = 'APPROVED' THEN
+            -- Allow approval
+            IF NEW.approved_by IS NULL THEN
+                NEW.approved_by := v_user_id;
+            END IF;
+            IF NEW.approved_at IS NULL THEN
+                NEW.approved_at := now();
+            END IF;
+            -- Clear rejection fields
+            NEW.rejected_by := NULL;
+            NEW.rejected_at := NULL;
+            NEW.rejection_reason := NULL;
+        END IF;
     ELSE
         -- User doesn't have approve permission
         -- If they're trying to set approval fields directly, reject
         IF TG_OP = 'UPDATE' AND (
-            NEW.approval_status IS DISTINCT FROM OLD.approval_status OR
+            NEW.report_approval_status IS DISTINCT FROM OLD.report_approval_status OR
             NEW.approved_by IS DISTINCT FROM OLD.approved_by OR
             NEW.approved_at IS DISTINCT FROM OLD.approved_at OR
             NEW.rejected_by IS DISTINCT FROM OLD.rejected_by OR
@@ -172,7 +199,7 @@ BEGIN
         END IF;
         
         -- Force pending status and clear approval fields
-        NEW.approval_status := 'PENDING';
+        NEW.report_approval_status := 'PENDING';
         NEW.approved_by := NULL;
         NEW.approved_at := NULL;
         NEW.rejected_by := NULL;
@@ -211,19 +238,37 @@ BEGIN
     -- Check if user has approve permission
     v_has_approve_permission := has_workspace_permission(v_ws_id, v_user_id, 'approve_posts');
     
-    -- If user has approve permission, auto-approve the post
+    -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
     IF v_has_approve_permission THEN
-        NEW.approval_status := 'APPROVED';
-        NEW.approved_by := v_user_id;
-        NEW.approved_at := now();
-        NEW.rejected_by := NULL;
-        NEW.rejected_at := NULL;
-        NEW.rejection_reason := NULL;
+        IF NEW.post_approval_status = 'REJECTED' THEN
+            -- Allow rejection, ensure required fields are set
+            IF NEW.rejected_by IS NULL THEN
+                NEW.rejected_by := v_user_id;
+            END IF;
+            IF NEW.rejected_at IS NULL THEN
+                NEW.rejected_at := now();
+            END IF;
+            -- Clear approval fields
+            NEW.approved_by := NULL;
+            NEW.approved_at := NULL;
+        ELSIF NEW.post_approval_status = 'APPROVED' THEN
+            -- Allow approval
+            IF NEW.approved_by IS NULL THEN
+                NEW.approved_by := v_user_id;
+            END IF;
+            IF NEW.approved_at IS NULL THEN
+                NEW.approved_at := now();
+            END IF;
+            -- Clear rejection fields
+            NEW.rejected_by := NULL;
+            NEW.rejected_at := NULL;
+            NEW.rejection_reason := NULL;
+        END IF;
     ELSE
         -- User doesn't have approve permission
         -- If they're trying to set approval fields directly, reject
         IF TG_OP = 'UPDATE' AND (
-            NEW.approval_status IS DISTINCT FROM OLD.approval_status OR
+            NEW.post_approval_status IS DISTINCT FROM OLD.post_approval_status OR
             NEW.approved_by IS DISTINCT FROM OLD.approved_by OR
             NEW.approved_at IS DISTINCT FROM OLD.approved_at OR
             NEW.rejected_by IS DISTINCT FROM OLD.rejected_by OR
@@ -234,7 +279,7 @@ BEGIN
         END IF;
         
         -- Force pending status and clear approval fields
-        NEW.approval_status := 'PENDING';
+        NEW.post_approval_status := 'PENDING';
         NEW.approved_by := NULL;
         NEW.approved_at := NULL;
         NEW.rejected_by := NULL;
@@ -280,7 +325,7 @@ BEGIN
         scores,
         creator_id,
         created_at,
-        approval_status,
+        report_approval_status,
         approved_by,
         approved_at,
         rejected_by,
@@ -298,7 +343,7 @@ BEGIN
         NEW.scores,
         NEW.creator_id,
         now(),
-        NEW.approval_status,
+        NEW.report_approval_status,
         NEW.approved_by,
         NEW.approved_at,
         NEW.rejected_by,

@@ -7,6 +7,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
   Select,
   SelectContent,
@@ -260,28 +261,36 @@ export default function GroupReportsClient({
     selectedManagerName,
   ]);
 
-  const configsQuery = useQuery({
-    queryKey: ['ws', wsId, 'report-configs'],
-    queryFn: async (): Promise<WorkspaceConfig[]> => {
-      const { data, error } = await supabase
-        .from('workspace_configs')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      const base = availableConfigs.map(({ defaultValue, ...rest }) => ({
-        ...rest,
-        value: defaultValue,
-      }));
-      const merged = [...base];
-      (data ?? []).forEach((config) => {
-        const idx = merged.findIndex((c) => c.id === config.id);
-        if (idx !== -1) merged[idx] = { ...merged[idx], ...config };
-        else merged.push(config);
+  // Extract config IDs from availableConfigs for batch fetching (filter out any without id)
+  const configIds = useMemo(
+    () =>
+      availableConfigs
+        .map((config) => config.id)
+        .filter((id): id is string => Boolean(id)),
+    []
+  );
+
+  // Use batch query to fetch workspace configs
+  const configsQuery = useWorkspaceConfigs(wsId, configIds);
+
+  // Transform the fetched config data into WorkspaceConfig[] format
+  const configsData: WorkspaceConfig[] = useMemo(() => {
+    const fetchedConfigs = configsQuery.data;
+    if (!fetchedConfigs) return [];
+
+    // Merge fetched values with availableConfigs defaults
+    return availableConfigs
+      .filter((config): config is typeof config & { id: string } =>
+        Boolean(config.id)
+      )
+      .map((baseConfig) => {
+        const fetchedValue = fetchedConfigs[baseConfig.id];
+        return {
+          ...baseConfig,
+          value: fetchedValue ?? baseConfig.defaultValue,
+        } as WorkspaceConfig;
       });
-      return merged as WorkspaceConfig[];
-    },
-  });
+  }, [configsQuery.data]);
 
   // Query to fetch healthcare vitals scores for the selected user
   const healthcareVitalsQuery = useQuery({
@@ -463,34 +472,36 @@ export default function GroupReportsClient({
         ) : null}
       </div>
 
-      {Boolean(groupId && userId) && selectedReport && configsQuery.data && (
-        <EditableReportPreview
-          wsId={wsId}
-          report={{
-            ...selectedReport,
-            // normalize potential nulls to undefined to match prop type
-            user_name: selectedReport?.user_name ?? undefined,
-            group_name:
-              selectedReport.group_name ??
-              groupQuery.data?.name ??
-              groupNameFallback,
-            // Frontend-only override of the displayed group manager name
-            creator_name: effectiveCreatorName ?? undefined,
-          }}
-          configs={configsQuery.data}
-          isNew={reportId === 'new'}
-          canUpdateReports={canUpdateReports}
-          canDeleteReports={canDeleteReports}
-          groupId={groupId}
-          healthcareVitals={healthcareVitalsQuery.data ?? []}
-          healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
-          factorEnabled={ENABLE_FACTOR_CALCULATION}
-          managerOptions={managerOptions}
-          selectedManagerName={effectiveCreatorName ?? undefined}
-          onChangeManagerAction={(name) => setSelectedManagerName(name)}
-          canCheckUserAttendance={canCheckUserAttendance}
-        />
-      )}
+      {Boolean(groupId && userId) &&
+        selectedReport &&
+        configsData.length > 0 && (
+          <EditableReportPreview
+            wsId={wsId}
+            report={{
+              ...selectedReport,
+              // normalize potential nulls to undefined to match prop type
+              user_name: selectedReport?.user_name ?? undefined,
+              group_name:
+                selectedReport.group_name ??
+                groupQuery.data?.name ??
+                groupNameFallback,
+              // Frontend-only override of the displayed group manager name
+              creator_name: effectiveCreatorName ?? undefined,
+            }}
+            configs={configsData}
+            isNew={reportId === 'new'}
+            canUpdateReports={canUpdateReports}
+            canDeleteReports={canDeleteReports}
+            groupId={groupId}
+            healthcareVitals={healthcareVitalsQuery.data ?? []}
+            healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
+            factorEnabled={ENABLE_FACTOR_CALCULATION}
+            managerOptions={managerOptions}
+            selectedManagerName={effectiveCreatorName ?? undefined}
+            onChangeManagerAction={(name) => setSelectedManagerName(name)}
+            canCheckUserAttendance={canCheckUserAttendance}
+          />
+        )}
     </div>
   );
 }

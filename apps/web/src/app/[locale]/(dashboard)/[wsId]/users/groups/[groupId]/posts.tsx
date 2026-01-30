@@ -54,7 +54,7 @@ export interface UserGroupPost {
   content: string | null;
   notes: string | null;
   created_at?: string;
-  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  post_approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 }
 
 export default function UserGroupPosts({
@@ -357,7 +357,7 @@ export default function UserGroupPosts({
                           )}
                         </div>
                       )}
-                      {post.approval_status !== 'APPROVED' && (
+                      {post.post_approval_status !== 'APPROVED' && (
                         <div className="flex w-fit items-center gap-0.5 rounded bg-dynamic-orange px-2 py-1 text-background text-xs">
                           <Shield className="h-3 w-3" />
                           {t('ws-user-groups.post_needs_approval')}

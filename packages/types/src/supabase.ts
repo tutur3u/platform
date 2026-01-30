@@ -2106,9 +2106,7 @@ export type Database = {
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
-          report_approval_status:
-            | Database['public']['Enums']['approval_status']
-            | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
           report_id: string;
           score: number | null;
           scores: number[] | null;
@@ -2127,9 +2125,7 @@ export type Database = {
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
-          report_approval_status?:
-            | Database['public']['Enums']['approval_status']
-            | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           report_id: string;
           score?: number | null;
           scores?: number[] | null;
@@ -2148,9 +2144,7 @@ export type Database = {
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
-          report_approval_status?:
-            | Database['public']['Enums']['approval_status']
-            | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           report_id?: string;
           score?: number | null;
           scores?: number[] | null;

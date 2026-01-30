@@ -716,6 +716,95 @@
     "status_code": "Trạng thái",
     "user_agent": "User Agent"
   },
+  "approvals": {
+    "actions": {
+      "approve": "Duyệt",
+      "approved": "Đã ghi nhận phê duyệt.",
+      "cancel": "Hủy",
+      "confirmReject": "Xác Nhận Từ Chối",
+      "reject": "Từ chối",
+      "rejected": "Đã ghi nhận từ chối.",
+      "viewDetails": "Xem Chi Tiết"
+    },
+    "description": "Xem và phê duyệt báo cáo, bài đăng của người dùng.",
+    "detail": {
+      "actions": "Thao Tác",
+      "compareWithPrevious": "So Sánh Với Phiên Bản Trước",
+      "content": "Nội Dung",
+      "currentVersion": "Phiên Bản Hiện Tại",
+      "day": "N{day}",
+      "feedback": "Nhận Xét",
+      "loading": "Đang tải...",
+      "metadata": "Thông Tin",
+      "no_content": "Không có nội dung",
+      "noContent": "Không có nội dung",
+      "noData": "Không có dữ liệu",
+      "pendingApproval": "Đang Chờ Phê Duyệt",
+      "postSubtitle": "Bài Đăng Nhóm",
+      "previousApprovedVersion": "Phiên Bản Đã Duyệt Trước Đó",
+      "rejectionReasonLabel": "Lý Do Từ Chối",
+      "rejectionReasonPlaceholder": "Nhập lý do từ chối mục này...",
+      "reportSubtitle": "Báo Cáo Tháng",
+      "score": "Điểm Tổng",
+      "scores": "Điểm Hàng Ngày",
+      "statusHistory": "Lịch Sử Trạng Thái",
+      "title": "Chi Tiết Phê Duyệt"
+    },
+    "empty": "Hiện chưa có mục cần phê duyệt.",
+    "filters": {
+      "clearFilters": "Xóa bộ lọc",
+      "description": "Lọc phê duyệt theo trạng thái và các tiêu chí khác.",
+      "status": "Trạng thái",
+      "status_all": "Tất cả",
+      "status_approved": "Đã duyệt",
+      "status_pending": "Đang chờ",
+      "status_rejected": "Từ chối",
+      "title": "Bộ lọc"
+    },
+    "labels": {
+      "approved_at": "Duyệt lúc",
+      "created_at": "Tạo lúc",
+      "group": "Nhóm",
+      "rejected_at": "Từ chối lúc",
+      "rejection_reason": "Lý do",
+      "unknown_group": "Nhóm không xác định",
+      "unknown_user": "Người dùng không xác định",
+      "untitled": "Chưa đặt tiêu đề",
+      "user": "Người dùng"
+    },
+    "list": {
+      "error": "Không thể tải danh sách phê duyệt",
+      "itemsPerPage": "Số mục mỗi trang",
+      "loading": "Đang tải danh sách phê duyệt...",
+      "noItemsDefault": "Hiện chưa có mục nào cần phê duyệt.",
+      "noItemsMessage": "Hãy điều chỉnh bộ lọc để xem thêm kết quả.",
+      "noItemsTitle": "Không tìm thấy mục nào",
+      "showing": "Hiển thị {start}–{end} trong {total}",
+      "title": "Phê duyệt"
+    },
+    "personal": {
+      "description": "Chuyển sang workspace nhóm để duyệt báo cáo hoặc bài đăng.",
+      "title": "Không hỗ trợ phê duyệt cho workspace cá nhân."
+    },
+    "reject_dialog": {
+      "cancel": "Hủy",
+      "confirm": "Từ chối",
+      "description": "Vui lòng nêu lý do từ chối {title}.",
+      "reason": "Lý do từ chối",
+      "reason_placeholder": "Giải thích vì sao mục này bị từ chối.",
+      "title": "Từ chối mục"
+    },
+    "status": {
+      "approved": "Đã duyệt",
+      "pending": "Đang chờ",
+      "rejected": "Từ chối"
+    },
+    "tabs": {
+      "posts": "Bài đăng",
+      "reports": "Báo cáo"
+    },
+    "title": "Phê duyệt"
+  },
   "audit-log-table": {
     "active": "Hoạt động",
     "archived": "Đã lưu trữ",
@@ -8982,6 +9071,7 @@
   },
   "workspace-users-tabs": {
     "active": "Người dùng đang hoạt động",
+    "approvals": "Phê duyệt",
     "attendance": "Điểm danh",
     "database": "Danh sách",
     "fields": "Trường thông tin",
@@ -10184,6 +10274,8 @@
     "singular": "Bộ trắc nghiệm"
   },
   "ws-reports": {
+    "approval_status": "Trạng thái phê duyệt",
+    "approved": "Đã phê duyệt",
     "average_score": "Điểm trung bình",
     "brand_location": "Vị trí thương hiệu",
     "brand_logo_url": "URL logo thương hiệu",
@@ -10199,6 +10291,7 @@
     "edit_existing_value": "Chỉnh sửa giá trị hiện tại",
     "edit_value": "Chỉnh sửa giá trị",
     "export": "Xuất",
+    "export_blocked_not_approved": "Xuất bị chặn - báo cáo chưa được phê duyệt",
     "export_png_success": "Đã xuất PNG của báo cáo",
     "exporting_png": "Đang xuất PNG...",
     "failed_create_report": "Tạo báo cáo thất bại",
@@ -10220,11 +10313,16 @@
     "lead_generation": "Tạo khách hàng tiềm năng",
     "light": "Sáng",
     "loading": "Đang tải...",
+    "loading_approved_version": "Đang tải phiên bản đã duyệt...",
     "name": "Tên",
+    "needs_approval": "Cần phê duyệt",
+    "needs_approval_description": "Báo cáo này cần được phê duyệt trước khi có thể xuất.",
     "no_history": "Không có lịch sử",
     "no_scores": "Không có dữ liệu điểm",
+    "pending": "Đang chờ",
     "png": "PNG",
     "print": "In",
+    "rejected": "Bị từ chối",
     "report": "Báo cáo",
     "report_closing": "Lời kết báo cáo",
     "report_conclusion": "Đoạn kết báo cáo",
@@ -10249,14 +10347,7 @@
     "updated_report-number": "Bản cập nhật #{number}",
     "user_data": "Chỉ số người dùng",
     "value": "Giá trị",
-    "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử",
-    "needs_approval": "Cần phê duyệt",
-    "needs_approval_description": "Báo cáo này cần được phê duyệt trước khi có thể xuất.",
-    "export_blocked_not_approved": "Xuất bị chặn - báo cáo chưa được phê duyệt",
-    "approval_status": "Trạng thái phê duyệt",
-    "approved": "Đã phê duyệt",
-    "pending": "Đang chờ",
-    "rejected": "Bị từ chối"
+    "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử"
   },
   "ws-roles": {
     "active_roles": "Vai trò đang hoạt động",
@@ -10278,12 +10369,12 @@
     "ai_lab": "Phòng thí nghiệm",
     "ai_lab_description": "Cho phép các thành viên tạo, chỉnh sửa và xóa các câu hỏi tùy chỉnh cho trí tuệ nhân tạo.",
     "all_members_already_added": "Tất cả thành viên trong không gian làm việc đã được thêm vào vai trò này",
-    "assignment_matrix": "Ma trận Phân công",
-    "avg_permissions": "Quyền Trung bình",
     "approve_posts": "Phê duyệt bài viết",
     "approve_posts_description": "Cho phép thành viên phê duyệt hoặc từ chối bài viết trước khi gửi qua email.",
     "approve_reports": "Phê duyệt báo cáo",
     "approve_reports_description": "Cho phép thành viên phê duyệt hoặc từ chối báo cáo nhóm người dùng. Báo cáo đã phê duyệt có thể được xuất.",
+    "assignment_matrix": "Ma trận Phân công",
+    "avg_permissions": "Quyền Trung bình",
     "bypass_time_tracking_request_approval": "Bỏ qua phê duyệt yêu cầu theo dõi thời gian",
     "bypass_time_tracking_request_approval_description": "Cho phép bỏ qua các hạn chế khi phê duyệt/từ chối yêu cầu theo dõi thời gian",
     "check_user_attendance": "Kiểm tra điểm danh người dùng",
@@ -11333,11 +11424,15 @@
     "edit_description": "Sửa nhóm hiện có",
     "edit_post": "Chỉnh sửa bài viết",
     "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
+    "email_blocked_not_approved": "Email bị chặn - bài viết chưa được phê duyệt",
     "group_label": "Nhóm",
     "name": "Tên nhóm",
     "no_groups": "Không có nhóm nào",
     "no_posts_to_show": "Không có bài viết nào để hiển thị.",
     "plural": "Nhóm người dùng",
+    "post_approval_status": "Trạng thái phê duyệt",
+    "post_needs_approval": "Bài viết cần phê duyệt",
+    "post_needs_approval_description": "Bài viết này cần được phê duyệt trước khi có thể gửi qua email.",
     "posts": "Bài viết",
     "search_group_placeholder": "Tìm kiếm nhóm...",
     "select_group": "Chọn nhóm người dùng",
@@ -11345,11 +11440,7 @@
     "select_group_placeholder": "Chọn một nhóm",
     "show_post_content": "Hiển thị nội dung bài viết",
     "show_post_status": "Hiển thị trạng thái bài viết",
-    "singular": "Nhóm người dùng",
-    "post_needs_approval": "Bài viết cần phê duyệt",
-    "post_needs_approval_description": "Bài viết này cần được phê duyệt trước khi có thể gửi qua email.",
-    "email_blocked_not_approved": "Email bị chặn - bài viết chưa được phê duyệt",
-    "post_approval_status": "Trạng thái phê duyệt"
+    "singular": "Nhóm người dùng"
   },
   "ws-user-linked-coupons": {
     "coupon_label": "Khuyến mãi",

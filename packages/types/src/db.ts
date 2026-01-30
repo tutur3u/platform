@@ -249,6 +249,80 @@ export type MemberWithPermissions = {
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
+
+/**
+ * Raw report data from Supabase query with joins
+ * Represents the shape of data returned from the reports approval query
+ */
+export type ReportApprovalQueryResult = {
+  id: string;
+  title: string;
+  content: string;
+  feedback: string;
+  score: number | null;
+  scores: number[] | null;
+  created_at: string;
+  report_approval_status: Database['public']['Enums']['approval_status'];
+  rejection_reason: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  user?:
+    | {
+        full_name?: string | null;
+      }
+    | Array<{
+        full_name?: string | null;
+      }>
+    | null;
+  group_name?: string | null;
+};
+
+/**
+ * Report approval item with computed user_name field
+ * Used in approvals view for external user monthly reports
+ */
+export type ReportApprovalItem = Omit<ReportApprovalQueryResult, 'user'> & {
+  user_name?: string | null;
+};
+
+/**
+ * Report log entry for comparison view
+ * Represents a snapshot of a report from the logs table
+ */
+export type ReportLogEntry = {
+  id: string;
+  report_id: string;
+  title: string;
+  content: string;
+  feedback: string | null;
+  score: number | null;
+  scores: number[] | null;
+  created_at: string;
+  report_approval_status: Database['public']['Enums']['approval_status'] | null;
+  approved_at: string | null;
+};
+
+/**
+ * Raw post data from Supabase query with joins
+ * Represents the shape of data returned from the posts approval query
+ */
+export type PostApprovalQueryResult = {
+  id: string;
+  title: string | null;
+  content: string | null;
+  created_at: string;
+  post_approval_status: Database['public']['Enums']['approval_status'];
+  rejection_reason: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  group_name?: string | null;
+};
+
+/**
+ * Post approval item with joined group data
+ * Used in approvals view for user group posts
+ */
+export type PostApprovalItem = PostApprovalQueryResult;
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 export type InternalEmail = Tables<'internal_emails'>;
 

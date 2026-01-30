@@ -151,8 +151,7 @@ export const getUserColumns = ({
             </Avatar>
             <div>
               <div className="font-medium">
-                {user.display_name ||
-                  generateFunName({ id: user.id, locale })}
+                {user.display_name || generateFunName({ id: user.id, locale })}
               </div>
               {user?.email && (
                 <div className="text-muted-foreground text-sm">
