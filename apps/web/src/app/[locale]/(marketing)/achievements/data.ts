@@ -3,6 +3,7 @@ export interface TeamMember {
   name: string;
   role: string;
   avatar?: string;
+  isNctMember?: boolean;
 }
 
 export interface Achievement {
@@ -21,41 +22,38 @@ export interface Achievement {
 export const achievements: Achievement[] = [
   {
     id: '1',
-    competitionName: 'International Coding Championship 2024',
-    achievement: '🥇 First Place',
-    teamName: 'Code Crusaders',
+    competitionName: 'Bosch Code Race 2025',
+    achievement: '2nd Runner-Up',
+    teamName: 'The LIEMS',
     image: '/hall-of-fames/coderace.jpg',
     teamMembers: [
       {
         id: '1',
-        name: 'Alex Chen',
-        role: 'Team Lead & Full-stack Developer',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Ngo Van Tai',
+        role: 'Embedded Developer',
+        avatar: '/members/gen7/tai.png',
+        isNctMember: true,
       },
       {
         id: '2',
-        name: 'Sarah Kim',
-        role: 'Frontend Specialist',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Huynh Thai Duong',
+        role: 'Embedded Developer',
+        avatar: '/members/gen7/duong.png',
+        isNctMember: true,
       },
       {
         id: '3',
-        name: 'Marcus Johnson',
-        role: 'Backend Engineer',
-        avatar: '/android-chrome-512x512.png',
-      },
-      {
-        id: '4',
-        name: 'Emily Rodriguez',
-        role: 'UI/UX Designer',
-        avatar: '/android-chrome-512x512.png',
+        name: 'Le Nguyen Khuong Duy',
+        role: 'Embedded Developer',
+        isNctMember: false,
       },
     ],
     achievementDescription:
-      'Our team developed an innovative AI-powered code review system that revolutionizes the way developers collaborate. The solution uses machine learning to provide intelligent suggestions and automatically detects potential bugs before they reach production.',
-    eventLink: 'https://codingchampionship.org/2024',
-    year: 2024,
-    category: 'Competition',
+      'In just 72 hours, our team built the Intelligent Mountain Pass Safety Assist System (IMPSAS) - an autonomous driving solution designed to prevent accidents on dangerous mountain roads. Despite having no prior experience with CAN bus or autonomous systems, we learned rapidly and delivered a working system that monitors brake integrity, detects hazards in blind spots, and warns drivers about slippery conditions. The hackathon tested our adaptability, teamwork, and ability to bridge the gap between simulation and real-world vehicle integration.',
+    eventLink:
+      'https://www.rmit.edu.vn/students/student-news-and-events/student-news/2025/rmit-students-build-safety-system-in-72-hours',
+    year: 2025,
+    category: 'Hackathon',
   },
   {
     id: '2',

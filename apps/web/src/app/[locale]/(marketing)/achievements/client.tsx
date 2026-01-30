@@ -159,7 +159,7 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
           </div>
         )}
         {/* Dark overlay for better text readability - reduces opacity on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 transition-opacity duration-200 group-hover:from-black/50 group-hover:via-black/20 group-hover:to-black/10" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/20 transition-opacity duration-200 group-hover:from-black/50 group-hover:via-black/20 group-hover:to-black/10" />
       </div>
 
       {/* Content Overlay */}

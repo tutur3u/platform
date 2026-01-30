@@ -1,9 +1,6 @@
 'use client';
 
-import { Achievement } from './data';
-import { Avatar } from '@ncthub/ui/avatar';
-import { AvatarImage } from '@ncthub/ui/avatar';
-import { AvatarFallback } from '@ncthub/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
 import { Badge } from '@ncthub/ui/badge';
 import { Button } from '@ncthub/ui/button';
 import {
@@ -14,12 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@ncthub/ui/dialog';
-import { ExternalLinkIcon } from '@ncthub/ui/icons';
-import { UsersIcon } from '@ncthub/ui/icons';
-import { TrophyIcon } from '@ncthub/ui/icons';
+import { ExternalLinkIcon, TrophyIcon, UsersIcon } from '@ncthub/ui/icons';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import type { Achievement } from './data';
 
 const categoryColors = {
   Hackathon: 'default',
@@ -40,10 +36,9 @@ export default function AchievementDialog({
   return (
     <Dialog key={achievement.id}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto md:min-w-2xl">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto md:min-w-2xl lg:min-w-3xl xl:min-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <TrophyIcon className="h-5 w-5 text-yellow-500" />
             {achievement.competitionName}
           </DialogTitle>
           <DialogDescription asChild>
@@ -55,7 +50,7 @@ export default function AchievementDialog({
                 >
                   {achievement.category} • {achievement.year}
                 </Badge>
-                <span className="text-lg font-semibold text-foreground">
+                <span className="font-semibold text-foreground text-lg">
                   {achievement.achievement}
                 </span>
               </div>
@@ -90,7 +85,7 @@ export default function AchievementDialog({
                   key={member.id}
                   className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-12 w-12">
                     <AvatarImage src={member.avatar} alt={member.name} />
                     <AvatarFallback>
                       {member.name
@@ -100,10 +95,20 @@ export default function AchievementDialog({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {member.name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium text-foreground text-xs md:text-base">
+                        {member.name}
+                      </p>
+                      {member.isNctMember && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 border-[#5FC6E5]/50 px-1.5 py-0.5 text-[#5FC6E5] text-[10px]"
+                        >
+                          NCT
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="truncate text-muted-foreground text-xs">
                       {member.role}
                     </p>
                   </div>
@@ -116,7 +121,7 @@ export default function AchievementDialog({
             <h4 className="mb-3 font-semibold text-foreground">
               Achievement Description
             </h4>
-            <p className="leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground leading-relaxed">
               {achievement.achievementDescription}
             </p>
           </div>
