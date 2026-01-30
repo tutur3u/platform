@@ -59,7 +59,7 @@ export function InvoiceUserHistoryAccordion({ wsId, userId }: Props) {
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="invoices" className="border-none">
           <AccordionTrigger className="hover:no-underline">
-            {t('ws-invoices.plural')} ({invoices.length})
+            {t('ws-invoices.plural')} ({userInvoicesData?.pages[0]?.count ?? 0})
           </AccordionTrigger>
           <AccordionContent>
             <ScrollArea className="h-75 w-full rounded-md border p-4">
@@ -80,6 +80,8 @@ export function InvoiceUserHistoryAccordion({ wsId, userId }: Props) {
                         <Link
                           href={`/${wsId}/finance/invoices/${invoice.id}`}
                           className="text-muted-foreground transition-colors hover:text-primary"
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
                           <ExternalLink className="h-3 w-3" />
                         </Link>

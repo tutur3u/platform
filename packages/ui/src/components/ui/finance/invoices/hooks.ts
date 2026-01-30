@@ -7,7 +7,10 @@ import {
 } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
-import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import type {
+  Invoice,
+  RawInvoiceRow,
+} from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
@@ -438,25 +441,36 @@ export const useInfiniteUserInvoices = (
 ) => {
   return useInfiniteQuery({
     queryKey: ['infinite-user-invoices', wsId, userId],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = null }: { pageParam: string | null }) => {
       const supabase = createClient();
-      const from = pageParam * pageSize;
-      const to = from + pageSize - 1;
 
-      const {
-        data: rawData,
-        error,
-        count,
-      } = await supabase
+      // Fetch count only on initial load (when no cursor)
+      let count: number | null = null;
+      if (!pageParam) {
+        const { count: totalCount, error: countError } = await supabase
+          .from('finance_invoices')
+          .select('*', { count: 'exact', head: true })
+          .eq('ws_id', wsId)
+          .eq('customer_id', userId);
+        if (countError) throw countError;
+        count = totalCount;
+      }
+
+      let query = supabase
         .from('finance_invoices')
         .select(
-          '*, legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))',
-          { count: 'exact' }
+          '*, legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))'
         )
         .eq('ws_id', wsId)
         .eq('customer_id', userId)
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order('created_at', { ascending: false });
+
+      // Cursor-based pagination: for subsequent loads, filter by created_at cursor
+      if (pageParam) {
+        query = query.lt('created_at', pageParam);
+      }
+
+      const { data: rawData, error } = await query.limit(pageSize + 1);
 
       if (error) throw error;
 
@@ -466,42 +480,26 @@ export const useInfiniteUserInvoices = (
           platform_creator,
           wallet_transactions,
           ...rest
-        }: any) => {
-          const platformCreator = platform_creator as {
-            id: string;
-            display_name: string | null;
-            avatar_url: string | null;
-            user_private_details: {
-              full_name: string | null;
-              email: string | null;
-            } | null;
-          } | null;
-
-          const legacyCreator = legacy_creator as {
-            id: string;
-            display_name: string | null;
-            full_name: string | null;
-            email: string | null;
-            avatar_url: string | null;
-          } | null;
-
+        }: RawInvoiceRow) => {
           const creator = {
-            id: platformCreator?.id ?? legacyCreator?.id ?? '',
+            id: platform_creator?.id ?? legacy_creator?.id ?? '',
             display_name:
-              platformCreator?.display_name ??
-              legacyCreator?.display_name ??
-              platformCreator?.user_private_details?.email ??
+              platform_creator?.display_name ??
+              legacy_creator?.display_name ??
+              platform_creator?.user_private_details?.email ??
               null,
             full_name:
-              platformCreator?.user_private_details?.full_name ??
-              legacyCreator?.full_name ??
+              platform_creator?.user_private_details?.full_name ??
+              legacy_creator?.full_name ??
               null,
             email:
-              platformCreator?.user_private_details?.email ??
-              legacyCreator?.email ??
+              platform_creator?.user_private_details?.email ??
+              legacy_creator?.email ??
               null,
             avatar_url:
-              platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
+              platform_creator?.avatar_url ??
+              legacy_creator?.avatar_url ??
+              null,
           };
 
           const wallet = wallet_transactions?.wallet
@@ -516,14 +514,23 @@ export const useInfiniteUserInvoices = (
         }
       );
 
+      // Check if there are more items (we fetched pageSize + 1)
+      const hasMore = data && data.length > pageSize;
+      const items = hasMore ? data.slice(0, pageSize) : data;
+
+      // Get the cursor from the last item for the next page
+      const lastItem = items[items.length - 1];
+      const nextCursor = hasMore && lastItem ? lastItem.created_at : null;
+
       return {
-        data: (data as Invoice[]) || [],
-        count: count || 0,
-        nextPage: data && data.length === pageSize ? pageParam + 1 : undefined,
+        data: (items as Invoice[]) || [],
+        count,
+        nextCursor,
+        hasMore,
       };
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: !!userId,
   });
 };
