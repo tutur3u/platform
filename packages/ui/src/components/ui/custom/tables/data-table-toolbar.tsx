@@ -24,6 +24,8 @@ interface DataTableToolbarProps<TData> {
   t?: any;
   importContent?: ReactNode;
   exportContent?: ReactNode;
+  /** Custom toolbar actions rendered directly (not wrapped in dialogs) */
+  toolbarActions?: ReactNode;
   onRefresh: () => void;
   selectedRowsActions?: (selectedRows: TData[]) => ReactNode;
 
@@ -45,6 +47,7 @@ export function DataTableToolbar<TData>({
   namespace,
   importContent,
   exportContent,
+  toolbarActions,
   onRefresh,
   selectedRowsActions,
   onSearch,
@@ -89,6 +92,8 @@ export function DataTableToolbar<TData>({
           </div>
         )}
       </div>
+
+      {toolbarActions}
 
       {importContent && (
         <Dialog>
