@@ -6,7 +6,7 @@
     "dev": "email dev -p 3001",
     "export": "email export"
   },
-  "packageManager": "bun@1.3.7",
+  "packageManager": "bun@1.3.8",
   "dependencies": {
     "@react-email/components": "^1.0.6",
     "@react-email/preview-server": "^5.2.5",
