@@ -9758,7 +9758,8 @@
     "update_success": "Updated successfully",
     "view_all": "View All",
     "view_details": "View Details",
-    "year": "year"
+    "year": "year",
+    "wallet": "Wallet"
   },
   "ws-debt-loan-settings": {
     "debt_category": "Debt Category",
