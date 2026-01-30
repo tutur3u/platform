@@ -139,7 +139,7 @@ USING (is_board_template_accessible(id));
 CREATE POLICY "Allow workspace members to create templates"
 ON board_templates FOR INSERT
 TO authenticated
-WITH CHECK (is_org_member(ws_id, auth.uid()) AND created_by = auth.uid());
+WITH CHECK (is_org_member(auth.uid(), ws_id) AND created_by = auth.uid());
 
 CREATE POLICY "Allow owners to update templates"
 ON board_templates FOR UPDATE
