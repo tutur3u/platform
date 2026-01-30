@@ -15639,7 +15639,9 @@ export type Database = {
           created_at: string | null;
           currency: string;
           description: string | null;
+          icon: Database['public']['Enums']['platform_icon'] | null;
           id: string;
+          image_src: string | null;
           name: string | null;
           report_opt_in: boolean;
           type: string;
@@ -15650,7 +15652,9 @@ export type Database = {
           created_at?: string | null;
           currency?: string;
           description?: string | null;
+          icon?: Database['public']['Enums']['platform_icon'] | null;
           id?: string;
+          image_src?: string | null;
           name?: string | null;
           report_opt_in?: boolean;
           type?: string;
@@ -15661,7 +15665,9 @@ export type Database = {
           created_at?: string | null;
           currency?: string;
           description?: string | null;
+          icon?: Database['public']['Enums']['platform_icon'] | null;
           id?: string;
+          image_src?: string | null;
           name?: string | null;
           report_opt_in?: boolean;
           type?: string;

@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
+import { WalletIconDisplay } from './wallet-icon-display';
 
 interface WalletExtraData {
   canUpdateWallets?: boolean;
@@ -69,7 +70,16 @@ export const walletColumns = ({
           title={t(`${namespace}.name`)}
         />
       ),
-      cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <WalletIconDisplay
+            icon={row.original.icon}
+            imageSrc={row.original.image_src}
+            size="sm"
+          />
+          <span>{row.getValue('name') || '-'}</span>
+        </div>
+      ),
     },
     {
       accessorKey: 'description',
