@@ -118,8 +118,8 @@ export function TransactionsInfinitePage({
                 {t('common.import')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <MoneyLoverImportDialog wsId={wsId} />
+            <DialogContent className="flex max-h-[85vh] max-w-4xl flex-col overflow-hidden">
+              <MoneyLoverImportDialog wsId={wsId} currency={currency} />
             </DialogContent>
           </Dialog>
 

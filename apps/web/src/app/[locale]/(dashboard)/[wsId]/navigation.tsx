@@ -421,6 +421,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/transactions/categories`,
         `/${personalOrWsId}/finance/tags`,
         `/${personalOrWsId}/finance/invoices`,
+        `/${personalOrWsId}/finance/debts`,
         `/${personalOrWsId}/finance/settings`,
       ],
       icon: <Banknote className="h-5 w-5" />,
@@ -459,6 +460,12 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutPermission('view_invoices'),
         },
         null,
+        // {
+        //   title: t('workspace-finance-tabs.debts'),
+        //   href: `/${personalOrWsId}/finance/debts`,
+        //   icon: <HandCoins className="h-5 w-5" />,
+        //   disabled: withoutPermission('manage_finance'),
+        // },
         // {
         //   title: t('workspace-finance-tabs.recurring'),
         //   href: `/${personalOrWsId}/finance/recurring`,
