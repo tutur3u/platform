@@ -1,6 +1,7 @@
 'use client';
 
 import { Download, Upload } from '@tuturuuu/icons';
+import type { TransactionViewMode } from '@tuturuuu/types/primitives/TransactionPeriod';
 import { Button } from '@tuturuuu/ui/button';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
 import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
@@ -10,11 +11,14 @@ import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infi
 import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-lover-import-dialog';
 import { TagFilterWrapper } from '@tuturuuu/ui/finance/transactions/tag-filter-wrapper';
 import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
+import { ViewModeToggle } from '@tuturuuu/ui/finance/transactions/view-mode-toggle';
 import { WalletFilterWrapper } from '@tuturuuu/ui/finance/transactions/wallet-filter-wrapper';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { parseAsString, useQueryState } from 'nuqs';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { Suspense } from 'react';
+
+const VIEW_MODES = ['daily', 'weekly', 'monthly', 'yearly'] as const;
 
 interface TransactionsInfinitePageProps {
   wsId: string;
@@ -55,8 +59,19 @@ export function TransactionsInfinitePage({
     })
   );
 
+  const [viewMode, setViewMode] = useQueryState(
+    'viewMode',
+    parseAsStringLiteral(VIEW_MODES).withDefault('daily').withOptions({
+      shallow: true,
+    })
+  );
+
   const handleSearch = async (query: string) => {
     await setQ(query || '');
+  };
+
+  const handleViewModeChange = async (mode: TransactionViewMode) => {
+    await setViewMode(mode);
   };
 
   return (
@@ -84,6 +99,9 @@ export function TransactionsInfinitePage({
           </Suspense>
           <Suspense fallback={<Skeleton className="h-8 w-32" />}>
             <TagFilterWrapper wsId={wsId} />
+          </Suspense>
+          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+            <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
           </Suspense>
         </div>
 
@@ -141,6 +159,7 @@ export function TransactionsInfinitePage({
         <InfiniteTransactionsList
           wsId={wsId}
           currency={currency}
+          viewMode={viewMode}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
