@@ -88,6 +88,23 @@ export const achievements: Achievement[] = [
     category: 'Award',
   },
   {
+    name: 'Excel Leader Award 2025',
+    achievement: '🏆 Excel Leader',
+    image: '/hall-of-fames/excel-leader.jpg',
+    teamMembers: [
+      {
+        name: 'Ngo Van Tai',
+        role: 'Head of Technology',
+        avatar: '/members/gen7/tai.png',
+        isNctMember: true,
+      },
+    ],
+    achievementDescription:
+      "The Excel Leader Award recognizes student club leaders who successfully balance academic excellence (GPA ≥ 3.5) with strong co-curricular engagement and leadership contributions. Tai has consistently demonstrated the ability to excel academically while effectively managing his responsibilities as a club leader. His contributions to organizing and running multiple events and workshops have significantly strengthened the club's activities and impact. Through his dedication, teamwork, and reliability, Tai has become a key pillar of the club's success.",
+    year: 2025,
+    category: 'Award',
+  },
+  {
     name: 'NAVER Vietnam AI Hackathon 2025',
     achievement: '🥉 Second Runner Up (NAVER Award)',
     image: '/hall-of-fames/naver.jpg',
