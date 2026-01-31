@@ -83,7 +83,11 @@ export function TagFilter({
     <div className={cn('flex flex-col gap-2', className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 w-full gap-1.5 md:h-8 md:w-auto"
+          >
             <Tag className="h-3 w-3" />
             <span className="text-xs">{t('finance.filter_by_tags')}</span>
             {hasActiveFilters && (

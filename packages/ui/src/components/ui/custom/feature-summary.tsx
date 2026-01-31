@@ -117,7 +117,7 @@ export default function FeatureSummary<T>({
       </Button>
     ) : undefined);
   return (
-    <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
+    <div className="flex flex-col justify-between gap-3 rounded-lg border border-border bg-foreground/5 p-3 sm:gap-4 sm:p-4 md:flex-row md:items-start">
       <div className="w-full">
         {title || (
           <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function FeatureSummary<T>({
         showDefaultFormAsSecondary ||
         (showSecondaryTrigger && !showCustomSecondaryTrigger) ||
         (showSecondaryTrigger && secondaryTrigger)) && (
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
           {settingsForm && (
             <ModifiableDialogTrigger
               data={settingsData as { id?: string } | undefined}

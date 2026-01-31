@@ -65,7 +65,7 @@ export function ViewModeToggle({
   };
 
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex w-full items-center sm:w-auto', className)}>
       {/* Desktop: ToggleGroup */}
       <ToggleGroup
         type="single"
@@ -102,7 +102,7 @@ export function ViewModeToggle({
         value={value}
         onValueChange={(v) => onChange(v as TransactionViewMode)}
       >
-        <SelectTrigger className="h-8 w-[120px] sm:hidden">
+        <SelectTrigger className="h-9 w-full sm:hidden">
           <SelectValue placeholder={t('view-mode')} />
         </SelectTrigger>
         <SelectContent>

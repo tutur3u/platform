@@ -53,6 +53,7 @@ interface TransactionCardProps {
   canDelete?: boolean;
   /** Hide the transaction creator (useful for personal workspaces where all transactions belong to the same user) */
   showCreator?: boolean;
+  isDaily?: boolean;
 }
 
 export function TransactionCard({
@@ -64,6 +65,7 @@ export function TransactionCard({
   canDelete,
   showCreator = true,
   wsId,
+  isDaily = false,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
   const [isHovered, setIsHovered] = useState(false);
@@ -184,14 +186,14 @@ export function TransactionCard({
         }
       />
 
-      <div className="flex items-start gap-4 p-4 pl-5">
-        {/* Left section: Icon and main info */}
-        <div className="flex flex-1 gap-4">
+      <div className="flex flex-col gap-1.5 p-3 pl-4 sm:gap-0">
+        {/* Mobile: Stacked layout | Desktop: Side-by-side layout */}
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Icon */}
           <div className="shrink-0">
             <div
               className={cn(
-                'flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-200',
+                'flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 sm:rounded-2xl',
                 'shadow-sm ring-1 ring-black/5',
                 isConfidential
                   ? 'bg-linear-to-br from-dynamic-orange/20 to-dynamic-orange/10'
@@ -210,10 +212,10 @@ export function TransactionCard({
               }
             >
               {isConfidential ? (
-                <Lock className="h-6 w-6 text-dynamic-orange" />
+                <Lock className="h-4 w-4 text-dynamic-orange sm:h-6 sm:w-6" />
               ) : CategoryIcon ? (
                 <CategoryIcon
-                  className="h-6 w-6"
+                  className="h-4 w-4 sm:h-6 sm:w-6"
                   style={
                     customColorStyles
                       ? { color: customColorStyles.text }
@@ -223,7 +225,7 @@ export function TransactionCard({
               ) : isExpense ? (
                 <ArrowDownCircle
                   className={cn(
-                    'h-6 w-6',
+                    'h-4 w-4 sm:h-6 sm:w-6',
                     !hasCustomStyling && 'text-dynamic-red'
                   )}
                   style={
@@ -235,7 +237,7 @@ export function TransactionCard({
               ) : (
                 <ArrowUpCircle
                   className={cn(
-                    'h-6 w-6',
+                    'h-4 w-4 sm:h-6 sm:w-6',
                     !hasCustomStyling && 'text-dynamic-green'
                   )}
                   style={
@@ -248,15 +250,15 @@ export function TransactionCard({
             </div>
           </div>
 
-          {/* Transaction details */}
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            {/* Top row: Category, Wallet and badges */}
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Header row: Badges + Amount */}
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+            {/* Badges */}
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 sm:gap-2">
               {transaction.category && (
                 <Badge
                   variant="outline"
                   className={cn(
-                    'font-semibold text-xs transition-colors',
+                    'font-semibold text-[11px] transition-colors sm:text-xs',
                     isConfidential
                       ? 'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange'
                       : !hasCustomStyling &&
@@ -280,7 +282,7 @@ export function TransactionCard({
               {transaction.wallet && (
                 <Badge
                   variant="outline"
-                  className="gap-1 border-muted-foreground/30 bg-muted/50 px-2 py-0.5 font-medium text-muted-foreground text-xs"
+                  className="gap-1 border-muted-foreground/30 bg-muted/50 px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground sm:px-2 sm:text-xs"
                 >
                   <WalletIconDisplay
                     icon={wallet?.icon}
@@ -294,7 +296,7 @@ export function TransactionCard({
               {isConfidential && (
                 <Badge
                   variant="outline"
-                  className="flex items-center gap-1 border-dynamic-orange/40 bg-dynamic-orange/5 text-dynamic-orange text-xs"
+                  className="flex items-center gap-1 border-dynamic-orange/40 bg-dynamic-orange/5 text-[11px] text-dynamic-orange sm:text-xs"
                 >
                   <Lock className="h-2.5 w-2.5" />
                   {t('confidential')}
@@ -302,41 +304,103 @@ export function TransactionCard({
               )}
             </div>
 
-            {/* Description */}
-            {transaction.description && (
-              <div className="flex items-start gap-2 text-foreground/80">
-                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <p className="line-clamp-2 text-sm leading-relaxed">
-                  {transaction.description}
-                </p>
-              </div>
-            )}
+            {/* Amount + Actions */}
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <ConfidentialAmount
+                amount={transaction.amount ?? null}
+                isConfidential={transaction.is_amount_confidential || false}
+                currency={currency}
+                className={cn(
+                  'font-bold text-sm tabular-nums transition-all duration-200 sm:text-xl',
+                  isConfidential
+                    ? 'text-dynamic-orange'
+                    : !hasCustomStyling &&
+                        (isExpense ? 'text-dynamic-red' : 'text-dynamic-green'),
+                  isHovered && 'scale-105'
+                )}
+                style={
+                  hasCustomStyling && !isConfidential && customColorStyles
+                    ? { color: customColorStyles.text }
+                    : undefined
+                }
+              />
+              {(canEdit || canDelete) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={handleMenuClick}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        'h-7 w-7 p-0 transition-opacity sm:h-8 sm:w-8',
+                        'opacity-100 hover:bg-accent sm:opacity-0 sm:group-hover:opacity-100'
+                      )}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">Actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canEdit && (
+                      <DropdownMenuItem onClick={handleEdit}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
+                    {canDelete && (
+                      <DropdownMenuItem
+                        onClick={handleDelete}
+                        className="text-dynamic-red focus:text-dynamic-red"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        </div>
 
-            {/* Tags row */}
-            {transaction.tags && transaction.tags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Tag className="h-3 w-3 text-muted-foreground" />
-                {transaction.tags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className="px-1.5 py-0 font-normal text-[10px]"
-                    style={{
-                      backgroundColor: `${tag.color}20`,
-                      color: tag.color,
-                      borderColor: `${tag.color}40`,
-                    }}
-                  >
-                    {tag.name}
-                  </Badge>
-                ))}
-              </div>
-            )}
+        {/* Content section - Full width on mobile */}
+        <div className="flex flex-col gap-1.5 sm:ml-13 sm:gap-2">
+          {/* Description - Full width, its own row */}
+          {transaction.description && (
+            <div className="flex items-start gap-1.5 text-foreground/80 sm:gap-2">
+              <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
+              <p className="text-[13px] leading-relaxed sm:line-clamp-2 sm:text-sm">
+                {transaction.description}
+              </p>
+            </div>
+          )}
 
-            {/* Bottom metadata row */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs">
-              {transaction.taken_at && (
-                <div className="flex items-center gap-1.5">
+          {/* Tags row */}
+          {transaction.tags && transaction.tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              <Tag className="h-3 w-3 text-muted-foreground" />
+              {transaction.tags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="px-1.5 py-0 font-normal text-[10px]"
+                  style={{
+                    backgroundColor: `${tag.color}20`,
+                    color: tag.color,
+                    borderColor: `${tag.color}40`,
+                  }}
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Metadata row */}
+          {((!isDaily && transaction.taken_at) ||
+            (showCreator && transaction.user)) && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:gap-x-4 sm:text-xs">
+              {!isDaily && transaction.taken_at && (
+                <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   <span>
                     {moment(transaction.taken_at).format('DD/MM/YYYY')}
@@ -344,84 +408,23 @@ export function TransactionCard({
                 </div>
               )}
               {showCreator && transaction.user && (
-                <div className="flex items-center gap-1.5">
-                  <Avatar className="h-4 w-4 ring-1 ring-border">
+                <div className="flex items-center gap-1">
+                  <Avatar className="h-3.5 w-3.5 ring-1 ring-border sm:h-4 sm:w-4">
                     <AvatarImage
                       src={transaction.user.avatar_url || undefined}
                     />
-                    <AvatarFallback className="text-[8px]">
+                    <AvatarFallback className="text-[7px] sm:text-[8px]">
                       {transaction.user.full_name?.[0] ||
                         transaction.user.email?.[0] ||
                         '?'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="truncate">
+                  <span className="max-w-30 truncate sm:max-w-none">
                     {transaction.user.full_name || transaction.user.email}
                   </span>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Right section: Amount and actions */}
-        <div className="flex shrink-0 items-start gap-3">
-          {/* Amount */}
-          <div className="text-right">
-            <ConfidentialAmount
-              amount={transaction.amount ?? null}
-              isConfidential={transaction.is_amount_confidential || false}
-              currency={currency}
-              className={cn(
-                'font-bold text-xl tabular-nums transition-all duration-200',
-                isConfidential
-                  ? 'text-dynamic-orange'
-                  : !hasCustomStyling &&
-                      (isExpense ? 'text-dynamic-red' : 'text-dynamic-green'),
-                isHovered && 'scale-105'
-              )}
-              style={
-                hasCustomStyling && !isConfidential && customColorStyles
-                  ? { color: customColorStyles.text }
-                  : undefined
-              }
-            />
-          </div>
-
-          {/* Actions menu */}
-          {(canEdit || canDelete) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={handleMenuClick}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'h-8 w-8 p-0 opacity-0 transition-opacity',
-                    'hover:bg-accent group-hover:opacity-100'
-                  )}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">Actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canEdit && (
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-dynamic-red focus:text-dynamic-red"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
           )}
         </div>
       </div>
