@@ -78,8 +78,8 @@ export function WalletsDataTable({
     [pathname, router, searchParams]
   );
 
-  const pageIndex = page ? Number.parseInt(page) - 1 : 0;
-  const pageSizeValue = pageSize ? Number.parseInt(pageSize) : 10;
+  const pageIndex = page ? Number.parseInt(page, 10) - 1 : 0;
+  const pageSizeValue = pageSize ? Number.parseInt(pageSize, 10) : 10;
 
   return (
     <div className="relative">
