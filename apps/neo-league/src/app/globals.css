@@ -149,6 +149,7 @@
 /* Decorative Elements */
 .blob {
   position: absolute;
+  background-color: #ffc11d;
   border-radius: 50%;
   filter: blur(60px);
   opacity: 0.4;

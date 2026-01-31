@@ -10,11 +10,11 @@ export default async function Navbar() {
       customLogoLink={
         <Link href="/" className="flex flex-none items-center gap-2">
           <Image
-            src="/transparent.png"
+            src="/logo.png"
             className="h-16 w-auto"
             width={350}
             height={100}
-            alt="logo"
+            alt="NEO League Logo"
           />
         </Link>
       }
