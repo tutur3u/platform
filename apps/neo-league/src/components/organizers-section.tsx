@@ -1,17 +1,13 @@
 import Image from 'next/image';
 
-export function SupportersSection() {
+export function OrganizersSection() {
   return (
-    <section id="supporters" className="px-6 py-20 md:px-8 md:py-24">
+    <section id="organizers" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
-            OUR <span className="text-secondary">SUPPORTERS</span>
+            COMPETITION <span className="text-secondary">ORGANIZERS</span>
           </h2>
-          <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
-            Proudly supported by leading institutions committed to fostering
-            innovation and student excellence.
-          </p>
         </div>
 
         <div className="grid gap-8 md:grid-cols-3">
