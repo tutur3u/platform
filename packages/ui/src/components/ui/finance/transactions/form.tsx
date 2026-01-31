@@ -20,6 +20,7 @@ import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   getIconComponentByKey,
@@ -572,28 +573,11 @@ export function TransactionForm({
                   <FormItem>
                     <FormLabel>{t('transaction-data-table.amount')}</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
+                      <CurrencyInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={field.disabled}
                         placeholder="0"
-                        value={
-                          !field.value
-                            ? ''
-                            : new Intl.NumberFormat('en-US', {
-                                maximumFractionDigits: 2,
-                              }).format(Math.abs(field.value))
-                        }
-                        onChange={(e) => {
-                          // Remove non-numeric characters except decimal point, then parse
-                          const numericValue = parseFloat(
-                            e.target.value.replace(/[^0-9.]/g, '')
-                          );
-                          if (!Number.isNaN(numericValue)) {
-                            field.onChange(numericValue);
-                          } else {
-                            // Handle case where the input is not a number
-                            field.onChange(0);
-                          }
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -762,7 +746,7 @@ export function TransactionForm({
                       <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <Coins className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="!mt-0 font-normal text-sm">
+                          <FormLabel className="mt-0! font-normal text-sm">
                             {t(
                               'workspace-finance-transactions.confidential-amount'
                             )}
@@ -786,7 +770,7 @@ export function TransactionForm({
                       <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="!mt-0 font-normal text-sm">
+                          <FormLabel className="mt-0! font-normal text-sm">
                             {t(
                               'workspace-finance-transactions.confidential-description'
                             )}
@@ -810,7 +794,7 @@ export function TransactionForm({
                       <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="!mt-0 font-normal text-sm">
+                          <FormLabel className="mt-0! font-normal text-sm">
                             {t(
                               'workspace-finance-transactions.confidential-category'
                             )}
