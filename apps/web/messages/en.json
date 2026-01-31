@@ -3139,7 +3139,8 @@
     "view-yearly": "Year",
     "vs-average": "vs Avg",
     "vs-previous": "vs Previous",
-    "week-label": "Week {number}, {year}"
+    "week-label": "Week {number}, {year}",
+    "week-number": "Week {number}"
   },
   "flashcard-data-table": {
     "back": "Back",

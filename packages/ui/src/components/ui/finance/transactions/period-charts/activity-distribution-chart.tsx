@@ -126,7 +126,7 @@ export function ActivityDistributionChart({
 
         while (current.isBefore(monthEnd)) {
           weeks.push({
-            label: `Week ${weekNum}`,
+            label: t('week-number', { number: weekNum }),
             shortLabel: `W${weekNum}`,
             income: 0,
             expense: 0,
@@ -195,7 +195,7 @@ export function ActivityDistributionChart({
     });
 
     return buckets;
-  }, [transactions, viewMode, periodStart]);
+  }, [transactions, viewMode, periodStart, t]);
 
   // Find busiest bucket
   const busiestBucket = useMemo(() => {

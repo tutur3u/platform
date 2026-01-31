@@ -3139,7 +3139,8 @@
     "view-yearly": "Năm",
     "vs-average": "so với TB",
     "vs-previous": "so với Kỳ trước",
-    "week-label": "Tuần {number}, {year}"
+    "week-label": "Tuần {number}, {year}",
+    "week-number": "Tuần {number}"
   },
   "flashcard-data-table": {
     "back": "Mặt sau",
