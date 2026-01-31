@@ -41,6 +41,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionForm } from './form';
+import { PeriodBreakdownPanel } from './period-charts';
 import { TransactionCard } from './transaction-card';
 import { TransactionStatistics } from './transaction-statistics';
 
@@ -765,61 +766,79 @@ export function InfiniteTransactionsList({
               </div>
             </div>
 
-            {/* Transactions list */}
-            <div className="space-y-2 p-3 sm:space-y-3 sm:p-4">
-              {group.transactions
-                .slice(0, displayCount)
-                .map((transaction: Transaction) => (
-                  <div
-                    key={transaction.id}
-                    onClick={() => handleTransactionClick(transaction)}
-                    className="cursor-pointer"
-                  >
-                    <TransactionCard
-                      transaction={{
-                        ...transaction,
-                        is_amount_confidential:
-                          transaction.is_amount_confidential ?? undefined,
-                        is_category_confidential:
-                          transaction.is_category_confidential ?? undefined,
-                        is_description_confidential:
-                          transaction.is_description_confidential ?? undefined,
-                      }}
-                      wsId={wsId}
-                      currency={currency}
-                      onEdit={() => handleTransactionClick(transaction)}
-                      onDelete={() => handleDeleteClick(transaction)}
-                      canEdit={canUpdateTransactions}
-                      canDelete={canDeleteTransactions}
-                      showCreator={!isPersonalWorkspace}
-                      isDaily={viewMode === 'daily'}
-                    />
-                  </div>
-                ))}
+            {/* Content area - Two-column layout on desktop */}
+            <div className="flex flex-col lg:flex-row">
+              {/* Left: Transactions list */}
+              <div className="min-w-0 flex-1 space-y-2 p-3 sm:space-y-3 sm:p-4">
+                {group.transactions
+                  .slice(0, displayCount)
+                  .map((transaction: Transaction) => (
+                    <div
+                      key={transaction.id}
+                      onClick={() => handleTransactionClick(transaction)}
+                      className="cursor-pointer"
+                    >
+                      <TransactionCard
+                        transaction={{
+                          ...transaction,
+                          is_amount_confidential:
+                            transaction.is_amount_confidential ?? undefined,
+                          is_category_confidential:
+                            transaction.is_category_confidential ?? undefined,
+                          is_description_confidential:
+                            transaction.is_description_confidential ??
+                            undefined,
+                        }}
+                        wsId={wsId}
+                        currency={currency}
+                        onEdit={() => handleTransactionClick(transaction)}
+                        onDelete={() => handleDeleteClick(transaction)}
+                        canEdit={canUpdateTransactions}
+                        canDelete={canDeleteTransactions}
+                        showCreator={!isPersonalWorkspace}
+                        isDaily={viewMode === 'daily'}
+                      />
+                    </div>
+                  ))}
 
-              {/* Show more/less button */}
-              {group.transactions.length > 3 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
-                  onClick={() => toggleGroup(group.date)}
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="mr-2 h-4 w-4" />
-                      {t('common.show-less')}
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                      {t('common.show-more')} (
-                      {group.transactions.length - displayCount}{' '}
-                      {t('date_groups.more')})
-                    </>
-                  )}
-                </Button>
-              )}
+                {/* Show more/less button */}
+                {group.transactions.length > 3 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
+                    onClick={() => toggleGroup(group.date)}
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="mr-2 h-4 w-4" />
+                        {t('common.show-less')}
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="mr-2 h-4 w-4" />
+                        {t('common.show-more')} (
+                        {group.transactions.length - displayCount}{' '}
+                        {t('date_groups.more')})
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {/* Right: Period breakdown panel (desktop only) */}
+              <aside className="hidden shrink-0 border-border/40 border-l lg:block lg:w-80 xl:w-96">
+                <div className="sticky top-4 p-4">
+                  <PeriodBreakdownPanel
+                    transactions={group.transactions}
+                    viewMode={viewMode}
+                    periodStart={group.date}
+                    currency={currency}
+                    periodStats={group.periodStats}
+                    workspaceId={wsId}
+                  />
+                </div>
+              </aside>
             </div>
           </div>
         );
