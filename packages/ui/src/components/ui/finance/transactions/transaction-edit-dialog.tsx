@@ -2,9 +2,12 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ArrowDownCircle,
+  ArrowUpCircle,
   Calendar,
   Check,
   Coins,
+  CreditCard,
   DollarSign,
   FileText,
   FolderOpen,
@@ -33,6 +36,10 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import {
+  getIconComponentByKey,
+  type PlatformIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -48,10 +55,64 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import type * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { getWalletImagePath } from '../wallets/wallet-images';
 import { ConfidentialToggle } from './confidential-field';
+
+// Helper to get category icon - extracted to avoid lint warnings about JSX in iterables
+function getCategoryIcon(
+  category: TransactionCategory,
+  iconGetter: typeof getIconComponentByKey
+): React.ReactNode {
+  const IconComponent = category.icon
+    ? iconGetter(category.icon as PlatformIconKey)
+    : null;
+
+  if (IconComponent) {
+    return <IconComponent className="h-4 w-4" />;
+  }
+  if (category.is_expense === false) {
+    return <ArrowUpCircle className="h-4 w-4" />;
+  }
+  return <ArrowDownCircle className="h-4 w-4" />;
+}
+
+// Helper to get wallet icon - supports custom images, lucide icons, and type-based fallbacks
+function getWalletIcon(
+  wallet: Wallet,
+  iconGetter: typeof getIconComponentByKey
+): React.ReactNode {
+  // Priority 1: Custom image (bank/mobile logos)
+  if (wallet.image_src) {
+    return (
+      <Image
+        src={getWalletImagePath(wallet.image_src)}
+        alt=""
+        className="h-4 w-4 rounded-sm object-contain"
+        height={16}
+        width={16}
+      />
+    );
+  }
+  // Priority 2: Custom lucide icon
+  if (wallet.icon) {
+    const IconComponent = iconGetter(wallet.icon as PlatformIconKey);
+    if (IconComponent) {
+      return <IconComponent className="h-4 w-4" />;
+    }
+  }
+  // Priority 3: Fallback based on wallet type
+  return wallet.type === 'CREDIT' ? (
+    <CreditCard className="h-4 w-4" />
+  ) : (
+    <WalletIcon className="h-4 w-4" />
+  );
+}
 
 interface TransactionEditDialogProps {
   transaction: Transaction & {
@@ -706,6 +767,7 @@ export function TransactionEditDialog({
                     .map((w) => ({
                       value: w.id!,
                       label: w.name!,
+                      icon: getWalletIcon(w, getIconComponentByKey),
                     }))}
                   placeholder={t('transaction-data-table.select_wallet')}
                   disabled={isDisabled || !canUpdateTransactions}
@@ -729,6 +791,10 @@ export function TransactionEditDialog({
                     .map((c) => ({
                       value: c.id!,
                       label: c.name!,
+                      icon: getCategoryIcon(c, getIconComponentByKey),
+                      color: c.color
+                        ? computeAccessibleLabelStyles(c.color)?.text
+                        : undefined,
                     }))}
                   placeholder={t('transaction-data-table.select_category')}
                   disabled={isDisabled || !canUpdateTransactions}

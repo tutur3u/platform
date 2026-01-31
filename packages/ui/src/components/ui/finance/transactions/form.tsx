@@ -56,11 +56,13 @@ import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { getWalletImagePath } from '../wallets/wallet-images';
 
 // Helper to get category icon - extracted to avoid lint warnings about JSX in iterables
 function getCategoryIcon(
@@ -78,6 +80,38 @@ function getCategoryIcon(
     return <ArrowUpCircle className="h-4 w-4" />;
   }
   return <ArrowDownCircle className="h-4 w-4" />;
+}
+
+// Helper to get wallet icon - supports custom images, lucide icons, and type-based fallbacks
+function getWalletIcon(
+  wallet: WalletType,
+  iconGetter: typeof getIconComponentByKey
+): React.ReactNode {
+  // Priority 1: Custom image (bank/mobile logos)
+  if (wallet.image_src) {
+    return (
+      <Image
+        src={getWalletImagePath(wallet.image_src)}
+        alt=""
+        className="h-4 w-4 rounded-sm object-contain"
+        height={16}
+        width={16}
+      />
+    );
+  }
+  // Priority 2: Custom lucide icon
+  if (wallet.icon) {
+    const IconComponent = iconGetter(wallet.icon as PlatformIconKey);
+    if (IconComponent) {
+      return <IconComponent className="h-4 w-4" />;
+    }
+  }
+  // Priority 3: Fallback based on wallet type
+  return wallet.type === 'CREDIT' ? (
+    <CreditCard className="h-4 w-4" />
+  ) : (
+    <Wallet className="h-4 w-4" />
+  );
 }
 
 interface Props {
@@ -454,12 +488,10 @@ export function TransactionForm({
                             ? wallets.map((wallet) => ({
                                 value: wallet.id || '',
                                 label: wallet.name || '',
-                                icon:
-                                  wallet.type === 'CREDIT' ? (
-                                    <CreditCard className="h-4 w-4" />
-                                  ) : (
-                                    <Wallet className="h-4 w-4" />
-                                  ),
+                                icon: getWalletIcon(
+                                  wallet,
+                                  getIconComponentByKey
+                                ),
                               }))
                             : []
                         }
