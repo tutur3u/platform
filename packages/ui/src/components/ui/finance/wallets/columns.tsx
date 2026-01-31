@@ -113,7 +113,7 @@ export const walletColumns = ({
           currency,
           minimumFractionDigits: 0,
           maximumFractionDigits: currency === 'VND' ? 0 : 2,
-          signDisplay: 'always',
+          signDisplay: 'exceptZero',
         }).format(balance);
 
         const isPositive = balance > 0;

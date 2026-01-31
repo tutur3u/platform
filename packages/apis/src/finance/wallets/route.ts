@@ -194,6 +194,7 @@ export async function POST(req: Request, { params }: Params) {
     ws_id: wsId,
   };
   if (data.id) walletData.id = data.id;
+  if (data.name) walletData.name = data.name;
   if (data.balance !== undefined) walletData.balance = data.balance;
   if (data.currency) walletData.currency = data.currency;
   if (data.description !== undefined) walletData.description = data.description;
