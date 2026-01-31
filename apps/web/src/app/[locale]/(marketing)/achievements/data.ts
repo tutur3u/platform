@@ -159,6 +159,127 @@ export const achievements: Achievement[] = [
     year: 2025,
     category: 'Contest',
   },
+
+  {
+    name: 'AI IN BUSINESS SEASON 2',
+    achievement: '2nd Runner up',
+    teamName: 'Xin Loi Vi Da Den',
+    image: '/hall-of-fames/ai-in-business.jpeg',
+    teamMembers: [
+      {
+        name: 'Pham Ngoc Thien Kim',
+        role: 'Member',
+        avatar: '/members/gen7/kim.png',
+        isNctMember: true,
+      },
+      {
+        name: 'Nguyen Dang Gia Dao',
+        role: 'Member',
+        isNctMember: false,
+      },
+      {
+        name: 'Bui Khac Gia Dao',
+        role: 'Member',
+        isNctMember: false,
+      },
+      {
+        name: 'Vu Thi Anh Thu',
+        role: 'Member',
+        isNctMember: false,
+      },
+    ],
+    achievementDescription:
+      'Competition Theme: Applied AI Technology for User Growth in E-commerce. Our team developed an AI-powered e-commerce landing page integrated with an intelligent chatbot to enhance customer experience and drive user growth. The chatbot provides real-time support, automatically answering customer inquiries, recommending relevant products, and guiding users through the purchasing journey. A key innovation is its ability to store and analyze customer interaction data, reducing repetitive communication and delivering a more personalized experience.',
+    eventLink: 'https://www.facebook.com/share/1bQvHZxUeW/?mibextid=wwXIfr',
+    year: 2025,
+    category: 'Competition',
+  },
+  {
+    name: 'The Next Analyst Challenge Season 1',
+    achievement: 'Champion',
+    teamName: 'The Analyst',
+    image: '/hall-of-fames/next-analyst.jpeg',
+    teamMembers: [
+      {
+        name: 'Pham Ngoc Thien Kim',
+        role: 'Member',
+        avatar: '/members/gen7/kim.png',
+        isNctMember: true,
+      },
+    ],
+    achievementDescription:
+      'Tasked with uncovering insights from a complex dataset and proposing strategic business recommendations, our team took a visual-first approach—making data stories simple, clean, and impactful. The judges praised our visualization clarity and the depth of our insights. Winning Champion was a moment of pure joy and validation after months of dedicated effort.',
+    eventLink: 'https://www.facebook.com/thenextanalystchallenge',
+    year: 2025,
+    category: 'Competition',
+  },
+  {
+    name: 'CoverGo AI Hackathon 2025',
+    achievement: 'Champion',
+    teamName: 'RMIT x UIT',
+    image: '/hall-of-fames/covergo-ai-hackathon.jpg',
+    teamMembers: [
+      {
+        name: 'Khoa Mai Dang',
+        role: 'Member',
+        avatar: '/members/gen7/khoa.png',
+        isNctMember: true,
+      },
+      {
+        name: ' Dai Nguyen Ba',
+        role: 'Member',
+        isNctMember: false,
+      },
+      {
+        name: 'Shirin Shujaa',
+        role: 'Member',
+        isNctMember: false,
+      },
+      {
+        name: 'Thao Trinh',
+        role: 'Member',
+        isNctMember: false,
+      },
+    ],
+    achievementDescription: 'TBU',
+    eventLink:
+      'https://www.facebook.com/groups/congdongsvuit/posts/1705153630393663/',
+    year: 2025,
+    category: 'Hackathon',
+  },
+  {
+    name: 'Cybersecurity Student Contest Vietnam 2025 (CSCV 2025)',
+    achievement: 'Top 20 National',
+    teamName: '0XEPLOIT',
+    image: '/hall-of-fames/cscv.jpg',
+    teamMembers: [
+      {
+        name: 'Tri Duong Minh',
+        role: 'Member',
+        isNctMember: true,
+      },
+      {
+        name: 'Nguyen Nghia Hiep',
+        role: 'Member',
+        isNctMember: true,
+      },
+      {
+        name: 'Nguyen An Nhien',
+        role: 'Member',
+        isNctMember: true,
+      },
+      {
+        name: 'Dao Ngoc Huy',
+        role: 'Member',
+        isNctMember: false,
+      },
+    ],
+    achievementDescription:
+      "In 2025, my team, 0XEPLOIT, achieved a notable result at the Cybersecurity Student Contest Vietnam (CSCV), ranking 11th out of more than 300 teams from 317 institutions nationwide and internationally. Competing in the finals at the Ministry of Public Security’s A05 Cyber Arena in Hanoi, we faced intense Attack–Defense and Jeopardy-style CTF challenges across web exploitation, cryptography, binary exploitation, and digital forensics. Despite the high-pressure environment and experienced opponents, our team relied on strong collaboration, clear communication, and rapid problem-solving to perform effectively and secure a Top 20 national finish",
+    eventLink: 'https://www.facebook.com/cscv.vn',
+    year: 2025,
+    category: 'Contest',
+  },
   {
     name: 'RMIT Hack-A-Venture 2024',
     achievement: '🏆 Champion',
