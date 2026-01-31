@@ -40,7 +40,9 @@ export function AboutSection() {
                 />
               </svg>
             </div>
-            <h3 className="mb-3 font-black text-xl">THE CHALLENGE</h3>
+            <h3 className="mb-3 font-black text-brand-dark-blue text-xl">
+              THE CHALLENGE
+            </h3>
             <p className="text-foreground">
               Combine physical prototyping with software, data connectivity, and
               smart technologies to address UN Sustainable Development Goals
@@ -65,7 +67,9 @@ export function AboutSection() {
                 />
               </svg>
             </div>
-            <h3 className="mb-3 font-black text-xl">ABOUT THE ORGANIZERS</h3>
+            <h3 className="mb-3 font-black text-brand-dark-blue text-xl">
+              ABOUT THE ORGANIZERS
+            </h3>
             <p className="text-foreground">
               RMIT NEO Culture Technology Club focuses on innovation in emerging
               technologies like machine learning and digital systems. With 80+
@@ -82,7 +86,7 @@ export function AboutSection() {
               key={index}
               className="glass-card card-hover rounded-xl p-6 text-center"
             >
-              <p className="gradient-text mb-2 font-black text-3xl shadow-text md:text-4xl">
+              <p className="gradient-text mb-2 font-black text-3xl md:text-4xl">
                 {stat.number}
               </p>
               <p className="text-foreground text-sm">{stat.label}</p>

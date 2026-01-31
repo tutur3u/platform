@@ -5,7 +5,7 @@ export function SupportersSection() {
     <section id="supporters" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl md:text-4xl">
+          <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
             OUR <span className="text-secondary">SUPPORTERS</span>
           </h2>
           <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">

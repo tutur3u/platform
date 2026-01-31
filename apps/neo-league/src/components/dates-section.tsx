@@ -37,7 +37,7 @@ export function DatesSection() {
     >
       <div className="mx-auto max-w-4xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl md:text-4xl">
+          <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
             IMPORTANT <span className="text-secondary">DATES</span>
           </h2>
         </div>

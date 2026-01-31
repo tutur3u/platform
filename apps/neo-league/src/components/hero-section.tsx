@@ -5,27 +5,16 @@ export function HeroSection() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
       {/* Animated Blobs */}
-      <div className="blob -top-48 -left-48 h-96 w-96 animate-float" />
       <div
-        className="blob top-1/2 -right-40 h-80 w-80 animate-float"
+        className="blob -top-20 -right-20 h-64 w-64 animate-float"
         style={{ animationDelay: '2s' }}
       />
       <div
-        className="blob bottom-20 left-1/4 h-64 w-64 animate-float"
+        className="blob -bottom-40 -left-40 h-128 w-lg animate-float"
         style={{ animationDelay: '4s' }}
       />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
-        <div className="mb-20 flex items-center justify-center">
-          <Image
-            src="/club-logo.png"
-            alt="NEO Culture Tech Logo"
-            width={350}
-            height={100}
-            className="size-16"
-          />
-        </div>
-
+      <div className="relative mx-auto max-w-6xl px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-8">
           <div className="w-full max-w-lg">
             <Image
