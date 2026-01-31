@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -165,16 +166,19 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
       }
     }, [value, isFocused, formatForDisplay]);
 
-    // Restore cursor position after React re-render
-    useEffect(() => {
-      if (isFocused && cursorPositionRef.current !== null && inputRef.current) {
+    // Restore cursor position synchronously after React updates the DOM
+    // useLayoutEffect runs after DOM mutations but before browser paint,
+    // preventing cursor flicker. We check the ref on every render since
+    // cursorPositionRef.current is set during handleChange.
+    useLayoutEffect(() => {
+      if (cursorPositionRef.current !== null && inputRef.current) {
         inputRef.current.setSelectionRange(
           cursorPositionRef.current,
           cursorPositionRef.current
         );
         cursorPositionRef.current = null;
       }
-    }, [isFocused]);
+    });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
