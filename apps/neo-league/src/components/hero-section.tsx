@@ -27,12 +27,15 @@ export function HeroSection() {
           </div>
 
           <p
-            className="mx-auto max-w-2xl animate-slide-up text-foreground/70 text-lg"
+            className="mx-auto max-w-4xl animate-slide-up text-foreground/70 text-lg"
             style={{ animationDelay: '0.3s' }}
           >
-            Engineer integrated IoT solutions addressing UN Sustainable
-            Development Goals. Combine physical prototyping with software, data
-            connectivity, and smart technologies.
+            Engineer integrated IoT solutions addressing{' '}
+            <span className="font-bold text-primary">
+              UN Sustainable Development Goals.
+            </span>{' '}
+            Combine physical prototyping with software, data connectivity, and
+            smart technologies.
           </p>
 
           <div
