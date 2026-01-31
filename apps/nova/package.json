@@ -79,7 +79,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.1.2",
-    "autoprefixer": "^10.4.23",
+    "autoprefixer": "^10.4.24",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.6",
