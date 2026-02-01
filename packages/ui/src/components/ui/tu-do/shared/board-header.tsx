@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowUp,
   ArrowUpAZ,
+  Bookmark,
   CalendarDays,
   Check,
   ChevronDown,
@@ -79,6 +80,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { CopyBoardDialog } from '../boards/copy-board-dialog';
 import { TaskBoardForm } from '../boards/form';
+import { SaveAsTemplateDialog } from '../boards/save-as-template-dialog';
 import { BoardLayoutSettings } from './board-layout-settings';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
@@ -219,6 +221,7 @@ export function BoardHeader({
   const [isLoading, setIsLoading] = useState(false);
   const [editBoardOpen, setEditBoardOpen] = useState(false);
   const [duplicateBoardOpen, setDuplicateBoardOpen] = useState(false);
+  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -967,6 +970,16 @@ export function BoardHeader({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
+                    setSaveAsTemplateOpen(true);
+                    setBoardMenuOpen(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Bookmark className="h-4 w-4" />
+                  {t('ws-task-boards.actions.save_as_template')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
                     setLayoutSettingsOpen(true);
                     setBoardMenuOpen(false);
                   }}
@@ -1099,6 +1112,12 @@ export function BoardHeader({
         board={{ id: board.id, ws_id: board.ws_id, name: board.name }}
         open={duplicateBoardOpen}
         onOpenChange={setDuplicateBoardOpen}
+      />
+      {/* Save as Template Dialog */}
+      <SaveAsTemplateDialog
+        board={{ id: board.id, ws_id: board.ws_id, name: board.name }}
+        open={saveAsTemplateOpen}
+        onOpenChange={setSaveAsTemplateOpen}
       />
       {/* Board Layout Settings */}
       {onUpdate && (

@@ -655,6 +655,189 @@ export type Database = {
           },
         ];
       };
+      board_template_shares: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          email: string | null;
+          id: string;
+          permission: string;
+          template_id: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          email?: string | null;
+          id?: string;
+          permission?: string;
+          template_id: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          email?: string | null;
+          id?: string;
+          permission?: string;
+          template_id?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'board_template_shares_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'board_templates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_template_shares_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      board_templates: {
+        Row: {
+          content: Json;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          source_board_id: string | null;
+          updated_at: string;
+          visibility: Database['public']['Enums']['board_template_visibility'];
+          ws_id: string;
+        };
+        Insert: {
+          content: Json;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          source_board_id?: string | null;
+          updated_at?: string;
+          visibility?: Database['public']['Enums']['board_template_visibility'];
+          ws_id: string;
+        };
+        Update: {
+          content?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          source_board_id?: string | null;
+          updated_at?: string;
+          visibility?: Database['public']['Enums']['board_template_visibility'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'board_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'board_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'board_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_templates_source_board_id_fkey';
+            columns: ['source_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_auth_tokens: {
         Row: {
           access_token: string;
@@ -14833,8 +15016,14 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          max_seats: number | null;
+          min_seats: number | null;
           name: string | null;
           price: number | null;
+          price_per_seat: number | null;
+          pricing_model:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           recurring_interval: string | null;
           tier: Database['public']['Enums']['workspace_product_tier'] | null;
         };
@@ -14843,8 +15032,14 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id: string;
+          max_seats?: number | null;
+          min_seats?: number | null;
           name?: string | null;
           price?: number | null;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           recurring_interval?: string | null;
           tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
@@ -14853,8 +15048,14 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          max_seats?: number | null;
+          min_seats?: number | null;
           name?: string | null;
           price?: number | null;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           recurring_interval?: string | null;
           tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
@@ -14868,7 +15069,12 @@ export type Database = {
           current_period_start: string | null;
           id: string;
           polar_subscription_id: string;
+          price_per_seat: number | null;
+          pricing_model:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           product_id: string | null;
+          seat_count: number | null;
           status: Database['public']['Enums']['subscription_status'] | null;
           updated_at: string | null;
           ws_id: string;
@@ -14880,7 +15086,12 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id: string;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           product_id?: string | null;
+          seat_count?: number | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
           updated_at?: string | null;
           ws_id: string;
@@ -14892,7 +15103,12 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id?: string;
+          price_per_seat?: number | null;
+          pricing_model?:
+            | Database['public']['Enums']['workspace_pricing_model']
+            | null;
           product_id?: string | null;
+          seat_count?: number | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
           updated_at?: string | null;
           ws_id?: string;
@@ -19456,6 +19672,10 @@ export type Database = {
             Returns: number;
           };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
+      has_board_template_edit_permission: {
+        Args: { p_template_id: string };
+        Returns: boolean;
+      };
       has_task_permission: {
         Args: { p_permission: string; p_task_id: string };
         Returns: boolean;
@@ -19522,6 +19742,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      is_board_template_accessible: {
+        Args: { p_template_id: string };
+        Returns: boolean;
       };
       is_list_accessible: { Args: { _list_id: string }; Returns: boolean };
       is_member_invited: {
@@ -19976,6 +20200,7 @@ export type Database = {
         | 'subscription_cycle'
         | 'subscription_update';
       blacklist_entry_type: 'email' | 'domain';
+      board_template_visibility: 'private' | 'workspace' | 'public';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
       calendar_hours: 'work_hours' | 'personal_hours' | 'meeting_hours';
       calendar_provider: 'tuturuuu' | 'google' | 'microsoft';
@@ -21795,6 +22020,7 @@ export type Database = {
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
+      workspace_pricing_model: 'fixed' | 'seat_based';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -22042,6 +22268,7 @@ export const Constants = {
         'subscription_update',
       ],
       blacklist_entry_type: ['email', 'domain'],
+      board_template_visibility: ['private', 'workspace', 'public'],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
       calendar_hours: ['work_hours', 'personal_hours', 'meeting_hours'],
       calendar_provider: ['tuturuuu', 'google', 'microsoft'],
@@ -23872,6 +24099,7 @@ export const Constants = {
         'gemini-2.5-flash-lite',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
+      workspace_pricing_model: ['fixed', 'seat_based'],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',
