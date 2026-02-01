@@ -1,3 +1,4 @@
+import AboutClubSection from '@/components/about-club-section';
 import AboutNeoLeagueSection from '@/components/about-neo-league-section';
 import ContactSection from '@/components/contact-section';
 import DatesSection from '@/components/dates-section';
@@ -12,6 +13,7 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       <HeroSection />
+      <AboutClubSection />
       <AboutNeoLeagueSection />
       <SponsorsSection />
       <PhasesSection />
