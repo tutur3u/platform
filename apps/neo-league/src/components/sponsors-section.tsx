@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export function SponsorsSection() {
+export default function SponsorsSection() {
   const bronzeCategories = [
     'Media Partners',
     'Tech Partners',

@@ -1,4 +1,4 @@
-export function MentorsSection() {
+export default function MentorsSection() {
   const mentors = [
     {
       name: 'DR. BYRON MASON',

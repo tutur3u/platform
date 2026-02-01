@@ -1,4 +1,4 @@
-export function DatesSection() {
+export default function DatesSection() {
   const importantDates = [
     {
       round: '01',

@@ -1,4 +1,4 @@
-export function PhasesSection() {
+export default function PhasesSection() {
   const phases = [
     {
       round: '01',

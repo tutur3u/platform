@@ -1,4 +1,4 @@
-export function RulesSection() {
+export default function RulesSection() {
   return (
     <section id="rules" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">

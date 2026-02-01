@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export function OrganizersSection() {
+export default function OrganizersSection() {
   return (
     <section id="organizers" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">

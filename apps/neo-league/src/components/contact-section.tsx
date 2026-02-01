@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export function ContactSection() {
+export default function ContactSection() {
   return (
     <section id="contact" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-4xl">
