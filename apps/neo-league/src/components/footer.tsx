@@ -14,7 +14,7 @@ export default function Footer() {
     <footer className="border-primary/10 border-t bg-background py-12">
       <div className="mx-auto max-w-7xl space-y-8 px-6">
         {/* Top Section - Logos */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
           {/* Neo League Logo */}
           <div className="w-80">
             <Image

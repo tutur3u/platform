@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export default function AboutClubSection() {
   return (
-    <section className="relative overflow-hidden bg-secondary/10 px-6 py-20 md:px-8 md:py-28">
+    <section className="relative overflow-hidden px-6 py-20 md:px-8 md:py-28">
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
@@ -30,7 +30,7 @@ export default function AboutClubSection() {
           <div className="order-2 animate-slide-up lg:order-1">
             {/* Logo Badge */}
             <div className="mb-6 flex items-center gap-3">
-              <div className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/50 bg-white/80 p-2 shadow-lg backdrop-blur-sm">
+              <div className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/50 bg-white/30 p-2 shadow-lg backdrop-blur-sm">
                 <Image
                   src="/rmit_nct.png"
                   alt="NCT Logo"
@@ -85,7 +85,7 @@ export default function AboutClubSection() {
               {/* Main Feature Image */}
               <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl">
                 <Image
-                  src="/demo.jpg"
+                  src="/netcompany-tour.jpg"
                   alt="NCT Club Activities"
                   fill
                   className="object-cover transition-transform duration-700 hover:scale-105"
@@ -113,11 +113,6 @@ export default function AboutClubSection() {
                   />
                   <div className="absolute inset-0 bg-linear-to-bl from-brand-light-blue/20 to-transparent" />
                 </div>
-              </div>
-
-              {/* Floating Accent */}
-              <div className="absolute -top-4 -right-4 flex h-20 w-20 animate-float items-center justify-center rounded-2xl bg-linear-to-br from-brand-light-yellow to-brand-light-red shadow-lg">
-                <span className="font-black text-2xl text-white">80+</span>
               </div>
             </div>
           </div>

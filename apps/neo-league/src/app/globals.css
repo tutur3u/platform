@@ -69,7 +69,7 @@
 }
 
 .shadow-text {
-  text-shadow: 1px 1px 5px var(--brand-light-yellow);
+  text-shadow: 1px 1px 5px var(--brand-dark-blue);
 }
 
 /* Button Styles */
