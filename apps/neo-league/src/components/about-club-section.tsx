@@ -286,18 +286,11 @@ export default function AboutClubSection() {
         <div>
           {/* Header */}
           <div className="mb-10 text-center">
-            <p
-              className="mb-2 animate-slide-up font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]"
-              style={{ animationDelay: '0.1s' }}
-            >
-              Our Previous Activities
-            </p>
             <h3
-              className="mb-4 animate-slide-up font-black text-3xl text-foreground leading-tight tracking-tight md:text-4xl"
+              className="gradient-text mb-4 animate-slide-up font-black text-3xl md:text-4xl"
               style={{ animationDelay: '0.15s' }}
             >
-              Building <span className="gradient-text">Connections</span> &{' '}
-              <span className="gradient-text">Memories</span>
+              Our Previous Activities
             </h3>
             <p
               className="mx-auto max-w-2xl animate-slide-up text-foreground/70 leading-relaxed"
