@@ -48,7 +48,7 @@
     "@biomejs/biome": "^2.3.13",
     "@ncthub/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.0.18",
-    "turbo": "^2.8.1",
+    "turbo": "^2.8.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
