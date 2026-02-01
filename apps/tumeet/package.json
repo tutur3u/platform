@@ -24,7 +24,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.0",
+    "@formatjs/intl-localematcher": "^0.8.1",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.20",
     "@tuturuuu/ai": "workspace:*",

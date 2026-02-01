@@ -26,7 +26,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.18",
+    "@ai-sdk/google": "^3.0.19",
     "@deepgram/sdk": "^4.11.3",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -34,7 +34,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@excalidraw/excalidraw": "^0.18.0",
-    "@formatjs/intl-localematcher": "^0.8.0",
+    "@formatjs/intl-localematcher": "^0.8.1",
     "@google/genai": "^1.39.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
@@ -80,7 +80,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.9.0",
     "@upstash/redis": "^1.36.1",
-    "ai": "^6.0.64",
+    "ai": "^6.0.66",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
@@ -137,7 +137,7 @@
     "uuid": "^13.0.0",
     "vega-embed": "^7.1.0",
     "zod": "^4.3.6",
-    "zustand": "^5.0.10"
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.1.6",
