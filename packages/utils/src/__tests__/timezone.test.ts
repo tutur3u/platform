@@ -1,10 +1,10 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  isValidTimezone,
-  getBrowserTimezone,
-  resolveAutoTimezone,
-  getTimezoneOffset,
   AUTO_TIMEZONE,
+  getBrowserTimezone,
+  getTimezoneOffset,
+  isValidTimezone,
+  resolveAutoTimezone,
 } from '../timezone';
 
 describe('timezone utilities', () => {
