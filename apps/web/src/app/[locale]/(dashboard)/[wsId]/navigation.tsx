@@ -1100,7 +1100,6 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.billing'),
           href: `/${personalOrWsId}/billing`,
           icon: <CircleDollarSign className="h-5 w-5" />,
-          disabled: withoutPermission('manage_subscription'),
         },
         {
           title: t('sidebar_tabs.usage'),

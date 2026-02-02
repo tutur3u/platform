@@ -51,7 +51,6 @@ interface BillingClientProps {
   wsId: string;
   products: Product[];
   product_id: string;
-  isCreator: boolean;
   seatStatus?: SeatStatus;
   hasManageSubscriptionPermission: boolean;
 }
@@ -68,7 +67,6 @@ export function BillingClient({
   currentPlan,
   products,
   wsId,
-  isCreator,
   seatStatus,
   hasManageSubscriptionPermission,
 }: BillingClientProps) {
@@ -224,7 +222,7 @@ export function BillingClient({
                         {t('seat-usage')}
                       </span>
                     </div>
-                    {isCreator && (
+                    {hasManageSubscriptionPermission && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -301,7 +299,7 @@ export function BillingClient({
                     >
                       {t('upgrade-plan')}
                     </Button>
-                    {isPaidPlan && isCreator && (
+                    {hasManageSubscriptionPermission && isPaidPlan && (
                       <Button
                         variant="ghost"
                         size="lg"
@@ -376,7 +374,7 @@ export function BillingClient({
       </div>
 
       {/* Migration Option - Show for fixed-pricing paid plans */}
-      {isFixedPricing && isCreator && (
+      {hasManageSubscriptionPermission && isFixedPricing && (
         <div className="mb-8 overflow-hidden rounded-2xl border border-dynamic-blue/50 border-dashed bg-card">
           <div className="bg-linear-to-r from-dynamic-blue/10 via-dynamic-blue/5 to-dynamic-blue/10 p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -432,7 +430,7 @@ export function BillingClient({
       />
 
       {/* Add Seats Dialog - Only for seat-based subscriptions */}
-      {isSeatBased && seatStatus && (
+      {hasManageSubscriptionPermission && isSeatBased && seatStatus && (
         <AddSeatsDialog
           open={showAddSeatsDialog}
           onOpenChange={setShowAddSeatsDialog}
@@ -446,7 +444,7 @@ export function BillingClient({
       )}
 
       {/* Migration Dialog - Only for fixed-pricing subscriptions */}
-      {isFixedPricing && isCreator && (
+      {hasManageSubscriptionPermission && isFixedPricing && (
         <MigrateToSeatsDialog
           open={showMigrationDialog}
           onOpenChange={setShowMigrationDialog}

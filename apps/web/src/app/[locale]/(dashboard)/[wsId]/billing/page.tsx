@@ -65,33 +65,6 @@ const fetchWorkspaceOrders = async (wsId: string) => {
   }
 };
 
-const checkCreator = async (wsId: string) => {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    console.error('Error checking user:', userError);
-    return false;
-  }
-
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', wsId)
-    .single();
-
-  if (error) {
-    console.error('Error checking workspace creator:', error);
-    return false;
-  }
-
-  return data.creator_id === user?.id;
-};
-
 const checkManageSubscriptionPermission = async (
   wsId: string,
   userId: string
@@ -184,7 +157,6 @@ export default async function BillingPage({
           products,
           subscriptionResult,
           orders,
-          isCreator,
           hasManageSubscriptionPermission,
           locale,
           t,
@@ -192,7 +164,6 @@ export default async function BillingPage({
           fetchProducts(),
           ensureSubscription(wsId, user.id), // Try to ensure subscription exists
           fetchWorkspaceOrders(wsId),
-          checkCreator(wsId),
           checkManageSubscriptionPermission(wsId, user.id),
           getLocale(),
           getTranslations('billing'),
@@ -245,7 +216,6 @@ export default async function BillingPage({
               products={products}
               product_id={subscription?.product.id || ''}
               wsId={wsId}
-              isCreator={isCreator}
               seatStatus={seatStatus}
               hasManageSubscriptionPermission={hasManageSubscriptionPermission}
             />
