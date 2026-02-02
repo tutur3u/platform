@@ -76,14 +76,13 @@ export async function POST() {
     const customerId = await getOrCreatePolarCustomer({
       polar,
       supabase,
-      userId: user.id,
+      wsId: data.id,
     });
 
     // Create free subscription for the workspace
     const subscription = await createFreeSubscription(
       polar,
       sbAdmin,
-      data.id,
       customerId
     );
 

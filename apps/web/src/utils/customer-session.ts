@@ -4,82 +4,77 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 interface CreateCustomerSessionOptions {
   polar: Polar;
   supabase: TypedSupabaseClient;
-  userId: string;
+  wsId: string;
 }
 
 interface GetOrCreateCustomerOptions {
   polar: Polar;
   supabase: TypedSupabaseClient;
-  userId: string;
+  wsId: string;
 }
 
 /**
- * Create a Polar customer session with automatic fallback.
- *
- * First attempts to create a session using the external customer ID (user.id).
- * If that fails (customer not found), searches for the customer by email
- * and creates a session using the Polar customer ID.
- *
- * This handles existing Polar customers that were created before external ID tracking.
+ * Create a Polar customer session by workspace ID.
  */
-export async function createCustomerSessionWithFallback({
+export async function createCustomerSession({
   polar,
   supabase,
-  userId,
+  wsId,
 }: CreateCustomerSessionOptions) {
-  // Try to create customer session using external customer ID
-  try {
-    const session = await polar.customerSessions.create({
-      externalCustomerId: userId,
-    });
-    return session;
-  } catch (externalIdError) {
-    // If external ID lookup fails, try to find customer by email
-    console.log(
-      'External customer ID lookup failed, trying email lookup:',
-      externalIdError instanceof Error
-        ? externalIdError.message
-        : 'Unknown error'
-    );
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('id')
+    .eq('id', wsId)
+    .single();
 
-    // Fall back to get-or-create by email, then create session
-    const customerId = await getOrCreatePolarCustomer({
-      polar,
-      supabase,
-      userId,
-    });
-
-    return await polar.customerSessions.create({ customerId });
+  if (!workspace) {
+    throw new Error('Workspace not found');
   }
+
+  const session = await polar.customerSessions.create({
+    externalCustomerId: wsId,
+  });
+
+  return session;
 }
 
 /**
- * Get or create a Polar customer for the given user ID.
+ * Get or create a Polar customer for the given workspace.
  *
- * Searches for an existing customer by email.
- * If no customer exists, creates a new one with the user's email and external ID.
+ * Searches for an existing customer by workspace owner email.
+ * If no customer exists, creates a new one with:
+ * - Name: workspace name
+ * - External ID: workspace ID
+ * - Email: workspace owner email
  *
  * Returns the Polar customer ID.
  */
 export async function getOrCreatePolarCustomer({
   polar,
   supabase,
-  userId,
+  wsId,
 }: GetOrCreateCustomerOptions): Promise<string> {
-  // Get user email from user_private_details
-  const { data: userDetails, error: emailError } = await supabase
-    .from('user_private_details')
-    .select('email, full_name, ...users(display_name)')
-    .eq('user_id', userId)
+  // Get workspace with owner email (join through users table)
+  const { data: workspace, error: workspaceError } = await supabase
+    .from('workspaces')
+    .select(
+      'id, name, creator_id, users!creator_id(user_private_details(email))'
+    )
+    .eq('id', wsId)
     .single();
 
-  if (emailError || !userDetails?.email) {
-    throw new Error('Unable to retrieve user email for customer lookup');
+  if (workspaceError || !workspace) {
+    throw new Error('Unable to retrieve workspace information');
+  }
+
+  const ownerEmail = workspace.users?.user_private_details?.email;
+  if (!ownerEmail) {
+    throw new Error('Unable to retrieve workspace owner email');
   }
 
   // Search for customer by email in Polar
   const customersResponse = await polar.customers.list({
-    email: userDetails.email,
+    email: ownerEmail,
   });
 
   const customers = customersResponse.result?.items || [];
@@ -88,9 +83,9 @@ export async function getOrCreatePolarCustomer({
     // Create new customer if not found
     console.log('Customer not found in Polar, creating new customer...');
     const newCustomer = await polar.customers.create({
-      email: userDetails.email,
-      name: userDetails.full_name || userDetails.display_name || undefined,
-      externalId: userId,
+      email: ownerEmail,
+      name: workspace.name || undefined,
+      externalId: wsId,
     });
 
     if (!newCustomer?.id) {

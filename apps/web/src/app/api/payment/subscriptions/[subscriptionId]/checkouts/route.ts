@@ -87,20 +87,6 @@ export async function POST(
     );
   }
 
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('display_name')
-    .eq('id', user?.id || '')
-    .single();
-
-  if (error) {
-    console.error('Error fetching user display name:', error);
-    return NextResponse.json(
-      { error: 'Error fetching user display name' },
-      { status: 500 }
-    );
-  }
-
   // HERE is where you add the metadata
   try {
     const polar = createPolarClient();
@@ -109,10 +95,7 @@ export async function POST(
       subscriptionId: subscription.polar_subscription_id,
       products: [productId],
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
-      externalCustomerId: user?.id || '',
-      metadata: { wsId },
-      customerName: userData.display_name,
-      customerEmail: user?.email,
+      isBusinessCustomer: true,
     });
 
     return NextResponse.json({ url: checkoutSession.url });

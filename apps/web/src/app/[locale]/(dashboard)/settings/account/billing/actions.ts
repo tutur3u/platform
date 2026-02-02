@@ -9,7 +9,7 @@ import type {
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { createCustomerSessionWithFallback } from '@/utils/customer-session';
+import { createCustomerSession } from '@/utils/customer-session';
 
 interface BillingData {
   customer: {
@@ -48,10 +48,10 @@ export async function getBillingData(): Promise<ActionResult<BillingData>> {
     const supabase = await createClient();
 
     // Create a customer session to authenticate with customer portal
-    const session = await createCustomerSessionWithFallback({
+    const session = await createCustomerSession({
       polar,
       supabase,
-      userId: user.id,
+      wsId: 'FAKE_WS_ID',
     });
 
     // Fetch customer data using customer portal API
@@ -135,10 +135,10 @@ export async function updateBillingAddress(
     const supabase = await createClient();
 
     // Create a customer session to authenticate with customer portal
-    const session = await createCustomerSessionWithFallback({
+    const session = await createCustomerSession({
       polar,
       supabase,
-      userId: user.id,
+      wsId: 'FAKE_WS_ID',
     });
 
     // Update customer billing address using customer portal API
@@ -187,10 +187,10 @@ export async function deletePaymentMethod(
     const supabase = await createClient();
 
     // Create a customer session to authenticate with customer portal
-    const session = await createCustomerSessionWithFallback({
+    const session = await createCustomerSession({
       polar,
       supabase,
-      userId: user.id,
+      wsId: 'FAKE_WS_ID',
     });
 
     // Delete payment method using customer portal API
@@ -238,10 +238,10 @@ export async function getCustomerPortalUrl(): Promise<
     const supabase = await createClient();
 
     // Create customer session to get portal URL
-    const session = await createCustomerSessionWithFallback({
+    const session = await createCustomerSession({
       polar,
       supabase,
-      userId: user.id,
+      wsId: 'FAKE_WS_ID',
     });
 
     return {

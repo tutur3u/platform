@@ -85,7 +85,7 @@ const checkManageSubscriptionPermission = async (
   return data ?? false;
 };
 
-const ensureSubscription = async (wsId: string, userId: string) => {
+const ensureSubscription = async (wsId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
   if (existing) return { subscription: existing, error: null };
@@ -99,14 +99,13 @@ const ensureSubscription = async (wsId: string, userId: string) => {
     const customerId = await getOrCreatePolarCustomer({
       polar,
       supabase,
-      userId,
+      wsId,
     });
 
     // Create free tier subscription
     const subscription = await createFreeSubscription(
       polar,
       supabase,
-      wsId,
       customerId
     );
 
@@ -162,7 +161,7 @@ export default async function BillingPage({
           t,
         ] = await Promise.all([
           fetchProducts(),
-          ensureSubscription(wsId, user.id), // Try to ensure subscription exists
+          ensureSubscription(wsId), // Try to ensure subscription exists
           fetchWorkspaceOrders(wsId),
           checkManageSubscriptionPermission(wsId, user.id),
           getLocale(),
