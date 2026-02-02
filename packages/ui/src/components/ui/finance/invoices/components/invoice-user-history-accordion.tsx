@@ -19,9 +19,14 @@ import { useInfiniteUserInvoices } from '../hooks';
 interface Props {
   wsId: string;
   userId: string;
+  currency?: string;
 }
 
-export function InvoiceUserHistoryAccordion({ wsId, userId }: Props) {
+export function InvoiceUserHistoryAccordion({
+  wsId,
+  userId,
+  currency = 'VND',
+}: Props) {
   const t = useTranslations();
 
   const {
@@ -125,7 +130,8 @@ export function InvoiceUserHistoryAccordion({ wsId, userId }: Props) {
                       <p className="font-semibold text-dynamic-blue">
                         {invoice.price !== undefined
                           ? formatCurrency(
-                              invoice.price + (invoice.total_diff || 0)
+                              invoice.price + (invoice.total_diff || 0),
+                              currency
                             )
                           : '-'}
                       </p>

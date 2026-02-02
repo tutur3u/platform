@@ -1,6 +1,7 @@
 import { DollarSign, Percent } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { formatCurrency } from '@tuturuuu/utils/format';
 
 interface PromotionCardProps {
   promotion: {
@@ -9,13 +10,11 @@ interface PromotionCardProps {
     use_ratio: boolean;
     value: number;
   };
-  locale: string;
   currency?: string;
 }
 
 export function PromotionCard({
   promotion,
-  locale,
   currency = 'USD',
 }: PromotionCardProps) {
   const isPercentage = promotion.use_ratio;
@@ -59,10 +58,7 @@ export function PromotionCard({
             <div className="font-bold text-foreground text-lg">
               {isPercentage
                 ? `${promotion.value}%`
-                : `-${Intl.NumberFormat(locale, {
-                    style: 'currency',
-                    currency,
-                  }).format(promotion.value)}`}
+                : `-${formatCurrency(promotion.value, currency)}`}
             </div>
             <div className="text-muted-foreground text-xs">
               {isPercentage ? 'Discount' : 'Off'}

@@ -2,7 +2,7 @@
 
 import { Calendar, Clock, Percent, User, Wallet } from '@tuturuuu/icons';
 import type { DebtLoanWithBalance } from '@tuturuuu/types/primitives/DebtLoan';
-import { cn } from '@tuturuuu/utils/format';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Badge } from '../../badge';
@@ -13,25 +13,10 @@ interface Props {
   debtLoan: DebtLoanWithBalance;
   wsId: string;
   currency?: string;
-  locale?: string;
 }
 
-export function DebtLoanCard({
-  debtLoan,
-  wsId,
-  currency,
-  locale = 'vi-VN',
-}: Props) {
+export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
   const t = useTranslations('ws-debt-loan');
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currency || debtLoan.currency || 'VND',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -101,7 +86,10 @@ export function DebtLoanCard({
                 {t('principal_amount')}
               </span>
               <span className="font-medium">
-                {formatCurrency(debtLoan.principal_amount)}
+                {formatCurrency(
+                  debtLoan.principal_amount,
+                  currency || debtLoan.currency
+                )}
               </span>
             </div>
             {debtLoan.total_paid > 0 && (
@@ -110,7 +98,10 @@ export function DebtLoanCard({
                   {t('amount_paid')}
                 </span>
                 <span className="font-medium text-green-600 dark:text-green-400">
-                  {formatCurrency(debtLoan.total_paid)}
+                  {formatCurrency(
+                    debtLoan.total_paid,
+                    currency || debtLoan.currency
+                  )}
                 </span>
               </div>
             )}
@@ -126,7 +117,10 @@ export function DebtLoanCard({
                       : 'text-blue-600 dark:text-blue-400'
                 )}
               >
-                {formatCurrency(debtLoan.remaining_balance)}
+                {formatCurrency(
+                  debtLoan.remaining_balance,
+                  currency || debtLoan.currency
+                )}
               </span>
             </div>
           </div>
@@ -162,7 +156,7 @@ export function DebtLoanCard({
                 <Calendar className="h-3.5 w-3.5" />
                 <span>
                   {isOverdue && `${t('overdue')}: `}
-                  {new Date(debtLoan.due_date).toLocaleDateString(locale)}
+                  {new Date(debtLoan.due_date).toLocaleDateString()}
                 </span>
               </div>
             )}
@@ -174,9 +168,7 @@ export function DebtLoanCard({
             )}
             <div className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              <span>
-                {new Date(debtLoan.start_date).toLocaleDateString(locale)}
-              </span>
+              <span>{new Date(debtLoan.start_date).toLocaleDateString()}</span>
             </div>
           </div>
         </CardContent>

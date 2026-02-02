@@ -256,25 +256,25 @@ describe('Format Utilities', () => {
     });
 
     it('formats positive amounts with sign when specified', () => {
-      const result = formatCurrency(50000, 'vi-VN', 'VND', {
+      const result = formatCurrency(50000, 'VND', 'vi-VN', {
         signDisplay: 'always',
       });
       expect(result).toContain('+');
     });
 
     it('formats USD currency', () => {
-      const result = formatCurrency(1000, 'en-US', 'USD');
+      const result = formatCurrency(1000, 'USD');
       expect(result).toContain('$');
       expect(result).toContain('1,000');
     });
 
     it('formats EUR currency', () => {
-      const result = formatCurrency(1000, 'de-DE', 'EUR');
+      const result = formatCurrency(1000, 'EUR');
       expect(result).toContain('€');
     });
 
     it('respects custom options', () => {
-      const result = formatCurrency(1000.5, 'en-US', 'USD', {
+      const result = formatCurrency(1000.5, 'USD', 'en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
