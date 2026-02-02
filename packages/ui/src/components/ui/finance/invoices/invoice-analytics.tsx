@@ -35,7 +35,7 @@ export function InvoiceAnalytics({
   wsId,
   className,
   weekStartsOn = 1,
-  currency: _currency = 'USD',
+  currency = 'USD',
 }: InvoiceAnalyticsProps) {
   const t = useTranslations('invoice-analytics');
 
@@ -146,6 +146,7 @@ export function InvoiceAnalytics({
         setPeriod: handlePeriodChange,
         className,
         showPeriodTabs: true, // Always show period tabs
+        currency,
       }
     : {
         dailyWalletData: dailyWalletData || [],
@@ -159,6 +160,7 @@ export function InvoiceAnalytics({
         setPeriod: handlePeriodChange,
         className,
         showPeriodTabs: true,
+        currency,
       };
 
   return <InvoiceTotalsChart {...chartProps} />;

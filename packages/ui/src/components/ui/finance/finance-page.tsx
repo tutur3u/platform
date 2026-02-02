@@ -68,7 +68,7 @@ export default async function FinancePage({
 
       <BudgetAlerts wsId={wsId} className="mb-4" />
 
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid items-end gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/*<Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
           <TotalBalanceStatistics
             wsId={wsId}
@@ -121,7 +121,7 @@ export default async function FinancePage({
           <InvoicesStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
 
         <DailyTotalChartClient
           wsId={wsId}
@@ -130,7 +130,7 @@ export default async function FinancePage({
           className="col-span-full"
         />
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
 
         <MonthlyTotalChartClient
           wsId={wsId}
@@ -139,7 +139,7 @@ export default async function FinancePage({
           className="col-span-full"
         />
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
 
         <CategoryBreakdownChart
           wsId={wsId}
@@ -148,7 +148,7 @@ export default async function FinancePage({
           className="col-span-full"
         />
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
 
         <CustomDataTable
           data={transactionsData}

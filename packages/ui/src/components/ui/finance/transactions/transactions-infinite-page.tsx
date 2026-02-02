@@ -77,49 +77,61 @@ export function TransactionsInfinitePage({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-col items-start justify-between gap-2 md:flex-row">
-        <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
+      <div className="flex flex-col items-start justify-between gap-3 lg:flex-row">
+        <div className="grid w-full grid-cols-1 xs:grid-cols-2 gap-2 md:flex md:flex-1 md:flex-wrap md:items-center md:gap-2">
           <SearchBar
             t={t}
             defaultValue={q || ''}
             onSearch={handleSearch}
-            className="col-span-full w-full bg-background md:col-span-1 md:max-w-xs"
+            className="col-span-full w-full bg-background md:max-w-xs"
           />
-          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+          <Suspense
+            fallback={<Skeleton className="h-9 w-full md:h-8 md:w-32" />}
+          >
             <DateRangeFilterWrapper />
           </Suspense>
-          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+          <Suspense
+            fallback={<Skeleton className="h-9 w-full md:h-8 md:w-32" />}
+          >
             <UserFilterWrapper wsId={wsId} />
           </Suspense>
-          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+          <Suspense
+            fallback={<Skeleton className="h-9 w-full md:h-8 md:w-32" />}
+          >
             <CategoryFilterWrapper wsId={wsId} />
           </Suspense>
-          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+          <Suspense
+            fallback={<Skeleton className="h-9 w-full md:h-8 md:w-32" />}
+          >
             <WalletFilterWrapper wsId={wsId} />
           </Suspense>
-          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+          <Suspense
+            fallback={<Skeleton className="h-9 w-full md:h-8 md:w-32" />}
+          >
             <TagFilterWrapper wsId={wsId} />
           </Suspense>
-          <Suspense fallback={<Skeleton className="h-8 w-32" />}>
+          <Suspense
+            fallback={<Skeleton className="h-9 w-full md:h-8 md:w-32" />}
+          >
             <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
           </Suspense>
         </div>
 
-        <div className="flex w-full gap-2 md:w-auto">
+        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           {/* Import button */}
           <Dialog>
             <DialogTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 w-full md:w-fit"
+                className="h-9 w-full sm:h-8 md:w-fit"
               >
                 <Download className="h-4 w-4" />
                 {t('common.import')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <MoneyLoverImportDialog wsId={wsId} />
+            <DialogContent className="flex max-h-[85vh] max-w-4xl flex-col overflow-hidden">
+              <MoneyLoverImportDialog wsId={wsId} currency={currency} />
             </DialogContent>
           </Dialog>
 
@@ -130,7 +142,7 @@ export function TransactionsInfinitePage({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 w-full md:w-fit"
+                  className="h-9 w-full sm:h-8 md:w-fit"
                 >
                   <Upload className="h-4 w-4" />
                   {t('common.export')}

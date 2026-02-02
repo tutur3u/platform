@@ -374,23 +374,27 @@ export function Structure({
           link.requiredWorkspaceTier.requiredTier
         );
 
-        // Tuturuuu employees bypass tier requirements
+        // Tuturuuu employees can access features but still see the tier UI
         const isTuturuuuEmployee = isValidTuturuuuEmail(user?.email);
 
-        if (!meetsTier && !isTuturuuuEmployee) {
+        if (!meetsTier) {
           if (link.requiredWorkspaceTier.alwaysShow) {
             return [
               {
                 ...link,
-                tempDisabled: true,
+                // Tuturuuu employees can still access, but see the tier badge
+                tempDisabled: !isTuturuuuEmployee,
               },
             ];
           } else {
-            // Hide it
+            // Hide it (but Tuturuuu employees can still see)
+            if (isTuturuuuEmployee) {
+              return [link];
+            }
             return [];
           }
         } else {
-          // Tier requirement is met or user is Tuturuuu employee - remove the badge
+          // Tier requirement is met - remove the badge
           return [
             {
               ...link,

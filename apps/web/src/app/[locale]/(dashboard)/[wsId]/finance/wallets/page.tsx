@@ -26,7 +26,14 @@ export default async function WorkspaceWalletsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const sp = await searchParams;
-        return <WalletsPage wsId={wsId} searchParams={sp} />;
+        return (
+          <WalletsPage
+            wsId={wsId}
+            searchParams={sp}
+            page={sp.page}
+            pageSize={sp.pageSize}
+          />
+        );
       }}
     </WorkspaceWrapper>
   );

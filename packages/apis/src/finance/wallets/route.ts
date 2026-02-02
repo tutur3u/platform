@@ -188,10 +188,25 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase.from('workspace_wallets').upsert({
-    ...data,
+  // Extract only fields that exist in the database schema
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const walletData: { ws_id: string } & Record<string, any> = {
     ws_id: wsId,
-  });
+  };
+  if (data.id) walletData.id = data.id;
+  if (data.name) walletData.name = data.name;
+  if (data.balance !== undefined) walletData.balance = data.balance;
+  if (data.currency) walletData.currency = data.currency;
+  if (data.description !== undefined) walletData.description = data.description;
+  if (data.icon !== undefined) walletData.icon = data.icon;
+  if (data.image_src !== undefined) walletData.image_src = data.image_src;
+  if (data.report_opt_in !== undefined)
+    walletData.report_opt_in = data.report_opt_in;
+  if (data.type) walletData.type = data.type;
+
+  const { error } = await supabase
+    .from('workspace_wallets')
+    .upsert([walletData as never]);
 
   if (error) {
     console.log(error);

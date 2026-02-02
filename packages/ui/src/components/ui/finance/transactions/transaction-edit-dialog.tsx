@@ -2,9 +2,12 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ArrowDownCircle,
+  ArrowUpCircle,
   Calendar,
   Check,
   Coins,
+  CreditCard,
   DollarSign,
   FileText,
   FolderOpen,
@@ -32,7 +35,12 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import {
+  getIconComponentByKey,
+  type PlatformIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -40,7 +48,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -48,10 +55,64 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import type * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { getWalletImagePath } from '../wallets/wallet-images';
 import { ConfidentialToggle } from './confidential-field';
+
+// Helper to get category icon - extracted to avoid lint warnings about JSX in iterables
+function getCategoryIcon(
+  category: TransactionCategory,
+  iconGetter: typeof getIconComponentByKey
+): React.ReactNode {
+  const IconComponent = category.icon
+    ? iconGetter(category.icon as PlatformIconKey)
+    : null;
+
+  if (IconComponent) {
+    return <IconComponent className="h-4 w-4" />;
+  }
+  if (category.is_expense === false) {
+    return <ArrowUpCircle className="h-4 w-4" />;
+  }
+  return <ArrowDownCircle className="h-4 w-4" />;
+}
+
+// Helper to get wallet icon - supports custom images, lucide icons, and type-based fallbacks
+function getWalletIcon(
+  wallet: Wallet,
+  iconGetter: typeof getIconComponentByKey
+): React.ReactNode {
+  // Priority 1: Custom image (bank/mobile logos)
+  if (wallet.image_src) {
+    return (
+      <Image
+        src={getWalletImagePath(wallet.image_src)}
+        alt=""
+        className="h-4 w-4 rounded-sm object-contain"
+        height={16}
+        width={16}
+      />
+    );
+  }
+  // Priority 2: Custom lucide icon
+  if (wallet.icon) {
+    const IconComponent = iconGetter(wallet.icon as PlatformIconKey);
+    if (IconComponent) {
+      return <IconComponent className="h-4 w-4" />;
+    }
+  }
+  // Priority 3: Fallback based on wallet type
+  return wallet.type === 'CREDIT' ? (
+    <CreditCard className="h-4 w-4" />
+  ) : (
+    <WalletIcon className="h-4 w-4" />
+  );
+}
 
 interface TransactionEditDialogProps {
   transaction: Transaction & {
@@ -125,21 +186,11 @@ export function TransactionEditDialog({
     (!isConfidentialTransaction || canDeleteConfidentialTransactions);
 
   // Form state
-  const initialAmount = transaction?.amount
-    ? Math.abs(transaction.amount).toString()
-    : '';
+  const initialAmount = transaction?.amount ? Math.abs(transaction.amount) : 0;
   const [description, setDescription] = useState(
     transaction?.description || ''
   );
   const [amount, setAmount] = useState(initialAmount);
-  const [displayAmount, setDisplayAmount] = useState(
-    initialAmount
-      ? Intl.NumberFormat(locale, {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(parseFloat(initialAmount))
-      : ''
-  );
   const [walletId, setWalletId] = useState(transaction?.wallet_id || '');
   const [categoryId, setCategoryId] = useState(transaction?.category_id || '');
   const [takenAt, setTakenAt] = useState<Date | undefined>(
@@ -204,29 +255,11 @@ export function TransactionEditDialog({
     }
   }, [existingTags]);
 
-  // Format amount for display
-  const formatAmountForDisplay = useCallback(
-    (value: string) => {
-      if (!value) return '';
-      const numValue = parseFloat(value);
-      if (Number.isNaN(numValue)) return '';
-      return Intl.NumberFormat(locale, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(numValue);
-    },
-    [locale]
-  );
-
   // Reset form when dialog opens or transaction changes
   useEffect(() => {
     if (isOpen && transaction) {
-      const amountValue = transaction.amount
-        ? Math.abs(transaction.amount).toString()
-        : '';
       setDescription(transaction.description || '');
-      setAmount(amountValue);
-      setDisplayAmount(formatAmountForDisplay(amountValue));
+      setAmount(transaction.amount ? Math.abs(transaction.amount) : 0);
       setWalletId(transaction.wallet_id || '');
       setCategoryId(transaction.category_id || '');
       setTakenAt(
@@ -245,8 +278,7 @@ export function TransactionEditDialog({
     } else if (isOpen && !transaction) {
       // Reset for new transaction
       setDescription('');
-      setAmount('');
-      setDisplayAmount('');
+      setAmount(0);
       setWalletId('');
       setCategoryId('');
       setTakenAt(new Date());
@@ -255,36 +287,13 @@ export function TransactionEditDialog({
       setIsDescriptionConfidential(false);
       setIsCategoryConfidential(false);
     }
-  }, [isOpen, transaction, formatAmountForDisplay]);
+  }, [isOpen, transaction]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const isExpense = selectedCategory?.is_expense !== false;
-  const numericAmount = parseFloat(amount) || 0;
 
   const canSave =
-    numericAmount > 0 &&
-    walletId &&
-    categoryId &&
-    takenAt &&
-    canUpdateTransactions;
-
-  // Update display amount when amount changes
-  useEffect(() => {
-    setDisplayAmount(formatAmountForDisplay(amount));
-  }, [amount, formatAmountForDisplay]);
-
-  // Handle amount input change
-  const handleAmountChange = (value: string) => {
-    // Remove all non-numeric characters except decimal point
-    const cleaned = value.replace(/[^\d.]/g, '');
-
-    // Only allow one decimal point
-    const parts = cleaned.split('.');
-    const formatted =
-      parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : cleaned;
-
-    setAmount(formatted);
-  };
+    amount > 0 && walletId && categoryId && takenAt && canUpdateTransactions;
 
   const handleSave = useCallback(async () => {
     if (!canSave) return;
@@ -298,9 +307,7 @@ export function TransactionEditDialog({
     setIsLoading(true);
 
     try {
-      const finalAmount = isExpense
-        ? -Math.abs(numericAmount)
-        : Math.abs(numericAmount);
+      const finalAmount = isExpense ? -Math.abs(amount) : Math.abs(amount);
 
       const res = await fetch(
         transaction?.id
@@ -367,7 +374,7 @@ export function TransactionEditDialog({
     canSave,
     canUpdateTransactions,
     isExpense,
-    numericAmount,
+    amount,
     transaction,
     wsId,
     description,
@@ -627,25 +634,19 @@ export function TransactionEditDialog({
                     </div>
                     {t('transaction-data-table.amount')}
                   </Label>
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      value={displayAmount}
-                      onChange={(e) => handleAmountChange(e.target.value)}
-                      placeholder="0"
-                      disabled={isDisabled || !canUpdateTransactions}
-                      className={cn(
-                        'pr-16 font-bold text-2xl tabular-nums',
-                        isExpense ? 'text-dynamic-red' : 'text-dynamic-green',
-                        (isDisabled || !canUpdateTransactions) &&
-                          'cursor-not-allowed opacity-60'
-                      )}
-                    />
-                    <div className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5 text-muted-foreground text-sm">
-                      <span className="font-medium">VND</span>
-                    </div>
-                  </div>
+                  <CurrencyInput
+                    value={amount}
+                    onChange={setAmount}
+                    placeholder="0"
+                    disabled={isDisabled || !canUpdateTransactions}
+                    locale={locale}
+                    className={cn(
+                      'font-bold text-2xl tabular-nums',
+                      isExpense ? 'text-dynamic-red' : 'text-dynamic-green',
+                      (isDisabled || !canUpdateTransactions) &&
+                        'cursor-not-allowed opacity-60'
+                    )}
+                  />
                   <div className="flex items-center justify-between text-muted-foreground text-xs">
                     <span>
                       {isExpense
@@ -662,7 +663,7 @@ export function TransactionEditDialog({
                           maximumFractionDigits: 0,
                           signDisplay: 'always',
                         }
-                      ).format(isExpense ? -numericAmount : numericAmount)}
+                      ).format(isExpense ? -amount : amount)}
                     </span>
                   </div>
                 </div>
@@ -706,6 +707,7 @@ export function TransactionEditDialog({
                     .map((w) => ({
                       value: w.id!,
                       label: w.name!,
+                      icon: getWalletIcon(w, getIconComponentByKey),
                     }))}
                   placeholder={t('transaction-data-table.select_wallet')}
                   disabled={isDisabled || !canUpdateTransactions}
@@ -729,6 +731,10 @@ export function TransactionEditDialog({
                     .map((c) => ({
                       value: c.id!,
                       label: c.name!,
+                      icon: getCategoryIcon(c, getIconComponentByKey),
+                      color: c.color
+                        ? computeAccessibleLabelStyles(c.color)?.text
+                        : undefined,
                     }))}
                   placeholder={t('transaction-data-table.select_category')}
                   disabled={isDisabled || !canUpdateTransactions}

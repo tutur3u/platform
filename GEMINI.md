@@ -72,7 +72,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - **Code Style:** The project uses Biome for linting and formatting. Use `bun format-and-lint:fix` to automatically fix any issues.
 - **Type Checking:** Always use the exact command `bun type-check` for type checking. Do NOT use `npx tsgo`, `bunx tsgo`, or other alternatives. This is the only accepted type checking command.
 - **Testing:** Tests are written with Vitest. Run all tests with `bun test`. **CRITICAL**: Always add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test` to verify functionality.
-- **Commits:** Commits should follow the Conventional Commits specification.
+- **Commits:** Commits should follow the Conventional Commits specification. **ALWAYS ask for user approval before creating commits** – never commit without explicit confirmation. Prefer atomic commits by scope when changes span multiple areas.
 - **Environment Variables:** Global environment variables are defined in `turbo.json`. Each application can also have its own `.env.local` file for local development.
 - **Internationalization:** The project supports multiple languages via `next-intl`. **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings to `apps/web/messages/{locale}.json`. Never add translations only for English - Vietnamese translations are mandatory.
 - **Type Inference:** Always prefer importing database types from `packages/types/src/db.ts` (only after user runs migrations via `bun sb:push` and typegen via `bun sb:typegen`). Never attempt to run these commands yourself.
@@ -92,6 +92,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Verification:** Run `bun check` at the end of your work. This unified command runs formatting, tests, type-checking, and i18n checks (`bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check`). All checks MUST pass. This is a mandatory requirement.
 - **Testing After Features:** Always add test cases after implementing new features and run them to verify functionality. Tests CAN and SHOULD be run by agents.
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
+- **Session Retrospective (MANDATORY):** At the END of every co-working session, ALWAYS review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`. Document mistakes made, lessons learned, and proposed improvements. Update these files with new rules or clarifications to prevent repeating errors in future sessions. This continuous improvement practice is NON-NEGOTIABLE.
 
 ### Prohibited Actions
 

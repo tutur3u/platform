@@ -99,7 +99,7 @@ export function DataTablePagination<TData>({
 
       <Separator className="my-1 md:hidden" />
 
-      <div className="flex flex-wrap items-center justify-center gap-2 text-center md:gap-4 lg:gap-8">
+      <div className="flex flex-wrap items-center justify-center gap-3 text-center sm:gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
           <p className="font-medium text-sm">
             {t?.('common.rows-per-page') ?? 'Rows per page'}
@@ -147,7 +147,7 @@ export function DataTablePagination<TData>({
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
+              className="hidden h-9 w-9 p-0 md:flex md:h-8 md:w-8"
               onClick={() => {
                 if (isServerSide) {
                   setParams?.({ page: 1 });
@@ -163,7 +163,7 @@ export function DataTablePagination<TData>({
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-9 w-9 p-0 sm:h-8 sm:w-8"
               onClick={() => {
                 if (isServerSide) {
                   // pageIndex is 0-based, page param is 1-based
@@ -181,7 +181,7 @@ export function DataTablePagination<TData>({
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-9 w-9 p-0 sm:h-8 sm:w-8"
               onClick={() => {
                 if (isServerSide) {
                   // pageIndex is 0-based, page param is 1-based
@@ -199,7 +199,7 @@ export function DataTablePagination<TData>({
             </Button>
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
+              className="hidden h-9 w-9 p-0 md:flex md:h-8 md:w-8"
               onClick={() => {
                 if (isServerSide) {
                   setParams?.({ page: pageCount });

@@ -16,16 +16,18 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import * as z from 'zod';
 import { toast } from '../../sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import { WalletIconImagePicker } from './wallet-icon-image-picker';
 import WalletRoleAccess from './walletId/wallet-role-access';
 
 interface Props {
   wsId: string;
   data?: Wallet;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  isPersonalWorkspace?: boolean;
 }
 
 const FormSchema = z.object({
@@ -37,13 +39,26 @@ const FormSchema = z.object({
   // type: z.enum(['STANDARD', 'CREDIT']),
   currency: z.string(),
   // currency: z.enum(['VND']),
+  icon: z.string().nullable().optional(),
+  image_src: z.string().nullable().optional(),
 });
 
-export function WalletForm({ wsId, data, onFinish }: Props) {
+export function WalletForm({
+  wsId,
+  data,
+  onFinish,
+  isPersonalWorkspace,
+}: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Local state for immediate UI updates (icon/image)
+  const [localIcon, setLocalIcon] = useState<string | null>(data?.icon || null);
+  const [localImageSrc, setLocalImageSrc] = useState<string | null>(
+    data?.image_src || null
+  );
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -54,27 +69,51 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
       balance: data?.balance || 0,
       type: data?.type || 'STANDARD',
       currency: data?.currency || 'VND',
+      icon: data?.icon || null,
+      image_src: data?.image_src || null,
     },
   });
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
+  // Handle icon change - update both local state and form
+  const handleIconChange = useCallback(
+    (value: string | null) => {
+      setLocalIcon(value);
+      form.setValue('icon', value);
+    },
+    [form]
+  );
+
+  // Handle image_src change - update both local state and form
+  const handleImageSrcChange = useCallback(
+    (value: string | null) => {
+      setLocalImageSrc(value);
+      form.setValue('image_src', value);
+    },
+    [form]
+  );
+
+  async function onSubmit(formData: z.infer<typeof FormSchema>) {
     setLoading(true);
 
     const res = await fetch(
-      data?.id
-        ? `/api/workspaces/${wsId}/wallets/${data.id}`
+      formData?.id
+        ? `/api/workspaces/${wsId}/wallets/${formData.id}`
         : `/api/workspaces/${wsId}/wallets`,
       {
-        method: data?.id ? 'PUT' : 'POST',
+        method: formData?.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...formData,
+          icon: formData.icon || null,
+          image_src: formData.image_src || null,
+        }),
       }
     );
 
     if (res.ok) {
-      onFinish?.(data);
+      onFinish?.(formData);
       router.refresh();
     } else {
       setLoading(false);
@@ -85,20 +124,56 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
   const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-        <FormField
-          control={form.control}
-          name="name"
-          disabled={loading}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
-              <FormControl>
-                <Input placeholder="Cash" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="flex items-end gap-2">
+          <FormField
+            control={form.control}
+            name="icon"
+            render={() => (
+              <FormItem>
+                <FormLabel>{t('wallet-data-table.icon')}</FormLabel>
+                <FormControl>
+                  <WalletIconImagePicker
+                    icon={localIcon}
+                    imageSrc={localImageSrc}
+                    onIconChange={handleIconChange}
+                    onImageSrcChange={handleImageSrcChange}
+                    disabled={loading}
+                    translations={{
+                      selectIconOrImage: t(
+                        'wallet-data-table.select_icon_or_image'
+                      ),
+                      iconTab: t('wallet-data-table.icon_tab'),
+                      bankTab: t('wallet-data-table.bank_tab'),
+                      mobileTab: t('wallet-data-table.mobile_tab'),
+                      searchPlaceholder: t('wallet-data-table.search'),
+                      clear: t('common.clear'),
+                      selectIcon: t('wallet-data-table.select_icon'),
+                      iconDescription: t('wallet-data-table.icon_description'),
+                      searchIcons: t('wallet-data-table.search_icons'),
+                      noIcon: t('wallet-data-table.no_icon'),
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="name"
+            disabled={loading}
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
+                <FormControl>
+                  <Input placeholder="Cash" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
@@ -223,7 +298,8 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
     </Form>
   );
 
-  if (!data?.id) return formContent;
+  // If personal workspace or no data.id, only show form (no tabs needed for role access)
+  if (!data?.id || isPersonalWorkspace) return formContent;
 
   return (
     <Tabs defaultValue="general">

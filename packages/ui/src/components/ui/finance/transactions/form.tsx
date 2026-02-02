@@ -20,6 +20,7 @@ import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   getIconComponentByKey,
@@ -56,11 +57,13 @@ import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { getWalletImagePath } from '../wallets/wallet-images';
 
 // Helper to get category icon - extracted to avoid lint warnings about JSX in iterables
 function getCategoryIcon(
@@ -78,6 +81,38 @@ function getCategoryIcon(
     return <ArrowUpCircle className="h-4 w-4" />;
   }
   return <ArrowDownCircle className="h-4 w-4" />;
+}
+
+// Helper to get wallet icon - supports custom images, lucide icons, and type-based fallbacks
+function getWalletIcon(
+  wallet: WalletType,
+  iconGetter: typeof getIconComponentByKey
+): React.ReactNode {
+  // Priority 1: Custom image (bank/mobile logos)
+  if (wallet.image_src) {
+    return (
+      <Image
+        src={getWalletImagePath(wallet.image_src)}
+        alt=""
+        className="h-4 w-4 rounded-sm object-contain"
+        height={16}
+        width={16}
+      />
+    );
+  }
+  // Priority 2: Custom lucide icon
+  if (wallet.icon) {
+    const IconComponent = iconGetter(wallet.icon as PlatformIconKey);
+    if (IconComponent) {
+      return <IconComponent className="h-4 w-4" />;
+    }
+  }
+  // Priority 3: Fallback based on wallet type
+  return wallet.type === 'CREDIT' ? (
+    <CreditCard className="h-4 w-4" />
+  ) : (
+    <Wallet className="h-4 w-4" />
+  );
 }
 
 interface Props {
@@ -454,12 +489,10 @@ export function TransactionForm({
                             ? wallets.map((wallet) => ({
                                 value: wallet.id || '',
                                 label: wallet.name || '',
-                                icon:
-                                  wallet.type === 'CREDIT' ? (
-                                    <CreditCard className="h-4 w-4" />
-                                  ) : (
-                                    <Wallet className="h-4 w-4" />
-                                  ),
+                                icon: getWalletIcon(
+                                  wallet,
+                                  getIconComponentByKey
+                                ),
                               }))
                             : []
                         }
@@ -540,28 +573,11 @@ export function TransactionForm({
                   <FormItem>
                     <FormLabel>{t('transaction-data-table.amount')}</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
+                      <CurrencyInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={field.disabled}
                         placeholder="0"
-                        value={
-                          !field.value
-                            ? ''
-                            : new Intl.NumberFormat('en-US', {
-                                maximumFractionDigits: 2,
-                              }).format(Math.abs(field.value))
-                        }
-                        onChange={(e) => {
-                          // Remove non-numeric characters except decimal point, then parse
-                          const numericValue = parseFloat(
-                            e.target.value.replace(/[^0-9.]/g, '')
-                          );
-                          if (!Number.isNaN(numericValue)) {
-                            field.onChange(numericValue);
-                          } else {
-                            // Handle case where the input is not a number
-                            field.onChange(0);
-                          }
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -730,7 +746,7 @@ export function TransactionForm({
                       <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <Coins className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="!mt-0 font-normal text-sm">
+                          <FormLabel className="mt-0! font-normal text-sm">
                             {t(
                               'workspace-finance-transactions.confidential-amount'
                             )}
@@ -754,7 +770,7 @@ export function TransactionForm({
                       <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="!mt-0 font-normal text-sm">
+                          <FormLabel className="mt-0! font-normal text-sm">
                             {t(
                               'workspace-finance-transactions.confidential-description'
                             )}
@@ -778,7 +794,7 @@ export function TransactionForm({
                       <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="!mt-0 font-normal text-sm">
+                          <FormLabel className="mt-0! font-normal text-sm">
                             {t(
                               'workspace-finance-transactions.confidential-category'
                             )}

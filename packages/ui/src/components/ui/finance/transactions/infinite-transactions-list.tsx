@@ -41,6 +41,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionForm } from './form';
+import { PeriodBreakdownPanel } from './period-charts';
 import { TransactionCard } from './transaction-card';
 import { TransactionStatistics } from './transaction-statistics';
 
@@ -662,12 +663,12 @@ export function InfiniteTransactionsList({
             }}
           >
             {/* Date header */}
-            <div className="border-border/40 border-b bg-muted/30 px-6 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="border-border/40 border-b bg-muted/30 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
                 {/* Left: Date info */}
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
-                    <Calendar className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm ring-1 ring-primary/20 sm:flex sm:h-12 sm:w-12">
+                    <Calendar className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                   </div>
                   <div className="space-y-1">
                     <h3 className="font-bold text-foreground text-lg">
@@ -716,7 +717,7 @@ export function InfiniteTransactionsList({
                 {/* Right: Daily total */}
                 {!allAmountsRedacted ? (
                   <div className="flex items-center gap-3">
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-start gap-1 sm:items-end">
                       <span className="text-muted-foreground text-xs">
                         {t('workspace-finance-transactions.net-total')}
                       </span>
@@ -765,60 +766,79 @@ export function InfiniteTransactionsList({
               </div>
             </div>
 
-            {/* Transactions list */}
-            <div className="space-y-3 p-4">
-              {group.transactions
-                .slice(0, displayCount)
-                .map((transaction: Transaction) => (
-                  <div
-                    key={transaction.id}
-                    onClick={() => handleTransactionClick(transaction)}
-                    className="cursor-pointer"
-                  >
-                    <TransactionCard
-                      transaction={{
-                        ...transaction,
-                        is_amount_confidential:
-                          transaction.is_amount_confidential ?? undefined,
-                        is_category_confidential:
-                          transaction.is_category_confidential ?? undefined,
-                        is_description_confidential:
-                          transaction.is_description_confidential ?? undefined,
-                      }}
-                      wsId={wsId}
-                      currency={currency}
-                      onEdit={() => handleTransactionClick(transaction)}
-                      onDelete={() => handleDeleteClick(transaction)}
-                      canEdit={canUpdateTransactions}
-                      canDelete={canDeleteTransactions}
-                      showCreator={!isPersonalWorkspace}
-                    />
-                  </div>
-                ))}
+            {/* Content area - Two-column layout on desktop */}
+            <div className="flex flex-col lg:flex-row">
+              {/* Left: Transactions list */}
+              <div className="min-w-0 flex-1 space-y-2 p-3 sm:space-y-3 sm:p-4">
+                {group.transactions
+                  .slice(0, displayCount)
+                  .map((transaction: Transaction) => (
+                    <div
+                      key={transaction.id}
+                      onClick={() => handleTransactionClick(transaction)}
+                      className="cursor-pointer"
+                    >
+                      <TransactionCard
+                        transaction={{
+                          ...transaction,
+                          is_amount_confidential:
+                            transaction.is_amount_confidential ?? undefined,
+                          is_category_confidential:
+                            transaction.is_category_confidential ?? undefined,
+                          is_description_confidential:
+                            transaction.is_description_confidential ??
+                            undefined,
+                        }}
+                        wsId={wsId}
+                        currency={currency}
+                        onEdit={() => handleTransactionClick(transaction)}
+                        onDelete={() => handleDeleteClick(transaction)}
+                        canEdit={canUpdateTransactions}
+                        canDelete={canDeleteTransactions}
+                        showCreator={!isPersonalWorkspace}
+                        isDaily={viewMode === 'daily'}
+                      />
+                    </div>
+                  ))}
 
-              {/* Show more/less button */}
-              {group.transactions.length > 3 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
-                  onClick={() => toggleGroup(group.date)}
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="mr-2 h-4 w-4" />
-                      {t('common.show-less')}
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                      {t('common.show-more')} (
-                      {group.transactions.length - displayCount}{' '}
-                      {t('date_groups.more')})
-                    </>
-                  )}
-                </Button>
-              )}
+                {/* Show more/less button */}
+                {group.transactions.length > 3 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
+                    onClick={() => toggleGroup(group.date)}
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="mr-2 h-4 w-4" />
+                        {t('common.show-less')}
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="mr-2 h-4 w-4" />
+                        {t('common.show-more')} (
+                        {group.transactions.length - displayCount}{' '}
+                        {t('date_groups.more')})
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {/* Right: Period breakdown panel (desktop only) */}
+              <aside className="hidden shrink-0 border-border/40 border-l lg:block lg:w-80 xl:w-96">
+                <div className="sticky top-4 p-4">
+                  <PeriodBreakdownPanel
+                    transactions={group.transactions}
+                    viewMode={viewMode}
+                    periodStart={group.date}
+                    currency={currency}
+                    periodStats={group.periodStats}
+                    workspaceId={wsId}
+                  />
+                </div>
+              </aside>
             </div>
           </div>
         );

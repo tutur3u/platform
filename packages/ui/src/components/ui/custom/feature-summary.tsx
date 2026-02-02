@@ -28,6 +28,7 @@ interface Props<T> {
   settingsTriggerIcon?: ReactNode;
   href?: string;
   secondaryHref?: string;
+  icon?: ReactNode;
   title?: ReactNode;
   pluralTitle?: string;
   singularTitle?: string;
@@ -66,6 +67,7 @@ export default function FeatureSummary<T>({
   settingsTriggerIcon,
   href,
   secondaryHref,
+  icon,
   title,
   pluralTitle,
   singularTitle,
@@ -115,9 +117,14 @@ export default function FeatureSummary<T>({
       </Button>
     ) : undefined);
   return (
-    <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
+    <div className="flex flex-col justify-between gap-3 rounded-lg border border-border bg-foreground/5 p-3 sm:gap-4 sm:p-4 md:flex-row md:items-start">
       <div className="w-full">
-        {title || <h1 className="w-full font-bold text-2xl">{pluralTitle}</h1>}
+        {title || (
+          <div className="flex items-center gap-2">
+            {icon && <div className="flex items-center">{icon}</div>}
+            <h1 className="w-full font-bold text-2xl">{pluralTitle}</h1>
+          </div>
+        )}
         {description && (
           <div className="whitespace-pre-wrap text-foreground/80">
             {description}
@@ -134,7 +141,7 @@ export default function FeatureSummary<T>({
         showDefaultFormAsSecondary ||
         (showSecondaryTrigger && !showCustomSecondaryTrigger) ||
         (showSecondaryTrigger && secondaryTrigger)) && (
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
           {settingsForm && (
             <ModifiableDialogTrigger
               data={settingsData as { id?: string } | undefined}
