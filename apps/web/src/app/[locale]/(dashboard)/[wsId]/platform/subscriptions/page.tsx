@@ -95,19 +95,19 @@ export default function PlatformSubscriptionsMigrationPage() {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Processed</p>
-                  <p className="font-bold text-lg text-dynamic-green">
+                  <p className="font-bold text-dynamic-green text-lg">
                     {migrationResult.processed}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Skipped</p>
-                  <p className="font-bold text-lg text-dynamic-yellow">
+                  <p className="font-bold text-dynamic-yellow text-lg">
                     {migrationResult.skipped}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Errors</p>
-                  <p className="font-bold text-lg text-dynamic-red">
+                  <p className="font-bold text-dynamic-red text-lg">
                     {migrationResult.errors}
                   </p>
                 </div>
