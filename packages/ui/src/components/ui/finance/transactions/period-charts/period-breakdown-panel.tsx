@@ -11,8 +11,8 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionViewMode } from '@tuturuuu/types/primitives/TransactionPeriod';
-import { cn } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
+import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../button';
 import {
@@ -73,7 +73,6 @@ export function PeriodBreakdownPanel({
   workspaceId,
 }: PeriodBreakdownPanelProps) {
   const t = useTranslations('finance-transactions');
-  const locale = useLocale();
   const [isConfidential, setIsConfidential] = useState(true);
 
   // Default expanded state: collapsed for daily, expanded for weekly+
@@ -244,7 +243,7 @@ export function PeriodBreakdownPanel({
 
   const formatCompactValue = (value: number) => {
     if (isConfidential) return '•••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
       notation: 'compact',

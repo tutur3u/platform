@@ -33,7 +33,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
+import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -688,12 +688,15 @@ export function InfiniteTransactionsList({
                         <div className="flex items-center gap-1">
                           <TrendingUp className="h-3 w-3 text-dynamic-green" />
                           <span className="text-dynamic-green">
-                            {Intl.NumberFormat(locale, {
-                              style: 'currency',
-                              currency: currency || 'USD',
-                              notation: 'compact',
-                              maximumFractionDigits: 1,
-                            }).format(income)}
+                            {Intl.NumberFormat(
+                              getCurrencyLocale(currency || 'USD'),
+                              {
+                                style: 'currency',
+                                currency: currency || 'USD',
+                                notation: 'compact',
+                                maximumFractionDigits: 1,
+                              }
+                            ).format(income)}
                           </span>
                         </div>
                       )}
@@ -701,12 +704,15 @@ export function InfiniteTransactionsList({
                         <div className="flex items-center gap-1">
                           <TrendingDown className="h-3 w-3 text-dynamic-red" />
                           <span className="text-dynamic-red">
-                            {Intl.NumberFormat(locale, {
-                              style: 'currency',
-                              currency: currency || 'USD',
-                              notation: 'compact',
-                              maximumFractionDigits: 1,
-                            }).format(Math.abs(expense))}
+                            {Intl.NumberFormat(
+                              getCurrencyLocale(currency || 'USD'),
+                              {
+                                style: 'currency',
+                                currency: currency || 'USD',
+                                notation: 'compact',
+                                maximumFractionDigits: 1,
+                              }
+                            ).format(Math.abs(expense))}
                           </span>
                         </div>
                       )}
@@ -745,13 +751,16 @@ export function InfiniteTransactionsList({
                           )}
                         >
                           {hasRedactedAmounts && '≈ '}
-                          {Intl.NumberFormat(locale, {
-                            style: 'currency',
-                            currency: currency || 'USD',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                            signDisplay: 'always',
-                          }).format(dailyTotal)}
+                          {Intl.NumberFormat(
+                            getCurrencyLocale(currency || 'USD'),
+                            {
+                              style: 'currency',
+                              currency: currency || 'USD',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                              signDisplay: 'always',
+                            }
+                          ).format(dailyTotal)}
                         </div>
                       </div>
                     </div>

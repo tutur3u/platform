@@ -9,8 +9,8 @@ import {
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Badge } from '@tuturuuu/ui/badge';
-import { cn } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
+import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 interface TransactionStatisticsProps {
@@ -33,7 +33,6 @@ export function TransactionStatistics({
   currency = 'USD',
 }: TransactionStatisticsProps) {
   const t = useTranslations();
-  const locale = useLocale();
 
   const localStatistics = useMemo(() => {
     if (stats) return stats;
@@ -134,7 +133,7 @@ export function TransactionStatistics({
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-2xl text-dynamic-green tabular-nums">
               {statistics.hasRedactedAmounts && '≈ '}
-              {Intl.NumberFormat(locale, {
+              {Intl.NumberFormat(getCurrencyLocale(currency), {
                 style: 'currency',
                 currency,
                 minimumFractionDigits: 0,
@@ -155,7 +154,7 @@ export function TransactionStatistics({
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-2xl text-dynamic-red tabular-nums">
               {statistics.hasRedactedAmounts && '≈ '}
-              {Intl.NumberFormat(locale, {
+              {Intl.NumberFormat(getCurrencyLocale(currency), {
                 style: 'currency',
                 currency,
                 minimumFractionDigits: 0,
@@ -197,7 +196,7 @@ export function TransactionStatistics({
               )}
             >
               {statistics.hasRedactedAmounts && '≈ '}
-              {Intl.NumberFormat(locale, {
+              {Intl.NumberFormat(getCurrencyLocale(currency), {
                 style: 'currency',
                 currency,
                 minimumFractionDigits: 0,
