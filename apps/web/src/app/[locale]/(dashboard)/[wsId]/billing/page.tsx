@@ -8,11 +8,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getOrCreatePolarCustomer } from '@/utils/customer-session';
 import { getSeatStatus } from '@/utils/seat-limits';
-import {
-  createFreeSubscription,
-  fetchSubscription,
-  waitForSubscriptionSync,
-} from '@/utils/subscription-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
@@ -135,6 +131,80 @@ const ensureSubscription = async (wsId: string) => {
     };
   }
 };
+
+export async function fetchSubscription(wsId: string) {
+  const supabase = await createClient();
+
+  const { data: dbSub, error } = await supabase
+    .from('workspace_subscriptions')
+    .select(
+      `
+      *,
+      workspace_subscription_products (
+        id,
+        name,
+        description,
+        price,
+        recurring_interval,
+        tier,
+        pricing_model,
+        price_per_seat
+      )
+    `
+    )
+    .eq('ws_id', wsId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !dbSub) {
+    console.error('Error fetching subscription:', error);
+    return null;
+  }
+
+  if (!dbSub.workspace_subscription_products) return null;
+
+  return {
+    id: dbSub.id,
+    status: dbSub.status,
+    createdAt: dbSub.created_at,
+    currentPeriodStart: dbSub.current_period_start,
+    currentPeriodEnd: dbSub.current_period_end,
+    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
+    product: dbSub.workspace_subscription_products,
+    // Seat-based pricing fields
+    pricingModel: dbSub.pricing_model,
+    seatCount: dbSub.seat_count,
+    pricePerSeat: dbSub.price_per_seat,
+  };
+}
+
+export async function waitForSubscriptionSync(
+  wsId: string,
+  maxAttempts: number = 10,
+  delayMs: number = 500
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const subscription = await fetchSubscription(wsId);
+
+    if (subscription) {
+      console.log(
+        `Subscription sync: Found subscription after ${attempt} attempt(s) (${attempt * delayMs}ms)`
+      );
+      return subscription;
+    }
+
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  console.warn(
+    `Subscription sync: Timeout after ${maxAttempts} attempts (${maxAttempts * delayMs}ms)`
+  );
+  return null;
+}
 
 export default async function BillingPage({
   params,
