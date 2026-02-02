@@ -34,8 +34,19 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
+import { resolveAutoTimezone } from '@tuturuuu/utils/timezone';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import moment from 'moment';
 import 'moment/locale/vi';
+
+// Initialize dayjs plugins for timezone-aware date operations
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(isoWeek);
+
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
@@ -50,6 +61,8 @@ interface InfiniteTransactionsListProps {
   walletId?: string;
   initialData?: Transaction[];
   currency?: string;
+  /** IANA timezone identifier for period grouping (e.g., 'America/New_York'). Defaults to browser timezone. */
+  timezone?: string | null;
   /** View mode for transaction grouping */
   viewMode?: TransactionViewMode;
   canUpdateTransactions?: boolean;
@@ -88,6 +101,7 @@ export function InfiniteTransactionsList({
   wsId,
   walletId,
   currency,
+  timezone: timezoneProp,
   viewMode = 'daily',
   canUpdateTransactions,
   canDeleteTransactions,
@@ -108,6 +122,12 @@ export function InfiniteTransactionsList({
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Resolve timezone: if 'auto' or null/undefined, use browser timezone
+  const resolvedTimezone = useMemo(
+    () => resolveAutoTimezone(timezoneProp),
+    [timezoneProp]
+  );
 
   // Set moment locale
   useEffect(() => {
@@ -228,64 +248,90 @@ export function InfiniteTransactionsList({
     })
   );
 
-  const buildQueryString = (cursor?: string, isPeriods = false) => {
-    const params = new URLSearchParams();
-    if (cursor) params.set('cursor', cursor);
-    if (q) params.set('q', q);
-    if (walletId) params.set('walletId', walletId);
-    if (start) params.set('start', start);
-    if (end) params.set('end', end);
-    userIds.forEach((id) => {
-      params.append('userIds', id);
-    });
-    categoryIds.forEach((id) => {
-      params.append('categoryIds', id);
-    });
-    walletIds.forEach((id) => {
-      params.append('walletIds', id);
-    });
-    tagIds.forEach((id) => {
-      params.append('tagIds', id);
-    });
-    if (isPeriods) {
-      params.set('viewMode', viewMode);
-      params.set('limit', '10');
-    } else {
-      params.set('limit', '20');
-    }
-    return params.toString();
-  };
+  const buildQueryString = useCallback(
+    (cursor?: string, isPeriods = false) => {
+      const params = new URLSearchParams();
+      if (cursor) params.set('cursor', cursor);
+      if (q) params.set('q', q);
+      if (walletId) params.set('walletId', walletId);
+      if (start) params.set('start', start);
+      if (end) params.set('end', end);
+      userIds.forEach((id) => {
+        params.append('userIds', id);
+      });
+      categoryIds.forEach((id) => {
+        params.append('categoryIds', id);
+      });
+      walletIds.forEach((id) => {
+        params.append('walletIds', id);
+      });
+      tagIds.forEach((id) => {
+        params.append('tagIds', id);
+      });
+      if (isPeriods) {
+        params.set('viewMode', viewMode);
+        params.set('limit', '10');
+        // Include timezone for period grouping
+        params.set('timezone', resolvedTimezone);
+      } else {
+        params.set('limit', '20');
+      }
+      return params.toString();
+    },
+    [
+      q,
+      walletId,
+      start,
+      end,
+      userIds,
+      categoryIds,
+      walletIds,
+      tagIds,
+      viewMode,
+      resolvedTimezone,
+    ]
+  );
 
-  // Generate period label based on view mode
+  // Generate period label based on view mode with timezone awareness
   const generatePeriodLabel = useCallback(
     (periodStart: string, mode: TransactionViewMode): string => {
-      const date = moment(periodStart);
-      const now = moment();
+      // Parse the period start in the resolved timezone for accurate comparisons
+      // The server already returns period boundaries in the requested timezone
+      const date = dayjs(periodStart).tz(resolvedTimezone);
+      const now = dayjs().tz(resolvedTimezone);
+
+      // Use moment for formatting (better locale support) but dayjs for comparison
+      const momentDate = moment(date.toDate());
+      momentDate.locale(locale);
 
       switch (mode) {
         case 'daily': {
-          const daysDiff = now.startOf('day').diff(date.startOf('day'), 'days');
+          // Compare dates in the user's timezone
+          const todayStart = now.startOf('day');
+          const dateStart = date.startOf('day');
+          const daysDiff = todayStart.diff(dateStart, 'day');
+
           if (daysDiff === 0) return t('date_groups.today');
           if (daysDiff === 1) return t('date_groups.yesterday');
-          return date.format('dddd, DD MMMM YYYY');
+          return momentDate.format('dddd, DD MMMM YYYY');
         }
         case 'weekly': {
           const weekNum = date.isoWeek();
           const year = date.isoWeekYear();
-          const weekStart = date.clone().startOf('isoWeek');
-          const weekEnd = date.clone().endOf('isoWeek');
+          const weekStart = date.startOf('isoWeek');
+          const weekEnd = date.endOf('isoWeek');
           const rangeStr = `${weekStart.format('MMM D')} - ${weekEnd.format('MMM D, YYYY')}`;
           return `${t('finance-transactions.week-label', { number: weekNum, year })} (${rangeStr})`;
         }
         case 'monthly':
-          return date.format('MMMM YYYY');
+          return momentDate.format('MMMM YYYY');
         case 'yearly':
-          return date.format('YYYY');
+          return momentDate.format('YYYY');
         default:
-          return date.format('dddd, DD MMMM YYYY');
+          return momentDate.format('dddd, DD MMMM YYYY');
       }
     },
-    [t]
+    [t, resolvedTimezone, locale]
   );
 
   // Use periods endpoint for non-daily view modes
@@ -357,6 +403,7 @@ export function InfiniteTransactionsList({
       start,
       end,
       viewMode,
+      resolvedTimezone,
     ],
     queryFn: async ({ pageParam }) => {
       const queryString = buildQueryString(
@@ -447,31 +494,36 @@ export function InfiniteTransactionsList({
       }));
     }
 
-    // For daily view, group transactions by date
+    // For daily view, group transactions by date in the user's timezone
     const groups: GroupedTransactions[] = [];
-    const now = moment();
+    const now = dayjs().tz(resolvedTimezone);
 
     allTransactions.forEach((transaction) => {
-      const transactionDate = moment(transaction.taken_at);
+      // Parse transaction date in the user's timezone
+      const transactionDate = dayjs(transaction.taken_at).tz(resolvedTimezone);
       const dateKey = transactionDate.format('YYYY-MM-DD');
 
+      // Use moment for label formatting (better locale support)
+      const momentDate = moment(transactionDate.toDate());
+      momentDate.locale(locale);
+
       let label: string;
-      const daysDiff = now
-        .startOf('day')
-        .diff(transactionDate.clone().startOf('day'), 'days');
+      const todayStart = now.startOf('day');
+      const txDateStart = transactionDate.startOf('day');
+      const daysDiff = todayStart.diff(txDateStart, 'day');
 
       if (daysDiff === 0) {
         label = t('date_groups.today');
       } else if (daysDiff === 1) {
         label = t('date_groups.yesterday');
       } else if (daysDiff < 7) {
-        label = transactionDate.format('dddd, DD MMMM YYYY');
+        label = momentDate.format('dddd, DD MMMM YYYY');
       } else if (transactionDate.isSame(now, 'month')) {
-        label = transactionDate.format('dddd, DD MMMM YYYY');
+        label = momentDate.format('dddd, DD MMMM YYYY');
       } else if (transactionDate.isSame(now, 'year')) {
-        label = transactionDate.format('MMMM YYYY');
+        label = momentDate.format('MMMM YYYY');
       } else {
-        label = transactionDate.format('dddd, DD MMMM YYYY');
+        label = momentDate.format('dddd, DD MMMM YYYY');
       }
 
       let group = groups.find((g) => g.date === dateKey);
@@ -491,6 +543,8 @@ export function InfiniteTransactionsList({
     viewMode,
     t,
     generatePeriodLabel,
+    resolvedTimezone,
+    locale,
   ]);
 
   // Intersection Observer for auto-loading
@@ -843,6 +897,7 @@ export function InfiniteTransactionsList({
                     viewMode={viewMode}
                     periodStart={group.date}
                     currency={currency}
+                    timezone={resolvedTimezone}
                     periodStats={group.periodStats}
                     workspaceId={wsId}
                   />
