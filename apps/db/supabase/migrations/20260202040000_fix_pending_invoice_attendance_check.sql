@@ -31,35 +31,14 @@ declare
 	v_use_attendance_based boolean;
 	v_blocked_pending_group_ids uuid[];
 begin
-	-- Fetch workspace config for attendance-based calculation (default to TRUE for backward compatibility)
-	-- workspace_configs stores values as text, so we need to convert "true"/"false" strings to boolean
-	select coalesce(
-		(select case 
-			when lower(value) = 'true' then true
-			when lower(value) = 'false' then false
-			else true  -- Default to true if value is not recognized
-		end from workspace_configs 
-		 where ws_id = p_ws_id and id = 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'),
-		true
-	) into v_use_attendance_based;
-
-	-- Fetch workspace config for groups that should be excluded from pending invoices
-	-- Value is stored as a comma-separated list of UUIDs
-	-- Safe split-and-filter: validate each token is a valid UUID before casting
+	-- Fetch workspace config using centralized function for consistency
 	select
-		case
-			when value is null or trim(value) = '' then null
-			else (
-				select array_agg(v::uuid)
-				from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
-				where trim(v) != ''
-					and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-			)
-		end
-	into v_blocked_pending_group_ids
-	from workspace_configs
-	where ws_id = p_ws_id
-		and id = 'INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING';
+		use_attendance_based,
+		blocked_pending_group_ids
+	into
+		v_use_attendance_based,
+		v_blocked_pending_group_ids
+	from public.fetch_workspace_invoice_configs(p_ws_id);
 
 	v_escaped_query := replace(replace(replace(p_query, '\\', '\\\\'), '%', '\\%'), '_', '\\_');
 
@@ -216,35 +195,14 @@ declare
 	v_use_attendance_based boolean;
 	v_blocked_pending_group_ids uuid[];
 begin
-	-- Fetch workspace config for attendance-based calculation (default to TRUE for backward compatibility)
-	-- workspace_configs stores values as text, so we need to convert "true"/"false" strings to boolean
-	select coalesce(
-		(select case 
-			when lower(value) = 'true' then true
-			when lower(value) = 'false' then false
-			else true  -- Default to true if value is not recognized
-		end from workspace_configs 
-		 where ws_id = p_ws_id and id = 'INVOICE_USE_ATTENDANCE_BASED_CALCULATION'),
-		true
-	) into v_use_attendance_based;
-
-	-- Fetch workspace config for groups that should be excluded from pending invoices
-	-- Value is stored as a comma-separated list of UUIDs
-	-- Safe split-and-filter: validate each token is a valid UUID before casting
+	-- Fetch workspace config using centralized function for consistency
 	select
-		case
-			when value is null or trim(value) = '' then null
-			else (
-				select array_agg(v::uuid)
-				from unnest(string_to_array(replace(value, ' ', ''), ',')) as t(v)
-				where trim(v) != ''
-					and trim(v) ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-			)
-		end
-	into v_blocked_pending_group_ids
-	from workspace_configs
-	where ws_id = p_ws_id
-		and id = 'INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING';
+		use_attendance_based,
+		blocked_pending_group_ids
+	into
+		v_use_attendance_based,
+		v_blocked_pending_group_ids
+	from public.fetch_workspace_invoice_configs(p_ws_id);
 
 	v_escaped_query := case 
 		when p_query is null then null
