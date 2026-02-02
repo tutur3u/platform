@@ -23,9 +23,11 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { handleTemplateBackgroundUpload } from '@tuturuuu/utils/template-background';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
+import { FileUploader, type StatedFile } from '../../custom/file-uploader';
 
 interface SaveAsTemplateDialogProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'ws_id' | 'name'>;
@@ -53,6 +55,8 @@ export function SaveAsTemplateDialog({
   const [includeLabels, setIncludeLabels] = useState(true);
   const [includeDates, setIncludeDates] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [backgroundFiles, setBackgroundFiles] = useState<StatedFile[]>([]);
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
 
   // Initialize template name when dialog opens
   useEffect(() => {
@@ -63,8 +67,28 @@ export function SaveAsTemplateDialog({
       setIncludeTasks(true);
       setIncludeLabels(true);
       setIncludeDates(true);
+      setBackgroundFiles([]);
+      setBackgroundUrl(null);
     }
   }, [open, board]);
+
+  const handleBackgroundUpload = async (files: StatedFile[]) => {
+    await handleTemplateBackgroundUpload(
+      files,
+      board.ws_id,
+      (url, _path) => {
+        setBackgroundUrl(url);
+      },
+      (error) => {
+        console.error('Background upload error:', error);
+      }
+    );
+  };
+
+  const handleRemoveBackground = () => {
+    setBackgroundUrl(null);
+    setBackgroundFiles([]);
+  };
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
@@ -88,6 +112,7 @@ export function SaveAsTemplateDialog({
             includeTasks,
             includeLabels,
             includeDates,
+            backgroundUrl: backgroundUrl || undefined,
           }),
         }
       );
@@ -206,6 +231,46 @@ export function SaveAsTemplateDialog({
                 ? t('ws-board-templates.visibility.private_hint')
                 : t('ws-board-templates.visibility.workspace_hint')}
             </p>
+          </div>
+
+          {/* Background Image */}
+          <div className="space-y-2">
+            <Label>Background Image (Optional)</Label>
+            <p className="text-muted-foreground text-xs">
+              Upload a background image for your template. Only one image is
+              allowed.
+            </p>
+            {backgroundUrl ? (
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                  {/* biome-ignore lint/performance/noImgElement: preview image */}
+                  <img
+                    src={backgroundUrl}
+                    alt="Template background"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveBackground}
+                  className="w-full"
+                >
+                  Remove Background
+                </Button>
+              </div>
+            ) : (
+              <FileUploader
+                value={backgroundFiles}
+                onValueChange={setBackgroundFiles}
+                onUpload={handleBackgroundUpload}
+                accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                maxSize={5 * 1024 * 1024}
+                maxFileCount={1}
+                multiple={false}
+              />
+            )}
           </div>
 
           {/* Import Options */}

@@ -74,6 +74,7 @@ async function getTemplate(
       description,
       visibility,
       content,
+      background_url,
       created_at,
       updated_at
     `
@@ -109,6 +110,7 @@ async function getTemplate(
     name: template.name,
     description: template.description,
     visibility: template.visibility as 'private' | 'workspace' | 'public',
+    backgroundUrl: template.background_url,
     createdAt: template.created_at,
     updatedAt: template.updated_at,
     isOwner: template.created_by === user?.id,

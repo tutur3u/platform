@@ -7,6 +7,7 @@ interface UpdateTemplateRequest {
   name?: string;
   description?: string | null;
   visibility?: 'private' | 'workspace' | 'public';
+  backgroundUrl?: string | null;
 }
 
 interface Params {
@@ -119,7 +120,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { wsId, templateId } = await params;
     const body: UpdateTemplateRequest = await req.json();
 
-    const { name, description, visibility } = body;
+    const { name, description, visibility, backgroundUrl } = body;
 
     if (!validate(wsId) || !validate(templateId)) {
       return NextResponse.json(
@@ -175,6 +176,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     if (visibility !== undefined) {
       updateData.visibility = visibility;
+    }
+
+    if (backgroundUrl !== undefined) {
+      updateData.background_url = backgroundUrl;
     }
 
     // Update the template (RLS will enforce owner-only access)

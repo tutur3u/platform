@@ -3,6 +3,10 @@
 import { Loader2, Pencil } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  FileUploader,
+  type StatedFile,
+} from '@tuturuuu/ui/custom/file-uploader';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,6 +25,10 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  deleteTemplateBackground,
+  handleTemplateBackgroundUpload,
+} from '@tuturuuu/utils/template-background';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -31,6 +39,7 @@ interface EditTemplateDialogProps {
   templateName: string;
   templateDescription: string | null;
   templateVisibility: 'private' | 'workspace' | 'public';
+  templateBackgroundUrl?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -41,6 +50,7 @@ export function EditTemplateDialog({
   templateName,
   templateDescription,
   templateVisibility,
+  templateBackgroundUrl,
   open,
   onOpenChange,
 }: EditTemplateDialogProps) {
@@ -53,6 +63,11 @@ export function EditTemplateDialog({
     templateDescription || ''
   );
   const [editVisibility, setEditVisibility] = useState(templateVisibility);
+  const [backgroundFiles, setBackgroundFiles] = useState<StatedFile[]>([]);
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(
+    templateBackgroundUrl || null
+  );
+  const [backgroundPath, setBackgroundPath] = useState<string | null>(null);
 
   const nameId = useId();
   const descId = useId();
@@ -66,6 +81,20 @@ export function EditTemplateDialog({
 
     setIsEditing(true);
     try {
+      // Delete old background if a new one was uploaded
+      if (backgroundPath && templateBackgroundUrl) {
+        try {
+          // Extract path from URL if it's a full URL
+          const oldPath = templateBackgroundUrl.includes('/')
+            ? templateBackgroundUrl.split('/').slice(-3).join('/')
+            : templateBackgroundUrl;
+          await deleteTemplateBackground(oldPath);
+        } catch (error) {
+          console.error('Failed to delete old background:', error);
+          // Continue anyway - the update is more important
+        }
+      }
+
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/templates/${templateId}`,
         {
@@ -75,6 +104,7 @@ export function EditTemplateDialog({
             name: editName.trim(),
             description: editDescription.trim() || null,
             visibility: editVisibility,
+            backgroundUrl: backgroundUrl,
           }),
         }
       );
@@ -95,6 +125,26 @@ export function EditTemplateDialog({
     } finally {
       setIsEditing(false);
     }
+  };
+
+  const handleBackgroundUpload = async (files: StatedFile[]) => {
+    await handleTemplateBackgroundUpload(
+      files,
+      wsId,
+      (url, path) => {
+        setBackgroundUrl(url);
+        setBackgroundPath(path);
+      },
+      (error) => {
+        console.error('Background upload error:', error);
+      }
+    );
+  };
+
+  const handleRemoveBackground = () => {
+    setBackgroundUrl(null);
+    setBackgroundPath(null);
+    setBackgroundFiles([]);
   };
 
   return (
@@ -157,6 +207,44 @@ export function EditTemplateDialog({
                 ? t('visibility.private_hint')
                 : t('visibility.workspace_hint')}
             </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Background Image (Optional)</Label>
+            <p className="text-muted-foreground text-xs">
+              Upload a background image for your template. Only one image is
+              allowed.
+            </p>
+            {backgroundUrl ? (
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                  {/* biome-ignore lint/performance/noImgElement: preview image */}
+                  <img
+                    src={backgroundUrl}
+                    alt="Template background"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveBackground}
+                  className="w-full"
+                >
+                  Remove Background
+                </Button>
+              </div>
+            ) : (
+              <FileUploader
+                value={backgroundFiles}
+                onValueChange={setBackgroundFiles}
+                onUpload={handleBackgroundUpload}
+                accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                maxSize={5 * 1024 * 1024}
+                maxFileCount={1}
+                multiple={false}
+              />
+            )}
           </div>
         </div>
         <DialogFooter>

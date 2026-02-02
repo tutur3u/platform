@@ -571,6 +571,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
         templateName={template.name}
         templateDescription={template.description}
         templateVisibility={template.visibility}
+        templateBackgroundUrl={template.backgroundUrl}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
       />

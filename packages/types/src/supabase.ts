@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -751,6 +756,7 @@ export type Database = {
       };
       board_templates: {
         Row: {
+          background_url: string | null;
           content: Json;
           created_at: string;
           created_by: string | null;
@@ -763,6 +769,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          background_url?: string | null;
           content: Json;
           created_at?: string;
           created_by?: string | null;
@@ -775,6 +782,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          background_url?: string | null;
           content?: Json;
           created_at?: string;
           created_by?: string | null;
@@ -11080,30 +11088,6 @@ export type Database = {
           },
         ];
       };
-      vietnamese_holidays: {
-        Row: {
-          created_at: string;
-          date: string;
-          id: string;
-          name: string;
-          year: number | null;
-        };
-        Insert: {
-          created_at?: string;
-          date: string;
-          id?: string;
-          name: string;
-          year?: number | null;
-        };
-        Update: {
-          created_at?: string;
-          date?: string;
-          id?: string;
-          name?: string;
-          year?: number | null;
-        };
-        Relationships: [];
-      };
       vital_group_vitals: {
         Row: {
           created_at: string | null;
@@ -11133,94 +11117,6 @@ export type Database = {
             columns: ['vital_id'];
             isOneToOne: false;
             referencedRelation: 'healthcare_vitals';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      wallet_interest_configs: {
-        Row: {
-          created_at: string;
-          enabled: boolean;
-          id: string;
-          last_calculated_at: string | null;
-          last_interest_amount: number | null;
-          provider: Database['public']['Enums']['wallet_interest_provider'];
-          total_interest_earned: number | null;
-          tracking_end_date: string | null;
-          tracking_start_date: string | null;
-          updated_at: string;
-          wallet_id: string;
-          zalopay_tier: Database['public']['Enums']['zalopay_tier'] | null;
-        };
-        Insert: {
-          created_at?: string;
-          enabled?: boolean;
-          id?: string;
-          last_calculated_at?: string | null;
-          last_interest_amount?: number | null;
-          provider: Database['public']['Enums']['wallet_interest_provider'];
-          total_interest_earned?: number | null;
-          tracking_end_date?: string | null;
-          tracking_start_date?: string | null;
-          updated_at?: string;
-          wallet_id: string;
-          zalopay_tier?: Database['public']['Enums']['zalopay_tier'] | null;
-        };
-        Update: {
-          created_at?: string;
-          enabled?: boolean;
-          id?: string;
-          last_calculated_at?: string | null;
-          last_interest_amount?: number | null;
-          provider?: Database['public']['Enums']['wallet_interest_provider'];
-          total_interest_earned?: number | null;
-          tracking_end_date?: string | null;
-          tracking_start_date?: string | null;
-          updated_at?: string;
-          wallet_id?: string;
-          zalopay_tier?: Database['public']['Enums']['zalopay_tier'] | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'wallet_interest_configs_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: true;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      wallet_interest_rates: {
-        Row: {
-          annual_rate: number;
-          config_id: string;
-          created_at: string;
-          effective_from: string;
-          effective_to: string | null;
-          id: string;
-        };
-        Insert: {
-          annual_rate: number;
-          config_id: string;
-          created_at?: string;
-          effective_from: string;
-          effective_to?: string | null;
-          id?: string;
-        };
-        Update: {
-          annual_rate?: number;
-          config_id?: string;
-          created_at?: string;
-          effective_from?: string;
-          effective_to?: string | null;
-          id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'wallet_interest_rates_config_id_fkey';
-            columns: ['config_id'];
-            isOneToOne: false;
-            referencedRelation: 'wallet_interest_configs';
             referencedColumns: ['id'];
           },
         ];
@@ -13087,152 +12983,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_datasets_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_debt_loan_transactions: {
-        Row: {
-          amount: number;
-          created_at: string;
-          debt_loan_id: string;
-          id: string;
-          is_interest: boolean;
-          note: string | null;
-          transaction_id: string;
-        };
-        Insert: {
-          amount: number;
-          created_at?: string;
-          debt_loan_id: string;
-          id?: string;
-          is_interest?: boolean;
-          note?: string | null;
-          transaction_id: string;
-        };
-        Update: {
-          amount?: number;
-          created_at?: string;
-          debt_loan_id?: string;
-          id?: string;
-          is_interest?: boolean;
-          note?: string | null;
-          transaction_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_debt_loan_transactions_debt_loan_id_fkey';
-            columns: ['debt_loan_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_debt_loans';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loan_transactions_transaction_id_fkey';
-            columns: ['transaction_id'];
-            isOneToOne: false;
-            referencedRelation: 'wallet_transactions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loan_transactions_transaction_id_fkey';
-            columns: ['transaction_id'];
-            isOneToOne: false;
-            referencedRelation: 'wallet_transactions_secure';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_debt_loans: {
-        Row: {
-          counterparty: string | null;
-          created_at: string;
-          creator_id: string;
-          currency: string;
-          description: string | null;
-          due_date: string | null;
-          id: string;
-          interest_rate: number | null;
-          interest_type:
-            | Database['public']['Enums']['interest_calculation_type']
-            | null;
-          name: string;
-          principal_amount: number;
-          start_date: string;
-          status: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid: number;
-          total_paid: number;
-          type: Database['public']['Enums']['debt_loan_type'];
-          updated_at: string;
-          wallet_id: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          counterparty?: string | null;
-          created_at?: string;
-          creator_id: string;
-          currency?: string;
-          description?: string | null;
-          due_date?: string | null;
-          id?: string;
-          interest_rate?: number | null;
-          interest_type?:
-            | Database['public']['Enums']['interest_calculation_type']
-            | null;
-          name: string;
-          principal_amount: number;
-          start_date?: string;
-          status?: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid?: number;
-          total_paid?: number;
-          type: Database['public']['Enums']['debt_loan_type'];
-          updated_at?: string;
-          wallet_id?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          counterparty?: string | null;
-          created_at?: string;
-          creator_id?: string;
-          currency?: string;
-          description?: string | null;
-          due_date?: string | null;
-          id?: string;
-          interest_rate?: number | null;
-          interest_type?:
-            | Database['public']['Enums']['interest_calculation_type']
-            | null;
-          name?: string;
-          principal_amount?: number;
-          start_date?: string;
-          status?: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid?: number;
-          total_paid?: number;
-          type?: Database['public']['Enums']['debt_loan_type'];
-          updated_at?: string;
-          wallet_id?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_debt_loans_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loans_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loans_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -16113,9 +15863,7 @@ export type Database = {
           created_at: string | null;
           currency: string;
           description: string | null;
-          icon: Database['public']['Enums']['platform_icon'] | null;
           id: string;
-          image_src: string | null;
           name: string | null;
           report_opt_in: boolean;
           type: string;
@@ -16126,9 +15874,7 @@ export type Database = {
           created_at?: string | null;
           currency?: string;
           description?: string | null;
-          icon?: Database['public']['Enums']['platform_icon'] | null;
           id?: string;
-          image_src?: string | null;
           name?: string | null;
           report_opt_in?: boolean;
           type?: string;
@@ -16139,9 +15885,7 @@ export type Database = {
           created_at?: string | null;
           currency?: string;
           description?: string | null;
-          icon?: Database['public']['Enums']['platform_icon'] | null;
           id?: string;
-          image_src?: string | null;
           name?: string | null;
           report_opt_in?: boolean;
           type?: string;
@@ -16376,36 +16120,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -18171,7 +17886,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: string;
+          last_sign_in_avg: unknown;
           percentage: number;
           provider: string;
           user_count: number;
@@ -18376,47 +18091,6 @@ export type Database = {
         }[];
       };
       get_dau_count: { Args: never; Returns: number };
-      get_debt_loan_summary: {
-        Args: { p_ws_id: string };
-        Returns: {
-          active_debt_count: number;
-          active_loan_count: number;
-          net_position: number;
-          total_debt_remaining: number;
-          total_debts: number;
-          total_loan_remaining: number;
-          total_loans: number;
-        }[];
-      };
-      get_debt_loans_with_balance: {
-        Args: {
-          p_status?: Database['public']['Enums']['debt_loan_status'];
-          p_type?: Database['public']['Enums']['debt_loan_type'];
-          p_ws_id: string;
-        };
-        Returns: {
-          counterparty: string;
-          created_at: string;
-          creator_id: string;
-          currency: string;
-          description: string;
-          due_date: string;
-          id: string;
-          interest_rate: number;
-          interest_type: Database['public']['Enums']['interest_calculation_type'];
-          name: string;
-          principal_amount: number;
-          progress_percentage: number;
-          remaining_balance: number;
-          start_date: string;
-          status: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid: number;
-          total_paid: number;
-          type: Database['public']['Enums']['debt_loan_type'];
-          updated_at: string;
-          wallet_id: string;
-        }[];
-      };
       get_default_ai_pricing: { Args: never; Returns: Json };
       get_default_calendar_for_event: {
         Args: {
@@ -18486,44 +18160,6 @@ export type Database = {
           adoption_count: number;
           adoption_percentage: number;
           feature_name: string;
-        }[];
-      };
-      get_finance_invoice_products_by_workspace: {
-        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
-        Returns: {
-          amount: number;
-          created_at: string;
-          id: string;
-          invoice_id: string;
-          price: number;
-          product_id: string;
-          total_count: number;
-          unit_id: string;
-          warehouse_id: string;
-        }[];
-      };
-      get_finance_invoice_promotions_by_workspace: {
-        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
-        Returns: {
-          code: string;
-          created_at: string;
-          description: string;
-          id: string;
-          invoice_id: string;
-          name: string;
-          promo_id: string;
-          total_count: number;
-          use_ratio: boolean;
-          value: number;
-        }[];
-      };
-      get_finance_invoice_user_groups_by_workspace: {
-        Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
-        Returns: {
-          created_at: string;
-          invoice_id: string;
-          total_count: number;
-          user_group_id: string;
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
@@ -19207,33 +18843,6 @@ export type Database = {
           total_transactions: number;
         }[];
       };
-      get_transactions_by_period: {
-        Args: {
-          p_category_ids?: string[];
-          p_creator_ids?: string[];
-          p_cursor_period_start?: string;
-          p_end_date?: string;
-          p_interval?: string;
-          p_limit?: number;
-          p_search_query?: string;
-          p_start_date?: string;
-          p_tag_ids?: string[];
-          p_user_id?: string;
-          p_wallet_ids?: string[];
-          p_ws_id: string;
-        };
-        Returns: {
-          has_more: boolean;
-          has_redacted_amounts: boolean;
-          net_total: number;
-          period_end: string;
-          period_start: string;
-          total_expense: number;
-          total_income: number;
-          transaction_count: number;
-          transactions: Json;
-        }[];
-      };
       get_upcoming_recurring_transactions: {
         Args: { _ws_id: string; days_ahead?: number };
         Returns: {
@@ -19301,7 +18910,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: string;
+          current_session_age: unknown;
           total_sessions: number;
         }[];
       };
@@ -20208,8 +19817,6 @@ export type Database = {
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
-      debt_loan_status: 'active' | 'paid' | 'defaulted' | 'cancelled';
-      debt_loan_type: 'debt' | 'loan';
       estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt';
       feature_flag:
         | 'ENABLE_AI'
@@ -20217,7 +19824,6 @@ export type Database = {
         | 'ENABLE_CHALLENGES'
         | 'ENABLE_QUIZZES';
       habit_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
-      interest_calculation_type: 'simple' | 'compound';
       ip_block_status: 'active' | 'expired' | 'manually_unblocked';
       monthly_recurrence_type: 'day_of_month' | 'day_of_week';
       notification_delivery_mode: 'immediate' | 'batched';
@@ -21968,7 +21574,6 @@ export type Database = {
         | 'event'
         | 'person';
       tuna_mood: 'happy' | 'neutral' | 'tired' | 'sad' | 'excited' | 'focused';
-      wallet_interest_provider: 'momo' | 'zalopay';
       workforce_benefit_type:
         | 'health_insurance'
         | 'dental_insurance'
@@ -22107,7 +21712,6 @@ export type Database = {
         | 'delete_wallets'
         | 'view_stock_quantity'
         | 'update_stock_quantity';
-      zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
       email_block_status: {
@@ -22276,8 +21880,6 @@ export const Constants = {
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
-      debt_loan_status: ['active', 'paid', 'defaulted', 'cancelled'],
-      debt_loan_type: ['debt', 'loan'],
       estimation_type: ['exponential', 'fibonacci', 'linear', 't-shirt'],
       feature_flag: [
         'ENABLE_AI',
@@ -22286,7 +21888,6 @@ export const Constants = {
         'ENABLE_QUIZZES',
       ],
       habit_frequency: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
-      interest_calculation_type: ['simple', 'compound'],
       ip_block_status: ['active', 'expired', 'manually_unblocked'],
       monthly_recurrence_type: ['day_of_month', 'day_of_week'],
       notification_delivery_mode: ['immediate', 'batched'],
@@ -24047,7 +23648,6 @@ export const Constants = {
         'person',
       ],
       tuna_mood: ['happy', 'neutral', 'tired', 'sad', 'excited', 'focused'],
-      wallet_interest_provider: ['momo', 'zalopay'],
       workforce_benefit_type: [
         'health_insurance',
         'dental_insurance',
@@ -24187,7 +23787,6 @@ export const Constants = {
         'view_stock_quantity',
         'update_stock_quantity',
       ],
-      zalopay_tier: ['standard', 'gold', 'diamond'],
     },
   },
 } as const;
