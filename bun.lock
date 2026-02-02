@@ -1038,6 +1038,7 @@
         "postcss-load-config": "^6.0.1",
         "tailwindcss": "^4.1.18",
         "typescript": "^5.9.3",
+        "uuid": "^13.0.0",
         "vitest": "^4.0.18",
       },
       "peerDependencies": {
@@ -1056,7 +1057,6 @@
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
-        "@tuturuuu/ui": "workspace:*",
         "@upstash/redis": "^1.36.1",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
