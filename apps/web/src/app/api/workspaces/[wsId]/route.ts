@@ -1,3 +1,4 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
@@ -63,6 +64,29 @@ export async function PUT(req: Request, { params }: Params) {
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
+
+  // Check for active subscription to cancel immediately
+  try {
+    const { data: subscription } = await supabase
+      .from('workspace_subscriptions')
+      .select('polar_subscription_id')
+      .eq('ws_id', id)
+      .neq('status', 'canceled')
+      .maybeSingle();
+
+    if (subscription?.polar_subscription_id) {
+      const polar = createPolarClient();
+      await polar.subscriptions.revoke({
+        id: subscription.polar_subscription_id,
+      });
+      console.log(
+        `Revoked Polar subscription ${subscription.polar_subscription_id} for workspace ${id}`
+      );
+    }
+  } catch (error) {
+    console.error('Failed to revoke Polar subscription:', error);
+    // Continue with workspace deletion even if subscription cancellation fails
+  }
 
   const { error } = await supabase.from('workspaces').delete().eq('id', id);
 
