@@ -82,7 +82,7 @@ export const walletColumns = ({
           <Link
             href={row.original.href || '#'}
             onClick={(e) => e.stopPropagation()}
-            className="hover:underline"
+            className="font-semibold hover:underline"
           >
             {row.getValue('name') || '-'}
           </Link>
