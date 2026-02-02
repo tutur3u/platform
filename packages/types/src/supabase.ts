@@ -19186,6 +19186,33 @@ export type Database = {
           total_transactions: number;
         }[];
       };
+      get_transactions_by_period: {
+        Args: {
+          p_category_ids?: string[];
+          p_creator_ids?: string[];
+          p_cursor_period_start?: string;
+          p_end_date?: string;
+          p_interval?: string;
+          p_limit?: number;
+          p_search_query?: string;
+          p_start_date?: string;
+          p_tag_ids?: string[];
+          p_user_id?: string;
+          p_wallet_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          has_more: boolean;
+          has_redacted_amounts: boolean;
+          net_total: number;
+          period_end: string;
+          period_start: string;
+          total_expense: number;
+          total_income: number;
+          transaction_count: number;
+          transactions: Json;
+        }[];
+      };
       get_upcoming_recurring_transactions: {
         Args: { _ws_id: string; days_ahead?: number };
         Returns: {
