@@ -39,9 +39,6 @@ export function ProductSelection({
   const t = useTranslations();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
 
-  // Compute locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const availableInventory =
     selectedProduct?.inventory.filter((inv) => inv.amount !== 0) || [];
@@ -197,11 +194,7 @@ export function ProductSelection({
                           ? t('ws-invoices.unlimited')
                           : item.inventory.amount}{' '}
                         • {t('ws-invoices.price')}:{' '}
-                        {formatCurrency(
-                          item.inventory.price,
-                          currencyLocale,
-                          currency
-                        )}
+                        {formatCurrency(item.inventory.price, currency)}
                       </p>
                       {linkedGroups.length > 0 && (
                         <div className="mt-1">
@@ -275,7 +268,6 @@ export function ProductSelection({
                           total + item.inventory.price * item.quantity,
                         0
                       ),
-                      currencyLocale,
                       currency
                     )}
                   </span>
@@ -299,9 +291,6 @@ function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
 
-  // Compute locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   const handleAdd = () => {
     if (
       quantity > 0 &&
@@ -323,8 +312,7 @@ function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
             {inventory.amount === null
               ? t('ws-invoices.unlimited')
               : inventory.amount}{' '}
-            {inventory.unit_name} •{' '}
-            {formatCurrency(inventory.price, currencyLocale, currency)}{' '}
+            {inventory.unit_name} • {formatCurrency(inventory.price, currency)}{' '}
             {t('ws-invoices.each')}
           </p>
           {inventory.amount !== null &&

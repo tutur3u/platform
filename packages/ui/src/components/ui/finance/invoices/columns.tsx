@@ -35,7 +35,6 @@ export const invoiceColumns = ({
   extraData?: InvoiceExtraData;
 }): ColumnDef<Invoice>[] => {
   const currency = extraData?.currency || 'USD';
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   return [
     // {
@@ -183,11 +182,7 @@ export const invoiceColumns = ({
       ),
       cell: ({ row }) => (
         <div className="min-w-32">
-          {formatCurrency(
-            row.getValue<number>('price') || 0,
-            currencyLocale,
-            currency
-          )}
+          {formatCurrency(row.getValue<number>('price') || 0, currency)}
         </div>
       ),
     },
@@ -204,14 +199,9 @@ export const invoiceColumns = ({
         <div className="min-w-32">
           {row.getValue('total_diff') === 0
             ? '-'
-            : formatCurrency(
-                row.getValue('total_diff'),
-                currencyLocale,
-                currency,
-                {
-                  signDisplay: 'always',
-                }
-              )}
+            : formatCurrency(row.getValue('total_diff'), currency, undefined, {
+                signDisplay: 'always',
+              })}
         </div>
       ),
     },
@@ -232,7 +222,6 @@ export const invoiceColumns = ({
                 {formatCurrency(
                   (row.getValue<number>('price') || 0) +
                     (row.getValue<number>('total_diff') || 0),
-                  currencyLocale,
                   currency
                 )}
               </TooltipTrigger>
@@ -241,8 +230,8 @@ export const invoiceColumns = ({
                   <span className="text-blue-600 dark:text-blue-300">
                     {formatCurrency(
                       row.getValue<number>('price') || 0,
-                      currencyLocale,
                       currency,
+                      undefined,
                       { signDisplay: 'never' }
                     )}
                   </span>{' '}
@@ -256,8 +245,8 @@ export const invoiceColumns = ({
                   >
                     {formatCurrency(
                       row.getValue<number>('total_diff') || 0,
-                      currencyLocale,
                       currency,
+                      undefined,
                       { signDisplay: 'never' }
                     )}
                   </span>

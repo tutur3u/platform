@@ -23,9 +23,6 @@ export function PromotionCard({
     ? promotion.value > 20
     : promotion.value > 100000;
 
-  // Compute currency locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   return (
     <Card className="border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-md">
       <CardContent className="p-4">
@@ -61,7 +58,7 @@ export function PromotionCard({
             <div className="font-bold text-foreground text-lg">
               {isPercentage
                 ? `${promotion.value}%`
-                : `-${formatCurrency(promotion.value, currencyLocale, currency)}`}
+                : `-${formatCurrency(promotion.value, currency)}`}
             </div>
             <div className="text-muted-foreground text-xs">
               {isPercentage ? 'Discount' : 'Off'}

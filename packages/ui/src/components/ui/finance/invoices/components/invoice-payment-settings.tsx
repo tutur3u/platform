@@ -77,9 +77,6 @@ export function InvoicePaymentSettings({
   const t = useTranslations();
   const shouldShowPromotion = showPromotion && promotionsAllowed;
 
-  // Compute locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   const promotionOptions = (() => {
     if (!shouldShowPromotion) return [];
 
@@ -92,7 +89,7 @@ export function InvoicePaymentSettings({
             ? `${referralPercent || 0}%`
             : promotion.use_ratio
               ? `${promotion.value}%`
-              : formatCurrency(promotion.value, currencyLocale, currency);
+              : formatCurrency(promotion.value, currency);
         return {
           value: promotion.id,
           label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,

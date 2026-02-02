@@ -10,7 +10,6 @@ interface Props {
   debtLoans: DebtLoanWithBalance[];
   wsId: string;
   currency?: string;
-  locale?: string;
   onCreateNew?: () => void;
   emptyMessage?: string;
 }
@@ -19,7 +18,6 @@ export function DebtLoanList({
   debtLoans,
   wsId,
   currency,
-  locale = 'vi-VN',
   onCreateNew,
   emptyMessage,
 }: Props) {
@@ -53,7 +51,6 @@ export function DebtLoanList({
           debtLoan={debtLoan}
           wsId={wsId}
           currency={currency}
-          locale={locale}
         />
       ))}
     </div>

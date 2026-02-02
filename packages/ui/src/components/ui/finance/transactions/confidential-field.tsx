@@ -75,7 +75,7 @@ export function ConfidentialAmount({
   // Default formatter using locale and currency
   // Use 'exceptZero' to show + for income, - for expense, no sign for zero
   const defaultFormatter = (amt: number) =>
-    formatCurrency(amt, locale, currency, { signDisplay: 'exceptZero' });
+    formatCurrency(amt, currency, locale, { signDisplay: 'exceptZero' });
 
   if (actuallyRedacted) {
     return (

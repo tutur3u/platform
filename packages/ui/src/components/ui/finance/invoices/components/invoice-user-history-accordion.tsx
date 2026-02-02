@@ -20,14 +20,12 @@ interface Props {
   wsId: string;
   userId: string;
   currency?: string;
-  currencyLocale?: string;
 }
 
 export function InvoiceUserHistoryAccordion({
   wsId,
   userId,
   currency = 'VND',
-  currencyLocale = 'vi-VN',
 }: Props) {
   const t = useTranslations();
 
@@ -133,7 +131,6 @@ export function InvoiceUserHistoryAccordion({
                         {invoice.price !== undefined
                           ? formatCurrency(
                               invoice.price + (invoice.total_diff || 0),
-                              currencyLocale,
                               currency
                             )
                           : '-'}

@@ -107,7 +107,7 @@ export const walletColumns = ({
         // Use workspace currency for display consistency
         const currency = workspaceCurrency;
 
-        const formattedBalance = formatCurrency(balance, undefined, currency, {
+        const formattedBalance = formatCurrency(balance, currency, undefined, {
           signDisplay: 'exceptZero',
         });
 

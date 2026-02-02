@@ -115,7 +115,6 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const isDark = resolvedTheme === 'dark';
 
   const { period, setPeriod, currency = 'USD' } = props;
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
   const [metric, setMetric] = useState<InvoiceAnalyticsMetric>('amount');
   const [groupBy, setGroupBy] = useState<InvoiceAnalyticsGroupBy>('wallet');
   const [chartMode, setChartMode] = useState<ChartMode>('stacked');
@@ -252,7 +251,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
-    return formatCurrency(value, currencyLocale, currency);
+    return formatCurrency(value, currency);
   };
 
   const formatCompactValue = (value: number) => {
@@ -260,7 +259,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
-    return formatCurrency(value, locale, currency, {
+    return formatCurrency(value, currency, locale, {
       notation: 'compact',
       compactDisplay: 'short',
       maximumFractionDigits: 1,

@@ -177,7 +177,7 @@ export const transactionColumns = ({
               isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
             }`}
           >
-            {formatCurrency(amount, undefined, currency, {
+            {formatCurrency(amount, currency, undefined, {
               signDisplay: 'always',
             })}
           </div>

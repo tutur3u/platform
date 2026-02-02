@@ -24,9 +24,6 @@ export function ProductCard({
   const totalPrice = product.amount * product.price;
   const isHighQuantity = product.amount > 10;
 
-  // Compute currency locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   const cardContent = (
     <Card className="group cursor-pointer border-border bg-card shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg">
       <CardContent className="p-4">
@@ -56,10 +53,10 @@ export function ProductCard({
           </div>
           <div className="text-right">
             <div className="font-semibold text-card-foreground text-sm transition-colors duration-200 group-hover:text-primary">
-              {formatCurrency(totalPrice, currencyLocale, currency)}
+              {formatCurrency(totalPrice, currency)}
             </div>
             <div className="text-muted-foreground text-xs">
-              {formatCurrency(product.price, currencyLocale, currency)} each
+              {formatCurrency(product.price, currency)} each
             </div>
           </div>
           {product.product_id && workspaceId && (

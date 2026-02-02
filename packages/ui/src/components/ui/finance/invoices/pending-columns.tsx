@@ -23,8 +23,6 @@ export const pendingInvoiceColumns = (
   useAttendanceBased = true,
   currency: string = 'USD'
 ): ColumnDef<PendingInvoice>[] => {
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   return [
     {
       accessorKey: 'user_id',
@@ -224,7 +222,6 @@ export const pendingInvoiceColumns = (
         <div className="min-w-32 font-semibold">
           {formatCurrency(
             row.getValue<number>('potential_total') || 0,
-            currencyLocale,
             currency
           )}
         </div>

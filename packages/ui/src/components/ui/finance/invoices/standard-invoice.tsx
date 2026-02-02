@@ -59,9 +59,6 @@ export function StandardInvoice({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
-  // Compute locale based on currency
-  const currencyLocale = defaultCurrency === 'VND' ? 'vi-VN' : 'en-US';
-
   // Read from URL params
   const selectedUserId = searchParams.get('user_id') || '';
 
@@ -304,17 +301,15 @@ export function StandardInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | ${t('ws-invoices.rounding')}: ${formatCurrency(calculated_values.rounding_applied, currencyLocale, defaultCurrency)}`
+            ? ` | ${t('ws-invoices.rounding')}: ${formatCurrency(calculated_values.rounding_applied, defaultCurrency)}`
             : '';
 
         toast(t('ws-invoices.invoice_created_recalculated'), {
           description: `${t('ws-invoices.server_calculated')}: ${formatCurrency(
             calculated_values.total,
-            currencyLocale,
             defaultCurrency
           )} | ${t('ws-invoices.frontend_calculated')}: ${formatCurrency(
             frontend_values?.total || 0,
-            currencyLocale,
             defaultCurrency
           )}${roundingInfo}`,
           duration: 5000,
@@ -403,7 +398,6 @@ export function StandardInvoice({
               wsId={wsId}
               userId={selectedUser.id}
               currency={defaultCurrency}
-              currencyLocale={currencyLocale}
             />
           )}
         </InvoiceCustomerSelectCard>
@@ -523,7 +517,6 @@ export function StandardInvoice({
                           Math.abs(roundedTotal - totalBeforeRounding) < 0.01
                         }
                         currency={defaultCurrency}
-                        currencyLocale={currencyLocale}
                       />
 
                       <Button

@@ -75,9 +75,6 @@ export function SubscriptionInvoice({
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Compute locale based on currency
-  const currencyLocale = defaultCurrency === 'VND' ? 'vi-VN' : 'en-US';
-
   // URL state using nuqs
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
     defaultValue: '',
@@ -533,10 +530,10 @@ export function SubscriptionInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | ${t('ws-invoices.rounding')}: ${formatCurrency(calculated_values.rounding_applied, currencyLocale, defaultCurrency)}`
+            ? ` | ${t('ws-invoices.rounding')}: ${formatCurrency(calculated_values.rounding_applied, defaultCurrency)}`
             : '';
         toast(t('ws-invoices.subscription_invoice_created_recalculated'), {
-          description: `${t('ws-invoices.server_calculated')}: ${formatCurrency(calculated_values.total, currencyLocale, defaultCurrency)} | ${t('ws-invoices.frontend_calculated')}: ${formatCurrency(frontend_values?.total || 0, currencyLocale, defaultCurrency)}${roundingInfo}`,
+          description: `${t('ws-invoices.server_calculated')}: ${formatCurrency(calculated_values.total, defaultCurrency)} | ${t('ws-invoices.frontend_calculated')}: ${formatCurrency(frontend_values?.total || 0, defaultCurrency)}${roundingInfo}`,
           duration: 5000,
         });
       } else {
@@ -808,7 +805,6 @@ export function SubscriptionInvoice({
                             ) < 0.01
                           }
                           currency={defaultCurrency}
-                          currencyLocale={currencyLocale}
                         />
 
                         <Button

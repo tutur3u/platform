@@ -11,7 +11,6 @@ export function CompactInvoiceTemplate({
   isDarkPreview,
   lang,
   currency = 'VND',
-  currencyLocale = 'vi-VN',
 }: {
   invoice: Invoice & {
     customer_display_name: string | null;
@@ -28,7 +27,6 @@ export function CompactInvoiceTemplate({
   isDarkPreview: boolean;
   lang: string;
   currency?: string;
-  currencyLocale?: string;
 }) {
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
@@ -107,8 +105,8 @@ export function CompactInvoiceTemplate({
           >
             {formatCurrency(
               invoice.price + invoice.total_diff,
-              currencyLocale,
               currency,
+              undefined,
               { signDisplay: 'never' }
             )}
           </span>

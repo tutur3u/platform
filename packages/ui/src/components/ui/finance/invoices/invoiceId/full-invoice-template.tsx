@@ -16,7 +16,6 @@ export function FullInvoiceTemplate({
   configs,
   isDarkPreview,
   currency = 'VND',
-  currencyLocale = 'vi-VN',
 }: {
   invoice: Invoice & {
     customer_display_name: string | null;
@@ -34,7 +33,6 @@ export function FullInvoiceTemplate({
   configs: WorkspaceConfig[];
   isDarkPreview: boolean;
   currency?: string;
-  currencyLocale?: string;
 }) {
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
@@ -191,7 +189,7 @@ export function FullInvoiceTemplate({
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(product.price, currencyLocale, currency, {
+                {formatCurrency(product.price, currency, undefined, {
                   signDisplay: 'never',
                 })}
               </td>
@@ -200,8 +198,8 @@ export function FullInvoiceTemplate({
               >
                 {formatCurrency(
                   product.amount * product.price,
-                  currencyLocale,
                   currency,
+                  undefined,
                   { signDisplay: 'never' }
                 )}
               </td>
@@ -226,7 +224,7 @@ export function FullInvoiceTemplate({
               {promo.name || promo.code}:{' '}
               {promo.use_ratio
                 ? `${promo.value}%`
-                : formatCurrency(promo.value, currencyLocale, currency, {
+                : formatCurrency(promo.value, currency, undefined, {
                     signDisplay: 'never',
                   })}
             </p>
@@ -241,7 +239,7 @@ export function FullInvoiceTemplate({
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-          {formatCurrency(subtotal, currencyLocale, currency, {
+          {formatCurrency(subtotal, currency, undefined, {
             signDisplay: 'never',
           })}
         </p>
@@ -253,7 +251,7 @@ export function FullInvoiceTemplate({
               {t('invoices.discounts')}: {''}
             </span>
             {'-'}
-            {formatCurrency(discount_amount, currencyLocale, currency, {
+            {formatCurrency(discount_amount, currency, undefined, {
               signDisplay: 'never',
             })}
           </p>
@@ -263,7 +261,7 @@ export function FullInvoiceTemplate({
             className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
             <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-            {formatCurrency(invoice.total_diff, currencyLocale, currency, {
+            {formatCurrency(invoice.total_diff, currency, undefined, {
               signDisplay: 'never',
             })}
           </p>
@@ -276,8 +274,8 @@ export function FullInvoiceTemplate({
           <span className="font-semibold">
             {formatCurrency(
               invoice.price + invoice.total_diff,
-              currencyLocale,
               currency,
+              undefined,
               { signDisplay: 'never' }
             )}
           </span>

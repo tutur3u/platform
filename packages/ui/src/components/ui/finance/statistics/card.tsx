@@ -107,11 +107,11 @@ const StatisticCard = ({
     }
 
     // Full value always in standard format
-    const fullValue = formatCurrency(val, locale, currency);
+    const fullValue = formatCurrency(val, currency, locale);
 
     // Use compact notation for large currency values (>= 10 million)
     if (absValue >= 10_000_000) {
-      const compactValue = formatCurrency(val, locale, currency, {
+      const compactValue = formatCurrency(val, currency, locale, {
         notation: 'compact',
         compactDisplay: 'short',
         maximumFractionDigits: 1,

@@ -63,9 +63,6 @@ export default function InvoiceCard({
   );
   const [isExporting, setIsExporting] = useState(false);
 
-  // Compute currency locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   const handlePrintExport = useCallback(() => {
     const printableArea = document.getElementById('printable-area');
     if (!printableArea) return;
@@ -306,7 +303,6 @@ export default function InvoiceCard({
               isDarkPreview={isDarkPreview}
               lang={lang}
               currency={currency}
-              currencyLocale={currencyLocale}
             />
           ) : (
             <FullInvoiceTemplate
@@ -316,7 +312,6 @@ export default function InvoiceCard({
               configs={configs}
               isDarkPreview={isDarkPreview}
               currency={currency}
-              currencyLocale={currencyLocale}
             />
           )}
         </div>

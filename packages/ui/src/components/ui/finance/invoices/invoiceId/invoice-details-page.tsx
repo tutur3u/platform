@@ -113,15 +113,12 @@ export default async function InvoiceDetailsPage({
                 label={t('invoice-data-table.final_price')}
                 value={`${formatCurrency(
                   invoice.price,
-                  currency === 'VND' ? 'vi-VN' : 'en-US',
                   currency
                 )} + ${formatCurrency(
                   invoice.total_diff,
-                  currency === 'VND' ? 'vi-VN' : 'en-US',
                   currency
                 )} = ${formatCurrency(
                   invoice.price + invoice.total_diff,
-                  currency === 'VND' ? 'vi-VN' : 'en-US',
                   currency
                 )}`}
               />
