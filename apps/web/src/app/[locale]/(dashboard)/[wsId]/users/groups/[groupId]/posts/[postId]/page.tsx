@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -87,25 +88,48 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           'send_user_group_post_emails'
         );
 
+        const approvalStatus = post.post_approval_status || 'PENDING';
+        const isApproved = approvalStatus === 'APPROVED';
+
         return (
           <div>
             <FeatureSummary
               title={
-                <>
-                  <Link
-                    href={`/${wsId}/users/groups/${groupId}`}
-                    className="font-bold text-2xl hover:underline"
-                  >
-                    {group.name}
-                  </Link>
-                  {post.created_at && (
-                    <div className="flex items-center gap-0.5 text-xs opacity-70">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
-                    </div>
-                  )}
-                  <Separator className="my-2" />
-                </>
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/${wsId}/users/groups/${groupId}`}
+                      className="font-bold text-2xl hover:underline"
+                    >
+                      {group.name}
+                    </Link>
+                    {!isApproved && (
+                      <Badge
+                        variant={
+                          approvalStatus === 'REJECTED'
+                            ? 'destructive'
+                            : 'outline'
+                        }
+                        className={
+                          approvalStatus === 'PENDING'
+                            ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow'
+                            : ''
+                        }
+                      >
+                        {approvalStatus === 'REJECTED'
+                          ? t('approvals.status.rejected')
+                          : t('approvals.status.pending')}
+                      </Badge>
+                    )}
+                    {post.created_at && (
+                      <div className="flex items-center gap-0.5 text-nowrap text-xs opacity-70">
+                        <Clock className="h-3 w-3" />
+                        {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
+                      </div>
+                    )}
+                  </div>
+                  <Separator />
+                </div>
               }
               description={
                 post?.title || post?.content ? (
@@ -127,7 +151,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               secondaryTriggerIcon={<CheckCheck className="mr-1 h-5 w-5" />}
               secondaryTitle={t('ws_post_details.check_all')}
               form={
-                canUpdateUserGroupsPosts ? (
+                canUpdateUserGroupsPosts && isApproved ? (
                   <CheckAll
                     wsId={wsId}
                     groupId={groupId}
@@ -138,13 +162,15 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                   />
                 ) : undefined
               }
-              disableSecondaryTrigger={status.checked === status.count}
+              disableSecondaryTrigger={
+                status.checked === status.count || !isApproved
+              }
               action={
-                canSendUserGroupPostEmails ? (
+                canSendUserGroupPostEmails && isApproved ? (
                   <EmailList wsId={wsId} groupId={groupId} />
                 ) : null
               }
-              showSecondaryTrigger={canUpdateUserGroupsPosts}
+              showSecondaryTrigger={canUpdateUserGroupsPosts && isApproved}
             />
             <Separator className="my-4" />
             <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">

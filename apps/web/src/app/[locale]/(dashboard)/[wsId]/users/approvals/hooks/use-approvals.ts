@@ -5,6 +5,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   PostApprovalItem,
   PostApprovalQueryResult,
+  PostLogEntry,
   ReportApprovalItem,
   ReportApprovalQueryResult,
   ReportLogEntry,
@@ -181,7 +182,7 @@ export function useApprovals({
       let dataQuery = supabase
         .from('user_group_posts')
         .select(
-          'id, title, content, created_at, post_approval_status, rejection_reason, approved_at, rejected_at, ...workspace_user_groups(group_name:name, ws_id)'
+          'id, title, content, notes, created_at, post_approval_status, rejection_reason, approved_at, rejected_at, ...workspace_user_groups(group_name:name, ws_id)'
         )
         .eq('workspace_user_groups.ws_id', wsId);
 
@@ -207,6 +208,7 @@ export function useApprovals({
         id: row.id,
         title: row.title,
         content: row.content,
+        notes: row.notes,
         created_at: row.created_at,
         post_approval_status: row.post_approval_status,
         rejection_reason: row.rejection_reason,
@@ -416,6 +418,31 @@ export function useLatestApprovedLog(reportId: string | null) {
 
       if (error) throw error;
       return data as ReportLogEntry | null;
+    },
+  });
+}
+
+// Hook for fetching the latest approved post log
+export function useLatestApprovedPostLog(postId: string | null) {
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ['latest-approved-post-log', postId],
+    enabled: !!postId,
+    queryFn: async (): Promise<PostLogEntry | null> => {
+      if (!postId) return null;
+
+      const { data, error } = await supabase
+        .from('user_group_post_logs')
+        .select('*')
+        .eq('post_id', postId)
+        .eq('post_approval_status', 'APPROVED')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as PostLogEntry | null;
     },
   });
 }

@@ -26,6 +26,7 @@ import { useEffect, useState } from 'react';
 import {
   type ApprovalItem,
   useLatestApprovedLog,
+  useLatestApprovedPostLog,
 } from '../hooks/use-approvals';
 import { getStatusColorClasses } from '../utils';
 
@@ -58,7 +59,10 @@ export function ApprovalDetailDialog({
 
   // Fetch latest approved log using useQuery hook
   const reportId = item?.kind === 'reports' && open ? item.id : null;
-  const { data: previousVersion } = useLatestApprovedLog(reportId);
+  const postId = item?.kind === 'posts' && open ? item.id : null;
+
+  const { data: previousReportVersion } = useLatestApprovedLog(reportId);
+  const { data: previousPostVersion } = useLatestApprovedPostLog(postId);
 
   useEffect(() => {
     if (!open) {
@@ -74,8 +78,11 @@ export function ApprovalDetailDialog({
       ? item.report_approval_status
       : item.post_approval_status;
   const isReport = item.kind === 'reports';
-  const hasPreviousVersion = previousVersion !== null;
-  const isCompareMode = isReport && hasPreviousVersion;
+  const previousVersion = isReport
+    ? previousReportVersion
+    : previousPostVersion;
+  const hasPreviousVersion = !!previousVersion;
+  const isCompareMode = hasPreviousVersion;
 
   // Helper function to render score display
   const renderScore = (
@@ -167,12 +174,12 @@ export function ApprovalDetailDialog({
     );
   };
 
-  // Helper function to render feedback
-  const renderFeedback = (
-    feedback: string | null | undefined,
+  // Helper function to render feedback/notes
+  const renderFeedbackOrNotes = (
+    text: string | null | undefined,
     isPrevious = false
   ) => {
-    if (!feedback) {
+    if (!text) {
       return (
         <span className="text-muted-foreground text-sm">
           {t('detail.noData')}
@@ -188,7 +195,7 @@ export function ApprovalDetailDialog({
             : 'border-dynamic-orange/20 bg-dynamic-orange/5'
         )}
       >
-        <p className="text-sm">{feedback}</p>
+        <p className="text-sm">{text}</p>
       </div>
     );
   };
@@ -206,7 +213,7 @@ export function ApprovalDetailDialog({
       </div>
 
       {/* Report-specific fields */}
-      {isReport && (
+      {isReport ? (
         <>
           {/* Score Section */}
           {'score' in item && (
@@ -215,7 +222,7 @@ export function ApprovalDetailDialog({
                 <Trophy className="h-4 w-4" />
                 {t('detail.score')}
               </div>
-              {renderScore(item.score)}
+              {renderScore(item.score as number | null)}
             </div>
           )}
 
@@ -226,7 +233,7 @@ export function ApprovalDetailDialog({
                 <Star className="h-4 w-4" />
                 {t('detail.scores')}
               </div>
-              {renderScoresArray(item.scores)}
+              {renderScoresArray(item.scores as number[] | null)}
             </div>
           )}
 
@@ -237,10 +244,21 @@ export function ApprovalDetailDialog({
                 <MessageSquare className="h-4 w-4" />
                 {t('detail.feedback')}
               </div>
-              {renderFeedback(item.feedback)}
+              {renderFeedbackOrNotes(item.feedback as string | null)}
             </div>
           )}
         </>
+      ) : (
+        /* Post-specific fields */
+        item.notes && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+              <MessageSquare className="h-4 w-4" />
+              {t('detail.notes')}
+            </div>
+            {renderFeedbackOrNotes(item.notes as string | null)}
+          </div>
+        )
       )}
     </div>
   );
@@ -259,32 +277,54 @@ export function ApprovalDetailDialog({
           {renderContent(previousVersion.content, true)}
         </div>
 
-        {/* Score Section */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-            <Trophy className="h-4 w-4" />
-            {t('detail.score')}
-          </div>
-          {renderScore(previousVersion.score, true)}
-        </div>
+        {/* Report-specific fields */}
+        {isReport ? (
+          <>
+            {/* Score Section */}
+            {previousReportVersion?.score && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                  <Trophy className="h-4 w-4" />
+                  {t('detail.score')}
+                </div>
+                {renderScore(previousReportVersion.score, true)}
+              </div>
+            )}
 
-        {/* Scores Array Section */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-            <Star className="h-4 w-4" />
-            {t('detail.scores')}
-          </div>
-          {renderScoresArray(previousVersion.scores, true)}
-        </div>
+            {/* Scores Array Section */}
+            {previousReportVersion?.scores && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                  <Star className="h-4 w-4" />
+                  {t('detail.scores')}
+                </div>
+                {renderScoresArray(previousReportVersion.scores, true)}
+              </div>
+            )}
 
-        {/* Feedback Section */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-            <MessageSquare className="h-4 w-4" />
-            {t('detail.feedback')}
-          </div>
-          {renderFeedback(previousVersion.feedback, true)}
-        </div>
+            {/* Feedback Section */}
+            {previousReportVersion?.feedback && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                  <MessageSquare className="h-4 w-4" />
+                  {t('detail.feedback')}
+                </div>
+                {renderFeedbackOrNotes(previousReportVersion.feedback, true)}
+              </div>
+            )}
+          </>
+        ) : (
+          /* Post-specific fields */
+          previousPostVersion?.notes && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <MessageSquare className="h-4 w-4" />
+                {t('detail.notes')}
+              </div>
+              {renderFeedbackOrNotes(previousPostVersion.notes, true)}
+            </div>
+          )
+        )}
       </div>
     );
   };

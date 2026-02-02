@@ -10565,6 +10565,118 @@ export type Database = {
           },
         ];
       };
+      user_group_post_logs: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          content: string;
+          created_at: string;
+          group_id: string;
+          id: string;
+          notes: string;
+          post_approval_status: Database['public']['Enums']['approval_status'];
+          post_id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          title: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string;
+          created_at?: string;
+          group_id: string;
+          id?: string;
+          notes?: string;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          post_id: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string;
+          created_at?: string;
+          group_id?: string;
+          id?: string;
+          notes?: string;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          post_id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_group_posts: {
         Row: {
           approved_at: string | null;

@@ -57,7 +57,7 @@ export async function POST(
     // Fetch post from database to verify approval status (don't trust client input)
     const { data: post, error: postError } = await sbAdmin
       .from('user_group_posts')
-      .select('id, approval_status')
+      .select('id, post_approval_status')
       .eq('id', postId)
       .eq('group_id', groupId)
       .single();
@@ -69,7 +69,7 @@ export async function POST(
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (post.approval_status !== 'APPROVED') {
+    if (post.post_approval_status !== 'APPROVED') {
       console.log(
         `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Post not approved`
       );

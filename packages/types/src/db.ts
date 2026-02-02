@@ -310,6 +310,7 @@ export type PostApprovalQueryResult = {
   id: string;
   title: string | null;
   content: string | null;
+  notes: string | null;
   created_at: string;
   post_approval_status: Database['public']['Enums']['approval_status'];
   rejection_reason: string | null;
@@ -323,6 +324,13 @@ export type PostApprovalQueryResult = {
  * Used in approvals view for user group posts
  */
 export type PostApprovalItem = PostApprovalQueryResult;
+
+/**
+ * Post log entry for comparison view
+ * Represents a snapshot of a post from the logs table
+ */
+export type PostLogEntry = Tables<'user_group_post_logs'>;
+
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 export type InternalEmail = Tables<'internal_emails'>;
 
