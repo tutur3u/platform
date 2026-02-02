@@ -685,7 +685,6 @@ export async function WorkspaceNavigationLinks({
       ],
       disabled:
         ENABLE_AI_ONLY ||
-        !hasSecret('ENABLE_USERS', 'true') ||
         (withoutPermission('manage_users') &&
           withoutPermission('check_user_attendance') &&
           withoutPermission('view_users_private_info') &&
