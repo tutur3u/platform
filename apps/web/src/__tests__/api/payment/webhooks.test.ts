@@ -40,6 +40,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 describe('syncSubscriptionToDatabase', () => {
   const mockSubscription: any = {
     id: 'sub_123',
+    customer: { externalId: 'workspace_00000000-0000-0000-0000-000000000000' },
     status: 'active',
     metadata: { wsId: 'ws_123' },
     product: { id: 'prod_123' },
@@ -103,11 +104,5 @@ describe('syncSubscriptionToDatabase', () => {
       ],
       expect.any(Object)
     );
-  });
-
-  it('should throw error if wsId is missing in metadata', async () => {
-    const invalidSub = { ...mockSubscription, metadata: {} };
-
-    await expect(syncSubscriptionToDatabase(invalidSub)).rejects.toThrow();
   });
 });

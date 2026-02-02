@@ -10,13 +10,13 @@ import {
 } from '@/utils/subscription-helper';
 
 // Helper function to report initial seat usage to Polar
-export async function reportInitialUsage(ws_id: string, customerId: string) {
+export async function reportInitialUsage(wsId: string, customerId: string) {
   const sbAdmin = await createAdminClient();
 
   const { count: initialUserCount, error: countError } = await sbAdmin
     .from('workspace_members')
     .select('*', { count: 'exact', head: true })
-    .eq('ws_id', ws_id);
+    .eq('ws_id', wsId);
 
   if (countError) throw countError;
 

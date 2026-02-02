@@ -94,12 +94,12 @@ export async function createFreeSubscription(
 }
 
 export function convertWorkspaceIDToExternalID(wsId: string) {
-  return `workspace-${wsId}`;
+  return `workspace_${wsId}`;
 }
 
 export function convertExternalIDToWorkspaceID(customerId: string) {
-  if (customerId.startsWith('workspace-')) {
-    return customerId.replace('workspace-', '');
+  if (customerId.startsWith('workspace_')) {
+    return customerId.replace('workspace_', '');
   }
   return null;
 }
