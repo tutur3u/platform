@@ -13,12 +13,14 @@ interface ProductCardProps {
   };
   locale: string;
   workspaceId?: string;
+  currency?: string;
 }
 
 export function ProductCard({
   product,
   locale,
   workspaceId,
+  currency = 'USD',
 }: ProductCardProps) {
   const totalPrice = product.amount * product.price;
   const isHighQuantity = product.amount > 10;
@@ -54,13 +56,13 @@ export function ProductCard({
             <div className="font-semibold text-card-foreground text-sm transition-colors duration-200 group-hover:text-primary">
               {Intl.NumberFormat(locale, {
                 style: 'currency',
-                currency: 'VND',
+                currency,
               }).format(totalPrice)}
             </div>
             <div className="text-muted-foreground text-xs">
               {Intl.NumberFormat(locale, {
                 style: 'currency',
-                currency: 'VND',
+                currency,
               }).format(product.price)}{' '}
               each
             </div>

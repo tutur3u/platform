@@ -35,6 +35,7 @@ interface WalletRowActionsProps {
   href?: string;
   canUpdateWallets?: boolean;
   canDeleteWallets?: boolean;
+  isPersonalWorkspace?: boolean;
 }
 
 export function WalletRowActions({
@@ -42,6 +43,7 @@ export function WalletRowActions({
   href,
   canUpdateWallets,
   canDeleteWallets,
+  isPersonalWorkspace,
 }: WalletRowActionsProps) {
   const t = useTranslations();
 
@@ -80,7 +82,10 @@ export function WalletRowActions({
   if (!data.id || !data.ws_id) return null;
 
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div
+      className="flex items-center justify-end gap-2"
+      onClick={(e) => e.stopPropagation()}
+    >
       {href && (
         <Link href={href}>
           <Button>
@@ -148,8 +153,14 @@ export function WalletRowActions({
         title={t('ws-wallets.edit')}
         editDescription={t('ws-wallets.edit_description')}
         setOpen={setShowEditDialog}
-        form={<WalletForm wsId={data.ws_id} data={data} />}
-        requireExpansion
+        form={
+          <WalletForm
+            wsId={data.ws_id}
+            data={data}
+            isPersonalWorkspace={isPersonalWorkspace}
+          />
+        }
+        requireExpansion={!isPersonalWorkspace}
       />
     </div>
   );

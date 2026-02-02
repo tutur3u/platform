@@ -1,9 +1,16 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { batchUpsert, createMigrationResponse } from '../batch-upsert';
+import {
+  batchUpsert,
+  createMigrationResponse,
+  requireDevMode,
+} from '../batch-upsert';
 
 // user_linked_promotions doesn't have ws_id - query via user_id -> workspace_users
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -51,6 +58,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   const result = await batchUpsert({
     table: 'user_linked_promotions',

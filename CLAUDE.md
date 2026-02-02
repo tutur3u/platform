@@ -215,6 +215,7 @@ bun trigger:deploy
 16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
 17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
 18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
+19. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
 
 ### Escalate When
 
@@ -617,6 +618,8 @@ ALL application settings MUST be implemented within the centralized settings dia
 - Scope = package/app name: `feat(ui): add button variant`
 - Add `!` or `BREAKING CHANGE:` footer for breaking changes
 - Keep PR title aligned with primary commit
+- **ALWAYS ask for user approval before creating commits** – never commit without explicit confirmation
+- **Prefer atomic commits by scope** – offer to commit changes separately when spanning multiple areas
 
 ### API Patterns
 

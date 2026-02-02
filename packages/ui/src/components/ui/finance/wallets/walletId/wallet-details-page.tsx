@@ -1,5 +1,6 @@
-import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/icons';
+import { Calendar, CreditCard, DollarSign } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Wallet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -11,6 +12,8 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
+import { WalletIconDisplay } from '../wallet-icon-display';
+import { WalletInterestSection } from './interest';
 import { WalletDeleteButton } from './wallet-delete-button';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
@@ -67,6 +70,13 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           description={wallet.description || t('ws-wallets.description')}
           createTitle={t('ws-wallets.create')}
           createDescription={t('ws-wallets.create_description')}
+          icon={
+            <WalletIconDisplay
+              icon={wallet.icon}
+              imageSrc={wallet.image_src}
+              size="lg"
+            />
+          }
         />
         {canDeleteWallets && (
           <WalletDeleteButton
@@ -85,7 +95,13 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
             </div>
             <Separator />
             <DetailItem
-              icon={<Wallet className="h-5 w-5" />}
+              icon={
+                <WalletIconDisplay
+                  icon={wallet.icon}
+                  imageSrc={wallet.image_src}
+                  size="md"
+                />
+              }
               label={t('wallet-data-table.name')}
               value={wallet.name}
             />
@@ -136,6 +152,8 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           <Separator className="my-4" />
         </>
       )}
+      {/* Interest Tracking Section - for Momo/ZaloPay wallets */}
+      <WalletInterestSection wsId={wsId} wallet={wallet as Wallet} />
       <Suspense
         fallback={
           <div className="space-y-3">

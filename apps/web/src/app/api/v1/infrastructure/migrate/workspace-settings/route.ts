@@ -5,9 +5,13 @@ import {
   batchUpsert,
   createFetchResponse,
   createMigrationResponse,
+  requireDevMode,
 } from '../batch-upsert';
 
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -27,6 +31,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   // Strip referral_promotion_id to break circular FK dependency with workspace_promotions
   // After promotions are migrated, use PATCH to update referral_promotion_id
@@ -47,6 +54,9 @@ export async function PUT(req: Request) {
 // PATCH: Update referral_promotion_id after workspace_promotions are migrated
 // This resolves the circular FK dependency
 export async function PATCH(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const supabase = await createClient();
   const json = await req.json();
 

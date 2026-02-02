@@ -1,9 +1,16 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { batchUpsert, createMigrationResponse } from '../batch-upsert';
+import {
+  batchUpsert,
+  createMigrationResponse,
+  requireDevMode,
+} from '../batch-upsert';
 
 // workspace_wallet_transfers doesn't have ws_id - query via transaction_id -> wallet_id -> workspace_wallets
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -71,6 +78,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   // Composite key: (from_transaction_id, to_transaction_id)
   const result = await batchUpsert({

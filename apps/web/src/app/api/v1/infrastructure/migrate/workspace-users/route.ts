@@ -5,9 +5,13 @@ import {
   batchUpsert,
   createFetchResponse,
   createMigrationResponse,
+  requireDevMode,
 } from '../batch-upsert';
 
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -27,6 +31,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   // Strip updated_by to avoid self-referencing FK constraint
   // (updated_by references workspace_users.id which may not exist yet)
@@ -48,6 +55,9 @@ export async function PUT(req: Request) {
 // PATCH: Update updated_by after all workspace_users are created
 // This resolves the self-referencing FK constraint
 export async function PATCH(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const supabase = await createClient();
   const json = await req.json();
 

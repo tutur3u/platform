@@ -15,6 +15,11 @@ import {
   TrendingUp,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import type {
+  TransactionPeriod,
+  TransactionPeriodResponse,
+  TransactionViewMode,
+} from '@tuturuuu/types/primitives/TransactionPeriod';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +39,9 @@ import 'moment/locale/vi';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionForm } from './form';
+import { PeriodBreakdownPanel } from './period-charts';
 import { TransactionCard } from './transaction-card';
 import { TransactionStatistics } from './transaction-statistics';
 
@@ -44,6 +50,8 @@ interface InfiniteTransactionsListProps {
   walletId?: string;
   initialData?: Transaction[];
   currency?: string;
+  /** View mode for transaction grouping */
+  viewMode?: TransactionViewMode;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
@@ -66,12 +74,21 @@ interface GroupedTransactions {
   label: string;
   transactions: Transaction[];
   isExpanded?: boolean;
+  /** Pre-computed period statistics from server (for period-based views) */
+  periodStats?: {
+    totalIncome: number;
+    totalExpense: number;
+    netTotal: number;
+    transactionCount: number;
+    hasRedactedAmounts?: boolean;
+  };
 }
 
 export function InfiniteTransactionsList({
   wsId,
   walletId,
   currency,
+  viewMode = 'daily',
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
@@ -211,7 +228,7 @@ export function InfiniteTransactionsList({
     })
   );
 
-  const buildQueryString = (cursor?: string) => {
+  const buildQueryString = (cursor?: string, isPeriods = false) => {
     const params = new URLSearchParams();
     if (cursor) params.set('cursor', cursor);
     if (q) params.set('q', q);
@@ -230,17 +247,58 @@ export function InfiniteTransactionsList({
     tagIds.forEach((id) => {
       params.append('tagIds', id);
     });
-    params.set('limit', '20');
+    if (isPeriods) {
+      params.set('viewMode', viewMode);
+      params.set('limit', '10');
+    } else {
+      params.set('limit', '20');
+    }
     return params.toString();
   };
 
+  // Generate period label based on view mode
+  const generatePeriodLabel = useCallback(
+    (periodStart: string, mode: TransactionViewMode): string => {
+      const date = moment(periodStart);
+      const now = moment();
+
+      switch (mode) {
+        case 'daily': {
+          const daysDiff = now.startOf('day').diff(date.startOf('day'), 'days');
+          if (daysDiff === 0) return t('date_groups.today');
+          if (daysDiff === 1) return t('date_groups.yesterday');
+          return date.format('dddd, DD MMMM YYYY');
+        }
+        case 'weekly': {
+          const weekNum = date.isoWeek();
+          const year = date.isoWeekYear();
+          const weekStart = date.clone().startOf('isoWeek');
+          const weekEnd = date.clone().endOf('isoWeek');
+          const rangeStr = `${weekStart.format('MMM D')} - ${weekEnd.format('MMM D, YYYY')}`;
+          return `${t('finance-transactions.week-label', { number: weekNum, year })} (${rangeStr})`;
+        }
+        case 'monthly':
+          return date.format('MMMM YYYY');
+        case 'yearly':
+          return date.format('YYYY');
+        default:
+          return date.format('dddd, DD MMMM YYYY');
+      }
+    },
+    [t]
+  );
+
+  // Use periods endpoint for non-daily view modes
+  const usePeriods = viewMode !== 'daily';
+
+  // Query for daily view (individual transactions)
   const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
+    data: dailyData,
+    fetchNextPage: fetchNextDailyPage,
+    hasNextPage: hasNextDailyPage,
+    isFetchingNextPage: isFetchingNextDailyPage,
+    isLoading: isLoadingDaily,
+    error: dailyError,
   } = useInfiniteQuery<TransactionResponse>({
     queryKey: [
       `/api/workspaces/${wsId}/transactions/infinite`,
@@ -252,6 +310,7 @@ export function InfiniteTransactionsList({
       walletId,
       start,
       end,
+      'daily',
     ],
     queryFn: async ({ pageParam }) => {
       const queryString = buildQueryString(pageParam as string | undefined);
@@ -275,9 +334,65 @@ export function InfiniteTransactionsList({
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
+    enabled: !usePeriods,
   });
 
-  const allTransactions = data?.pages.flatMap((page) => page.data) || [];
+  // Query for period-based views (weekly, monthly, yearly)
+  const {
+    data: periodsData,
+    fetchNextPage: fetchNextPeriodsPage,
+    hasNextPage: hasNextPeriodsPage,
+    isFetchingNextPage: isFetchingNextPeriodsPage,
+    isLoading: isLoadingPeriods,
+    error: periodsError,
+  } = useInfiniteQuery<TransactionPeriodResponse>({
+    queryKey: [
+      `/api/workspaces/${wsId}/transactions/periods`,
+      q,
+      userIds,
+      categoryIds,
+      walletIds,
+      tagIds,
+      walletId,
+      start,
+      end,
+      viewMode,
+    ],
+    queryFn: async ({ pageParam }) => {
+      const queryString = buildQueryString(
+        pageParam as string | undefined,
+        true
+      );
+      const response = await fetch(
+        `/api/workspaces/${wsId}/transactions/periods?${queryString}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch transaction periods');
+
+      return (await response.json()) as TransactionPeriodResponse;
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined,
+    enabled: usePeriods,
+  });
+
+  // Unified state based on view mode
+  const fetchNextPage = usePeriods ? fetchNextPeriodsPage : fetchNextDailyPage;
+  const hasNextPage = usePeriods ? hasNextPeriodsPage : hasNextDailyPage;
+  const isFetchingNextPage = usePeriods
+    ? isFetchingNextPeriodsPage
+    : isFetchingNextDailyPage;
+  const isLoading = usePeriods ? isLoadingPeriods : isLoadingDaily;
+  const error = usePeriods ? periodsError : dailyError;
+
+  // All transactions for daily view
+  const allTransactions = usePeriods
+    ? []
+    : dailyData?.pages.flatMap((page) => page.data) || [];
+
+  // All periods for period-based views
+  const allPeriods: TransactionPeriod[] = usePeriods
+    ? periodsData?.pages.flatMap((page) => page.data) || []
+    : [];
 
   // Check if any filter is active
   const hasActiveFilter =
@@ -313,8 +428,26 @@ export function InfiniteTransactionsList({
     enabled: hasActiveFilter && !isLoading && !error,
   });
 
-  // Group transactions by date
+  // Group transactions by date (for daily view) or use periods (for other views)
   const groupedTransactions = useMemo(() => {
+    // For period-based views, convert periods to grouped transactions format
+    if (usePeriods) {
+      return allPeriods.map((period) => ({
+        date: period.periodStart,
+        label: generatePeriodLabel(period.periodStart, viewMode),
+        transactions: period.transactions || [],
+        // Store period stats for display
+        periodStats: {
+          totalIncome: period.totalIncome,
+          totalExpense: period.totalExpense,
+          netTotal: period.netTotal,
+          transactionCount: period.transactionCount,
+          hasRedactedAmounts: period.hasRedactedAmounts,
+        },
+      }));
+    }
+
+    // For daily view, group transactions by date
     const groups: GroupedTransactions[] = [];
     const now = moment();
 
@@ -323,7 +456,9 @@ export function InfiniteTransactionsList({
       const dateKey = transactionDate.format('YYYY-MM-DD');
 
       let label: string;
-      const daysDiff = now.diff(transactionDate, 'days');
+      const daysDiff = now
+        .startOf('day')
+        .diff(transactionDate.clone().startOf('day'), 'days');
 
       if (daysDiff === 0) {
         label = t('date_groups.today');
@@ -349,7 +484,14 @@ export function InfiniteTransactionsList({
     });
 
     return groups;
-  }, [allTransactions, t]);
+  }, [
+    allTransactions,
+    allPeriods,
+    usePeriods,
+    viewMode,
+    t,
+    generatePeriodLabel,
+  ]);
 
   // Intersection Observer for auto-loading
   useEffect(() => {
@@ -399,7 +541,12 @@ export function InfiniteTransactionsList({
     );
   }
 
-  if (allTransactions.length === 0) {
+  // Check if there's no data (either no transactions for daily or no periods for other views)
+  const hasNoData = usePeriods
+    ? allPeriods.length === 0
+    : allTransactions.length === 0;
+
+  if (hasNoData) {
     return (
       <div className="rounded-2xl border border-muted-foreground/20 border-dashed bg-muted/20 p-12 text-center">
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
@@ -417,8 +564,8 @@ export function InfiniteTransactionsList({
 
   return (
     <div className="space-y-6">
-      {/* Statistics Summary - Only show when filters are active */}
-      {hasActiveFilter && (stats || isStatsLoading) && (
+      {/* Statistics Summary - Only show when filters are active (daily view only uses transactions for stats) */}
+      {hasActiveFilter && (stats || isStatsLoading) && !usePeriods && (
         <TransactionStatistics
           transactions={allTransactions}
           stats={stats}
@@ -428,41 +575,77 @@ export function InfiniteTransactionsList({
       )}
 
       {groupedTransactions.map((group, groupIndex) => {
-        const dailyTotal = group.transactions.reduce((sum, transaction) => {
-          if (
-            transaction.amount === null &&
-            transaction.is_amount_confidential
-          ) {
-            return sum;
-          }
-          return sum + (transaction.amount || 0);
-        }, 0);
+        // Use pre-computed period stats if available (for period-based views)
+        const hasPeriodStats = !!group.periodStats;
+
+        // Calculate stats from transactions if not pre-computed
+        const dailyTotal = hasPeriodStats
+          ? group.periodStats!.netTotal
+          : group.transactions.reduce(
+              (sum: number, transaction: Transaction) => {
+                if (
+                  transaction.amount === null &&
+                  transaction.is_amount_confidential
+                ) {
+                  return sum;
+                }
+                return sum + (transaction.amount || 0);
+              },
+              0
+            );
 
         const isPositive = dailyTotal >= 0;
-        const hasRedactedAmounts = group.transactions.some(
-          (transaction) =>
-            transaction.amount === null && transaction.is_amount_confidential
-        );
-        const allAmountsRedacted = group.transactions.every(
-          (transaction) =>
-            transaction.amount === null && transaction.is_amount_confidential
-        );
+
+        const hasRedactedAmounts = hasPeriodStats
+          ? group.periodStats!.hasRedactedAmounts
+          : group.transactions.some(
+              (transaction: Transaction) =>
+                transaction.amount === null &&
+                transaction.is_amount_confidential
+            );
+
+        const allAmountsRedacted = hasPeriodStats
+          ? group.periodStats!.transactionCount > 0 &&
+            group.periodStats!.totalIncome === 0 &&
+            group.periodStats!.totalExpense === 0 &&
+            group.periodStats!.hasRedactedAmounts
+          : group.transactions.every(
+              (transaction: Transaction) =>
+                transaction.amount === null &&
+                transaction.is_amount_confidential
+            );
 
         const isExpanded = expandedGroups.has(group.date);
         const displayCount = isExpanded ? group.transactions.length : 3;
 
         // Calculate stats for the group
-        const amounts = group.transactions
-          .filter(
-            (transaction) =>
-              !(
-                transaction.amount === null &&
-                transaction.is_amount_confidential
-              )
-          )
-          .map((transaction) => transaction.amount || 0);
-        const income = amounts.filter((a) => a > 0).reduce((a, b) => a + b, 0);
-        const expense = amounts.filter((a) => a < 0).reduce((a, b) => a + b, 0);
+        const transactionCount = hasPeriodStats
+          ? group.periodStats!.transactionCount
+          : group.transactions.length;
+
+        let income: number;
+        let expense: number;
+
+        if (hasPeriodStats) {
+          income = group.periodStats!.totalIncome;
+          expense = group.periodStats!.totalExpense;
+        } else {
+          const amounts = group.transactions
+            .filter(
+              (transaction: Transaction) =>
+                !(
+                  transaction.amount === null &&
+                  transaction.is_amount_confidential
+                )
+            )
+            .map((transaction: Transaction) => transaction.amount || 0);
+          income = amounts
+            .filter((a: number) => a > 0)
+            .reduce((a: number, b: number) => a + b, 0);
+          expense = amounts
+            .filter((a: number) => a < 0)
+            .reduce((a: number, b: number) => a + b, 0);
+        }
 
         return (
           <div
@@ -472,17 +655,20 @@ export function InfiniteTransactionsList({
               'hover:shadow-md'
             )}
             style={{
+              animationName: 'fadeInUp',
+              animationDuration: '0.4s',
+              animationTimingFunction: 'ease-out',
+              animationFillMode: 'forwards',
               animationDelay: `${groupIndex * 50}ms`,
-              animation: 'fadeInUp 0.4s ease-out forwards',
             }}
           >
             {/* Date header */}
-            <div className="border-border/40 border-b bg-muted/30 px-6 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="border-border/40 border-b bg-muted/30 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
                 {/* Left: Date info */}
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
-                    <Calendar className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm ring-1 ring-primary/20 sm:flex sm:h-12 sm:w-12">
+                    <Calendar className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                   </div>
                   <div className="space-y-1">
                     <h3 className="font-bold text-foreground text-lg">
@@ -493,8 +679,8 @@ export function InfiniteTransactionsList({
                         variant="secondary"
                         className="font-medium text-xs"
                       >
-                        {group.transactions.length}{' '}
-                        {group.transactions.length === 1
+                        {transactionCount}{' '}
+                        {transactionCount === 1
                           ? t('date_groups.transaction')
                           : t('date_groups.transactions')}
                       </Badge>
@@ -531,7 +717,7 @@ export function InfiniteTransactionsList({
                 {/* Right: Daily total */}
                 {!allAmountsRedacted ? (
                   <div className="flex items-center gap-3">
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-start gap-1 sm:items-end">
                       <span className="text-muted-foreground text-xs">
                         {t('workspace-finance-transactions.net-total')}
                       </span>
@@ -580,58 +766,79 @@ export function InfiniteTransactionsList({
               </div>
             </div>
 
-            {/* Transactions list */}
-            <div className="space-y-3 p-4">
-              {group.transactions.slice(0, displayCount).map((transaction) => (
-                <div
-                  key={transaction.id}
-                  onClick={() => handleTransactionClick(transaction)}
-                  className="cursor-pointer"
-                >
-                  <TransactionCard
-                    transaction={{
-                      ...transaction,
-                      is_amount_confidential:
-                        transaction.is_amount_confidential ?? undefined,
-                      is_category_confidential:
-                        transaction.is_category_confidential ?? undefined,
-                      is_description_confidential:
-                        transaction.is_description_confidential ?? undefined,
-                    }}
-                    wsId={wsId}
+            {/* Content area - Two-column layout on desktop */}
+            <div className="flex flex-col lg:flex-row">
+              {/* Left: Transactions list */}
+              <div className="min-w-0 flex-1 space-y-2 p-3 sm:space-y-3 sm:p-4">
+                {group.transactions
+                  .slice(0, displayCount)
+                  .map((transaction: Transaction) => (
+                    <div
+                      key={transaction.id}
+                      onClick={() => handleTransactionClick(transaction)}
+                      className="cursor-pointer"
+                    >
+                      <TransactionCard
+                        transaction={{
+                          ...transaction,
+                          is_amount_confidential:
+                            transaction.is_amount_confidential ?? undefined,
+                          is_category_confidential:
+                            transaction.is_category_confidential ?? undefined,
+                          is_description_confidential:
+                            transaction.is_description_confidential ??
+                            undefined,
+                        }}
+                        wsId={wsId}
+                        currency={currency}
+                        onEdit={() => handleTransactionClick(transaction)}
+                        onDelete={() => handleDeleteClick(transaction)}
+                        canEdit={canUpdateTransactions}
+                        canDelete={canDeleteTransactions}
+                        showCreator={!isPersonalWorkspace}
+                        isDaily={viewMode === 'daily'}
+                      />
+                    </div>
+                  ))}
+
+                {/* Show more/less button */}
+                {group.transactions.length > 3 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
+                    onClick={() => toggleGroup(group.date)}
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="mr-2 h-4 w-4" />
+                        {t('common.show-less')}
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="mr-2 h-4 w-4" />
+                        {t('common.show-more')} (
+                        {group.transactions.length - displayCount}{' '}
+                        {t('date_groups.more')})
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {/* Right: Period breakdown panel (desktop only) */}
+              <aside className="hidden shrink-0 border-border/40 border-l lg:block lg:w-80 xl:w-96">
+                <div className="sticky top-4 p-4">
+                  <PeriodBreakdownPanel
+                    transactions={group.transactions}
+                    viewMode={viewMode}
+                    periodStart={group.date}
                     currency={currency}
-                    onEdit={() => handleTransactionClick(transaction)}
-                    onDelete={() => handleDeleteClick(transaction)}
-                    canEdit={canUpdateTransactions}
-                    canDelete={canDeleteTransactions}
-                    showCreator={!isPersonalWorkspace}
+                    periodStats={group.periodStats}
+                    workspaceId={wsId}
                   />
                 </div>
-              ))}
-
-              {/* Show more/less button */}
-              {group.transactions.length > 3 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
-                  onClick={() => toggleGroup(group.date)}
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="mr-2 h-4 w-4" />
-                      {t('common.show-less')}
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                      {t('common.show-more')} (
-                      {group.transactions.length - displayCount}{' '}
-                      {t('date_groups.more')})
-                    </>
-                  )}
-                </Button>
-              )}
+              </aside>
             </div>
           </div>
         );
@@ -662,13 +869,16 @@ export function InfiniteTransactionsList({
           </div>
         )}
 
-        {!hasNextPage && allTransactions.length > 10 && (
-          <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              🎉 {t('user-data-table.common.end_of_list')}
-            </p>
-          </div>
-        )}
+        {!hasNextPage &&
+          (usePeriods
+            ? allPeriods.length > 5
+            : allTransactions.length > 10) && (
+            <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
+              <p className="text-muted-foreground text-sm">
+                {t('user-data-table.common.end_of_list')}
+              </p>
+            </div>
+          )}
       </div>
 
       {/* Transaction Edit Dialog */}

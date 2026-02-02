@@ -88,7 +88,7 @@ export default function InvoiceEditForm({
             value={notice}
             onChange={(e) => setNotice(e.target.value)}
             placeholder={t('ws-invoices.content_placeholder')}
-            className="min-h-[80px]"
+            className="min-h-20"
           />
         </div>
 
@@ -100,7 +100,7 @@ export default function InvoiceEditForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={t('ws-invoices.notes_placeholder')}
-            className="min-h-[60px]"
+            className="min-h-15"
           />
         </div>
 
@@ -127,7 +127,7 @@ export default function InvoiceEditForm({
                         {wallet.name || t('ws-invoices.unnamed_wallet')}
                       </p>
                       <p className="text-muted-foreground text-sm">
-                        {wallet.type || 'STANDARD'} - {wallet.currency || 'VND'}
+                        {wallet.type || 'STANDARD'} - {wallet.currency || 'USD'}
                       </p>
                     </div>
                   </div>

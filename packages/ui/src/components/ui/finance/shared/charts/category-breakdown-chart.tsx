@@ -83,6 +83,8 @@ interface CategoryBreakdownChartProps {
   currency?: string;
   className?: string;
   includeConfidential?: boolean;
+  /** Default transaction type to show. Defaults to 'expense' */
+  defaultTransactionType?: TransactionType;
 }
 
 interface TooltipPayloadItem {
@@ -195,6 +197,7 @@ export function CategoryBreakdownChart({
   currency = 'USD',
   className,
   includeConfidential = true,
+  defaultTransactionType = 'expense',
 }: CategoryBreakdownChartProps) {
   const locale = useLocale();
   const t = useTranslations();
@@ -203,8 +206,9 @@ export function CategoryBreakdownChart({
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
   );
-  const [transactionType, setTransactionType] =
-    useState<TransactionType>('expense');
+  const [transactionType, setTransactionType] = useState<TransactionType>(
+    defaultTransactionType
+  );
   const [interval, setInterval] = useState<ChartInterval>('monthly');
 
   // Calculate date range based on offset and interval

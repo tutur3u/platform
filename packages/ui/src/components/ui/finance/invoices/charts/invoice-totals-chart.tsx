@@ -436,7 +436,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex h-[280px] items-center justify-center">
+        <CardContent className="flex h-70 items-center justify-center">
           <p className="text-muted-foreground text-sm">
             {t('no_data_available')}
           </p>
@@ -520,7 +520,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
       </CardHeader>
 
       <CardContent className="px-2 pb-4">
-        <div className="h-[280px] w-full">
+        <div className="h-70 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -889,13 +889,13 @@ export function InvoiceTotalsChartSkeleton({
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-[180px] rounded-lg" />
-            <Skeleton className="h-8 w-[120px] rounded-lg" />
+            <Skeleton className="h-8 w-45 rounded-lg" />
+            <Skeleton className="h-8 w-30 rounded-lg" />
           </div>
         </div>
       </CardHeader>
       <CardContent className="px-2 pb-4">
-        <div className="flex h-[280px] w-full items-end justify-between gap-1 px-4 py-4">
+        <div className="flex h-70 w-full items-end justify-between gap-1 px-4 py-4">
           {Array.from({ length: 14 }).map((_, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-1">
               <Skeleton

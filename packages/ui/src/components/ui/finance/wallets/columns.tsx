@@ -9,11 +9,13 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
+import { WalletIconDisplay } from './wallet-icon-display';
 
 interface WalletExtraData {
   canUpdateWallets?: boolean;
   canDeleteWallets?: boolean;
   currency?: string;
+  isPersonalWorkspace?: boolean;
 }
 
 export const walletColumns = ({
@@ -69,7 +71,16 @@ export const walletColumns = ({
           title={t(`${namespace}.name`)}
         />
       ),
-      cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <WalletIconDisplay
+            icon={row.original.icon}
+            imageSrc={row.original.image_src}
+            size="sm"
+          />
+          <span>{row.getValue('name') || '-'}</span>
+        </div>
+      ),
     },
     {
       accessorKey: 'description',
@@ -102,7 +113,7 @@ export const walletColumns = ({
           currency,
           minimumFractionDigits: 0,
           maximumFractionDigits: currency === 'VND' ? 0 : 2,
-          signDisplay: 'always',
+          signDisplay: 'exceptZero',
         }).format(balance);
 
         const isPositive = balance > 0;
@@ -207,6 +218,7 @@ export const walletColumns = ({
           href={row.original.href}
           canUpdateWallets={extraData?.canUpdateWallets}
           canDeleteWallets={extraData?.canDeleteWallets}
+          isPersonalWorkspace={extraData?.isPersonalWorkspace}
         />
       ),
     },
