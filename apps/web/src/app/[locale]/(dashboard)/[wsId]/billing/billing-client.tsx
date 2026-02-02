@@ -24,7 +24,6 @@ import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import type { SeatStatus } from '@/utils/seat-limits';
 import { AddSeatsDialog } from './add-seats-dialog';
-import { MigrateToSeatsDialog } from './migrate-to-seats-dialog';
 import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
@@ -73,7 +72,6 @@ export function BillingClient({
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [showAddSeatsDialog, setShowAddSeatsDialog] = useState(false);
-  const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const t = useTranslations('billing');
   const router = useRouter();
 
@@ -83,7 +81,6 @@ export function BillingClient({
   const isPlusPlan = currentPlan.tier === 'PLUS';
   const simplePlanName = getSimplePlanName(currentPlan.name);
   const isSeatBased = seatStatus?.isSeatBased ?? false;
-  const isFixedPricing = currentPlan.pricingModel === 'fixed' && isPaidPlan;
 
   // Dynamic color configuration per tier
   const tierConfig = isEnterprisePlan
@@ -373,39 +370,6 @@ export function BillingClient({
         </div>
       </div>
 
-      {/* Migration Option - Show for fixed-pricing paid plans */}
-      {hasManageSubscriptionPermission && isFixedPricing && (
-        <div className="mb-8 overflow-hidden rounded-2xl border border-dynamic-blue/50 border-dashed bg-card">
-          <div className="bg-linear-to-r from-dynamic-blue/10 via-dynamic-blue/5 to-dynamic-blue/10 p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-dynamic-blue" />
-                  <h3 className="font-semibold text-lg">
-                    {t('switch-to-seat-based')}
-                  </h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  {t('switch-to-seat-based-description')}
-                </p>
-                <ul className="ml-6 list-disc space-y-1 text-muted-foreground text-sm">
-                  <li>{t('pay-per-member')}</li>
-                  <li>{t('add-seats-anytime')}</li>
-                  <li>{t('ideal-for-growing-teams')}</li>
-                </ul>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowMigrationDialog(true)}
-                className="border-dynamic-blue/50 hover:bg-dynamic-blue/10"
-              >
-                {t('learn-more')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Dialogs */}
       <PlanList
         currentPlan={currentPlan}
@@ -440,15 +404,6 @@ export function BillingClient({
             seatStatus.pricePerSeat ?? currentPlan.pricePerSeat ?? 0
           }
           billingCycle={currentPlan.billingCycle}
-        />
-      )}
-
-      {/* Migration Dialog - Only for fixed-pricing subscriptions */}
-      {hasManageSubscriptionPermission && isFixedPricing && (
-        <MigrateToSeatsDialog
-          open={showMigrationDialog}
-          onOpenChange={setShowMigrationDialog}
-          wsId={wsId}
         />
       )}
     </>
