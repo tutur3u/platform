@@ -1,5 +1,6 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { convertWorkspaceIDToExternalID } from './subscription-helper';
 
 interface CreateCustomerSessionOptions {
   polar: Polar;
@@ -32,7 +33,7 @@ export async function createCustomerSession({
   }
 
   const session = await polar.customerSessions.create({
-    externalCustomerId: wsId,
+    externalCustomerId: convertWorkspaceIDToExternalID(wsId),
   });
 
   return session;
@@ -82,10 +83,11 @@ export async function getOrCreatePolarCustomer({
   if (customers.length === 0) {
     // Create new customer if not found
     console.log('Customer not found in Polar, creating new customer...');
+
     const newCustomer = await polar.customers.create({
       email: ownerEmail,
       name: workspace.name || undefined,
-      externalId: wsId,
+      externalId: convertWorkspaceIDToExternalID(wsId),
     });
 
     if (!newCustomer?.id) {

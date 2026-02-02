@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
-import { getOrCreatePolarCustomer } from '@/utils/customer-session';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function POST() {
@@ -72,7 +72,7 @@ export async function POST() {
     const polar = createPolarClient();
     const sbAdmin = await createAdminClient();
 
-    // Get or create Polar customer using user ID as external customer ID
+    // Get or create Polar customer using workspace ID as external customer ID
     const customerId = await getOrCreatePolarCustomer({
       polar,
       supabase,

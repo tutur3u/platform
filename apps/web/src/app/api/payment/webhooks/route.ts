@@ -4,6 +4,7 @@ import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import {
+  convertExternalIDToWorkspaceID,
   createFreeSubscription,
   hasActiveSubscription,
 } from '@/utils/subscription-helper';
@@ -41,11 +42,13 @@ export async function reportInitialUsage(ws_id: string, customerId: string) {
 // Helper function to sync subscription data from Polar to DB
 export async function syncSubscriptionToDatabase(subscription: Subscription) {
   const sbAdmin = await createAdminClient();
-  const wsId = subscription.metadata?.wsId;
+  const wsId = subscription.customer.externalId
+    ? convertExternalIDToWorkspaceID(subscription.customer.externalId)
+    : null;
 
-  if (!wsId || typeof wsId !== 'string') {
-    console.error('Webhook Error: Workspace ID (wsId) not found in metadata.');
-    throw new Response('Webhook Error: Missing wsId in metadata', {
+  if (!wsId) {
+    console.error('Webhook Error: Workspace ID not found.');
+    throw new Response('Webhook Error: Workspace ID not found.', {
       status: 400,
     });
   }
@@ -111,19 +114,19 @@ export async function syncSubscriptionToDatabase(subscription: Subscription) {
 // Helper function to sync order data from Polar to DB
 export async function syncOrderToDatabase(order: Order) {
   const sbAdmin = await createAdminClient();
-  const ws_id = order.metadata?.wsId;
+  const wsId = order.customer.externalId
+    ? convertExternalIDToWorkspaceID(order.customer.externalId)
+    : null;
 
-  if (!ws_id || typeof ws_id !== 'string') {
-    console.error(
-      'Webhook Error: Workspace ID (wsId) not found in order metadata.'
-    );
-    throw new Response('Webhook Error: Missing wsId in order metadata', {
+  if (!wsId) {
+    console.error('Webhook Error: Workspace ID not found.');
+    throw new Response('Webhook Error: Workspace ID not found.', {
       status: 400,
     });
   }
 
   const orderData = {
-    ws_id: ws_id,
+    ws_id: wsId,
     polar_order_id: order.id,
     status: order.status as any,
     polar_subscription_id: order.subscriptionId,
@@ -131,7 +134,6 @@ export async function syncOrderToDatabase(order: Order) {
     total_amount: order.totalAmount,
     currency: order.currency,
     billing_reason: order.billingReason as any,
-    user_id: order.customer.externalId,
     created_at:
       order.createdAt instanceof Date
         ? order.createdAt.toISOString()
@@ -157,7 +159,7 @@ export async function syncOrderToDatabase(order: Order) {
     throw new Error(`Database Error: ${dbError.message}`);
   }
 
-  return { ws_id, orderData };
+  return { wsId, orderData };
 }
 
 export const POST = Webhooks({
@@ -419,11 +421,11 @@ export const POST = Webhooks({
   // Handle new order creation
   onOrderCreated: async (payload) => {
     try {
-      const { ws_id, orderData } = await syncOrderToDatabase(payload.data);
+      const { wsId, orderData } = await syncOrderToDatabase(payload.data);
       console.log(
         `Webhook: Order created: ${payload.data.id}, status: ${orderData.status}, billing_reason: ${orderData.billing_reason}`
       );
-      console.log(`Webhook: Order created for workspace ${ws_id}.`);
+      console.log(`Webhook: Order created for workspace ${wsId}.`);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       console.error('Webhook: Order created error:', errorMessage);
@@ -434,12 +436,12 @@ export const POST = Webhooks({
   // Handle order updates (status changes, payment confirmations, refunds, etc.)
   onOrderUpdated: async (payload) => {
     try {
-      const { ws_id, orderData } = await syncOrderToDatabase(payload.data);
+      const { wsId, orderData } = await syncOrderToDatabase(payload.data);
       console.log(
         `Webhook: Order updated: ${payload.data.id}, status: ${orderData.status}, billing_reason: ${orderData.billing_reason}`
       );
       console.log(
-        `Webhook: Order updated for workspace ${ws_id}, new status: ${orderData.status}`
+        `Webhook: Order updated for workspace ${wsId}, new status: ${orderData.status}`
       );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';

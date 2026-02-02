@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { convertExternalIDToWorkspaceID } from '@/utils/subscription-helper';
 
 /**
  * Cron job to sync orders from Polar.sh to database
@@ -49,10 +50,12 @@ export async function GET(req: NextRequest) {
         // Process each order
         for (const order of orders) {
           try {
-            const ws_id = order.metadata?.wsId;
+            const wsId = order.customer.externalId
+              ? convertExternalIDToWorkspaceID(order.customer.externalId)
+              : null;
 
             // Skip orders without workspace ID in metadata
-            if (!ws_id || typeof ws_id !== 'string') {
+            if (!wsId) {
               skippedCount++;
               continue;
             }
@@ -61,18 +64,18 @@ export async function GET(req: NextRequest) {
             const { data: workspace, error: workspaceError } = await sbAdmin
               .from('workspaces')
               .select('id')
-              .eq('id', ws_id)
+              .eq('id', wsId)
               .single();
 
             if (workspaceError || !workspace) {
               failedCount++;
-              errors.push(`Workspace ${ws_id}: ${workspaceError.message}`);
+              errors.push(`Workspace ${wsId}: ${workspaceError.message}`);
               continue;
             }
 
             // Prepare order data
             const orderData = {
-              ws_id: ws_id,
+              ws_id: wsId,
               polar_order_id: order.id,
               status: order.status as any,
               polar_subscription_id: order.subscriptionId,
@@ -80,7 +83,6 @@ export async function GET(req: NextRequest) {
               total_amount: order.totalAmount,
               currency: order.currency,
               billing_reason: order.billingReason as any,
-              user_id: order.customer.externalId,
               created_at:
                 order.createdAt instanceof Date
                   ? order.createdAt.toISOString()

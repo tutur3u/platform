@@ -42,13 +42,22 @@ export async function hasActiveSubscription(
 export async function createFreeSubscription(
   polar: Polar,
   supabase: TypedSupabaseClient,
-  wsId: string
+  customerId: string
 ) {
   // Get the FREE tier product
   const freeProduct = await getFreeProduct(supabase);
   if (!freeProduct) {
     console.error(
       'No FREE tier product found, cannot create free subscription'
+    );
+    return null;
+  }
+
+  const wsId = convertExternalIDToWorkspaceID(customerId);
+  if (!wsId) {
+    console.error(
+      'Invalid customer ID, cannot extract workspace ID:',
+      customerId
     );
     return null;
   }
@@ -67,7 +76,7 @@ export async function createFreeSubscription(
     // Note: Polar's subscriptions.create() only works for free products
     const subscription = await polar.subscriptions.create({
       productId: freeProduct.id,
-      customerId: wsId,
+      customerId,
     });
 
     console.log(
@@ -82,4 +91,15 @@ export async function createFreeSubscription(
     );
     return null;
   }
+}
+
+export function convertWorkspaceIDToExternalID(wsId: string) {
+  return `workspace-${wsId}`;
+}
+
+export function convertExternalIDToWorkspaceID(customerId: string) {
+  if (customerId.startsWith('workspace-')) {
+    return customerId.replace('workspace-', '');
+  }
+  return null;
 }

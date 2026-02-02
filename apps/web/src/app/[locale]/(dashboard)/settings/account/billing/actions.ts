@@ -9,7 +9,7 @@ import type {
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { createCustomerSession } from '@/utils/customer-session';
+import { createCustomerSession } from '@/utils/customer-helper';
 
 interface BillingData {
   customer: {

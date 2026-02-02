@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getOrCreatePolarCustomer } from '@/utils/customer-session';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';

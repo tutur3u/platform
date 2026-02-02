@@ -2,7 +2,7 @@ import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { createCustomerSession } from '@/utils/customer-session';
+import { createCustomerSession } from '@/utils/customer-helper';
 
 // PATCH: Reactivate subscription (cancel_at_period_end = false)
 export async function PATCH(
@@ -79,7 +79,7 @@ export async function PATCH(
     const session = await createCustomerSession({
       polar,
       supabase,
-      wsId: subscriptionId,
+      wsId: subscription.ws_id,
     });
 
     // Only allow reactivation (cancel_at_period_end = false)
@@ -184,7 +184,7 @@ export async function DELETE(
     const session = await createCustomerSession({
       polar,
       supabase,
-      wsId: subscriptionId,
+      wsId: subscription.ws_id,
     });
 
     const result = await polar.customerPortal.subscriptions.cancel(

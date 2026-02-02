@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { convertExternalIDToWorkspaceID } from '@/utils/subscription-helper';
 
 /**
  * Cron job to sync subscriptions from Polar.sh to database
@@ -51,10 +52,11 @@ export async function GET(req: NextRequest) {
         // Process each subscription
         for (const subscription of subscriptions) {
           try {
-            const ws_id = subscription.metadata?.wsId;
+            const wsId = subscription.customer.externalId
+              ? convertExternalIDToWorkspaceID(subscription.customer.externalId)
+              : null;
 
-            // Skip subscriptions without workspace ID in metadata
-            if (!ws_id || typeof ws_id !== 'string') {
+            if (!wsId) {
               skippedCount++;
               continue;
             }
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
             const { data: workspace, error: workspaceError } = await sbAdmin
               .from('workspaces')
               .select('id')
-              .eq('id', ws_id)
+              .eq('id', wsId)
               .single();
 
             if (workspaceError || !workspace) {
@@ -76,7 +78,7 @@ export async function GET(req: NextRequest) {
 
             // Prepare subscription data
             const subscriptionData = {
-              ws_id: ws_id,
+              ws_id: wsId,
               status: subscription.status as any,
               polar_subscription_id: subscription.id,
               product_id: subscription.product.id,
