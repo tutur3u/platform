@@ -265,6 +265,14 @@ export function useApprovals({
       await queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', kind],
       });
+
+      // Also invalidate group-posts queries when a post is approved/rejected
+      // This updates the post list in the groups view
+      if (kind === 'posts') {
+        await queryClient.invalidateQueries({
+          queryKey: ['group-posts', wsId],
+        });
+      }
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : tCommon('error'));
