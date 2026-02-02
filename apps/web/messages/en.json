@@ -9118,6 +9118,7 @@
     "mark-as-confidential": "Mark as Confidential",
     "net-total": "Net Total",
     "no-transactions-found": "No transactions found. Create your first transaction to get started.",
+    "redacted-amounts-note": "Note: Some amounts are confidential and excluded from totals",
     "statistics-summary": "Statistics Summary",
     "total-expenses": "Total Expenses",
     "total-income": "Total Income",
