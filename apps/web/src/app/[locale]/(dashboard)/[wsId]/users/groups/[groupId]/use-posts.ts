@@ -14,7 +14,7 @@ const PAGINATION_LIMIT = 10;
 
 export interface UserGroupPost {
   id?: string;
-  group_name?: string;
+  group_name?: string | null;
   title: string | null;
   content: string | null;
   notes: string | null;
