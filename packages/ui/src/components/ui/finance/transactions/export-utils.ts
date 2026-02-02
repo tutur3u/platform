@@ -36,7 +36,12 @@ export type ExportFinanceInvoice = {
   workspace_users: ExportWorkspaceUser | ExportWorkspaceUser[] | null;
 };
 
+export type ExportTransactionTag = {
+  transaction_tags: { name: string | null } | null;
+};
+
 export type ExportWalletTransactionRow = {
+  id: string;
   amount: number | null;
   description: string | null;
   taken_at: string | null;
@@ -52,6 +57,7 @@ export type ExportWalletTransactionRow = {
     | ExportTransactionCreator[]
     | null;
   finance_invoices: ExportFinanceInvoice | ExportFinanceInvoice[] | null;
+  wallet_transaction_tags: ExportTransactionTag[] | null;
 };
 
 export type TransactionExportRow = {
@@ -60,6 +66,7 @@ export type TransactionExportRow = {
   category: string | null;
   transaction_type: 'expense' | 'income' | null;
   wallet: string | null;
+  tags: string | null;
   taken_at: string | null;
   created_at: string | null;
   report_opt_in: boolean | null;
@@ -68,6 +75,52 @@ export type TransactionExportRow = {
   invoice_for_name: string | null;
   invoice_for_email: string | null;
 };
+
+export type ExportSummary = {
+  totalTransactions: number;
+  totalIncome: number;
+  totalExpense: number;
+  netTotal: number;
+  hasRedactedAmounts: boolean;
+};
+
+/**
+ * Calculates summary statistics from exported transaction data
+ *
+ * Note: Expense amounts are stored as negative values in the database,
+ * so we use Math.abs() to get the positive total for display purposes.
+ *
+ * @param data - Array of transaction export rows
+ * @returns Summary object with totals and redaction flag
+ */
+export function calculateExportSummary(
+  data: TransactionExportRow[]
+): ExportSummary {
+  let totalIncome = 0;
+  let totalExpense = 0;
+  let hasRedactedAmounts = false;
+
+  for (const row of data) {
+    if (row.amount === null) {
+      hasRedactedAmounts = true;
+      continue;
+    }
+    if (row.transaction_type === 'income') {
+      totalIncome += row.amount;
+    } else if (row.transaction_type === 'expense') {
+      // Use Math.abs since expense amounts are stored as negative values
+      totalExpense += Math.abs(row.amount);
+    }
+  }
+
+  return {
+    totalTransactions: data.length,
+    totalIncome,
+    totalExpense,
+    netTotal: totalIncome - totalExpense,
+    hasRedactedAmounts,
+  };
+}
 
 /**
  * Fetches paginated transaction data for export
@@ -132,6 +185,7 @@ export async function getData(
     .from('wallet_transactions')
     .select(
       [
+        'id',
         'amount',
         'description',
         'taken_at',
@@ -141,6 +195,7 @@ export async function getData(
         'transaction_categories(name, is_expense)',
         'distinct_transaction_creators(display_name, full_name, email)',
         'finance_invoices!wallet_transactions_invoice_id_fkey(customer_id, workspace_users!finance_invoices_customer_id_fkey(display_name, full_name, email))',
+        'wallet_transaction_tags(transaction_tags(name))',
       ].join(','),
       {
         count: 'exact',
@@ -240,12 +295,19 @@ export async function getData(
           ? 'income'
           : null;
 
+    // Extract tag names and join with comma
+    const tagNames = (row.wallet_transaction_tags ?? [])
+      .map((t) => t.transaction_tags?.name)
+      .filter((name): name is string => name !== null && name !== undefined)
+      .join(', ');
+
     return {
       amount: row.amount ?? null,
       description: row.description ?? null,
       category: category?.name ?? null,
       transaction_type: transactionType,
       wallet: wallet?.name ?? null,
+      tags: tagNames || null,
       taken_at: row.taken_at ?? null,
       created_at: row.created_at ?? null,
       report_opt_in: row.report_opt_in ?? null,
