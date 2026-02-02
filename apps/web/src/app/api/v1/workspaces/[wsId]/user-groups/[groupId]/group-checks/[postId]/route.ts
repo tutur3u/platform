@@ -34,6 +34,7 @@ export async function PUT(req: Request, { params }: Params) {
     .select(`
       id,
       group_id,
+      post_approval_status,
       workspace_user_groups!inner(ws_id)
     `)
     .eq('id', postId)
@@ -42,6 +43,13 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
   if (postErr || !post) {
     return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+  }
+
+  if (post.post_approval_status !== 'APPROVED') {
+    return NextResponse.json(
+      { message: 'Post must be approved before updating checks' },
+      { status: 403 }
+    );
   }
 
   // Validate payload
