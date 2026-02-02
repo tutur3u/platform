@@ -25,13 +25,13 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import {
-  deleteTemplateBackground,
-  handleTemplateBackgroundUpload,
-} from '@tuturuuu/utils/template-background';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import {
+  deleteTemplateBackground,
+  handleTemplateBackgroundUpload,
+} from '@/utils/template-background';
 
 interface EditTemplateDialogProps {
   wsId: string;

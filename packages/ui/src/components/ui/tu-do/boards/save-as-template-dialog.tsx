@@ -1,6 +1,7 @@
 'use client';
 
 import { Bookmark, Loader2 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -23,10 +24,10 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { handleTemplateBackgroundUpload } from '@tuturuuu/utils/template-background';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { FileUploader, type StatedFile } from '../../custom/file-uploader';
 
 interface SaveAsTemplateDialogProps {
@@ -36,6 +37,14 @@ interface SaveAsTemplateDialogProps {
 }
 
 type TemplateVisibility = 'private' | 'workspace';
+
+const ALLOWED_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export function SaveAsTemplateDialog({
   board,
@@ -73,16 +82,73 @@ export function SaveAsTemplateDialog({
   }, [open, board]);
 
   const handleBackgroundUpload = async (files: StatedFile[]) => {
-    await handleTemplateBackgroundUpload(
-      files,
-      board.ws_id,
-      (url, _path) => {
-        setBackgroundUrl(url);
-      },
-      (error) => {
-        console.error('Background upload error:', error);
+    if (files.length === 0) {
+      return;
+    }
+
+    const file = files[0]; // Only support one background image
+
+    if (!file) {
+      toast('No file selected for upload');
+      return;
+    }
+
+    try {
+      // Update file status to uploading
+      file.status = 'uploading';
+
+      if (!ALLOWED_IMAGE_TYPES.includes(file.rawFile.type)) {
+        throw new Error(
+          'Invalid file type. Only PNG, JPEG, and WebP images are allowed.'
+        );
       }
-    );
+
+      // Validate file size
+      if (file.rawFile.size > MAX_FILE_SIZE) {
+        throw new Error('File size exceeds 5MB limit.');
+      }
+
+      const supabase = createClient();
+
+      // Generate unique filename
+      const uniqueId = uuidv4();
+      const sanitizedName = file.rawFile.name
+        .toLowerCase()
+        .replace(/[^a-z0-9.-]/g, '-')
+        .replace(/-+/g, '-');
+      const storagePath = `${board.ws_id}/template-backgrounds/${uniqueId}-${sanitizedName}`;
+
+      // Convert File to ArrayBuffer
+      const arrayBuffer = await file.rawFile.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('workspaces')
+        .upload(storagePath, buffer, {
+          contentType: file.rawFile.type,
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Error uploading template background:', error);
+        throw new Error('Failed to upload background image');
+      }
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('workspaces').getPublicUrl(data.path);
+
+      // Update file status to uploaded
+      file.status = 'uploaded';
+      file.finalPath = publicUrl;
+    } catch (error) {
+      file.status = 'error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to upload image';
+      toast.error(errorMessage);
+    }
   };
 
   const handleRemoveBackground = () => {
