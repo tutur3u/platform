@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import Link from 'next/link';
@@ -22,8 +23,6 @@ export const pendingInvoiceColumns = (
   useAttendanceBased = true,
   currency: string = 'USD'
 ): ColumnDef<PendingInvoice>[] => {
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   return [
     {
       accessorKey: 'user_id',
@@ -221,10 +220,10 @@ export const pendingInvoiceColumns = (
       ),
       cell: ({ row }) => (
         <div className="min-w-32 font-semibold">
-          {Intl.NumberFormat(currencyLocale, {
-            style: 'currency',
-            currency,
-          }).format(row.getValue<number>('potential_total') || 0)}
+          {formatCurrency(
+            row.getValue<number>('potential_total') || 0,
+            currency
+          )}
         </div>
       ),
     },

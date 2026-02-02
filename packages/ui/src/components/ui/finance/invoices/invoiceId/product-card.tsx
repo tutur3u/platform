@@ -1,6 +1,7 @@
 import { Box, Edit } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 
 interface ProductCardProps {
@@ -11,14 +12,12 @@ interface ProductCardProps {
     price: number;
     product_id?: string | null;
   };
-  locale: string;
   workspaceId?: string;
   currency?: string;
 }
 
 export function ProductCard({
   product,
-  locale,
   workspaceId,
   currency = 'USD',
 }: ProductCardProps) {
@@ -54,17 +53,10 @@ export function ProductCard({
           </div>
           <div className="text-right">
             <div className="font-semibold text-card-foreground text-sm transition-colors duration-200 group-hover:text-primary">
-              {Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-              }).format(totalPrice)}
+              {formatCurrency(totalPrice, currency)}
             </div>
             <div className="text-muted-foreground text-xs">
-              {Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-              }).format(product.price)}{' '}
-              each
+              {formatCurrency(product.price, currency)} each
             </div>
           </div>
           {product.product_id && workspaceId && (
