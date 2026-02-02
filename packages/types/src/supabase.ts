@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -16160,36 +16165,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -17955,7 +17931,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: string;
+          last_sign_in_avg: unknown;
           percentage: number;
           provider: string;
           user_count: number;
@@ -18050,6 +18026,26 @@ export type Database = {
               _end_date?: string;
               _interval?: string;
               _start_date?: string;
+              _transaction_type?: string;
+              _ws_id: string;
+              include_confidential?: boolean;
+            };
+            Returns: {
+              category_color: string;
+              category_icon: string;
+              category_id: string;
+              category_name: string;
+              period: string;
+              total: number;
+            }[];
+          }
+        | {
+            Args: {
+              _anchor_to_latest?: boolean;
+              _end_date?: string;
+              _interval?: string;
+              _start_date?: string;
+              _timezone?: string;
               _transaction_type?: string;
               _ws_id: string;
               include_confidential?: boolean;
@@ -18277,12 +18273,15 @@ export type Database = {
         Returns: {
           amount: number;
           created_at: string;
-          id: string;
           invoice_id: string;
           price: number;
           product_id: string;
+          product_name: string;
+          product_unit: string;
           total_count: number;
+          total_diff: number;
           unit_id: string;
+          warehouse: string;
           warehouse_id: string;
         }[];
       };
@@ -18292,7 +18291,6 @@ export type Database = {
           code: string;
           created_at: string;
           description: string;
-          id: string;
           invoice_id: string;
           name: string;
           promo_id: string;
@@ -19002,6 +19000,7 @@ export type Database = {
           p_search_query?: string;
           p_start_date?: string;
           p_tag_ids?: string[];
+          p_timezone?: string;
           p_user_id?: string;
           p_wallet_ids?: string[];
           p_ws_id: string;
@@ -19085,7 +19084,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: string;
+          current_session_age: unknown;
           total_sessions: number;
         }[];
       };
