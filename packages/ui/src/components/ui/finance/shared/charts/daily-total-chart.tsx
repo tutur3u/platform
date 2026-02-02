@@ -6,7 +6,14 @@ import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Button } from '../../../button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../card';
 import {
@@ -42,9 +49,15 @@ type ViewMode = 'all' | 'income' | 'expense';
 export function DailyTotalChart({
   data,
   className,
+  currency = 'USD',
+  openingBalance,
+  closingBalance,
 }: {
   data: { day: string; total_income: number; total_expense: number }[];
   className?: string;
+  currency?: string;
+  openingBalance?: number;
+  closingBalance?: number;
 }) {
   const t = useTranslations('transaction-data-table');
   const { resolvedTheme } = useTheme();
@@ -93,11 +106,13 @@ export function DailyTotalChart({
     window.dispatchEvent(new Event('finance-confidential-mode-change'));
   };
 
+  const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
+
   const formatValue = (value: number) => {
     if (isConfidential) return '•••••';
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'VND',
+      currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -105,7 +120,7 @@ export function DailyTotalChart({
 
   const formatCompactValue = (value: number) => {
     if (isConfidential) return '•••';
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',
       maximumFractionDigits: 1,
@@ -279,6 +294,34 @@ export function DailyTotalChart({
                 name={t('expense')}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
+              />
+            )}
+            {openingBalance !== undefined && !isConfidential && (
+              <ReferenceLine
+                y={openingBalance}
+                stroke="hsl(var(--primary))"
+                strokeDasharray="5 5"
+                strokeWidth={2}
+                label={{
+                  value: t('opening_balance'),
+                  position: 'insideTopLeft',
+                  fill: 'hsl(var(--primary))',
+                  fontSize: 12,
+                }}
+              />
+            )}
+            {closingBalance !== undefined && !isConfidential && (
+              <ReferenceLine
+                y={closingBalance}
+                stroke="hsl(var(--muted-foreground))"
+                strokeDasharray="5 5"
+                strokeWidth={2}
+                label={{
+                  value: t('closing_balance'),
+                  position: 'insideBottomLeft',
+                  fill: 'hsl(var(--muted-foreground))',
+                  fontSize: 12,
+                }}
               />
             )}
           </BarChart>

@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { TransactionRowActions } from '@tuturuuu/ui/finance/transactions/row-actions';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -14,13 +15,23 @@ function getAvatarPlaceholder(name: string) {
   return `https://ui-avatars.com/api/?name=${name}`;
 }
 
-export const transactionColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<Transaction>[] => {
-  const locale = useLocale();
+interface TransactionExtraData {
+  currency?: string;
+  isPersonalWorkspace?: boolean;
+}
 
-  return [
+export const transactionColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Transaction> & {
+  extraData?: TransactionExtraData;
+}): ColumnDef<Transaction>[] => {
+  const locale = useLocale();
+  const currency = extraData?.currency || 'USD';
+  const isPersonalWorkspace = extraData?.isPersonalWorkspace || false;
+
+  const columns: ColumnDef<Transaction>[] = [
     // {
     //   id: 'select',
     //   header: ({ table }) => (
@@ -165,9 +176,9 @@ export const transactionColumns = (
               isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
             }`}
           >
-            {Intl.NumberFormat(locale, {
+            {Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
               style: 'currency',
-              currency: 'VND',
+              currency,
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
               signDisplay: 'always',
@@ -236,4 +247,14 @@ export const transactionColumns = (
       ),
     },
   ];
+
+  // Filter out the user column if in personal workspace
+  if (isPersonalWorkspace) {
+    return columns.filter((col) => {
+      const accessorKey = (col as any).accessorKey;
+      return accessorKey !== 'user';
+    });
+  }
+
+  return columns;
 };

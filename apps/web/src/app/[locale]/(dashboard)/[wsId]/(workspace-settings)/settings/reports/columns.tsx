@@ -2,14 +2,15 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { ConfigRowActions } from './row-actions';
 
-export const configColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceConfig>[] => [
+export const configColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceConfig>): ColumnDef<WorkspaceConfig>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

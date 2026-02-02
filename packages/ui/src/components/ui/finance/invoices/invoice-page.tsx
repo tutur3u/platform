@@ -91,6 +91,7 @@ interface Props {
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
   deleteInvoiceAction?: DeleteInvoiceAction;
+  currency?: string;
 }
 
 export default async function InvoicesPage({
@@ -99,6 +100,7 @@ export default async function InvoicesPage({
   canCreateInvoices = false,
   canDeleteInvoices = false,
   deleteInvoiceAction,
+  currency = 'USD',
 }: Props) {
   const t = await getTranslations();
   const { wsId: id } = await params;
@@ -144,6 +146,7 @@ export default async function InvoicesPage({
         <InvoiceAnalytics
           wsId={wsId}
           weekStartsOn={weekStartsOn}
+          currency={currency}
           className="mb-4"
         />
       </Suspense>
@@ -167,6 +170,7 @@ export default async function InvoicesPage({
               canExport={canExportFinanceData}
               deleteInvoiceAction={deleteInvoiceAction}
               initialData={initialData}
+              currency={currency}
             />
           </Suspense>
         </TabsContent>
@@ -175,6 +179,7 @@ export default async function InvoicesPage({
             <PendingInvoicesTable
               wsId={wsId}
               canExport={canExportFinanceData}
+              currency={currency}
             />
           </Suspense>
         </TabsContent>

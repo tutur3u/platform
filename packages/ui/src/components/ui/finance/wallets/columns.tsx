@@ -1,17 +1,32 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from '@tuturuuu/icons';
+import { Check, TrendingDown, TrendingUp, X } from '@tuturuuu/icons';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
+import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
+import { WalletIconDisplay } from './wallet-icon-display';
 
-export const walletColumns = (
-  t: any,
-  namespace: string | undefined,
-  extraData?: any
-): ColumnDef<Wallet>[] => {
+interface WalletExtraData {
+  canUpdateWallets?: boolean;
+  canDeleteWallets?: boolean;
+  currency?: string;
+  isPersonalWorkspace?: boolean;
+}
+
+export const walletColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<Wallet> & {
+  extraData?: WalletExtraData;
+}): ColumnDef<Wallet>[] => {
+  const workspaceCurrency = extraData?.currency || 'USD';
+
   return [
     // {
     //   id: 'select',
@@ -56,7 +71,16 @@ export const walletColumns = (
           title={t(`${namespace}.name`)}
         />
       ),
-      cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <WalletIconDisplay
+            icon={row.original.icon}
+            imageSrc={row.original.image_src}
+            size="sm"
+          />
+          <span>{row.getValue('name') || '-'}</span>
+        </div>
+      ),
     },
     {
       accessorKey: 'description',
@@ -78,14 +102,61 @@ export const walletColumns = (
           title={t(`${namespace}.balance`)}
         />
       ),
-      cell: ({ row }) => (
-        <div>
-          {Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(row.getValue('balance'))}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const balance = Number(row.getValue('balance')) || 0;
+        // Use workspace currency for display consistency
+        const currency = workspaceCurrency;
+        const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
+
+        const formattedBalance = Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: currency === 'VND' ? 0 : 2,
+          signDisplay: 'exceptZero',
+        }).format(balance);
+
+        const isPositive = balance > 0;
+        const isNegative = balance < 0;
+        const isNeutral = balance === 0;
+
+        return (
+          <div className="flex items-center gap-2">
+            {isPositive && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green',
+                  'flex items-center gap-1'
+                )}
+              >
+                <TrendingUp className="h-3 w-3" />
+                {formattedBalance}
+              </Badge>
+            )}
+            {isNegative && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red',
+                  'flex items-center gap-1'
+                )}
+              >
+                <TrendingDown className="h-3 w-3" />
+                {formattedBalance}
+              </Badge>
+            )}
+            {isNeutral && (
+              <Badge
+                variant="outline"
+                className="font-semibold text-muted-foreground"
+              >
+                {formattedBalance}
+              </Badge>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'type',
@@ -147,6 +218,7 @@ export const walletColumns = (
           href={row.original.href}
           canUpdateWallets={extraData?.canUpdateWallets}
           canDeleteWallets={extraData?.canDeleteWallets}
+          isPersonalWorkspace={extraData?.isPersonalWorkspace}
         />
       ),
     },

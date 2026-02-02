@@ -105,6 +105,7 @@ interface MigrationStateReturn {
   setDuplicates: (module: MigrationModule, duplicates: number) => void;
   setUpdates: (module: MigrationModule, updates: number) => void;
   setNewRecords: (module: MigrationModule, newRecords: number) => void;
+  setRecordsToSync: (module: MigrationModule, recordsToSync: number) => void;
   setStage: (module: MigrationModule, stage: MigrationStage) => void;
   setExistingInternalData: (
     module: MigrationModule,
@@ -120,6 +121,10 @@ interface MigrationStateReturn {
     totalNewRecords: number;
     totalUpdates: number;
     totalDuplicates: number;
+    /** Total records that need syncing (new + updates) across all modules */
+    totalRecordsToSync: number;
+    /** Efficiency percentage: duplicates skipped / total external */
+    efficiencyPercent: number;
     modulesWithData: number;
     completedModules: number;
     runningModules: number;
@@ -480,6 +485,13 @@ export function useMigrationState(
     [updateModuleState]
   );
 
+  const setRecordsToSync = useCallback(
+    (module: MigrationModule, recordsToSync: number) => {
+      updateModuleState(module, { recordsToSync });
+    },
+    [updateModuleState]
+  );
+
   const setStage = useCallback(
     (module: MigrationModule, stage: MigrationStage) => {
       updateModuleState(module, { stage });
@@ -515,11 +527,21 @@ export function useMigrationState(
   }, []);
 
   // Computed stats
+  const totalExternal = Object.values(migrationData).reduce(
+    (acc, v) => acc + (v?.externalTotal ?? 0),
+    0
+  );
+  const totalDuplicates = Object.values(migrationData).reduce(
+    (acc, v) => acc + (v?.duplicates ?? 0),
+    0
+  );
+  const totalRecordsToSync = Object.values(migrationData).reduce(
+    (acc, v) => acc + (v?.recordsToSync ?? 0),
+    0
+  );
+
   const stats = {
-    totalExternal: Object.values(migrationData).reduce(
-      (acc, v) => acc + (v?.externalTotal ?? 0),
-      0
-    ),
+    totalExternal,
     totalSynced: Object.values(migrationData).reduce(
       (acc, v) =>
         acc + ((v?.internalData as unknown[] | undefined)?.length ?? 0),
@@ -533,10 +555,13 @@ export function useMigrationState(
       (acc, v) => acc + (v?.updates ?? 0),
       0
     ),
-    totalDuplicates: Object.values(migrationData).reduce(
-      (acc, v) => acc + (v?.duplicates ?? 0),
-      0
-    ),
+    totalDuplicates,
+    totalRecordsToSync,
+    // Efficiency: percentage of records that were skipped (duplicates / total)
+    efficiencyPercent:
+      totalExternal > 0
+        ? Math.round((totalDuplicates / totalExternal) * 100)
+        : 0,
     modulesWithData: Object.values(migrationData).filter(
       (v) => v?.externalData && (v.externalData as unknown[]).length > 0
     ).length,
@@ -603,6 +628,7 @@ export function useMigrationState(
     setDuplicates,
     setUpdates,
     setNewRecords,
+    setRecordsToSync,
     setStage,
     setExistingInternalData,
     resetData,

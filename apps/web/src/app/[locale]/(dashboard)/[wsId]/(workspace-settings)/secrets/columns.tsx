@@ -8,6 +8,7 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { HelpCircle, Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
 import {
@@ -22,10 +23,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { KNOWN_SECRETS } from './constants';
 import { SecretRowActions } from './row-actions';
 
-export const secretColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceSecret>[] => {
+export const secretColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceSecret>): ColumnDef<WorkspaceSecret>[] => {
   const params = useParams();
   const router = useRouter();
   const wsId = params.wsId as string;

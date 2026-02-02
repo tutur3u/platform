@@ -26,10 +26,11 @@ import {
   ClockFading,
   Database,
   FileText,
+  Fish,
   FolderSync,
   GalleryVerticalEnd,
-  Goal,
   GraduationCap,
+  Group,
   HandCoins,
   HardDrive,
   hexagons3,
@@ -56,7 +57,6 @@ import {
   Radio,
   ReceiptText,
   Repeat,
-  RotateCcw,
   RulerDimensionLine,
   ScanSearch,
   ScreenShare,
@@ -138,25 +138,64 @@ export async function WorkspaceNavigationLinks({
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
 
   // Parallelize user-dependent queries
-  const [rootMemberData, workspacePermissions, platformUserRole] =
-    await Promise.all([
-      user
-        ? supabase
-            .from('workspace_members')
-            .select('user_id')
-            .eq('ws_id', ROOT_WORKSPACE_ID)
-            .eq('user_id', user.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      getPermissions({ wsId: resolvedWorkspaceId }),
-      user
-        ? supabase
-            .from('platform_user_roles')
-            .select('allow_discord_integrations')
-            .eq('user_id', user.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+  const [
+    rootMemberData,
+    workspacePermissions,
+    platformUserRole,
+    userFinanceRouteConfig,
+    workspaceFinanceRouteConfig,
+    userInvoiceVisibilityConfig,
+    workspaceInvoiceVisibilityConfig,
+  ] = await Promise.all([
+    user
+      ? supabase
+          .from('workspace_members')
+          .select('user_id')
+          .eq('ws_id', ROOT_WORKSPACE_ID)
+          .eq('user_id', user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    getPermissions({ wsId: resolvedWorkspaceId }),
+    user
+      ? supabase
+          .from('platform_user_roles')
+          .select('allow_discord_integrations')
+          .eq('user_id', user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Get user's finance default route preference
+    user
+      ? supabase
+          .from('user_configs')
+          .select('value')
+          .eq('user_id', user.id)
+          .eq('id', 'FINANCE_DEFAULT_ROUTE')
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Get workspace's finance default route setting
+    supabase
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', resolvedWorkspaceId)
+      .eq('id', 'finance_default_route')
+      .maybeSingle(),
+    // Get user's invoice visibility preference
+    user
+      ? supabase
+          .from('user_configs')
+          .select('value')
+          .eq('user_id', user.id)
+          .eq('id', 'FINANCE_SHOW_INVOICES')
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Get workspace's invoice visibility setting
+    supabase
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', resolvedWorkspaceId)
+      .eq('id', 'finance_show_invoices')
+      .maybeSingle(),
+  ]);
 
   const { withoutPermission } = workspacePermissions;
 
@@ -167,6 +206,37 @@ export async function WorkspaceNavigationLinks({
 
   const allowDiscordIntegrations =
     platformUserRole.data?.allow_discord_integrations ?? false;
+
+  // Compute effective finance default route
+  // Priority: user preference > workspace setting > default (overview)
+  const USE_WORKSPACE_DEFAULT = '__workspace_default__';
+  const userFinanceRoute = userFinanceRouteConfig.data?.value;
+  const workspaceFinanceRoute = workspaceFinanceRouteConfig.data?.value || '';
+
+  const effectiveFinanceRouteSuffix =
+    userFinanceRoute && userFinanceRoute !== USE_WORKSPACE_DEFAULT
+      ? userFinanceRoute
+      : workspaceFinanceRoute;
+
+  // Compute effective invoice visibility
+  // Default: disabled for personal, enabled for non-personal
+  const invoiceWorkspaceDefault = !isPersonal;
+  const userInvoiceValue = userInvoiceVisibilityConfig.data?.value;
+  const workspaceInvoiceValue = workspaceInvoiceVisibilityConfig.data?.value;
+
+  // Parse workspace setting (stored as string 'true'/'false')
+  const workspaceShowInvoices =
+    workspaceInvoiceValue !== undefined && workspaceInvoiceValue !== null
+      ? String(workspaceInvoiceValue) === 'true'
+      : invoiceWorkspaceDefault;
+
+  // Parse user setting - if it's '__workspace_default__' or undefined, use workspace setting
+  const showInvoices =
+    userInvoiceValue === undefined ||
+    userInvoiceValue === null ||
+    userInvoiceValue === '__workspace_default__'
+      ? workspaceShowInvoices
+      : String(userInvoiceValue) === 'true';
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -180,6 +250,17 @@ export async function WorkspaceNavigationLinks({
       href: `/${personalOrWsId}/notifications`,
       aliases: [`/${personalOrWsId}/notifications`],
       icon: <Bell className="h-5 w-5" />,
+    },
+    null,
+    {
+      title: t('sidebar_tabs.tuna'),
+      href: `/${personalOrWsId}/tuna`,
+      icon: <Fish className="h-5 w-5" />,
+      disabled: !isPersonal,
+      requiredWorkspaceTier: createTierRequirement('tuna', {
+        alwaysShow: true,
+      }),
+      experimental: 'beta',
     },
     null,
     {
@@ -410,6 +491,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/transactions/categories`,
         `/${personalOrWsId}/finance/tags`,
         `/${personalOrWsId}/finance/invoices`,
+        `/${personalOrWsId}/finance/debts`,
         `/${personalOrWsId}/finance/settings`,
       ],
       icon: <Banknote className="h-5 w-5" />,
@@ -418,7 +500,7 @@ export async function WorkspaceNavigationLinks({
       }),
       href: withoutPermission('manage_finance')
         ? undefined
-        : `/${personalOrWsId}/finance`,
+        : `/${personalOrWsId}/finance${effectiveFinanceRouteSuffix}`,
       children: [
         {
           title: t('workspace-finance-tabs.overview'),
@@ -445,32 +527,38 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-finance-tabs.invoices'),
           href: `/${personalOrWsId}/finance/invoices`,
           icon: <ReceiptText className="h-5 w-5" />,
-          disabled: withoutPermission('view_invoices'),
+          disabled: !showInvoices || withoutPermission('view_invoices'),
         },
         null,
-        {
-          title: t('workspace-finance-tabs.recurring'),
-          href: `/${personalOrWsId}/finance/recurring`,
-          icon: <RotateCcw className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
-        },
-        {
-          title: t('workspace-finance-tabs.budgets'),
-          href: `/${personalOrWsId}/finance/budgets`,
-          icon: <Goal className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
-        },
-        {
-          title: t('workspace-finance-tabs.analytics'),
-          href: `/${personalOrWsId}/finance/analytics`,
-          icon: <ChartArea className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
-        },
+        // {
+        //   title: t('workspace-finance-tabs.debts'),
+        //   href: `/${personalOrWsId}/finance/debts`,
+        //   icon: <HandCoins className="h-5 w-5" />,
+        //   disabled: withoutPermission('manage_finance'),
+        // },
+        // {
+        //   title: t('workspace-finance-tabs.recurring'),
+        //   href: `/${personalOrWsId}/finance/recurring`,
+        //   icon: <RotateCcw className="h-5 w-5" />,
+        //   disabled: withoutPermission('manage_finance'),
+        // },
+        // {
+        //   title: t('workspace-finance-tabs.budgets'),
+        //   href: `/${personalOrWsId}/finance/budgets`,
+        //   icon: <Goal className="h-5 w-5" />,
+        //   disabled: withoutPermission('manage_finance'),
+        // },
+        // {
+        //   title: t('workspace-finance-tabs.analytics'),
+        //   href: `/${personalOrWsId}/finance/analytics`,
+        //   icon: <ChartArea className="h-5 w-5" />,
+        //   disabled: withoutPermission('manage_finance'),
+        // },
         null,
         {
           title: t('workspace-finance-tabs.categories'),
           href: `/${personalOrWsId}/finance/transactions/categories`,
-          icon: <Tags className="h-5 w-5" />,
+          icon: <Group className="h-5 w-5" />,
           disabled: withoutPermission('manage_finance'),
         },
         {

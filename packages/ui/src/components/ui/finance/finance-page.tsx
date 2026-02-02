@@ -2,17 +2,15 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { BudgetAlerts } from '@tuturuuu/ui/finance/budgets/budget-alerts';
-import { DailyTotalChart } from '@tuturuuu/ui/finance/shared/charts/daily-total-chart';
-import { MonthlyTotalChart } from '@tuturuuu/ui/finance/shared/charts/monthly-total-chart';
+import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
+import { DailyTotalChartClient } from '@tuturuuu/ui/finance/shared/charts/daily-total-chart-client';
+import { MonthlyTotalChartClient } from '@tuturuuu/ui/finance/shared/charts/monthly-total-chart-client';
 import ConfidentialToggle from '@tuturuuu/ui/finance/shared/confidential-toggle';
 import { DashboardHeader } from '@tuturuuu/ui/finance/shared/dashboard-header';
 import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
-import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
-import IncomeStatistics from '@tuturuuu/ui/finance/statistics/income';
 import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';
-import TotalBalanceStatistics from '@tuturuuu/ui/finance/statistics/total-balance';
 import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/transaction-categories';
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
@@ -25,9 +23,16 @@ import { Suspense } from 'react';
 interface Props {
   wsId: string;
   searchParams: FinanceDashboardSearchParams;
+  currency?: string;
+  isPersonalWorkspace?: boolean;
 }
 
-export default async function FinancePage({ wsId, searchParams }: Props) {
+export default async function FinancePage({
+  wsId,
+  searchParams,
+  currency = 'USD',
+  isPersonalWorkspace = false,
+}: Props) {
   const sp = searchParams;
 
   const { containsPermission, permissions } = await getPermissions({ wsId });
@@ -41,12 +46,6 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
 
   // Parse includeConfidential from URL param (defaults to true if not set)
   const includeConfidentialBool = sp.includeConfidential !== 'false';
-
-  const { data: dailyData } = await getDailyData(wsId, includeConfidentialBool);
-  const { data: monthlyData } = await getMonthlyData(
-    wsId,
-    includeConfidentialBool
-  );
 
   const { data: recentTransactions } = await getRecentTransactions(wsId);
 
@@ -69,18 +68,42 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
 
       <BudgetAlerts wsId={wsId} className="mb-4" />
 
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-          <TotalBalanceStatistics wsId={wsId} searchParams={sp} />
+      <div className="grid items-end gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {/*<Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
+          <TotalBalanceStatistics
+            wsId={wsId}
+            currency={currency}
+            searchParams={sp}
+          />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <IncomeStatistics wsId={wsId} searchParams={sp} />
+          <IncomeStatistics wsId={wsId} currency={currency} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <ExpenseStatistics wsId={wsId} searchParams={sp} />
+          <ExpenseStatistics
+            wsId={wsId}
+            currency={currency}
+            searchParams={sp}
+          />
         </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <MonthlyIncomeStatistics
+            wsId={wsId}
+            currency={currency}
+            searchParams={sp}
+          />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <MonthlyExpenseStatistics
+            wsId={wsId}
+            currency={currency}
+            searchParams={sp}
+          />
+        </Suspense>*/}
 
         <Suspense fallback={<LoadingStatisticCard />}>
           <WalletsStatistics wsId={wsId} searchParams={sp} />
@@ -98,19 +121,39 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
           <InvoicesStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
 
-        <DailyTotalChart data={dailyData} className="col-span-full" />
+        <DailyTotalChartClient
+          wsId={wsId}
+          currency={currency}
+          includeConfidential={includeConfidentialBool}
+          className="col-span-full"
+        />
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
 
-        <MonthlyTotalChart data={monthlyData} className="col-span-full mb-8" />
+        <MonthlyTotalChartClient
+          wsId={wsId}
+          currency={currency}
+          includeConfidential={includeConfidentialBool}
+          className="col-span-full"
+        />
 
-        <Separator className="col-span-full my-4" />
+        <Separator className="col-span-full my-3 sm:my-4" />
+
+        <CategoryBreakdownChart
+          wsId={wsId}
+          currency={currency}
+          includeConfidential={includeConfidentialBool}
+          className="col-span-full"
+        />
+
+        <Separator className="col-span-full my-3 sm:my-4" />
 
         <CustomDataTable
           data={transactionsData}
           columnGenerator={transactionColumns}
+          extraData={{ currency, isPersonalWorkspace }}
           namespace="transaction-data-table"
           className="col-span-full"
           defaultVisibility={{
@@ -124,34 +167,6 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
       </div>
     </>
   );
-}
-
-async function getDailyData(wsId: string, includeConfidential: boolean) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase.rpc('get_daily_income_expense', {
-    _ws_id: wsId,
-    include_confidential: includeConfidential,
-  });
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: data || [], count };
-}
-
-async function getMonthlyData(wsId: string, includeConfidential: boolean) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase.rpc('get_monthly_income_expense', {
-    _ws_id: wsId,
-    include_confidential: includeConfidential,
-  });
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: data || [], count };
 }
 
 async function getRecentTransactions(wsId: string) {

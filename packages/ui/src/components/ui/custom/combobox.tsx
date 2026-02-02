@@ -19,6 +19,9 @@ import { Separator } from '../separator';
 export type ComboboxOption = {
   value: string;
   label: string;
+  icon?: React.ReactNode;
+  /** Optional color for styling */
+  color?: string;
 };
 
 export type ComboboxAction = {
@@ -113,9 +116,17 @@ export function Combobox({
       onChange?.(options?.[0]?.value ?? '');
   }, [onChange, selected, options, useFirstValueAsDefault]);
 
+  // Find the selected option to get its icon and color for the trigger button (single mode only)
+  const selectedOption = React.useMemo(() => {
+    if (mode === 'single') {
+      return options.find((option) => option.value === selected);
+    }
+    return undefined;
+  }, [mode, options, selected]);
+
   const selectedLabel =
     mode === 'single'
-      ? options.find((option) => option.value === selected)?.label
+      ? selectedOption?.label
       : mode === 'multiple' && Array.isArray(selected)
         ? selected
             .map(
@@ -173,8 +184,51 @@ export function Combobox({
             )}
             disabled={disabled}
           >
-            {label ?? selectedLabel ?? placeholder}
-            <ChevronsUpDown className="opacity-50" />
+            <span
+              className={cn(
+                'flex min-w-0 items-center gap-2',
+                !selectedLabel && 'text-muted-foreground'
+              )}
+            >
+              {selectedOption?.icon && (
+                <span className="flex shrink-0 items-center justify-center">
+                  {React.isValidElement(selectedOption.icon)
+                    ? React.cloneElement(
+                        selectedOption.icon as React.ReactElement<{
+                          style?: React.CSSProperties;
+                        }>,
+                        {
+                          style: selectedOption.color
+                            ? {
+                                ...((
+                                  selectedOption.icon as React.ReactElement<{
+                                    style?: React.CSSProperties;
+                                  }>
+                                ).props?.style || {}),
+                                color: selectedOption.color,
+                              }
+                            : (
+                                selectedOption.icon as React.ReactElement<{
+                                  style?: React.CSSProperties;
+                                }>
+                              ).props?.style,
+                        }
+                      )
+                    : selectedOption.icon}
+                </span>
+              )}
+              <span
+                className="truncate"
+                style={
+                  selectedOption?.color
+                    ? { color: selectedOption.color }
+                    : undefined
+                }
+              >
+                {label ?? selectedLabel ?? placeholder}
+              </span>
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -261,10 +315,46 @@ export function Combobox({
                       }
                     }}
                   >
-                    {option.label}
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      {option.icon && (
+                        <span className="flex shrink-0 items-center justify-center">
+                          {React.isValidElement(option.icon)
+                            ? React.cloneElement(
+                                option.icon as React.ReactElement<{
+                                  style?: React.CSSProperties;
+                                }>,
+                                {
+                                  style: option.color
+                                    ? {
+                                        ...((
+                                          option.icon as React.ReactElement<{
+                                            style?: React.CSSProperties;
+                                          }>
+                                        ).props?.style || {}),
+                                        color: option.color,
+                                      }
+                                    : (
+                                        option.icon as React.ReactElement<{
+                                          style?: React.CSSProperties;
+                                        }>
+                                      ).props?.style,
+                                }
+                              )
+                            : option.icon}
+                        </span>
+                      )}
+                      <span
+                        className="truncate"
+                        style={
+                          option.color ? { color: option.color } : undefined
+                        }
+                      >
+                        {option.label}
+                      </span>
+                    </span>
                     <Check
                       className={cn(
-                        'ml-auto',
+                        'ml-auto shrink-0',
                         isSelected(option.value) ? 'opacity-100' : 'opacity-0'
                       )}
                     />

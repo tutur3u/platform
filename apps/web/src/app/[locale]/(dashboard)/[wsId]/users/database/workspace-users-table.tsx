@@ -52,6 +52,7 @@ interface Props {
   initialData: WorkspaceUsersResponse;
   toolbarImportContent?: React.ReactNode;
   toolbarExportContent?: React.ReactNode;
+  toolbarActions?: React.ReactNode;
 }
 
 export function WorkspaceUsersTable({
@@ -62,6 +63,7 @@ export function WorkspaceUsersTable({
   initialData,
   toolbarImportContent,
   toolbarExportContent,
+  toolbarActions,
 }: Props) {
   const t = useTranslations();
   const userStatusLabels = useUserStatusLabels(wsId);
@@ -348,6 +350,7 @@ export function WorkspaceUsersTable({
         }
         toolbarImportContent={toolbarImportContent}
         toolbarExportContent={toolbarExportContent}
+        toolbarActions={toolbarActions}
         onSearch={handleSearch}
         setParams={handleSetParams}
         resetParams={handleResetParams}

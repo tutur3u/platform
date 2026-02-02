@@ -47,6 +47,7 @@ Mandatory guardrails:
 11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
 12. Verification: Run `bun check` at the end of your work. This unified command runs formatting, tests, type-checking, and i18n checks (`bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check`). All checks MUST pass. This is a mandatory requirement.
 13. CI/Workflow Configuration: When adding or modifying GitHub Actions workflows in `.github/workflows/`, ALWAYS update `tuturuuu.ts` at the repository root. Add an entry for the new workflow filename (e.g., `"my-workflow.yaml": true`). The workflow must include a `check-ci` job that calls `.github/workflows/ci-check.yml` and all main jobs must depend on it with `needs: [check-ci]` and `if: needs.check-ci.outputs.should_run == 'true'`.
+14. Session Retrospective (MANDATORY): At the END of every co-working session, ALWAYS review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` files. Document any mistakes made, lessons learned, and proposed improvements. Update these files with new rules or clarifications to prevent repeating the same mistakes in future sessions. This continuous improvement practice is NON-NEGOTIABLE for all sessions.
 
 Prohibited actions (HARD STOP - agents must NEVER do these):
 
@@ -311,6 +312,8 @@ Follow Conventional Commits & Branch naming (see `apps/docs/git-conventions.mdx`
 - Scope = package or app directory name (e.g., `feat(ui): ...`).
 - Add `!` or `BREAKING CHANGE:` footer for breaking changes.
 - Keep PR title aligned with primary commit.
+- **ALWAYS ask for user approval before creating commits** – never commit without explicit confirmation.
+- **Prefer atomic commits by scope** – when changes span multiple areas, offer to commit them separately (e.g., one commit per package/app) for cleaner git history and easier reverts.
 
 ### 5.2 TypeScript
 
@@ -1445,9 +1448,70 @@ Label Stability in README:
 - `@stable` (backwards compatible changes only)
 - `@frozen` (changes require BREAKING notice)
 
-## 12. AI Model Usage & Fallback Policy
+## 12. Session Retrospective & Continuous Improvement
 
-### 12.1 Model Selection Principles
+**MANDATORY FOR ALL CO-WORKING SESSIONS**
+
+At the END of every co-working session, agents MUST conduct a retrospective review to ensure continuous improvement of the operating guidelines.
+
+### 12.1 Retrospective Workflow
+
+1. **Review Current Session**: Identify any mistakes made, edge cases encountered, or patterns that caused confusion.
+2. **Document Learnings**: Note specific issues with clear examples of what went wrong and what the correct approach should be.
+3. **Propose Updates**: Draft improvements to `AGENTS.md`, `CLAUDE.md`, and/or `GEMINI.md` that would prevent similar issues.
+4. **Apply Updates**: Update the relevant markdown files with new rules, clarifications, or examples.
+
+### 12.2 What to Document
+
+| Category | Examples |
+| --- | --- |
+| Mistakes Made | Used wrong command, violated a guardrail, made incorrect assumptions |
+| Edge Cases | Scenarios not covered by existing rules that caused confusion |
+| Ambiguities | Rules that were unclear and led to wrong decisions |
+| Missing Guidelines | Patterns or workflows that should be documented but weren't |
+| Improved Patterns | Better approaches discovered during the session |
+
+### 12.3 Update Format
+
+When adding new rules or clarifications:
+
+1. **Be Specific**: Include concrete examples of the mistake and the correct approach.
+2. **Add Context**: Explain WHY the rule exists to help agents understand the reasoning.
+3. **Cross-Reference**: Link to related sections if applicable.
+4. **Keep Consistent**: Match the tone and format of existing documentation.
+
+### 12.4 Session Summary Template
+
+At session end, provide a brief summary:
+
+```markdown
+## Session Retrospective
+
+### Mistakes/Issues Encountered
+- [List specific issues]
+
+### Lessons Learned
+- [Key takeaways]
+
+### Documentation Updates Made
+- [List of changes to AGENTS.md, CLAUDE.md, GEMINI.md]
+
+### Proposed Future Improvements
+- [Any additional suggestions for next sessions]
+```
+
+### 12.5 Non-Negotiable Requirements
+
+- ❌ **NEVER** end a session without reviewing these guideline files
+- ❌ **NEVER** repeat the same mistake twice without documenting it
+- ✅ **ALWAYS** update documentation when discovering gaps or ambiguities
+- ✅ **ALWAYS** leave the guidelines better than you found them (Boy Scout Rule for docs)
+
+This continuous improvement process ensures that the operating guidelines evolve with real-world usage and become more robust over time.
+
+## 13. AI Model Usage & Fallback Policy
+
+### 13.1 Model Selection Principles
 
 - Prefer fastest model that satisfies quality for structured object tasks (e.g., `gemini-2.0-flash-*` for low-latency generation).
 - Elevate to higher context model (e.g., `gemini-2.0-pro-*`) when:
@@ -1455,7 +1519,7 @@ Label Stability in README:
   - Prior attempt failed with truncation / hallucination flagged by validation.
 - For deterministic schema compliance: rely on Vercel AI SDK `generateObject` / `streamObject` with Zod schema.
 
-### 12.2 Fallback Order (Example)
+### 13.2 Fallback Order (Example)
 
 1. `gemini-2.0-flash-001`
 2. `gemini-2.0-pro-exp-02-05`
@@ -1463,7 +1527,7 @@ Label Stability in README:
 
 Document any deviation inside PR description (Reason + Observed Failure Mode).
 
-### 12.3 Error Handling Strategy
+### 13.3 Error Handling Strategy
 
 | Error Type             | Detect                 | Action                                                                 |
 | ---------------------- | ---------------------- | ---------------------------------------------------------------------- |
@@ -1473,26 +1537,26 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 | Timeout                | Exceeds `maxDuration`  | Abort controller; fallback to shorter prompt or flash model            |
 | Content filter blocked | Provider flag          | Return 400 with generic safe message; do not retry automatically       |
 
-### 12.4 Prompt Hygiene
+### 13.4 Prompt Hygiene
 
 - Always isolate user-provided text with clear boundary markers: `USER_CONTENT_START` / `USER_CONTENT_END` (or similar) when risk of injection.
 - Remove disallowed tokens / control sequences before sending.
 - Avoid echoing secret-like substrings using a simple regex filter before model call (e.g., patterns for API key shapes) – if detected, replace with `[REDACTED]` and log sanitized event.
 
-### 12.5 Telemetry (Future Scope)
+### 13.5 Telemetry (Future Scope)
 
 - If adding telemetry hooks: ensure they capture model name, latency bucket, success/failure classification, token estimate; never raw prompt or full output unless separately consented.
 
-### 12.6 Caching (Not Yet Enabled)
+### 13.6 Caching (Not Yet Enabled)
 
 - Do not implement ad-hoc caching of AI responses without explicit product requirement; risk of stale sensitive data leakage.
 
-### 12.7 Large Output Strategy
+### 13.7 Large Output Strategy
 
 - Prefer streaming for user-perceivable partial progress (`streamObject`).
 - For bulk inserts (e.g., large flashcard sets) validate size thresholds (< defined row cap) before DB write; chunk if necessary.
 
-## 13. Glossary
+## 14. Glossary
 
 | Term                     | Definition                                                                                                                                   |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1518,3 +1582,4 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 | Dialog Components        | Accessible modal components from `@tuturuuu/ui/dialog`; must be used instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). |
 | Bilingual Translations   | Mandatory requirement to provide user-facing strings in both English (`en.json`) and Vietnamese (`vi.json`) simultaneously.                  |
 | Translation Key          | Hierarchical identifier (e.g., `workspace-finance-tabs.recurring`) used to reference localized strings via `next-intl`.                      |
+| Session Retrospective    | Mandatory end-of-session review of `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` to document mistakes, learnings, and improvements for future sessions. |

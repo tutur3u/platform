@@ -2,17 +2,19 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceQuizSet } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { QuizSetRowActions } from './row-actions';
 
-export const getQuizSetColumns = (
-  t: any,
-  namespace: string | undefined,
-  _: any,
-  extraData?: any
-): ColumnDef<WorkspaceQuizSet>[] => [
+export const getQuizSetColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<WorkspaceQuizSet> & {
+  extraData?: { wsId: string; moduleId?: string };
+}): ColumnDef<WorkspaceQuizSet>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

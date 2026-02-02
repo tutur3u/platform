@@ -2,19 +2,21 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { ProductWarehouseRowActions } from './row-actions';
 
-export const productWarehouseColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any[],
+export const productWarehouseColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<ProductWarehouse> & {
   extraData?: {
     canDeleteInventory?: boolean;
     canUpdateInventory?: boolean;
-  }
-): ColumnDef<ProductWarehouse>[] => [
+  };
+}): ColumnDef<ProductWarehouse>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

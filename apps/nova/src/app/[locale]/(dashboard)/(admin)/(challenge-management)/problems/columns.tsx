@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   DropdownMenu,
@@ -29,12 +30,16 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import EditProblemDialog from './editProblemDialog';
 
-export function getProblemColumns(
-  t: any,
-  _: string | undefined,
-  __: any[] | undefined,
-  _extraData?: any
-): ColumnDef<ExtendedNovaProblem>[] {
+interface ProblemExtraData {
+  filteredChallengeId?: string;
+}
+
+export function getProblemColumns({
+  t,
+  extraData,
+}: ColumnGeneratorOptions<ExtendedNovaProblem> & {
+  extraData?: ProblemExtraData;
+}): ColumnDef<ExtendedNovaProblem>[] {
   return [
     {
       accessorKey: 'id',
@@ -66,8 +71,8 @@ export function getProblemColumns(
       ),
       cell: ({ row }) => {
         const isHighlighted =
-          _extraData?.filteredChallengeId &&
-          row.original.challenge_id === _extraData.filteredChallengeId;
+          extraData?.filteredChallengeId &&
+          row.original.challenge_id === extraData.filteredChallengeId;
 
         return (
           <span className={isHighlighted ? 'font-semibold text-primary' : ''}>

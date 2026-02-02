@@ -2,6 +2,7 @@ import {
   type CountdownTime,
   dayjs,
   FOUNDING_DATE,
+  JSC_INCORPORATION_DATE,
   QUARTERS,
   type YearInfo,
 } from './types';
@@ -72,6 +73,7 @@ export function calculateYearInfo(): YearInfo {
   );
   const daysRemaining = Math.max(0, totalDays - daysPassed);
 
+  // Tuturuuu birthday (June 20)
   const isBirthday = currentMonth === 6 && currentDay === 20;
   const thisYearBirthday = dayjs().month(5).date(20).startOf('day');
   let nextBirthday = thisYearBirthday;
@@ -79,6 +81,17 @@ export function calculateYearInfo(): YearInfo {
     nextBirthday = thisYearBirthday.add(1, 'year');
   }
   const daysUntilBirthday = isBirthday ? 0 : nextBirthday.diff(now, 'day') + 1;
+
+  // Tuturuuu JSC birthday (April 2)
+  const isJscBirthday = currentMonth === 4 && currentDay === 2;
+  const thisYearJscBirthday = dayjs().month(3).date(2).startOf('day');
+  let nextJscBirthday = thisYearJscBirthday;
+  if (now.isAfter(thisYearJscBirthday) && !isJscBirthday) {
+    nextJscBirthday = thisYearJscBirthday.add(1, 'year');
+  }
+  const daysUntilJscBirthday = isJscBirthday
+    ? 0
+    : nextJscBirthday.diff(now, 'day') + 1;
 
   const isYearEndPartyMonth = currentMonth === 12;
   const isYearEndPartyPassed = currentMonth === 1;
@@ -91,10 +104,17 @@ export function calculateYearInfo(): YearInfo {
     ? 0
     : nextYearEndParty.diff(now, 'day') + 1;
 
+  // Tuturuuu age (from June 20, 2022)
   const ageDuration = dayjs.duration(now.diff(FOUNDING_DATE));
   const ageYears = Math.floor(ageDuration.asYears());
   const ageMonths = Math.floor(ageDuration.asMonths() % 12);
   const ageDays = Math.floor(ageDuration.asDays() % 30);
+
+  // Tuturuuu JSC age (from April 2, 2025)
+  const jscAgeDuration = dayjs.duration(now.diff(JSC_INCORPORATION_DATE));
+  const jscAgeYears = Math.max(0, Math.floor(jscAgeDuration.asYears()));
+  const jscAgeMonths = Math.max(0, Math.floor(jscAgeDuration.asMonths() % 12));
+  const jscAgeDays = Math.max(0, Math.floor(jscAgeDuration.asDays() % 30));
 
   return {
     fiscalYear,
@@ -108,6 +128,9 @@ export function calculateYearInfo(): YearInfo {
     isJanuary,
     isBirthday,
     daysUntilBirthday,
+    isJscBirthday,
+    daysUntilJscBirthday,
+    jscAge: { years: jscAgeYears, months: jscAgeMonths, days: jscAgeDays },
     isYearEndPartyMonth,
     isYearEndPartyPassed,
     daysUntilYearEndParty,
@@ -167,6 +190,50 @@ export function calculateBirthdayCountdown(): {
   );
   const isBirthday = now.month() === 5 && now.date() === 20;
   const currentAge = now.diff(FOUNDING_DATE, 'year');
+  let targetBirthday = thisYearBirthday;
+  if (now.isAfter(thisYearBirthday) && !isBirthday) {
+    targetBirthday = nextYearBirthday;
+  }
+  const diff = targetBirthday.diff(now);
+  if (diff > 0 || isBirthday) {
+    if (isBirthday) {
+      return {
+        countdown: { days: 0, hours: 0, minutes: 0, seconds: 0 },
+        nextAge: currentAge,
+        isBirthday: true,
+      };
+    }
+    const dur = dayjs.duration(diff);
+    return {
+      countdown: {
+        days: Math.floor(dur.asDays()),
+        hours: dur.hours(),
+        minutes: dur.minutes(),
+        seconds: dur.seconds(),
+      },
+      nextAge: currentAge + 1,
+      isBirthday: false,
+    };
+  }
+  return { countdown: null, nextAge: currentAge + 1, isBirthday: false };
+}
+
+export function calculateJscBirthdayCountdown(): {
+  countdown: CountdownTime | null;
+  nextAge: number;
+  isBirthday: boolean;
+} {
+  const now = dayjs();
+  const thisYearBirthday = dayjs.tz(
+    `${now.year()}-04-02 00:00:00`,
+    'Asia/Ho_Chi_Minh'
+  );
+  const nextYearBirthday = dayjs.tz(
+    `${now.year() + 1}-04-02 00:00:00`,
+    'Asia/Ho_Chi_Minh'
+  );
+  const isBirthday = now.month() === 3 && now.date() === 2;
+  const currentAge = now.diff(JSC_INCORPORATION_DATE, 'year');
   let targetBirthday = thisYearBirthday;
   if (now.isAfter(thisYearBirthday) && !isBirthday) {
     targetBirthday = nextYearBirthday;

@@ -62,7 +62,6 @@ export const billsMapping = (wsId: string, data: any[]) =>
       notice: i?.content,
       note: i?.note,
       customer_id: i?.customer_id,
-      user_group_id: i?.class_id,
       category_id: categoryId,
       completed_at: i?.created_at,
       creator_id: i?.creator_id,

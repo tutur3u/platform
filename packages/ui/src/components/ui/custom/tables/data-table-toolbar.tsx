@@ -24,6 +24,8 @@ interface DataTableToolbarProps<TData> {
   t?: any;
   importContent?: ReactNode;
   exportContent?: ReactNode;
+  /** Custom toolbar actions rendered directly (not wrapped in dialogs) */
+  toolbarActions?: ReactNode;
   onRefresh: () => void;
   selectedRowsActions?: (selectedRows: TData[]) => ReactNode;
 
@@ -45,6 +47,7 @@ export function DataTableToolbar<TData>({
   namespace,
   importContent,
   exportContent,
+  toolbarActions,
   onRefresh,
   selectedRowsActions,
   onSearch,
@@ -57,8 +60,8 @@ export function DataTableToolbar<TData>({
         (defaultQuery?.length || 0) > 0;
 
   return (
-    <div className="flex flex-col items-start justify-between gap-2 md:flex-row">
-      <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
+    <div className="flex flex-col items-start justify-between gap-2 lg:flex-row">
+      <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
         {disableSearch || (
           <SearchBar
             t={t}
@@ -90,6 +93,8 @@ export function DataTableToolbar<TData>({
         )}
       </div>
 
+      {toolbarActions}
+
       {importContent && (
         <Dialog>
           <DialogTrigger asChild>
@@ -118,7 +123,7 @@ export function DataTableToolbar<TData>({
         </Dialog>
       )}
 
-      <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
+      <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-fit">
         {editContent && (
           <DataTableCreateButton
             newObjectTitle={newObjectTitle}

@@ -20,9 +20,11 @@ export interface FinanceDashboardSearchParams {
 
 export default function FinanceMetrics({
   wsId,
+  currency = 'USD',
   searchParams: sp,
 }: {
   wsId: string;
+  currency?: string;
   searchParams: FinanceDashboardSearchParams;
 }) {
   // const [showFinanceStats, setShowFinanceStats] = useState(false);
@@ -32,15 +34,19 @@ export default function FinanceMetrics({
       {/* <FinanceToggle value={showFinanceStats} onChange={setShowFinanceStats} /> */}
 
       <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-        <TotalBalanceStatistics wsId={wsId} searchParams={sp} />
+        <TotalBalanceStatistics
+          wsId={wsId}
+          currency={currency}
+          searchParams={sp}
+        />
       </Suspense>
 
       <Suspense fallback={<LoadingStatisticCard />}>
-        <IncomeStatistics wsId={wsId} searchParams={sp} />
+        <IncomeStatistics wsId={wsId} currency={currency} searchParams={sp} />
       </Suspense>
 
       <Suspense fallback={<LoadingStatisticCard />}>
-        <ExpenseStatistics wsId={wsId} searchParams={sp} />
+        <ExpenseStatistics wsId={wsId} currency={currency} searchParams={sp} />
       </Suspense>
 
       <Suspense fallback={<LoadingStatisticCard />}>

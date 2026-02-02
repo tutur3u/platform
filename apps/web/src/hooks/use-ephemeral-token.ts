@@ -3,11 +3,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
-async function fetchEphemeralToken(): Promise<{
+async function fetchEphemeralToken(wsId: string): Promise<{
   token: string;
   fetchedAt: number;
 }> {
-  const response = await fetch('/api/v1/live/token', { method: 'POST' });
+  const response = await fetch('/api/v1/live/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ wsId }),
+  });
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch token');
@@ -19,13 +23,14 @@ async function fetchEphemeralToken(): Promise<{
 // Token is valid for 30 minutes, refresh if older than 5 minutes to ensure freshness
 const TOKEN_MAX_AGE_MS = 5 * 60 * 1000;
 
-export function useEphemeralToken() {
+export function useEphemeralToken(wsId: string) {
   const queryClient = useQueryClient();
   const refreshingRef = useRef(false);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['ephemeral-token'],
-    queryFn: fetchEphemeralToken,
+    queryKey: ['ephemeral-token', wsId],
+    queryFn: () => fetchEphemeralToken(wsId),
+    enabled: !!wsId,
     staleTime: TOKEN_MAX_AGE_MS,
     gcTime: 30 * 60 * 1000,
     retry: 1,

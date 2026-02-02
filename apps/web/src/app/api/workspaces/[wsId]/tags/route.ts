@@ -1,3 +1,3 @@
-import { GET } from '@tuturuuu/apis/finance/tags/route';
+import { GET, POST } from '@tuturuuu/apis/finance/tags/route';
 
-export { GET };
+export { GET, POST };

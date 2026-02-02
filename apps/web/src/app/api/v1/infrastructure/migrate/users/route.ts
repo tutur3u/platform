@@ -1,11 +1,14 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { NextResponse } from 'next/server';
-import { batchUpsert } from '../batch-upsert';
+import { batchUpsert, requireDevMode } from '../batch-upsert';
 
 const BATCH_SIZE = 500;
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const supabase = await createClient();
 
   const json = await req.json();

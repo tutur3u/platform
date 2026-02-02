@@ -1,6 +1,6 @@
 'use client';
 
-import { Building, Minus, Package, Plus } from '@tuturuuu/icons';
+import { Building, Minus, Package, Plus, Trash } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -21,17 +21,25 @@ interface Props {
   products: Product[];
   selectedProducts: SelectedProductItem[];
   onSelectedProductsChange: (products: SelectedProductItem[]) => void;
-  groupLinkedProductIds?: string[];
+  groupLinkedProducts?: {
+    productId: string;
+    groupName: string;
+  }[];
+  currency?: string;
 }
 
 export function ProductSelection({
   products,
   selectedProducts,
   onSelectedProductsChange,
-  groupLinkedProductIds = [],
+  groupLinkedProducts = [],
+  currency = 'USD',
 }: Props) {
   const t = useTranslations();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+
+  // Compute locale based on currency
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const availableInventory =
@@ -139,6 +147,7 @@ export function ProductSelection({
                     onAdd={(quantity) =>
                       addProductToInvoice(inventory, quantity)
                     }
+                    currency={currency}
                   />
                 ))}
               </div>
@@ -165,85 +174,102 @@ export function ProductSelection({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {selectedProducts.map((item, index) => (
-                <div
-                  key={`${item.product.id}-${item.inventory.warehouse_id}-${item.inventory.unit_id}-${index}`}
-                  className={`flex items-center justify-between rounded-lg border p-3 ${groupLinkedProductIds.includes(item.product.id) ? 'border-primary bg-primary/5' : ''}`}
-                >
-                  <div className="flex-1">
-                    <p className="font-medium">{item.product.name}</p>
-                    <p className="text-muted-foreground text-sm">
-                      {item.inventory.warehouse_name} •{' '}
-                      {item.inventory.unit_name}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {t('ws-invoices.available')}:{' '}
-                      {item.inventory.amount === null
-                        ? t('ws-invoices.unlimited')
-                        : item.inventory.amount}{' '}
-                      • {t('ws-invoices.price')}:{' '}
-                      {Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                      }).format(item.inventory.price)}
-                    </p>
-                    {groupLinkedProductIds.includes(item.product.id) && (
-                      <div className="mt-1">
-                        <Badge variant="secondary" className="text-[10px]">
-                          {t('ws-invoices.linked_to_group')}
-                        </Badge>
-                      </div>
-                    )}
+              {selectedProducts.map((item, index) => {
+                const linkedGroups = groupLinkedProducts
+                  .filter((lp) => lp.productId === item.product.id)
+                  .map((lp) => lp.groupName);
+
+                return (
+                  <div
+                    key={`${item.product.id}-${item.inventory.warehouse_id}-${item.inventory.unit_id}-${index}`}
+                    className={`flex items-center justify-between rounded-lg border p-3 ${linkedGroups.length > 0 ? 'border-dynamic-gray bg-dynamic-gray/5' : ''}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{item.product.name}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {item.inventory.warehouse_name} •{' '}
+                        {item.inventory.unit_name}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        {t('ws-invoices.available')}:{' '}
+                        {item.inventory.amount === null
+                          ? t('ws-invoices.unlimited')
+                          : item.inventory.amount}{' '}
+                        • {t('ws-invoices.price')}:{' '}
+                        {Intl.NumberFormat(currencyLocale, {
+                          style: 'currency',
+                          currency,
+                        }).format(item.inventory.price)}
+                      </p>
+                      {linkedGroups.length > 0 && (
+                        <div className="mt-1">
+                          <Badge
+                            variant="secondary"
+                            className="whitespace-normal text-[10px]"
+                          >
+                            {t('ws-invoices.linked_to_group')}:{' '}
+                            {linkedGroups.join(', ')}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => updateQuantity(index, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          updateQuantity(
+                            index,
+                            parseInt(e.target.value, 10) || 0
+                          )
+                        }
+                        className="w-16 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        min="1"
+                        {...(item.inventory.amount !== null && {
+                          max: item.inventory.amount,
+                        })}
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => updateQuantity(index, item.quantity + 1)}
+                        disabled={
+                          item.inventory.amount !== null &&
+                          item.quantity >= item.inventory.amount
+                        }
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => removeProductFromInvoice(index)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateQuantity(index, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateQuantity(index, parseInt(e.target.value, 10) || 0)
-                      }
-                      className="w-20 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      min="1"
-                      {...(item.inventory.amount !== null && {
-                        max: item.inventory.amount,
-                      })}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateQuantity(index, item.quantity + 1)}
-                      disabled={
-                        item.inventory.amount !== null &&
-                        item.quantity >= item.inventory.amount
-                      }
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeProductFromInvoice(index)}
-                    >
-                      {t('ws-invoices.remove')}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+
               <div className="border-t pt-3">
                 <div className="flex items-center justify-between font-semibold">
                   <span>Subtotal:</span>
                   <span>
-                    {Intl.NumberFormat('vi-VN', {
+                    {Intl.NumberFormat(currencyLocale, {
                       style: 'currency',
-                      currency: 'VND',
+                      currency,
                     }).format(
                       selectedProducts.reduce(
                         (total, item) =>
@@ -265,11 +291,15 @@ export function ProductSelection({
 interface StockItemProps {
   inventory: ProductInventory;
   onAdd: (quantity: number) => void;
+  currency?: string;
 }
 
-function StockItem({ inventory, onAdd }: StockItemProps) {
+function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
+
+  // Compute locale based on currency
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const handleAdd = () => {
     if (
@@ -293,9 +323,9 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
               ? t('ws-invoices.unlimited')
               : inventory.amount}{' '}
             {inventory.unit_name} •{' '}
-            {Intl.NumberFormat('vi-VN', {
+            {Intl.NumberFormat(currencyLocale, {
               style: 'currency',
-              currency: 'VND',
+              currency,
             }).format(inventory.price)}{' '}
             {t('ws-invoices.each')}
           </p>

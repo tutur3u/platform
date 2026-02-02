@@ -1,9 +1,16 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { batchUpsert, createMigrationResponse } from '../batch-upsert';
+import {
+  batchUpsert,
+  createMigrationResponse,
+  requireDevMode,
+} from '../batch-upsert';
 
-// finance_invoice_products doesn't have ws_id - query via invoice_id -> finance_invoices
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -13,32 +20,17 @@ export async function GET(req: Request) {
     return Response.json({ error: 'ws_id is required' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  // noCookie: true returns sync, so cast is safe
+  const supabase = createAdminClient({
+    noCookie: true,
+  }) as TypedSupabaseClient;
 
-  // Get invoice IDs for this workspace
-  const { data: invoices, error: invoiceError } = await supabase
-    .from('finance_invoices')
-    .select('id')
-    .eq('ws_id', wsId);
-
-  if (invoiceError) {
-    return NextResponse.json(
-      { message: 'Error fetching invoices', error: invoiceError },
-      { status: 500 }
-    );
-  }
-
-  const invoiceIds = invoices?.map((i) => i.id) ?? [];
-  if (invoiceIds.length === 0) {
-    return NextResponse.json({ data: [], count: 0 });
-  }
-
-  // Get products for those invoices
-  const { data, error, count } = await supabase
-    .from('finance_invoice_products')
-    .select('*', { count: 'exact' })
-    .in('invoice_id', invoiceIds)
-    .range(offset, offset + limit - 1);
+  // Use RPC for efficient fetching with proper JOINs
+  // This avoids the 1000-row limit when using .in() queries
+  const { data, error } = await supabase.rpc(
+    'get_finance_invoice_products_by_workspace',
+    { p_ws_id: wsId, p_offset: offset, p_limit: limit }
+  );
 
   if (error) {
     return NextResponse.json(
@@ -47,16 +39,24 @@ export async function GET(req: Request) {
     );
   }
 
-  return NextResponse.json({ data: data ?? [], count: count ?? 0 });
+  const count = data?.[0]?.total_count ?? 0;
+  // Remove total_count from each row
+  const cleanData = (data ?? []).map(({ total_count: _, ...rest }) => rest);
+
+  return NextResponse.json({ data: cleanData, count });
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   // No unique constraint on this table - use plain insert
   // Duplicates should be handled by reconciliation before syncing
   const result = await batchUpsert({
     table: 'finance_invoice_products',
     data: json?.data || [],
+    supabase: createAdminClient({ noCookie: true }),
     // No onConflict - table has no unique constraint
   });
   return createMigrationResponse(result, 'finance-invoice-products');

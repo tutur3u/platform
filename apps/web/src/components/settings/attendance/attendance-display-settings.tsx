@@ -12,13 +12,13 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceConfig } from '@/hooks/use-workspace-config';
 
 interface Props {
   wsId: string;
@@ -43,16 +43,17 @@ export default function AttendanceDisplaySettings({ wsId }: Props) {
     defaultValues: {
       show_managers_in_attendance: true,
     },
+    values: useMemo(() => {
+      if (isLoading || configValue === undefined) return undefined;
+      return {
+        show_managers_in_attendance:
+          configValue.trim().toLowerCase() === 'true',
+      };
+    }, [isLoading, configValue]),
+    resetOptions: {
+      keepDirtyValues: true,
+    },
   });
-
-  useEffect(() => {
-    if (configValue !== undefined) {
-      const value = configValue.trim().toLowerCase() === 'true';
-      form.reset({
-        show_managers_in_attendance: value,
-      });
-    }
-  }, [configValue, form]);
 
   const updateMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {

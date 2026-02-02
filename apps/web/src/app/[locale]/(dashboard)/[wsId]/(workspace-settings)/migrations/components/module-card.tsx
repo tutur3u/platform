@@ -7,6 +7,7 @@ import {
   Pause,
   Play,
   RefreshCcw,
+  SkipForward,
   StopCircle,
   Trash2,
 } from '@tuturuuu/icons';
@@ -66,6 +67,7 @@ export function ModuleCard({
     duplicates,
     updates,
     newRecords,
+    recordsToSync,
     stage,
   } = moduleState;
 
@@ -81,19 +83,34 @@ export function ModuleCard({
       : (externalDataLength / externalTotal) * 100
     : 0;
 
+  // Use recordsToSync (filtered: new + updates) for sync progress when available
+  // This accurately shows progress for actual records being synced, not duplicates
+  const effectiveRecordsToSync =
+    recordsToSync > 0 ? recordsToSync : externalDataLength;
+
   const syncProgress = hasExternalData
     ? skip
       ? 100
-      : externalDataLength > 0
-        ? (internalDataLength / externalDataLength) * 100
-        : externalTotal === 0
-          ? 100 // Nothing to sync (0/0) - show 100%
-          : 0
+      : duplicates > 0 && recordsToSync === 0
+        ? 100 // All duplicates, nothing to sync - show 100%
+        : effectiveRecordsToSync > 0
+          ? (internalDataLength / effectiveRecordsToSync) * 100
+          : externalTotal === 0
+            ? 100 // Nothing to sync (0/0) - show 100%
+            : 0
     : 0;
 
+  // Calculate efficiency percentage (duplicates skipped vs total external)
+  const efficiencyPercent =
+    externalDataLength > 0
+      ? Math.round((duplicates / externalDataLength) * 100)
+      : 0;
+
   return (
-    <Card className={isDisabled || isSkipped ? 'opacity-50' : ''}>
-      <CardHeader className="pb-3">
+    <Card
+      className={`flex h-full flex-col ${isDisabled || isSkipped ? 'opacity-50' : ''}`}
+    >
+      <CardHeader className="flex flex-1 flex-col justify-between p-1 pl-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Tooltip>
@@ -159,7 +176,7 @@ export function ModuleCard({
               </span>
             )}
             {isCompleted && !isLoading && (
-              <span className="flex items-center gap-1 rounded bg-green-100 px-2 py-0.5 font-medium text-green-700 text-xs">
+              <span className="flex items-center gap-1 rounded bg-dynamic-green/10 px-2 py-0.5 font-medium text-dynamic-green text-xs">
                 <CheckCircle2 className="h-3 w-3" />
                 Completed
                 {healthCheckMode && ' (Health Check)'}
@@ -229,9 +246,9 @@ export function ModuleCard({
                   title={isPaused ? 'Resume' : 'Pause'}
                 >
                   {isPaused ? (
-                    <Play className="h-4 w-4 text-green-600" />
+                    <Play className="h-4 w-4 text-dynamic-green" />
                   ) : (
-                    <Pause className="h-4 w-4 text-orange-600" />
+                    <Pause className="h-4 w-4 text-dynamic-orange" />
                   )}
                 </Button>
 
@@ -294,7 +311,7 @@ export function ModuleCard({
       </CardHeader>
 
       {!isDisabled && hasExternalData && (
-        <CardContent className="space-y-3 pt-0">
+        <CardContent className="space-y-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">External fetch</span>
@@ -313,46 +330,64 @@ export function ModuleCard({
             <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-xs">Reconciliation</span>
-                <span className="text-muted-foreground text-xs">
-                  {existingInternalTotal > 0
-                    ? `${existingInternalTotal} existing`
-                    : 'First migration'}
-                </span>
+                <div className="flex items-center gap-2">
+                  {duplicates > 0 && efficiencyPercent > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="flex items-center gap-1 rounded-full bg-dynamic-green/10 px-2 py-0.5 text-dynamic-green text-xs">
+                          <SkipForward className="h-3 w-3" />
+                          {efficiencyPercent}% skipped
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">
+                          {duplicates.toLocaleString()} duplicate records will
+                          be skipped during sync
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  <span className="text-muted-foreground text-xs">
+                    {existingInternalTotal > 0
+                      ? `${existingInternalTotal} existing`
+                      : 'First migration'}
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1 rounded-md bg-green-50 p-2 dark:bg-green-950/30">
+                <div className="space-y-1 rounded-md bg-dynamic-green/10 p-2">
                   <div className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-green-600" />
-                    <span className="text-[10px] text-green-600 uppercase tracking-wide">
+                    <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
+                    <span className="text-[10px] text-dynamic-green uppercase tracking-wide">
                       New
                     </span>
                   </div>
-                  <div className="font-bold text-green-700 text-lg dark:text-green-400">
+                  <div className="font-bold text-dynamic-green text-lg">
                     {newRecords}
                   </div>
                 </div>
 
-                <div className="space-y-1 rounded-md bg-blue-50 p-2 dark:bg-blue-950/30">
+                <div className="space-y-1 rounded-md bg-dynamic-blue/10 p-2">
                   <div className="flex items-center gap-1">
-                    <RefreshCcw className="h-3 w-3 text-blue-600" />
-                    <span className="text-[10px] text-blue-600 uppercase tracking-wide">
+                    <RefreshCcw className="h-3 w-3 text-dynamic-blue" />
+                    <span className="text-[10px] text-dynamic-blue uppercase tracking-wide">
                       Updates
                     </span>
                   </div>
-                  <div className="font-bold text-blue-700 text-lg dark:text-blue-400">
+                  <div className="font-bold text-dynamic-blue text-lg">
                     {updates}
                   </div>
                 </div>
 
-                <div className="space-y-1 rounded-md bg-yellow-50 p-2 dark:bg-yellow-950/30">
+                <div className="space-y-1 rounded-md bg-dynamic-yellow/10 p-2">
                   <div className="flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3 text-yellow-600" />
-                    <span className="text-[10px] text-yellow-600 uppercase tracking-wide">
-                      Dups
+                    <SkipForward className="h-3 w-3 text-dynamic-yellow" />
+                    <span className="text-[10px] text-dynamic-yellow uppercase tracking-wide">
+                      Skipped
                     </span>
                   </div>
-                  <div className="font-bold text-lg text-yellow-700 dark:text-yellow-400">
+                  <div className="font-bold text-dynamic-yellow text-lg">
                     {duplicates}
                   </div>
                 </div>
@@ -363,16 +398,38 @@ export function ModuleCard({
           {!skip && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Synchronized</span>
+                <span className="text-muted-foreground">
+                  Synchronized
+                  {duplicates > 0 && recordsToSync > 0 && (
+                    <span className="ml-1 text-dynamic-green">
+                      ({duplicates} skipped)
+                    </span>
+                  )}
+                </span>
                 <span className="font-medium">
-                  {internalDataLength} / {externalDataLength}
+                  {internalDataLength} / {effectiveRecordsToSync}
+                  {recordsToSync > 0 && recordsToSync < externalDataLength && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="ml-1 cursor-help text-muted-foreground">
+                          of {externalDataLength}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">
+                          Only syncing {recordsToSync} changed records (
+                          {newRecords} new + {updates} updates)
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </span>
               </div>
               <Progress
                 value={syncProgress}
                 className="h-1.5"
                 indicatorClassName={
-                  syncProgress === 100 ? 'bg-green-500' : undefined
+                  syncProgress === 100 ? 'bg-dynamic-green' : undefined
                 }
               />
             </div>

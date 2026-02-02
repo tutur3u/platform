@@ -3,9 +3,13 @@ import {
   batchUpsert,
   createFetchResponse,
   createMigrationResponse,
+  requireDevMode,
 } from '../batch-upsert';
 
 export async function GET(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const url = new URL(req.url);
   const wsId = url.searchParams.get('ws_id');
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -25,6 +29,9 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const devModeError = requireDevMode();
+  if (devModeError) return devModeError;
+
   const json = await req.json();
   const result = await batchUpsert({
     table: 'workspace_user_group_tags',

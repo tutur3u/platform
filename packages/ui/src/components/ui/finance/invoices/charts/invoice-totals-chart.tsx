@@ -87,6 +87,7 @@ interface DateRangeProps {
   setPeriod: (period: InvoiceAnalyticsPeriod) => void;
   className?: string;
   showPeriodTabs?: boolean;
+  currency?: string;
 }
 
 // Props for default mode (no date range, period tabs)
@@ -102,6 +103,7 @@ interface DefaultModeProps {
   setPeriod: (period: InvoiceAnalyticsPeriod) => void;
   className?: string;
   showPeriodTabs?: boolean;
+  currency?: string;
 }
 
 export type InvoiceTotalsChartProps = DateRangeProps | DefaultModeProps;
@@ -112,7 +114,8 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
-  const { period, setPeriod } = props;
+  const { period, setPeriod, currency = 'USD' } = props;
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
   const [metric, setMetric] = useState<InvoiceAnalyticsMetric>('amount');
   const [groupBy, setGroupBy] = useState<InvoiceAnalyticsGroupBy>('wallet');
   const [chartMode, setChartMode] = useState<ChartMode>('stacked');
@@ -249,9 +252,9 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currencyLocale, {
       style: 'currency',
-      currency: 'VND',
+      currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -433,7 +436,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex h-[280px] items-center justify-center">
+        <CardContent className="flex h-70 items-center justify-center">
           <p className="text-muted-foreground text-sm">
             {t('no_data_available')}
           </p>
@@ -517,7 +520,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
       </CardHeader>
 
       <CardContent className="px-2 pb-4">
-        <div className="h-[280px] w-full">
+        <div className="h-70 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -886,13 +889,13 @@ export function InvoiceTotalsChartSkeleton({
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-[180px] rounded-lg" />
-            <Skeleton className="h-8 w-[120px] rounded-lg" />
+            <Skeleton className="h-8 w-45 rounded-lg" />
+            <Skeleton className="h-8 w-30 rounded-lg" />
           </div>
         </div>
       </CardHeader>
       <CardContent className="px-2 pb-4">
-        <div className="flex h-[280px] w-full items-end justify-between gap-1 px-4 py-4">
+        <div className="flex h-70 w-full items-end justify-between gap-1 px-4 py-4">
           {Array.from({ length: 14 }).map((_, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-1">
               <Skeleton

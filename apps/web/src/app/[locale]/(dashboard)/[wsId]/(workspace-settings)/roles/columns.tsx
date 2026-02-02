@@ -3,17 +3,19 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { UserCircle } from '@tuturuuu/icons';
 import type { WorkspaceRole } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { ExpandableRoleRow } from './_components/expandable-role-row';
 import { RoleRowActions } from './row-actions';
 
-export const roleColumns = (
-  t: any,
-  namespace: string | undefined,
-  _?: any[],
-  extraData?: any
-): ColumnDef<WorkspaceRole & { ws_id?: string }>[] => [
+export const roleColumns = ({
+  t,
+  namespace,
+  extraData,
+}: ColumnGeneratorOptions<WorkspaceRole & { ws_id?: string }> & {
+  extraData?: number;
+}): ColumnDef<WorkspaceRole & { ws_id?: string }>[] => [
   {
     id: 'expand',
     header: () => <div className="w-6" />,

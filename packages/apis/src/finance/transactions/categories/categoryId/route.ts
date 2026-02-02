@@ -13,6 +13,8 @@ interface Params {
 const TransactionCategoryUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   is_expense: z.boolean().optional(),
+  icon: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
 });
 
 export async function GET(_: Request, { params }: Params) {

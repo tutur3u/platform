@@ -3,14 +3,15 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCourse } from '@tuturuuu/types';
 import { WorkspaceCourseRowActions } from '@tuturuuu/ui/custom/education/courses/course-row-actions';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
-export const getWorkspaceCourseColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceCourse>[] => [
+export const getWorkspaceCourseColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceCourse>): ColumnDef<WorkspaceCourse>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

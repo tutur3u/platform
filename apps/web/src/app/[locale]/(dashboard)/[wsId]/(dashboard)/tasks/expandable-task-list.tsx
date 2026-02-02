@@ -18,7 +18,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   getIconComponentByKey,
-  type WorkspaceBoardIconKey,
+  type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
@@ -435,7 +435,7 @@ export default function ExpandableTaskList({
                     (() => {
                       const BoardIcon =
                         getIconComponentByKey(
-                          task.list.board.icon as WorkspaceBoardIconKey | null
+                          task.list.board.icon as PlatformIconKey | null
                         ) ?? LayoutGrid;
                       return (
                         <>

@@ -434,12 +434,7 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     const workspaceUserId = workspaceUser?.virtual_user_id || null;
-    const workspaceUserGroup: string | null = null;
-
-    // Determine if this is a subscription invoice (has user_group_id)
-    // Note: workspaceUserGroup is currently always null in this implementation
-    // but we check it for future compatibility
-    const isSubscriptionInvoice = !!workspaceUserGroup;
+    const isSubscriptionInvoice = false;
 
     // Calculate values using backend logic
     let calculatedValues: CalculatedValues;
@@ -500,9 +495,6 @@ export async function POST(req: Request, { params }: Params) {
     // Only add optional fields if they have values
     if (workspaceUserId) {
       invoiceData.creator_id = workspaceUserId;
-    }
-    if (workspaceUserGroup) {
-      invoiceData.user_group_id = workspaceUserGroup;
     }
 
     const { data: invoice, error: invoiceError } = await supabase

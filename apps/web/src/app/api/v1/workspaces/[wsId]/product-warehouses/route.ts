@@ -25,13 +25,12 @@ export async function GET(_: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('inventory_warehouses')
     .select('*')
-    .eq('ws_id', id)
-    .single();
+    .eq('ws_id', id);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: 'Error fetching product warehouses' },
       { status: 500 }
     );
   }

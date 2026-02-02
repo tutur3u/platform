@@ -14,7 +14,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = (await req.json()) as {
     name?: string;
-    icon?: Database['public']['Enums']['workspace_board_icon'] | null;
+    icon?: Database['public']['Enums']['platform_icon'] | null;
     color?: string;
     archived?: boolean;
     group_ids?: string[];

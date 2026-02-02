@@ -3,6 +3,7 @@
 import { CircleDashed } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
 import { usePendingInvoicesCurrentMonthCount } from './hooks';
 
 interface Props {
@@ -11,8 +12,17 @@ interface Props {
 }
 
 export function PendingInvoicesTab({ wsId, label }: Props) {
+  const { data: groupByUserConfig, isLoading: isConfigLoading } =
+    useWorkspaceConfig<string>(
+      wsId,
+      'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
+      'false'
+    );
+
+  const groupByUser = groupByUserConfig === 'true';
+
   const { data: currentMonthCount, isLoading } =
-    usePendingInvoicesCurrentMonthCount(wsId);
+    usePendingInvoicesCurrentMonthCount(wsId, groupByUser, !isConfigLoading);
 
   return (
     <TabsTrigger value="pending" className="gap-2">

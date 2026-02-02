@@ -23,6 +23,8 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'finance-invoices': 'finance_invoices',
   'finance-invoice-products': 'finance_invoice_products',
   'finance-invoice-promotions': 'finance_invoice_promotions',
+  'finance-invoice-user-groups': 'finance_invoice_user_groups',
+  'finance-invoice-transaction-links': 'finance_invoices', // Special: returns id + transaction_id for relinking
   // Wallet tables
   'credit-wallets': 'credit_wallets',
   'wallet-types': 'wallet_types',
@@ -101,6 +103,14 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
 const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
 ]);
+
+// Modules that have dedicated RPC functions for efficient pagination
+// These RPCs use proper JOINs and avoid the Supabase 1000-row default limit
+const MODULE_RPC_MAP: Record<string, string> = {
+  'finance-invoice-user-groups': 'get_finance_invoice_user_groups_by_workspace',
+  'finance-invoice-promotions': 'get_finance_invoice_promotions_by_workspace',
+  'finance-invoice-products': 'get_finance_invoice_products_by_workspace',
+};
 
 // Maximum number of IDs to use in a single .in() query
 // PostgREST/Supabase has limits on query size
@@ -334,6 +344,10 @@ export const GET = withApiAuth<Params>(
         parentTable: 'finance_invoices',
         joinColumn: 'invoice_id',
       },
+      finance_invoice_user_groups: {
+        parentTable: 'finance_invoices',
+        joinColumn: 'invoice_id',
+      },
       // Wallet related - query via workspace_wallets
       credit_wallets: {
         parentTable: 'workspace_wallets',
@@ -374,6 +388,89 @@ export const GET = withApiAuth<Params>(
         joinColumn: 'user_id',
       },
     };
+
+    // finance-invoice-transaction-links: special module that returns only id + transaction_id
+    // for relinking invoices to wallet_transactions after migration
+    if (module === 'finance-invoice-transaction-links') {
+      // Get invoices with transaction_id for relinking
+      const { count: totalCount, error: countError } = await supabase
+        .from('finance_invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('ws_id', wsId)
+        .not('transaction_id', 'is', null);
+
+      if (countError) {
+        console.error('Error counting invoice transaction links:', countError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to count records: ${countError.message}`,
+          500,
+          'COUNT_ERROR'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('finance_invoices')
+        .select('id, transaction_id')
+        .eq('ws_id', wsId)
+        .not('transaction_id', 'is', null)
+        .range(from, from + limit - 1);
+
+      if (error) {
+        console.error('Error fetching invoice transaction links:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount ?? 0,
+        data: data ?? [],
+      });
+    }
+
+    // Check if this module has a dedicated RPC function for efficient pagination
+    // These RPCs use proper JOINs and avoid the Supabase 1000-row default limit
+    // when fetching parent IDs
+    const rpcName = MODULE_RPC_MAP[module];
+    if (rpcName) {
+      const { data, error } = await supabase.rpc(rpcName, {
+        p_ws_id: wsId,
+        p_offset: from,
+        p_limit: limit,
+      });
+
+      if (error) {
+        console.error(`Error calling ${rpcName}:`, error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'RPC_ERROR'
+        );
+      }
+
+      // Extract total_count from first row (RPC includes it in each row)
+      const count = data?.[0]?.total_count ?? 0;
+      // Remove total_count from response data as it's metadata, not actual data
+      const cleanData = (data ?? []).map(
+        ({
+          total_count: _,
+          ...rest
+        }: {
+          total_count: number;
+          [key: string]: unknown;
+        }) => rest
+      );
+
+      return NextResponse.json({
+        count,
+        data: cleanData,
+      });
+    }
 
     // inventory_batch_products needs two-level join (batch -> warehouse)
     if (tableName === 'inventory_batch_products') {

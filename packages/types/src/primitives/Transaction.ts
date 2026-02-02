@@ -1,3 +1,9 @@
+export interface TransactionTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Transaction {
   id?: string;
   href?: string;
@@ -5,6 +11,8 @@ export interface Transaction {
   description?: string;
   category_id?: string;
   category?: string;
+  category_icon?: string | null;
+  category_color?: string | null;
   wallet_id?: string;
   wallet?: string;
   ws_id?: string;
@@ -19,4 +27,5 @@ export interface Transaction {
     email?: string;
     avatar_url?: string;
   };
+  tags?: TransactionTag[];
 }

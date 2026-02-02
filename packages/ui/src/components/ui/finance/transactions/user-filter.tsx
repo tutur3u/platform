@@ -166,7 +166,11 @@ export function UserFilter({
       {/* User Filter Dropdown */}
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 w-full gap-1.5 md:h-8 md:w-auto"
+          >
             <Users className="h-3 w-3" />
             <span className="text-xs">{filterLabel}</span>
           </Button>

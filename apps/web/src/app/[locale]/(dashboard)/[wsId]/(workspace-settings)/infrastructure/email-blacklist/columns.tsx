@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Globe, Mail } from '@tuturuuu/icons';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { EmailBlacklistRowActions } from './row-actions';
@@ -20,10 +21,10 @@ export interface EmailBlacklistEntry {
   } | null;
 }
 
-export const getEmailBlacklistColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<EmailBlacklistEntry>[] => [
+export const getEmailBlacklistColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<EmailBlacklistEntry>): ColumnDef<EmailBlacklistEntry>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

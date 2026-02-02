@@ -2,13 +2,13 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Workspace } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
-export const workspaceColumns = (
-  t: any,
-  _namespace?: string
-): ColumnDef<Workspace>[] => [
+export const workspaceColumns = ({
+  t,
+}: ColumnGeneratorOptions<Workspace>): ColumnDef<Workspace>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

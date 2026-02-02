@@ -67,10 +67,13 @@ const availableModules = [
   'workspace-wallet-transfers',
 
   // TUTURUUU-RELATED MODULES (Finance) - after wallets
+  'coupons', // Must come before finance-invoice-promotions (FK constraint on promo_id)
   'finance-budgets',
   'finance-invoices',
   'finance-invoice-products',
   'finance-invoice-promotions',
+  'finance-invoice-user-groups',
+  'finance-invoice-transaction-links', // Relinks invoice->transaction FKs after both are migrated
 
   // Workspace settings - run BEFORE coupons to clear referral_promotion_id FK
   // (target workspace may have auto-created settings with FK reference)
@@ -80,7 +83,6 @@ const availableModules = [
   'payment-methods',
   'roles',
   'classes',
-  'coupons',
   'wallets',
   'bills',
   'bill-packages',
@@ -315,6 +317,17 @@ export const generateModules = (): ModulePackage[] => {
 
       case 'finance-invoice-promotions':
         // Finance invoice promotions - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'finance-invoice-user-groups':
+        // Finance invoice user groups - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'finance-invoice-transaction-links':
+        // Relinks invoice transaction_id FKs after both wallet-transactions
+        // and finance-invoices have been migrated - 1:1 sync, Tuturuuu mode only
         baseModule.tuturuuuOnly = true;
         break;
 

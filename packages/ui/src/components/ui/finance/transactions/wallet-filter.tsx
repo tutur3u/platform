@@ -24,6 +24,7 @@ const WorkspaceWalletSchema = z
     id: z.string(),
     name: z.string().nullable(),
     balance: z.number().nullable(),
+    currency: z.string().nullable().optional(),
   })
   .passthrough(); // Allow optional fields from API (viewing_window, custom_days)
 const WorkspaceWalletListSchema = z.array(WorkspaceWalletSchema);
@@ -32,6 +33,7 @@ interface WorkspaceWallet {
   id: string;
   name: string | null;
   balance: number | null;
+  currency?: string | null;
 }
 
 interface WalletFilterProps {
@@ -90,7 +92,11 @@ export function WalletFilter({
       {/* Wallet Filter Dropdown */}
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 w-full gap-1.5 md:h-8 md:w-auto"
+          >
             <Wallet className="h-3 w-3" />
             <span className="text-xs">{t('finance.filter_by_wallets')}</span>
             {hasActiveFilters && (
@@ -163,12 +169,15 @@ export function WalletFilter({
                                 {wallet.name}
                               </span>
                               <span className="text-muted-foreground text-xs">
-                                {Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                }).format(wallet.balance || 0)}
+                                {Intl.NumberFormat(
+                                  wallet.currency === 'VND' ? 'vi-VN' : 'en-US',
+                                  {
+                                    style: 'currency',
+                                    currency: wallet.currency || 'USD',
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  }
+                                ).format(wallet.balance || 0)}
                               </span>
                             </div>
                           </div>

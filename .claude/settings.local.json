@@ -31,7 +31,14 @@
       "Bash(head:*)",
       "Bash(gh run view:*)",
       "Bash(gh workflow view:*)",
-      "Bash(npx @biomejs/biome@latest lint:*)"
+      "Bash(npx @biomejs/biome@latest lint:*)",
+      "Bash(cat:*)",
+      "Bash(tsgo --build:*)",
+      "Bash(printf:*)",
+      "Bash(git stash:*)",
+      "Bash(bunx vitest run:*)",
+      "Bash(node scripts/check-migration-timestamps.js:*)",
+      "Bash(node scripts/check.js:*)"
     ]
   }
 }

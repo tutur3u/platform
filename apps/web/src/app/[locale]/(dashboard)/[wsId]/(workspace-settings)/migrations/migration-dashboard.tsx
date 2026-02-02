@@ -136,6 +136,10 @@ export default function MigrationDashboard({ wsId }: MigrationDashboardProps) {
             totalExternal={stats.totalExternal}
             totalSynced={stats.totalSynced}
             totalNewRecords={stats.totalNewRecords}
+            totalUpdates={stats.totalUpdates}
+            totalDuplicates={stats.totalDuplicates}
+            totalRecordsToSync={stats.totalRecordsToSync}
+            efficiencyPercent={stats.efficiencyPercent}
             modulesWithData={stats.modulesWithData}
             completedModules={stats.completedModules}
             runningModules={stats.runningModules}
@@ -313,7 +317,7 @@ export default function MigrationDashboard({ wsId }: MigrationDashboardProps) {
         </div>
 
         {/* Module Grid */}
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-3">
           {modules.map((m) => (
             <ModuleCard
               key={m.name}

@@ -27,6 +27,32 @@ import {
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
 
+/**
+ * Options for column generator functions.
+ * Using named parameters improves readability and maintainability.
+ *
+ * @template TData - The row data type (used for type inference in implementations)
+ * @template TValue - The column value type (used for type inference in implementations)
+ */
+export interface ColumnGeneratorOptions<
+  // biome-ignore lint/correctness/noUnusedVariables: Type params enable consumer type inference
+  TData = unknown,
+  // biome-ignore lint/correctness/noUnusedVariables: Type params enable consumer type inference
+  TValue = unknown,
+> {
+  t: any;
+  namespace: string | undefined;
+  extraColumns?: any[];
+  extraData?: any;
+}
+
+/**
+ * Type for column generator functions that create table columns.
+ */
+export type ColumnGenerator<TData = unknown, TValue = unknown> = (
+  options: ColumnGeneratorOptions<TData, TValue>
+) => ColumnDef<TData, TValue>[];
+
 export interface DataTableProps<TData, TValue> {
   hideToolbar?: boolean;
   hidePagination?: boolean;
@@ -50,6 +76,8 @@ export interface DataTableProps<TData, TValue> {
   currentSortOrder?: 'asc' | 'desc';
   toolbarImportContent?: ReactNode;
   toolbarExportContent?: ReactNode;
+  /** Custom toolbar actions rendered directly (not wrapped in dialogs) */
+  toolbarActions?: ReactNode;
   className?: string;
   preserveParams?: string[];
   onRefresh?: () => void;
@@ -68,12 +96,7 @@ export interface DataTableProps<TData, TValue> {
   }) => void;
   resetParams?: () => void;
   t?: any;
-  columnGenerator?: (
-    t: any,
-    namespace: string | undefined,
-    extraColumns?: any[],
-    extraData?: any
-  ) => ColumnDef<TData, TValue>[];
+  columnGenerator?: ColumnGenerator<TData, TValue>;
   // Optional row wrapper for custom row rendering (e.g., context menu)
   rowWrapper?: (row: React.ReactElement, rowData: TData) => React.ReactElement;
 }
@@ -102,6 +125,7 @@ export function DataTable<TData, TValue>({
   t,
   toolbarImportContent,
   toolbarExportContent,
+  toolbarActions,
   className,
   onRefresh,
   selectedRowsActions,
@@ -127,7 +151,7 @@ export function DataTable<TData, TValue>({
     data: data || [],
     columns:
       columnGenerator && t
-        ? columnGenerator(t, namespace, extraColumns, extraData)
+        ? columnGenerator({ t, namespace, extraColumns, extraData })
         : columns || [],
     state: {
       sorting,
@@ -205,6 +229,7 @@ export function DataTable<TData, TValue>({
           selectedRowsActions={selectedRowsActions}
           importContent={toolbarImportContent}
           exportContent={toolbarExportContent}
+          toolbarActions={toolbarActions}
         />
       )}
       <Card>
@@ -259,7 +284,8 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={
-                    (namespace && columnGenerator?.(t, namespace)?.length) ||
+                    (namespace &&
+                      columnGenerator?.({ t, namespace })?.length) ||
                     columns?.length ||
                     1
                   }

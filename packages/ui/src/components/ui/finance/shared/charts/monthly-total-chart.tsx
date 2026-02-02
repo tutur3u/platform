@@ -5,7 +5,15 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Button } from '../../../button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../card';
 import {
@@ -41,9 +49,15 @@ type ViewMode = 'all' | 'income' | 'expense';
 export function MonthlyTotalChart({
   data,
   className,
+  currency = 'USD',
+  openingBalance,
+  closingBalance,
 }: {
   data: { month: string; total_income: number; total_expense: number }[];
   className?: string;
+  currency?: string;
+  openingBalance?: number;
+  closingBalance?: number;
 }) {
   const locale = useLocale();
   const t = useTranslations('transaction-data-table');
@@ -95,9 +109,9 @@ export function MonthlyTotalChart({
 
   const formatValue = (value: number) => {
     if (isConfidential) return '•••••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
       style: 'currency',
-      currency: 'VND',
+      currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -294,6 +308,34 @@ export function MonthlyTotalChart({
                 minPointSize={1}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
+              />
+            )}
+            {openingBalance !== undefined && !isConfidential && (
+              <ReferenceLine
+                y={openingBalance}
+                stroke="hsl(var(--primary))"
+                strokeDasharray="5 5"
+                strokeWidth={2}
+                label={{
+                  value: t('opening_balance'),
+                  position: 'insideTopLeft',
+                  fill: 'hsl(var(--primary))',
+                  fontSize: 12,
+                }}
+              />
+            )}
+            {closingBalance !== undefined && !isConfidential && (
+              <ReferenceLine
+                y={closingBalance}
+                stroke="hsl(var(--muted-foreground))"
+                strokeDasharray="5 5"
+                strokeWidth={2}
+                label={{
+                  value: t('closing_balance'),
+                  position: 'insideBottomLeft',
+                  fill: 'hsl(var(--muted-foreground))',
+                  fontSize: 12,
+                }}
               />
             )}
           </BarChart>

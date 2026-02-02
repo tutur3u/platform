@@ -3,6 +3,7 @@ export const ci = {
   'branch-name-check.yaml': true,
   'check-and-bump-versions.yaml': true,
   'check-docs-links.yml': true,
+  'check-migration-timestamps.yml': true,
   'check-migrations.yml': true,
   'codecov.yaml': true,
   'codeql.yml': true,

@@ -20,9 +20,17 @@ export interface ModuleState {
   paused: boolean;
   completed: boolean;
   error: unknown | null;
+  /** Total duplicates detected during reconciliation */
   duplicates: number;
+  /** Records that have changes and need updating */
   updates: number;
+  /** New records that don't exist in target */
   newRecords: number;
+  /**
+   * Count of records to actually sync (new + updates).
+   * When skipDuplicates is enabled, this is less than externalTotal.
+   */
+  recordsToSync: number;
   stage: MigrationStage;
 }
 
@@ -51,5 +59,6 @@ export const DEFAULT_MODULE_STATE: ModuleState = {
   duplicates: 0,
   updates: 0,
   newRecords: 0,
+  recordsToSync: 0,
   stage: null,
 };

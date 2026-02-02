@@ -5,6 +5,7 @@ import { Check, Copy } from '@tuturuuu/icons';
 import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import moment from 'moment';
@@ -45,10 +46,10 @@ function KeyPrefixCell({ t, prefix }: { t: any; prefix: string | null }) {
   );
 }
 
-export const apiKeyColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceApiKey>[] => [
+export const apiKeyColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceApiKey>): ColumnDef<WorkspaceApiKey>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

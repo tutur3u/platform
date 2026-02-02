@@ -2,14 +2,15 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceFlashcard } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { WorkspaceFlashcardRowActions } from './row-actions';
 
-export const getWorkspaceFlashcardColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<WorkspaceFlashcard>[] => [
+export const getWorkspaceFlashcardColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<WorkspaceFlashcard>): ColumnDef<WorkspaceFlashcard>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

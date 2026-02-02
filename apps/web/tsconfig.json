@@ -16,6 +16,12 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src", ".next/types/**/*.ts", "src/app/sw.ts"],
+  "include": [
+    "src",
+    ".next/types/**/*.ts",
+    "src/app/sw.ts",
+    "global.d.ts",
+    "messages"
+  ],
   "exclude": ["node_modules", "dist", ".turbo", "public/sw.js"]
 }

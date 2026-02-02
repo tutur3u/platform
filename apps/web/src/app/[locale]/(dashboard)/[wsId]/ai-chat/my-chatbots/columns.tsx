@@ -3,15 +3,16 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { GroupTagRowActions } from './row-actions';
 
-export const groupTagColumns = (
-  t: any,
-  namespace: string | undefined
-): ColumnDef<UserGroupTag>[] => [
+export const groupTagColumns = ({
+  t,
+  namespace,
+}: ColumnGeneratorOptions<UserGroupTag>): ColumnDef<UserGroupTag>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

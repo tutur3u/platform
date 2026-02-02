@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Tables } from '@tuturuuu/types/supabase';
+import type {
+  InventoryProduct,
+  RawInventoryProduct,
+} from '@tuturuuu/types/primitives/InventoryProductRelations';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -42,6 +45,7 @@ export async function GET(request: Request, { params }: Params) {
     // Check permissions
     const { containsPermission } = await getPermissions({ wsId });
     const canViewInventory = containsPermission('view_inventory');
+    const canViewStockQuantity = containsPermission('view_stock_quantity');
 
     if (!canViewInventory) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -65,88 +69,126 @@ export async function GET(request: Request, { params }: Params) {
     }
     const { q, page, pageSize, sortBy, sortOrder } = parsed.data;
 
-    const queryBuilder = supabase
-      .from('workspace_products')
-      .select(
-        '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('ws_id', wsId);
-
-    if (q) queryBuilder.ilike('name', `%${q}%`);
-
     const start = (page - 1) * pageSize;
     const end = page * pageSize - 1;
-    queryBuilder.range(start, end);
 
-    // Apply sorting - default to created_at desc for consistent ordering
-    if (sortBy && sortOrder) {
-      queryBuilder.order(sortBy, { ascending: sortOrder === 'asc' });
+    let rawData: RawInventoryProduct[] | null = null;
+    let count: number | null = null;
+
+    if (canViewStockQuantity) {
+      let query = supabase
+        .from('workspace_products')
+        .select(
+          'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
+          {
+            count: 'exact',
+          }
+        )
+        .eq('ws_id', wsId);
+
+      if (q) query = query.ilike('name', `%${q}%`);
+      query = query.range(start, end);
+
+      // Apply sorting - default to created_at desc for consistent ordering
+      if (sortBy && sortOrder) {
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const {
+        data,
+        error,
+        count: fetchedCount,
+      } = await query.overrideTypes<RawInventoryProduct[]>();
+      if (error) throw error;
+      rawData = data;
+      count = fetchedCount;
     } else {
-      queryBuilder.order('created_at', { ascending: false });
+      let query = supabase
+        .from('workspace_products')
+        .select(
+          'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name)',
+          {
+            count: 'exact',
+          }
+        )
+        .eq('ws_id', wsId);
+
+      if (q) query = query.ilike('name', `%${q}%`);
+      query = query.range(start, end);
+
+      // Apply sorting - default to created_at desc for consistent ordering
+      if (sortBy && sortOrder) {
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const {
+        data,
+        error,
+        count: fetchedCount,
+      } = await query.overrideTypes<RawInventoryProduct[]>();
+      if (error) throw error;
+      rawData = data;
+      count = fetchedCount;
     }
 
-    const { data: rawData, error, count } = await queryBuilder;
+    const selectPrimaryInventory = (
+      inventories: InventoryProduct[] | null | undefined
+    ) => {
+      if (!inventories?.length) return undefined;
 
-    if (error) throw error;
+      return inventories.slice().sort((a, b) => {
+        const aKey = [
+          a.warehouse_id ?? '',
+          a.unit_id ?? '',
+          a.created_at ?? '',
+        ].join('|');
+        const bKey = [
+          b.warehouse_id ?? '',
+          b.unit_id ?? '',
+          b.created_at ?? '',
+        ].join('|');
 
-    type InventoryProduct = Tables<'inventory_products'> & {
-      inventory_warehouses: { name: string | null } | null;
-      inventory_units: { name: string | null } | null;
+        return aKey.localeCompare(bKey);
+      })[0];
     };
 
-    type ProductStockChange = Tables<'product_stock_changes'> & {
-      beneficiary: { full_name: string | null; email: string | null } | null;
-      creator: { full_name: string | null; email: string | null } | null;
-    };
+    const data = (rawData ?? []).map((item) => {
+      const primaryInventory = selectPrimaryInventory(item.inventory_products);
 
-    const data = (rawData || []).map((item) => ({
-      id: item.id,
-      name: item.name,
-      manufacturer: item.manufacturer,
-      description: item.description,
-      usage: item.usage,
-      unit: (item.inventory_products as InventoryProduct[])?.[0]
-        ?.inventory_units?.name,
-      stock: ((item.inventory_products as InventoryProduct[] | null) || []).map(
-        (inventory: InventoryProduct) => ({
-          amount: inventory.amount,
-          min_amount: inventory.min_amount,
-          unit: inventory.inventory_units?.name,
-          warehouse: inventory.inventory_warehouses?.name,
-          price: inventory.price,
-        })
-      ),
-      // Inventory with ids for editing
-      inventory: (
-        (item.inventory_products as InventoryProduct[] | null) || []
-      ).map((inventory: InventoryProduct) => ({
-        unit_id: inventory.unit_id,
-        warehouse_id: inventory.warehouse_id,
-        amount: inventory.amount,
-        min_amount: inventory.min_amount,
-        price: inventory.price,
-      })),
-      min_amount:
-        (item.inventory_products as InventoryProduct[])?.[0]?.min_amount || 0,
-      warehouse: (item.inventory_products as InventoryProduct[])?.[0]
-        ?.inventory_warehouses?.name,
-      category: item.product_categories?.name,
-      category_id: item.category_id,
-      ws_id: item.ws_id,
-      created_at: item.created_at,
-      stock_changes:
-        (item.product_stock_changes as ProductStockChange[])?.map(
-          (change: ProductStockChange) => ({
-            amount: change.amount,
-            creator: change.creator,
-            beneficiary: change.beneficiary,
-            created_at: change.created_at,
-          })
-        ) || [],
-    }));
+      return {
+        id: item.id,
+        name: item.name,
+        manufacturer: item.manufacturer,
+        description: item.description,
+        usage: item.usage,
+        unit: canViewStockQuantity
+          ? (primaryInventory?.inventory_units?.name ?? null)
+          : null,
+        stock: canViewStockQuantity
+          ? (item.inventory_products || []).map((inventory) => ({
+              amount: inventory.amount,
+              min_amount: inventory.min_amount,
+              unit: inventory.inventory_units?.name,
+              warehouse: inventory.inventory_warehouses?.name,
+              price: inventory.price,
+            }))
+          : [],
+        min_amount: canViewStockQuantity
+          ? (primaryInventory?.min_amount ?? null)
+          : null,
+        warehouse: canViewStockQuantity
+          ? (primaryInventory?.inventory_warehouses?.name ?? null)
+          : null,
+        category: item.product_categories?.name,
+        category_id: item.category_id,
+        ws_id: item.ws_id,
+        created_at: item.created_at,
+      };
+    });
 
     return NextResponse.json({
       data,
