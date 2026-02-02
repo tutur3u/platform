@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -107,22 +107,15 @@ const StatisticCard = ({
     }
 
     // Full value always in standard format
-    const fullValue = new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(val);
+    const fullValue = formatCurrency(val, currency, locale);
 
     // Use compact notation for large currency values (>= 10 million)
     if (absValue >= 10_000_000) {
-      const compactValue = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
+      const compactValue = formatCurrency(val, currency, locale, {
         notation: 'compact',
         compactDisplay: 'short',
         maximumFractionDigits: 1,
-      }).format(val);
+      });
       return { display: compactValue, full: fullValue, isCompact: true };
     }
 

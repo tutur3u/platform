@@ -34,6 +34,7 @@ export default function InvoiceCard({
   invoice,
   products,
   promotions,
+  currency = 'VND',
 }: {
   lang: string;
   configs: WorkspaceConfig[];
@@ -50,6 +51,7 @@ export default function InvoiceCard({
   };
   products: InvoiceProduct[];
   promotions: InvoicePromotion[];
+  currency?: string;
 }) {
   const t = useTranslations();
 
@@ -300,6 +302,7 @@ export default function InvoiceCard({
               configs={configs}
               isDarkPreview={isDarkPreview}
               lang={lang}
+              currency={currency}
             />
           ) : (
             <FullInvoiceTemplate
@@ -308,6 +311,7 @@ export default function InvoiceCard({
               promotions={promotions}
               configs={configs}
               isDarkPreview={isDarkPreview}
+              currency={currency}
             />
           )}
         </div>

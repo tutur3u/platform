@@ -13,6 +13,7 @@ import {
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Product, ProductInventory, SelectedProductItem } from './types';
@@ -37,9 +38,6 @@ export function ProductSelection({
 }: Props) {
   const t = useTranslations();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
-
-  // Compute locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const availableInventory =
@@ -196,10 +194,7 @@ export function ProductSelection({
                           ? t('ws-invoices.unlimited')
                           : item.inventory.amount}{' '}
                         • {t('ws-invoices.price')}:{' '}
-                        {Intl.NumberFormat(currencyLocale, {
-                          style: 'currency',
-                          currency,
-                        }).format(item.inventory.price)}
+                        {formatCurrency(item.inventory.price, currency)}
                       </p>
                       {linkedGroups.length > 0 && (
                         <div className="mt-1">
@@ -267,15 +262,13 @@ export function ProductSelection({
                 <div className="flex items-center justify-between font-semibold">
                   <span>Subtotal:</span>
                   <span>
-                    {Intl.NumberFormat(currencyLocale, {
-                      style: 'currency',
-                      currency,
-                    }).format(
+                    {formatCurrency(
                       selectedProducts.reduce(
                         (total, item) =>
                           total + item.inventory.price * item.quantity,
                         0
-                      )
+                      ),
+                      currency
                     )}
                   </span>
                 </div>
@@ -298,9 +291,6 @@ function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
 
-  // Compute locale based on currency
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
-
   const handleAdd = () => {
     if (
       quantity > 0 &&
@@ -322,11 +312,7 @@ function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
             {inventory.amount === null
               ? t('ws-invoices.unlimited')
               : inventory.amount}{' '}
-            {inventory.unit_name} •{' '}
-            {Intl.NumberFormat(currencyLocale, {
-              style: 'currency',
-              currency,
-            }).format(inventory.price)}{' '}
+            {inventory.unit_name} • {formatCurrency(inventory.price, currency)}{' '}
             {t('ws-invoices.each')}
           </p>
           {inventory.amount !== null &&
