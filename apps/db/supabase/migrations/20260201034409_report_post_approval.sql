@@ -1,8 +1,11 @@
-create type public.approval_status as enum (
-    'PENDING',
-    'APPROVED',
-    'REJECTED'
-);
+-- Create approval_status enum type if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'approval_status') THEN
+        CREATE TYPE public.approval_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+    END IF;
+END
+$$;
 
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'approve_reports';
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'approve_posts';
@@ -34,22 +37,42 @@ ALTER TABLE external_user_monthly_report_logs
     ADD COLUMN IF NOT EXISTS rejected_at timestamptz,
     ADD COLUMN IF NOT EXISTS rejection_reason text;
 
--- Add check constraints for status consistency
-ALTER TABLE external_user_monthly_reports
-    ADD CONSTRAINT chk_report_approval_consistency 
-    CHECK (
-        (report_approval_status = 'APPROVED' AND approved_by IS NOT NULL AND approved_at IS NOT NULL) OR
-        (report_approval_status = 'REJECTED' AND rejected_by IS NOT NULL AND rejected_at IS NOT NULL AND rejection_reason IS NOT NULL) OR
-        (report_approval_status = 'PENDING' AND approved_by IS NULL AND approved_at IS NULL AND rejected_by IS NULL AND rejected_at IS NULL AND rejection_reason IS NULL)
-    );
+-- Add check constraints for status consistency (idempotent)
+DO $$
+BEGIN
+    -- Add report approval consistency constraint if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_constraint 
+        WHERE conname = 'chk_report_approval_consistency' 
+        AND conrelid = 'external_user_monthly_reports'::regclass
+    ) THEN
+        ALTER TABLE external_user_monthly_reports
+            ADD CONSTRAINT chk_report_approval_consistency 
+            CHECK (
+                (report_approval_status = 'APPROVED' AND approved_by IS NOT NULL AND approved_at IS NOT NULL) OR
+                (report_approval_status = 'REJECTED' AND rejected_by IS NOT NULL AND rejected_at IS NOT NULL AND rejection_reason IS NOT NULL) OR
+                (report_approval_status = 'PENDING' AND approved_by IS NULL AND approved_at IS NULL AND rejected_by IS NULL AND rejected_at IS NULL AND rejection_reason IS NULL)
+            );
+    END IF;
 
-ALTER TABLE user_group_posts
-    ADD CONSTRAINT chk_post_approval_consistency 
-    CHECK (
-        (post_approval_status = 'APPROVED' AND approved_by IS NOT NULL AND approved_at IS NOT NULL) OR
-        (post_approval_status = 'REJECTED' AND rejected_by IS NOT NULL AND rejected_at IS NOT NULL AND rejection_reason IS NOT NULL) OR
-        (post_approval_status = 'PENDING' AND approved_by IS NULL AND approved_at IS NULL AND rejected_by IS NULL AND rejected_at IS NULL AND rejection_reason IS NULL)
-    );
+    -- Add post approval consistency constraint if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_constraint 
+        WHERE conname = 'chk_post_approval_consistency' 
+        AND conrelid = 'user_group_posts'::regclass
+    ) THEN
+        ALTER TABLE user_group_posts
+            ADD CONSTRAINT chk_post_approval_consistency 
+            CHECK (
+                (post_approval_status = 'APPROVED' AND approved_by IS NOT NULL AND approved_at IS NOT NULL) OR
+                (post_approval_status = 'REJECTED' AND rejected_by IS NOT NULL AND rejected_at IS NOT NULL AND rejection_reason IS NOT NULL) OR
+                (post_approval_status = 'PENDING' AND approved_by IS NULL AND approved_at IS NULL AND rejected_by IS NULL AND rejected_at IS NULL AND rejection_reason IS NULL)
+            );
+    END IF;
+END
+$$;
 
 -- Backfill existing reports to APPROVED with creator_id as approved_by
 UPDATE external_user_monthly_reports 
@@ -161,6 +184,10 @@ BEGIN
     -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
     IF v_has_approve_permission THEN
         IF NEW.report_approval_status = 'REJECTED' THEN
+            -- Validate rejection_reason is provided
+            IF NEW.rejection_reason IS NULL OR NEW.rejection_reason = '' THEN
+                RAISE EXCEPTION 'rejection_reason is required when rejecting a report';
+            END IF;
             -- Allow rejection, ensure required fields are set
             IF NEW.rejected_by IS NULL THEN
                 NEW.rejected_by := v_user_id;
@@ -241,6 +268,10 @@ BEGIN
     -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
     IF v_has_approve_permission THEN
         IF NEW.post_approval_status = 'REJECTED' THEN
+            -- Validate rejection_reason is provided
+            IF NEW.rejection_reason IS NULL OR NEW.rejection_reason = '' THEN
+                RAISE EXCEPTION 'rejection_reason is required when rejecting a post';
+            END IF;
             -- Allow rejection, ensure required fields are set
             IF NEW.rejected_by IS NULL THEN
                 NEW.rejected_by := v_user_id;

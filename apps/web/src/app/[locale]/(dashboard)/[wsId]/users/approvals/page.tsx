@@ -1,4 +1,4 @@
-import { AlertTriangle } from '@tuturuuu/icons';
+import { Info } from '@tuturuuu/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -30,7 +30,7 @@ export default async function UserApprovalsPage({ params }: PageProps) {
               <div className="rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-4">
                 <div className="flex">
                   <div className="shrink-0">
-                    <AlertTriangle
+                    <Info
                       className="h-5 w-5 text-dynamic-blue"
                       aria-hidden="true"
                     />

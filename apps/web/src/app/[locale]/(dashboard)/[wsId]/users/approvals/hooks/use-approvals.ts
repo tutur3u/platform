@@ -262,6 +262,7 @@ export function useApprovals({
     },
     onSuccess: async () => {
       toast.success(t('actions.approved'));
+      setDetailItem(null);
       await queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', kind],
       });
@@ -317,6 +318,8 @@ export function useApprovals({
     },
     onSuccess: async () => {
       toast.success(t('actions.rejected'));
+      setDetailItem(null);
+      setRejectReason('');
       await queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', kind],
       });

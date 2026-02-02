@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { Database } from '@tuturuuu/types/supabase';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -88,7 +89,9 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           'send_user_group_post_emails'
         );
 
-        const approvalStatus = post.post_approval_status || 'PENDING';
+        type ApprovalStatus = Database['public']['Enums']['approval_status'];
+        const approvalStatus: ApprovalStatus =
+          (post.post_approval_status as ApprovalStatus) ?? 'PENDING';
         const isApproved = approvalStatus === 'APPROVED';
 
         return (

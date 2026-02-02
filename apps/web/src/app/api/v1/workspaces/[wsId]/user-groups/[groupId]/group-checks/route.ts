@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -22,7 +25,10 @@ const MultipleSchema = z.array(SingleSchema);
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
-  const { wsId, groupId } = await params;
+  const { wsId: id, groupId } = await params;
+
+  // Resolve workspace ID
+  const wsId = await normalizeWorkspaceId(id);
 
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });

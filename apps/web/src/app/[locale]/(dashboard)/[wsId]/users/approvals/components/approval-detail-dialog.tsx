@@ -112,6 +112,22 @@ export function ApprovalDetailDialog({
   };
 
   // Helper function to render scores array
+  const getScoreColorClass = (
+    score: number | null,
+    isPrevious: boolean
+  ): string => {
+    if (score === null || isPrevious) {
+      return 'bg-muted text-muted-foreground';
+    }
+    if (score >= 80) {
+      return 'bg-dynamic-green/10 text-dynamic-green';
+    }
+    if (score >= 60) {
+      return 'bg-dynamic-orange/10 text-dynamic-orange';
+    }
+    return 'bg-dynamic-red/10 text-dynamic-red';
+  };
+
   const renderScoresArray = (
     scores: number[] | null | undefined,
     isPrevious = false
@@ -130,19 +146,7 @@ export function ApprovalDetailDialog({
             key={index}
             className={cn(
               'flex flex-col items-center justify-center rounded-md p-2 text-xs',
-              score === null
-                ? 'bg-muted text-muted-foreground'
-                : score >= 80
-                  ? isPrevious
-                    ? 'bg-muted text-muted-foreground'
-                    : 'bg-dynamic-green/10 text-dynamic-green'
-                  : score >= 60
-                    ? isPrevious
-                      ? 'bg-muted text-muted-foreground'
-                      : 'bg-dynamic-orange/10 text-dynamic-orange'
-                    : isPrevious
-                      ? 'bg-muted text-muted-foreground'
-                      : 'bg-dynamic-red/10 text-dynamic-red'
+              getScoreColorClass(score, isPrevious)
             )}
           >
             <span className="font-medium">{score !== null ? score : '-'}</span>
@@ -404,9 +408,6 @@ export function ApprovalDetailDialog({
                         id: item.id,
                         reason: rejectReason.trim(),
                       });
-                      setShowRejectForm(false);
-                      setRejectReason('');
-                      onOpenChange(false);
                     }}
                     disabled={isRejecting || !rejectReason.trim()}
                     className="h-8 gap-1"
@@ -434,7 +435,6 @@ export function ApprovalDetailDialog({
                     onClick={() => {
                       if (!item) return;
                       onApprove(item.id);
-                      onOpenChange(false);
                     }}
                     disabled={isApproving}
                     className="h-8 gap-1 bg-dynamic-green hover:bg-dynamic-green/90"

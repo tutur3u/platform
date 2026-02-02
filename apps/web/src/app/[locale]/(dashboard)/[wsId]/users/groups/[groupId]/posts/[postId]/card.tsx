@@ -12,6 +12,7 @@ import {
   Send,
   X,
 } from '@tuturuuu/icons';
+import type { PostApprovalQueryResult } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -44,18 +45,11 @@ interface Props {
   isLoadingChecks?: boolean;
 }
 
-export interface UserGroupPost {
-  id?: string;
-  title: string | null;
-  content: string | null;
+export type UserGroupPost = PostApprovalQueryResult & {
   ws_id?: string;
   name?: string;
-  created_at?: string;
-  notes: string | null;
   group_id?: string;
-  group_name?: string;
-  post_approval_status?: 'APPROVED' | 'PENDING' | 'REJECTED';
-}
+};
 
 function UserCard({
   user,
