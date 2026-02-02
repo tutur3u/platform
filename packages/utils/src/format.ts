@@ -86,6 +86,15 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
 }
 
 /**
+ * Get the locale for a specific currency
+ * @param currency - The currency code
+ * @returns The locale string
+ */
+export function getCurrencyLocale(currency = 'VND'): string {
+  return currency === 'VND' ? 'vi-VN' : 'en-US';
+}
+
+/**
  * Format a number as currency with locale-specific formatting
  * @param amount - The amount to format
  * @param locale - The locale to use (default: 'vi-VN')
@@ -95,16 +104,15 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
  */
 export function formatCurrency(
   amount: number,
-  locale = 'vi-VN',
+  locale?: string,
   currency = 'VND',
   options?: Partial<Intl.NumberFormatOptions>
 ): string {
   const { signDisplay = 'auto', ...rest } = options || {};
-  return new Intl.NumberFormat(locale, {
+  const effectiveLocale = locale || getCurrencyLocale(currency);
+  return new Intl.NumberFormat(effectiveLocale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
     signDisplay,
     ...rest,
   }).format(amount);

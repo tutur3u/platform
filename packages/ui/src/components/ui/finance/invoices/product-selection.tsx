@@ -13,6 +13,7 @@ import {
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Product, ProductInventory, SelectedProductItem } from './types';
@@ -196,10 +197,11 @@ export function ProductSelection({
                           ? t('ws-invoices.unlimited')
                           : item.inventory.amount}{' '}
                         • {t('ws-invoices.price')}:{' '}
-                        {Intl.NumberFormat(currencyLocale, {
-                          style: 'currency',
-                          currency,
-                        }).format(item.inventory.price)}
+                        {formatCurrency(
+                          item.inventory.price,
+                          currencyLocale,
+                          currency
+                        )}
                       </p>
                       {linkedGroups.length > 0 && (
                         <div className="mt-1">
@@ -267,15 +269,14 @@ export function ProductSelection({
                 <div className="flex items-center justify-between font-semibold">
                   <span>Subtotal:</span>
                   <span>
-                    {Intl.NumberFormat(currencyLocale, {
-                      style: 'currency',
-                      currency,
-                    }).format(
+                    {formatCurrency(
                       selectedProducts.reduce(
                         (total, item) =>
                           total + item.inventory.price * item.quantity,
                         0
-                      )
+                      ),
+                      currencyLocale,
+                      currency
                     )}
                   </span>
                 </div>
@@ -323,10 +324,7 @@ function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
               ? t('ws-invoices.unlimited')
               : inventory.amount}{' '}
             {inventory.unit_name} •{' '}
-            {Intl.NumberFormat(currencyLocale, {
-              style: 'currency',
-              currency,
-            }).format(inventory.price)}{' '}
+            {formatCurrency(inventory.price, currencyLocale, currency)}{' '}
             {t('ws-invoices.each')}
           </p>
           {inventory.amount !== null &&

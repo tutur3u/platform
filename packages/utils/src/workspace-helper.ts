@@ -715,79 +715,6 @@ export async function isPersonalWorkspace(
   return data?.personal === true;
 }
 
-/**
- * Fetches a workspace configuration by ID.
- *
- * @param wsId - The workspace ID
- * @param configId - The configuration ID
- * @returns The configuration value or null if not found
- */
-export async function getWorkspaceConfig(
-  wsId: string,
-  configId: string
-): Promise<string | null> {
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
-
-  // Handle 'personal' workspace slug by looking up the user's personal workspace
-  let resolvedWorkspaceId: string;
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      logWorkspaceError(
-        'User not authenticated for personal workspace config',
-        null,
-        {
-          workspaceId: wsId,
-          configId,
-        }
-      );
-      return null;
-    }
-
-    const { data: workspace, error: wsError } = await supabase
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id)')
-      .eq('personal', true)
-      .eq('workspace_members.user_id', user.id)
-      .maybeSingle();
-
-    if (wsError || !workspace) {
-      logWorkspaceError('Failed to find personal workspace', wsError, {
-        workspaceId: wsId,
-        configId,
-        userId: user.id,
-      });
-      return null;
-    }
-
-    resolvedWorkspaceId = workspace.id;
-  } else {
-    resolvedWorkspaceId = resolveWorkspaceId(wsId);
-  }
-
-  const { data, error } = await sbAdmin
-    .from('workspace_configs')
-    .select('value')
-    .eq('ws_id', resolvedWorkspaceId)
-    .eq('id', configId)
-    .maybeSingle();
-
-  if (error) {
-    logWorkspaceError('Failed to fetch workspace config', error, {
-      workspaceId: wsId,
-      configId,
-      errorCode: error.code,
-    });
-    return null;
-  }
-
-  return data?.value || null;
-}
-
 export async function normalizeWorkspaceId(wsId: string): Promise<string> {
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
     const supabase = await createClient();
@@ -813,4 +740,38 @@ export async function normalizeWorkspaceId(wsId: string): Promise<string> {
     return workspace.id;
   }
   return resolveWorkspaceId(wsId);
+}
+
+/**
+ * Fetches a workspace configuration by ID.
+ *
+ * @param wsId - The workspace ID
+ * @param configId - The configuration ID
+ * @returns The configuration value or null if not found
+ */
+export async function getWorkspaceConfig(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const sbAdmin = await createAdminClient();
+
+  const resolvedWorkspaceId = await normalizeWorkspaceId(wsId);
+
+  const { data, error } = await sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', resolvedWorkspaceId)
+    .eq('id', configId)
+    .maybeSingle();
+
+  if (error) {
+    logWorkspaceError('Failed to fetch workspace config', error, {
+      workspaceId: wsId,
+      configId,
+      errorCode: error.code,
+    });
+    return null;
+  }
+
+  return data?.value || null;
 }

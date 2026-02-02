@@ -7,6 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -303,31 +304,19 @@ export function StandardInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat(
-                currencyLocale,
-                {
-                  style: 'currency',
-                  currency: defaultCurrency,
-                }
-              ).format(calculated_values.rounding_applied)}`
+            ? ` | ${t('ws-invoices.rounding')}: ${formatCurrency(calculated_values.rounding_applied, currencyLocale, defaultCurrency)}`
             : '';
 
         toast(t('ws-invoices.invoice_created_recalculated'), {
-          description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(
+          description: `${t('ws-invoices.server_calculated')}: ${formatCurrency(
+            calculated_values.total,
             currencyLocale,
-            {
-              style: 'currency',
-              currency: defaultCurrency,
-            }
-          ).format(
-            calculated_values.total
-          )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat(
+            defaultCurrency
+          )} | ${t('ws-invoices.frontend_calculated')}: ${formatCurrency(
+            frontend_values?.total || 0,
             currencyLocale,
-            {
-              style: 'currency',
-              currency: defaultCurrency,
-            }
-          ).format(frontend_values?.total || 0)}${roundingInfo}`,
+            defaultCurrency
+          )}${roundingInfo}`,
           duration: 5000,
         });
       } else {
@@ -410,7 +399,12 @@ export function StandardInvoice({
         >
           {/* Conditional User History Accordion */}
           {selectedUser && (
-            <InvoiceUserHistoryAccordion wsId={wsId} userId={selectedUser.id} />
+            <InvoiceUserHistoryAccordion
+              wsId={wsId}
+              userId={selectedUser.id}
+              currency={defaultCurrency}
+              currencyLocale={currencyLocale}
+            />
           )}
         </InvoiceCustomerSelectCard>
 
@@ -528,6 +522,8 @@ export function StandardInvoice({
                         roundingDisabled={
                           Math.abs(roundedTotal - totalBeforeRounding) < 0.01
                         }
+                        currency={defaultCurrency}
+                        currencyLocale={currencyLocale}
                       />
 
                       <Button

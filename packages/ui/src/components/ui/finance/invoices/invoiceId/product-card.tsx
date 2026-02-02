@@ -1,6 +1,7 @@
 import { Box, Edit } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 
 interface ProductCardProps {
@@ -11,19 +12,20 @@ interface ProductCardProps {
     price: number;
     product_id?: string | null;
   };
-  locale: string;
   workspaceId?: string;
   currency?: string;
 }
 
 export function ProductCard({
   product,
-  locale,
   workspaceId,
   currency = 'USD',
 }: ProductCardProps) {
   const totalPrice = product.amount * product.price;
   const isHighQuantity = product.amount > 10;
+
+  // Compute currency locale based on currency
+  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   const cardContent = (
     <Card className="group cursor-pointer border-border bg-card shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg">
@@ -54,17 +56,10 @@ export function ProductCard({
           </div>
           <div className="text-right">
             <div className="font-semibold text-card-foreground text-sm transition-colors duration-200 group-hover:text-primary">
-              {Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-              }).format(totalPrice)}
+              {formatCurrency(totalPrice, currencyLocale, currency)}
             </div>
             <div className="text-muted-foreground text-xs">
-              {Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-              }).format(product.price)}{' '}
-              each
+              {formatCurrency(product.price, currencyLocale, currency)} each
             </div>
           </div>
           {product.product_id && workspaceId && (

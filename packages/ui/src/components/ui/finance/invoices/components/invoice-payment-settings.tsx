@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { AvailablePromotion } from '../hooks';
@@ -91,10 +92,7 @@ export function InvoicePaymentSettings({
             ? `${referralPercent || 0}%`
             : promotion.use_ratio
               ? `${promotion.value}%`
-              : Intl.NumberFormat(currencyLocale, {
-                  style: 'currency',
-                  currency,
-                }).format(promotion.value);
+              : formatCurrency(promotion.value, currencyLocale, currency);
         return {
           value: promotion.id,
           label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,

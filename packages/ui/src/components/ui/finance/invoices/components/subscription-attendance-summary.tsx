@@ -316,7 +316,8 @@ export function SubscriptionAttendanceSummary({
               </div>
             </div>
 
-            {userAttendance && userAttendance.length > 0 && (
+            {((userAttendance && userAttendance.length > 0) ||
+              totalSessions > 0) && (
               <div className="space-y-2">
                 <Label>{t('ws-invoices.attendance_calendar')}</Label>
                 <AttendanceCalendar

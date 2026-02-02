@@ -15,6 +15,8 @@ export function FullInvoiceTemplate({
   promotions,
   configs,
   isDarkPreview,
+  currency = 'VND',
+  currencyLocale = 'vi-VN',
 }: {
   invoice: Invoice & {
     customer_display_name: string | null;
@@ -31,6 +33,8 @@ export function FullInvoiceTemplate({
   promotions: InvoicePromotion[];
   configs: WorkspaceConfig[];
   isDarkPreview: boolean;
+  currency?: string;
+  currencyLocale?: string;
 }) {
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
@@ -187,7 +191,7 @@ export function FullInvoiceTemplate({
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(product.price, 'vi-VN', 'VND', {
+                {formatCurrency(product.price, currencyLocale, currency, {
                   signDisplay: 'never',
                 })}
               </td>
@@ -196,8 +200,8 @@ export function FullInvoiceTemplate({
               >
                 {formatCurrency(
                   product.amount * product.price,
-                  'vi-VN',
-                  'VND',
+                  currencyLocale,
+                  currency,
                   { signDisplay: 'never' }
                 )}
               </td>
@@ -222,7 +226,7 @@ export function FullInvoiceTemplate({
               {promo.name || promo.code}:{' '}
               {promo.use_ratio
                 ? `${promo.value}%`
-                : formatCurrency(promo.value, 'vi-VN', 'VND', {
+                : formatCurrency(promo.value, currencyLocale, currency, {
                     signDisplay: 'never',
                   })}
             </p>
@@ -237,7 +241,9 @@ export function FullInvoiceTemplate({
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-          {formatCurrency(subtotal, 'vi-VN', 'VND', { signDisplay: 'never' })}
+          {formatCurrency(subtotal, currencyLocale, currency, {
+            signDisplay: 'never',
+          })}
         </p>
         {promotions.length > 0 && (
           <p
@@ -247,7 +253,7 @@ export function FullInvoiceTemplate({
               {t('invoices.discounts')}: {''}
             </span>
             {'-'}
-            {formatCurrency(discount_amount, 'vi-VN', 'VND', {
+            {formatCurrency(discount_amount, currencyLocale, currency, {
               signDisplay: 'never',
             })}
           </p>
@@ -257,7 +263,7 @@ export function FullInvoiceTemplate({
             className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
             <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-            {formatCurrency(invoice.total_diff, 'vi-VN', 'VND', {
+            {formatCurrency(invoice.total_diff, currencyLocale, currency, {
               signDisplay: 'never',
             })}
           </p>
@@ -270,8 +276,8 @@ export function FullInvoiceTemplate({
           <span className="font-semibold">
             {formatCurrency(
               invoice.price + invoice.total_diff,
-              'vi-VN',
-              'VND',
+              currencyLocale,
+              currency,
               { signDisplay: 'never' }
             )}
           </span>

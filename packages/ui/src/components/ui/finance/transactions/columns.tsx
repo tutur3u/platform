@@ -6,6 +6,7 @@ import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { TransactionRowActions } from '@tuturuuu/ui/finance/transactions/row-actions';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
@@ -176,13 +177,9 @@ export const transactionColumns = ({
               isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
             }`}
           >
-            {Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
-              style: 'currency',
-              currency,
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
+            {formatCurrency(amount, undefined, currency, {
               signDisplay: 'always',
-            }).format(amount)}
+            })}
           </div>
         );
       },

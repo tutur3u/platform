@@ -7,7 +7,7 @@ import type {
   InvoiceAnalyticsPeriod,
   InvoiceTotalsByGroup,
 } from '@tuturuuu/types/primitives/Invoice';
-import { cn } from '@tuturuuu/utils/format';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
@@ -252,12 +252,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
-    return new Intl.NumberFormat(currencyLocale, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatCurrency(value, currencyLocale, currency);
   };
 
   const formatCompactValue = (value: number) => {
@@ -265,11 +260,11 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
-    return new Intl.NumberFormat(locale, {
+    return formatCurrency(value, locale, currency, {
       notation: 'compact',
       compactDisplay: 'short',
       maximumFractionDigits: 1,
-    }).format(value);
+    });
   };
 
   const formatPeriodLabel = (value: string) => {
