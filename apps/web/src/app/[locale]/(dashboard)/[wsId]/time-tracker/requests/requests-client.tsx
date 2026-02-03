@@ -12,12 +12,14 @@ interface RequestsClientProps {
   wsId: string;
   currentUser: WorkspaceUser | null;
   canManageTimeTrackingRequests: boolean;
+  canBypassTimeTrackingRequestApproval: boolean;
 }
 
 export function RequestsClient({
   wsId,
   currentUser,
   canManageTimeTrackingRequests,
+  canBypassTimeTrackingRequestApproval,
 }: RequestsClientProps) {
   const t = useTranslations('time-tracker.requests');
   const [selectedRequest, setSelectedRequest] =
@@ -72,6 +74,9 @@ export function RequestsClient({
           }}
           wsId={wsId}
           canManageTimeTrackingRequests={canManageTimeTrackingRequests}
+          canBypassTimeTrackingRequestApproval={
+            canBypassTimeTrackingRequestApproval
+          }
           currentUser={currentUser}
         />
       )}
