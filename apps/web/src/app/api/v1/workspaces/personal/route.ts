@@ -50,7 +50,7 @@ export async function POST() {
     );
   }
 
-  const { data, error } = await supabase
+  const { data: workspace, error: createError } = await supabase
     .from('workspaces')
     .insert({
       name: 'PERSONAL',
@@ -59,8 +59,8 @@ export async function POST() {
     .select('id')
     .single();
 
-  if (error) {
-    console.error(error);
+  if (createError || !workspace) {
+    console.error('Error creating team workspace:', createError);
     return NextResponse.json(
       { message: 'Failed to create personal workspace' },
       { status: 500 }
@@ -76,19 +76,22 @@ export async function POST() {
     await createPolarCustomer({
       polar,
       supabase,
-      wsId: data.id,
+      wsId: workspace.id,
     });
 
     // Create free subscription for the workspace
-    const subscription = await createFreeSubscription(polar, sbAdmin, data.id);
-
+    const subscription = await createFreeSubscription(
+      polar,
+      sbAdmin,
+      workspace.id
+    );
     if (subscription) {
       console.log(
-        `Created free subscription ${subscription.id} for workspace ${data.id}`
+        `Created free subscription ${subscription.id} for workspace ${workspace.id}`
       );
     } else {
       console.log(
-        `Skipped free subscription creation for workspace ${data.id} (may already have active subscription)`
+        `Skipped free subscription creation for workspace ${workspace.id} (may already have active subscription)`
       );
     }
   } catch (error) {
@@ -97,7 +100,7 @@ export async function POST() {
     // Workspace creation succeeded, subscription creation is best-effort
   }
 
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({ id: workspace.id });
 }
 
 export async function PATCH(req: Request) {
