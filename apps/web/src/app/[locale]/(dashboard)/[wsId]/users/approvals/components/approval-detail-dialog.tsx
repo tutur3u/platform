@@ -83,6 +83,7 @@ export function ApprovalDetailDialog({
     : previousPostVersion;
   const hasPreviousVersion = !!previousVersion;
   const isCompareMode = hasPreviousVersion;
+  const modifierName = item.modifier_name || t('labels.unknown_user');
 
   // Helper function to render score display
   const renderScore = (
@@ -285,7 +286,7 @@ export function ApprovalDetailDialog({
         {isReport ? (
           <>
             {/* Score Section */}
-            {previousReportVersion?.score && (
+            {previousReportVersion?.score != null && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                   <Trophy className="h-4 w-4" />
@@ -488,6 +489,10 @@ export function ApprovalDetailDialog({
                         {t('detail.pendingApproval')}
                       </span>
                     </div>
+                    <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                      <span>{t('labels.last_modified_by')}</span>
+                      <span className="font-medium">{modifierName}</span>
+                    </div>
                   </div>
                   <ScrollArea className="h-[calc(90vh-12rem)]">
                     <div className="p-4">
@@ -498,11 +503,27 @@ export function ApprovalDetailDialog({
               </div>
             ) : (
               // Single view for posts or reports without previous version
-              <ScrollArea className="h-[calc(90vh-8rem)]">
-                <div className="p-6">
-                  <CurrentVersionContent />
+              <div className="flex h-full flex-col">
+                <div className="border-border border-b bg-dynamic-blue/5 px-6 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
+                      {t('detail.currentVersion')}
+                    </div>
+                    <span className="text-muted-foreground text-xs">
+                      {t('detail.pendingApproval')}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                    <span>{t('labels.last_modified_by')}</span>
+                    <span className="font-medium">{modifierName}</span>
+                  </div>
                 </div>
-              </ScrollArea>
+                <ScrollArea className="h-[calc(90vh-11rem)]">
+                  <div className="p-6">
+                    <CurrentVersionContent />
+                  </div>
+                </ScrollArea>
+              </div>
             )}
           </div>
           {/* End Left Column */}
@@ -538,6 +559,12 @@ export function ApprovalDetailDialog({
                       <span>{item.group_name}</span>
                     </div>
                   )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      {t('labels.last_modified_by')}
+                    </span>
+                    <span>{modifierName}</span>
+                  </div>
                 </div>
               </div>
 

@@ -158,7 +158,14 @@ export default function EditableReportPreview({
             feedback: report?.feedback || '',
           };
     form.reset(formValues);
-  }, [isRejected, latestApprovedLog, report, form.reset]);
+  }, [
+    isRejected,
+    latestApprovedLog,
+    report?.title,
+    report?.content,
+    report?.feedback,
+    form.reset,
+  ]);
 
   const title = form.watch('title');
   const content = form.watch('content');
@@ -372,12 +379,14 @@ export default function EditableReportPreview({
       }
       // Navigate depending on context
       const isGroupContext = pathname.includes('/users/groups/');
+      const sp = new URLSearchParams(searchParams.toString());
+      if (report.user_id) sp.set('userId', report.user_id);
+      sp.set('reportId', data.id);
+
       if (isGroupContext) {
-        const sp = new URLSearchParams(searchParams.toString());
-        sp.set('reportId', data.id);
         router.replace(`${pathname}?${sp.toString()}`);
       } else {
-        router.replace(`/${wsId}/users/reports/${data.id}`);
+        router.replace(`/${wsId}/users/reports?${sp.toString()}`);
       }
     },
     onError: (err) => {
@@ -437,6 +446,10 @@ export default function EditableReportPreview({
             'reports',
           ],
         }),
+        report?.title,
+        report?.content,
+        report?.feedback,
+        form.reset,
       ]);
     },
     onError: (err) => {
@@ -471,19 +484,14 @@ export default function EditableReportPreview({
         });
       }
       const isGroupContext = pathname.includes('/users/groups/');
+      const sp = new URLSearchParams(searchParams.toString());
+      if (report.user_id) sp.set('userId', report.user_id);
+      sp.delete('reportId');
+
       if (isGroupContext) {
-        const sp = new URLSearchParams(searchParams.toString());
-        sp.delete('reportId');
         router.replace(`${pathname}?${sp.toString()}`);
       } else {
-        // Redirect to new with preserved user/group if available
-        const qp: string[] = [];
-        if (report.group_id)
-          qp.push(`groupId=${encodeURIComponent(report.group_id)}`);
-        if (report.user_id)
-          qp.push(`userId=${encodeURIComponent(report.user_id)}`);
-        const qs = qp.length ? `?${qp.join('&')}` : '';
-        router.replace(`/${wsId}/users/reports/new${qs}`);
+        router.replace(`/${wsId}/users/reports?${sp.toString()}`);
       }
     },
     onError: (err) => {

@@ -803,6 +803,7 @@
       "approved_at": "Duyệt lúc",
       "created_at": "Tạo lúc",
       "group": "Nhóm",
+      "last_modified_by": "Chỉnh sửa gần nhất bởi",
       "rejected_at": "Từ chối lúc",
       "rejection_reason": "Lý do",
       "unknown_group": "Nhóm không xác định",

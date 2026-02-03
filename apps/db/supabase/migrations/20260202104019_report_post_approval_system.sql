@@ -10,6 +10,10 @@ $$;
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'approve_reports';
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'approve_posts';
 
+-- Drop existing triggers if they exist to prevent interference with backfills
+DROP TRIGGER IF EXISTS trg_report_approval ON external_user_monthly_reports;
+DROP TRIGGER IF EXISTS trg_post_approval ON user_group_posts;
+
 -- Add approval columns to external_user_monthly_reports
 ALTER TABLE external_user_monthly_reports 
     ADD COLUMN IF NOT EXISTS report_approval_status approval_status NOT NULL DEFAULT 'PENDING',
@@ -167,6 +171,11 @@ DECLARE
 BEGIN
     -- Get the current user ID
     v_user_id := auth.uid();
+    
+    -- Bypass if run by service role or migration
+    IF v_user_id IS NULL THEN
+        RETURN NEW;
+    END IF;
     
     -- Get workspace ID for this report
     IF TG_OP = 'UPDATE' THEN
@@ -497,17 +506,30 @@ ALTER TABLE "public"."user_group_post_logs" ENABLE ROW LEVEL SECURITY;
 
 -- Create primary key
 CREATE UNIQUE INDEX IF NOT EXISTS user_group_post_logs_pkey ON public.user_group_post_logs USING btree (id);
-ALTER TABLE "public"."user_group_post_logs" ADD CONSTRAINT "user_group_post_logs_pkey" PRIMARY KEY USING INDEX "user_group_post_logs_pkey";
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_group_post_logs_pkey') THEN
+        ALTER TABLE "public"."user_group_post_logs" ADD CONSTRAINT "user_group_post_logs_pkey" PRIMARY KEY USING INDEX "user_group_post_logs_pkey";
+    END IF;
+END $$;
 
 -- Add foreign key constraints (only for core relations)
-ALTER TABLE "public"."user_group_post_logs" 
-    ADD CONSTRAINT "user_group_post_logs_post_id_fkey" 
-    FOREIGN KEY (post_id) REFERENCES user_group_posts(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
-ALTER TABLE "public"."user_group_post_logs" VALIDATE CONSTRAINT "user_group_post_logs_post_id_fkey";
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_group_post_logs_post_id_fkey') THEN
+        ALTER TABLE "public"."user_group_post_logs" 
+            ADD CONSTRAINT "user_group_post_logs_post_id_fkey" 
+            FOREIGN KEY (post_id) REFERENCES user_group_posts(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+    END IF;
 
-ALTER TABLE "public"."user_group_post_logs" 
-    ADD CONSTRAINT "user_group_post_logs_group_id_fkey" 
-    FOREIGN KEY (group_id) REFERENCES workspace_user_groups(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_group_post_logs_group_id_fkey') THEN
+        ALTER TABLE "public"."user_group_post_logs" 
+            ADD CONSTRAINT "user_group_post_logs_group_id_fkey" 
+            FOREIGN KEY (group_id) REFERENCES workspace_user_groups(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+    END IF;
+END $$;
+
+ALTER TABLE "public"."user_group_post_logs" VALIDATE CONSTRAINT "user_group_post_logs_post_id_fkey";
 ALTER TABLE "public"."user_group_post_logs" VALIDATE CONSTRAINT "user_group_post_logs_group_id_fkey";
 
 -- Grant permissions (anon not needed - workspace data is private)

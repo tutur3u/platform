@@ -289,6 +289,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
             const approvedAt = item.approved_at;
             const rejectedAt = item.rejected_at;
             const title = item.title || t('labels.untitled');
+            const modifierName = item.modifier_name || t('labels.unknown_user');
 
             return (
               <Card
@@ -325,6 +326,9 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                     <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
                       <span>
                         {t('labels.created_at')} {formatDate(item.created_at)}
+                      </span>
+                      <span>
+                        {t('labels.last_modified_by')} {modifierName}
                       </span>
                       {approvedAt && (
                         <span>

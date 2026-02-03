@@ -706,7 +706,9 @@ export async function WorkspaceNavigationLinks({
           withoutPermission('view_user_groups_reports') &&
           withoutPermission('view_user_groups_scores') &&
           withoutPermission('send_user_group_post_emails') &&
-          withoutPermission('create_lead_generations')),
+          withoutPermission('create_lead_generations') &&
+          withoutPermission('approve_reports') &&
+          withoutPermission('approve_posts')),
     },
     {
       title: t('sidebar_tabs.inventory'),

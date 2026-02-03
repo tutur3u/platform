@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getStatusColorClasses } from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
+import {
+  getStatusColorClasses,
+  type ApprovalStatus,
+} from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
 
 describe('approvals utils', () => {
   it.each([
@@ -13,6 +16,13 @@ describe('approvals utils', () => {
     status,
     expected,
   }) => {
-    expect(getStatusColorClasses(status as any)).toContain(expected);
+    const result = getStatusColorClasses(
+      status as ApprovalStatus | undefined | null
+    );
+    if (expected === '') {
+      expect(result).toBe('');
+    } else {
+      expect(result).toContain(expected);
+    }
   });
 });

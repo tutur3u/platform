@@ -803,6 +803,7 @@
       "approved_at": "Approved",
       "created_at": "Created",
       "group": "Group",
+      "last_modified_by": "Last modified by",
       "rejected_at": "Rejected",
       "rejection_reason": "Reason",
       "unknown_group": "Unknown group",

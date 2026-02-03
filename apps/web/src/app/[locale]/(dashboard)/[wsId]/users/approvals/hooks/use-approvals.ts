@@ -106,7 +106,7 @@ export function useApprovals({
       let dataQuery = supabase
         .from('external_user_monthly_reports')
         .select(
-          'id, title, content, feedback, score, scores, created_at, report_approval_status, rejection_reason, approved_at, rejected_at, user:workspace_users!user_id!inner(full_name, ws_id), ...workspace_user_groups(group_name:name)'
+          'id, title, content, feedback, score, scores, created_at, updated_by, report_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name), user:workspace_users!user_id!inner(full_name, ws_id), ...workspace_user_groups(group_name:name)'
         )
         .eq('user.ws_id', wsId);
 
@@ -141,12 +141,16 @@ export function useApprovals({
           score: row.score,
           scores: row.scores,
           created_at: row.created_at,
+          updated_by: row.updated_by,
           report_approval_status: row.report_approval_status,
           rejection_reason: row.rejection_reason,
           approved_at: row.approved_at,
           rejected_at: row.rejected_at,
           group_name: row.group_name,
           user_name: userName,
+          modifier_name: row.modifier?.display_name
+            ? row.modifier.display_name
+            : row.modifier?.full_name,
         };
       });
 
@@ -182,7 +186,7 @@ export function useApprovals({
       let dataQuery = supabase
         .from('user_group_posts')
         .select(
-          'id, title, content, notes, created_at, post_approval_status, rejection_reason, approved_at, rejected_at, ...workspace_user_groups(group_name:name, ws_id)'
+          'id, title, content, notes, created_at, updated_by, post_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name), ...workspace_user_groups(group_name:name, ws_id)'
         )
         .eq('workspace_user_groups.ws_id', wsId);
 
@@ -210,11 +214,15 @@ export function useApprovals({
         content: row.content,
         notes: row.notes,
         created_at: row.created_at,
+        updated_by: row.updated_by,
         post_approval_status: row.post_approval_status,
         rejection_reason: row.rejection_reason,
         approved_at: row.approved_at,
         rejected_at: row.rejected_at,
         group_name: row.group_name,
+        modifier_name: row.modifier?.display_name
+          ? row.modifier.display_name
+          : row.modifier?.full_name,
       }));
 
       const totalCount = count ?? 0;
@@ -323,6 +331,14 @@ export function useApprovals({
       await queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', kind],
       });
+
+      // Also invalidate group-posts queries when a post is approved/rejected
+      // This updates the post list in the groups view
+      if (kind === 'posts') {
+        await queryClient.invalidateQueries({
+          queryKey: ['group-posts', wsId],
+        });
+      }
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : tCommon('error'));

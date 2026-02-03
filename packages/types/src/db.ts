@@ -262,10 +262,15 @@ export type ReportApprovalQueryResult = {
   score: number | null;
   scores: number[] | null;
   created_at: string;
+  updated_by?: string | null;
   report_approval_status: Database['public']['Enums']['approval_status'];
   rejection_reason: string | null;
   approved_at: string | null;
   rejected_at: string | null;
+  modifier?: {
+    full_name?: string | null;
+    display_name?: string | null;
+  } | null;
   user?:
     | {
         full_name?: string | null;
@@ -283,24 +288,14 @@ export type ReportApprovalQueryResult = {
  */
 export type ReportApprovalItem = Omit<ReportApprovalQueryResult, 'user'> & {
   user_name?: string | null;
+  modifier_name?: string | null;
 };
 
 /**
  * Report log entry for comparison view
  * Represents a snapshot of a report from the logs table
  */
-export type ReportLogEntry = {
-  id: string;
-  report_id: string;
-  title: string;
-  content: string;
-  feedback: string | null;
-  score: number | null;
-  scores: number[] | null;
-  created_at: string;
-  report_approval_status: Database['public']['Enums']['approval_status'] | null;
-  approved_at: string | null;
-};
+export type ReportLogEntry = Tables<'external_user_monthly_report_logs'>;
 
 /**
  * Raw post data from Supabase query with joins
@@ -312,10 +307,15 @@ export type PostApprovalQueryResult = {
   content: string | null;
   notes: string | null;
   created_at: string;
+  updated_by?: string | null;
   post_approval_status: Database['public']['Enums']['approval_status'];
   rejection_reason: string | null;
   approved_at: string | null;
   rejected_at: string | null;
+  modifier?: {
+    full_name?: string | null;
+    display_name?: string | null;
+  } | null;
   group_name?: string | null;
 };
 
@@ -323,7 +323,9 @@ export type PostApprovalQueryResult = {
  * Post approval item with joined group data
  * Used in approvals view for user group posts
  */
-export type PostApprovalItem = PostApprovalQueryResult;
+export type PostApprovalItem = PostApprovalQueryResult & {
+  modifier_name?: string | null;
+};
 
 /**
  * Post log entry for comparison view

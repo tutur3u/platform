@@ -412,7 +412,7 @@ export default function GroupReportsClient({
   return (
     <div className="flex min-h-full w-full flex-col">
       <div className="mb-4 flex flex-row items-center justify-between gap-2">
-        <div className="grid flex-wrap items-start gap-2 md:flex">
+        <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center">
           <Combobox
             t={t}
             key="user-combobox"
@@ -432,6 +432,7 @@ export default function GroupReportsClient({
                 reportId: undefined,
               });
             }}
+            className="w-full max-w-sm"
           />
 
           {Boolean(userId) && (
