@@ -1,3 +1,4 @@
+import type { TimeTrackingSession } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -6,6 +7,25 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
+
+type SessionLike = Pick<TimeTrackingSession, 'start_time' | 'end_time'>;
+
+type PeriodSession = SessionLike & {
+  id: string;
+  title: string;
+  duration_seconds: number | null;
+  category?: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
+};
+
+type SessionWithPeriodDuration = {
+  session: PeriodSession;
+  periodDuration: number;
+  timeOfDay: string;
+};
 
 /**
  * Calculate how much of a session's duration falls within a specific date range.
@@ -18,10 +38,7 @@ dayjs.extend(isoWeek);
  * @returns Duration in seconds that falls within the period
  */
 export const getSessionDurationInPeriod = (
-  session: {
-    start_time: string;
-    end_time: string | null;
-  },
+  session: SessionLike,
   periodStart: dayjs.Dayjs,
   periodEnd: dayjs.Dayjs,
   userTimezone: string
@@ -56,10 +73,7 @@ export const getSessionDurationInPeriod = (
  * @returns Duration in seconds that falls within the specified day
  */
 export const getSessionDurationForDay = (
-  session: {
-    start_time: string;
-    end_time: string | null;
-  },
+  session: SessionLike,
   date: dayjs.Dayjs,
   userTimezone: string
 ): number => {
@@ -72,9 +86,7 @@ export const getSessionDurationForDay = (
  * Get the time of day category for a session (morning, afternoon, evening, night)
  */
 export const getTimeOfDayCategory = (
-  session: {
-    start_time: string;
-  },
+  session: SessionLike,
   userTimezone: string
 ): string => {
   const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
@@ -119,55 +131,153 @@ export interface PeriodStats {
   sessionCount: number;
 }
 
-export const calculatePeriodStats = (
-  sessionsForPeriod:
-    | {
-        id: string;
-        title: string;
-        start_time: string;
-        end_time: string | null;
-        duration_seconds: number | null;
-        category?: {
-          id: string;
-          name: string;
-          color: string | null;
-        } | null;
-      }[]
-    | undefined,
+const getOverlapSeconds = (
+  session: SessionLike,
+  periodStart: dayjs.Dayjs,
+  periodEnd: dayjs.Dayjs,
+  userTimezone: string
+): number => {
+  const sessionStart = dayjs.utc(session.start_time).tz(userTimezone);
+  const sessionEnd = session.end_time
+    ? dayjs.utc(session.end_time).tz(userTimezone)
+    : dayjs().tz(userTimezone);
+
+  const clampedStart = sessionStart.isAfter(periodStart)
+    ? sessionStart
+    : periodStart;
+  const clampedEnd = sessionEnd.isBefore(periodEnd) ? sessionEnd : periodEnd;
+
+  return Math.max(0, clampedEnd.diff(clampedStart, 'second'));
+};
+
+const buildSessionsWithPeriodDuration = (
+  sessionsList: PeriodSession[],
   startOfPeriod: dayjs.Dayjs,
   endOfPeriod: dayjs.Dayjs,
   userTimezone: string
-): PeriodStats => {
-  // Calculate total duration using only the portion that falls within the period
-  const totalDuration =
-    sessionsForPeriod?.reduce(
-      (sum, s) =>
-        sum +
-        getSessionDurationInPeriod(s, startOfPeriod, endOfPeriod, userTimezone),
-      0
-    ) || 0;
+): SessionWithPeriodDuration[] =>
+  sessionsList.map((session) => ({
+    session,
+    periodDuration: getSessionDurationInPeriod(
+      session,
+      startOfPeriod,
+      endOfPeriod,
+      userTimezone
+    ),
+    timeOfDay: getTimeOfDayCategory(session, userTimezone),
+  }));
 
+const computeTimeOfDayBreakdown = (
+  sessionsWithPeriodDuration: SessionWithPeriodDuration[]
+): PeriodStats['timeOfDayBreakdown'] =>
+  sessionsWithPeriodDuration.reduce(
+    (acc, { timeOfDay }) => {
+      acc[timeOfDay as keyof PeriodStats['timeOfDayBreakdown']] += 1;
+      return acc;
+    },
+    {
+      morning: 0,
+      afternoon: 0,
+      evening: 0,
+      night: 0,
+    }
+  );
+
+const computeDurationBuckets = (
+  sessionsWithPeriodDuration: SessionWithPeriodDuration[]
+): Pick<PeriodStats, 'shortSessions' | 'mediumSessions' | 'longSessions'> => {
+  let shortSessions = 0;
+  let mediumSessions = 0;
+  let longSessions = 0;
+
+  sessionsWithPeriodDuration.forEach(({ periodDuration }) => {
+    if (periodDuration <= 0) return;
+    if (periodDuration < 1800) {
+      shortSessions += 1;
+      return;
+    }
+    if (periodDuration < 7200) {
+      mediumSessions += 1;
+      return;
+    }
+    longSessions += 1;
+  });
+
+  return { shortSessions, mediumSessions, longSessions };
+};
+
+const computeCategoryBreakdown = (
+  sessionsWithPeriodDuration: SessionWithPeriodDuration[]
+): PeriodStats['breakdown'] => {
   const categoryDurations: {
     [id: string]: { name: string; duration: number; color: string };
   } = {};
 
+  sessionsWithPeriodDuration.forEach(({ session, periodDuration }) => {
+    const id = session.category?.id || 'uncategorized';
+    const name = session.category?.name || 'No Category';
+    const color = session.category?.color || 'GRAY';
+
+    if (!categoryDurations[id]) {
+      categoryDurations[id] = { name, duration: 0, color };
+    }
+    categoryDurations[id].duration += periodDuration;
+  });
+
+  return Object.values(categoryDurations)
+    .filter((c) => c.duration > 0)
+    .sort((a, b) => b.duration - a.duration);
+};
+
+const computeLongestSession = (
+  sessionsList: PeriodSession[],
+  startOfPeriod: dayjs.Dayjs,
+  endOfPeriod: dayjs.Dayjs,
+  userTimezone: string
+): PeriodSession | null => {
+  if (sessionsList.length === 0) return null;
+
+  return sessionsList.reduce((longest, session) => {
+    const longestOverlap = getOverlapSeconds(
+      longest,
+      startOfPeriod,
+      endOfPeriod,
+      userTimezone
+    );
+    const sessionOverlap = getOverlapSeconds(
+      session,
+      startOfPeriod,
+      endOfPeriod,
+      userTimezone
+    );
+
+    return sessionOverlap > longestOverlap ? session : longest;
+  });
+};
+
+export const calculatePeriodStats = (
+  sessionsForPeriod: PeriodSession[] | undefined,
+  startOfPeriod: dayjs.Dayjs,
+  endOfPeriod: dayjs.Dayjs,
+  userTimezone: string
+): PeriodStats => {
   // Normalize sessions array to avoid undefined lengths producing undefined counts
   const sessionsList = sessionsForPeriod ?? [];
+  const sessionsWithPeriodDuration = buildSessionsWithPeriodDuration(
+    sessionsList,
+    startOfPeriod,
+    endOfPeriod,
+    userTimezone
+  );
 
-  const timeOfDayBreakdown = {
-    morning: sessionsList.filter(
-      (s) => getTimeOfDayCategory(s, userTimezone) === 'morning'
-    ).length,
-    afternoon: sessionsList.filter(
-      (s) => getTimeOfDayCategory(s, userTimezone) === 'afternoon'
-    ).length,
-    evening: sessionsList.filter(
-      (s) => getTimeOfDayCategory(s, userTimezone) === 'evening'
-    ).length,
-    night: sessionsList.filter(
-      (s) => getTimeOfDayCategory(s, userTimezone) === 'night'
-    ).length,
-  };
+  const totalDuration = sessionsWithPeriodDuration.reduce(
+    (sum, { periodDuration }) => sum + periodDuration,
+    0
+  );
+
+  const timeOfDayBreakdown = computeTimeOfDayBreakdown(
+    sessionsWithPeriodDuration
+  );
 
   const bestTimeOfDay =
     sessionsList.length > 0
@@ -177,69 +287,17 @@ export const calculatePeriodStats = (
         )[0]
       : 'none';
 
-  const longestSession =
-    (sessionsForPeriod?.length || 0) > 0
-      ? sessionsForPeriod?.reduce((longest, session) =>
-          (session.duration_seconds || 0) > (longest.duration_seconds || 0)
-            ? session
-            : longest
-        )
-      : null;
+  const longestSession = computeLongestSession(
+    sessionsList,
+    startOfPeriod,
+    endOfPeriod,
+    userTimezone
+  );
 
-  // Calculate session duration categories using the portion within the period
-  const shortSessions =
-    sessionsForPeriod?.filter((s) => {
-      const periodDuration = getSessionDurationInPeriod(
-        s,
-        startOfPeriod,
-        endOfPeriod,
-        userTimezone
-      );
-      return periodDuration > 0 && periodDuration < 1800;
-    }).length || 0;
+  const { shortSessions, mediumSessions, longSessions } =
+    computeDurationBuckets(sessionsWithPeriodDuration);
 
-  const mediumSessions =
-    sessionsForPeriod?.filter((s) => {
-      const periodDuration = getSessionDurationInPeriod(
-        s,
-        startOfPeriod,
-        endOfPeriod,
-        userTimezone
-      );
-      return periodDuration >= 1800 && periodDuration < 7200;
-    }).length || 0;
-
-  const longSessions =
-    sessionsForPeriod?.filter((s) => {
-      const periodDuration = getSessionDurationInPeriod(
-        s,
-        startOfPeriod,
-        endOfPeriod,
-        userTimezone
-      );
-      return periodDuration >= 7200;
-    }).length || 0;
-
-  // Calculate category durations using only the portion within the period
-  sessionsForPeriod?.forEach((s) => {
-    const id = s.category?.id || 'uncategorized';
-    const name = s.category?.name || 'No Category';
-    const color = s.category?.color || 'GRAY';
-
-    if (!categoryDurations[id]) {
-      categoryDurations[id] = { name, duration: 0, color };
-    }
-    categoryDurations[id].duration += getSessionDurationInPeriod(
-      s,
-      startOfPeriod,
-      endOfPeriod,
-      userTimezone
-    );
-  });
-
-  const breakdown = Object.values(categoryDurations)
-    .filter((c) => c.duration > 0)
-    .sort((a, b) => b.duration - a.duration);
+  const breakdown = computeCategoryBreakdown(sessionsWithPeriodDuration);
 
   return {
     totalDuration,
@@ -250,6 +308,6 @@ export const calculatePeriodStats = (
     shortSessions,
     mediumSessions,
     longSessions,
-    sessionCount: sessionsForPeriod?.length || 0,
+    sessionCount: sessionsList.length,
   };
 };

@@ -79,10 +79,8 @@ export function SessionHistory({
     searchQuery: '',
     categoryId: 'all',
     duration: 'all',
-    productivity: 'all',
     timeOfDay: 'all',
     projectContext: 'all',
-    sessionQuality: 'all',
   });
 
   // Calculate period bounds for API query
@@ -253,10 +251,8 @@ export function SessionHistory({
       searchQuery: '',
       categoryId: 'all',
       duration: 'all',
-      productivity: 'all',
       timeOfDay: 'all',
       projectContext: 'all',
-      sessionQuality: 'all',
     });
   }, []);
 

@@ -74,7 +74,7 @@ BEGIN
     WHERE s.user_id = p_user_id
       AND (p_is_personal OR s.ws_id = p_ws_id)
       AND s.duration_seconds IS NOT NULL
-      AND (s.start_time AT TIME ZONE p_timezone)::DATE >= v_current_date - (v_lookback_days || ' day')::INTERVAL
+      AND (s.start_time AT TIME ZONE p_timezone)::DATE >= v_current_date - MAKE_INTERVAL(days => v_lookback_days)
   ),
   daily_aggregates AS (
     SELECT
@@ -123,7 +123,7 @@ BEGIN
             'sessions', session_count
           )
           ORDER BY activity_date DESC
-        ) FILTER (WHERE activity_date >= v_current_date - (p_days_back || ' day')::INTERVAL),
+        ) FILTER (WHERE activity_date >= v_current_date - MAKE_INTERVAL(days => p_days_back)),
         '[]'::JSONB
       ) AS daily_data
       

@@ -43,6 +43,12 @@ export function MonthView({
 }: MonthViewProps) {
   const t = useTranslations('time-tracker.session_history');
 
+  const sessionColor = {
+    long: 'text-dynamic-green',
+    medium: 'text-dynamic-blue',
+    short: 'text-dynamic-orange',
+  };
+
   return (
     <div className="space-y-6">
       {/* Month Overview Cards */}
@@ -179,19 +185,19 @@ export function MonthView({
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="text-center">
-                    <div className="font-bold text-green-600">
+                    <div className={cn('font-bold', sessionColor.long)}>
                       {periodStats?.longSessions}
                     </div>
                     <div className="text-muted-foreground">{t('deep')}</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-blue-600">
+                    <div className={cn('font-bold', sessionColor.medium)}>
                       {periodStats?.mediumSessions}
                     </div>
                     <div className="text-muted-foreground">{t('focus')}</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-orange-600">
+                    <div className={cn('font-bold', sessionColor.short)}>
                       {periodStats?.shortSessions}
                     </div>
                     <div className="text-muted-foreground">{t('quick')}</div>

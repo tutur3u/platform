@@ -1,8 +1,31 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  escapeLikePattern,
+  sanitizeSearchQuery,
+} from '@tuturuuu/utils/search-helper';
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { calculatePeriodStats } from '@/lib/time-tracker-utils';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const querySchema = z.object({
+  dateFrom: z.string().min(1),
+  dateTo: z.string().min(1),
+  timezone: z.string().min(1).default('UTC'),
+  targetUserId: z.string().min(1).optional(),
+  searchQuery: z.string().optional(),
+  categoryId: z.string().optional(),
+  taskId: z.string().optional(),
+  duration: z.string().optional(),
+  timeOfDay: z.string().optional(),
+  projectContext: z.string().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -38,31 +61,44 @@ export async function GET(
     }
 
     const url = new URL(request.url);
-    const dateFrom = url.searchParams.get('dateFrom');
-    const dateTo = url.searchParams.get('dateTo');
-    const userTimezone = url.searchParams.get('timezone') || 'UTC';
-    const targetUserId = url.searchParams.get('userId') || user.id;
+    const parsedQuery = querySchema.safeParse({
+      dateFrom: url.searchParams.get('dateFrom'),
+      dateTo: url.searchParams.get('dateTo'),
+      timezone: url.searchParams.get('timezone') ?? 'UTC',
+      targetUserId: url.searchParams.get('userId') ?? undefined,
+      searchQuery: url.searchParams.get('searchQuery') ?? undefined,
+      categoryId: url.searchParams.get('categoryId') ?? undefined,
+      taskId: url.searchParams.get('taskId') ?? undefined,
+      duration: url.searchParams.get('duration') ?? undefined,
+      timeOfDay: url.searchParams.get('timeOfDay') ?? undefined,
+      projectContext: url.searchParams.get('projectContext') ?? undefined,
+    });
 
-    // Filter parameters
-    const searchQuery = url.searchParams.get('searchQuery');
-    const categoryId = url.searchParams.get('categoryId');
-    const taskId = url.searchParams.get('taskId');
-    const duration = url.searchParams.get('duration');
-    const timeOfDay = url.searchParams.get('timeOfDay');
-    const projectContext = url.searchParams.get('projectContext');
-
-    if (!dateFrom || !dateTo) {
+    if (!parsedQuery.success) {
       return NextResponse.json(
-        { error: 'dateFrom and dateTo are required' },
+        { error: 'Invalid query parameters' },
         { status: 400 }
       );
     }
 
+    const {
+      dateFrom,
+      dateTo,
+      timezone: userTimezone,
+      targetUserId,
+      searchQuery,
+      categoryId,
+      taskId,
+      duration,
+      timeOfDay,
+      projectContext,
+    } = parsedQuery.data;
+
     // Determine which user's data to fetch
-    const queryUserId = targetUserId;
+    const queryUserId = targetUserId ?? user.id;
 
     // If targeting another user, verify they're in the same workspace
-    if (targetUserId !== user.id) {
+    if (targetUserId && targetUserId !== user.id) {
       const { data: targetUserCheck } = await supabase
         .from('workspace_members')
         .select('id:user_id')
@@ -107,9 +143,12 @@ export async function GET(
     if (taskId && taskId !== 'all') {
       query = query.eq('task_id', taskId);
     }
-    if (searchQuery) {
+    const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
+    if (sanitizedSearchQuery) {
+      const escapedSearchQuery = escapeLikePattern(sanitizedSearchQuery);
+      const searchPattern = `%${escapedSearchQuery}%`;
       query = query.or(
-        `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+        `title.ilike.${searchPattern},description.ilike.${searchPattern}`
       );
     }
 

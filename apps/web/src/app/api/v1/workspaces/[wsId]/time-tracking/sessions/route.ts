@@ -2,6 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  escapeLikePattern,
+  sanitizeSearchQuery,
+} from '@tuturuuu/utils/search-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -201,12 +205,15 @@ export async function GET(
         countQuery = countQuery.eq('task_id', taskId);
       }
 
-      if (searchQuery) {
+      const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
+      if (sanitizedSearchQuery) {
+        const escapedSearchQuery = escapeLikePattern(sanitizedSearchQuery);
+        const searchPattern = `%${escapedSearchQuery}%`;
         query = query.or(
-          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+          `title.ilike.${searchPattern},description.ilike.${searchPattern}`
         );
         countQuery = countQuery.or(
-          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+          `title.ilike.${searchPattern},description.ilike.${searchPattern}`
         );
       }
 
@@ -335,7 +342,6 @@ export async function GET(
     }
 
     if (type === 'stats') {
-      const userTimezone = url.searchParams.get('timezone') || 'UTC';
       const isPersonal = await isPersonalWorkspace(normalizedWsId);
 
       // Call the optimized RPC function
