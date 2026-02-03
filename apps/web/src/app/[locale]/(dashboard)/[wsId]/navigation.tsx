@@ -689,15 +689,11 @@ export async function WorkspaceNavigationLinks({
           requireRootWorkspace: true,
           requireRootMember: true,
           disabled:
-            !DEV_MODE ||
-            ENABLE_AI_ONLY ||
-            !hasSecret('ENABLE_USERS', 'true') ||
-            withoutPermission('manage_users'),
+            !DEV_MODE || ENABLE_AI_ONLY || withoutPermission('manage_users'),
         },
       ],
       disabled:
         ENABLE_AI_ONLY ||
-        !hasSecret('ENABLE_USERS', 'true') ||
         (withoutPermission('manage_users') &&
           withoutPermission('check_user_attendance') &&
           withoutPermission('view_users_private_info') &&
@@ -769,10 +765,7 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutPermission('view_inventory'),
         },
       ],
-      disabled:
-        ENABLE_AI_ONLY ||
-        !hasSecret('ENABLE_INVENTORY', 'true') ||
-        withoutPermission('view_inventory'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('view_inventory'),
     },
     null,
     {

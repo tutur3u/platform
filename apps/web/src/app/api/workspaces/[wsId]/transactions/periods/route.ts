@@ -64,6 +64,7 @@ export async function GET(req: Request, { params }: Params) {
     const walletId = searchParams.get('walletId');
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
+    const timezone = searchParams.get('timezone') || 'UTC';
 
     // Combine wallet filters
     const finalWalletIds =
@@ -92,6 +93,7 @@ export async function GET(req: Request, { params }: Params) {
       p_end_date: endDate || undefined,
       p_cursor_period_start: cursor || undefined,
       p_limit: limit,
+      p_timezone: timezone,
     });
 
     if (error) throw error;

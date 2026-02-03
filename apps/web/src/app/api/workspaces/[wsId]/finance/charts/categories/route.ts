@@ -27,6 +27,7 @@ const querySchema = z.object({
     .optional()
     .default('false')
     .transform((v) => v === 'true'),
+  timezone: z.string().optional().default('UTC'),
 });
 
 interface Params {
@@ -52,6 +53,7 @@ export async function GET(
       transactionType: searchParams.get('transactionType'),
       interval: searchParams.get('interval'),
       anchorToLatest: searchParams.get('anchorToLatest'),
+      timezone: searchParams.get('timezone'),
     });
 
     if (!parsed.success) {
@@ -68,6 +70,7 @@ export async function GET(
       transactionType,
       interval,
       anchorToLatest,
+      timezone,
     } = parsed.data;
 
     // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
@@ -90,6 +93,7 @@ export async function GET(
       _transaction_type: transactionType,
       _interval: interval,
       _anchor_to_latest: anchorToLatest,
+      _timezone: timezone,
     });
 
     if (error) throw error;

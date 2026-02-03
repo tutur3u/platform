@@ -2,7 +2,7 @@
 
 import { Lock } from '@tuturuuu/icons';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Checkbox } from '../../checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 
@@ -67,15 +67,14 @@ export function ConfidentialAmount({
   style,
 }: ConfidentialAmountProps) {
   const t = useTranslations('workspace-finance-transactions');
-  const locale = useLocale();
 
   // Auto-detect redaction: amount is null AND field is confidential
   const actuallyRedacted = isRedacted ?? (amount === null && isConfidential);
 
-  // Default formatter using locale and currency
+  // Default formatter using currency (locale is derived from currency via getCurrencyLocale)
   // Use 'exceptZero' to show + for income, - for expense, no sign for zero
   const defaultFormatter = (amt: number) =>
-    formatCurrency(amt, currency, locale, { signDisplay: 'exceptZero' });
+    formatCurrency(amt, currency, undefined, { signDisplay: 'exceptZero' });
 
   if (actuallyRedacted) {
     return (
