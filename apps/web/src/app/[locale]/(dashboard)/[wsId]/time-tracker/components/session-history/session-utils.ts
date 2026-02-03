@@ -243,18 +243,18 @@ export const stackSessions = (
  */
 export const getCategoryColor = (color: string): string => {
   const colorMap: Record<string, string> = {
-    RED: 'bg-red-500',
-    BLUE: 'bg-blue-500',
-    GREEN: 'bg-green-500',
-    YELLOW: 'bg-yellow-500',
-    ORANGE: 'bg-orange-500',
-    PURPLE: 'bg-purple-500',
-    PINK: 'bg-pink-500',
-    INDIGO: 'bg-indigo-500',
-    CYAN: 'bg-cyan-500',
-    GRAY: 'bg-gray-500',
+    RED: 'bg-dynamic-red',
+    BLUE: 'bg-dynamic-blue',
+    GREEN: 'bg-dynamic-green',
+    YELLOW: 'bg-dynamic-yellow',
+    ORANGE: 'bg-dynamic-orange',
+    PURPLE: 'bg-dynamic-purple',
+    PINK: 'bg-dynamic-pink',
+    INDIGO: 'bg-dynamic-indigo',
+    CYAN: 'bg-dynamic-cyan',
+    GRAY: 'bg-dynamic-gray',
   };
-  return colorMap[color] || 'bg-blue-500';
+  return colorMap[color] || 'bg-dynamic-blue';
 };
 
 /**
