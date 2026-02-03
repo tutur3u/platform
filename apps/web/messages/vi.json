@@ -9155,6 +9155,7 @@
     "mark-as-confidential": "Đánh dấu là bảo mật",
     "net-total": "Tổng ròng",
     "no-transactions-found": "Không tìm thấy giao dịch nào. Tạo giao dịch đầu tiên của bạn để bắt đầu.",
+    "redacted-amounts-note": "Lưu ý: Một số số tiền là bảo mật và không được tính vào tổng",
     "statistics-summary": "Thống kê tổng hợp",
     "total-expenses": "Tổng chi",
     "total-income": "Tổng thu",

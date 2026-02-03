@@ -4,6 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezonePlugin from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
@@ -16,6 +19,10 @@ import {
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
 import { CategoryBreakdownDialog } from './category-breakdown-dialog';
+
+// Initialize dayjs plugins for timezone-aware date operations
+dayjs.extend(utc);
+dayjs.extend(timezonePlugin);
 
 // Cookie helper functions
 const getCookie = (name: string): string | null => {
@@ -32,12 +39,14 @@ const getCookie = (name: string): string | null => {
 };
 
 // Dynamic color palette using CSS variables
+// NOTE: CSS variables --chart-N already contain full hsl() values (e.g., "hsl(12 76% 61%)"),
+// so we use var(--chart-N) directly without wrapping in hsl()
 const CATEGORY_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
   '#f87171', // red-400
   '#fb923c', // orange-400
   '#fbbf24', // amber-400
@@ -67,6 +76,8 @@ interface CategoryDonutChartProps {
   periodStart?: string;
   /** Period end date for immersive dialog */
   periodEnd?: string;
+  /** IANA timezone identifier for period calculations (e.g., 'America/New_York'). Defaults to 'UTC'. */
+  timezone?: string;
   /** Enable clicking to open immersive category breakdown dialog (default: true) */
   enableImmersiveView?: boolean;
 }
@@ -89,6 +100,7 @@ export function CategoryDonutChart({
   workspaceId,
   periodStart,
   periodEnd,
+  timezone = 'UTC',
   enableImmersiveView = true,
 }: CategoryDonutChartProps) {
   const t = useTranslations('finance-transactions');
@@ -97,8 +109,32 @@ export function CategoryDonutChart({
   const [isConfidential, setIsConfidential] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Extract date string from period timestamps (handles both YYYY-MM-DD and full ISO timestamps)
+  // IMPORTANT: Do NOT convert to UTC - extract the date directly from the local ISO string
+  const extractDateString = (timestamp: string): string => {
+    // If it's already just a date (YYYY-MM-DD), return as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(timestamp)) {
+      return timestamp;
+    }
+    // ISO timestamps start with YYYY-MM-DDTHH:MM:SS
+    // Extract the date part directly WITHOUT converting to UTC
+    // This preserves the local date when timezone offset is included
+    const dateMatch = timestamp.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch?.[1]) {
+      return dateMatch[1];
+    }
+    // Fallback: use original timestamp
+    return timestamp;
+  };
+
+  const periodStartDate = periodStart
+    ? extractDateString(periodStart)
+    : undefined;
+  const periodEndDate = periodEnd ? extractDateString(periodEnd) : undefined;
+
   // Check if immersive view is available (needs workspace context)
-  const canOpenDialog = enableImmersiveView && !!workspaceId && !!periodStart;
+  const canOpenDialog =
+    enableImmersiveView && !!workspaceId && !!periodStartDate;
 
   // Sync with confidential mode cookie
   useEffect(() => {
@@ -128,22 +164,27 @@ export function CategoryDonutChart({
   }, []);
 
   // Fetch category data from RPC when workspace context is available
-  const shouldFetchCategories = !!workspaceId && !!periodStart;
+  const shouldFetchCategories = !!workspaceId && !!periodStartDate;
 
   const { data: rpcCategoryData, isLoading: isCategoriesLoading } = useQuery({
     queryKey: [
       'category-donut',
       workspaceId,
-      periodStart,
-      periodEnd,
+      periodStartDate,
+      periodEndDate,
       type || 'all',
+      timezone,
     ],
     queryFn: async () => {
       const supabase = createClient();
-      const startDate = `${periodStart}T00:00:00.000Z`;
-      const endDate = periodEnd
-        ? `${periodEnd}T23:59:59.999Z`
-        : `${periodStart}T23:59:59.999Z`;
+      // Create start/end timestamps in the user's timezone
+      // IMPORTANT: Use the resolved timezone, not UTC, to ensure we query the correct local day
+      const startDate = dayjs
+        .tz(`${periodStartDate} 00:00:00`, timezone)
+        .toISOString();
+      const endDate = dayjs
+        .tz(`${periodEndDate || periodStartDate} 23:59:59.999`, timezone)
+        .toISOString();
 
       const { data, error } = await supabase.rpc('get_category_breakdown', {
         _ws_id: workspaceId!, // Safe: query is only enabled when workspaceId exists
@@ -153,6 +194,7 @@ export function CategoryDonutChart({
         _transaction_type: type,
         _interval: 'daily',
         _anchor_to_latest: false,
+        _timezone: timezone, // Pass timezone for correct date grouping
       });
 
       if (error) throw error;
@@ -243,10 +285,8 @@ export function CategoryDonutChart({
       result.push({
         name: t('other-categories'),
         value: otherTotal,
-        color:
-          resolvedTheme === 'dark'
-            ? 'hsl(var(--muted-foreground))'
-            : 'hsl(var(--muted))',
+        // Use hex colors for "Other" since CSS variables may not work in SVG fill
+        color: resolvedTheme === 'dark' ? '#a1a1aa' : '#d4d4d8', // zinc-400 / zinc-300
         percentage: otherPercentage,
       });
     }
@@ -526,9 +566,10 @@ export function CategoryDonutChart({
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           workspaceId={workspaceId}
-          periodStart={periodStart}
-          periodEnd={periodEnd}
+          periodStart={periodStartDate}
+          periodEnd={periodEndDate}
           currency={currency}
+          timezone={timezone}
           initialCategoryData={categoryData}
           initialType={type}
         />

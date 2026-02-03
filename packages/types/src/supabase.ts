@@ -18254,6 +18254,26 @@ export type Database = {
               period: string;
               total: number;
             }[];
+          }
+        | {
+            Args: {
+              _anchor_to_latest?: boolean;
+              _end_date?: string;
+              _interval?: string;
+              _start_date?: string;
+              _timezone?: string;
+              _transaction_type?: string;
+              _ws_id: string;
+              include_confidential?: boolean;
+            };
+            Returns: {
+              category_color: string;
+              category_icon: string;
+              category_id: string;
+              category_name: string;
+              period: string;
+              total: number;
+            }[];
           };
       get_challenge_stats: {
         Args: { challenge_id_param: string; user_id_param: string };
@@ -18469,12 +18489,15 @@ export type Database = {
         Returns: {
           amount: number;
           created_at: string;
-          id: string;
           invoice_id: string;
           price: number;
           product_id: string;
+          product_name: string;
+          product_unit: string;
           total_count: number;
+          total_diff: number;
           unit_id: string;
+          warehouse: string;
           warehouse_id: string;
         }[];
       };
@@ -18484,7 +18507,6 @@ export type Database = {
           code: string;
           created_at: string;
           description: string;
-          id: string;
           invoice_id: string;
           name: string;
           promo_id: string;
@@ -19194,6 +19216,7 @@ export type Database = {
           p_search_query?: string;
           p_start_date?: string;
           p_tag_ids?: string[];
+          p_timezone?: string;
           p_user_id?: string;
           p_wallet_ids?: string[];
           p_ws_id: string;
