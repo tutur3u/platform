@@ -1,9 +1,10 @@
 import { Head, Html, Img, Tailwind } from '@tuturuuu/transactional/react/email';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import { cn } from '@tuturuuu/utils/format';
-import type { UserGroupPost } from '../users/groups/[groupId]/posts/[postId]/card';
 
 interface Props {
   post: UserGroupPost;
+  groupName: string | undefined;
   isHomeworkDone?: boolean;
   username: string | undefined;
   notes: string | undefined;
@@ -11,6 +12,7 @@ interface Props {
 
 const PostEmailTemplate = ({
   post,
+  groupName,
   isHomeworkDone,
   username,
   notes,
@@ -87,10 +89,8 @@ const PostEmailTemplate = ({
                   year: 'numeric',
                 })}
                 , lớp{' '}
-                <span className="font-semibold underline">
-                  {post.group_name}
-                </span>
-                , với nội dung như sau:
+                <span className="font-semibold underline">{groupName}</span>,
+                với nội dung như sau:
               </p>
               <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Bài học:</span>{' '}
@@ -145,10 +145,8 @@ const PostEmailTemplate = ({
                   year: 'numeric',
                 })}
                 , class{' '}
-                <span className="font-semibold underline">
-                  {post.group_name}
-                </span>
-                , with the following content:
+                <span className="font-semibold underline">{groupName}</span>,
+                with the following content:
               </p>
               <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Lesson:</span>{' '}
