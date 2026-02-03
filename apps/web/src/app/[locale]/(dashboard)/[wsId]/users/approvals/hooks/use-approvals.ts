@@ -203,7 +203,7 @@ export function useApprovals({
       const to = from + limit - 1;
 
       const { data, error } = await dataQuery
-        .order('created_at', { ascending: false })
+        .order('approved_at', { ascending: false })
         .range(from, to);
 
       if (error) throw error;
@@ -245,7 +245,7 @@ export function useApprovals({
           .from('external_user_monthly_reports')
           .update({
             report_approval_status: 'APPROVED' as ApprovalStatus,
-            approved_by: user.id,
+            // approved_by is set by database trigger to ensure correct workspace_user_id
             approved_at: now,
             rejected_by: null,
             rejected_at: null,
@@ -258,7 +258,7 @@ export function useApprovals({
           .from('user_group_posts')
           .update({
             post_approval_status: 'APPROVED' as ApprovalStatus,
-            approved_by: user.id,
+            // approved_by is set by database trigger to ensure correct workspace_user_id
             approved_at: now,
             rejected_by: null,
             rejected_at: null,
@@ -301,7 +301,7 @@ export function useApprovals({
           .from('external_user_monthly_reports')
           .update({
             report_approval_status: 'REJECTED' as ApprovalStatus,
-            rejected_by: user.id,
+            // rejected_by is set by database trigger to ensure correct workspace_user_id
             rejected_at: now,
             rejection_reason: reason,
             approved_by: null,
@@ -314,7 +314,7 @@ export function useApprovals({
           .from('user_group_posts')
           .update({
             post_approval_status: 'REJECTED' as ApprovalStatus,
-            rejected_by: user.id,
+            // rejected_by is set by database trigger to ensure correct workspace_user_id
             rejected_at: now,
             rejection_reason: reason,
             approved_by: null,
