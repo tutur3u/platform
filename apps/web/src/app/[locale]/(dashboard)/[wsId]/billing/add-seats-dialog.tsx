@@ -122,9 +122,7 @@ export function AdjustSeatsDialog({
             <Users className="h-5 w-5" />
             {t('adjust-seats')}
           </DialogTitle>
-          <DialogDescription>
-            {t('adjust-seats-description')}
-          </DialogDescription>
+          <DialogDescription>{t('adjust-seats-description')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
