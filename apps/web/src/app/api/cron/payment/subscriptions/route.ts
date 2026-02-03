@@ -3,7 +3,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { convertExternalIDToWorkspaceID } from '@/utils/subscription-helper';
 
 /**
  * Cron job to sync subscriptions from Polar.sh to database
@@ -52,11 +51,9 @@ export async function GET(req: NextRequest) {
         // Process each subscription
         for (const subscription of subscriptions) {
           try {
-            const wsId = subscription.customer.externalId
-              ? convertExternalIDToWorkspaceID(subscription.customer.externalId)
-              : null;
+            const wsId = subscription.metadata?.wsId;
 
-            if (!wsId) {
+            if (!wsId || typeof wsId !== 'string') {
               skippedCount++;
               continue;
             }

@@ -3,7 +3,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { convertExternalIDToWorkspaceID } from '@/utils/subscription-helper';
 
 /**
  * Cron job to sync orders from Polar.sh to database
@@ -50,12 +49,9 @@ export async function GET(req: NextRequest) {
         // Process each order
         for (const order of orders) {
           try {
-            const wsId = order.customer.externalId
-              ? convertExternalIDToWorkspaceID(order.customer.externalId)
-              : null;
+            const wsId = order.metadata?.wsId;
 
-            // Skip orders without workspace ID in metadata
-            if (!wsId) {
+            if (!wsId || typeof wsId !== 'string') {
               skippedCount++;
               continue;
             }

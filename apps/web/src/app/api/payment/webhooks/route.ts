@@ -4,7 +4,6 @@ import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import {
-  convertExternalIDToWorkspaceID,
   createFreeSubscription,
   hasActiveSubscription,
 } from '@/utils/subscription-helper';
@@ -42,11 +41,10 @@ export async function reportInitialUsage(wsId: string, customerId: string) {
 // Helper function to sync subscription data from Polar to DB
 export async function syncSubscriptionToDatabase(subscription: Subscription) {
   const sbAdmin = await createAdminClient();
-  const wsId = subscription.customer.externalId
-    ? convertExternalIDToWorkspaceID(subscription.customer.externalId)
-    : null;
 
-  if (!wsId) {
+  const wsId = subscription.metadata?.wsId;
+
+  if (!wsId || typeof wsId !== 'string') {
     console.error('Webhook Error: Workspace ID not found.');
     throw new Response('Webhook Error: Workspace ID not found.', {
       status: 400,
@@ -108,17 +106,15 @@ export async function syncSubscriptionToDatabase(subscription: Subscription) {
     throw new Error(`Database Error: ${dbError.message}`);
   }
 
-  return { wsId, subscriptionData, isSeatBased };
+  return { subscriptionData, isSeatBased };
 }
 
 // Helper function to sync order data from Polar to DB
 export async function syncOrderToDatabase(order: Order) {
   const sbAdmin = await createAdminClient();
-  const wsId = order.customer.externalId
-    ? convertExternalIDToWorkspaceID(order.customer.externalId)
-    : null;
+  const wsId = order.metadata?.wsId;
 
-  if (!wsId) {
+  if (!wsId || typeof wsId !== 'string') {
     console.error('Webhook Error: Workspace ID not found.');
     throw new Response('Webhook Error: Workspace ID not found.', {
       status: 400,
@@ -330,20 +326,27 @@ export const POST = Webhooks({
   // Handle new subscription creation
   onSubscriptionCreated: async (payload) => {
     try {
-      const { wsId } = await syncSubscriptionToDatabase(payload.data);
+      const { subscriptionData } = await syncSubscriptionToDatabase(
+        payload.data
+      );
       console.log('Webhook: Subscription created:', payload.data.id);
 
       // Report initial usage for new subscriptions
       if (payload.data.status === 'active') {
         try {
-          await reportInitialUsage(wsId, payload.data.customer.id);
+          await reportInitialUsage(
+            subscriptionData.ws_id,
+            payload.data.customer.id
+          );
         } catch (e) {
           // Log but don't fail - subscription is already saved
           console.error('Webhook: Failed to report initial usage', e);
         }
       }
 
-      console.log(`Webhook: Subscription created for workspace ${wsId}.`);
+      console.log(
+        `Webhook: Subscription created for workspace ${subscriptionData.ws_id}.`
+      );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       console.error('Webhook: Subscription created error:', errorMessage);
@@ -354,7 +357,9 @@ export const POST = Webhooks({
   // Handle ALL subscription updates (status changes, plan changes, cancellations, etc.)
   onSubscriptionUpdated: async (payload) => {
     try {
-      const { wsId } = await syncSubscriptionToDatabase(payload.data);
+      const { subscriptionData } = await syncSubscriptionToDatabase(
+        payload.data
+      );
       console.log(
         `Webhook: Subscription updated: ${payload.data.id}, status: ${payload.data.status}`
       );
@@ -362,7 +367,10 @@ export const POST = Webhooks({
       // If subscription just became active, report usage
       if (payload.data.status === 'active') {
         try {
-          await reportInitialUsage(wsId, payload.data.customer.id);
+          await reportInitialUsage(
+            subscriptionData.ws_id,
+            payload.data.customer.id
+          );
         } catch (e) {
           console.error('Webhook: Failed to report usage on activation', e);
         }
@@ -371,45 +379,48 @@ export const POST = Webhooks({
       // If subscription is fully canceled, check if workspace needs a free subscription
       if (payload.data.status === 'canceled') {
         console.log(
-          `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${wsId} needs a free subscription`
+          `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${subscriptionData.ws_id} needs a free subscription`
         );
 
         const sbAdmin = await createAdminClient();
         const polar = createPolarClient();
 
         // Check if workspace has any other active subscriptions
-        const hasActive = await hasActiveSubscription(sbAdmin, wsId);
+        const hasActive = await hasActiveSubscription(
+          sbAdmin,
+          subscriptionData.ws_id
+        );
 
         if (!hasActive) {
           console.log(
-            `Webhook: Workspace ${wsId} has no active subscriptions, creating free subscription`
+            `Webhook: Workspace ${subscriptionData.ws_id} has no active subscriptions, creating free subscription`
           );
 
           // Create a free subscription for this workspace
           const freeSubscription = await createFreeSubscription(
             polar,
             sbAdmin,
-            payload.data.customer.id
+            subscriptionData.ws_id
           );
 
           if (freeSubscription) {
             console.log(
-              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${wsId}`
+              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${subscriptionData.ws_id}`
             );
           } else {
             console.warn(
-              `Webhook: Could not create free subscription for workspace ${wsId}`
+              `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id}`
             );
           }
         } else {
           console.log(
-            `Webhook: Workspace ${wsId} still has active subscriptions, no free subscription needed`
+            `Webhook: Workspace ${subscriptionData.ws_id} still has active subscriptions, no free subscription needed`
           );
         }
       }
 
       console.log(
-        `Webhook: Subscription updated for workspace ${wsId}, status: ${payload.data.status}`
+        `Webhook: Subscription updated for workspace ${subscriptionData.ws_id}, status: ${payload.data.status}`
       );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';

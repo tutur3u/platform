@@ -47,11 +47,26 @@ export async function getBillingData(): Promise<ActionResult<BillingData>> {
     const polar = createPolarClient();
     const supabase = await createClient();
 
+    // Get the user's personal workspace to use for billing
+    const { data: personalWorkspace } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('creator_id', user.id)
+      .eq('is_personal', true)
+      .single();
+
+    if (!personalWorkspace) {
+      return {
+        success: false,
+        error: 'Personal workspace not found',
+      };
+    }
+
     // Create a customer session to authenticate with customer portal
     const session = await createCustomerSession({
       polar,
       supabase,
-      wsId: 'FAKE_WS_ID',
+      wsId: personalWorkspace.id,
     });
 
     // Fetch customer data using customer portal API
@@ -134,11 +149,26 @@ export async function updateBillingAddress(
     const polar = createPolarClient();
     const supabase = await createClient();
 
+    // Get the user's personal workspace to use for billing
+    const { data: personalWorkspace } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('creator_id', user.id)
+      .eq('is_personal', true)
+      .single();
+
+    if (!personalWorkspace) {
+      return {
+        success: false,
+        error: 'Personal workspace not found',
+      };
+    }
+
     // Create a customer session to authenticate with customer portal
     const session = await createCustomerSession({
       polar,
       supabase,
-      wsId: 'FAKE_WS_ID',
+      wsId: personalWorkspace.id,
     });
 
     // Update customer billing address using customer portal API
@@ -186,11 +216,26 @@ export async function deletePaymentMethod(
     const polar = createPolarClient();
     const supabase = await createClient();
 
+    // Get the user's personal workspace to use for billing
+    const { data: personalWorkspace } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('creator_id', user.id)
+      .eq('is_personal', true)
+      .single();
+
+    if (!personalWorkspace) {
+      return {
+        success: false,
+        error: 'Personal workspace not found',
+      };
+    }
+
     // Create a customer session to authenticate with customer portal
     const session = await createCustomerSession({
       polar,
       supabase,
-      wsId: 'FAKE_WS_ID',
+      wsId: personalWorkspace.id,
     });
 
     // Delete payment method using customer portal API
@@ -237,11 +282,26 @@ export async function getCustomerPortalUrl(): Promise<
     const polar = createPolarClient();
     const supabase = await createClient();
 
+    // Get the user's personal workspace to use for billing
+    const { data: personalWorkspace } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('creator_id', user.id)
+      .eq('is_personal', true)
+      .single();
+
+    if (!personalWorkspace) {
+      return {
+        success: false,
+        error: 'Personal workspace not found',
+      };
+    }
+
     // Create customer session to get portal URL
     const session = await createCustomerSession({
       polar,
       supabase,
-      wsId: 'FAKE_WS_ID',
+      wsId: personalWorkspace.id,
     });
 
     return {

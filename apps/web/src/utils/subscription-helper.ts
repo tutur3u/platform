@@ -42,22 +42,13 @@ export async function hasActiveSubscription(
 export async function createFreeSubscription(
   polar: Polar,
   supabase: TypedSupabaseClient,
-  customerId: string
+  wsId: string
 ) {
   // Get the FREE tier product
   const freeProduct = await getFreeProduct(supabase);
   if (!freeProduct) {
     console.error(
       'No FREE tier product found, cannot create free subscription'
-    );
-    return null;
-  }
-
-  const wsId = convertExternalIDToWorkspaceID(customerId);
-  if (!wsId) {
-    console.error(
-      'Invalid customer ID, cannot extract workspace ID:',
-      customerId
     );
     return null;
   }
@@ -71,17 +62,41 @@ export async function createFreeSubscription(
     return null;
   }
 
+  let externalCustomerId: string;
+
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('id')
+    .eq('personal', true)
+    .eq('id', wsId)
+    .maybeSingle();
+
+  if (!workspace) {
+    console.error(
+      `Workspace not found for wsId ${wsId}, cannot create free subscription`
+    );
+    return null;
+  }
+
+  if (workspace.personal) {
+    externalCustomerId = workspace.creator_id;
+  } else {
+    externalCustomerId = `workspace_${wsId}`;
+  }
+
   try {
     // Create a new subscription to the free product via Polar API
     // Note: Polar's subscriptions.create() only works for free products
     const subscription = await polar.subscriptions.create({
       productId: freeProduct.id,
-      customerId,
+      externalCustomerId,
+      metadata: { wsId },
     });
 
     console.log(
       `Created free subscription ${subscription.id} for workspace ${wsId}`
     );
+
     return subscription;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
