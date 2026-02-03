@@ -5,6 +5,7 @@ import {
 import {
   getWorkspace,
   getWorkspaceConfig as getWorkspaceConfigUtil,
+  isPersonalWorkspace as isPersonalWorkspaceUtil,
 } from '@tuturuuu/utils/workspace-helper';
 
 /**
@@ -27,6 +28,17 @@ export const normalizeWorkspaceId = async (
   }
 
   return resolveWorkspaceId(wsIdParam);
+};
+
+/**
+ * Check if a workspace ID corresponds to a personal workspace
+ * @param workspaceId - The workspace ID to check
+ * @returns true if the workspace is personal, false otherwise
+ */
+export const isPersonalWorkspace = async (
+  workspaceId: string
+): Promise<boolean> => {
+  return isPersonalWorkspaceUtil(workspaceId);
 };
 
 /**

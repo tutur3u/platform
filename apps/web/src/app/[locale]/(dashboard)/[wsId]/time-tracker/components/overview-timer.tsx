@@ -12,6 +12,7 @@ import { SimpleTimerControls } from './simple-timer-controls';
 
 interface OverviewTimerProps {
   wsId: string;
+  userId: string;
   categories: TimeTrackingCategory[];
   initialRunningSession: SessionWithRelations | null;
   workspace: Workspace;
@@ -19,6 +20,7 @@ interface OverviewTimerProps {
 
 export default function OverviewTimer({
   wsId,
+  userId,
   categories,
   initialRunningSession,
   workspace,
@@ -27,7 +29,7 @@ export default function OverviewTimer({
 
   // Use React Query for running session - single source of truth
   const { data: currentSession } = useQuery<SessionWithRelations | null>({
-    queryKey: ['running-time-session', wsId],
+    queryKey: ['running-time-session', wsId, userId],
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
@@ -38,6 +40,7 @@ export default function OverviewTimer({
     },
     refetchInterval: 30000,
     initialData: initialRunningSession,
+    staleTime: 60000, // Don't refetch immediately after SSR
   });
 
   // Derive isRunning from query data
@@ -119,6 +122,7 @@ export default function OverviewTimer({
       categories={categories}
       apiCall={apiCall}
       workspace={workspace}
+      currentUserId={userId}
       headerAction={
         <Link href={`/${wsId}/time-tracker/timer?mode=advanced`}>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
