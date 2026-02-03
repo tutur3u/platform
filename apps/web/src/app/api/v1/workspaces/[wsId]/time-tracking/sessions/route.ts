@@ -2,6 +2,9 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -9,6 +12,9 @@ import {
   isPersonalWorkspace,
   normalizeWorkspaceId,
 } from '@/lib/workspace-helper';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const cursorSchema = z.object({
   lastStartTime: z.iso.datetime({ offset: true }),
@@ -55,6 +61,14 @@ export async function GET(
     const dateFrom = url.searchParams.get('dateFrom');
     const dateTo = url.searchParams.get('dateTo');
     const targetUserId = url.searchParams.get('userId'); // New parameter for viewing other users
+    const userTimezone = url.searchParams.get('timezone') || 'UTC';
+
+    // Filter parameters
+    const searchQuery = url.searchParams.get('searchQuery');
+    const duration = url.searchParams.get('duration');
+    const timeOfDay = url.searchParams.get('timeOfDay');
+    const projectContext = url.searchParams.get('projectContext');
+
     const limit = Math.min(
       parseInt(url.searchParams.get('limit') || '10', 10),
       50
@@ -177,14 +191,40 @@ export async function GET(
       }
 
       // Apply filters
-      if (categoryId) {
+      if (categoryId && categoryId !== 'all') {
         query = query.eq('category_id', categoryId);
         countQuery = countQuery.eq('category_id', categoryId);
       }
 
-      if (taskId) {
+      if (taskId && taskId !== 'all') {
         query = query.eq('task_id', taskId);
         countQuery = countQuery.eq('task_id', taskId);
+      }
+
+      if (searchQuery) {
+        query = query.or(
+          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+        );
+        countQuery = countQuery.or(
+          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+        );
+      }
+
+      if (duration && duration !== 'all') {
+        if (duration === 'short') {
+          query = query.lt('duration_seconds', 1800);
+          countQuery = countQuery.lt('duration_seconds', 1800);
+        } else if (duration === 'medium') {
+          query = query
+            .gte('duration_seconds', 1800)
+            .lt('duration_seconds', 7200);
+          countQuery = countQuery
+            .gte('duration_seconds', 1800)
+            .lt('duration_seconds', 7200);
+        } else if (duration === 'long') {
+          query = query.gte('duration_seconds', 7200);
+          countQuery = countQuery.gte('duration_seconds', 7200);
+        }
       }
 
       if (dateFrom) {
@@ -232,8 +272,54 @@ export async function GET(
 
       if (error) throw error;
 
+      let filteredSessions = data || [];
+
+      // Post-filter by time of day and project context if requested
+      // (These are harder to do in simple SQL with complex logic)
+      if (
+        (timeOfDay && timeOfDay !== 'all') ||
+        (projectContext && projectContext !== 'all')
+      ) {
+        filteredSessions = filteredSessions.filter((session) => {
+          if (timeOfDay && timeOfDay !== 'all') {
+            const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+            let cat = 'night';
+            if (hour >= 6 && hour < 12) cat = 'morning';
+            else if (hour >= 12 && hour < 18) cat = 'afternoon';
+            else if (hour >= 18 && hour < 24) cat = 'evening';
+
+            if (cat !== timeOfDay) return false;
+          }
+
+          if (projectContext && projectContext !== 'all') {
+            let cat = 'general';
+            if (session.task_id) {
+              cat = 'project-work';
+            } else if (
+              session.category?.name?.toLowerCase().includes('meeting')
+            ) {
+              cat = 'meetings';
+            } else if (
+              session.category?.name?.toLowerCase().includes('learn')
+            ) {
+              cat = 'learning';
+            } else if (
+              session.category?.name?.toLowerCase().includes('admin')
+            ) {
+              cat = 'administrative';
+            }
+
+            if (cat !== projectContext) return false;
+          }
+
+          return true;
+        });
+      }
+
       const hasMore = (data?.length || 0) > limit;
-      const sessions = hasMore ? data?.slice(0, limit) : data;
+      const sessions = hasMore
+        ? filteredSessions.slice(0, limit)
+        : filteredSessions;
       const lastSession =
         hasMore && data && data[limit - 1] ? data[limit - 1] : null;
       const nextCursor = lastSession

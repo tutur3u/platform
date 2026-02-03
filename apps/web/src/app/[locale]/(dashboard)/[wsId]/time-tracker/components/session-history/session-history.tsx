@@ -1,6 +1,6 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   ChevronDown,
   Clock,
@@ -29,6 +29,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
+import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
 import MissedEntryDialog from '../missed-entry-dialog';
 import { WorkspaceSelectDialog } from '../workspace-select-dialog';
@@ -44,8 +45,6 @@ import type {
 } from './session-types';
 import {
   calculatePeriodStats,
-  getDurationCategory,
-  getTimeOfDayCategory,
   sessionOverlapsPeriod,
   sortSessionGroups,
   stackSessions,
@@ -74,6 +73,17 @@ export function SessionHistory({
   const [currentDate, setCurrentDate] = useState(dayjs());
 
   const userTimezone = dayjs.tz.guess();
+
+  // Filter state
+  const [filters, setFilters] = useState<FilterState>({
+    searchQuery: '',
+    categoryId: 'all',
+    duration: 'all',
+    productivity: 'all',
+    timeOfDay: 'all',
+    projectContext: 'all',
+    sessionQuality: 'all',
+  });
 
   // Calculate period bounds for API query
   const { startOfPeriod, endOfPeriod } = useMemo(() => {
@@ -105,6 +115,7 @@ export function SessionHistory({
       'history',
       startOfPeriod.toISOString(),
       endOfPeriod.toISOString(),
+      filters,
     ],
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams({
@@ -113,6 +124,12 @@ export function SessionHistory({
         dateFrom: startOfPeriod.toISOString(),
         dateTo: endOfPeriod.toISOString(),
         userId: userId,
+        timezone: userTimezone,
+        searchQuery: filters.searchQuery,
+        categoryId: filters.categoryId,
+        duration: filters.duration,
+        timeOfDay: filters.timeOfDay,
+        projectContext: filters.projectContext,
       });
       if (pageParam) {
         params.set('cursor', pageParam as string);
@@ -138,6 +155,41 @@ export function SessionHistory({
     [sessionsInfiniteData]
   );
 
+  // Fetch period stats independently of paginated sessions
+  const { data: fetchedPeriodStats, isLoading: isLoadingStats } =
+    useQuery<PeriodStats>({
+      queryKey: [
+        'time-tracking-sessions',
+        wsId,
+        userId,
+        'period-stats',
+        startOfPeriod.toISOString(),
+        endOfPeriod.toISOString(),
+        filters,
+      ],
+      queryFn: async () => {
+        const params = new URLSearchParams({
+          dateFrom: startOfPeriod.toISOString(),
+          dateTo: endOfPeriod.toISOString(),
+          timezone: userTimezone,
+          userId: userId,
+          searchQuery: filters.searchQuery,
+          categoryId: filters.categoryId,
+          duration: filters.duration,
+          timeOfDay: filters.timeOfDay,
+          projectContext: filters.projectContext,
+        });
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/time-tracking/stats/period?${params}`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch period stats');
+        }
+        return response.json();
+      },
+      staleTime: 30 * 1000,
+    });
+
   // Intersection Observer for auto-loading
   useEffect(() => {
     if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
@@ -156,16 +208,6 @@ export function SessionHistory({
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Filter state
-  const [filters, setFilters] = useState<FilterState>({
-    searchQuery: '',
-    categoryId: 'all',
-    duration: 'all',
-    productivity: 'all',
-    timeOfDay: 'all',
-    projectContext: 'all',
-    sessionQuality: 'all',
-  });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Session actions hook
@@ -231,96 +273,32 @@ export function SessionHistory({
     setCurrentDate(dayjs());
   }, []);
 
-  // Filter functions
-  const getProjectContext = useCallback(
-    (session: {
-      task_id?: string | null;
-      category?: { name?: string } | null;
-    }): string => {
-      if (session.task_id) {
-        // Return generic project-work if task exists - specific board name not needed for filtering
-        return 'project-work';
-      }
-      if (session.category?.name?.toLowerCase().includes('meeting'))
-        return 'meetings';
-      if (session.category?.name?.toLowerCase().includes('learn'))
-        return 'learning';
-      if (session.category?.name?.toLowerCase().includes('admin'))
-        return 'administrative';
-      return 'general';
-    },
-    []
-  );
-
-  // Filtered sessions
-  const filteredSessions = useMemo(
-    () =>
-      sessions?.filter((session) => {
-        // Search filter
-        if (
-          filters.searchQuery &&
-          !session.title
-            .toLowerCase()
-            .includes(filters.searchQuery.toLowerCase()) &&
-          !session.description
-            ?.toLowerCase()
-            .includes(filters.searchQuery.toLowerCase())
-        ) {
-          return false;
-        }
-
-        // Category filter
-        if (
-          filters.categoryId !== 'all' &&
-          session.category_id !== filters.categoryId
-        )
-          return false;
-
-        // Duration filter
-        if (
-          filters.duration !== 'all' &&
-          getDurationCategory(session) !== filters.duration
-        )
-          return false;
-
-        // Time of day filter
-        if (
-          filters.timeOfDay !== 'all' &&
-          getTimeOfDayCategory(session, userTimezone) !== filters.timeOfDay
-        )
-          return false;
-
-        // Project context filter
-        if (
-          filters.projectContext !== 'all' &&
-          getProjectContext(session) !== filters.projectContext
-        )
-          return false;
-
-        return true;
-      }),
-    [sessions, filters, userTimezone, getProjectContext]
-  );
-
   // Note: startOfPeriod and endOfPeriod are already calculated at the top for the query
 
   const sessionsForPeriod = useMemo(
     () =>
-      filteredSessions?.filter((session) =>
+      sessions?.filter((session) =>
         sessionOverlapsPeriod(session, startOfPeriod, endOfPeriod, userTimezone)
       ),
-    [filteredSessions, startOfPeriod, endOfPeriod, userTimezone]
+    [sessions, startOfPeriod, endOfPeriod, userTimezone]
   );
 
   const periodStats = useMemo(
     () =>
+      fetchedPeriodStats ||
       calculatePeriodStats(
         sessionsForPeriod,
         startOfPeriod,
         endOfPeriod,
         userTimezone
       ),
-    [sessionsForPeriod, startOfPeriod, endOfPeriod, userTimezone]
+    [
+      fetchedPeriodStats,
+      sessionsForPeriod,
+      startOfPeriod,
+      endOfPeriod,
+      userTimezone,
+    ]
   );
 
   const groupedStackedSessions = useMemo(() => {
@@ -368,14 +346,14 @@ export function SessionHistory({
               </div>
               <div>
                 <div className="font-bold tracking-tight">{t('title')}</div>
-                {(sessionsForPeriod?.length || 0) > 0 && (
+                {(periodStats?.sessionCount || 0) > 0 && (
                   <div className="font-normal text-muted-foreground text-xs md:text-sm">
-                    {sessionsForPeriod?.length === 1
+                    {periodStats?.sessionCount === 1
                       ? t('sessions_count', {
-                          count: sessionsForPeriod?.length || 0,
+                          count: periodStats?.sessionCount || 0,
                         })
                       : t('sessions_count_plural', {
-                          count: sessionsForPeriod?.length || 0,
+                          count: periodStats?.sessionCount || 0,
                         })}
                   </div>
                 )}
@@ -396,7 +374,7 @@ export function SessionHistory({
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 categories={categories}
-                filteredSessions={filteredSessions}
+                filteredSessions={sessions}
                 showAdvancedFilters={showAdvancedFilters}
                 onToggleAdvancedFilters={() =>
                   setShowAdvancedFilters(!showAdvancedFilters)
@@ -451,6 +429,7 @@ export function SessionHistory({
           ) : viewMode === 'month' ? (
             <MonthView
               periodStats={periodStats}
+              isLoadingStats={isLoadingStats}
               sessionsForPeriod={sessionsForPeriod}
               groupedStackedSessions={groupedStackedSessions}
               startOfPeriod={startOfPeriod}
@@ -461,7 +440,10 @@ export function SessionHistory({
           ) : (
             // Day/Week View Layout
             <>
-              <SessionStats periodStats={periodStats} />
+              <SessionStats
+                periodStats={periodStats}
+                isLoading={isLoadingStats}
+              />
 
               <div className="space-y-6">
                 {sortSessionGroups(Object.entries(groupedStackedSessions)).map(
