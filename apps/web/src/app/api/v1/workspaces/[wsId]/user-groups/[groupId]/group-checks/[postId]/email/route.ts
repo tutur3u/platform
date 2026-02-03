@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import {
   extractIPFromHeaders,
   isIPBlocked,
@@ -13,7 +14,6 @@ import dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface UserToEmail {
@@ -129,7 +129,7 @@ export async function POST(
 
     const data = parsedBody.data as {
       users: UserToEmail[];
-      post: UserGroupPost;
+      post: UserGroupPost & { group_name?: string };
       date: string;
     };
 
@@ -260,6 +260,7 @@ export async function POST(
         const htmlContent = await render(
           PostEmailTemplate({
             post: data.post,
+            groupName: data.post.group_name,
             username: user.username,
             isHomeworkDone: user.is_completed,
             notes: user.notes || undefined,

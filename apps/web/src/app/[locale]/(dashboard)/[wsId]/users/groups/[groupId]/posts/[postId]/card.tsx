@@ -12,7 +12,7 @@ import {
   Send,
   X,
 } from '@tuturuuu/icons';
-import type { PostApprovalQueryResult } from '@tuturuuu/types/db';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -44,12 +44,6 @@ interface Props {
   }> | null;
   isLoadingChecks?: boolean;
 }
-
-export type UserGroupPost = PostApprovalQueryResult & {
-  ws_id?: string;
-  name?: string;
-  group_id?: string;
-};
 
 function UserCard({
   user,

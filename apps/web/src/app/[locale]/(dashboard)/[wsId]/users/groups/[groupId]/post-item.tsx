@@ -90,11 +90,6 @@ export const PostItem = memo(function PostItem({
         <div>
           <div className="text-left font-semibold text-sm">{post.title}</div>
           <div className="flex flex-wrap items-center gap-2 font-semibold">
-            {post?.group_name && (
-              <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-background text-xs">
-                {post?.group_name}
-              </div>
-            )}
             {post.created_at && (
               <div className="flex items-center gap-0.5 text-xs opacity-70">
                 <Clock className="h-3 w-3" />

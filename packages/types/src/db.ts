@@ -6,6 +6,9 @@ export type AIWhitelistEmail = Tables<'ai_whitelisted_emails'>;
 export type WorkspaceAIExecution = Tables<'workspace_ai_executions'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
 export type GroupPostCheck = Tables<'user_group_post_checks'>;
+export type UserGroupPost = Tables<'user_group_posts'> & {
+  group_name?: string | null;
+};
 export type EmailHistoryEntry = Tables<'sent_emails'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
@@ -281,6 +284,35 @@ export type ReportApprovalQueryResult = {
     | null;
   group_name?: string | null;
 };
+
+/**
+ * Normalized user shape - always a single object or null
+ */
+export type NormalizedUser = {
+  full_name?: string | null;
+} | null;
+
+/**
+ * Normalizes the ambiguous user field from ReportApprovalQueryResult
+ * Handles both single object and array shapes, returning a consistent single object or null
+ *
+ * @param user - The user field from ReportApprovalQueryResult (object | array | null)
+ * @returns A normalized user object or null
+ *
+ * @example
+ * const normalizedUser = normalizeUser(report.user);
+ * console.log(normalizedUser?.full_name); // Always safe to access
+ */
+export function normalizeUser(
+  user: ReportApprovalQueryResult['user']
+): NormalizedUser {
+  if (!user) return null;
+  if (Array.isArray(user)) {
+    const first = user[0];
+    return first ?? null;
+  }
+  return user;
+}
 
 /**
  * Report approval item with computed user_name field

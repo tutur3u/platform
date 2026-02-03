@@ -126,6 +126,7 @@ DECLARE
     v_user_id uuid;
     v_workspace_user_id uuid;
     v_has_approve_permission boolean;
+    v_has_create_permission boolean;
 BEGIN
     -- Get the current user ID
     v_user_id := auth.uid();
@@ -148,10 +149,20 @@ BEGIN
     IF v_workspace_user_id IS NOT NULL THEN
         NEW.updated_by := v_workspace_user_id;
     END IF;
-    -- Check if user has approve permission
+    -- Check if user has approve and create permissions
     v_has_approve_permission := has_workspace_permission(v_ws_id, v_user_id, 'approve_reports');
+    v_has_create_permission := has_workspace_permission(v_ws_id, v_user_id, 'create_user_groups_reports');
     -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
     IF v_has_approve_permission THEN
+        -- Auto-approve on INSERT if user has both create and approve permissions and status is PENDING
+        IF TG_OP = 'INSERT' AND NEW.report_approval_status = 'PENDING' AND v_has_create_permission THEN
+            NEW.report_approval_status := 'APPROVED';
+            NEW.approved_by := v_workspace_user_id;
+            NEW.approved_at := now();
+            NEW.rejected_by := NULL;
+            NEW.rejected_at := NULL;
+            NEW.rejection_reason := NULL;
+        END IF;
         IF NEW.report_approval_status = 'REJECTED' THEN
             -- Validate rejection_reason is provided
             IF NEW.rejection_reason IS NULL OR NEW.rejection_reason = '' THEN

@@ -6,20 +6,22 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { UserGroupPost as DBUserGroupPost } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const PAGINATION_LIMIT = 10;
 
-export interface UserGroupPost {
+// Re-export the generated DB type for backward compatibility
+export type UserGroupPost = DBUserGroupPost;
+
+// Form input type for creating/editing posts (only fields that can be edited)
+export interface UserGroupPostFormInput {
   id?: string;
-  group_name?: string | null;
   title: string | null;
   content: string | null;
   notes: string | null;
-  created_at?: string;
-  post_approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 }
 
 export function useGroupPostsInfiniteQuery(
@@ -132,7 +134,7 @@ export function useUpsertPostMutation(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (post: UserGroupPost) => {
+    mutationFn: async (post: UserGroupPostFormInput) => {
       if (!groupId) throw new Error('Missing groupId');
       const supabase = createClient();
       const payload = {
@@ -206,7 +208,7 @@ export function useDeletePostMutation(
 // Hook for managing post dialog state with performance optimization
 export function usePostDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  const [post, setPost] = useState<UserGroupPost | undefined>();
+  const [post, setPost] = useState<UserGroupPostFormInput | undefined>();
 
   const openDialog = useCallback((postToEdit?: UserGroupPost) => {
     setPost(
@@ -226,7 +228,7 @@ export function usePostDialog() {
 
   // Optimized input change handler using functional updates
   const updateField = useCallback(
-    (field: keyof UserGroupPost, value: string) => {
+    (field: keyof UserGroupPostFormInput, value: string) => {
       setPost((prev) => {
         if (!prev) return prev;
         // Only update if value actually changed

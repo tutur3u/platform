@@ -1,3 +1,5 @@
+'use client';
+
 import { BookPlus, ChevronDown, Loader2, Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {

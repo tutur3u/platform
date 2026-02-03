@@ -14,13 +14,13 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { memo, useCallback } from 'react';
-import type { UserGroupPost } from './use-posts';
+import type { UserGroupPostFormInput } from './use-posts';
 
 interface PostDialogProps {
   isOpen: boolean;
-  post: UserGroupPost | undefined;
+  post: UserGroupPostFormInput | undefined;
   onClose: () => void;
-  onFieldChange: (field: keyof UserGroupPost, value: string) => void;
+  onFieldChange: (field: keyof UserGroupPostFormInput, value: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
 }

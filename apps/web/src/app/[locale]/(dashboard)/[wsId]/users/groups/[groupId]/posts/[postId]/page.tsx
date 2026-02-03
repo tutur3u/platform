@@ -229,7 +229,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               post={{
                 ...post,
                 group_id: groupId,
-                group_name: group.name,
               }}
               canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
               canSendUserGroupPostEmails={canSendUserGroupPostEmails}

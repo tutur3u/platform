@@ -204,6 +204,7 @@ export function useApprovals({
 
       const { data, error } = await dataQuery
         .order('approved_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(from, to);
 
       if (error) throw error;

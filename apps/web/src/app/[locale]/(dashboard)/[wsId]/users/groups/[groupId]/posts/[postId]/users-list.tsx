@@ -2,8 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import UserCard, { type UserGroupPost } from './card';
+import UserCard from './card';
 
 interface Props {
   users: WorkspaceUser[];
