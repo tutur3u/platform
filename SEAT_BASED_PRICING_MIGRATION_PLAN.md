@@ -162,7 +162,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!seatCheck.allowed) {
     return NextResponse.json(
       {
-        error: 'seat_limit_reached',
+        errorCode: 'SEAT_LIMIT_REACHED',
         message: seatCheck.message,
         seatStatus: seatCheck.status,
       },

@@ -55,7 +55,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!inviteCheck.allowed) {
     return NextResponse.json(
       {
-        error: 'seat_limit_reached',
+        errorCode: 'SEAT_LIMIT_REACHED',
         message: inviteCheck.message,
         seatStatus: inviteCheck.status,
       },
