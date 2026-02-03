@@ -1,0 +1,103 @@
+name: Native Build (iOS)
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - "apps/native/**"
+            - ".github/workflows/native-build-ios.yaml"
+    pull_request:
+        branches:
+            - main
+        paths:
+            - "apps/native/**"
+            - ".github/workflows/native-build-ios.yaml"
+    workflow_dispatch:
+
+jobs:
+    check-ci:
+        uses: ./.github/workflows/ci-check.yml
+        with:
+            workflow_name: native-build-ios.yaml
+
+    check-draft:
+        name: Check Draft Status
+        runs-on: ubuntu-latest
+        outputs:
+            is_draft: ${{ steps.check.outputs.is_draft }}
+        steps:
+            - name: Check if PR is draft
+              id: check
+              run: |
+                  if [ "${{ github.event_name }}" == "pull_request" ]; then
+                    echo "is_draft=${{ github.event.pull_request.draft }}" >> $GITHUB_OUTPUT
+                  else
+                    echo "is_draft=false" >> $GITHUB_OUTPUT
+                  fi
+
+    build:
+        name: Build iOS
+        needs: [check-ci, check-draft]
+        if: needs.check-ci.outputs.should_run == 'true' && needs.check-draft.outputs.is_draft != 'true'
+        runs-on: macos-latest
+        timeout-minutes: 60
+        defaults:
+            run:
+                working-directory: apps/native
+
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v6
+
+            - name: Setup bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install dependencies
+              run: bun install
+
+            - name: Install root dependencies
+              run: bun install
+              working-directory: .
+
+            - name: Generate native iOS project
+              run: bunx expo prebuild --platform ios --clean
+
+            - name: Setup CocoaPods cache
+              uses: actions/cache@v5
+              with:
+                  path: apps/native/ios/Pods
+                  key: ${{ runner.os }}-pods-${{ hashFiles('apps/native/ios/Podfile.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pods-
+
+            - name: Install CocoaPods dependencies
+              run: cd ios && pod install
+
+            - name: Build iOS (Simulator)
+              run: |
+                  xcodebuild \
+                    -workspace ios/native.xcworkspace \
+                    -scheme native \
+                    -configuration Debug \
+                    -sdk iphonesimulator \
+                    -destination 'platform=iOS Simulator,name=iPhone 16' \
+                    -derivedDataPath build \
+                    build \
+                    CODE_SIGNING_ALLOWED=NO \
+                    | xcpretty --color
+
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              if: success()
+              with:
+                  name: ios-simulator-build
+                  path: apps/native/build/Build/Products/Debug-iphonesimulator/
+                  retention-days: 7
