@@ -925,10 +925,10 @@
   "benefits:": "Những lợi ích:",
   "billing": {
     "actions": "Hành động",
-    "adjust-seats": "Sửa đổi ghế",
-    "adjust-seats-description": "Sửa đổi ghế cho gói đăng ký của bạn",
     "additional-cost": "Chi phí bổ sung",
     "additional-seats": "Ghế bổ sung",
+    "adjust-seats": "Sửa đổi ghế",
+    "adjust-seats-description": "Sửa đổi ghế cho gói đăng ký của bạn",
     "amount": "Số tiền",
     "amount-due-today": "Số tiền thanh toán hôm nay",
     "annual-savings": "so với thanh toán hàng tháng",
