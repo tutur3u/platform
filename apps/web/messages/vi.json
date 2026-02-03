@@ -3545,6 +3545,7 @@
     "error-invite-max-uses-reached": "Liên kết lời mời này đã đạt giới hạn sử dụng tối đa",
     "error-join-failed": "Không thể tham gia không gian làm việc",
     "error-unauthorized": "Bạn phải đăng nhập để tham gia không gian làm việc",
+    "error-seat-limit-reached": "Không gian làm việc này đã đạt giới hạn số ghế",
     "go-to-workspace": "Đến Không Gian Làm Việc",
     "invalid-invite-message": "Liên kết lời mời này không hợp lệ hoặc đã hết hạn.",
     "invalid-invite-title": "Lời mời không hợp lệ",
@@ -3561,8 +3562,12 @@
     "members": "thành viên",
     "need-help": "Cần trợ giúp? Liên hệ với quản trị viên của không gian làm việc",
     "redirecting": "Đang chuyển hướng đến không gian làm việc...",
+    "seat-limit-reached-description": "Quản trị viên không gian làm việc cần thêm ghế trước khi bạn có thể tham gia.",
+    "seat-limit-reached-description-with-count": "Không gian làm việc này có {current} trong {max} ghế đã được sử dụng. Liên hệ quản trị viên để thêm ghế.",
+    "seat-limit-reached-title": "Không Gian Làm Việc Đã Đầy",
     "unexpected-error-toast": "Đã xảy ra lỗi không mong muốn",
     "welcome-aboard": "Chào mừng bạn!",
+    "workspace-full": "Đã Đầy",
     "workspace-invitation": "Lời mời vào không gian làm việc",
     "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc"
   },
@@ -10312,7 +10317,10 @@
     "users-joined-description": "Xem các thành viên đã tham gia qua liên kết mời này",
     "users-joined-title": "Người dùng đã tham gia",
     "uses": "Lượt sử dụng",
-    "view-users": "Xem người dùng"
+    "view-users": "Xem người dùng",
+    "seat-limit-reached": "Đã đạt giới hạn ghế",
+    "seat-limit-reached-description": "Không gian làm việc của bạn đã đạt giới hạn ghế. Thêm ghế để tạo liên kết mời.",
+    "manage-billing": "Quản lý thanh toán"
   },
   "ws-invoices": {
     "absent": "Vắng Mặt",
@@ -10561,7 +10569,14 @@
     "total_permissions": "Tổng Quyền",
     "unique": "riêng",
     "update-error": "Đã xảy ra lỗi khi cập nhật thành viên",
-    "you": "Bạn"
+    "you": "Bạn",
+    "invitation-sent": "Lời mời đã được gửi",
+    "invitation-sent-description": "Lời mời đã được gửi đến {email}.",
+    "invitation-failed": "Không thể mời thành viên",
+    "invitation-failed-description": "Đã xảy ra lỗi khi gửi lời mời. Vui lòng thử lại.",
+    "seat-limit-reached": "Đã đạt giới hạn ghế",
+    "seat-limit-reached-description": "Không gian làm việc của bạn đã đạt giới hạn ghế. Nâng cấp gói hoặc xóa thành viên để mời thêm.",
+    "manage-billing": "Quản lý thanh toán"
   },
   "ws-models": {
     "create": "Tạo mô hình",

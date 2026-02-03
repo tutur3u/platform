@@ -3545,6 +3545,7 @@
     "error-invite-max-uses-reached": "This invite link has reached its maximum usage limit",
     "error-join-failed": "Failed to join workspace",
     "error-unauthorized": "You must be signed in to join a workspace",
+    "error-seat-limit-reached": "This workspace has reached its seat limit",
     "go-to-workspace": "Go to Workspace",
     "invalid-invite-message": "This invite link is invalid or has expired.",
     "invalid-invite-title": "Invalid Invite",
@@ -3561,8 +3562,12 @@
     "members": "members",
     "need-help": "Need help? Contact your workspace administrator",
     "redirecting": "Redirecting you to the workspace...",
+    "seat-limit-reached-description": "The workspace administrator needs to add more seats before you can join.",
+    "seat-limit-reached-description-with-count": "This workspace has {current} of {max} seats occupied. Contact the administrator to add more seats.",
+    "seat-limit-reached-title": "Workspace is Full",
     "unexpected-error-toast": "An unexpected error occurred",
     "welcome-aboard": "Welcome aboard!",
+    "workspace-full": "Workspace Full",
     "workspace-invitation": "Workspace invitation",
     "you-been-invited-to-join-the": "You've been invited to join the"
   },
@@ -10312,7 +10317,10 @@
     "users-joined-description": "View members who joined via this invite link",
     "users-joined-title": "Users Who Joined",
     "uses": "Uses",
-    "view-users": "View Users"
+    "view-users": "View Users",
+    "seat-limit-reached": "Seat limit reached",
+    "seat-limit-reached-description": "Your workspace has reached its seat limit. Add more seats to create invite links.",
+    "manage-billing": "Manage Billing"
   },
   "ws-invoices": {
     "absent": "Absent",
@@ -10561,7 +10569,14 @@
     "total_permissions": "Total Permissions",
     "unique": "unique",
     "update-error": "An error occurred while updating the member",
-    "you": "You"
+    "you": "You",
+    "invitation-sent": "Invitation sent",
+    "invitation-sent-description": "An invitation has been sent to {email}.",
+    "invitation-failed": "Failed to invite member",
+    "invitation-failed-description": "There was an error sending the invitation. Please try again.",
+    "seat-limit-reached": "Seat limit reached",
+    "seat-limit-reached-description": "Your workspace has reached its seat limit. Upgrade your plan or remove members to invite more.",
+    "manage-billing": "Manage Billing"
   },
   "ws-models": {
     "create": "Create model",

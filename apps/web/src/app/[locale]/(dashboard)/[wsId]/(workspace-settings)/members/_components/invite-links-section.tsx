@@ -132,7 +132,12 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || t('ws-invite-links.create-error'));
+        // Throw error with errorCode for special handling
+        const error = new Error(
+          data.error || t('ws-invite-links.create-error')
+        );
+        (error as any).errorCode = data.errorCode;
+        throw error;
       }
       return res.json();
     },
@@ -145,8 +150,20 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
       });
       router.refresh();
     },
-    onError: (error: Error) => {
-      toast.error(error.message);
+    onError: (error: Error & { errorCode?: string }) => {
+      // Handle seat limit reached error with actionable toast
+      if (error.errorCode === 'SEAT_LIMIT_REACHED') {
+        toast.error(t('ws-invite-links.seat-limit-reached'), {
+          description: t('ws-invite-links.seat-limit-reached-description'),
+          action: {
+            label: t('ws-invite-links.manage-billing'),
+            onClick: () => router.push(`/${wsId}/billing`),
+          },
+          duration: 10000,
+        });
+      } else {
+        toast.error(error.message);
+      }
     },
   });
 
