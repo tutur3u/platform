@@ -83,14 +83,18 @@ export default function PostsRowActions({
         postId: data.post_id,
         groupId: data.group_id,
         post: {
-          id: data.post_id,
-          title: data.post_title,
-          content: data.post_content,
+          id: data.post_id || undefined,
+          title: data.post_title || null,
+          content: data.post_content || null,
           notes: data.notes || '',
-          group_name: data.group_name,
-          created_at:
-            dayjs(data.post_created_at || data.created_at)?.toISOString() ||
-            undefined,
+          group_name: data.group_name || null,
+          created_at: (() => {
+            const dateStr = data.post_created_at || data.created_at;
+            const parsed = dayjs(dateStr);
+            return parsed.isValid()
+              ? parsed.toISOString()
+              : new Date().toISOString();
+          })(),
         },
         users: [
           {

@@ -15,6 +15,7 @@ interface ActionButtonsProps {
   request: ExtendedTimeTrackingRequest;
   currentUser: WorkspaceUser | null;
   canManageTimeTrackingRequests: boolean;
+  canBypassTimeTrackingRequestApproval: boolean;
   // Approve
   isApproving: boolean;
   onApprove: () => void;
@@ -41,6 +42,7 @@ export function ActionButtons({
   request,
   currentUser,
   canManageTimeTrackingRequests,
+  canBypassTimeTrackingRequestApproval,
   isApproving,
   onApprove,
   showRejectionForm,
@@ -86,7 +88,7 @@ export function ActionButtons({
     request.approval_status === 'PENDING' &&
     canManageTimeTrackingRequests &&
     currentUser &&
-    request.user_id !== currentUser.id
+    (request.user_id !== currentUser.id || canBypassTimeTrackingRequestApproval)
   ) {
     // Show rejection form
     if (showRejectionForm) {

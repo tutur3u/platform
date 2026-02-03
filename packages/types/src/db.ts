@@ -6,6 +6,9 @@ export type AIWhitelistEmail = Tables<'ai_whitelisted_emails'>;
 export type WorkspaceAIExecution = Tables<'workspace_ai_executions'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
 export type GroupPostCheck = Tables<'user_group_post_checks'>;
+export type UserGroupPost = Tables<'user_group_posts'> & {
+  group_name?: string | null;
+};
 export type EmailHistoryEntry = Tables<'sent_emails'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
@@ -249,6 +252,119 @@ export type MemberWithPermissions = {
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
+
+/**
+ * Raw report data from Supabase query with joins
+ * Represents the shape of data returned from the reports approval query
+ */
+export type ReportApprovalQueryResult = {
+  id: string;
+  title: string;
+  content: string;
+  feedback: string;
+  score: number | null;
+  scores: number[] | null;
+  created_at: string;
+  updated_by?: string | null;
+  report_approval_status: Database['public']['Enums']['approval_status'];
+  rejection_reason: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  modifier?: {
+    full_name?: string | null;
+    display_name?: string | null;
+  } | null;
+  user?:
+    | {
+        full_name?: string | null;
+      }
+    | Array<{
+        full_name?: string | null;
+      }>
+    | null;
+  group_name?: string | null;
+};
+
+/**
+ * Normalized user shape - always a single object or null
+ */
+export type NormalizedUser = {
+  full_name?: string | null;
+} | null;
+
+/**
+ * Normalizes the ambiguous user field from ReportApprovalQueryResult
+ * Handles both single object and array shapes, returning a consistent single object or null
+ *
+ * @param user - The user field from ReportApprovalQueryResult (object | array | null)
+ * @returns A normalized user object or null
+ *
+ * @example
+ * const normalizedUser = normalizeUser(report.user);
+ * console.log(normalizedUser?.full_name); // Always safe to access
+ */
+export function normalizeUser(
+  user: ReportApprovalQueryResult['user']
+): NormalizedUser {
+  if (!user) return null;
+  if (Array.isArray(user)) {
+    const first = user[0];
+    return first ?? null;
+  }
+  return user;
+}
+
+/**
+ * Report approval item with computed user_name field
+ * Used in approvals view for external user monthly reports
+ */
+export type ReportApprovalItem = Omit<ReportApprovalQueryResult, 'user'> & {
+  user_name?: string | null;
+  modifier_name?: string | null;
+};
+
+/**
+ * Report log entry for comparison view
+ * Represents a snapshot of a report from the logs table
+ */
+export type ReportLogEntry = Tables<'external_user_monthly_report_logs'>;
+
+/**
+ * Raw post data from Supabase query with joins
+ * Represents the shape of data returned from the posts approval query
+ */
+export type PostApprovalQueryResult = {
+  id: string;
+  title: string | null;
+  content: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_by?: string | null;
+  post_approval_status: Database['public']['Enums']['approval_status'];
+  rejection_reason: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  modifier?: {
+    full_name?: string | null;
+    display_name?: string | null;
+  } | null;
+  group_name?: string | null;
+};
+
+/**
+ * Post approval item with joined group data
+ * Used in approvals view for user group posts
+ */
+export type PostApprovalItem = PostApprovalQueryResult & {
+  modifier_name?: string | null;
+};
+
+/**
+ * Post log entry for comparison view
+ * Represents a snapshot of a post from the logs table
+ */
+export type PostLogEntry = Tables<'user_group_post_logs'>;
+
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 export type InternalEmail = Tables<'internal_emails'>;
 
