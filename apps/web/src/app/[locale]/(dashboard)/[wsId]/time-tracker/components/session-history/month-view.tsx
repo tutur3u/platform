@@ -25,7 +25,6 @@ import { getCategoryColor } from './session-utils';
 interface MonthViewProps {
   periodStats: PeriodStats;
   isLoadingStats?: boolean;
-  sessionsForPeriod: SessionWithRelations[] | undefined;
   groupedStackedSessions: { [key: string]: StackedSession[] };
   startOfPeriod: dayjs.Dayjs;
   onResume: (session: SessionWithRelations | undefined) => void;
@@ -36,7 +35,6 @@ interface MonthViewProps {
 export function MonthView({
   periodStats,
   isLoadingStats,
-  sessionsForPeriod,
   groupedStackedSessions,
   startOfPeriod,
   onResume,

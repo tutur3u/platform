@@ -430,7 +430,6 @@ export function SessionHistory({
             <MonthView
               periodStats={periodStats}
               isLoadingStats={isLoadingStats}
-              sessionsForPeriod={sessionsForPeriod}
               groupedStackedSessions={groupedStackedSessions}
               startOfPeriod={startOfPeriod}
               onResume={resumeSession}
