@@ -136,7 +136,8 @@ export async function fetchSubscription(wsId: string) {
         recurring_interval,
         tier,
         pricing_model,
-        price_per_seat
+        price_per_seat,
+        max_seats
       )
     `
     )
@@ -264,6 +265,7 @@ export default async function BillingPage({
           pricingModel: subscription.pricingModel,
           seatCount: subscription.seatCount,
           pricePerSeat: subscription.pricePerSeat,
+          maxSeats: subscription.product.max_seats,
         };
 
         return (

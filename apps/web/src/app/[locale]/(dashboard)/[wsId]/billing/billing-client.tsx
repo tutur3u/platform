@@ -23,7 +23,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import type { SeatStatus } from '@/utils/seat-limits';
-import { AddSeatsDialog } from './add-seats-dialog';
+import { AdjustSeatsDialog } from './add-seats-dialog';
 import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
@@ -43,6 +43,7 @@ export interface Plan {
   pricingModel?: 'fixed' | 'seat_based' | null;
   seatCount?: number | null;
   pricePerSeat?: number | null;
+  maxSeats?: number | null;
 }
 
 interface BillingClientProps {
@@ -71,7 +72,7 @@ export function BillingClient({
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-  const [showAddSeatsDialog, setShowAddSeatsDialog] = useState(false);
+  const [showAdjustSeatsDialog, setShowAdjustSeatsDialog] = useState(false);
   const t = useTranslations('billing');
   const router = useRouter();
 
@@ -223,10 +224,10 @@ export function BillingClient({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setShowAddSeatsDialog(true)}
+                        onClick={() => setShowAdjustSeatsDialog(true)}
                       >
                         <Plus className="mr-1 h-3 w-3" />
-                        {t('add-seats')}
+                        {t('adjust-seats')}
                       </Button>
                     )}
                   </div>
@@ -395,11 +396,13 @@ export function BillingClient({
 
       {/* Add Seats Dialog - Only for seat-based subscriptions */}
       {hasManageSubscriptionPermission && isSeatBased && seatStatus && (
-        <AddSeatsDialog
-          open={showAddSeatsDialog}
-          onOpenChange={setShowAddSeatsDialog}
+        <AdjustSeatsDialog
+          open={showAdjustSeatsDialog}
+          onOpenChange={setShowAdjustSeatsDialog}
           wsId={wsId}
           currentSeats={seatStatus.seatCount}
+          currentMembers={seatStatus.memberCount}
+          maxSeats={currentPlan.maxSeats}
           pricePerSeat={
             seatStatus.pricePerSeat ?? currentPlan.pricePerSeat ?? 0
           }

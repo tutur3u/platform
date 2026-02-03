@@ -4,7 +4,6 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { getSeatStatus } from '@/utils/seat-limits';
 
 /**
  * GET /api/payment/seats?wsId=xxx
@@ -23,6 +22,7 @@ export async function GET(req: Request) {
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Verify user has access to the workspace
     const {
@@ -46,8 +46,36 @@ export async function GET(req: Request) {
       );
     }
 
-    const seatStatus = await getSeatStatus(supabase, wsId);
-    return NextResponse.json(seatStatus);
+    // Get subscription and member count
+    const { data: subscription } = await sbAdmin
+      .from('workspace_subscriptions')
+      .select('pricing_model, seat_count, price_per_seat')
+      .eq('ws_id', wsId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { count: memberCount } = await sbAdmin
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId);
+
+    const isSeatBased = subscription?.pricing_model === 'seat_based';
+    const seatCount = isSeatBased ? (subscription?.seat_count ?? 1) : Infinity;
+    const currentMembers = memberCount ?? 0;
+    const availableSeats = isSeatBased
+      ? Math.max(0, seatCount - currentMembers)
+      : Infinity;
+
+    return NextResponse.json({
+      isSeatBased,
+      seatCount,
+      memberCount: currentMembers,
+      availableSeats,
+      canAddMember: availableSeats > 0,
+      pricePerSeat: subscription?.price_per_seat ?? null,
+    });
   } catch (error) {
     console.error('Error getting seat status:', error);
     return NextResponse.json(
@@ -59,15 +87,15 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/payment/seats
- * Purchase additional seats for a workspace subscription
+ * Update subscription seat count for a workspace
  */
 export async function POST(req: Request) {
   try {
-    const { wsId, additionalSeats } = await req.json();
+    const { wsId, newSeatCount } = await req.json();
 
-    if (!wsId || !additionalSeats || additionalSeats < 1) {
+    if (!wsId || !newSeatCount || newSeatCount < 1) {
       return NextResponse.json(
-        { error: 'Missing required fields: wsId and additionalSeats (min 1)' },
+        { error: 'Missing required fields: wsId and newSeatCount (min 1)' },
         { status: 400 }
       );
     }
@@ -92,15 +120,15 @@ export async function POST(req: Request) {
 
     if (!workspace || workspace.creator_id !== user.id) {
       return NextResponse.json(
-        { error: 'Only the workspace owner can purchase seats' },
+        { error: 'Only the workspace owner can adjust seats' },
         { status: 403 }
       );
     }
 
-    // Get current seat-based subscription
+    // Get current seat-based subscription with product limits
     const { data: subscription } = await sbAdmin
       .from('workspace_subscriptions')
-      .select('*')
+      .select('*, workspace_subscription_products(max_seats, min_seats)')
       .eq('ws_id', wsId)
       .eq('status', 'active')
       .eq('pricing_model', 'seat_based')
@@ -115,8 +143,38 @@ export async function POST(req: Request) {
       );
     }
 
+    // Get current member count
+    const { count: memberCount } = await sbAdmin
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId);
+
+    const currentMembers = memberCount ?? 0;
+
+    // Validate new seat count against constraints
+    const product = subscription.workspace_subscription_products;
+    const minSeats = Math.max(1, currentMembers); // Must be at least current members
+    const maxSeats = product?.max_seats ?? Infinity;
+
+    if (newSeatCount < minSeats) {
+      return NextResponse.json(
+        {
+          error: `Seat count cannot be less than current member count (${currentMembers})`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (newSeatCount > maxSeats) {
+      return NextResponse.json(
+        {
+          error: `Seat count cannot exceed maximum (${maxSeats})`,
+        },
+        { status: 400 }
+      );
+    }
+
     const previousSeats = subscription.seat_count ?? 1;
-    const newSeatCount = previousSeats + additionalSeats;
 
     // Update subscription in Polar (prorated billing)
     const polar = createPolarClient();
@@ -153,13 +211,13 @@ export async function POST(req: Request) {
       success: true,
       previousSeats,
       newSeats: newSeatCount,
-      additionalSeats,
+      seatChange: newSeatCount - previousSeats,
       pricePerSeat: subscription.price_per_seat,
     });
   } catch (error) {
-    console.error('Error purchasing seats:', error);
+    console.error('Error updating seats:', error);
     return NextResponse.json(
-      { error: 'Failed to purchase seats' },
+      { error: 'Failed to update seats' },
       { status: 500 }
     );
   }

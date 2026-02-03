@@ -925,9 +925,8 @@
   "benefits:": "Benefits:",
   "billing": {
     "actions": "Actions",
-    "add-seats": "Add Seats",
-    "add-seats-anytime": "Add seats anytime (prorated billing)",
-    "add-seats-description": "Purchase additional seats to invite more team members to your workspace.",
+    "adjust-seats": "Adjust Seats",
+    "adjust-seats-description": "Adjust the number of seats for your subscription.",
     "additional-cost": "Additional Cost",
     "additional-seats": "Additional Seats",
     "amount": "Amount",

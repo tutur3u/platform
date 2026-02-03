@@ -925,9 +925,8 @@
   "benefits:": "Những lợi ích:",
   "billing": {
     "actions": "Hành động",
-    "add-seats": "Thêm ghế",
-    "add-seats-anytime": "Thêm ghế bất cứ lúc nào (tính phí theo tỷ lệ)",
-    "add-seats-description": "Mua thêm ghế để mời thêm thành viên vào workspace của bạn.",
+    "adjust-seats": "Sửa đổi ghế",
+    "adjust-seats-description": "Sửa đổi ghế cho gói đăng ký của bạn",
     "additional-cost": "Chi phí bổ sung",
     "additional-seats": "Ghế bổ sung",
     "amount": "Số tiền",
