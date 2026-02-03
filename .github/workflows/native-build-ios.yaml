@@ -83,6 +83,7 @@ jobs:
 
             - name: Build iOS (Simulator)
               run: |
+                  set -o pipefail
                   xcodebuild \
                     -workspace ios/native.xcworkspace \
                     -scheme native \
@@ -92,7 +93,7 @@ jobs:
                     -derivedDataPath build \
                     build \
                     CODE_SIGNING_ALLOWED=NO \
-                    | xcpretty --color
+                    | xcbeautify
 
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
