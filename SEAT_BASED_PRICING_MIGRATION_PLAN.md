@@ -662,7 +662,7 @@ export async function POST(req: Request) {
 | **Webhooks** | `apps/web/src/app/api/payment/webhooks/route.ts` | ✅ Complete |
 | **UI** | `apps/web/src/app/[locale]/(dashboard)/[wsId]/billing/page.tsx` | ✅ Complete |
 | **UI** | `apps/web/src/app/[locale]/(dashboard)/[wsId]/billing/billing-client.tsx` | ✅ Complete |
-| **UI** | `apps/web/src/app/[locale]/(dashboard)/[wsId]/billing/add-seats-dialog.tsx` | ✅ Complete |
+| **UI** | `apps/web/src/app/[locale]/(dashboard)/[wsId]/billing/adjust-seats-dialog.tsx` | ✅ Complete |
 | **UI** | `apps/web/src/app/[locale]/(dashboard)/[wsId]/billing/migrate-to-seats-dialog.tsx` | ✅ Complete |
 | **Translations** | `apps/web/messages/en.json` | ✅ Complete |
 | **Translations** | `apps/web/messages/vi.json` | ✅ Complete |
