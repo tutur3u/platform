@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import {
   extractIPFromHeaders,
   isIPBlocked,
@@ -11,8 +12,9 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface UserToEmail {
   id: string;
@@ -21,6 +23,35 @@ interface UserToEmail {
   notes: string;
   is_completed: boolean;
 }
+
+const EmailUserSchema = z.object({
+  id: z.string().min(1),
+  email: z.string().email(),
+  username: z.string().min(1),
+  notes: z.string(),
+  is_completed: z.boolean(),
+});
+
+const EmailPostSchema = z.object({
+  title: z.string().nullable(),
+  content: z.string().nullable(),
+  notes: z.string().nullable(),
+  id: z.string().optional(),
+  ws_id: z.string().optional(),
+  name: z.string().optional(),
+  created_at: z.string().optional(),
+  group_id: z.string().optional(),
+  group_name: z.string().optional(),
+  post_approval_status: z.enum(['APPROVED', 'PENDING', 'REJECTED']).optional(),
+});
+
+const EmailRequestSchema = z.object({
+  users: z.array(EmailUserSchema).min(1),
+  post: EmailPostSchema,
+  date: z.string().refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: 'Invalid date format',
+  }),
+});
 
 export async function POST(
   req: NextRequest,
@@ -34,6 +65,7 @@ export async function POST(
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
     const { wsId, groupId, postId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     console.log(
       `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Request received`
@@ -53,14 +85,62 @@ export async function POST(
       );
     }
 
+    // Check if post is approved before allowing email send
+    // Fetch post from database to verify approval status (don't trust client input)
+    const { data: post, error: postError } = await sbAdmin
+      .from('user_group_posts')
+      .select('id, post_approval_status, workspace_user_groups!inner(ws_id)')
+      .eq('id', postId)
+      .eq('group_id', groupId)
+      .eq('workspace_user_groups.ws_id', normalizedWsId)
+      .single();
+
+    if (postError || !post) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Post not found`
+      );
+      return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+    }
+
+    if (post.post_approval_status !== 'APPROVED') {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Post not approved`
+      );
+      return NextResponse.json(
+        { message: 'Post must be approved before sending emails' },
+        { status: 403 }
+      );
+    }
+
+    const parsedBody = EmailRequestSchema.safeParse(await req.json());
+
+    if (!parsedBody.success) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Invalid request body`
+      );
+      return NextResponse.json(
+        {
+          message: 'Invalid request body',
+          errors: parsedBody.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = parsedBody.data as {
+      users: UserToEmail[];
+      post: UserGroupPost & { group_name?: string };
+      date: string;
+    };
+
     // Check if workspace has email sending enabled
     const { data: workspaceSecret } =
-      wsId === process.env.MAILBOX_ALLOWED_WS_ID
-        ? { data: { id: wsId, value: 'true' } }
+      normalizedWsId === process.env.MAILBOX_ALLOWED_WS_ID
+        ? { data: { id: normalizedWsId, value: 'true' } }
         : await sbAdmin
             .from('workspace_secrets')
             .select('*')
-            .eq('ws_id', wsId)
+            .eq('ws_id', normalizedWsId)
             .eq('name', 'ENABLE_EMAIL_SENDING')
             .maybeSingle();
 
@@ -73,22 +153,6 @@ export async function POST(
       return NextResponse.json(
         { message: 'Workspace ID is not allowed' },
         { status: 403 }
-      );
-    }
-
-    const data = (await req.json()) as {
-      users: UserToEmail[];
-      post: UserGroupPost;
-      date: string;
-    };
-
-    if (!data.users) {
-      console.log(
-        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Invalid request body - missing users`
-      );
-      return NextResponse.json(
-        { message: 'Invalid request body' },
-        { status: 400 }
       );
     }
 
@@ -137,7 +201,7 @@ export async function POST(
     let sourceEmail = 'notifications@tuturuuu.com';
 
     try {
-      emailService = await EmailService.fromWorkspace(wsId, {
+      emailService = await EmailService.fromWorkspace(normalizedWsId, {
         rateLimits: isWSIDAllowed
           ? {
               workspacePerMinute: 100, // Increased limit for allowed workspaces
@@ -152,7 +216,7 @@ export async function POST(
       const { data: credentials } = await sbAdmin
         .from('workspace_email_credentials')
         .select('source_name, source_email')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .single();
 
       if (credentials) {
@@ -196,6 +260,7 @@ export async function POST(
         const htmlContent = await render(
           PostEmailTemplate({
             post: data.post,
+            groupName: data.post.group_name,
             username: user.username,
             isHomeworkDone: user.is_completed,
             notes: user.notes || undefined,
@@ -208,7 +273,7 @@ export async function POST(
           recipients: { to: [user.email] },
           content: { subject, html: htmlContent },
           metadata: {
-            wsId,
+            wsId: normalizedWsId,
             userId: authUser.id,
             templateType: 'user-group-post',
             entityType: 'post',
@@ -223,7 +288,7 @@ export async function POST(
             .from('sent_emails')
             .insert({
               post_id: postId,
-              ws_id: wsId,
+              ws_id: normalizedWsId,
               sender_id: authUser.id,
               receiver_id: user.id,
               email: user.email,

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '13.0.5';
   };
   public: {
     Tables: {
@@ -2281,12 +2281,18 @@ export type Database = {
       };
       external_user_monthly_report_logs: {
         Row: {
+          approved_at: string | null;
+          approved_by: string | null;
           content: string;
           created_at: string;
           creator_id: string | null;
           feedback: string;
           group_id: string;
           id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
           report_id: string;
           score: number | null;
           scores: number[] | null;
@@ -2294,12 +2300,18 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
           feedback?: string;
           group_id: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           report_id: string;
           score?: number | null;
           scores?: number[] | null;
@@ -2307,12 +2319,18 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
           feedback?: string;
           group_id?: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           report_id?: string;
           score?: number | null;
           scores?: number[] | null;
@@ -2450,42 +2468,63 @@ export type Database = {
       };
       external_user_monthly_reports: {
         Row: {
+          approved_at: string | null;
+          approved_by: string | null;
           content: string;
           created_at: string;
           creator_id: string | null;
           feedback: string;
           group_id: string;
           id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
           score: number | null;
           scores: number[] | null;
           title: string;
           updated_at: string;
+          updated_by: string | null;
           user_id: string;
         };
         Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content: string;
           created_at?: string;
           creator_id?: string | null;
           feedback: string;
           group_id: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           score?: number | null;
           scores?: number[] | null;
           title: string;
           updated_at: string;
+          updated_by?: string | null;
           user_id: string;
         };
         Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
           feedback?: string;
           group_id?: string;
           id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          report_approval_status?: Database['public']['Enums']['approval_status'];
           score?: number | null;
           scores?: number[] | null;
           title?: string;
           updated_at?: string;
+          updated_by?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -2571,6 +2610,41 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
           {
@@ -10715,32 +10789,241 @@ export type Database = {
           },
         ];
       };
+      user_group_post_logs: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          content: string;
+          created_at: string;
+          creator_id: string | null;
+          group_id: string;
+          id: string;
+          notes: string;
+          post_approval_status: Database['public']['Enums']['approval_status'];
+          post_id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          title: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id: string;
+          id?: string;
+          notes?: string;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          post_id: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id?: string;
+          id?: string;
+          notes?: string;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          post_id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_group_posts: {
         Row: {
+          approved_at: string | null;
+          approved_by: string | null;
           content: string | null;
           created_at: string;
+          creator_id: string | null;
           group_id: string;
           id: string;
           notes: string | null;
+          post_approval_status: Database['public']['Enums']['approval_status'];
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
           title: string | null;
+          updated_by: string | null;
         };
         Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string | null;
           created_at?: string;
+          creator_id?: string | null;
           group_id: string;
           id?: string;
           notes?: string | null;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
           title?: string | null;
+          updated_by?: string | null;
         };
         Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
           content?: string | null;
           created_at?: string;
+          creator_id?: string | null;
           group_id?: string;
           id?: string;
           notes?: string | null;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
           title?: string | null;
+          updated_by?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'user_group_posts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'user_group_posts_group_id_fkey';
             columns: ['group_id'];
@@ -10788,6 +11071,41 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
         ];
@@ -18925,6 +19243,7 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_power_users: {
         Args: { limit_count?: number };
         Returns: {
@@ -18960,6 +19279,10 @@ export type Database = {
         Returns: {
           task_id: string;
         }[];
+      };
+      get_report_workspace_id: {
+        Args: { p_report_id: string };
+        Returns: string;
       };
       get_retention_rate: {
         Args: { period?: string };
@@ -19582,6 +19905,10 @@ export type Database = {
         Args: { ws_id: string };
         Returns: number;
       };
+      get_workspace_user_id: {
+        Args: { p_user_id: string; p_ws_id: string };
+        Returns: string;
+      };
       get_workspace_user_with_details: {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: Json;
@@ -20193,6 +20520,7 @@ export type Database = {
         | 'multi_choice_quiz'
         | 'paragraph_quiz'
         | 'flashcards';
+      approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
       billing_reason:
         | 'purchase'
         | 'subscription_create'
@@ -22105,7 +22433,9 @@ export type Database = {
         | 'update_wallets'
         | 'delete_wallets'
         | 'view_stock_quantity'
-        | 'update_stock_quantity';
+        | 'update_stock_quantity'
+        | 'approve_reports'
+        | 'approve_posts';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -22260,6 +22590,7 @@ export const Constants = {
         'paragraph_quiz',
         'flashcards',
       ],
+      approval_status: ['PENDING', 'APPROVED', 'REJECTED'],
       billing_reason: [
         'purchase',
         'subscription_create',
@@ -24185,6 +24516,8 @@ export const Constants = {
         'delete_wallets',
         'view_stock_quantity',
         'update_stock_quantity',
+        'approve_reports',
+        'approve_posts',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

@@ -559,6 +559,22 @@ export const permissionGroups = ({
             disableOnProduction: false,
             disabled: false,
           },
+          {
+            id: 'approve_reports',
+            icon: <ShieldCheck />,
+            title: t('ws-roles.approve_reports'),
+            description: t('ws-roles.approve_reports_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'approve_posts',
+            icon: <ShieldCheck />,
+            title: t('ws-roles.approve_posts'),
+            description: t('ws-roles.approve_posts_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
         ],
       },
       {

@@ -6,11 +6,13 @@ import {
   FileText,
   History,
   ImageIcon,
+  Loader2,
   Moon,
   Palette,
   PencilIcon,
   Plus,
   Printer,
+  Shield as ShieldIcon,
   Sun,
   Undo,
 } from '@tuturuuu/icons';
@@ -47,6 +49,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { useLatestApprovedLog } from '../../approvals/hooks/use-approvals';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
 import ScoreDisplay from './score-display';
@@ -81,6 +84,7 @@ export default function EditableReportPreview({
     user_note?: string | null;
     creator_name?: string;
     group_name?: string;
+    report_approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   };
   configs: WorkspaceConfig[];
   isNew: boolean;
@@ -109,24 +113,59 @@ export default function EditableReportPreview({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
-  const form = useForm({
-    resolver: zodResolver(UserReportFormSchema),
-    defaultValues: {
+  // Fetch latest approved log if report is rejected
+  const isRejected = report.report_approval_status === 'REJECTED';
+  const { data: latestApprovedLog, isLoading: isLoadingApprovedLog } =
+    useLatestApprovedLog(isRejected ? report.id || null : null);
+
+  // Show loading state while fetching approved log for rejected reports
+  const isLoadingRejectedBase = isRejected && isLoadingApprovedLog;
+
+  // Determine form values: use latest approved log if rejected, otherwise use report
+  const getFormValues = () => {
+    if (isRejected && latestApprovedLog) {
+      return {
+        title: latestApprovedLog.title || '',
+        content: latestApprovedLog.content || '',
+        feedback: latestApprovedLog.feedback || '',
+      };
+    }
+    return {
       title: report?.title || '',
       content: report?.content || '',
       feedback: report?.feedback || '',
-    },
+    };
+  };
+
+  const form = useForm({
+    resolver: zodResolver(UserReportFormSchema),
+    defaultValues: getFormValues(),
   });
 
   // Ensure form reflects the latest report when switching user/report selections
+  // If rejected, use the latest approved log as the base state
   useEffect(() => {
-    form.reset({
-      title: report?.title || '',
-      content: report?.content || '',
-      feedback: report?.feedback || '',
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [report?.title, report?.content, report?.feedback, form.reset]);
+    const formValues =
+      isRejected && latestApprovedLog
+        ? {
+            title: latestApprovedLog.title || '',
+            content: latestApprovedLog.content || '',
+            feedback: latestApprovedLog.feedback || '',
+          }
+        : {
+            title: report?.title || '',
+            content: report?.content || '',
+            feedback: report?.feedback || '',
+          };
+    form.reset(formValues);
+  }, [
+    isRejected,
+    latestApprovedLog,
+    report?.title,
+    report?.content,
+    report?.feedback,
+    form.reset,
+  ]);
 
   const title = form.watch('title');
   const content = form.watch('content');
@@ -256,47 +295,6 @@ export default function EditableReportPreview({
     return rtf.format(Math.sign(diffMs) * Math.round(years), 'year');
   };
 
-  const insertLog = async (
-    reportId: string,
-    values: { title: string; content: string; feedback: string }
-  ) => {
-    try {
-      if (!report.user_id || !report.group_id) return;
-
-      // Get the current user's workspace user ID
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (!authUser) throw new Error('User not authenticated');
-
-      const { data: workspaceUser, error: workspaceUserError } = await supabase
-        .from('workspace_user_linked_users')
-        .select('virtual_user_id')
-        .eq('platform_user_id', authUser.id)
-        .eq('ws_id', wsId)
-        .single();
-
-      if (workspaceUserError) throw workspaceUserError;
-      if (!workspaceUser) throw new Error('User not found in workspace');
-      await supabase.from('external_user_monthly_report_logs').insert({
-        report_id: reportId,
-        user_id: report.user_id,
-        group_id: report.group_id,
-        title: values.title ?? '',
-        content: values.content ?? '',
-        feedback: values.feedback ?? '',
-        score: report?.score ?? null,
-        scores: report.scores ?? null,
-        creator_id: workspaceUser.virtual_user_id ?? undefined,
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ['ws', wsId, 'report', reportId, 'logs'],
-      });
-    } catch (_) {
-      // no-op; logging should not block UX
-    }
-  };
-
   // Mutations: create, update, delete
   const createMutation = useMutation({
     mutationFn: async (payload: {
@@ -363,7 +361,7 @@ export default function EditableReportPreview({
       if (error) throw error;
       return data as { id: string };
     },
-    onSuccess: async (data, variables) => {
+    onSuccess: async (data) => {
       toast.success(t('ws-reports.report_created'));
       // Invalidate lists that may include this report
       if (report.user_id && report.group_id) {
@@ -379,16 +377,16 @@ export default function EditableReportPreview({
           ],
         });
       }
-      // Insert initial log snapshot
-      await insertLog(data.id, variables);
       // Navigate depending on context
       const isGroupContext = pathname.includes('/users/groups/');
+      const sp = new URLSearchParams(searchParams.toString());
+      if (report.user_id) sp.set('userId', report.user_id);
+      sp.set('reportId', data.id);
+
       if (isGroupContext) {
-        const sp = new URLSearchParams(searchParams.toString());
-        sp.set('reportId', data.id);
         router.replace(`${pathname}?${sp.toString()}`);
       } else {
-        router.replace(`/${wsId}/users/reports/${data.id}`);
+        router.replace(`/${wsId}/users/reports?${sp.toString()}`);
       }
     },
     onError: (err) => {
@@ -418,10 +416,8 @@ export default function EditableReportPreview({
         .eq('id', report.id);
       if (error) throw error;
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: async () => {
       toast.success(t('ws-reports.report_saved'));
-      // Insert version log snapshot
-      if (report.id) await insertLog(report.id, variables);
       // Invalidate detail and logs
       await Promise.all([
         queryClient.invalidateQueries({
@@ -450,6 +446,10 @@ export default function EditableReportPreview({
             'reports',
           ],
         }),
+        report?.title,
+        report?.content,
+        report?.feedback,
+        form.reset,
       ]);
     },
     onError: (err) => {
@@ -484,19 +484,14 @@ export default function EditableReportPreview({
         });
       }
       const isGroupContext = pathname.includes('/users/groups/');
+      const sp = new URLSearchParams(searchParams.toString());
+      if (report.user_id) sp.set('userId', report.user_id);
+      sp.delete('reportId');
+
       if (isGroupContext) {
-        const sp = new URLSearchParams(searchParams.toString());
-        sp.delete('reportId');
         router.replace(`${pathname}?${sp.toString()}`);
       } else {
-        // Redirect to new with preserved user/group if available
-        const qp: string[] = [];
-        if (report.group_id)
-          qp.push(`groupId=${encodeURIComponent(report.group_id)}`);
-        if (report.user_id)
-          qp.push(`userId=${encodeURIComponent(report.user_id)}`);
-        const qs = qp.length ? `?${qp.join('&')}` : '';
-        router.replace(`/${wsId}/users/reports/new${qs}`);
+        router.replace(`/${wsId}/users/reports?${sp.toString()}`);
       }
     },
     onError: (err) => {
@@ -621,6 +616,7 @@ export default function EditableReportPreview({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  const isPendingApproval = report.report_approval_status === 'PENDING';
   const previewTitle = selectedLog?.title ?? title;
   const previewContent = selectedLog?.content ?? content;
   const previewFeedback = selectedLog?.feedback ?? feedback;
@@ -852,25 +848,34 @@ export default function EditableReportPreview({
           />
         </div>
 
-        <UserReportForm
-          isNew={isNew}
-          form={form}
-          submitLabel={isNew ? t('common.create') : t('common.save')}
-          onSubmit={(values) => {
-            if (isNew) createMutation.mutate(values);
-            else updateMutation.mutate(values);
-          }}
-          onDelete={
-            !isNew && canDeleteReports
-              ? () => setShowDeleteDialog(true)
-              : undefined
-          }
-          managerOptions={managerOptions}
-          selectedManagerName={selectedManagerName ?? report.creator_name}
-          onChangeManager={(name) => onChangeManagerAction?.(name)}
-          canUpdate={canUpdateReports}
-          canDelete={canDeleteReports}
-        />
+        {isLoadingRejectedBase ? (
+          <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-lg border p-4">
+            <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
+            <div className="text-muted-foreground text-sm">
+              {t('ws-reports.loading_approved_version')}
+            </div>
+          </div>
+        ) : (
+          <UserReportForm
+            isNew={isNew}
+            form={form}
+            submitLabel={isNew ? t('common.create') : t('common.save')}
+            onSubmit={(values) => {
+              if (isNew) createMutation.mutate(values);
+              else updateMutation.mutate(values);
+            }}
+            onDelete={
+              !isNew && canDeleteReports
+                ? () => setShowDeleteDialog(true)
+                : undefined
+            }
+            managerOptions={managerOptions}
+            selectedManagerName={selectedManagerName ?? report.creator_name}
+            onChangeManager={(name) => onChangeManagerAction?.(name)}
+            canUpdate={canUpdateReports}
+            canDelete={canDeleteReports}
+          />
+        )}
 
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
@@ -1086,7 +1091,17 @@ export default function EditableReportPreview({
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  disabled={isPendingApproval}
+                  title={
+                    isPendingApproval
+                      ? t('ws-reports.export_blocked_not_approved')
+                      : undefined
+                  }
+                >
                   <Download className="h-4 w-4" />
                   {t('common.export')}
                 </Button>
@@ -1150,6 +1165,23 @@ export default function EditableReportPreview({
             score: previewScore,
             feedback: previewFeedback,
           }}
+          notice={
+            isPendingApproval ? (
+              <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
+                  <div className="flex-1">
+                    <div className="font-semibold text-dynamic-orange">
+                      {t('ws-reports.needs_approval')}
+                    </div>
+                    <div className="mt-1 text-dynamic-orange/80 text-sm">
+                      {t('ws-reports.needs_approval_description')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : undefined
+          }
         />
       </div>
     </div>

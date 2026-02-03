@@ -40,6 +40,7 @@ interface RequestDetailModalProps {
   onUpdate?: () => void;
   wsId: string;
   canManageTimeTrackingRequests: boolean;
+  canBypassTimeTrackingRequestApproval: boolean;
   currentUser: WorkspaceUser | null;
 }
 
@@ -50,6 +51,7 @@ export function RequestDetailModal({
   onUpdate,
   wsId,
   canManageTimeTrackingRequests,
+  canBypassTimeTrackingRequestApproval,
   currentUser,
 }: RequestDetailModalProps) {
   const t = useTranslations('time-tracker.requests');
@@ -240,6 +242,9 @@ export function RequestDetailModal({
                 request={request}
                 currentUser={currentUser}
                 canManageTimeTrackingRequests={canManageTimeTrackingRequests}
+                canBypassTimeTrackingRequestApproval={
+                  canBypassTimeTrackingRequestApproval
+                }
                 isApproving={actions.approveMutation.isPending}
                 onApprove={actions.handleApprove}
                 showRejectionForm={actions.showRejectionForm}

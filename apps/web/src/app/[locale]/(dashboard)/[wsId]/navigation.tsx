@@ -592,6 +592,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/users/groups/indicators`,
         `/${personalOrWsId}/users/group-tags`,
         `/${personalOrWsId}/users/reports`,
+        `/${personalOrWsId}/users/approvals`,
         `/${personalOrWsId}/users/structure`,
       ],
       icon: <Users className="h-5 w-5" />,
@@ -649,6 +650,14 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutPermission('view_user_groups_reports'),
         },
         {
+          title: t('workspace-users-tabs.approvals'),
+          href: `/${personalOrWsId}/users/approvals`,
+          icon: <CheckCircle2 className="h-5 w-5" />,
+          disabled:
+            withoutPermission('approve_reports') &&
+            withoutPermission('approve_posts'),
+        },
+        {
           title: t('workspace-users-tabs.metrics'),
           href: `/${personalOrWsId}/users/groups/indicators`,
           icon: <ChartColumn className="h-5 w-5" />,
@@ -694,7 +703,9 @@ export async function WorkspaceNavigationLinks({
           withoutPermission('view_user_groups_reports') &&
           withoutPermission('view_user_groups_scores') &&
           withoutPermission('send_user_group_post_emails') &&
-          withoutPermission('create_lead_generations')),
+          withoutPermission('create_lead_generations') &&
+          withoutPermission('approve_reports') &&
+          withoutPermission('approve_posts')),
     },
     {
       title: t('sidebar_tabs.inventory'),

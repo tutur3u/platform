@@ -8,6 +8,7 @@ export default function ReportPreview({
   parseDynamicText,
   getConfig,
   theme,
+  notice,
 }: {
   lang: string;
   data?: {
@@ -22,6 +23,7 @@ export default function ReportPreview({
 
   getConfig: (id: string) => string | null | undefined;
   theme?: 'light' | 'dark';
+  notice?: ReactNode;
 }) {
   return (
     <div className="overflow-x-auto xl:flex-none">
@@ -85,6 +87,8 @@ export default function ReportPreview({
             })}{' '} */}
             {getConfig('REPORT_TITLE_SUFFIX')}
           </div>
+
+          {notice && <div>{notice}</div>}
 
           {getConfig('REPORT_INTRO') && (
             <div
@@ -167,6 +171,8 @@ export default function ReportPreview({
             </div>
           )}
 
+          {notice && <div>{notice}</div>}
+
           <div
             className={`text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}
           >
@@ -186,6 +192,8 @@ export default function ReportPreview({
                 {getConfig('REPORT_CLOSING')}
               </span>
             )}
+
+            {notice && <div>{notice}</div>}
           </div>
         </div>
       </div>
