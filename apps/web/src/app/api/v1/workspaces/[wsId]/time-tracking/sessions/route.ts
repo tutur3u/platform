@@ -12,6 +12,10 @@ import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  getProjectContextCategory,
+  getTimeOfDayCategory,
+} from '@/lib/time-tracker-utils';
+import {
   getWorkspaceConfig,
   isPersonalWorkspace,
   normalizeWorkspaceId,
@@ -289,33 +293,12 @@ export async function GET(
       ) {
         filteredSessions = filteredSessions.filter((session) => {
           if (timeOfDay && timeOfDay !== 'all') {
-            const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-            let cat = 'night';
-            if (hour >= 6 && hour < 12) cat = 'morning';
-            else if (hour >= 12 && hour < 18) cat = 'afternoon';
-            else if (hour >= 18 && hour < 24) cat = 'evening';
-
+            const cat = getTimeOfDayCategory(session.start_time, userTimezone);
             if (cat !== timeOfDay) return false;
           }
 
           if (projectContext && projectContext !== 'all') {
-            let cat = 'general';
-            if (session.task_id) {
-              cat = 'project-work';
-            } else if (
-              session.category?.name?.toLowerCase().includes('meeting')
-            ) {
-              cat = 'meetings';
-            } else if (
-              session.category?.name?.toLowerCase().includes('learn')
-            ) {
-              cat = 'learning';
-            } else if (
-              session.category?.name?.toLowerCase().includes('admin')
-            ) {
-              cat = 'administrative';
-            }
-
+            const cat = getProjectContextCategory(session);
             if (cat !== projectContext) return false;
           }
 

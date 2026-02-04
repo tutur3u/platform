@@ -23,7 +23,7 @@ import type { StackedSession } from './session-types';
 import { getCategoryColor } from './session-utils';
 
 interface MonthViewProps {
-  periodStats: PeriodStats;
+  periodStats?: PeriodStats;
   isLoadingStats?: boolean;
   groupedStackedSessions: { [key: string]: StackedSession[] };
   startOfPeriod: dayjs.Dayjs;
@@ -42,6 +42,8 @@ export function MonthView({
   onMove,
 }: MonthViewProps) {
   const t = useTranslations('time-tracker.session_history');
+
+  if (!periodStats && !isLoadingStats) return null;
 
   const sessionColor = {
     long: 'text-dynamic-green',

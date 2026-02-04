@@ -44,7 +44,6 @@ import type {
   ViewMode,
 } from './session-types';
 import {
-  calculatePeriodStats,
   sessionOverlapsPeriod,
   sortSessionGroups,
   stackSessions,
@@ -154,39 +153,42 @@ export function SessionHistory({
   );
 
   // Fetch period stats independently of paginated sessions
-  const { data: fetchedPeriodStats, isLoading: isLoadingStats } =
-    useQuery<PeriodStats>({
-      queryKey: [
-        'time-tracking-sessions',
-        wsId,
-        userId,
-        'period-stats',
-        startOfPeriod.toISOString(),
-        endOfPeriod.toISOString(),
-        filters,
-      ],
-      queryFn: async () => {
-        const params = new URLSearchParams({
-          dateFrom: startOfPeriod.toISOString(),
-          dateTo: endOfPeriod.toISOString(),
-          timezone: userTimezone,
-          userId: userId,
-          searchQuery: filters.searchQuery,
-          categoryId: filters.categoryId,
-          duration: filters.duration,
-          timeOfDay: filters.timeOfDay,
-          projectContext: filters.projectContext,
-        });
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/time-tracking/stats/period?${params}`
-        );
-        if (!response.ok) {
-          throw new Error('Failed to fetch period stats');
-        }
-        return response.json();
-      },
-      staleTime: 30 * 1000,
-    });
+  const {
+    data: fetchedPeriodStats,
+    isLoading: isLoadingStats,
+    isFetching: isFetchingStats,
+  } = useQuery<PeriodStats>({
+    queryKey: [
+      'time-tracking-sessions',
+      wsId,
+      userId,
+      'period-stats',
+      startOfPeriod.toISOString(),
+      endOfPeriod.toISOString(),
+      filters,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        dateFrom: startOfPeriod.toISOString(),
+        dateTo: endOfPeriod.toISOString(),
+        timezone: userTimezone,
+        userId: userId,
+        searchQuery: filters.searchQuery,
+        categoryId: filters.categoryId,
+        duration: filters.duration,
+        timeOfDay: filters.timeOfDay,
+        projectContext: filters.projectContext,
+      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/stats/period?${params}`
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch period stats');
+      }
+      return response.json();
+    },
+    staleTime: 30 * 1000,
+  });
 
   // Intersection Observer for auto-loading
   useEffect(() => {
@@ -279,22 +281,13 @@ export function SessionHistory({
     [sessions, startOfPeriod, endOfPeriod, userTimezone]
   );
 
+  const isPeriodStatsReady = Boolean(fetchedPeriodStats);
+  const isPeriodStatsLoading =
+    !isPeriodStatsReady && (isLoadingStats || isFetchingStats);
+
   const periodStats = useMemo(
-    () =>
-      fetchedPeriodStats ||
-      calculatePeriodStats(
-        sessionsForPeriod,
-        startOfPeriod,
-        endOfPeriod,
-        userTimezone
-      ),
-    [
-      fetchedPeriodStats,
-      sessionsForPeriod,
-      startOfPeriod,
-      endOfPeriod,
-      userTimezone,
-    ]
+    () => (isPeriodStatsReady ? fetchedPeriodStats : undefined),
+    [isPeriodStatsReady, fetchedPeriodStats]
   );
 
   const groupedStackedSessions = useMemo(() => {
@@ -342,7 +335,7 @@ export function SessionHistory({
               </div>
               <div>
                 <div className="font-bold tracking-tight">{t('title')}</div>
-                {(periodStats?.sessionCount || 0) > 0 && (
+                {isPeriodStatsReady && (periodStats?.sessionCount || 0) > 0 && (
                   <div className="font-normal text-muted-foreground text-xs md:text-sm">
                     {periodStats?.sessionCount === 1
                       ? t('sessions_count', {
@@ -425,7 +418,7 @@ export function SessionHistory({
           ) : viewMode === 'month' ? (
             <MonthView
               periodStats={periodStats}
-              isLoadingStats={isLoadingStats}
+              isLoadingStats={isPeriodStatsLoading}
               groupedStackedSessions={groupedStackedSessions}
               startOfPeriod={startOfPeriod}
               onResume={resumeSession}
@@ -437,7 +430,7 @@ export function SessionHistory({
             <>
               <SessionStats
                 periodStats={periodStats}
-                isLoading={isLoadingStats}
+                isLoading={isPeriodStatsLoading}
               />
 
               <div className="space-y-6">

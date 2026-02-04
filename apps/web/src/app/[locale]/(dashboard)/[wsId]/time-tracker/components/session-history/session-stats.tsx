@@ -9,7 +9,7 @@ import type { PeriodStats } from '@/lib/time-tracker-utils';
 import { getCategoryColor } from './session-utils';
 
 interface SessionStatsProps {
-  periodStats: PeriodStats;
+  periodStats?: PeriodStats;
   isLoading?: boolean;
 }
 
@@ -23,6 +23,8 @@ export function SessionStats({ periodStats, isLoading }: SessionStatsProps) {
       </div>
     );
   }
+
+  if (!periodStats) return null;
 
   return (
     <div className="mb-6 rounded-lg border p-4">

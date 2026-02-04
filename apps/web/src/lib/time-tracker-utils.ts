@@ -10,6 +10,12 @@ dayjs.extend(isoWeek);
 
 type SessionLike = Pick<TimeTrackingSession, 'start_time' | 'end_time'>;
 
+type ProjectContextSession = Pick<TimeTrackingSession, 'task_id'> & {
+  category?: {
+    name?: string | null;
+  } | null;
+};
+
 type PeriodSession = SessionLike & {
   id: string;
   title: string;
@@ -86,14 +92,25 @@ export const getSessionDurationForDay = (
  * Get the time of day category for a session (morning, afternoon, evening, night)
  */
 export const getTimeOfDayCategory = (
-  session: SessionLike,
+  startTime: string,
   userTimezone: string
-): string => {
-  const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+): 'morning' | 'afternoon' | 'evening' | 'night' => {
+  const hour = dayjs.utc(startTime).tz(userTimezone).hour();
   if (hour >= 6 && hour < 12) return 'morning';
   if (hour >= 12 && hour < 18) return 'afternoon';
   if (hour >= 18 && hour < 24) return 'evening';
   return 'night';
+};
+
+export const getProjectContextCategory = (
+  session: ProjectContextSession
+): 'general' | 'project-work' | 'meetings' | 'learning' | 'administrative' => {
+  if (session.task_id) return 'project-work';
+  const categoryName = session.category?.name?.toLowerCase() || '';
+  if (categoryName.includes('meeting')) return 'meetings';
+  if (categoryName.includes('learn')) return 'learning';
+  if (categoryName.includes('admin')) return 'administrative';
+  return 'general';
 };
 
 /**
@@ -164,7 +181,7 @@ const buildSessionsWithPeriodDuration = (
       endOfPeriod,
       userTimezone
     ),
-    timeOfDay: getTimeOfDayCategory(session, userTimezone),
+    timeOfDay: getTimeOfDayCategory(session.start_time, userTimezone),
   }));
 
 const computeTimeOfDayBreakdown = (
@@ -236,23 +253,37 @@ const computeLongestSession = (
   userTimezone: string
 ): PeriodSession | null => {
   if (sessionsList.length === 0) return null;
+  const initialSession = sessionsList[0];
+  if (!initialSession) return null;
 
-  return sessionsList.reduce((longest, session) => {
-    const longestOverlap = getOverlapSeconds(
-      longest,
-      startOfPeriod,
-      endOfPeriod,
-      userTimezone
-    );
-    const sessionOverlap = getOverlapSeconds(
-      session,
-      startOfPeriod,
-      endOfPeriod,
-      userTimezone
-    );
+  const { session, overlapSeconds } = sessionsList.reduce<{
+    session: PeriodSession;
+    overlapSeconds: number;
+  }>(
+    (current, nextSession) => {
+      const nextOverlap = getOverlapSeconds(
+        nextSession,
+        startOfPeriod,
+        endOfPeriod,
+        userTimezone
+      );
 
-    return sessionOverlap > longestOverlap ? session : longest;
-  });
+      return nextOverlap > current.overlapSeconds
+        ? { session: nextSession, overlapSeconds: nextOverlap }
+        : current;
+    },
+    {
+      session: initialSession,
+      overlapSeconds: getOverlapSeconds(
+        initialSession,
+        startOfPeriod,
+        endOfPeriod,
+        userTimezone
+      ),
+    }
+  );
+
+  return { ...session, duration_seconds: overlapSeconds };
 };
 
 export const calculatePeriodStats = (

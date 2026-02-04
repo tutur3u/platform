@@ -74,7 +74,7 @@ BEGIN
     WHERE s.user_id = p_user_id
       AND (p_is_personal OR s.ws_id = p_ws_id)
       AND s.duration_seconds IS NOT NULL
-      AND (s.start_time AT TIME ZONE p_timezone)::DATE >= v_current_date - MAKE_INTERVAL(days => v_lookback_days)
+      AND (COALESCE(s.end_time, CURRENT_TIMESTAMP) AT TIME ZONE p_timezone)::DATE >= v_current_date - MAKE_INTERVAL(days => v_lookback_days)
   ),
   daily_aggregates AS (
     SELECT

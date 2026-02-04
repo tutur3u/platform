@@ -8,24 +8,60 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { calculatePeriodStats } from '@/lib/time-tracker-utils';
+import {
+  calculatePeriodStats,
+  getProjectContextCategory,
+  getTimeOfDayCategory,
+} from '@/lib/time-tracker-utils';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const querySchema = z.object({
-  dateFrom: z.string().min(1),
-  dateTo: z.string().min(1),
-  timezone: z.string().min(1).default('UTC'),
-  targetUserId: z.string().min(1).optional(),
-  searchQuery: z.string().optional(),
-  categoryId: z.string().optional(),
-  taskId: z.string().optional(),
-  duration: z.string().optional(),
-  timeOfDay: z.string().optional(),
-  projectContext: z.string().optional(),
-});
+const timezoneEnumValues = (() => {
+  if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
+    const timezones = Intl.supportedValuesOf('timeZone');
+    if (timezones.includes('UTC')) return timezones;
+    return ['UTC', ...timezones];
+  }
+  return ['UTC'];
+})();
+
+const isoDateSchema = z
+  .string()
+  .datetime({ offset: true })
+  .transform((value) => new Date(value));
+
+const querySchema = z
+  .object({
+    dateFrom: isoDateSchema,
+    dateTo: isoDateSchema,
+    timezone: z
+      .enum(timezoneEnumValues as [string, ...string[]])
+      .default('UTC'),
+    targetUserId: z.string().min(1).optional(),
+    searchQuery: z.string().optional(),
+    categoryId: z.string().optional(),
+    taskId: z.string().optional(),
+    duration: z.enum(['all', 'short', 'medium', 'long']).optional(),
+    timeOfDay: z
+      .enum(['all', 'morning', 'afternoon', 'evening', 'night'])
+      .optional(),
+    projectContext: z
+      .enum([
+        'all',
+        'project-work',
+        'meetings',
+        'learning',
+        'administrative',
+        'general',
+      ])
+      .optional(),
+  })
+  .refine((data) => data.dateFrom <= data.dateTo, {
+    message: 'dateFrom must be before or equal to dateTo',
+    path: ['dateFrom'],
+  });
 
 export async function GET(
   request: NextRequest,
@@ -94,6 +130,9 @@ export async function GET(
       projectContext,
     } = parsedQuery.data;
 
+    const dateFromIso = dateFrom.toISOString();
+    const dateToIso = dateTo.toISOString();
+
     // Determine which user's data to fetch
     const queryUserId = targetUserId ?? user.id;
 
@@ -133,8 +172,8 @@ export async function GET(
       .eq('ws_id', normalizedWsId)
       .eq('user_id', queryUserId)
       .eq('pending_approval', false)
-      .gte('start_time', dateFrom)
-      .lte('start_time', dateTo);
+      .lt('start_time', dateToIso)
+      .or(`end_time.gte.${dateFromIso},end_time.is.null`);
 
     // Apply basic filters in SQL
     if (categoryId && categoryId !== 'all') {
@@ -186,29 +225,12 @@ export async function GET(
         }
 
         if (timeOfDay && timeOfDay !== 'all') {
-          const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-          let cat = 'night';
-          if (hour >= 6 && hour < 12) cat = 'morning';
-          else if (hour >= 12 && hour < 18) cat = 'afternoon';
-          else if (hour >= 18 && hour < 24) cat = 'evening';
-
+          const cat = getTimeOfDayCategory(session.start_time, userTimezone);
           if (cat !== timeOfDay) return false;
         }
 
         if (projectContext && projectContext !== 'all') {
-          let cat = 'general';
-          if (session.task_id) {
-            cat = 'project-work';
-          } else if (
-            session.category?.name?.toLowerCase().includes('meeting')
-          ) {
-            cat = 'meetings';
-          } else if (session.category?.name?.toLowerCase().includes('learn')) {
-            cat = 'learning';
-          } else if (session.category?.name?.toLowerCase().includes('admin')) {
-            cat = 'administrative';
-          }
-
+          const cat = getProjectContextCategory(session);
           if (cat !== projectContext) return false;
         }
 

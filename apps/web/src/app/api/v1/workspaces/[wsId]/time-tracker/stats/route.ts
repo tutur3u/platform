@@ -14,7 +14,10 @@ const querySchema = z.object({
   daysBack: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : 365)),
+    .refine((val) => val === undefined || /^\d+$/.test(val), {
+      message: 'daysBack must be a non-negative integer',
+    })
+    .transform((val) => (val ? Number.parseInt(val, 10) : 365)),
 });
 
 const dailyActivitySchema = z.object({
