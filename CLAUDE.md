@@ -194,6 +194,7 @@ bun trigger:deploy
 10. **NEVER** use emojis in UI code - use lucide-react icons via `@tuturuuu/icons`
 11. **NEVER** use `useEffect` for data fetching - THIS IS THE #1 VIOLATION - use TanStack Query's `useQuery`/`useMutation` instead
 12. **NEVER** use raw `fetch()` in client components without TanStack Query wrapper
+13. **NEVER** use absolute Windows drive paths with `apply_patch` - prefer repo-relative paths to avoid tool parsing errors
 
 ### Mandatory Actions
 

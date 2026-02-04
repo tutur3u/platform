@@ -44,11 +44,11 @@ export default async function WorkspaceProductsPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
 
-        const { permissions } = await getPermissions({
+        const { containsPermission } = await getPermissions({
           wsId,
         });
 
-        if (!permissions.includes('view_inventory')) {
+        if (!containsPermission('view_inventory')) {
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
@@ -63,13 +63,11 @@ export default async function WorkspaceProductsPage({
           );
         }
 
-        const canCreateInventory = permissions.includes('create_inventory');
-        const canUpdateInventory = permissions.includes('update_inventory');
-        const canDeleteInventory = permissions.includes('delete_inventory');
-        const canViewStockQuantity = permissions.includes(
-          'view_stock_quantity'
-        );
-        const canUpdateStockQuantity = permissions.includes(
+        const canCreateInventory = containsPermission('create_inventory');
+        const canUpdateInventory = containsPermission('update_inventory');
+        const canDeleteInventory = containsPermission('delete_inventory');
+        const canViewStockQuantity = containsPermission('view_stock_quantity');
+        const canUpdateStockQuantity = containsPermission(
           'update_stock_quantity'
         );
 

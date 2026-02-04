@@ -21,7 +21,7 @@ interface Props {
   workspaceId: string;
 }
 
-type SupportedCurrency = 'VND' | 'USD';
+type SupportedCurrency = 'VND' | 'USD' | 'PHP' | 'EUR';
 
 export default function DefaultCurrencySettings({ workspaceId }: Props) {
   const t = useTranslations('ws-finance-settings');
@@ -127,6 +127,8 @@ export default function DefaultCurrencySettings({ workspaceId }: Props) {
               <SelectValue placeholder={t('default_currency_placeholder')} />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="EUR">{t('currency_eur')}</SelectItem>
+              <SelectItem value="PHP">{t('currency_php')}</SelectItem>
               <SelectItem value="USD">{t('currency_usd')}</SelectItem>
               <SelectItem value="VND">{t('currency_vnd')}</SelectItem>
             </SelectContent>

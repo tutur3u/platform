@@ -41,7 +41,7 @@ export function Filter({ className }: { className: string }) {
         : 'date';
 
     setView(view);
-  }, [searchParams.get]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.toString() === '') return;

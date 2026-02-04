@@ -1,6 +1,13 @@
 'use client';
 
-import { ArrowRight, Check, Loader2, Sparkles, Users } from '@tuturuuu/icons';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  Loader2,
+  Sparkles,
+  Users,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import Image from 'next/image';
@@ -46,6 +53,7 @@ export default function JoinWorkspaceClient({
       UNAUTHORIZED: 'error-unauthorized',
       ALREADY_MEMBER: 'error-already-member',
       JOIN_FAILED: 'error-join-failed',
+      SEAT_LIMIT_REACHED: 'error-seat-limit-reached',
     };
 
     try {
@@ -175,7 +183,8 @@ export default function JoinWorkspaceClient({
     return null;
   }
 
-  const { workspace, memberCount } = workspaceInfo;
+  const { workspace, memberCount, seatLimitReached, seatStatus } =
+    workspaceInfo;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
@@ -250,6 +259,28 @@ export default function JoinWorkspaceClient({
                 </div>
               </div>
             )}
+
+            {/* Seat Limit Warning */}
+            {!joined && seatLimitReached && (
+              <div className="mt-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-orange" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground text-sm">
+                      {t('seat-limit-reached-title')}
+                    </p>
+                    <p className="text-foreground/70 text-xs">
+                      {seatStatus?.maxSeats
+                        ? t('seat-limit-reached-description-with-count', {
+                            current: seatStatus.currentSeats,
+                            max: seatStatus.maxSeats,
+                          })
+                        : t('seat-limit-reached-description')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Join Button */}
@@ -257,11 +288,13 @@ export default function JoinWorkspaceClient({
             className={`group/btn relative w-full overflow-hidden shadow-lg transition-all duration-300 ${
               joined
                 ? 'bg-dynamic-green hover:bg-dynamic-green'
-                : 'bg-linear-to-r from-dynamic-blue to-dynamic-purple hover:shadow-dynamic-blue/20 hover:shadow-xl'
+                : seatLimitReached
+                  ? 'cursor-not-allowed bg-foreground/20'
+                  : 'bg-linear-to-r from-dynamic-blue to-dynamic-purple hover:shadow-dynamic-blue/20 hover:shadow-xl'
             }`}
             size="lg"
             onClick={handleJoin}
-            disabled={joining || joined}
+            disabled={joining || joined || seatLimitReached}
           >
             <span className="relative z-10 flex items-center justify-center gap-2 font-semibold">
               {joined ? (
@@ -277,6 +310,11 @@ export default function JoinWorkspaceClient({
                   <Loader2 className="h-5 w-5 animate-spin" />
                   {t('joining-workspace')}
                 </>
+              ) : seatLimitReached ? (
+                <>
+                  <AlertTriangle className="h-5 w-5" />
+                  {t('workspace-full')}
+                </>
               ) : (
                 <>
                   {t('join-workspace')}
@@ -284,7 +322,7 @@ export default function JoinWorkspaceClient({
                 </>
               )}
             </span>
-            {!joined && !joining && (
+            {!joined && !joining && !seatLimitReached && (
               <div className="absolute inset-0 bg-linear-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
             )}
           </Button>

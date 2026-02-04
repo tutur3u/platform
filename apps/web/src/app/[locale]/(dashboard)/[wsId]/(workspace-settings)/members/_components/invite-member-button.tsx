@@ -20,10 +20,11 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -50,6 +51,7 @@ export default function InviteMemberButton({
   disabled,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations();
 
   const [open, setOpen] = useState(false);
 
@@ -68,15 +70,32 @@ export default function InviteMemberButton({
     });
 
     if (res.ok) {
-      toast({
-        title: 'Invitation sent',
-        description: `An invitation has been sent to ${values.email}.`,
+      toast.success(t('ws-members.invitation-sent'), {
+        description: t('ws-members.invitation-sent-description', {
+          email: values.email,
+        }),
       });
       setOpen(false);
       router.refresh();
     } else {
       const data = await res.json();
-      toast({ title: 'Failed to invite member', description: data.message });
+
+      // Handle seat limit reached error with actionable toast
+      if (data.errorCode === 'SEAT_LIMIT_REACHED') {
+        toast.error(t('ws-members.seat-limit-reached'), {
+          description: t('ws-members.seat-limit-reached-description'),
+          action: {
+            label: t('ws-members.manage-billing'),
+            onClick: () => router.push(`/${wsId}/billing`),
+          },
+          duration: 10000,
+        });
+      } else {
+        toast.error(t('ws-members.invitation-failed'), {
+          description:
+            data.message || t('ws-members.invitation-failed-description'),
+        });
+      }
     }
   };
 

@@ -9,9 +9,9 @@ import StatisticCard from '@/components/cards/StatisticCard';
 
 export async function WorkspaceMembersStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_workspace_members')) {
+  if (!containsPermission('manage_workspace_members')) {
     return <StatisticCard title="Members" value="***" className="opacity-50" />;
   }
 
@@ -24,9 +24,9 @@ export async function WorkspaceMembersStats({ wsId }: { wsId: string }) {
 
 export async function WorkspaceRolesStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_workspace_roles')) {
+  if (!containsPermission('manage_workspace_roles')) {
     return <StatisticCard title="Roles" value="***" className="opacity-50" />;
   }
 
@@ -40,9 +40,9 @@ export async function WorkspaceRolesStats({ wsId }: { wsId: string }) {
 
 export async function WorkspaceGroupsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_users')) {
+  if (!containsPermission('manage_users')) {
     return (
       <StatisticCard title="User Groups" value="***" className="opacity-50" />
     );
@@ -94,9 +94,9 @@ export async function DriveUsageStats({
   isRootWorkspace: boolean;
 }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_drive')) {
+  if (!containsPermission('manage_drive')) {
     return (
       <StatisticCard title="Drive Storage" value="***" className="opacity-50" />
     );
@@ -142,9 +142,9 @@ export async function DriveUsageStats({
 
 export async function DocumentsUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_documents')) {
+  if (!containsPermission('manage_documents')) {
     return (
       <StatisticCard title="Documents" value="***" className="opacity-50" />
     );
@@ -160,9 +160,9 @@ export async function DocumentsUsageStats({ wsId }: { wsId: string }) {
 
 export async function PostsUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('send_user_group_post_emails')) {
+  if (!containsPermission('send_user_group_post_emails')) {
     return <StatisticCard title="Posts" value="***" className="opacity-50" />;
   }
 
@@ -198,9 +198,9 @@ export async function LinksUsageStats({ wsId }: { wsId: string }) {
 
 export async function FinanceUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_finance')) {
+  if (!containsPermission('manage_finance')) {
     return (
       <StatisticCard title="Transactions" value="***" className="opacity-50" />
     );
@@ -216,11 +216,11 @@ export async function FinanceUsageStats({ wsId }: { wsId: string }) {
 
 export async function InvoicesUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
   if (
-    !permissions.includes('manage_finance') &&
-    !permissions.includes('view_invoices')
+    !containsPermission('manage_finance') &&
+    !containsPermission('view_invoices')
   ) {
     return (
       <StatisticCard title="Invoices" value="***" className="opacity-50" />
@@ -237,9 +237,9 @@ export async function InvoicesUsageStats({ wsId }: { wsId: string }) {
 
 export async function InventoryUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('view_inventory')) {
+  if (!containsPermission('view_inventory')) {
     return (
       <StatisticCard title="Products" value="***" className="opacity-50" />
     );
@@ -258,9 +258,9 @@ export async function InventoryUsageStats({ wsId }: { wsId: string }) {
 
 export async function TaskBoardsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_projects')) {
+  if (!containsPermission('manage_projects')) {
     return <StatisticCard title="Boards" value="***" className="opacity-50" />;
   }
 
@@ -274,9 +274,9 @@ export async function TaskBoardsStats({ wsId }: { wsId: string }) {
 
 export async function TaskProjectsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_projects')) {
+  if (!containsPermission('manage_projects')) {
     return (
       <StatisticCard title="Projects" value="***" className="opacity-50" />
     );
@@ -292,9 +292,9 @@ export async function TaskProjectsStats({ wsId }: { wsId: string }) {
 
 export async function TasksUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_projects')) {
+  if (!containsPermission('manage_projects')) {
     return (
       <StatisticCard title="Task Lists" value="***" className="opacity-50" />
     );
@@ -333,9 +333,9 @@ export async function TimeTrackingUsageStats({ wsId }: { wsId: string }) {
 
 export async function HabitsUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_projects')) {
+  if (!containsPermission('manage_projects')) {
     return <StatisticCard title="Habits" value="***" className="opacity-50" />;
   }
 
@@ -353,9 +353,9 @@ export async function HabitsUsageStats({ wsId }: { wsId: string }) {
 
 export async function CalendarEventsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_calendar')) {
+  if (!containsPermission('manage_calendar')) {
     return (
       <StatisticCard
         title="Calendar Events"
@@ -375,9 +375,9 @@ export async function CalendarEventsStats({ wsId }: { wsId: string }) {
 
 export async function CalendarConnectionsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_calendar')) {
+  if (!containsPermission('manage_calendar')) {
     return (
       <StatisticCard
         title="Connected Calendars"
@@ -401,9 +401,9 @@ export async function CalendarConnectionsStats({ wsId }: { wsId: string }) {
 
 export async function AIExecutionsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_lab')) {
+  if (!containsPermission('ai_lab')) {
     return (
       <StatisticCard title="AI Executions" value="***" className="opacity-50" />
     );
@@ -419,9 +419,9 @@ export async function AIExecutionsStats({ wsId }: { wsId: string }) {
 
 export async function ChatUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_chat')) {
+  if (!containsPermission('ai_chat')) {
     return (
       <StatisticCard title="Chat Messages" value="***" className="opacity-50" />
     );
@@ -437,9 +437,9 @@ export async function ChatUsageStats({ wsId }: { wsId: string }) {
 
 export async function ModelsUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_lab')) {
+  if (!containsPermission('ai_lab')) {
     return (
       <StatisticCard title="AI Models" value="***" className="opacity-50" />
     );
@@ -455,9 +455,9 @@ export async function ModelsUsageStats({ wsId }: { wsId: string }) {
 
 export async function AIPromptsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_lab')) {
+  if (!containsPermission('ai_lab')) {
     return (
       <StatisticCard title="AI Prompts" value="***" className="opacity-50" />
     );
@@ -473,9 +473,9 @@ export async function AIPromptsStats({ wsId }: { wsId: string }) {
 
 export async function AIDatasetsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_lab')) {
+  if (!containsPermission('ai_lab')) {
     return (
       <StatisticCard title="AI Datasets" value="***" className="opacity-50" />
     );
@@ -491,9 +491,9 @@ export async function AIDatasetsStats({ wsId }: { wsId: string }) {
 
 export async function AICronJobsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_lab')) {
+  if (!containsPermission('ai_lab')) {
     return (
       <StatisticCard title="Cron Jobs" value="***" className="opacity-50" />
     );
@@ -509,9 +509,9 @@ export async function AICronJobsStats({ wsId }: { wsId: string }) {
 
 export async function CrawlersUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('ai_lab')) {
+  if (!containsPermission('ai_lab')) {
     return (
       <StatisticCard title="Crawlers" value="***" className="opacity-50" />
     );
@@ -538,9 +538,9 @@ export async function CrawlersUsageStats({ wsId }: { wsId: string }) {
 
 export async function CoursesStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_documents')) {
+  if (!containsPermission('manage_documents')) {
     return <StatisticCard title="Courses" value="***" className="opacity-50" />;
   }
 
@@ -554,9 +554,9 @@ export async function CoursesStats({ wsId }: { wsId: string }) {
 
 export async function QuizzesStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_documents')) {
+  if (!containsPermission('manage_documents')) {
     return <StatisticCard title="Quizzes" value="***" className="opacity-50" />;
   }
 
@@ -570,9 +570,9 @@ export async function QuizzesStats({ wsId }: { wsId: string }) {
 
 export async function FlashcardsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_documents')) {
+  if (!containsPermission('manage_documents')) {
     return (
       <StatisticCard title="Flashcards" value="***" className="opacity-50" />
     );
@@ -592,9 +592,9 @@ export async function FlashcardsStats({ wsId }: { wsId: string }) {
 
 export async function APIKeysStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_workspace_security')) {
+  if (!containsPermission('manage_workspace_security')) {
     return (
       <StatisticCard title="API Keys" value="***" className="opacity-50" />
     );
@@ -610,9 +610,9 @@ export async function APIKeysStats({ wsId }: { wsId: string }) {
 
 export async function SecretsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_workspace_secrets')) {
+  if (!containsPermission('manage_workspace_secrets')) {
     return <StatisticCard title="Secrets" value="***" className="opacity-50" />;
   }
 
@@ -630,9 +630,9 @@ export async function SecretsStats({ wsId }: { wsId: string }) {
 
 export async function DiscordIntegrationsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_workspace_integrations')) {
+  if (!containsPermission('manage_workspace_integrations')) {
     return <StatisticCard title="Discord" value="***" className="opacity-50" />;
   }
 
@@ -646,9 +646,9 @@ export async function DiscordIntegrationsStats({ wsId }: { wsId: string }) {
 
 export async function SentEmailsStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
-  const { permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_workspace_audit_logs')) {
+  if (!containsPermission('manage_workspace_audit_logs')) {
     return (
       <StatisticCard title="Sent Emails" value="***" className="opacity-50" />
     );

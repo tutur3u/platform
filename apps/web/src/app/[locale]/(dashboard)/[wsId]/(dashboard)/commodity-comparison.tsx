@@ -119,7 +119,7 @@ const CommodityComparison = ({
     };
 
     loadData();
-  }, [toast, initialData.statistical_forecast.map, locale]);
+  }, [toast, initialData.statistical_forecast, locale]);
 
   // Calculate insights
   const getModelInsights = (modelData: any[], model: string) => {
@@ -255,7 +255,7 @@ const CommodityComparison = ({
             {t('aurora.select_date')}
           </label>
           <Select value={selectedDate} onValueChange={setSelectedDate}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-50">
               <SelectValue placeholder={t('aurora.select_date')} />
             </SelectTrigger>
             <SelectContent>
@@ -378,7 +378,7 @@ const CommodityComparison = ({
 
             <Card>
               <CardContent className="pt-6">
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[selectedData]}>
                       <CartesianGrid
@@ -449,7 +449,7 @@ const CommodityComparison = ({
 
             <Card>
               <CardContent className="pt-6">
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data}>
                       <CartesianGrid

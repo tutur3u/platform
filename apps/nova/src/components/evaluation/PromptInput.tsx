@@ -54,7 +54,7 @@ export function PromptInput({
       const timer = setTimeout(() => setSubmitPulse(false), 1000);
       return () => clearTimeout(timer);
     }
-  }, [isSubmitting, prompt.trim]);
+  }, [isSubmitting, prompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -234,7 +234,7 @@ export function PromptInput({
                     : 'Write your prompt here...\n\nTip: Press Ctrl+Enter (or Cmd+Enter on Mac) to submit'
                 }
                 className={cn(
-                  'min-h-[200px] flex-1 resize-none border-2 bg-background text-foreground shadow-sm transition-all duration-200',
+                  'min-h-50 flex-1 resize-none border-2 bg-background text-foreground shadow-sm transition-all duration-200',
                   'placeholder:text-foreground/40 focus-visible:ring-transparent',
                   isAtLimit
                     ? 'border-dynamic-red/40 focus-visible:border-dynamic-red/60'

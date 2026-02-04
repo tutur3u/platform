@@ -6,12 +6,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getOrCreatePolarCustomer } from '@/utils/customer-session';
-import {
-  createFreeSubscription,
-  fetchSubscription,
-  waitForSubscriptionSync,
-} from '@/utils/subscription-helper';
+import { getSeatStatus } from '@/utils/seat-limits';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
@@ -64,33 +60,6 @@ const fetchWorkspaceOrders = async (wsId: string) => {
   }
 };
 
-const checkCreator = async (wsId: string) => {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    console.error('Error checking user:', userError);
-    return false;
-  }
-
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', wsId)
-    .single();
-
-  if (error) {
-    console.error('Error checking workspace creator:', error);
-    return false;
-  }
-
-  return data.creator_id === user?.id;
-};
-
 const checkManageSubscriptionPermission = async (
   wsId: string,
   userId: string
@@ -111,7 +80,7 @@ const checkManageSubscriptionPermission = async (
   return data ?? false;
 };
 
-const ensureSubscription = async (wsId: string, userId: string) => {
+const ensureSubscription = async (wsId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
   if (existing) return { subscription: existing, error: null };
@@ -121,20 +90,8 @@ const ensureSubscription = async (wsId: string, userId: string) => {
     const supabase = await createClient();
     const polar = createPolarClient();
 
-    // Get or create Polar customer
-    const customerId = await getOrCreatePolarCustomer({
-      polar,
-      supabase,
-      userId,
-    });
-
     // Create free tier subscription
-    const subscription = await createFreeSubscription(
-      polar,
-      supabase,
-      wsId,
-      customerId
-    );
+    const subscription = await createFreeSubscription(polar, supabase, wsId);
 
     if (!subscription) {
       return {
@@ -163,6 +120,81 @@ const ensureSubscription = async (wsId: string, userId: string) => {
   }
 };
 
+export async function fetchSubscription(wsId: string) {
+  const supabase = await createClient();
+
+  const { data: dbSub, error } = await supabase
+    .from('workspace_subscriptions')
+    .select(
+      `
+      *,
+      workspace_subscription_products (
+        id,
+        name,
+        description,
+        price,
+        recurring_interval,
+        tier,
+        pricing_model,
+        price_per_seat,
+        max_seats
+      )
+    `
+    )
+    .eq('ws_id', wsId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !dbSub) {
+    console.error('Error fetching subscription:', error);
+    return null;
+  }
+
+  if (!dbSub.workspace_subscription_products) return null;
+
+  return {
+    id: dbSub.id,
+    status: dbSub.status,
+    createdAt: dbSub.created_at,
+    currentPeriodStart: dbSub.current_period_start,
+    currentPeriodEnd: dbSub.current_period_end,
+    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
+    product: dbSub.workspace_subscription_products,
+    // Seat-based pricing fields
+    pricingModel: dbSub.pricing_model,
+    seatCount: dbSub.seat_count,
+    pricePerSeat: dbSub.price_per_seat,
+  };
+}
+
+export async function waitForSubscriptionSync(
+  wsId: string,
+  maxAttempts: number = 10,
+  delayMs: number = 500
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const subscription = await fetchSubscription(wsId);
+
+    if (subscription) {
+      console.log(
+        `Subscription sync: Found subscription after ${attempt} attempt(s) (${attempt * delayMs}ms)`
+      );
+      return subscription;
+    }
+
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  console.warn(
+    `Subscription sync: Timeout after ${maxAttempts} attempts (${maxAttempts * delayMs}ms)`
+  );
+  return null;
+}
+
 export default async function BillingPage({
   params,
 }: {
@@ -183,15 +215,13 @@ export default async function BillingPage({
           products,
           subscriptionResult,
           orders,
-          isCreator,
           hasManageSubscriptionPermission,
           locale,
           t,
         ] = await Promise.all([
           fetchProducts(),
-          ensureSubscription(wsId, user.id), // Try to ensure subscription exists
+          ensureSubscription(wsId), // Try to ensure subscription exists
           fetchWorkspaceOrders(wsId),
-          checkCreator(wsId),
           checkManageSubscriptionPermission(wsId, user.id),
           getLocale(),
           getTranslations('billing'),
@@ -205,6 +235,9 @@ export default async function BillingPage({
         }
 
         const subscription = subscriptionResult.subscription;
+
+        // Get seat status for the workspace
+        const seatStatus = await getSeatStatus(supabase, wsId);
 
         const dateLocale = locale === 'vi' ? vi : enUS;
         const formatDate = (date: string) =>
@@ -228,6 +261,11 @@ export default async function BillingPage({
           features: subscription.product.description
             ? [subscription.product.description]
             : [t('premium-features')],
+          // Seat-based pricing fields
+          pricingModel: subscription.pricingModel,
+          seatCount: subscription.seatCount,
+          pricePerSeat: subscription.pricePerSeat,
+          maxSeats: subscription.product.max_seats,
         };
 
         return (
@@ -237,7 +275,7 @@ export default async function BillingPage({
               products={products}
               product_id={subscription?.product.id || ''}
               wsId={wsId}
-              isCreator={isCreator}
+              seatStatus={seatStatus}
               hasManageSubscriptionPermission={hasManageSubscriptionPermission}
             />
 

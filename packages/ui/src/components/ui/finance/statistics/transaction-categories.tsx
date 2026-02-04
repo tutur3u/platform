@@ -26,11 +26,11 @@ export default async function TransactionCategoriesStatistics({
         .eq('ws_id', wsId)
     : { count: 0 };
 
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('manage_finance')) return null;
+  if (!enabled || !containsPermission('manage_finance')) return null;
 
   return (
     <StatisticCard

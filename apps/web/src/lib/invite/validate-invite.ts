@@ -146,9 +146,14 @@ export async function validateInvite(
     }
 
     // Parse workspace info with error handling
-    let workspaceInfo: WorkspaceInfo;
+    let apiResponse: {
+      workspace: WorkspaceInfo['workspace'];
+      memberCount: number;
+      seatLimitReached?: boolean;
+      seatStatus?: WorkspaceInfo['seatStatus'];
+    };
     try {
-      workspaceInfo = await response.json();
+      apiResponse = await response.json();
     } catch (jsonError) {
       console.error('Failed to parse workspace info:', jsonError);
       return {
@@ -160,10 +165,10 @@ export async function validateInvite(
 
     // Validate workspaceInfo structure
     if (
-      !workspaceInfo ||
-      !workspaceInfo.workspace ||
-      !workspaceInfo.workspace.id ||
-      !workspaceInfo.workspace.name
+      !apiResponse ||
+      !apiResponse.workspace ||
+      !apiResponse.workspace.id ||
+      !apiResponse.workspace.name
     ) {
       return {
         authenticated: true,
@@ -171,6 +176,14 @@ export async function validateInvite(
         errorCode: 'INTERNAL_ERROR',
       };
     }
+
+    // Build WorkspaceInfo including seat status
+    const workspaceInfo: WorkspaceInfo = {
+      workspace: apiResponse.workspace,
+      memberCount: apiResponse.memberCount,
+      seatLimitReached: apiResponse.seatLimitReached,
+      seatStatus: apiResponse.seatStatus,
+    };
 
     return {
       authenticated: true,

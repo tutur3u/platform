@@ -1,13 +1,14 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.13",
+    "@biomejs/biome": "^2.3.14",
     "@lingual/i18n-check": "^0.8.19",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260202.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260203.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "lightningcss": "1.30.1",
     "lucide-static": "^0.563.0",
-    "turbo": "^2.8.2",
+    "turbo": "^2.8.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
@@ -25,7 +26,11 @@
     "build:tudo": "turbo run build -F @tuturuuu/tudo",
     "build:tumeet": "turbo run build -F @tuturuuu/tumeet",
     "buildx": "turbo test build",
+    "ios": "cd apps/native && bun ios",
+    "android": "cd apps/native && bun android",
     "dev": "turbo run dev --parallel",
+    "dev:android": "cd apps/native && bun dev:android",
+    "dev:ios": "cd apps/native && bun dev:ios",
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/web",
     "dev:webns": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase",
@@ -123,11 +128,15 @@
     "core-js",
     "cytoscape",
     "esbuild",
+    "lightningcss",
     "protobufjs",
     "puppeteer",
     "sharp",
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": ["apps/*", "packages/*"]
+  "workspaces": ["apps/*", "packages/*"],
+  "overrides": {
+    "lightningcss": "1.30.1"
+  }
 }

@@ -321,7 +321,7 @@ export function DatasetCrawler({
       form.setValue('url', dataset.url);
       loadExcelFile();
     }
-  }, [isOpen, dataset.url, form.setValue, loadExcelFile]);
+  }, [isOpen, dataset.url, form, loadExcelFile]);
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
@@ -615,7 +615,7 @@ export function DatasetCrawler({
             <Button
               onClick={handleConfirmSync}
               disabled={loading || !!excelError || processedData.length <= 1}
-              className="flex min-w-[120px] items-center gap-2 transition-colors hover:bg-primary/90"
+              className="flex min-w-30 items-center gap-2 transition-colors hover:bg-primary/90"
             >
               {loading ? (
                 <>
@@ -715,7 +715,7 @@ export function DatasetCrawler({
               loading || !form.getValues('url') || !!form.formState.errors.url
             }
             variant="outline"
-            className="flex min-w-[100px] items-center gap-2"
+            className="flex min-w-25 items-center gap-2"
           >
             {loading ? (
               <>
@@ -888,7 +888,7 @@ export function DatasetCrawler({
 
   const renderDataPreview = () => (
     <div className="mt-4 rounded-lg border bg-card shadow-sm">
-      <div className="max-h-[400px] overflow-auto">
+      <div className="max-h-100 overflow-auto">
         <div className="relative w-full">
           <div className="overflow-x-auto">
             <table className="w-full divide-y divide-border">
