@@ -76,3 +76,12 @@ export const suggestEmails = (text: string): string[] => {
 
   return suggestions;
 };
+
+export function generateEmailSubaddressing(email: string, wsId: string) {
+  const atIndex = email.indexOf('@');
+  if (atIndex === -1) return email; // Invalid email, return as is
+
+  const localPart = email.substring(0, atIndex);
+  const domainPart = email.substring(atIndex);
+  return `${localPart}+ws_${wsId}${domainPart}`;
+}

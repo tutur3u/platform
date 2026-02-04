@@ -24,6 +24,7 @@ import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import type { SeatStatus } from '@/utils/seat-limits';
 import { AdjustSeatsDialog } from './adjust-seats-dialog';
+import { PaymentMethodsCard } from './payment-methods-card';
 import { PlanList } from './plan-list';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
@@ -370,6 +371,11 @@ export function BillingClient({
           )}
         </div>
       </div>
+
+      <PaymentMethodsCard
+        wsId={wsId}
+        hasManageSubscriptionPermission={hasManageSubscriptionPermission}
+      />
 
       {/* Dialogs */}
       <PlanList
