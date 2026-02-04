@@ -537,4 +537,31 @@
   body:not([data-fade-completed="false"]) .task-content-faded:has(:hover) {
     opacity: 1;
   }
+
+  /* ProseMirror image block styling
+   * When images are set to block-level (inline: false), ProseMirror still wraps them
+   * in paragraphs with separator/trailingBreak elements for cursor positioning.
+   * These styles remove the visual gap caused by these elements. */
+  .ProseMirror {
+    /* Hide the trailing break in paragraphs that only contain images */
+    p:has(> [data-node-view-wrapper] img):has(.ProseMirror-trailingBreak) {
+      /* Remove paragraph margin when it only contains an image */
+      margin: 0;
+
+      /* Hide the trailing break to prevent extra line */
+      .ProseMirror-trailingBreak {
+        display: none;
+      }
+
+      /* Hide the separator image */
+      .ProseMirror-separator {
+        display: none;
+      }
+    }
+
+    /* Ensure proper spacing between image paragraphs and text paragraphs */
+    p:has(> [data-node-view-wrapper] img) + p:not(:has(img)) {
+      margin-top: 0.5rem;
+    }
+  }
 }

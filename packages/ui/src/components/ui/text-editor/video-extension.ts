@@ -1,6 +1,6 @@
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
-import { Plugin, PluginKey } from 'prosemirror-state';
+import { type EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { toast } from '../sonner';
 import { getVideoDimensions, MAX_VIDEO_SIZE } from './media-utils';
 import {
@@ -29,6 +29,22 @@ const VIDEO_INPUT_REGEX = /!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\)/;
 
 interface VideoOptions {
   onVideoUpload?: (file: File) => Promise<string>;
+}
+
+/**
+ * Adjusts a drop position to the nearest valid block-level insertion point.
+ * If dropping inside a textblock (paragraph, heading, etc.), moves to after that block.
+ * This ensures block-level nodes like videos are not inserted mid-sentence.
+ */
+function adjustToBlockLevelPosition(pos: number, state: EditorState): number {
+  const $pos = state.doc.resolve(pos);
+
+  // If parent is a textblock (paragraph, heading, etc.), insert after it
+  if ($pos.parent.isTextblock) {
+    return $pos.after($pos.depth);
+  }
+
+  return pos;
 }
 
 export const Video = (options: VideoOptions = {}) =>
@@ -311,7 +327,11 @@ export const Video = (options: VideoOptions = {}) =>
                   return true;
                 }
 
-                const initialPos = coordinates.pos;
+                // Adjust position to block-level boundary to prevent dropping inside text
+                const initialPos = adjustToBlockLevelPosition(
+                  coordinates.pos,
+                  view.state
+                );
 
                 // Process files sequentially to avoid transaction conflicts
                 (async () => {
