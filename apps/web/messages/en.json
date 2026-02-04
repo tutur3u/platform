@@ -5784,6 +5784,18 @@
     "try_again": "Try Again"
   },
   "settings": {
+    "approvals": {
+      "description": "Configure approval workflows for posts and reports",
+      "enable_post_approval": "Enable Post Approval",
+      "enable_post_approval_description": "When enabled, all posts in user groups will require approval from a person with adequate permissions.",
+      "enable_report_approval": "Enable Report Approval",
+      "enable_report_approval_description": "When enabled, all reports in user groups will require approval from a person with adequate permissions.",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "title": "Approvals",
+      "update_error": "Failed to update approval settings",
+      "update_success": "Approval settings updated successfully"
+    },
     "attendance": {
       "display": "Display Settings",
       "display_description": "Configure which members appear in attendance views",
