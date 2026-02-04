@@ -165,14 +165,14 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     setActiveIndex(
       flatFilteredTimezones.findIndex((tz) => tz.value === value.timezone)
     );
-  }, [flatFilteredTimezones.findIndex, value.timezone]);
+  }, [flatFilteredTimezones, value.timezone]);
   React.useEffect(() => {
     setActiveSecondaryIndex(
       flatFilteredSecondaryTimezones.findIndex(
         (tz) => tz.value === value.secondaryTimezone
       )
     );
-  }, [flatFilteredSecondaryTimezones.findIndex, value.secondaryTimezone]);
+  }, [flatFilteredSecondaryTimezones, value.secondaryTimezone]);
 
   // Detect user's timezone on mount
   React.useEffect(() => {
@@ -416,7 +416,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               </div>
             </div>
             <div
-              className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
+              className="pointer-events-auto max-h-80 overflow-y-auto rounded-b-lg"
               onKeyDown={handleKeyDown}
               role="presentation"
               style={{ touchAction: 'pan-y' }}
@@ -555,7 +555,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 />
               </div>
               <div
-                className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
+                className="pointer-events-auto max-h-80 overflow-y-auto rounded-b-lg"
                 onKeyDown={handleSecondaryKeyDown}
                 role="presentation"
                 style={{ touchAction: 'pan-y' }}

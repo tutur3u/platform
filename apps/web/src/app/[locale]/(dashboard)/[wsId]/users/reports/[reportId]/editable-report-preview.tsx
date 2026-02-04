@@ -164,7 +164,7 @@ export default function EditableReportPreview({
     report?.title,
     report?.content,
     report?.feedback,
-    form.reset,
+    form,
   ]);
 
   const title = form.watch('title');

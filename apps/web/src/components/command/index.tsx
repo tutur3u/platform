@@ -32,7 +32,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
       if (props.setOpen) return props.setOpen(value);
       if (props.action) return props.action(value);
     },
-    [props.setOpenAction, props.setOpen, props.action]
+    [props]
   );
 
   const params = useParams();

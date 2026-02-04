@@ -292,7 +292,7 @@ export default function FollowUpClient({
     userName,
     healthcareVitalsQuery.data,
     effectiveManagerName,
-    form.watch,
+    form,
   ]);
 
   const groupOptions: ComboboxOptions[] = useMemo(

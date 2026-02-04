@@ -30,12 +30,12 @@ export default async function InventoryPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { permissions } = await getPermissions({
+        const { containsPermission } = await getPermissions({
           wsId,
         });
         const t = await getTranslations();
 
-        if (!permissions.includes('view_inventory')) {
+        if (!containsPermission('view_inventory')) {
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">

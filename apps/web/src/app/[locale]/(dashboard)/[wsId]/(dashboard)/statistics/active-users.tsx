@@ -25,11 +25,11 @@ export default async function ActiveUsersStatistics({
         .eq('archived', false)
     : { count: 0 };
 
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('manage_users')) return null;
+  if (!enabled || !containsPermission('manage_users')) return null;
 
   return (
     <StatisticCard
