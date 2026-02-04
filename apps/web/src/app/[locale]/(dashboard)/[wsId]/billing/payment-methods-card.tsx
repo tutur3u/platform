@@ -213,7 +213,7 @@ export function PaymentMethodsCard({
   );
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card p-6">
+    <div className="mb-8 rounded-xl border border-border/50 bg-card p-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-dynamic-blue/10 p-2.5">
