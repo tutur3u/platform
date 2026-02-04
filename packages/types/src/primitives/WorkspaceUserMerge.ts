@@ -28,6 +28,20 @@ export interface DuplicateCluster {
 }
 
 /**
+ * Details about a collision during merge (records deleted due to composite PK conflict)
+ */
+export interface CollisionDetail {
+  /** The table where collision occurred */
+  table: string;
+  /** Number of records deleted */
+  deleted_count: number;
+  /** The PK column that caused the collision */
+  pk_column: string;
+  /** Values of the deleted records' PK column (for recovery assessment) */
+  deleted_pk_values: string[];
+}
+
+/**
  * Result of a merge operation
  */
 export interface MergeResult {
@@ -39,8 +53,13 @@ export interface MergeResult {
   migratedTables: string[];
   /** Tables where collision records were deleted */
   collisionTables: string[];
+  /** Detailed information about collisions for recovery assessment */
+  collisionDetails?: CollisionDetail[];
   /** Number of custom field values merged */
   customFieldsMerged: number;
+  /** When both users are linked to different platform accounts (error case) */
+  sourcePlatformUserId?: string;
+  targetPlatformUserId?: string;
 }
 
 /**
