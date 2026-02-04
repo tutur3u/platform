@@ -121,6 +121,19 @@ export default function EditableReportPreview({
   // Show loading state while fetching approved log for rejected reports
   const isLoadingRejectedBase = isRejected && isLoadingApprovedLog;
 
+  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
+
+  const getDefaultReportTitle = () => {
+    const baseTitle = getConfig('REPORT_DEFAULT_TITLE')?.trim();
+    if (!baseTitle) return '';
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear());
+    return `${baseTitle} ${month}/${year}`;
+  };
+
+  const defaultReportTitle = isNew ? getDefaultReportTitle() : '';
+
   // Determine form values: use latest approved log if rejected, otherwise use report
   const getFormValues = () => {
     if (isRejected && latestApprovedLog) {
@@ -130,8 +143,9 @@ export default function EditableReportPreview({
         feedback: latestApprovedLog.feedback || '',
       };
     }
+    const reportTitle = report?.title || '';
     return {
-      title: report?.title || '',
+      title: reportTitle || defaultReportTitle,
       content: report?.content || '',
       feedback: report?.feedback || '',
     };
@@ -153,7 +167,7 @@ export default function EditableReportPreview({
             feedback: latestApprovedLog.feedback || '',
           }
         : {
-            title: report?.title || '',
+            title: report?.title || defaultReportTitle,
             content: report?.content || '',
             feedback: report?.feedback || '',
           };
@@ -161,6 +175,7 @@ export default function EditableReportPreview({
   }, [
     isRejected,
     latestApprovedLog,
+    defaultReportTitle,
     report?.title,
     report?.content,
     report?.feedback,
@@ -170,8 +185,6 @@ export default function EditableReportPreview({
   const title = form.watch('title');
   const content = form.watch('content');
   const feedback = form.watch('feedback');
-
-  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
 
   const parseDynamicText = (text?: string | null): ReactNode => {
     if (!text) return '';

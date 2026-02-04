@@ -5923,6 +5923,11 @@
       "sidebar_hover": "Hover",
       "title": "Preferences"
     },
+    "reports": {
+      "default_title": "Default Report Title",
+      "default_title_description": "Set the base title used when creating new reports",
+      "title": "Reports"
+    },
     "tasks": {
       "always_enabled_personal": "This is always enabled for personal workspaces",
       "auto_assign_to_self": "Auto-assign to self",
@@ -10950,6 +10955,7 @@
     "report_conclusion": "Report conclusion",
     "report_content_text": "Text displayed for report content header",
     "report_created": "Report created",
+    "report_default_title": "Default report title",
     "report_deleted": "Report deleted",
     "report_export_not_found": "Report preview not found",
     "report_feedback_text": "Text displayed for report feedback header",
@@ -10970,6 +10976,17 @@
     "user_data": "User Statistics",
     "value": "Value",
     "viewing_history_snapshot": "Viewing history snapshot"
+  },
+  "ws-reports-settings": {
+    "default_title_help": "This value is used as the base title; the current month is added automatically.",
+    "default_title_label": "Report title",
+    "default_title_placeholder": "Monthly report",
+    "description": "Configure the base title used for new reports. The current month is appended automatically.",
+    "save": "Save",
+    "saving": "Saving...",
+    "title": "Default report title",
+    "update_error": "Failed to update report title",
+    "update_success": "Report title updated successfully"
   },
   "ws-roles": {
     "active_roles": "Active roles",

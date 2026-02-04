@@ -114,6 +114,7 @@ import FinanceNavigationSettings from './finance/finance-navigation-settings';
 import InvoiceSettings from './finance/invoice-settings';
 import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
 import ReferralSettings from './inventory/referral-settings';
+import { ReportDefaultTitleSettings } from './reports/report-default-title-settings';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
@@ -355,6 +356,18 @@ export function SettingsDialog({
                 icon: ClipboardList,
                 description: t('settings.approvals.description'),
                 keywords: ['Approvals', 'Posts', 'Reports'],
+              },
+            ],
+          },
+          {
+            label: t('settings.reports.title'),
+            items: [
+              {
+                name: 'report_default_title',
+                label: t('settings.reports.default_title'),
+                icon: FileText,
+                description: t('settings.reports.default_title_description'),
+                keywords: ['Reports', 'Templates', 'Title', 'Default'],
               },
             ],
           },
@@ -957,6 +970,10 @@ export function SettingsDialog({
                   <div className="h-full">
                     <ApprovalsSettings wsId={wsId} />
                   </div>
+                )}
+
+                {activeTab === 'report_default_title' && workspace?.id && (
+                  <ReportDefaultTitleSettings workspaceId={workspace.id} />
                 )}
 
                 {activeTab === 'billing' && (

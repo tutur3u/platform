@@ -5923,6 +5923,11 @@
       "sidebar_hover": "Di chuột",
       "title": "Tùy chọn"
     },
+    "reports": {
+      "default_title": "Tiêu đề báo cáo mặc định",
+      "default_title_description": "Đặt tiêu đề cơ bản khi tạo báo cáo mới",
+      "title": "Báo cáo"
+    },
     "tasks": {
       "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
       "auto_assign_to_self": "Tự động gán cho bản thân",
@@ -10950,6 +10955,7 @@
     "report_conclusion": "Đoạn kết báo cáo",
     "report_content_text": "Chữ hiển thị cho mục nội dung báo cáo",
     "report_created": "Đã tạo báo cáo",
+    "report_default_title": "Tiêu đề báo cáo mặc định",
     "report_deleted": "Đã xóa báo cáo",
     "report_export_not_found": "Không tìm thấy bản xem trước báo cáo",
     "report_feedback_text": "Chữ hiển thị cho mục phản hồi báo cáo",
@@ -10970,6 +10976,17 @@
     "user_data": "Chỉ số người dùng",
     "value": "Giá trị",
     "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử"
+  },
+  "ws-reports-settings": {
+    "default_title_help": "Giá trị này dùng làm tiêu đề cơ bản; tháng hiện tại sẽ được thêm tự động.",
+    "default_title_label": "Tiêu đề báo cáo",
+    "default_title_placeholder": "Báo cáo hàng tháng",
+    "description": "Cấu hình tiêu đề cơ bản cho báo cáo mới. Tháng hiện tại sẽ được thêm tự động.",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "title": "Tiêu đề báo cáo mặc định",
+    "update_error": "Không thể cập nhật tiêu đề báo cáo",
+    "update_success": "Đã cập nhật tiêu đề báo cáo"
   },
   "ws-roles": {
     "active_roles": "Vai trò đang hoạt động",
