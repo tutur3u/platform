@@ -36,7 +36,7 @@ interface SaveAsTemplateDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type TemplateVisibility = 'private' | 'workspace';
+type TemplateVisibility = 'private' | 'workspace' | 'public';
 
 const ALLOWED_IMAGE_TYPES = [
   'image/png',
@@ -297,7 +297,9 @@ export function SaveAsTemplateDialog({
             <p className="text-muted-foreground text-xs">
               {visibility === 'private'
                 ? t('ws-board-templates.visibility.private_hint')
-                : t('ws-board-templates.visibility.workspace_hint')}
+                : visibility === 'workspace'
+                  ? t('ws-board-templates.visibility.workspace_hint')
+                  : t('ws-board-templates.visibility.public_hint')}
             </p>
           </div>
 

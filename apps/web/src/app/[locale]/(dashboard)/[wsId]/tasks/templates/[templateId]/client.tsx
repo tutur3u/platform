@@ -542,8 +542,8 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
         {/* Template Settings Info */}
         {template.content.settings &&
           (template.content.settings.estimation_type ||
-            template.content.settings.allow_zero_estimates !== undefined ||
-            template.content.settings.extended_estimation !== undefined) && (
+            template.content.settings.allow_zero_estimates != null ||
+            template.content.settings.extended_estimation != null) && (
             <div className="rounded-lg border bg-muted/30 p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Flag className="h-5 w-5 text-muted-foreground" />
@@ -565,8 +565,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                   </div>
                 )}
 
-                {template.content.settings.allow_zero_estimates !==
-                  undefined && (
+                {template.content.settings.allow_zero_estimates != null && (
                   <div className="flex items-start gap-3 rounded-md border bg-background p-3">
                     <div className="rounded-lg bg-dynamic-purple/10 p-2">
                       <Circle className="h-4 w-4 text-dynamic-purple" />
@@ -582,8 +581,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                   </div>
                 )}
 
-                {template.content.settings.extended_estimation !==
-                  undefined && (
+                {template.content.settings.extended_estimation != null && (
                   <div className="flex items-start gap-3 rounded-md border bg-background p-3">
                     <div className="rounded-lg bg-dynamic-green/10 p-2">
                       <Zap className="h-4 w-4 text-dynamic-green" />

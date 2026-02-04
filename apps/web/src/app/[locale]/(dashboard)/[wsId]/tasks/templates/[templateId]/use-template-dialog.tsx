@@ -47,6 +47,8 @@ export function UseTemplateDialog({
   const boardNameId = useId();
 
   const handleUseTemplate = async () => {
+    if (isUsing) return;
+
     if (!newBoardName.trim()) {
       toast.error(t('detail.board_name_required'));
       return;

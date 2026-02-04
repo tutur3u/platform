@@ -102,7 +102,7 @@ BEGIN
   END IF;
 
   -- Workspace access
-  IF v_template.visibility = 'workspace' AND is_org_member(v_template.ws_id, auth.uid()) THEN
+  IF v_template.visibility = 'workspace' AND is_org_member(auth.uid(), v_template.ws_id) THEN
     RETURN true;
   END IF;
 
@@ -162,7 +162,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM board_templates bt
-    WHERE bt.id = template_id AND (bt.created_by = auth.uid() OR (bt.visibility = 'workspace' AND is_org_member(bt.ws_id, auth.uid())))
+    WHERE bt.id = template_id AND (bt.created_by = auth.uid() OR (bt.visibility = 'workspace' AND is_org_member(auth.uid(), bt.ws_id)))
   )
   OR user_id = auth.uid()
   OR LOWER(email) = LOWER((SELECT email FROM user_private_details WHERE user_id = auth.uid()))

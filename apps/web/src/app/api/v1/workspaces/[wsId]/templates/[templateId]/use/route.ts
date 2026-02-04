@@ -265,7 +265,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       const { data: createdLists, error: listsError } = await supabase
         .from('task_lists')
         .insert(listsToCreate)
-        .select('id, name');
+        .select('id, position');
 
       if (listsError || !createdLists) {
         console.error('List creation error:', listsError);
@@ -273,10 +273,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       } else {
         totalListsCreated = createdLists.length;
 
-        // Create a mapping from list names to new list IDs
-        const listIdMap = new Map<string, string>();
+        // Create a mapping from position to new list IDs
+        const listIdMap = new Map<number, string>();
         createdLists.forEach((list) => {
-          listIdMap.set(list.name || '', list.id);
+          if (list.position == null) return;
+
+          listIdMap.set(list.position, list.id);
         });
 
         // Copy tasks for each list
@@ -291,12 +293,13 @@ export async function POST(req: NextRequest, { params }: Params) {
           creator_id: string;
         }> = [];
 
-        for (const originalList of content.lists) {
-          if (!originalList.tasks || originalList.tasks.length === 0) {
+        for (let i = 0; i < content.lists.length; i++) {
+          const originalList = content.lists[i];
+          if (!originalList?.tasks || originalList.tasks.length === 0) {
             continue;
           }
 
-          const newListId = listIdMap.get(originalList.name);
+          const newListId = listIdMap.get(i);
           if (!newListId) {
             continue;
           }

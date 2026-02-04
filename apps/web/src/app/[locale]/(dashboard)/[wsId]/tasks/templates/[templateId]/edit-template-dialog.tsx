@@ -67,7 +67,6 @@ export function EditTemplateDialog({
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(
     templateBackgroundUrl || null
   );
-  const [backgroundPath, setBackgroundPath] = useState<string | null>(null);
 
   const nameId = useId();
   const descId = useId();
@@ -81,8 +80,8 @@ export function EditTemplateDialog({
 
     setIsEditing(true);
     try {
-      // Delete old background if a new one was uploaded
-      if (backgroundPath && templateBackgroundUrl) {
+      // Delete old background if it was changed or removed
+      if (backgroundUrl !== templateBackgroundUrl && templateBackgroundUrl) {
         try {
           // Extract path from URL if it's a full URL
           const oldPath = templateBackgroundUrl.includes('/')
@@ -131,9 +130,8 @@ export function EditTemplateDialog({
     await handleTemplateBackgroundUpload(
       files,
       wsId,
-      (url, path) => {
+      (url, _path) => {
         setBackgroundUrl(url);
-        setBackgroundPath(path);
       },
       (error) => {
         console.error('Background upload error:', error);
@@ -143,7 +141,6 @@ export function EditTemplateDialog({
 
   const handleRemoveBackground = () => {
     setBackgroundUrl(null);
-    setBackgroundPath(null);
     setBackgroundFiles([]);
   };
 
