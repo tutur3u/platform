@@ -67,12 +67,14 @@ export async function DELETE(_: Request, { params }: Params) {
 
   // Check for active subscription to cancel immediately
   try {
-    const { data: subscription } = await supabase
+    const { data: subscription, error: subError } = await supabase
       .from('workspace_subscriptions')
       .select('polar_subscription_id')
       .eq('ws_id', id)
       .neq('status', 'canceled')
       .maybeSingle();
+
+    if (subError) throw subError;
 
     if (subscription?.polar_subscription_id) {
       const polar = createPolarClient();

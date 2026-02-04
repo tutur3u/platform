@@ -72,21 +72,23 @@ export async function GET(req: NextRequest) {
                 ? firstPrice.priceAmount
                 : 0;
 
-            const isSeatBased =
-              firstPrice &&
-              'amountType' in firstPrice &&
-              firstPrice.amountType === 'seat_based';
+            // Find seat-based price if it exists
+            const seatBasedPrice = product.prices.find(
+              (p: any) => 'amountType' in p && p.amountType === 'seat_based'
+            ) as any;
+
+            const isSeatBased = !!seatBasedPrice;
 
             const pricePerSeat = isSeatBased
-              ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+              ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
               : null;
 
             const minSeats = isSeatBased
-              ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+              ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
               : null;
 
             const maxSeats = isSeatBased
-              ? (firstPrice?.seatTiers?.maximumSeats ?? null)
+              ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
               : null;
 
             // Prepare product data

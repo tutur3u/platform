@@ -130,7 +130,7 @@ export async function POST() {
         });
 
         // Update local DB to reflect change immediately
-        await sbAdmin
+        const { error: updateError } = await sbAdmin
           .from('workspace_subscriptions')
           .update({
             pricing_model: 'seat_based',
@@ -139,6 +139,12 @@ export async function POST() {
             price_per_seat: targetProduct.price_per_seat,
           })
           .eq('id', sub.id);
+
+        if (updateError) {
+          throw new Error(
+            `Failed to update local subscription record: ${updateError.message}`
+          );
+        }
 
         processed++;
       } catch (err) {

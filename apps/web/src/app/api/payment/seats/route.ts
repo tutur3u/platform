@@ -152,14 +152,14 @@ export async function POST(req: Request) {
     const currentMembers = memberCount ?? 0;
 
     // Validate new seat count against constraints
-    const product = subscription.workspace_subscription_products;
-    const minSeats = Math.max(1, currentMembers); // Must be at least current members
+    const product = subscription.workspace_subscription_products as any;
+    const minSeats = Math.max(1, currentMembers, product?.min_seats ?? 0);
     const maxSeats = product?.max_seats ?? Infinity;
 
     if (newSeatCount < minSeats) {
       return NextResponse.json(
         {
-          error: `Seat count cannot be less than current member count (${currentMembers})`,
+          error: `Seat count cannot be less than the minimum required (${minSeats})`,
         },
         { status: 400 }
       );

@@ -41,7 +41,7 @@ export async function getSeatStatus(
   wsId: string
 ): Promise<SeatStatus> {
   // Get active subscription info
-  const { data: subscription } = await supabase
+  const { data: subscription, error } = await supabase
     .from('workspace_subscriptions')
     .select('pricing_model, seat_count, price_per_seat')
     .eq('ws_id', wsId)
@@ -49,6 +49,18 @@ export async function getSeatStatus(
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching seat status:', error.message);
+    return {
+      isSeatBased: true, // Be conservative on error
+      seatCount: 0,
+      memberCount: 0,
+      availableSeats: 0,
+      canAddMember: false,
+      pricePerSeat: null,
+    };
+  }
 
   // If not seat-based, no limit applies
   if (!subscription || subscription.pricing_model !== 'seat_based') {

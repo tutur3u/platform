@@ -15,7 +15,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 
 interface AdjustSeatsDialogProps {
@@ -40,6 +40,7 @@ export function AdjustSeatsDialog({
   billingCycle,
 }: AdjustSeatsDialogProps) {
   const [newSeatCount, setNewSeatCount] = useState(currentSeats);
+
   const t = useTranslations('billing');
   const router = useRouter();
 
@@ -114,6 +115,12 @@ export function AdjustSeatsDialog({
   const decrementSeats = () =>
     setNewSeatCount((prev) => Math.max(minSeats, prev - 1));
 
+  useEffect(() => {
+    if (open) {
+      setNewSeatCount(currentSeats);
+    }
+  }, [open, currentSeats]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -135,7 +142,9 @@ export function AdjustSeatsDialog({
               <span className="font-medium">{currentSeats}</span>
             </div>
             <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">Current Members</span>
+              <span className="text-muted-foreground">
+                {t('current-members')}
+              </span>
               <span className="font-medium">{currentMembers}</span>
             </div>
             <div className="mt-2 flex justify-between text-sm">
@@ -144,12 +153,18 @@ export function AdjustSeatsDialog({
               </span>
               <span className="font-medium">
                 ${centToDollar(pricePerSeat)}
-                {billingCycle === 'month' ? t('per-month') : t('per-year')}
+                {billingCycle === 'month'
+                  ? t('per-month')
+                  : billingCycle === 'year'
+                    ? t('per-year')
+                    : ''}
               </span>
             </div>
             {maxSeats && (
               <div className="mt-2 flex justify-between text-sm">
-                <span className="text-muted-foreground">Maximum Seats</span>
+                <span className="text-muted-foreground">
+                  {t('maximum-seats')}
+                </span>
                 <span className="font-medium">{maxSeats}</span>
               </div>
             )}
@@ -157,7 +172,7 @@ export function AdjustSeatsDialog({
 
           {/* Seat quantity selector */}
           <div className="space-y-2">
-            <label className="font-medium text-sm">New Seat Count</label>
+            <label className="font-medium text-sm">{t('new-seat-count')}</label>
             <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
@@ -190,14 +205,14 @@ export function AdjustSeatsDialog({
               </Button>
             </div>
             <p className="text-center text-muted-foreground text-xs">
-              Range: {minSeats} - {maxSeats ?? '∞'} seats
+              {t('seat-range', { min: minSeats, max: maxSeats ?? '∞' })}
             </p>
           </div>
 
           {/* Summary */}
           <div className="space-y-3 rounded-lg border bg-background p-4">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Seat Change</span>
+              <span className="text-muted-foreground">{t('seat-change')}</span>
               <span
                 className={`font-medium ${seatDifference > 0 ? 'text-dynamic-green' : seatDifference < 0 ? 'text-dynamic-red' : ''}`}
               >
@@ -213,17 +228,23 @@ export function AdjustSeatsDialog({
             </div>
             <div className="border-t pt-3">
               <div className="flex justify-between">
-                <span className="font-medium">New Cost</span>
+                <span className="font-medium">{t('new-cost')}</span>
                 <span className="font-bold text-lg">
                   ${centToDollar(totalCost)}
-                  {billingCycle === 'month' ? t('per-month') : t('per-year')}
+                  {billingCycle === 'month'
+                    ? t('per-month')
+                    : billingCycle === 'year'
+                      ? t('per-year')
+                      : ''}
                 </span>
               </div>
               {seatDifference !== 0 && (
                 <div className="mt-2 flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cost Change</span>
+                  <span className="text-muted-foreground">
+                    {t('cost-change')}
+                  </span>
                   <span
-                    className={`font-medium ${costDifference > 0 ? 'text-dynamic-green' : 'text-dynamic-red'}`}
+                    className={`font-medium ${costDifference > 0 ? 'font-medium text-dynamic-green' : 'font-medium text-dynamic-red'}`}
                   >
                     {costDifference > 0 ? '+' : ''}$
                     {centToDollar(costDifference)}
@@ -257,7 +278,7 @@ export function AdjustSeatsDialog({
             {mutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Update Seats
+            {t('update-seats')}
           </Button>
         </DialogFooter>
       </DialogContent>

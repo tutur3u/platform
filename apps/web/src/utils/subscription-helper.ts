@@ -67,7 +67,6 @@ export async function createFreeSubscription(
   const { data: workspace } = await supabase
     .from('workspaces')
     .select('*')
-    .eq('personal', true)
     .eq('id', wsId)
     .maybeSingle();
 

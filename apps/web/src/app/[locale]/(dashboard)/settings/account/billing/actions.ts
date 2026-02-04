@@ -52,7 +52,7 @@ export async function getBillingData(): Promise<ActionResult<BillingData>> {
       .from('workspaces')
       .select('id')
       .eq('creator_id', user.id)
-      .eq('is_personal', true)
+      .eq('personal', true)
       .single();
 
     if (!personalWorkspace) {
@@ -154,7 +154,7 @@ export async function updateBillingAddress(
       .from('workspaces')
       .select('id')
       .eq('creator_id', user.id)
-      .eq('is_personal', true)
+      .eq('personal', true)
       .single();
 
     if (!personalWorkspace) {
@@ -221,7 +221,7 @@ export async function deletePaymentMethod(
       .from('workspaces')
       .select('id')
       .eq('creator_id', user.id)
-      .eq('is_personal', true)
+      .eq('personal', true)
       .single();
 
     if (!personalWorkspace) {
@@ -287,7 +287,7 @@ export async function getCustomerPortalUrl(): Promise<
       .from('workspaces')
       .select('id')
       .eq('creator_id', user.id)
-      .eq('is_personal', true)
+      .eq('personal', true)
       .single();
 
     if (!personalWorkspace) {
