@@ -13,8 +13,18 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 2. Start the app
 
    ```bash
-   npx expo start
-   ```
+    npx expo start
+    ```
+
+## Environment
+
+Create a `.env.local` file in `apps/native` and set the required variables:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+EXPO_PUBLIC_API_BASE_URL=https://tuturuuu.com
+```
 
 In the output, you'll find options to open the app in a
 

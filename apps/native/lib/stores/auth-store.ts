@@ -1,5 +1,9 @@
 import type { AuthError, Session, User } from '@supabase/supabase-js';
+import * as Application from 'expo-application';
+import { Platform } from 'react-native';
 import { create } from 'zustand';
+
+import { passwordLoginApi, sendOtpApi, verifyOtpApi } from '@/lib/api/auth';
 
 import { supabase } from '../supabase/client';
 
@@ -23,6 +27,15 @@ type AuthActions = {
   signUpWithEmail: (
     email: string,
     password: string
+  ) => Promise<{ success: boolean; error?: AuthError }>;
+
+  // OTP auth
+  sendOtp: (
+    email: string
+  ) => Promise<{ success: boolean; error?: AuthError; retryAfter?: number }>;
+  verifyOtp: (
+    email: string,
+    otp: string
   ) => Promise<{ success: boolean; error?: AuthError }>;
 
   // OAuth
@@ -49,6 +62,35 @@ type AuthActions = {
 };
 
 export type AuthStore = AuthState & AuthActions;
+
+const getLocale = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().locale || 'en';
+  } catch {
+    return 'en';
+  }
+};
+
+const toAuthError = (message: string) =>
+  Object.assign(new Error(message), { name: 'AuthError' }) as AuthError;
+
+const getDeviceId = async () => {
+  try {
+    if (Platform.OS === 'ios') {
+      const id = await Application.getIosIdForVendorAsync();
+      return id ?? undefined;
+    }
+
+    if (Platform.OS === 'android') {
+      const id = Application.getAndroidId();
+      return id ?? undefined;
+    }
+
+    return undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 /**
  * Auth store for managing user authentication state
@@ -120,14 +162,29 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
   signInWithEmail: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const deviceId = await getDeviceId();
+    const result = await passwordLoginApi({
       email,
       password,
+      locale: getLocale(),
+      deviceId,
     });
 
-    if (error) {
-      set({ error, isLoading: false });
-      return { success: false, error };
+    if (result.error || !result.session) {
+      const authError = toAuthError(result.error || 'Failed to login');
+      set({ error: authError, isLoading: false });
+      return { success: false, error: authError };
+    }
+
+    const { data, error } = await supabase.auth.setSession({
+      access_token: result.session.access_token,
+      refresh_token: result.session.refresh_token,
+    });
+
+    if (error || !data.session) {
+      const authError = error || toAuthError('Failed to set session');
+      set({ error: authError, isLoading: false });
+      return { success: false, error: authError };
     }
 
     set({
@@ -154,6 +211,69 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
     }
 
     // Note: User might need to verify email depending on Supabase settings
+    set({
+      session: data.session,
+      user: data.user,
+      isLoading: false,
+    });
+
+    return { success: true };
+  },
+
+  // Send OTP
+  sendOtp: async (email: string) => {
+    set({ isLoading: true, error: null });
+
+    const deviceId = await getDeviceId();
+    const result = await sendOtpApi({
+      email,
+      locale: getLocale(),
+      deviceId,
+    });
+
+    if (result.error) {
+      const authError = toAuthError(result.error);
+      set({ error: authError, isLoading: false });
+      return {
+        success: false,
+        error: authError,
+        retryAfter: result.retryAfter,
+      };
+    }
+
+    set({ isLoading: false });
+    return { success: true };
+  },
+
+  // Verify OTP
+  verifyOtp: async (email: string, otp: string) => {
+    set({ isLoading: true, error: null });
+
+    const deviceId = await getDeviceId();
+    const result = await verifyOtpApi({
+      email,
+      otp,
+      locale: getLocale(),
+      deviceId,
+    });
+
+    if (result.error || !result.session) {
+      const authError = toAuthError(result.error || 'Failed to verify OTP');
+      set({ error: authError, isLoading: false });
+      return { success: false, error: authError };
+    }
+
+    const { data, error } = await supabase.auth.setSession({
+      access_token: result.session.access_token,
+      refresh_token: result.session.refresh_token,
+    });
+
+    if (error || !data.session) {
+      const authError = error || toAuthError('Failed to set session');
+      set({ error: authError, isLoading: false });
+      return { success: false, error: authError };
+    }
+
     set({
       session: data.session,
       user: data.user,
