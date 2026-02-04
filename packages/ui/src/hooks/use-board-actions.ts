@@ -160,6 +160,42 @@ export function useBoardActions(wsId: string) {
     },
   });
 
+  const duplicateMutation = useMutation<
+    any,
+    Error,
+    { boardId: string; options?: BoardActionOptions }
+  >({
+    mutationFn: ({ boardId }) =>
+      fetch(`/api/v1/workspaces/${wsId}/task-boards/${boardId}/copy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetWorkspaceId: wsId,
+        }),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to duplicate board');
+        }
+        return res.json();
+      }),
+    onSuccess: (_, { options }) => {
+      toast.success('Board duplicated successfully');
+      // Invalidate all queries that start with ['boards', wsId]
+      queryClient.invalidateQueries({
+        queryKey: ['boards', wsId],
+      });
+      options?.onSuccess?.();
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to duplicate board', {
+        description: error.message,
+      });
+    },
+  });
+
   return {
     softDeleteBoard: (boardId: string, options?: BoardActionOptions) =>
       softDeleteMutation.mutate({ boardId, options }),
@@ -171,5 +207,7 @@ export function useBoardActions(wsId: string) {
       archiveMutation.mutate({ boardId, options }),
     unarchiveBoard: (boardId: string, options?: BoardActionOptions) =>
       unarchiveMutation.mutate({ boardId, options }),
+    duplicateBoard: (boardId: string, options?: BoardActionOptions) =>
+      duplicateMutation.mutate({ boardId, options }),
   };
 }

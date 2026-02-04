@@ -5,6 +5,7 @@ import {
   Blocks,
   Bolt,
   BookKey,
+  Bookmark,
   BookText,
   BookUser,
   Bot,
@@ -317,6 +318,11 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.labels'),
           href: `/${personalOrWsId}/tasks/labels`,
           icon: <Tags className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.templates'),
+          href: `/${personalOrWsId}/tasks/templates`,
+          icon: <Bookmark className="h-4 w-4" />,
         },
         {
           title: t('sidebar_tabs.estimates'),
