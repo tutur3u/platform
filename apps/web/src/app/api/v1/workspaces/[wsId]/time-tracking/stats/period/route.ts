@@ -1,22 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  escapeLikePattern,
-  sanitizeSearchQuery,
-} from '@tuturuuu/utils/search-helper';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
+import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  calculatePeriodStats,
-  getProjectContextCategory,
-  getTimeOfDayCategory,
-} from '@/lib/time-tracker-utils';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 const timezoneEnumValues = (() => {
   if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
@@ -27,8 +13,7 @@ const timezoneEnumValues = (() => {
   return ['UTC'];
 })();
 
-const isoDateSchema = z
-  .string()
+const isoDateSchema = z.iso
   .datetime({ offset: true })
   .transform((value) => new Date(value));
 
@@ -62,6 +47,39 @@ const querySchema = z
     message: 'dateFrom must be before or equal to dateTo',
     path: ['dateFrom'],
   });
+
+const periodStatsSchema = z.object({
+  totalDuration: z.number().optional(),
+  breakdown: z
+    .array(
+      z.object({
+        name: z.string(),
+        duration: z.number(),
+        color: z.string(),
+      })
+    )
+    .optional(),
+  timeOfDayBreakdown: z
+    .object({
+      morning: z.number(),
+      afternoon: z.number(),
+      evening: z.number(),
+      night: z.number(),
+    })
+    .optional(),
+  bestTimeOfDay: z.string().optional(),
+  longestSession: z
+    .object({
+      title: z.string(),
+      duration_seconds: z.number(),
+    })
+    .nullable()
+    .optional(),
+  shortSessions: z.number().optional(),
+  mediumSessions: z.number().optional(),
+  longSessions: z.number().optional(),
+  sessionCount: z.number().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -153,99 +171,71 @@ export async function GET(
       }
     }
 
-    // Fetch ONLY necessary fields for sessions for the period to calculate accurate stats
-    // Filter out sessions with pending_approval=true
-    let query = supabase
-      .from('time_tracking_sessions')
-      .select(
-        `
-        id,
-        title,
-        start_time,
-        end_time,
-        duration_seconds,
-        category_id,
-        task_id,
-        category:time_tracking_categories(id, name, color)
-      `
-      )
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', queryUserId)
-      .eq('pending_approval', false)
-      .lt('start_time', dateToIso)
-      .or(`end_time.gte.${dateFromIso},end_time.is.null`);
-
-    // Apply basic filters in SQL
-    if (categoryId && categoryId !== 'all') {
-      query = query.eq('category_id', categoryId);
-    }
-    if (taskId && taskId !== 'all') {
-      query = query.eq('task_id', taskId);
-    }
     const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
-    if (sanitizedSearchQuery) {
-      const escapedSearchQuery = escapeLikePattern(sanitizedSearchQuery);
-      const searchPattern = `%${escapedSearchQuery}%`;
-      query = query.or(
-        `title.ilike.${searchPattern},description.ilike.${searchPattern}`
-      );
-    }
 
-    const { data: sessions, error } = await query;
+    const { data: stats, error } = await supabase.rpc(
+      'get_time_tracking_period_stats',
+      {
+        p_ws_id: normalizedWsId,
+        p_user_id: queryUserId,
+        p_date_from: dateFromIso,
+        p_date_to: dateToIso,
+        p_timezone: userTimezone,
+        p_category_id:
+          categoryId && categoryId !== 'all' ? categoryId : undefined,
+        p_task_id: taskId && taskId !== 'all' ? taskId : undefined,
+        p_search_query: sanitizedSearchQuery || undefined,
+        p_duration: duration && duration !== 'all' ? duration : undefined,
+        p_time_of_day: timeOfDay && timeOfDay !== 'all' ? timeOfDay : undefined,
+        p_project_context:
+          projectContext && projectContext !== 'all'
+            ? projectContext
+            : undefined,
+      }
+    );
 
     if (error) throw error;
 
-    const startOfPeriod = dayjs(dateFrom).tz(userTimezone);
-    const endOfPeriod = dayjs(dateTo).tz(userTimezone);
+    const parsedStats = periodStatsSchema.safeParse(stats ?? {});
+    const normalizedStats = {
+      totalDuration: parsedStats.success
+        ? (parsedStats.data.totalDuration ?? 0)
+        : 0,
+      breakdown: parsedStats.success ? (parsedStats.data.breakdown ?? []) : [],
+      timeOfDayBreakdown: parsedStats.success
+        ? (parsedStats.data.timeOfDayBreakdown ?? {
+            morning: 0,
+            afternoon: 0,
+            evening: 0,
+            night: 0,
+          })
+        : {
+            morning: 0,
+            afternoon: 0,
+            evening: 0,
+            night: 0,
+          },
+      bestTimeOfDay: parsedStats.success
+        ? (parsedStats.data.bestTimeOfDay ?? 'none')
+        : 'none',
+      longestSession: parsedStats.success
+        ? (parsedStats.data.longestSession ?? null)
+        : null,
+      shortSessions: parsedStats.success
+        ? (parsedStats.data.shortSessions ?? 0)
+        : 0,
+      mediumSessions: parsedStats.success
+        ? (parsedStats.data.mediumSessions ?? 0)
+        : 0,
+      longSessions: parsedStats.success
+        ? (parsedStats.data.longSessions ?? 0)
+        : 0,
+      sessionCount: parsedStats.success
+        ? (parsedStats.data.sessionCount ?? 0)
+        : 0,
+    };
 
-    // Calculate stats using the same logic as the frontend
-    // but now on the server with ALL sessions in the period
-    let stats = calculatePeriodStats(
-      sessions || [],
-      startOfPeriod,
-      endOfPeriod,
-      userTimezone
-    );
-
-    // Post-filter by duration, time of day, and project context if requested
-    // (These are harder to do in simple SQL with complex logic)
-    if (
-      (duration && duration !== 'all') ||
-      (timeOfDay && timeOfDay !== 'all') ||
-      (projectContext && projectContext !== 'all')
-    ) {
-      const postFilteredSessions = (sessions || []).filter((session) => {
-        if (duration && duration !== 'all') {
-          const d = session.duration_seconds || 0;
-          let cat = 'long';
-          if (d < 1800) cat = 'short';
-          else if (d < 7200) cat = 'medium';
-
-          if (cat !== duration) return false;
-        }
-
-        if (timeOfDay && timeOfDay !== 'all') {
-          const cat = getTimeOfDayCategory(session.start_time, userTimezone);
-          if (cat !== timeOfDay) return false;
-        }
-
-        if (projectContext && projectContext !== 'all') {
-          const cat = getProjectContextCategory(session);
-          if (cat !== projectContext) return false;
-        }
-
-        return true;
-      });
-
-      stats = calculatePeriodStats(
-        postFilteredSessions,
-        startOfPeriod,
-        endOfPeriod,
-        userTimezone
-      );
-    }
-
-    return NextResponse.json(stats);
+    return NextResponse.json(normalizedStats);
   } catch (error) {
     console.error('Error in period stats API:', error);
     return NextResponse.json(
