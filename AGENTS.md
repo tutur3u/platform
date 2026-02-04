@@ -1183,6 +1183,10 @@ Rules:
 - Keep Python isolated; do not assume Node environment variables exist unless duplicated.
 - If adding dependencies: update (or create) `requirements.txt` with pinned versions.
 
+### 6.8 Windows Path Safety
+
+- When using `apply_patch`, prefer repo-relative paths (e.g., `apps/web/...`) instead of absolute `C:\...` paths to avoid drive-letter parsing issues on Windows.
+
 ## 7. Agent Collaboration Protocol
 
 ### 7.1 Roles & Handoffs
