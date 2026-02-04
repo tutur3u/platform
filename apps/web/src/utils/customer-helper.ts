@@ -23,7 +23,7 @@ export async function createCustomerSession({
   supabase,
   wsId,
 }: CreateCustomerSessionOptions) {
-  const polarCustomerId = await createPolarCustomer({
+  const polarCustomerId = await getPolarCustomer({
     polar,
     supabase,
     wsId,
@@ -37,19 +37,7 @@ export async function createCustomerSession({
 }
 
 /**
- * Get or create a Polar customer for the given workspace.
- *
- * Searches for an existing customer by:
- * 1. External ID: workspace_[wsId] (New format)
- * 2. External ID: workspace owner's user_id (Legacy format)
- * 3. Email: workspace owner's email
- *
- * If no customer exists, creates a new one with:
- * - Name: workspace name
- * - External ID: workspace_[wsId]
- * - Email: workspace owner email
- *
- * Returns the Polar customer ID.
+ * Create a Polar customer for the given workspace.
  */
 export async function createPolarCustomer({
   polar,
@@ -95,5 +83,46 @@ export async function createPolarCustomer({
   }
 
   console.log('Created new Polar customer:', newCustomer.id);
+  return newCustomer.id;
+}
+
+/**
+ * Create a Polar customer for the given workspace.
+ */
+export async function getPolarCustomer({
+  polar,
+  supabase,
+  wsId,
+}: GetOrCreateCustomerOptions) {
+  // Get workspace with owner email (join through users table)
+  const { data: workspace, error: workspaceError } = await supabase
+    .from('workspaces')
+    .select('*, users!creator_id(display_name, user_private_details(email))')
+    .eq('id', wsId)
+    .single();
+
+  if (workspaceError || !workspace) {
+    throw new Error('Unable to retrieve workspace information');
+  }
+
+  const ownerId = workspace.creator_id;
+  const ownerEmail = workspace.users?.user_private_details?.email;
+
+  if (!ownerEmail) {
+    throw new Error('Unable to retrieve workspace owner email');
+  }
+
+  const isPersonalWorkspace = workspace.personal;
+
+  const newCustomer = await polar.customers.getExternal({
+    externalId: isPersonalWorkspace
+      ? ownerId
+      : convertWorkspaceIDToExternalID(wsId),
+  });
+
+  if (!newCustomer?.id) {
+    throw new Error('Failed to get Polar customer');
+  }
+
   return newCustomer.id;
 }
