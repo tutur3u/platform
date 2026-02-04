@@ -37,8 +37,6 @@ const FormSchema = z.object({
   balance: z.number().optional(),
   type: z.string(),
   // type: z.enum(['STANDARD', 'CREDIT']),
-  currency: z.string(),
-  // currency: z.enum(['VND']),
   icon: z.string().nullable().optional(),
   image_src: z.string().nullable().optional(),
 });
@@ -68,7 +66,6 @@ export function WalletForm({
       description: data?.description || '',
       balance: data?.balance || 0,
       type: data?.type || 'STANDARD',
-      currency: data?.currency || 'VND',
       icon: data?.icon || null,
       image_src: data?.image_src || null,
     },
@@ -229,61 +226,36 @@ export function WalletForm({
           disabled
         />
 
-        <div className="flex gap-2">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t('wallet-data-table.wallet_type')}</FormLabel>
-                <FormControl>
-                  <SelectField
-                    id="wallet-type"
-                    placeholder="Select a type"
-                    defaultValue="STANDARD"
-                    options={[
-                      {
-                        value: 'STANDARD',
-                        label: t('wallet-data-table.standard'),
-                      },
-                      {
-                        value: 'CREDIT',
-                        label: t('wallet-data-table.credit'),
-                        disabled: true,
-                      },
-                    ]}
-                    classNames={{ root: 'w-full' }}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="currency"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t('wallet-data-table.currency')}</FormLabel>
-                <FormControl>
-                  <SelectField
-                    id="wallet-currency"
-                    defaultValue="VND"
-                    placeholder="Select a currency"
-                    options={[
-                      { value: 'VND', label: 'VND' },
-                      { value: 'USD', label: 'USD', disabled: true },
-                    ]}
-                    classNames={{ root: 'w-full' }}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>{t('wallet-data-table.wallet_type')}</FormLabel>
+              <FormControl>
+                <SelectField
+                  id="wallet-type"
+                  placeholder="Select a type"
+                  defaultValue="STANDARD"
+                  options={[
+                    {
+                      value: 'STANDARD',
+                      label: t('wallet-data-table.standard'),
+                    },
+                    {
+                      value: 'CREDIT',
+                      label: t('wallet-data-table.credit'),
+                      disabled: true,
+                    },
+                  ]}
+                  classNames={{ root: 'w-full' }}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="h-2" />
 

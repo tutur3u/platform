@@ -10131,6 +10131,8 @@
     "blocked_groups_placeholder": "Chọn nhóm",
     "blocked_pending_groups_help": "Không hiển thị các nhóm đã chọn trong danh sách hóa đơn chờ thanh toán và thống kê.",
     "blocked_pending_groups_label": "Ẩn nhóm khỏi hóa đơn chờ thanh toán",
+    "currency_eur": "EUR - Euro",
+    "currency_php": "PHP - Peso Philippines",
     "currency_usd": "USD - Đô la Mỹ",
     "currency_vnd": "VND - Đồng Việt Nam",
     "default_category_description": "Đặt danh mục mặc định sẽ được chọn trước khi tạo giao dịch mới.",

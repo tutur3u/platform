@@ -1,6 +1,6 @@
 import { useWorkspaceConfig } from './use-workspace-config';
 
-export type SupportedCurrency = 'VND' | 'USD';
+export type SupportedCurrency = 'VND' | 'USD' | 'PHP' | 'EUR';
 
 export const useWorkspaceCurrency = (wsId: string) => {
   const { data, isLoading, error } = useWorkspaceConfig<SupportedCurrency>(
@@ -13,7 +13,14 @@ export const useWorkspaceCurrency = (wsId: string) => {
 
   return {
     currency,
-    locale: currency === 'VND' ? 'vi-VN' : 'en-US',
+    locale:
+      currency === 'VND'
+        ? 'vi-VN'
+        : currency === 'PHP'
+          ? 'en-PH'
+          : currency === 'EUR'
+            ? 'en-IE'
+            : 'en-US',
     isLoading,
     error,
   };

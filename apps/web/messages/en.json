@@ -10131,6 +10131,8 @@
     "blocked_groups_placeholder": "Select groups",
     "blocked_pending_groups_help": "Hide the selected groups from the pending invoices list and analytics.",
     "blocked_pending_groups_label": "Exclude groups from pending invoices",
+    "currency_eur": "EUR - Euro",
+    "currency_php": "PHP - Philippine Peso",
     "currency_usd": "USD - United States Dollar",
     "currency_vnd": "VND - Vietnamese Dong",
     "default_category_description": "Set the default category that will be pre-selected when creating new transactions.",
