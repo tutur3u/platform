@@ -204,7 +204,7 @@ export function SettingsDialog({
       }
 
       // Remove the joined data before returning
-      const { workspace_members: _, ...workspaceData } = data as any;
+      const { workspace_members: _, ...workspaceData } = data;
       return workspaceData as Workspace;
     },
     enabled: !workspaceProp && !!wsId,
