@@ -43,7 +43,7 @@ export default function AboutNeoLeagueSection() {
       <div className="mx-auto px-8 md:px-16">
         <div className="mb-24 md:mb-32">
           {/* Banner Image */}
-          <div className="relative mb-12 overflow-hidden rounded-3xl shadow-2xl md:mb-16">
+          <div className="relative mx-auto mb-12 max-w-6xl overflow-hidden rounded-2xl shadow-2xl md:mb-16">
             <div className="relative aspect-[2.5/1]">
               <Image
                 src="/background.png"
@@ -54,8 +54,8 @@ export default function AboutNeoLeagueSection() {
               />
             </div>
             {/* Decorative corner accents */}
-            <div className="absolute top-0 left-0 h-16 w-16 rounded-tl-3xl border-brand-light-yellow border-t-4 border-l-4" />
-            <div className="absolute right-0 bottom-0 h-16 w-16 rounded-br-3xl border-brand-light-red border-r-4 border-b-4" />
+            <div className="absolute top-0 left-0 h-16 w-16 rounded-tl-2xl border-brand-light-yellow border-t-4 border-l-4" />
+            <div className="absolute right-0 bottom-0 h-16 w-16 rounded-br-2xl border-brand-light-red border-r-4 border-b-4" />
           </div>
 
           {/* About Content */}
