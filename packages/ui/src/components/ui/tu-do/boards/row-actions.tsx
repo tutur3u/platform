@@ -2,6 +2,8 @@
 
 import {
   Archive,
+  Bookmark,
+  Copy,
   Edit,
   Ellipsis,
   Eye,
@@ -33,6 +35,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TaskBoardForm } from './form';
+import { SaveAsTemplateDialog } from './save-as-template-dialog';
 
 interface BoardActionsProps {
   board: WorkspaceTaskBoard;
@@ -48,6 +51,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
     restoreBoard,
     archiveBoard,
     unarchiveBoard,
+    duplicateBoard,
   } = useBoardActions(wsId || data.ws_id);
 
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -57,6 +61,8 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
+  const [showSaveAsTemplateDialog, setShowSaveAsTemplateDialog] =
+    useState(false);
 
   // No need for onSuccess callback - mutations handle invalidation
   // React Query will automatically refetch and update the UI
@@ -86,7 +92,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-48">
             {data.deleted_at ? (
               // Deleted board options
               <>
@@ -146,6 +152,24 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
                   <Edit className="mr-2 h-4 w-4" />
                   {t('common.edit')}
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    duplicateBoard(data.id);
+                  }}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {t('ws-task-boards.row_actions.duplicate')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSaveAsTemplateDialog(true);
+                  }}
+                >
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  {t('ws-task-boards.row_actions.save_as_template')}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -173,10 +197,14 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
         <ModifiableDialogTrigger
           data={data}
           open={showEditDialog}
-          // title={t('ws-user-group-tags.edit')}
-          // editDescription={t('ws-user-group-tags.edit_description')}
           setOpen={setShowEditDialog}
           form={<TaskBoardForm wsId={data.ws_id} data={data} />}
+        />
+
+        <SaveAsTemplateDialog
+          board={data}
+          open={showSaveAsTemplateDialog}
+          onOpenChange={setShowSaveAsTemplateDialog}
         />
       </div>
 
@@ -342,4 +370,3 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
 }
 
 export { BoardActions as BoardCardActions };
-export { BoardActions as ProjectRowActions };
