@@ -188,88 +188,23 @@ export default function AboutClubSection() {
                 shows, and strategic collaborations.
               </p>
 
-              {/* Feature List */}
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-brand-light-yellow to-brand-light-red">
-                    <svg
-                      className="h-4 w-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground">
-                      Engaging Workshops
-                    </h4>
-                    <p className="text-foreground/70 text-sm">
-                      Practical skills in GitHub, Arduino, and Soft Skills
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-brand-light-blue to-brand-dark-blue">
-                    <svg
-                      className="h-4 w-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground">
-                      Thought-Provoking Talk Shows
-                    </h4>
-                    <p className="text-foreground/70 text-sm">
-                      Featuring prominent figures in the tech industry
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary-foreground">
-                    <svg
-                      className="h-4 w-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground">
-                      Strategic Collaborations
-                    </h4>
-                    <p className="text-foreground/70 text-sm">
-                      Partnering with leading tech companies
-                    </p>
-                  </div>
-                </div>
+              {/* Core Values */}
+              <div className="flex flex-wrap gap-3">
+                <span className="rounded-full bg-primary px-4 py-2 font-semibold text-brand-light-yellow transition-all hover:scale-105">
+                  CULTURE
+                </span>
+                <span className="rounded-full bg-primary px-4 py-2 font-semibold text-brand-light-yellow transition-all hover:scale-105">
+                  REVOLUTIONARY
+                </span>
+                <span className="rounded-full bg-primary px-4 py-2 font-semibold text-brand-light-yellow transition-all hover:scale-105">
+                  COMPANIONSHIP
+                </span>
+                <span className="rounded-full bg-primary px-4 py-2 font-semibold text-brand-light-yellow transition-all hover:scale-105">
+                  DIVERSITY
+                </span>
+                <span className="rounded-full bg-primary px-4 py-2 font-semibold text-brand-light-yellow transition-all hover:scale-105">
+                  INCLUSION
+                </span>
               </div>
             </div>
           </div>
