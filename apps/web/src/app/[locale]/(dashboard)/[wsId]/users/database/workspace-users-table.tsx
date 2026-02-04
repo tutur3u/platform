@@ -27,7 +27,7 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { getUserColumns } from './columns';
 import Filters from './filters';
@@ -123,19 +123,26 @@ export function WorkspaceUsersTable({
   const { data: defaultExcludedGroups, isLoading: isLoadingDefaults } =
     useDefaultExcludedGroups(wsId);
 
+  // Track if defaults have been applied (prevents re-apply on clear)
+  const hasAppliedDefaults = useRef(false);
+
   const shouldApplyDefaultExcludedGroups =
     !isLoadingDefaults &&
+    !hasAppliedDefaults.current && // Only apply once per session
     excludedGroups === null &&
     !!defaultExcludedGroups &&
     defaultExcludedGroups.length > 0;
 
   const isInitialized =
     !isLoadingDefaults &&
-    (excludedGroups !== null || !defaultExcludedGroups?.length);
+    (excludedGroups !== null ||
+      !defaultExcludedGroups?.length ||
+      hasAppliedDefaults.current);
 
   // Apply default excluded groups to URL state on mount if no exclusions set
   useEffect(() => {
     if (!shouldApplyDefaultExcludedGroups) return;
+    hasAppliedDefaults.current = true; // Mark as applied to prevent re-apply on clear
     void setExcludedGroups(defaultExcludedGroups);
   }, [
     defaultExcludedGroups,
