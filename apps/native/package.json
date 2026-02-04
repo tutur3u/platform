@@ -43,7 +43,7 @@
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
     "nativewind": "^5.0.0-preview.2",
-    "react": "19.1.0",
+    "react": "19.2.4",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-css": "^3.0.1",
