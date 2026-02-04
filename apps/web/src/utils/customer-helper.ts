@@ -81,7 +81,9 @@ export async function createPolarCustomer({
   );
 
   const newCustomer = await polar.customers.create({
-    email: generateEmailSubadressing(ownerEmail, wsId),
+    email: isPersonalWorkspace
+      ? generateEmailSubadressing(ownerEmail, wsId)
+      : ownerEmail,
     name: isPersonalWorkspace ? workspace.users.display_name : workspace.name,
     externalId: isPersonalWorkspace
       ? ownerId
