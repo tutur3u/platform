@@ -1,4 +1,6 @@
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { ReactNode } from 'react';
+import { verifyGroupAccess } from '../utils';
 import SelectGroupGateway from './select-group-gateway';
 
 interface LayoutProps {
@@ -15,6 +17,13 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   if (groupId === '~') {
     return <SelectGroupGateway wsId={wsId} />;
+  }
+
+  const { containsPermission } = await getPermissions({ wsId });
+  const hasManageUsersPermission = containsPermission('manage_users');
+
+  if (!hasManageUsersPermission) {
+    await verifyGroupAccess(wsId, groupId);
   }
 
   return children;
