@@ -201,7 +201,7 @@ export function FilePreviewDialog({
     };
 
     fetchSignedUrl();
-  }, [file?.name, open, fileType, wsId, path, supabase.storage.from]);
+  }, [file?.name, open, fileType, wsId, path, supabase.storage]);
 
   const handleDownload = async () => {
     if (!file?.name || !signedUrl) return;
@@ -399,7 +399,7 @@ export function FilePreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="!max-w-[90vw] flex h-[90vh] w-full !sm:max-w-6xl flex-col overflow-y-auto"
+        className="flex h-[90vh] w-full !sm:max-w-6xl max-w-[90vw]! flex-col overflow-y-auto"
         showCloseButton={false}
       >
         <DialogHeader>

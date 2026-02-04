@@ -130,11 +130,11 @@ export async function validateApiKey(
     // Extract key_prefix for efficient lookup (first 12 characters)
     const keyPrefix = apiKey.substring(0, 12);
 
-    const supabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     // Query by key_prefix to fetch only the candidate row
     // This assumes a unique index exists on key_prefix for single-row matches
-    const { data: keys, error } = await supabase
+    const { data: keys, error } = await sbAdmin
       .from('workspace_api_keys')
       .select('id, ws_id, key_hash, role_id, expires_at')
       .eq('key_prefix', keyPrefix)
@@ -169,7 +169,7 @@ export async function validateApiKey(
 
         // 1. Fetch role-specific permissions if a role is assigned
         if (keyRecord.role_id) {
-          const { data: rolePermissions } = await supabase
+          const { data: rolePermissions } = await sbAdmin
             .from('workspace_role_permissions')
             .select('permission')
             .eq('ws_id', keyRecord.ws_id)
@@ -186,7 +186,7 @@ export async function validateApiKey(
         // 2. Fetch and merge workspace default permissions
         // This ensures API keys without a role still get default permissions,
         // and API keys with a role get the union of role + default permissions
-        const { data: defaultPermissions } = await supabase
+        const { data: defaultPermissions } = await sbAdmin
           .from('workspace_default_permissions')
           .select('permission')
           .eq('ws_id', keyRecord.ws_id)
@@ -245,11 +245,11 @@ export async function logApiKeyUsage(params: {
   errorMessage?: string | null;
 }): Promise<void> {
   try {
-    const supabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     // Insert the usage log - fire-and-forget with proper execution
     // Call .then() to actually execute the query without blocking
-    supabase
+    sbAdmin
       .from('workspace_api_key_usage_logs')
       .insert({
         api_key_id: params.apiKeyId,
@@ -275,6 +275,8 @@ export async function logApiKeyUsage(params: {
 /**
  * Checks if the workspace context has a specific permission
  *
+ * The "admin" permission grants access to all permissions.
+ *
  * @param context - The workspace context from validateApiKey
  * @param permission - The permission to check
  * @returns True if the permission is granted
@@ -283,7 +285,8 @@ export function hasPermission(
   context: WorkspaceContext,
   permission: PermissionId
 ): boolean {
-  return context.permissions.includes(permission);
+  const isAdmin = context.permissions.includes('admin');
+  return isAdmin || context.permissions.includes(permission);
 }
 
 /**

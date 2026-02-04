@@ -35,12 +35,12 @@ export default async function FinancePage({
 }: Props) {
   const sp = searchParams;
 
-  const { containsPermission, permissions } = await getPermissions({ wsId });
+  const { containsPermission } = await getPermissions({ wsId });
 
   if (!containsPermission('view_finance_stats')) return notFound();
 
   // Check if user has permission to view confidential amounts
-  const canViewConfidentialAmount = permissions.includes(
+  const canViewConfidentialAmount = containsPermission(
     'view_confidential_amount'
   );
 

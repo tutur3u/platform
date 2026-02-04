@@ -8,11 +8,11 @@ export default async function UnitsStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
 
   const enabled = true;
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('view_inventory')) return null;
+  if (!enabled || !containsPermission('view_inventory')) return null;
 
   const { count: units } = enabled
     ? await supabase

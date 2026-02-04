@@ -19,11 +19,11 @@ export default async function InventoryProductsStatistics({
       })
     : { data: 0 };
 
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('view_inventory')) return null;
+  if (!enabled || !containsPermission('view_inventory')) return null;
 
   return (
     <StatisticCard
