@@ -27,11 +27,11 @@ export default async function FinanceStatistics({
   const { showFinanceStats } = sp;
 
   // Check if user has permission to view confidential amounts
-  const [{ permissions }, currency] = await Promise.all([
+  const [{ containsPermission }, currency] = await Promise.all([
     getPermissions({ wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
   ]);
-  const canViewConfidentialAmount = permissions.includes(
+  const canViewConfidentialAmount = containsPermission(
     'view_confidential_amount'
   );
   const workspaceCurrency = currency ?? 'USD';
