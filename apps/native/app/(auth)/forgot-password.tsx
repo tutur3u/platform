@@ -34,7 +34,7 @@ export default function ForgotPasswordScreen() {
     // Validate input
     const result = resetSchema.safeParse({ email });
     if (!result.success) {
-      setError(result.error.errors[0]?.message ?? 'Invalid email');
+      setError(result.error.issues[0]?.message ?? 'Invalid email');
       return;
     }
 

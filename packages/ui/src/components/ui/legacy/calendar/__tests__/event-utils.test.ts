@@ -81,12 +81,8 @@ describe('event-utils', () => {
     it('should return false for event ending at midnight (Mon 10pm - Tue 12am)', () => {
       // Monday 10pm - Tuesday 12am should only show on Monday
       const result = isMultiDayEvent(
-        dayjs
-          .tz('2024-12-09 22:00:00', TEST_TZ)
-          .toISOString(), // Mon 10pm
-        dayjs
-          .tz('2024-12-10 00:00:00', TEST_TZ)
-          .toISOString(), // Tue 12am (midnight)
+        dayjs.tz('2024-12-09 22:00:00', TEST_TZ).toISOString(), // Mon 10pm
+        dayjs.tz('2024-12-10 00:00:00', TEST_TZ).toISOString(), // Tue 12am (midnight)
         TEST_TZ
       );
       expect(result).toBe(false);
@@ -95,12 +91,8 @@ describe('event-utils', () => {
     it('should return true for event spanning multiple days (Mon 10pm - Tue 1am)', () => {
       // Monday 10pm - Tuesday 1am should show on both days
       const result = isMultiDayEvent(
-        dayjs
-          .tz('2024-12-09 22:00:00', TEST_TZ)
-          .toISOString(), // Mon 10pm
-        dayjs
-          .tz('2024-12-10 01:00:00', TEST_TZ)
-          .toISOString(), // Tue 1am
+        dayjs.tz('2024-12-09 22:00:00', TEST_TZ).toISOString(), // Mon 10pm
+        dayjs.tz('2024-12-10 01:00:00', TEST_TZ).toISOString(), // Tue 1am
         TEST_TZ
       );
       expect(result).toBe(true);
