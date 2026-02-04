@@ -1,6 +1,8 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+import { getCurrencyLocale as getCurrencyLocaleFromConfig } from './currencies';
+
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
@@ -86,32 +88,13 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
 }
 
 /**
- * Get the locale for a specific currency
+ * Get the locale for a specific currency.
+ * Re-exported from currencies module for backward compatibility.
+ *
  * @param currency - The currency code
  * @returns The locale string
  */
-export function getCurrencyLocale(currency = 'VND'): string {
-  const currencyToLocale: Record<string, string> = {
-    VND: 'vi-VN',
-    USD: 'en-US',
-    EUR: 'de-DE',
-    GBP: 'en-GB',
-    JPY: 'ja-JP',
-    CNY: 'zh-CN',
-    AUD: 'en-AU',
-    CAD: 'en-CA',
-    KRW: 'ko-KR',
-    INR: 'hi-IN',
-    SGD: 'en-SG',
-    MYR: 'ms-MY',
-    THB: 'th-TH',
-    PHP: 'en-PH',
-    IDR: 'id-ID',
-    HKD: 'zh-HK',
-    TWD: 'zh-TW',
-  };
-  return currencyToLocale[currency.toUpperCase()] || 'en-US';
-}
+export const getCurrencyLocale = getCurrencyLocaleFromConfig;
 
 /**
  * Format a number as currency with locale-specific formatting

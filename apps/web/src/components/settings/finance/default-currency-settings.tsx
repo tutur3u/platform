@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from '@tuturuuu/utils/currencies';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -21,7 +25,49 @@ interface Props {
   workspaceId: string;
 }
 
-type SupportedCurrency = 'VND' | 'USD' | 'PHP' | 'EUR';
+/**
+ * Currency translation key type.
+ * Matches the pattern used in ws-finance-settings translations.
+ */
+type CurrencyTranslationKey =
+  | 'currency_aed'
+  | 'currency_aud'
+  | 'currency_brl'
+  | 'currency_cad'
+  | 'currency_chf'
+  | 'currency_cny'
+  | 'currency_czk'
+  | 'currency_dkk'
+  | 'currency_eur'
+  | 'currency_gbp'
+  | 'currency_hkd'
+  | 'currency_huf'
+  | 'currency_idr'
+  | 'currency_inr'
+  | 'currency_jpy'
+  | 'currency_krw'
+  | 'currency_mxn'
+  | 'currency_myr'
+  | 'currency_nok'
+  | 'currency_nzd'
+  | 'currency_php'
+  | 'currency_pln'
+  | 'currency_sar'
+  | 'currency_sek'
+  | 'currency_sgd'
+  | 'currency_thb'
+  | 'currency_twd'
+  | 'currency_usd'
+  | 'currency_vnd'
+  | 'currency_zar';
+
+/**
+ * Convert a currency code to its translation key.
+ * e.g., 'USD' -> 'currency_usd'
+ */
+function getCurrencyTranslationKey(code: string): CurrencyTranslationKey {
+  return `currency_${code.toLowerCase()}` as CurrencyTranslationKey;
+}
 
 export default function DefaultCurrencySettings({ workspaceId }: Props) {
   const t = useTranslations('ws-finance-settings');
@@ -127,10 +173,11 @@ export default function DefaultCurrencySettings({ workspaceId }: Props) {
               <SelectValue placeholder={t('default_currency_placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EUR">{t('currency_eur')}</SelectItem>
-              <SelectItem value="PHP">{t('currency_php')}</SelectItem>
-              <SelectItem value="USD">{t('currency_usd')}</SelectItem>
-              <SelectItem value="VND">{t('currency_vnd')}</SelectItem>
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <SelectItem key={currency.code} value={currency.code}>
+                  {t(getCurrencyTranslationKey(currency.code))}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
