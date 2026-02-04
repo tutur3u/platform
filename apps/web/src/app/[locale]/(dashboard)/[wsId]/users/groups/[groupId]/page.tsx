@@ -17,7 +17,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { verifyGroupAccess } from '../utils';
 import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
@@ -62,8 +61,6 @@ export default async function UserGroupDetailsPage({
         // Get permissions first to compute access flags
         const { containsPermission } = await getPermissions({ wsId });
 
-        const hasManageUsersPermission = containsPermission('manage_users');
-
         // Group-related permissions from migration
         const canViewUserGroups = containsPermission('view_user_groups');
 
@@ -71,7 +68,7 @@ export default async function UserGroupDetailsPage({
           console.error('User lacks permission to view user groups');
           notFound();
         }
-        const group = await getData(wsId, groupId, hasManageUsersPermission);
+        const group = await getData(wsId, groupId);
 
         // User Information Permissions
         const canViewPersonalInfo = containsPermission(
@@ -244,17 +241,8 @@ export default async function UserGroupDetailsPage({
   );
 }
 
-async function getData(
-  wsId: string,
-  groupId: string,
-  hasManageUsersPermission = false
-) {
+async function getData(wsId: string, groupId: string) {
   const supabase = await createClient();
-
-  // Restrict visibility: users only see groups they're a member of.
-  if (!hasManageUsersPermission) {
-    await verifyGroupAccess(wsId, groupId);
-  }
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
