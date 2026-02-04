@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { createPolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
@@ -89,6 +90,8 @@ const ensureSubscription = async (wsId: string) => {
   try {
     const supabase = await createClient();
     const polar = createPolarClient();
+
+    await createPolarCustomer({ polar, supabase, wsId });
 
     // Create free tier subscription
     const subscription = await createFreeSubscription(polar, supabase, wsId);
