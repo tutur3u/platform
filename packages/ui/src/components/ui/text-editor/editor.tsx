@@ -14,6 +14,7 @@ import { TextSelection } from 'prosemirror-state';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
+import { migrateInlineImagesToBlock } from './content-migration';
 import { EditorDragHandle } from './drag-handle';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
@@ -270,7 +271,8 @@ export function RichTextEditor({
       mentionTranslations,
       readOnly,
     }),
-    content: allowCollaboration ? undefined : content,
+    // Migrate inline images to block-level for backward compatibility
+    content: allowCollaboration ? undefined : migrateInlineImagesToBlock(content),
     editable: editable && !readOnly,
     immediatelyRender: false,
     editorProps: {
@@ -479,15 +481,20 @@ export function RichTextEditor({
       return;
     }
 
+    // Migrate inline images to block-level for backward compatibility
+    const migratedContent = migrateInlineImagesToBlock(content);
     const currentContent = editor.getJSON();
     const contentChanged =
-      JSON.stringify(currentContent) !== JSON.stringify(content);
+      JSON.stringify(currentContent) !== JSON.stringify(migratedContent);
 
     if (contentChanged) {
       // Update editor content without triggering onChange
-      editor.commands.setContent(content || { type: 'doc', content: [] }, {
-        emitUpdate: false,
-      });
+      editor.commands.setContent(
+        migratedContent || { type: 'doc', content: [] },
+        {
+          emitUpdate: false,
+        }
+      );
     }
   }, [editor, content, allowCollaboration]);
 

@@ -1,5 +1,5 @@
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
-import { Plugin, PluginKey } from 'prosemirror-state';
+import { Plugin, PluginKey, type EditorState } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
   getImageDimensions,
@@ -84,6 +84,22 @@ interface ImageOptions {
   onVideoUpload?: (file: File) => Promise<string>;
 }
 
+/**
+ * Adjusts a drop position to the nearest valid block-level insertion point.
+ * If dropping inside a textblock (paragraph, heading, etc.), moves to after that block.
+ * This ensures block-level nodes like images are not inserted mid-sentence.
+ */
+function adjustToBlockLevelPosition(pos: number, state: EditorState): number {
+  const $pos = state.doc.resolve(pos);
+
+  // If parent is a textblock (paragraph, heading, etc.), insert after it
+  if ($pos.parent.isTextblock) {
+    return $pos.after($pos.depth);
+  }
+
+  return pos;
+}
+
 // Extend ImageResizeOptions to include the additional Tiptap Image options
 interface ExtendedImageResizeOptions {
   inline: boolean;
@@ -106,6 +122,43 @@ export const CustomImage = (options: ImageOptions = {}) => {
         },
         wrapperStyle: {
           default: null,
+        },
+      };
+    },
+
+    addKeyboardShortcuts() {
+      return {
+        Backspace: ({ editor }: { editor: import('@tiptap/core').Editor }) => {
+          const { state } = editor;
+          const { selection } = state;
+          const { $from, empty } = selection;
+
+          // Only handle when cursor is at start of a node (empty selection)
+          if (!empty) return false;
+
+          // Check if the node before cursor is an image
+          const nodeBefore = $from.nodeBefore;
+          if (
+            nodeBefore &&
+            (nodeBefore.type.name === 'imageResize' ||
+              nodeBefore.type.name === 'image')
+          ) {
+            // If we're at the start of an empty paragraph after an image,
+            // delete the empty paragraph instead of the image
+            const parent = $from.parent;
+            if (parent.isTextblock && parent.content.size === 0) {
+              // Delete the empty paragraph
+              const tr = state.tr.delete($from.before(), $from.after());
+              editor.view.dispatch(tr);
+              return true;
+            }
+
+            // Otherwise, prevent deletion of the image when pressing backspace
+            // at the start of content immediately after the image
+            return true;
+          }
+
+          return false;
         },
       };
     },
@@ -416,7 +469,11 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   return true;
                 }
 
-                const initialPos = coordinates.pos;
+                // Adjust position to block-level boundary to prevent dropping inside text
+                const initialPos = adjustToBlockLevelPosition(
+                  coordinates.pos,
+                  view.state
+                );
 
                 // Get container width for sizing calculations
                 const editorElement = view.dom as HTMLElement;
@@ -622,11 +679,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
   // Configure the extension with the options
   // Using type assertion since these options exist at runtime but aren't in ImageResizeOptions type
+  // Note: inline: false makes images block-level. Existing content with inline images
+  // is auto-migrated via migrateInlineImagesToBlock() in the editor component.
+  // Using mt-4 mb-2 for tighter vertical spacing - images have more space above than below
+  // to maintain visual hierarchy without excessive gaps after the image.
   return baseExtension.configure({
-    inline: true,
+    inline: false,
     allowBase64: false,
     HTMLAttributes: {
-      class: 'rounded-md my-4 block w-full',
+      class: 'rounded-md mt-4 mb-2 block w-full',
     },
   } as Partial<ExtendedImageResizeOptions>);
 };

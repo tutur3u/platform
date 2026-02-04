@@ -449,10 +449,21 @@ describe('VideoExtension', () => {
         docChanged: false,
         mapping: { map: vi.fn((pos: number) => pos) },
       };
+      // Mock $pos for block-level position adjustment
+      const mock$pos = {
+        parent: { isTextblock: false },
+        after: vi.fn().mockReturnValue(5),
+        depth: 1,
+      };
+      const mockDoc = {
+        nodeSize: 100,
+        resolve: vi.fn().mockReturnValue(mock$pos),
+      };
       const mockView = {
         state: {
           schema: { nodes: { video: { create: vi.fn() } } },
           tr: mockTr,
+          doc: mockDoc,
         },
         dispatch: vi.fn(),
         posAtCoords: vi.fn().mockReturnValue({ pos: 0 }),

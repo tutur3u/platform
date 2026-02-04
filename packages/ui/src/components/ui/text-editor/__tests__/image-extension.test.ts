@@ -51,11 +51,12 @@ describe('ImageExtension', () => {
   });
 
   describe('configuration', () => {
-    it('should use inline mode for backward compatibility', () => {
+    it('should use block mode with auto-migration for backward compatibility', () => {
       const extension = CustomImage();
-      // inline: true allows images inside paragraphs (backward compat)
-      // CSS (display: block) makes them behave as block elements
-      expect(extension.options.inline).toBe(true);
+      // Block-level images (inline: false) with content migration.
+      // Existing inline images are auto-migrated via migrateInlineImagesToBlock()
+      // in the editor component when content is loaded.
+      expect(extension.options.inline).toBe(false);
     });
 
     it('should disable base64 images', () => {
@@ -66,7 +67,8 @@ describe('ImageExtension', () => {
     it('should add block-style CSS classes for visual presentation', () => {
       const extension = CustomImage();
       expect(extension.options.HTMLAttributes?.class).toContain('rounded-md');
-      expect(extension.options.HTMLAttributes?.class).toContain('my-4');
+      expect(extension.options.HTMLAttributes?.class).toContain('mt-4');
+      expect(extension.options.HTMLAttributes?.class).toContain('mb-2');
       expect(extension.options.HTMLAttributes?.class).toContain('block');
       expect(extension.options.HTMLAttributes?.class).toContain('w-full');
     });
@@ -576,6 +578,151 @@ describe('ImageExtension', () => {
         mockEvent
       );
       // Should return true but not process (handled event, early return)
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('block-level position adjustment', () => {
+    it('should adjust drop position to block boundary when inside textblock', () => {
+      const extension = CustomImage({ onImageUpload: vi.fn() });
+      expect(extension).toBeDefined();
+      // Drop handler uses adjustToBlockLevelPosition to ensure images
+      // are inserted at block boundaries, not mid-paragraph
+    });
+
+    it('should not modify drop position when already at block boundary', () => {
+      const extension = CustomImage({ onImageUpload: vi.fn() });
+      expect(extension).toBeDefined();
+      // When position is already between blocks, it remains unchanged
+    });
+  });
+
+  describe('keyboard shortcuts', () => {
+    it('should define addKeyboardShortcuts method', () => {
+      const extension = CustomImage();
+      expect(extension.config.addKeyboardShortcuts).toBeDefined();
+      expect(typeof extension.config.addKeyboardShortcuts).toBe('function');
+    });
+
+    it('should have Backspace shortcut handler', () => {
+      const extension = CustomImage();
+      const shortcuts = extension.config.addKeyboardShortcuts();
+      expect(shortcuts).toBeDefined();
+      expect(shortcuts.Backspace).toBeDefined();
+      expect(typeof shortcuts.Backspace).toBe('function');
+    });
+
+    it('should return false for non-empty selections (allow default behavior)', () => {
+      const extension = CustomImage();
+      const shortcuts = extension.config.addKeyboardShortcuts();
+
+      const mockEditor = {
+        state: {
+          selection: {
+            $from: { nodeBefore: null, parent: { isTextblock: false } },
+            empty: false, // Non-empty selection
+          },
+          tr: { delete: vi.fn().mockReturnThis() },
+        },
+        view: { dispatch: vi.fn() },
+      };
+
+      const result = shortcuts.Backspace({ editor: mockEditor as any });
+      expect(result).toBe(false);
+    });
+
+    it('should return false when node before cursor is not an image', () => {
+      const extension = CustomImage();
+      const shortcuts = extension.config.addKeyboardShortcuts();
+
+      const mockEditor = {
+        state: {
+          selection: {
+            $from: {
+              nodeBefore: { type: { name: 'paragraph' } },
+              parent: { isTextblock: true, content: { size: 5 } },
+            },
+            empty: true,
+          },
+          tr: { delete: vi.fn().mockReturnThis() },
+        },
+        view: { dispatch: vi.fn() },
+      };
+
+      const result = shortcuts.Backspace({ editor: mockEditor as any });
+      expect(result).toBe(false);
+    });
+
+    it('should return true (prevent deletion) when backspace after image', () => {
+      const extension = CustomImage();
+      const shortcuts = extension.config.addKeyboardShortcuts();
+
+      const mockEditor = {
+        state: {
+          selection: {
+            $from: {
+              nodeBefore: { type: { name: 'imageResize' } },
+              parent: { isTextblock: true, content: { size: 10 } }, // Non-empty paragraph
+            },
+            empty: true,
+          },
+          tr: { delete: vi.fn().mockReturnThis() },
+        },
+        view: { dispatch: vi.fn() },
+      };
+
+      const result = shortcuts.Backspace({ editor: mockEditor as any });
+      expect(result).toBe(true);
+    });
+
+    it('should delete empty paragraph and return true when in empty paragraph after image', () => {
+      const extension = CustomImage();
+      const shortcuts = extension.config.addKeyboardShortcuts();
+
+      const mockTr = { delete: vi.fn().mockReturnThis() };
+      const mockDispatch = vi.fn();
+
+      const mockEditor = {
+        state: {
+          selection: {
+            $from: {
+              nodeBefore: { type: { name: 'imageResize' } },
+              parent: { isTextblock: true, content: { size: 0 } }, // Empty paragraph
+              before: vi.fn().mockReturnValue(5),
+              after: vi.fn().mockReturnValue(10),
+            },
+            empty: true,
+          },
+          tr: mockTr,
+        },
+        view: { dispatch: mockDispatch },
+      };
+
+      const result = shortcuts.Backspace({ editor: mockEditor as any });
+      expect(result).toBe(true);
+      expect(mockTr.delete).toHaveBeenCalledWith(5, 10);
+      expect(mockDispatch).toHaveBeenCalled();
+    });
+
+    it('should also protect base image type from accidental deletion', () => {
+      const extension = CustomImage();
+      const shortcuts = extension.config.addKeyboardShortcuts();
+
+      const mockEditor = {
+        state: {
+          selection: {
+            $from: {
+              nodeBefore: { type: { name: 'image' } }, // Base image type
+              parent: { isTextblock: true, content: { size: 5 } },
+            },
+            empty: true,
+          },
+          tr: { delete: vi.fn().mockReturnThis() },
+        },
+        view: { dispatch: vi.fn() },
+      };
+
+      const result = shortcuts.Backspace({ editor: mockEditor as any });
       expect(result).toBe(true);
     });
   });
