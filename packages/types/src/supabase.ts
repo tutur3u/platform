@@ -20501,6 +20501,10 @@ export type Database = {
           user_id: string;
         }[];
       };
+      workspace_has_available_seats: {
+        Args: { target_ws_id: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       abuse_event_type:
